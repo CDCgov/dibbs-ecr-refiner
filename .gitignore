@@ -1,0 +1,25 @@
+# IDE
+.idea/
+*.iml
+/.vscode/settings.json
+
+# macOS
+.DS_Store
+
+# Python-Virtual Environments
+.venv
+
+# ASDF
+.tool-versions
+
+# Local Data Storage
+__pycache__/
+node_modules/
+
+# Code coverage
+**/coverage/
+.coverage
+coverage.xml
+
+#Environment
+.env
