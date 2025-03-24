@@ -1,0 +1,4 @@
+httpx
+pytest
+pytest-asyncio
+testcontainers[compose]>=3.7.1
