@@ -2,7 +2,7 @@ services:
   message-refiner-service:
     platform: linux/amd64
     build:
-      context: .
+      context: ./api/refiner
     depends_on:
       - trigger-code-reference-service
     ports:
@@ -14,7 +14,7 @@ services:
   trigger-code-reference-service:
     platform: linux/amd64
     build:
-      context: ../dibbs-ecr-viewer/containers/trigger-code-reference
+      context: ./api/trigger-code-reference
     ports:
       - "8081:8080"
     logging:
