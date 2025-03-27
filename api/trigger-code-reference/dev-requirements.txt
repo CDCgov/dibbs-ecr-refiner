@@ -6,3 +6,4 @@ testcontainers[compose]
 tqdm
 fhir.resources
 sqlmodel
+ruff==0.11.2
