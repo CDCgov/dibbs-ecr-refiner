@@ -43,10 +43,11 @@ def create_clinical_services_dict(
     """
     Transform the original Trigger Code Reference API response to have keys as systems
     and values as lists of codes, while ensuring the systems are recognized and using their
-    shorthand names so that we can both dynamicall construct XPaths and post-filter matches
+    shorthand names so that we can both dynamically construct XPaths and post-filter matches
     to system name varients.
     """
     system_dict = {
+        "http://hl7.org/fhir/sid/icd-9-cm": "icd9",
         "http://hl7.org/fhir/sid/icd-10-cm": "icd10",
         "http://snomed.info/sct": "snomed",
         "http://loinc.org": "loinc",
