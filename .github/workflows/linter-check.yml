@@ -1,23 +1,21 @@
 name: Linting
 
 on:
-  workflow_call:
-    inputs:
-      python_runner_version:
-        default: 3.13
-        required: true
-        type: number
+  pull_request:
+    branches:
+      - "**"
+  workflow_dispatch:
 
 jobs:
-  python-linting:
+  run-linter:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup python ${{inputs.python_runner_version}}
+      - name: Setup python 3.13
         uses: actions/setup-python@v5
         with:
-          python-version: ${{inputs.python_runner_version}}
+          python-version: 3.13
           cache: pip
       - name: Install dependencies
         run: |
