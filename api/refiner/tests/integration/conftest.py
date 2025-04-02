@@ -8,7 +8,7 @@ from testcontainers.compose import DockerCompose
 @pytest.fixture(scope="session")
 def setup(request):
     print("Setting up tests...")
-    path = Path(__file__).resolve().parent.parent.parent
+    path = Path(__file__).resolve().parent.parent.parent.parent.parent
     compose_file_name = os.path.join(path, "docker-compose.yaml")
     orchestration_service = DockerCompose(path, compose_file_name=compose_file_name)
 
