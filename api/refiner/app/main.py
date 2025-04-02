@@ -128,7 +128,7 @@ async def refine_ecr(
     clinical_services = None
     if conditions_to_include:
         clinical_services = [
-            service for service in get_clinical_services(conditions_to_include)
+            service for service in _get_clinical_services(conditions_to_include)
         ]
 
         # create a simple dictionary structure for refine.py to consume
@@ -139,7 +139,7 @@ async def refine_ecr(
     return Response(content=data, media_type="application/xml")
 
 
-def get_clinical_services(condition_codes: str) -> list[dict]:
+def _get_clinical_services(condition_codes: str) -> list[dict]:
     """
     This a function that loops through the provided condition codes. For each
     condition code provided, it calls the trigger-code-reference service to get
