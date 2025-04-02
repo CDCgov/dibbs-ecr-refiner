@@ -1,0 +1,71 @@
+# Get CapabilityStatement
+GET {{API_URL}}/metadata
+X-API-KEY: {{API_KEY}}
+
+###
+
+# get active value sets
+GET {{API_URL}}/ValueSet?status=active
+X-API-KEY: {{API_KEY}}
+
+###
+
+# Get an individual ValueSet
+GET {{API_URL}}/ValueSet?code=9991008
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?context-type-value=focus$[240589008]
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?code=9991008
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?context-type=http://terminology.hl7.org/CodeSystem/usage-context-type|focus
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|240589008
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?name=ReportingSpecificationGrouper41439009
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?title=Cyanobacteria
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?description=poisoning
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?title=Hepatitis B&status=active
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|66071002
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?description=Hepatitis B
+X-API-KEY: {{API_KEY}}
+
+###
+
+GET {{API_URL}}/ValueSet?description=Influenza
+X-API-KEY: {{API_KEY}}
+
