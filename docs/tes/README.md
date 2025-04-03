@@ -132,3 +132,24 @@ The CapabilityStatment can be obtained by hitting the `/metadata` endpoint on th
 ```bash
 jq '.rest[].resource[] | select(.type=="ValueSet") | .searchParam[]' tes-CapabilityStatement.json
 ```
+
+### `.http` file examples
+
+To use the `.http` file with example requests to the TES API you'll need to create an `http-client.env.json` file (or other kind of `.env` file for the API key to be added to the header of the requests). The contents should look something like this:
+
+```json
+ {
+  "$schema": "https://raw.githubusercontent.com/mistweaverco/kulala.nvim/main/schemas/http-client.env.schema.json",
+  "$shared": {
+    "$default_headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    }
+  },
+  "dev": {
+    "API_URL": "https://tes.tools.aimsplatform.org/api/fhir",
+    "API_KEY": "your-api-key"
+  }
+}
+```
+
