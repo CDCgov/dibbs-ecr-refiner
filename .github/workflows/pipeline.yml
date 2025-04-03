@@ -1,0 +1,17 @@
+name: Pipeline
+
+on:
+  pull_request:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-linter:
+    uses: ./.github/workflows/lint.yml
+    with:
+      python_runner_version: 3.13
