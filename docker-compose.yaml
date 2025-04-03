@@ -3,10 +3,10 @@ services:
     platform: linux/amd64
     command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
     build:
-      context: ./api/refiner
+      context: ./refiner
     working_dir: /app
     volumes:
-      - ./api/refiner:/app
+      - ./refiner:/app
     ports:
       - "8080:8080"
     logging:
