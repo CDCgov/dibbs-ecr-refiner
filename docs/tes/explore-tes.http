@@ -1,71 +1,107 @@
-# Get CapabilityStatement
+# Get CapabilityStatement - This returns metadata about the FHIR server's capabilities
+# This is often the first call to understand what operations the server supports
 GET {{API_URL}}/metadata
 X-API-KEY: {{API_KEY}}
 
 ###
 
-# get active value sets
+# Get all active value sets - Retrieves all ValueSets with a status of "active"
+# This is useful for discovering available terminology resources that are currently in use
 GET {{API_URL}}/ValueSet?status=active
 X-API-KEY: {{API_KEY}}
 
 ###
 
-# Get an individual ValueSet
+# Get ValueSets containing a specific code - Searches for ValueSets that include the SNOMED code 9991008
+# (which represents "Abdominal colic (finding)")
+# This helps find which condition groupers might include this specific clinical finding
 GET {{API_URL}}/ValueSet?code=9991008
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by context-type-value - This syntax attempts to search for ValueSets with a specific clinical focus
+# The focus$[240589008] syntax is trying to reference a SNOMED code for "Trichinosis (disorder)"
+# NOTE: This particular syntax currently returns zero results in the TES API
+# For better results, use the context parameter as shown in later examples (e.g., context=http://snomed.info/sct|240589008)
 GET {{API_URL}}/ValueSet?context-type-value=focus$[240589008]
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Get ValueSets containing a specific code (duplicate of earlier query for reference)
 GET {{API_URL}}/ValueSet?code=9991008
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by context type - This finds ValueSets that have any "focus" context
+# The "focus" context type in FHIR indicates the clinical focus of the ValueSet
+# This query would return all ValueSets that have any clinical focus defined
 GET {{API_URL}}/ValueSet?context-type=http://terminology.hl7.org/CodeSystem/usage-context-type|focus
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by SNOMED context - Finds ValueSets associated with a specific SNOMED condition code
+# 240589008 is the code for "Trichinosis (disorder)"
+# This returns all ValueSets that are explicitly linked to this condition
 GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|240589008
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by ValueSet name - Retrieves a specific Reporting Specification Grouper by its name
+# This would return the exact Reporting Specification Grouper for Rubella (41439009 is Rubella in SNOMED)
+# Useful when you know the exact ValueSet you need and have its identifier
 GET {{API_URL}}/ValueSet?name=ReportingSpecificationGrouper41439009
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by title - Finds ValueSets with "Cyanobacteria" in their title
+# This is useful for discovering ValueSets related to cyanobacterial diseases or poisoning
+# The title search is good for human-readable condition identification
 GET {{API_URL}}/ValueSet?title=Cyanobacteria
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by description - Finds ValueSets with "poisoning" in their description field
+# This helps locate ValueSets related to poisoning conditions across various causes
+# Description searches can find ValueSets based on their clinical intent or purpose
 GET {{API_URL}}/ValueSet?description=poisoning
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Combined parameter search - Finds active ValueSets related to Hepatitis B
+# This demonstrates how multiple parameters can be combined to refine your search
+# Only returns ValueSets that are both related to Hepatitis B and have an active status
 GET {{API_URL}}/ValueSet?title=Hepatitis B&status=active
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by SNOMED context for Hepatitis B - Finds ValueSets linked to Hepatitis B condition
+# 66071002 is the SNOMED code for "Viral hepatitis type B (disorder)"
+# This returns all terminology directly linked to this specific condition
 GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|66071002
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by description for Hepatitis B - Finds ValueSets with "Hepatitis B" in their description
+# This might return a broader set of ValueSets than the context search
+# Useful for finding ValueSets that mention Hepatitis B even if not directly focused on it
 GET {{API_URL}}/ValueSet?description=Hepatitis B
 X-API-KEY: {{API_KEY}}
 
 ###
 
+# Search by description for Influenza - Finds ValueSets with "Influenza" in their description
+# This retrieves all ValueSets related to influenza conditions and variants
+# Helpful for identifying available influenza-related terminology resources
 GET {{API_URL}}/ValueSet?description=Influenza
 X-API-KEY: {{API_KEY}}
 

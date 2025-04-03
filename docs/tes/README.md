@@ -1,95 +1,39 @@
-# TES
+# Terminology Exchange Service (TES) API Integration Guide
 
-## Web based interface
+## Background
 
-### Specification category
+The Terminology Exchange Service (TES) reduces the burden of terminology management for public health agencies (PHAs) by providing centralized, condition-associated codes through a searchable user interface and an application programming interface (API). These codes are curated from the Reportable Conditions Knowledge Management System (RCKMS) value sets and the Electronic Reporting and Surveillance Distribution (eRSD) system.
+
+There are several challenges that make it more difficult for PHAs to leverage electronic case reporting (eCR) terminology, including:
+- Identifying condition-indicating codes within Electronic Initial Case Reports (eICR)
+- Understanding codes that offer contextual information surrounding reported conditions
+- Addressing narrative descriptor gaps in coded data elements
+- Managing and maintaining vocabularies
+- Utilizing coded values for ingestion and integration into surveillance systems
+
+The TES aims to support PHAs to process, ingest, and utilize eCR data more efficiently and effectively through improved terminology management.
+
+## Benefits of the TES
+
+- Streamlines vocabulary management and reduces duplication of efforts across PHAs by providing relevant, curated, and centralized codes.
+- Helps identify and contextualize conditions through curated value sets to ensure data are useful and actionable for public health.
+- Informs users of content and value set updates with narrative description look-ups for value sets captured within the tool.
+
+## Organization of Terminology
+
+The TES FHIR server provides terminology services that organize medical terminology (primarily SNOMED CT codes) in two ways:
+
+1. **Triggering categories (eRSD)**: Grouped by types of clinical events (medications, lab orders, etc.)
+2. **Condition categories (TES)**: Grouped by health conditions (influenza, anthrax, etc.)
 
 > [!NOTE] 
-> **Specification category**: This server currently contains released eRSD and TES data bundles. They both contain very similar data, but are grouped/organized in different ways. The eRSD groups data by "triggering categories" (e.g. medications, lab orders) that are maintained by RCKMS to generate electronic initial case reports for tracked health conditions. TES data bundles are grouped by overarching "condition categories" (e.g. influenza, mpox)
+> **Specification category**: This server currently contains released eRSD and TES data bundles. They both contain very similar data, but are grouped/organized in different ways. The eRSD groups data by "triggering categories" that are maintained by RCKMS to generate electronic initial case reports for tracked health conditions. TES data bundles are grouped by overarching "condition categories".
 
-### Release version
+### Content Structure
 
-> [!NOTE]
-> **Release version**: All released (final) TES and eRSD bundles are given a unique version. Released bundles can no longer be edited, apart from small changes to the metadata.
+The TES uses two primary types of ValueSets to organize terminology:
 
-### Grouping Level
-
-> [!NOTE]
-> **Grouping Level**: Some bundles may have the ability to be viewed with narrower or wider content focus. Changing the grouping level helps you to view the data from different perspectives. eRSD bundles can only be viewed from the context of a "triggering category."
-
-### Available groupers
-
-> [!NOTE]
-> **Available groupers**: Code expansions below will be performed at the grouper level. A grouper may be one Value Set, or may contain other Value Sets.
-
-### Results
-
-Let's say we pick **Anthrax** as the grouper. This is what gets returned:
-
-|Field|Value|
-|---|---|
-|Title|Anthrax|
-|Computable Name|Anthrax|
-|Steward|CSTE Steward|
-|Publisher|Association of Public Health Laboratories (APHL)|
-|Description|The set of all codes from value sets used in Reporting Specifications that are associated with the 'Anthrax' condition.|
-|URL|`https://tes.tools.aimsplatform.org/api/fhir/ValueSet/cee10ec6-5f3c-42c8-91af-5bc3f4ab2daf`|
-|Version|`1.0.0`|
-
-It will also contain **Value Sets**
-
-In this case only one is returned:
-
-|Title|URL|Date|Version|
-|---|---|---|---|
-|Anthrax|`https://tes.tools.aimsplatform.org/api/fhir/ValueSet/rs-grouper-409498004`|October 8, 2024|`20241008`|
-
-You can click to expand for **Codes** and the expansion will be listed as generated on the date that the request is made:
-
-|Display|Code|System|System Version|
-|---|---|---|---|
-|Abdominal colic (finding)|`9991008`|`http://snomed.info/sct`|No Version|
-|Abdominal colic in adult or child greater than 12 months (finding)|`137891000119105`|`http://snomed.info/sct`|No Version|
-|Abdominal colic in child less than or equal to 12 months (finding)|`136051000119105`|`http://snomed.info/sct`|No Version|
-|Abdominal discomfort (finding)|`43364001`|`http://snomed.info/sct`|No Version|
-|Abdominal muscle pain (finding)|`28221000119103`|`http://snomed.info/sct`|No Version|
-|Abdominal pain - cause unknown (finding)|`314212008`|`http://snomed.info/sct`|No Version|
-|Abdominal pain (finding)|`21522001`|`http://snomed.info/sct`|No Version|
-|Abdominal pain through to back (finding)|`74704000`|`http://snomed.info/sct`|No Version|
-|Abdominal pain worse on motion (finding)|`71850005`|`http://snomed.info/sct`|No Version|
-|Abdominal tenderness (finding)|`43478001`|`http://snomed.info/sct`|No Version|
-|Abdominal wall pain (finding)|`162042000`|`http://snomed.info/sct`|No Version|
-|Abdominal wind pain (finding)|`45979003`|`http://snomed.info/sct`|No Version|
-|Abnormal (qualifier value)|`263654008`|`http://snomed.info/sct`|No Version|
-|Abnormal presence of (qualifier value)|`43261007`|`http://snomed.info/sct`|No Version|
-|Abnormal result (qualifier value)|`280415008`|`http://snomed.info/sct`|No Version|
-|Absent minded (finding)|`46991000`|`http://snomed.info/sct`|No Version|
-|Aching headache (finding)|`162307009`|`http://snomed.info/sct`|No Version|
-|Acute abdomen (disorder)|`9209005`|`http://snomed.info/sct`|No Version|
-|Acute abdominal pain (finding)|`116290004`|`http://snomed.info/sct`|No Version|
-|Acute bacterial pharyngitis (disorder)|`195658003`|`http://snomed.info/sct`|No Version|
-|Acute confusion (finding)|`130987000`|`http://snomed.info/sct`|No Version|
-|Acute exacerbation of chronic abdominal pain (finding)|`444746004`|`http://snomed.info/sct`|No Version|
-|Acute headache (finding)|`735938006`|`http://snomed.info/sct`|No Version|
-|Acute laryngopharyngitis (disorder)|`55355000`|`http://snomed.info/sct`|No Version|
-|Acute pharyngitis (disorder)|`363746003`|`http://snomed.info/sct`|No Version|
-|Acute phlegmonous pharyngitis (disorder)|`195656004`|`http://snomed.info/sct`|No Version|
-|Acute rise of fever (finding)|`271749004`|`http://snomed.info/sct`|No Version|
-|Acute ulcerative pharyngitis (disorder)|`195657008`|`http://snomed.info/sct`|No Version|
-|Acute viral pharyngitis (disorder)|`195662009`|`http://snomed.info/sct`|No Version|
-|Acute vomiting (disorder)|`23971007`|`http://snomed.info/sct`|No Version|
-|Added respiratory sounds (finding)|`53972003`|`http://snomed.info/sct`|No Version|
-|Altered mental status (finding)|`419284004`|`http://snomed.info/sct`|No Version|
-|Ankle edema (finding)|`26237000`|`http://snomed.info/sct`|No Version|
-|Anthrax (disorder)|`409498004`|`http://snomed.info/sct`|No Version|
-|Anthrax manifestation (disorder)|`111800004`|`http://snomed.info/sct`|No Version|
-|Anthrax pneumonia (disorder)|`195902009`|`http://snomed.info/sct`|No Version|
-
-There are 1000 rows of results.
-
-## From the docs
-
-### Condition Grouper
+#### Condition Grouper
 
 A **Condition Grouper** is a grouping ValueSet that contains Reporting Specification Groupers that typically share the same overarching condition.
 
@@ -97,48 +41,272 @@ For instance, an influenza condition grouper may contain two reporting specifica
 
 Condition Groupers themselves do not have an explicit association with a specific condition code, unlike their contents (Reporting Specification Groupers).
 
-### Reporting Specification Grouper
+#### Reporting Specification Grouper
 
-A Reporting Specification Grouper is a ValueSet with a definition and expansion that contains the codes from all of the ValueSets used in reporting specification implementations that are associated with a particular condition code.
+A **Reporting Specification Grouper** is a ValueSet with a definition and expansion that contains the codes from all of the ValueSets used in reporting specification implementations that are associated with a particular condition code.
 
-These ValueSets have an explicit association with a condition code - a ‘clinical focus’ useContext.
+These ValueSets have an explicit association with a condition code - a 'clinical focus' useContext.
 
-For instance, an influenza condition reporting specification grouper may contain all condition codes related to SNOMED code `43692000` `"[Influenzal acute upper respiratory infection (disorder)]"`, while an influenza hospitalization reporting specification grouper may be based on a different SNOMED code, such as SNOMED `719590007` `"[Influenza caused by seasonal influenza virus (disorder)]"`
+For instance, an influenza condition reporting specification grouper may contain all condition codes related to SNOMED code `43692000` `"[Influenzal acute upper respiratory infection (disorder)]"`, while an influenza hospitalization reporting specification grouper may be based on a different SNOMED code, such as SNOMED `719590007` `"[Influenza caused by seasonal influenza virus (disorder)]"`.
 
 > [!TIP]
-> A _reporting specification grouper_ can be expanded by invoking the `$expand` operation on the instance.
+> A reporting specification grouper can be expanded by invoking the `$expand` operation on the instance.
 
-## TES API
+## TES API Overview
 
-The API for the TES is a FHIR server that supports standard FHIR REST and FHIR Search functionality. The API is protected by API Key-based authentication and authorization. 
+The Application Programming Interface (API) for the Terminology Exchange Service (TES) is a FHIR server that supports standard FHIR REST and FHIR Search functionality built on top of HAPI 7.2. The API is protected by API Key-based authentication and authorization.
 
-- FHIR Endpoints
-  - Production – `https://tes.tools.aimsplatform.org/api/fhir`
-- API Key Authentication
-  - Users can generate an API key from within the TES application. The API Key should be included as an `X-API-KEY` header in requests that are submitted to the application.
-- API Key Authorization
-  - The TES currently defines the following roles: 
-    - Viewer
-    - Publisher
-    - Admin 
-  - All three will have full read access. Only publishers and admins will be able to publish new content to the repository.
+### FHIR Endpoints
 
-### CapabilityStatment
+- Production – `https://tes.tools.aimsplatform.org/api/fhir`
 
-The CapabilityStatment can be obtained by hitting the `/metadata` endpoint on the TES api. This has been saved as a `.json` file to make it easier to search through. To make it easier, here are some `jq` commands to find specific pieces of info:
+### API Key Authentication
 
-#### `jq` commands:
+Users can generate an API key from within the TES application. The API Key should be included as an `X-API-KEY` header in requests that are submitted to the application.
 
-```bash
-jq '.rest[].resource[] | select(.type=="ValueSet") | .searchParam[]' tes-CapabilityStatement.json
+### API Key Authorization
+
+The TES currently defines the following roles:
+- **Viewer**: Read-only access
+- **Publisher**: Read access and ability to publish new content
+- **Admin**: Full read access and ability to publish new content
+
+All three roles have full read access. Only publishers and admins can publish new content to the repository.
+
+## Getting Started with the API
+
+### Authentication Setup
+
+To use the TES API, you'll need to include your API key in the `X-API-KEY` header of every request:
+
+```python
+import requests
+
+API_URL = "https://tes.tools.aimsplatform.org/api/fhir"
+API_KEY = "your-api-key"  # Replace with your actual API key
+
+headers = {
+    "X-API-KEY": API_KEY,
+    "Accept": "application/json"
+}
+
+# example request to get the FHIR CapabilityStatement
+response = requests.get(f"{API_URL}/metadata", headers=headers)
+capability_statement = response.json()
 ```
 
-### `.http` file examples
+### Common API requests
 
-To use the `.http` file with example requests to the TES API you'll need to create an `http-client.env.json` file (or other kind of `.env` file for the API key to be added to the header of the requests). The contents should look something like this:
+Here are examples of common API requests to retrieve ValueSets from the TES:
+
+1. Get active ValueSets
+
+```python
+# get all active value sets
+response = requests.get(f"{API_URL}/ValueSet?status=active", headers=headers)
+active_value_sets = response.json()
+```
+
+2. Search by ValueSet code
+
+```python
+# get ValueSet by specific code
+code = "9991008"
+response = requests.get(f"{API_URL}/ValueSet?code={code}", headers=headers)
+value_sets_with_code = response.json()
+```
+
+3. Search by condition (using SNOMED CT context)
+
+```python
+# get ValueSets by SNOMED condition code (Hepatitis B - 66071002)
+snomed_code = "66071002"
+response = requests.get(f"{API_URL}/ValueSet?context=http://snomed.info/sct|{snomed_code}", headers=headers)
+condition_value_sets = response.json()
+```
+
+4. Search by title or description
+
+```python
+# search by title
+title = "Hepatitis B"
+response = requests.get(f"{API_URL}/ValueSet?title={title}&status=active", headers=headers)
+hepatitis_b_value_sets = response.json()
+
+# search by description containing "Influenza"
+description = "Influenza"
+response = requests.get(f"{API_URL}/ValueSet?description={description}", headers=headers)
+influenza_value_sets = response.json()
+```
+
+### Example Response Structure
+
+Responses are FHIR bundles, for example; if we search by description containing "Influenza" (from the example above), we receive this FHIR bundle as a response:
 
 ```json
- {
+{
+  "resourceType": "Bundle",
+  "id": "c0559580-6ed6-4f3a-934e-0ad5e08f0a35",
+  "meta": {
+    "lastUpdated": "2025-04-03T18:30:34.495+00:00"
+  },
+  "type": "searchset",
+  "total": 15,
+  "link": [
+    {
+      "relation": "self",
+      "url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet?description=Influenza"
+    }
+  ],
+  "entry": [
+    {
+      "fullUrl": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/2.16.840.1.113762.1.4.1146.133",
+      "resource": {
+        "resourceType": "ValueSet",
+        "id": "2.16.840.1.113762.1.4.1146.133",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-06T18:52:04.343+00:00",
+          "source": "#KwfuvchZ8Shkxhiw",
+          "profile": [
+            "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-triggering-valueset"
+          ]
+        },
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/valueset-author",
+            "valueContactDetail": {
+              "name": "CSTE Author"
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/valueset-steward",
+            "valueContactDetail": {
+              "name": "CSTE Steward"
+            }
+          }
+        ],
+        "url": "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1146.133",
+        "identifier": [
+          {
+            "system": "urn:ietf:rfc:3986",
+            "value": "urn:oid:2.16.840.1.113762.1.4.1146.133"
+          }
+        ],
+        "name": "InfluenzaDisordersICD10CM",
+        "title": "Influenza (Disorders) (ICD10CM)",
+        "status": "active",
+        "experimental": false,
+        "publisher": "CSTE Steward",
+        "description": "Influenza (Disorders) (ICD10CM)",
+        "useContext": [
+          {
+            "code": {
+              "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+              "code": "focus"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "661761000124109"
+                }
+              ],
+              "text": "Death associated with influenza (event)"
+            }
+          },
+          {
+            "code": {
+              "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context-type",
+              "code": "priority"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context",
+                  "code": "emergent"
+                }
+              ],
+              "text": "Emergent"
+            }
+          },
+          {
+            "code": {
+              "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+              "code": "focus"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "6142004"
+                }
+              ],
+              "text": "Influenza (disorder)"
+            }
+          },
+          {
+            "code": {
+              "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context-type",
+              "code": "priority"
+            },
+            "valueCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context",
+                  "code": "emergent"
+                }
+              ],
+              "text": "Emergent"
+            }
+          },
+          ...
+```
+
+The FHIR bundles can be very large so this is just part of the response.
+
+## Understanding Healthcare Terminology Systems
+
+TES works with multiple standard healthcare terminology systems. Here's a brief overview of the main ones:
+
+### SNOMED CT
+
+**SNOMED Clinical Terms** is a comprehensive clinical terminology system used for the electronic exchange of clinical health information. It provides a standardized vocabulary for clinical documentation and reporting.
+
+Example SNOMED code: `66071002` - "Hepatitis B" 
+
+### LOINC
+
+**Logical Observation Identifiers Names and Codes** is a database and universal standard for identifying medical laboratory observations. It is primarily used for laboratory test orders and results.
+
+Example LOINC code: `94500-6` - "SARS-CoV-2 (COVID-19) RNA [Presence] in Respiratory specimen by NAA with probe detection"
+
+### RxNorm
+
+**RxNorm** provides normalized names for clinical drugs and links to many of the drug vocabularies commonly used in pharmacy management and drug interaction software.
+
+Example RxNorm code: `1000001` - "Acetaminophen 325 MG Oral Tablet"
+
+### ICD-10-CM
+
+**International Classification of Diseases, 10th Revision, Clinical Modification** is a system used by physicians and other healthcare providers to classify and code diagnoses, symptoms, and procedures.
+
+Example ICD-10-CM code: `A22.9` - "Anthrax, unspecified"
+
+### ICD-9-CM
+
+The older version of ICD that is still used in some contexts for historical data.
+
+Example ICD-9-CM code: `022.9` - "Anthrax, unspecified"
+
+## Development Setup
+
+### Working with HTTP Examples
+
+To use the provided `.http` file examples with the TES API, create an `http-client.env.json`` file with the following structure:
+
+```json
+{
   "$schema": "https://raw.githubusercontent.com/mistweaverco/kulala.nvim/main/schemas/http-client.env.schema.json",
   "$shared": {
     "$default_headers": {
@@ -151,5 +319,23 @@ To use the `.http` file with example requests to the TES API you'll need to crea
     "API_KEY": "your-api-key"
   }
 }
+```
+
+> [!NOTE]
+> the `"$schema"` value is for using the Kulala NeoVim package. There are likely other `.env` examples if you are using a different tool for `.http` files.
+
+### Exploring the API Capabilities
+
+You can obtain the complete CapabilityStatement by requesting the `/metadata` endpoint:
+
+```python
+response = requests.get(f"{API_URL}/metadata", headers=headers)
+capability_statement = response.json()
+```
+
+There is a saved version named `tes-CapabilityStatement.json` that you can explore by opening the file or using tools like `jq` to extract parts of it:
+
+```bash
+jq '.rest[].resource[] | select(.type=="ValueSet") | .searchParam[]' tes-CapabilityStatement.json
 ```
 
