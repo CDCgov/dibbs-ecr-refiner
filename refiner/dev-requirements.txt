@@ -1,5 +1,9 @@
 httpx
 pytest
 pytest-asyncio
+python-dotenv
+tqdm
+sqlmodel
+fhir.resources
 testcontainers[compose]>=3.7.1
 ruff==0.11.2
