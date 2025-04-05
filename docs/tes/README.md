@@ -75,195 +75,150 @@ All three roles have full read access. Only publishers and admins can publish ne
 
 ## Getting Started with the API
 
-### Authentication Setup
-
-To use the TES API, you'll need to include your API key in the `X-API-KEY` header of every request:
+### 1. Basic Setup
 
 ```python
 import requests
 
 API_URL = "https://tes.tools.aimsplatform.org/api/fhir"
-API_KEY = "your-api-key"  # Replace with your actual API key
+API_KEY = "your_api_key_here"
 
 headers = {
     "X-API-KEY": API_KEY,
     "Accept": "application/json"
 }
 
-# example request to get the FHIR CapabilityStatement
-response = requests.get(f"{API_URL}/metadata", headers=headers)
-capability_statement = response.json()
+def make_tes_request(url_suffix, params=None):
+    """Helper function for TES API requests"""
+    try:
+        response = requests.get(
+            f"{API_URL}{url_suffix}",
+            headers=headers,
+            params=params
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error making request: {e}")
+        return None
 ```
 
-### Common API requests
+### Search Patterns
 
-Here are examples of common API requests to retrieve ValueSets from the TES:
-
-1. Get active ValueSets
+#### 1. Get Active ValueSets
 
 ```python
-# get all active value sets
-response = requests.get(f"{API_URL}/ValueSet?status=active", headers=headers)
-active_value_sets = response.json()
+def get_active_valuesets():
+    """Get all active ValueSets"""
+    params = {"status": "active"}
+    return make_tes_request("/ValueSet", params)
+
+active_vs = get_active_valuesets()
+if active_vs:
+    print(f"Found {active_vs.get('total', 0)} active ValueSets")  # Returns 20+ in production
 ```
 
-2. Search by ValueSet code
+#### 2. Search by Contained Code
 
 ```python
-# get ValueSet by specific code
-code = "9991008"
-response = requests.get(f"{API_URL}/ValueSet?code={code}", headers=headers)
-value_sets_with_code = response.json()
+def find_valuesets_by_code(code, code_system=None):
+    """Find ValueSets containing a specific code"""
+    params = {"code": code}
+    if code_system:
+        params["system"] = code_system
+    return make_tes_request("/ValueSet", params)
+
+# example: find ValueSets containing SNOMED code for Abdominal colic (9991008)
+abdominal_colic_vs = find_valuesets_by_code("9991008")  
+if abdominal_colic_vs:
+    print(f"Found {len(abdominal_colic_vs.get('entry', []))} ValueSets containing code 9991008")
 ```
 
-3. Search by condition (using SNOMED CT context)
+#### 3. Search by Condition (SNOMED Context)
 
 ```python
-# get ValueSets by SNOMED condition code (Hepatitis B - 66071002)
-snomed_code = "66071002"
-response = requests.get(f"{API_URL}/ValueSet?context=http://snomed.info/sct|{snomed_code}", headers=headers)
-condition_value_sets = response.json()
+def find_valuesets_by_condition(snomed_code):
+    """Find ValueSets associated with a condition"""
+    params = {"context": f"http://snomed.info/sct|{snomed_code}"}
+    return make_tes_request("/ValueSet", params)
+
+# example: find Hepatitis B (66071002) ValueSets
+hepatitis_b_vs = find_valuesets_by_condition("66071002")  
+if hepatitis_b_vs:
+    print(f"Found {hepatitis_b_vs.get('total', 0)} Hepatitis B ValueSets")  # Returns 12 in production
 ```
 
-4. Search by title or description
+#### 4. Search by Title/Description
 
 ```python
-# search by title
-title = "Hepatitis B"
-response = requests.get(f"{API_URL}/ValueSet?title={title}&status=active", headers=headers)
-hepatitis_b_value_sets = response.json()
+def search_valuesets_by_text(field, text, status=None):
+    """Search by title or description"""
+    params = {field: text}
+    if status:
+        params["status"] = status
+    return make_tes_request("/ValueSet", params)
 
-# search by description containing "Influenza"
-description = "Influenza"
-response = requests.get(f"{API_URL}/ValueSet?description={description}", headers=headers)
-influenza_value_sets = response.json()
+# title search for active ValueSets
+flu_title_vs = search_valuesets_by_text("title", "Influenza", "active")
+
+# description search
+poisoning_vs = search_valuesets_by_text("description", "poisoning")  # Returns 15+ for "Influenza"
 ```
 
-### Example Response Structure
+#### 5. Find ValueSets from Specific CodeSystem
 
-Responses are FHIR bundles, for example; if we search by description containing "Influenza" (from the example above), we receive this FHIR bundle as a response:
+```python
+def find_valuesets_by_codesystem(system_url):
+    """Find ValueSets using codes from a specific system"""
+    params = {"reference": system_url}
+    return make_tes_request("/ValueSet", params)
 
-```json
-{
-  "resourceType": "Bundle",
-  "id": "c0559580-6ed6-4f3a-934e-0ad5e08f0a35",
-  "meta": {
-    "lastUpdated": "2025-04-03T18:30:34.495+00:00"
-  },
-  "type": "searchset",
-  "total": 15,
-  "link": [
-    {
-      "relation": "self",
-      "url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet?description=Influenza"
+# example: find all ValueSets using LOINC codes
+loinc_vs = find_valuesets_by_codesystem("http://loinc.org")  # Returns 20+ in production
+```
+
+#### 6. Pagination with `_count`
+
+```python
+def get_paginated_valuesets(page_size=20, page=1):
+    """Get paginated ValueSet results"""
+    params = {
+        "_count": page_size,
+        "_getpagesoffset": (page - 1) * page_size
     }
-  ],
-  "entry": [
-    {
-      "fullUrl": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/2.16.840.1.113762.1.4.1146.133",
-      "resource": {
-        "resourceType": "ValueSet",
-        "id": "2.16.840.1.113762.1.4.1146.133",
-        "meta": {
-          "versionId": "1",
-          "lastUpdated": "2024-11-06T18:52:04.343+00:00",
-          "source": "#KwfuvchZ8Shkxhiw",
-          "profile": [
-            "http://hl7.org/fhir/us/ecr/StructureDefinition/us-ph-triggering-valueset"
-          ]
-        },
-        "extension": [
-          {
-            "url": "http://hl7.org/fhir/StructureDefinition/valueset-author",
-            "valueContactDetail": {
-              "name": "CSTE Author"
-            }
-          },
-          {
-            "url": "http://hl7.org/fhir/StructureDefinition/valueset-steward",
-            "valueContactDetail": {
-              "name": "CSTE Steward"
-            }
-          }
-        ],
-        "url": "http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1146.133",
-        "identifier": [
-          {
-            "system": "urn:ietf:rfc:3986",
-            "value": "urn:oid:2.16.840.1.113762.1.4.1146.133"
-          }
-        ],
-        "name": "InfluenzaDisordersICD10CM",
-        "title": "Influenza (Disorders) (ICD10CM)",
-        "status": "active",
-        "experimental": false,
-        "publisher": "CSTE Steward",
-        "description": "Influenza (Disorders) (ICD10CM)",
-        "useContext": [
-          {
-            "code": {
-              "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
-              "code": "focus"
-            },
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "http://snomed.info/sct",
-                  "code": "661761000124109"
-                }
-              ],
-              "text": "Death associated with influenza (event)"
-            }
-          },
-          {
-            "code": {
-              "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context-type",
-              "code": "priority"
-            },
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context",
-                  "code": "emergent"
-                }
-              ],
-              "text": "Emergent"
-            }
-          },
-          {
-            "code": {
-              "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
-              "code": "focus"
-            },
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "http://snomed.info/sct",
-                  "code": "6142004"
-                }
-              ],
-              "text": "Influenza (disorder)"
-            }
-          },
-          {
-            "code": {
-              "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context-type",
-              "code": "priority"
-            },
-            "valueCodeableConcept": {
-              "coding": [
-                {
-                  "system": "http://hl7.org/fhir/us/ecr/CodeSystem/us-ph-usage-context",
-                  "code": "emergent"
-                }
-              ],
-              "text": "Emergent"
-            }
-          },
-          ...
+    return make_tes_request("/ValueSet", params)
+
+# get first 5 ValueSets
+first_page = get_paginated_valuesets(page_size=5)
 ```
 
-The FHIR bundles can be very large so this is just part of the response.
+#### 7. ValueSet Operations
+
+```python
+def expand_valueset(valueset_id):
+    """Expand a ValueSet to see all codes"""
+    return make_tes_request(f"/ValueSet/{valueset_id}/$expand")
+
+def validate_code(valueset_id, code, system):
+    """Check if a code is in a ValueSet"""
+    params = {"code": code, "system": system}
+    return make_tes_request(f"/ValueSet/{valueset_id}/$validate-code", params)
+
+# example usage with real IDs from search results:
+# expand a ValueSet
+flu_codes = expand_valueset("rs-grouper-6142004")  # Returns pre-calculated expansion
+
+# validate a code
+validation = validate_code(
+    # Hepatitis B ValueSet
+    "rs-grouper-66071002",
+    "active",
+    "urn:oid:2.16.840.1.113883.3.1937.98.5.8"
+)
+```
+
+> [!NOTE]
+> See the [`explore-tes.py`](explore-tes.py) to run the different examples and see the responses.
 
 ## Understanding Healthcare Terminology Systems
 
@@ -303,7 +258,7 @@ Example ICD-9-CM code: `022.9` - "Anthrax, unspecified"
 
 ### Working with HTTP Examples
 
-To use the provided `.http` file examples with the TES API, create an `http-client.env.json`` file with the following structure:
+To use the provided `.http` file examples with the TES API, create an `http-client.env.json` file with the following structure:
 
 ```json
 {
@@ -324,16 +279,23 @@ To use the provided `.http` file examples with the TES API, create an `http-clie
 > [!NOTE]
 > the `"$schema"` value is for using the Kulala NeoVim package. There are likely other `.env` examples if you are using a different tool for `.http` files.
 
-### Exploring the API Capabilities
+### Working with the python examples
 
-You can obtain the complete CapabilityStatement by requesting the `/metadata` endpoint:
+To use the provided python examples with the TES API, create a `.env` file with the following structure:
 
-```python
-response = requests.get(f"{API_URL}/metadata", headers=headers)
-capability_statement = response.json()
+```
+TES_API_URL="https://tes.tools.aimsplatform.org/api/fhir"
+TES_API_KEY="your-api-key"
 ```
 
-There is a saved version named `tes-CapabilityStatement.json` that you can explore by opening the file or using tools like `jq` to extract parts of it:
+> [!NOTE]
+> the `requirements.txt` is associated with the [`explore-tes.py`](explore-tes.py) file, so please make sure you run `pip install -r requirements.txt` prior to running the script.
+
+### Exploring the entire API Capabilities
+
+You can obtain the complete CapabilityStatement by requesting the `/metadata` endpoint.
+
+There is a saved version of this response here [`tes-CapabilityStatement.json`](tes-CapabilityStatement.json) that you can view or slice by using tools like `jq` to extract specific parts of it:
 
 ```bash
 jq '.rest[].resource[] | select(.type=="ValueSet") | .searchParam[]' tes-CapabilityStatement.json
