@@ -1,0 +1,74 @@
+@hostname=localhost
+@refiner_port=8080
+@tcr_port=8081
+@refiner={{hostname}}:{{refiner_port}}
+@tcr={{hostname}}:{{tcr_port}}
+
+# health check
+# we want to see a 200 "OK"
+GET http://{{refiner}}/
+Content-Type: application/json
+Accept: application/json
+
+###
+
+# request with no parameters
+POST http://{{refiner}}/ecr
+Content-Type: application/xml
+Accept: application/xml
+
+< test-eICR.xml
+
+###
+
+# request with sections to include
+# we're passing the loinc code for the social history section
+POST http://{{refiner}}/ecr?sections_to_include=29762-2
+Content-Type: application/xml
+Accept: application/xml
+
+< test-eICR.xml
+
+###
+
+# request with sections to include
+# we're passing in the loinc codes for the results (labs) and 
+# reason for visit sections
+POST http://{{refiner}}/ecr?sections_to_include=30954-2,29299-5
+Content-Type: application/xml
+Accept: application/xml
+
+< test-eICR.xml
+
+###
+
+# post request with conditions to include
+# we're passing the snomed code for chlamydia
+POST http://{{refiner}}/ecr?conditions_to_include=240589008
+Content-Type: application/xml
+Accept: application/xml
+
+< test-eICR.xml
+
+###
+
+# post request with conditions and sections to include
+# we're passing the loinc code for the results (labs) section 
+# and the snomed code for chlamydia
+POST http://{{refiner}}/ecr?conditions_to_include=240589008&sections_to_include=30954-2
+Content-Type: application/xml
+Accept: application/xml
+
+< test-eICR.xml
+
+###
+
+# post request with conditions and sections to include
+# we're passing the loinc code for the encounters section 
+# and the snomed code for chlamydia
+POST http://{{refiner}}/ecr?conditions_to_include=240589008&sections_to_include=46240-8
+Content-Type: application/xml
+Accept: application/xml
+
+< test-eICR.xml
+
