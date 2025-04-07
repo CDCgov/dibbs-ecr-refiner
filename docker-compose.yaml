@@ -3,27 +3,11 @@ services:
     platform: linux/amd64
     command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
     build:
-      context: ./api/refiner
+      context: ./refiner
     working_dir: /app
     volumes:
-      - ./api/refiner:/app
-    depends_on:
-      - trigger-code-reference-service
+      - ./refiner:/app
     ports:
       - "8080:8080"
-    logging:
-      driver: "json-file"
-    environment:
-      - TRIGGER_CODE_REFERENCE_URL=http://trigger-code-reference-service:8080
-  trigger-code-reference-service:
-    platform: linux/amd64
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
-    build:
-      context: ./api/trigger-code-reference
-    working_dir: /app
-    volumes:
-      - ./api/trigger-code-reference:/app
-    ports:
-      - "8081:8080"
     logging:
       driver: "json-file"

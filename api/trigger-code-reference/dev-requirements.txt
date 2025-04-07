@@ -1,9 +1,0 @@
-httpx
-lxml>=5.2.2
-pytest
-python-dotenv
-testcontainers[compose]
-tqdm
-fhir.resources
-sqlmodel
-ruff==0.11.2

@@ -21,6 +21,10 @@ node_modules/
 .coverage
 coverage.xml
 
-#Environment
+# Environment
+**/.env
 .env
 *.env.json
+
+# Tools
+.requests

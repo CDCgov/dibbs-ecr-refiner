@@ -1,21 +1,14 @@
 from pathlib import Path
 from typing import Annotated
 
-import httpx
 from fastapi import Query, Request, Response, status
 from fastapi.openapi.utils import get_openapi
 
 from app.base_service import BaseService
-from app.config import get_settings
+from app.db import get_value_sets_for_condition
 from app.models import RefineECRResponse
 from app.refine import refine, validate_message, validate_sections_to_include
 from app.utils import create_clinical_services_dict, read_json_from_assets
-
-settings = get_settings()
-TCR_ENDPOINT = (
-    f"{settings['TRIGGER_CODE_REFERENCE_URL']}/get-value-sets?condition_code="
-)
-
 
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
@@ -134,15 +127,9 @@ async def refine_ecr(
 
     clinical_services = None
     if conditions_to_include:
-        responses = await get_clinical_services(conditions_to_include)
-        if set([response.status_code for response in responses]) != {200}:
-            error_message = ";".join(
-                [str(response) for response in responses if response.status_code != 200]
-            )
-            return Response(
-                content=error_message, status_code=status.HTTP_502_BAD_GATEWAY
-            )
-        clinical_services = [response.json() for response in responses]
+        clinical_services = [
+            service for service in _get_clinical_services(conditions_to_include)
+        ]
 
         # create a simple dictionary structure for refine.py to consume
         clinical_services = create_clinical_services_dict(clinical_services)
@@ -152,19 +139,17 @@ async def refine_ecr(
     return Response(content=data, media_type="application/xml")
 
 
-async def get_clinical_services(condition_codes: str) -> list[dict]:
+def _get_clinical_services(condition_codes: str) -> list[dict]:
     """
     This a function that loops through the provided condition codes. For each
-    condition code provided, it calls the trigger-code-reference service to get
-    the API response for that condition.
+    condition code provided, it returns the value set of clinical services associated
+    with that condition.
 
-    :param condition_codes: SNOMED condition codes to look up in TCR service
-    :return: List of API responses to check
+    :param condition_codes: SNOMED condition codes to look up in the TES DB
+    :return: List of clinical services associated with a condition code
     """
     clinical_services_list = []
     conditions_list = condition_codes.split(",")
-    async with httpx.AsyncClient() as client:
-        for condition in conditions_list:
-            response = await client.get(TCR_ENDPOINT + condition)
-            clinical_services_list.append(response)
+    for condition in conditions_list:
+        clinical_services_list.append(get_value_sets_for_condition(condition))
     return clinical_services_list
