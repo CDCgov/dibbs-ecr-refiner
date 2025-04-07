@@ -258,7 +258,39 @@ Example ICD-9-CM code: `022.9` - "Anthrax, unspecified"
 
 ### Working with HTTP Examples
 
-To use the provided `.http` file examples with the TES API, create an `http-client.env.json` file with the following structure:
+To use the provided `.http` file examples with the TES API, you can use tools like:
+
+- [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) on VS Code
+- [Kulala.nvim](https://github.com/mistweaverco/kulala.nvim) on Neovim
+
+#### For REST Client
+
+You can read about adding environment variables [here](https://marketplace.visualstudio.com/items?itemName=humao.rest-client#environment-variables); and below for a sample settings file:
+
+```json
+"rest-client.environmentVariables": {
+    "$shared": {
+        "version": "v1",
+        "prodToken": "foo",
+        "nonProdToken": "bar"
+    },
+    "local": {
+        "version": "v2",
+        "host": "localhost",
+        "token": "{{$shared nonProdToken}}",
+        "secretKey": "devSecret"
+    },
+    "production": {
+        "host": "example.com",
+        "token": "{{$shared prodToken}}",
+        "secretKey" : "prodSecret"
+    }
+}
+```
+
+#### For `kulala.nvim`:
+
+create an `http-client.env.json` file with the following structure:
 
 ```json
 {
@@ -277,7 +309,7 @@ To use the provided `.http` file examples with the TES API, create an `http-clie
 ```
 
 > [!NOTE]
-> the `"$schema"` value is for using the Kulala NeoVim package. There are likely other `.env` examples if you are using a different tool for `.http` files.
+> These are just two examples and there may be others based on the development tools that you use for `.http` files.
 
 ### Working with the python examples
 
