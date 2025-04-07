@@ -72,26 +72,3 @@ Accept: application/xml
 
 < test-eICR.xml
 
-###
-
-# tcr health check
-GET http://{{tcr}}
-Content-Type: application/json
-Accept: application/json
-
-###
-
-# get value sets
-# get value sets for chlamydia
-GET http://{{tcr}}/get-value-sets?condition_code=240589008
-Content-Type: application/json
-Accept: application/json
-
-###
-
-# get value sets
-# get value sets for tuberculosis
-GET http://{{tcr}}/get-value-sets?condition_code=56717001
-Content-Type: application/json
-Accept: application/json
-
