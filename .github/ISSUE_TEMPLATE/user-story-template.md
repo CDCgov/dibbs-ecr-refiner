@@ -2,7 +2,7 @@
 name: 👤💭 User Story Template
 about: Create a new user story
 title: "[USER STORY] <title>"
-labels:
+labels: dibbs-ecr-refiner
 assignees: ""
 ---
 

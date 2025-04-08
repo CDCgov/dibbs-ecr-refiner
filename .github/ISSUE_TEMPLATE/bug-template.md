@@ -2,7 +2,7 @@
 name: 🐛 Bug Template
 about: Capture 🐛🪲🐜 bugs with this
 title: "[BUG] <title>"
-labels:
+labels: dibbs-ecr-refiner
 assignees: ""
 ---
 

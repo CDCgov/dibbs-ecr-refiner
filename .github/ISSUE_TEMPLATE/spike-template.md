@@ -2,7 +2,7 @@
 name: 📚📓 Spike Template
 about: Used for exploratory engineering spikes 📚📓
 title: "[SPIKE] <title>"
-labels:
+labels: dibbs-ecr-refiner
 assignees: ""
 ---
 
