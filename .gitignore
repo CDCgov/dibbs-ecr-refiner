@@ -23,6 +23,8 @@ coverage.xml
 
 # Environment
 **/.env
+.env
+*.env.json
 
 # Tools
 .requests
