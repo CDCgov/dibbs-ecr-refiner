@@ -1,8 +1,12 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import Query, Request, Response, status
+from fastapi import Query, Request, Response, status, FastAPI, UploadFile, File
 from fastapi.openapi.utils import get_openapi
+
+import zipfile
+import io
+import chardet
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
@@ -63,6 +67,93 @@ async def health_check():
     """
     return {"status": "OK"}
 
+@app.post(
+    "/zip-upload",
+    status_code=200,
+    summary="Refine eCR from ZIP",
+)
+async def refine_ecr_from_zip(
+    file: UploadFile = File(...),
+    sections_to_include: Optional[str] = Query(None, description="Comma-separated LOINC codes to filter eCR sections."),
+    conditions_to_include: Optional[str] = Query(None, description="Comma-separated SNOMED condition codes."),
+) -> Response:
+    """
+    Accepts a ZIP file, extracts `CDA_eICR.xml` and `CDA_RR.xml`,
+    and processes them for refining the eCR message.
+
+    - `file`: The uploaded ZIP file.
+    - `sections_to_include`: Comma-separated LOINC codes for filtering eCR sections.
+    - `conditions_to_include`: Comma-separated SNOMED condition codes.
+
+    Returns:
+    - A refined XML eCR response.
+    """
+
+    try:
+        # Read the uploaded ZIP file
+        zip_bytes = await file.read()
+        zip_stream = io.BytesIO(zip_bytes)
+
+        # Open ZIP archive
+        with zipfile.ZipFile(zip_stream, "r") as z:
+            # Extract relevant XML files
+            eicr_xml = None
+            rr_xml = None
+
+            for filename in z.namelist():
+                    try:
+                        # Skip macOS resource fork files
+                        if filename.startswith("__MACOSX/") or filename.startswith("._"):
+                            continue
+
+                        content = z.read(filename)
+                        encoding = chardet.detect(content)['encoding']
+                        decoded = content.decode(encoding or 'utf-8')
+
+                        if filename.endswith("CDA_eICR.xml"):
+                            eicr_xml = decoded
+                        elif filename.endswith("CDA_RR.xml"):
+                            rr_xml = decoded
+                    except Exception as e:
+                        return Response(
+                            content=f"Failed to decode {filename}: {str(e)}",
+                            status_code=status.HTTP_400_BAD_REQUEST
+                        )
+
+#             if not eicr_xml:
+#                 return Response(content="CDA_eICR.xml not found in ZIP.", status_code=status.HTTP_400_BAD_REQUEST)
+
+            # Process the extracted XML
+            validated_message, error_message = validate_message(eicr_xml)
+            if error_message:
+                return Response(content=error_message, status_code=status.HTTP_400_BAD_REQUEST)
+
+            sections = None
+            if sections_to_include:
+                sections, error_message = validate_sections_to_include(sections_to_include)
+                if error_message:
+                    return Response(content=error_message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+            clinical_services = None
+            if conditions_to_include:
+                responses = await get_clinical_services(conditions_to_include)
+                if set([response.status_code for response in responses]) != {200}:
+                    error_message = ";".join(
+                        [str(response) for response in responses if response.status_code != 200]
+                    )
+                    return Response(content=error_message, status_code=status.HTTP_502_BAD_GATEWAY)
+                clinical_services = [response.json() for response in responses]
+                clinical_services = create_clinical_services_dict(clinical_services)
+
+            # Refine the extracted eICR data
+            refined_data = refine(validated_message, sections, clinical_services)
+
+            return Response(content=refined_data, media_type="application/xml")
+
+    except zipfile.BadZipFile:
+        return Response(content="Invalid ZIP file.", status_code=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response(content=f"Error processing file: {str(e)}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @app.post(
     "/ecr",
