@@ -16,41 +16,41 @@ This documentation focuses on the Clinical Document Architecture (CDA) implement
 ## Document Flow
 
 ```mermaid
-graph LR
-    %% eICR Column
-    subgraph eICR
-        MI[Manual Init Section]
-        LO[Lab Order Section]
-        PS[Problem Section]
-        RS[Results Section]
-    end
+flowchart LR
 
-    %% Middle Column
-    subgraph Bridge
-        T1[Manual Trigger]
-        T2[Lab Test Trigger]
-        T3[Problem Trigger]
-        T4[Result Trigger]
-        SNOMED[SNOMED CT Code]
-    end
+subgraph eICR["eICR Document"]
+    direction TB
+    mi[Manual Init Section]
+    lo[Lab Order Section]
+    ps[Problem Section]
+    rs[Results Section]
+end
 
-    %% RR Column
-    subgraph RR
-        RR11[RR11 Container]
-        RC[Reportable Condition]
-        DET[RR1 Determination]
-        RSN[RR3 Reason]
-    end
+subgraph Bridge["Connecting Elements"]
+    direction TB
+    t1[Manual Trigger]
+    t2[Lab Test Trigger]
+    t3[Problem Trigger]
+    t4[Result Trigger]
+    snomed[SNOMED CT Code]
+end
 
-    %% Connections
-    MI --> T1
-    LO --> T2
-    PS --> T3
-    RS --> T4
-    T1 & T2 & T3 & T4 --> SNOMED
-    SNOMED --> RC
-    RC --> DET
-    DET --> RSN
+subgraph RR["RR Document"]
+    direction TB
+    rr11[RR11 Container]
+    rc[Reportable Condition]
+    det[RR1 Determination]
+    rsn[RR3 Reason]
+end
+
+mi --> t1
+lo --> t2
+ps --> t3
+rs --> t4
+t1 & t2 & t3 & t4 --> snomed
+snomed --> rc
+rc --> det
+det --> rsn
 ```
 
 ## CDA Structure in both eICR and RR documents
@@ -81,35 +81,47 @@ This might seem confusing, but the "entries required" vs "entries optional" deal
 ### Trigger Code Templates
 
 ```mermaid
-graph LR
-    subgraph Triggers[Trigger Types]
-        A[Entry Point]
-        B[Manual]
-        C[Automated]
-    end
-    
-    subgraph Templates[Template Types]
-        M[Manual Initiation]
-        L[Lab Test Order]
-        P[Problem Observation]
-        R[Result Observation]
-    end
-    
-    subgraph IDs[Template IDs]
-        TM[2.16.840.1.113883.10.20.15.2.3.5]
-        TL[2.16.840.1.113883.10.20.15.2.3.4]
-        TP[2.16.840.1.113883.10.20.15.2.3.3]
-        TR[2.16.840.1.113883.10.20.15.2.3.2]
-    end
+flowchart LR
 
-    A --> B
-    A --> C
-    B --> M
-    C --> L & P & R
-    M --> TM
-    L --> TL
-    P --> TP
-    R --> TR
+subgraph Triggers["Trigger Entry Points"]
+    direction TB
+    start[Entry Point]
+    manual[Manual Trigger]
+    auto[Automated Triggers]
+end
+
+subgraph Templates["Template Types"]
+    direction TB
+    man_init[Manual Initiation]
+    lab[Lab Test Order]
+    prob[Problem Observation]
+    res[Result Observation]
+end
+
+subgraph Sections["Document Sections"]
+    direction TB
+    enc[Encounters Section<br>LOINC: 46240-8]
+    plan[Plan of Treatment Section<br>LOINC: 18776-5]
+    prob_sec[Problems Section<br>LOINC: 11450-4]
+    res_sec[Results Section<br>LOINC: 30954-2]
+end
+
+subgraph IDs["Template IDs"]
+    direction TB
+    tid1[2.16.840.1.113883.10.20.15.2.3.5]
+    tid2[2.16.840.1.113883.10.20.15.2.3.4]
+    tid3[2.16.840.1.113883.10.20.15.2.3.3]
+    tid4[2.16.840.1.113883.10.20.15.2.3.2]
+end
+
+start --> manual & auto
+manual --> man_init
+auto --> lab & prob & res
+
+man_init --> enc --> tid1
+lab --> plan --> tid2
+prob --> prob_sec --> tid3
+res --> res_sec --> tid4
 ```
 
 #### Manually Triggered
@@ -388,17 +400,40 @@ For the refiner we will focus mainly on what is **Reportable** until user feedba
 ### Document Components
 
 ```mermaid
-graph TD
-    A[RR Document] --> B[Reportability Response Coded Information]
-    B --> C[RR11: Coded Information Container]
-    C --> D[Relevant Reportable Condition]
-    D --> E[SNOMED CT Condition Code]
-    D --> F[Reportability Information]
-    F --> G[RR1: Determination]
-    F --> H[RR3: Reason]
-    G --> I[RRVS1: Reportable]
-    G --> J[RRVS2: Maybe Reportable]
-    G --> K[RRVS3: Not Reportable]
+flowchart LR
+
+subgraph RR_Doc["RR Document Structure"]
+    direction TB
+    doc[RR Document]
+    coded[Coded Information]
+    container[RR11 Container]
+    condition[Reportable Condition]
+    
+    doc --> coded --> container --> condition
+end
+
+subgraph Condition["Condition Information"]
+    direction TB
+    code[SNOMED CT Code]
+    info[Reportability Info]
+end
+
+subgraph Determination["Determination Information"]
+    direction TB
+    det[RR1: Determination]
+    reason[RR3: Reason]
+    
+    subgraph Values["Determination Values"]
+        direction TB
+        reportable[RRVS1: Reportable]
+        maybe[RRVS2: Maybe Reportable]
+        not[RRVS3: Not Reportable]
+    end
+end
+
+condition --> code & info
+info --> det & reason
+det --> reportable & maybe & not
 ```
 
 ### Code System Relationships
