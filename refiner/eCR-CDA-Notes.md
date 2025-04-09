@@ -17,54 +17,41 @@ This documentation focuses on the Clinical Document Architecture (CDA) implement
 
 ```mermaid
 graph LR
-    %% Styles
-    classDef eICR fill:#e1f5fe,stroke:#01579b
-    classDef bridge fill:#fff3e0,stroke:#e65100
-    classDef RR fill:#f3e5f5,stroke:#4a148c
-
     %% eICR Column
-    subgraph eICR[eICR Document]
-        E1[Entry Template]:::eICR
-        E2[Entry Template]:::eICR
-        E3[Entry Template]:::eICR
-        E4[Entry Template]:::eICR
-
-        S1[Manual Init Section]:::eICR --> E1
-        S2[Lab Order Section]:::eICR --> E2
-        S3[Problem Section]:::eICR --> E3
-        S4[Results Section]:::eICR --> E4
+    subgraph eICR
+        MI[Manual Init Section]
+        LO[Lab Order Section]
+        PS[Problem Section]
+        RS[Results Section]
     end
 
-    %% Bridge/Connection Column
-    subgraph bridge[Connecting Elements]
-        T1[Manual Init Trigger]:::bridge
-        T2[Lab Order Trigger]:::bridge
-        T3[Problem Trigger]:::bridge
-        T4[Result Trigger]:::bridge
-        
-        SC[SNOMED CT Concept]:::bridge
+    %% Middle Column
+    subgraph Bridge
+        T1[Manual Trigger]
+        T2[Lab Test Trigger]
+        T3[Problem Trigger]
+        T4[Result Trigger]
+        SNOMED[SNOMED CT Code]
     end
 
     %% RR Column
-    subgraph RR[RR Document]
-        R1[RR11 Container]:::RR
-        R2[Reportable Condition]:::RR
-        R3[RR1 Determination]:::RR
-        R4[RR3 Reason]:::RR
-        
-        R1 --> R2
-        R2 --> R3
-        R3 --> R4
+    subgraph RR
+        RR11[RR11 Container]
+        RC[Reportable Condition]
+        DET[RR1 Determination]
+        RSN[RR3 Reason]
     end
 
-    %% Connections between columns
-    E1 --> T1
-    E2 --> T2
-    E3 --> T3
-    E4 --> T4
-    
-    T1 & T2 & T3 & T4 --> SC
-    SC --> R2```
+    %% Connections
+    MI --> T1
+    LO --> T2
+    PS --> T3
+    RS --> T4
+    T1 & T2 & T3 & T4 --> SNOMED
+    SNOMED --> RC
+    RC --> DET
+    DET --> RSN
+```
 
 ## CDA Structure in both eICR and RR documents
 
