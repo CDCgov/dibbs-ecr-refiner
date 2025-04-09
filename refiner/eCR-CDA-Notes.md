@@ -48,6 +48,9 @@ In volume 2 of the CDA-phcaserpt-1.1.1 and volume 2 of the CDA-phcr-rr-1.1.1 spe
 
 Section-level templates are higher up the hierarchy while entry-level templates are children of section-level templates. Some sections are **required** in order for an eICR or RR document to be valid based on their associated schematrons (these can be found on the spcifications' GitHub repositories that are both linked in the [overview](#overview). As discussed, every single template has a unique id (`templateId`) that is used to track and test each row of a template; these rules are called conf numbers (`CONF#`). When validating an eICR or RR document against their associated schematrons the messages coming back are based on the `CONF#` and whether or not this is a fatal error, an error, or a warning. Our goal in this work is to not introduce additional errors or warnings given that both eICR and RR documents have likely already undergone validation on the AIMS platform.
 
+> [!NOTE]
+> We have validation tools for both eICR and RR based on schematron files that can be found in each of the repositories linked above in the [overview](#overview). Our process takes the schematron files and creates an `xslt` that we can use in Python validate both eICR and RR documents. These tools will be a part of the refiner workflow in the future.
+
 Additionally there are some section-level templates that have templates for both:
 
 - Entries optional, and;
@@ -329,6 +332,23 @@ This `<entry>` **must** contain what is called a "results organizer", which is t
 ```
 
 ## RR Structure
+
+### Reportability
+
+**Reportability** is: 
+
+> "the quality or state of being reportable or not". 
+
+Reportability **does not equate to the patient having a condition or meeting a case definition** (definitively being “a case”).
+
+For each condition included in the eICR and the relevant public health agency(s), this element indicates the determination of whether the condition is reportable to public health. The values that can be used for the Determination of Reportability are described below.
+
+- **Reportable**: The information provided meets reporting criteria for an associated PHA.
+- **May be Reportable**: The information provided may meet reporting criteria if additional information is provided. The Reportability Response will also be able to share the information needed to definitively determine reportability.
+- **Not Reportable**: The information provided conclusively does not meet reporting criteria. Some decision support systems may not be able to fully differentiate between possible conditions that are Not Reportable and those that May be Reportable if additional information is provided. In these circumstances there may only be a reportability determination of:
+- **No Reporting Rule Met**: The information provided does not meet reporting criteria or may meet reporting criteria if additional information is provided. The determination of No Reporting Rule Met may be provided for a possible condition or for all conditions in the eICR.
+
+For the refiner we will focus mainly on what is **Reportable** until user feedback tells us otherwise.
 
 ### Document Components
 
