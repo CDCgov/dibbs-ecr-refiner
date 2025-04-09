@@ -81,16 +81,35 @@ This might seem confusing, but the "entries required" vs "entries optional" deal
 ### Trigger Code Templates
 
 ```mermaid
-graph TD
-    A[Trigger Types] -->|Manual| B[Manual Initiation]
-    A -->|Auto| C[Lab Test Order]
-    A -->|Auto| D[Problem Observation]
-    A -->|Auto| E[Result Observation]
+graph LR
+    subgraph Triggers[Trigger Types]
+        A[Entry Point]
+        B[Manual]
+        C[Automated]
+    end
     
-    B -->|templateId| F[2.16.840.1.113883.10.20.15.2.3.5]
-    C -->|templateId| G[2.16.840.1.113883.10.20.15.2.3.4]
-    D -->|templateId| H[2.16.840.1.113883.10.20.15.2.3.3]
-    E -->|templateId| I[2.16.840.1.113883.10.20.15.2.3.2]
+    subgraph Templates[Template Types]
+        M[Manual Initiation]
+        L[Lab Test Order]
+        P[Problem Observation]
+        R[Result Observation]
+    end
+    
+    subgraph IDs[Template IDs]
+        TM[2.16.840.1.113883.10.20.15.2.3.5]
+        TL[2.16.840.1.113883.10.20.15.2.3.4]
+        TP[2.16.840.1.113883.10.20.15.2.3.3]
+        TR[2.16.840.1.113883.10.20.15.2.3.2]
+    end
+
+    A --> B
+    A --> C
+    B --> M
+    C --> L & P & R
+    M --> TM
+    L --> TL
+    P --> TP
+    R --> TR
 ```
 
 #### Manually Triggered
