@@ -439,25 +439,37 @@ det --> reportable & maybe & not
 ### Code System Relationships
 
 ```mermaid
-classDiagram
-    class ReportableCondition {
-        +SNOMED_CT code
-        +displayName
-        +determination
-        +reason
-    }
-    class DeterminationType {
-        +RR1
-        +RRVS1
-        +RRVS2
-        +RRVS3
-    }
-    class ReasonType {
-        +RR3
-        +textValue
-    }
-    ReportableCondition --> DeterminationType
-    ReportableCondition --> ReasonType
+flowchart LR
+
+subgraph RC["Reportable Condition"]
+    direction TB
+    code["SNOMED_CT code<br><code>@code</code>"]
+    name["Display Name<br><code>@displayName</code>"]
+end
+
+subgraph DET["Determination"]
+    direction TB
+    rr1["RR1<br><code>2.16.840.1.113883.10.20.15.2.3.19</code>"]
+    subgraph Values["Value Options<br><code>2.16.840.1.113883.10.20.15.2.5.3</code>"]
+        direction TB
+        rrvs1["RRVS1<br>Reportable<br><code>@code='RRVS1'</code>"]
+        rrvs2["RRVS2<br>Maybe Reportable<br><code>@code='RRVS2'</code>"]
+        rrvs3["RRVS3<br>Not Reportable<br><code>@code='RRVS3'</code>"]
+        rrvs4["RRVS4<br>No Rule Met<br><code>@code='RRVS4'</code>"]
+    end
+end
+
+subgraph RSN["Reason"]
+    direction TB
+    rr3["RR3<br><code>2.16.840.1.113883.10.20.15.2.3.26</code>"]
+    text["Text Value<br><code>text/text()</code>"]
+end
+
+code --> rr1
+name --> rr1
+rr1 --> rrvs1 & rrvs2 & rrvs3 & rrvs4
+rr1 --> rr3
+rr3 --> text
 ```
 
 ### Key Components
@@ -532,15 +544,44 @@ The reason for the determination is provided in `RR3`:
 ### Trigger Code to RR Flow
 
 ```mermaid
-sequenceDiagram
-    participant eICR
-    participant RR
+flowchart LR
+
+subgraph Flow["Document Exchange Flow"]
+    direction TB
     
-    eICR->>RR: Trigger Code Match
-    Note over eICR,RR: SNOMED CT Code
-    RR->>RR: Evaluate Reportability
-    RR-->>eICR: Determination (RR1)
-    RR-->>eICR: Reason (RR3)
+    subgraph eICR["eICR Document Sources"]
+        direction TB
+        m[Manual Initiation]
+        l[Lab Order]
+        p[Problem]
+        r[Result]
+    end
+    
+    subgraph Process["Processing"]
+        direction TB
+        match[Trigger Code Match<br><code>SNOMED CT</code>]
+        eval[Evaluate Reportability<br><code>2.16.840.1.113883.10.20.15.2.5.3</code>]
+    end
+    
+    subgraph Response["RR Response"]
+        direction TB
+        det[RR1: Determination<br><code>2.16.840.1.113883.10.20.15.2.3.19</code>]
+        subgraph Values["Determination Values"]
+            direction TB
+            v1[RRVS1: Reportable]
+            v2[RRVS2: Maybe Reportable]
+            v3[RRVS3: Not Reportable]
+            v4[RRVS4: No Rule Met]
+        end
+        reason[RR3: Reason<br><code>2.16.840.1.113883.10.20.15.2.3.26</code>]
+    end
+end
+
+m & l & p & r --> match
+match --> eval
+eval --> det
+det --> v1 & v2 & v3 & v4
+det --> reason
 ```
 
 ### SNOMED CT Usage
