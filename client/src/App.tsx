@@ -1,40 +1,64 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [status, setStatus] = useState<string | null>(null);
+  const [eicr, setEicr] = useState("");
+  const [refinedEicr, setRefinedEicr] = useState("");
+  const [error, setError] = useState("");
 
-  async function onClick() {
-    const req = await (await fetch("/api")).json();
-    setStatus(req);
+  async function refine() {
+    if (!eicr) {
+      setError("Please provide an eICR XML input.");
+      return;
+    }
+    const req = await fetch("/api/ecr", {
+      body: eicr,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/xml",
+      },
+    });
+    const result = await req.text();
+    setRefinedEicr(result);
+    setError("");
+  }
+
+  function onReset() {
+    setRefinedEicr("");
+    setError("");
   }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+        <button onClick={async () => await refine()}>Refine eICR</button>
+        <button onClick={onReset}>Reset</button>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+      {error ? <p>{error}</p> : null}
+      <div className="io-container">
+        <div style={{ width: "50%" }}>
+          <label htmlFor="input">Refined eICR:</label>
+          <textarea
+            name="input"
+            style={{ minWidth: "100%", minHeight: "100%" }}
+            onChange={(e) => {
+              e.preventDefault();
+              setEicr(e.target.value);
+            }}
+            onClick={() => setError("")}
+            onBlur={() => setError("")}
+          />
+        </div>
+        <div style={{ minWidth: "50%" }}>
+          <label htmlFor="output">Unrefined eICR:</label>
+          <textarea
+            name="output"
+            style={{ minWidth: "100%", minHeight: "100%" }}
+            disabled
+            value={refinedEicr}
+          />
+        </div>
       </div>
-      <button onClick={onClick}>Run health check</button>
-      {status ? (
-        <>
-          <pre>{JSON.stringify(status)}</pre>
-          <button onClick={() => setStatus(null)}>Clear</button>
-        </>
-      ) : null}
     </>
   );
 }

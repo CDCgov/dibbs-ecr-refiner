@@ -65,7 +65,7 @@ async def health_check():
 
 
 @app.post(
-    "/ecr",
+    "/api/ecr",
     response_model=RefineECRResponse,
     status_code=200,
     responses=refine_ecr_response_examples,
