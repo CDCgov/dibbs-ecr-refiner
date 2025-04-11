@@ -1,14 +1,18 @@
+import os
 from pathlib import Path
 from typing import Annotated
 
 from fastapi import Query, Request, Response, status
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
 from app.models import RefineECRResponse
 from app.refine import refine, validate_message, validate_sections_to_include
 from app.utils import create_clinical_services_dict, read_json_from_assets
+
+is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
@@ -153,3 +157,10 @@ def _get_clinical_services(condition_codes: str) -> list[dict]:
     for condition in conditions_list:
         clinical_services_list.append(get_value_sets_for_condition(condition))
     return clinical_services_list
+
+
+# Directory is only checked when running in production since we run the client in another
+# container during development
+app.mount(
+    "/", StaticFiles(directory="dist", html=True, check_dir=is_production), name="dist"
+)

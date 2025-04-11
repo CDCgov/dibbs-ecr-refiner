@@ -7,15 +7,18 @@ services:
     command: sh -c "npm i && npm run dev"
     ports:
     - "8081:8081"
+    depends_on:
+      - message-refiner-service
   message-refiner-service:
+    image: python:3.13-slim
     platform: linux/amd64
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
-    build:
-      context: ./refiner
+    command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
     working_dir: /app
     volumes:
       - ./refiner:/app
     ports:
       - "8080:8080"
+    environment:
+      - PIP_ROOT_USER_ACTION=ignore
     logging:
       driver: "json-file"
