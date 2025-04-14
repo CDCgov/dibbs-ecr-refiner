@@ -79,7 +79,7 @@ def test_ecr_refiner():
     expected_response = refined_test_no_parameters
     content = test_eICR_xml
     sections_to_include = None
-    endpoint = "/ecr/"
+    endpoint = "/api/ecr/"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -91,7 +91,7 @@ def test_ecr_refiner():
     expected_response = refined_test_eICR_social_history_only
     content = test_eICR_xml
     sections_to_include = "29762-2"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -103,7 +103,7 @@ def test_ecr_refiner():
     expected_response = refined_test_eICR_labs_reason
     content = test_eICR_xml
     sections_to_include = "30954-2,29299-5"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
     actual_flattened = [i.tag for i in etree.fromstring(actual_response.content).iter()]
@@ -114,7 +114,7 @@ def test_ecr_refiner():
     expected_response = "Invalid section provided."
     content = test_eICR_xml
     sections_to_include = "blah blah blah"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 422
     assert actual_response.content.decode() == expected_response
@@ -122,7 +122,7 @@ def test_ecr_refiner():
     # Test case: raw_message is invalid XML
     content = "invalid XML"
     sections_to_include = None
-    endpoint = "/ecr/"
+    endpoint = "/api/ecr/"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 400
     assert "Invalid XML format." in actual_response.content.decode()
@@ -167,7 +167,7 @@ async def test_ecr_refiner_conditions(mock_get):
     content = test_eICR_xml
     conditions_to_include = "240589008"
     sections_to_include = "30954-2"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -194,7 +194,7 @@ async def test_ecr_refiner_conditions(mock_get):
     content = test_eICR_xml
     conditions_to_include = "240589008"
     sections_to_include = "46240-8"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 

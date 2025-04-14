@@ -24,7 +24,7 @@ app = BaseService(
 ).start()
 
 
-# /ecr endpoint request examples
+# /api/ecr endpoint request examples
 refine_ecr_request_examples = read_json_from_assets("sample_refine_ecr_request.json")
 refine_ecr_response_examples = read_json_from_assets("sample_refine_ecr_response.json")
 
@@ -42,7 +42,7 @@ def custom_openapi():
         description=app.description,
         routes=app.routes,
     )
-    path = openapi_schema["paths"]["/ecr"]["post"]
+    path = openapi_schema["paths"]["/api/ecr"]["post"]
     path["requestBody"] = {
         "content": {
             "application/xml": {
