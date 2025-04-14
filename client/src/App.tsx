@@ -29,7 +29,17 @@ function App() {
   }
 
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        minWidth: "100%",
+        padding: "1rem",
+      }}
+    >
+      <header>
+        <h1>DIBBs eCR Refiner</h1>
+      </header>
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
         <button onClick={async () => await refine()}>Refine eICR</button>
         <button onClick={onReset}>Reset</button>
@@ -37,9 +47,9 @@ function App() {
       {error ? <p>{error}</p> : null}
       <div className="io-container">
         <div style={{ width: "50%" }}>
-          <label htmlFor="input">Refined eICR:</label>
+          <label htmlFor="input">Unrefined eICR:</label>
           <textarea
-            name="input"
+            id="input"
             style={{ minWidth: "100%", minHeight: "100%" }}
             onChange={(e) => {
               e.preventDefault();
@@ -50,16 +60,16 @@ function App() {
           />
         </div>
         <div style={{ minWidth: "50%" }}>
-          <label htmlFor="output">Unrefined eICR:</label>
+          <label htmlFor="output">Refined eICR:</label>
           <textarea
-            name="output"
+            id="output"
             style={{ minWidth: "100%", minHeight: "100%" }}
             disabled
             value={refinedEicr}
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
