@@ -64,7 +64,7 @@ mock_tcr_response = {"lrtc": [{"codes": ["53926-2"], "system": "http://loinc.org
 
 
 def test_health_check():
-    actual_response = client.get("/")
+    actual_response = client.get("/api/healthcheck")
     assert actual_response.status_code == 200
     assert actual_response.json() == {"status": "OK"}
 
@@ -141,7 +141,7 @@ async def test_ecr_refiner_conditions(mock_get):
     expected_response = refined_test_condition_only
     content = test_eICR_xml
     conditions_to_include = "240589008"
-    endpoint = f"/ecr/?conditions_to_include={conditions_to_include}"
+    endpoint = f"/api/ecr/?conditions_to_include={conditions_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 

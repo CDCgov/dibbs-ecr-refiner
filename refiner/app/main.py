@@ -58,7 +58,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-@app.get("/api")
+@app.get("/api/healthcheck")
 async def health_check():
     """
     This endpoint checks service status. If an HTTP 200 status code is returned
