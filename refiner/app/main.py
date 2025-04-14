@@ -161,6 +161,9 @@ def _get_clinical_services(condition_codes: str) -> list[dict]:
 
 # Directory is only checked when running in production since we run the client in another
 # container during development
-app.mount(
-    "/", StaticFiles(directory="dist", html=True, check_dir=is_production), name="dist"
-)
+if is_production:
+    app.mount(
+        "/",
+        StaticFiles(directory="dist", html=True, check_dir=is_production),
+        name="dist",
+    )
