@@ -71,6 +71,8 @@ test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
 
 refined_zip_response = parse_file_from_test_assets("refined_zip_response.xml")
 
+refined_message_results = parse_file_from_test_assets("refined_message_results.xml")
+
 
 def test_health_check():
     actual_response = client.get("/")
@@ -249,16 +251,17 @@ def test_ecr_refiner_zip():
     expected_flattened = [i.tag for i in expected_response.iter()]
     assert actual_flattened == expected_flattened
 
-    # Test case: sections_to_include = "29762-2"
-    #     expected_response = refined_test_eICR_social_history_only
-    #     response = client.post(
-    #         "/zip-upload?",
-    #         files={"file": ("test.zip", zip_bytes, "application/zip")},
-    #     )
-    #     assert response.status_code == 200
-    #     actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
-    #     expected_flattened = [i.tag for i in expected_response.iter()]
-    #     assert actual_flattened == expected_flattened
+    # Test case: sections_to_include = "30954-2,"
+    expected_response = refined_message_results
+    sections_to_include = "30954-2"
+    response = client.post(
+        f"/zip-upload?sections_to_include={sections_to_include}",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 200
+    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    expected_flattened = [i.tag for i in expected_response.iter()]
+    assert actual_flattened == expected_flattened
 
     # Test case: invalid section
     response = client.post(
