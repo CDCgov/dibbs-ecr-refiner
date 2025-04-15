@@ -12,7 +12,6 @@
   <languageCode code="en-US"/>
   <setId extension="8d86218e-0fea-11eb-8216-a80388425cfb" root="1.2.840.114350.1.13.380.3.7.1.1"/>
   <versionNumber value="1"/>
-
   <!-- Patient Information -->
   <recordTarget>
     <patientRole>
@@ -48,7 +47,6 @@
       </patient>
     </patientRole>
   </recordTarget>
-
   <!-- Author Information -->
   <author>
     <time value="20250205084339+0000"/>
@@ -69,7 +67,6 @@
       </assignedAuthoringDevice>
     </assignedAuthor>
   </author>
-
   <!-- Legal Authenticator -->
   <legalAuthenticator>
     <time value="20250205084339+0000"/>
@@ -94,7 +91,6 @@
       </assignedPerson>
     </assignedEntity>
   </legalAuthenticator>
-
   <!-- Custodian -->
   <custodian>
     <assignedCustodian>
@@ -112,7 +108,6 @@
       </representedCustodianOrganization>
     </assignedCustodian>
   </custodian>
-
   <!-- Emergency Contact -->
   <participant typeCode="IND">
     <time nullFlavor="UNK"/>
@@ -135,7 +130,6 @@
       </associatedPerson>
     </associatedEntity>
   </participant>
-
   <!-- Encounter Information -->
   <componentOf>
     <encompassingEncounter>
@@ -205,7 +199,6 @@
       </location>
     </encompassingEncounter>
   </componentOf>
-
   <!-- Clinical Content -->
   <!-- Continuing from previous structuredBody opening -->
   <component>
@@ -221,9 +214,16 @@
           <effectiveTime value="20250205085919"/>
           <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of encounters"/>
           <title>Encounters</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
-
       <!-- 2. History of Present Illness Section -->
       <component>
         <section nullFlavor="NI">
@@ -232,9 +232,16 @@
           <effectiveTime value="20250205085919"/>
           <code code="10164-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of Present Illness"/>
           <title>History of Present Illness</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
-
       <!-- 3. Medications Administered Section -->
       <component>
         <section nullFlavor="NI">
@@ -244,9 +251,16 @@
           <effectiveTime value="20250205085919"/>
           <code code="29549-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Medications Administered"/>
           <title>Medications Administered</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
-
       <!-- 4. Problems Section -->
       <component>
         <section nullFlavor="NI">
@@ -256,7 +270,15 @@
           <effectiveTime value="20250206041023"/>
           <code code="11450-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Problem List"/>
           <title>Problems</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
       <!-- 5. Reason for Visit Section -->
       <component>
@@ -266,9 +288,16 @@
           <effectiveTime value="20250205085919"/>
           <code code="29299-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Reason for Visit"/>
           <title>Reason for Visit</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
-
       <!-- 6. Results Section (with trigger codes) -->
       <component>
         <section>
@@ -280,7 +309,24 @@
           <effectiveTime value="20250205085919"/>
           <code code="30954-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Relevant diagnostic tests and/or laboratory data"/>
           <title>Results</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><th>Display Text</th><th>Code</th><th>Code System</th><th>Trigger Code Observation</th></tr><tr><td>SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection</td><td>94310-0</td><td>LOINC</td><td>TRUE</td></tr></table></text><entry typeCode="DRIV">
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <th>Display Text</th>
+                <th>Code</th>
+                <th>Code System</th>
+                <th>Trigger Code Observation</th>
+              </tr>
+              <tr>
+                <td>SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection</td>
+                <td>94310-0</td>
+                <td>LOINC</td>
+                <td>TRUE</td>
+              </tr>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
             <organizer classCode="BATTERY" moodCode="EVN">
               <templateId root="2.16.840.1.113883.10.20.22.4.1"/>
               <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1"/>
@@ -307,7 +353,6 @@
           </entry>
         </section>
       </component>
-
       <!-- 7. Social History Section -->
       <component>
         <section nullFlavor="NI">
@@ -316,9 +361,16 @@
           <id root="g3e59c63-6b40-4d28-ae79-023f4789e567"/>
           <code code="29762-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Social History"/>
           <title>Social History</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
-
       <!-- 8. Immunizations Section (optional but recommended) -->
       <component>
         <section nullFlavor="NI">
@@ -328,9 +380,16 @@
           <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.2.2.1"/>
           <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="History of immunizations"/>
           <title>Immunizations</title>
-          <text><title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title><table border="1"><tr><td>Section details have been removed as requested</td></tr></table></text></section>
+          <text>
+            <title>Output from CDC PRIME DIBBs `message-refiner` API by request of STLT</title>
+            <table border="1">
+              <tr>
+                <td>Section details have been removed as requested</td>
+              </tr>
+            </table>
+          </text>
+        </section>
       </component>
-
     </structuredBody>
   </component>
 </ClinicalDocument>
