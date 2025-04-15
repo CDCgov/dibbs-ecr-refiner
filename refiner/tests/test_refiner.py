@@ -2,6 +2,8 @@ import pathlib
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+import zipfile
+import io
 from fastapi.testclient import TestClient
 from lxml import etree
 
@@ -39,6 +41,7 @@ def read_file_from_test_assets(filename: str) -> str:
 
 
 test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr.xml")
+test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
 
 refined_test_no_parameters = parse_file_from_test_assets(
     "refined_message_no_parameters.xml"
@@ -214,3 +217,65 @@ async def test_ecr_refiner_conditions(mock_get):
         if isinstance(i, etree._Element) and isinstance(i.tag, str)
     ]
     assert "ClinicalDocument" in actual_elements
+
+def create_test_zip(eicr_content: str, rr_content: str) -> bytes:
+    """Creates an in-memory zip containing CDA_eICR.xml and CDA_RR.xml"""
+    mem_zip = io.BytesIO()
+    with zipfile.ZipFile(mem_zip, mode="w") as zf:
+        zf.writestr("CDA_eICR.xml", eicr_content)
+        zf.writestr("CDA_RR.xml", rr_content)
+    mem_zip.seek(0)
+    return mem_zip.getvalue()
+
+def test_ecr_refiner():
+    zip_bytes = create_test_zip(test_eICR_xml, test_RR_xml)
+
+    # Test case: sections_to_include = None
+    expected_response = refined_test_no_parameters
+    response = client.post(
+        "/ecr-upload",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 200
+    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    expected_flattened = [i.tag for i in expected_response.iter()]
+    assert actual_flattened == expected_flattened
+
+    # Test case: sections_to_include = "29762-2"
+    expected_response = refined_test_eICR_social_history_only
+    response = client.post(
+        "/ecr-upload?sections_to_include=29762-2",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 200
+    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    expected_flattened = [i.tag for i in expected_response.iter()]
+    assert actual_flattened == expected_flattened
+
+    # Test case: multiple sections
+    expected_response = refined_test_eICR_labs_reason
+    response = client.post(
+        "/ecr-upload?sections_to_include=30954-2,29299-5",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 200
+    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    expected_flattened = [i.tag for i in expected_response.iter()]
+    assert actual_flattened == expected_flattened
+
+    # Test case: invalid section
+    response = client.post(
+        "/ecr-upload?sections_to_include=blah blah blah",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 422
+    assert "Invalid section provided" in response.content.decode()
+
+    # Test case: invalid XML (replace eICR with invalid XML)
+    bad_zip_bytes = create_test_zip("invalid XML", test_RR_xml)
+    response = client.post(
+        "/ecr-upload",
+        files={"file": ("bad.zip", bad_zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 400
+    assert "Invalid XML format." in response.content.decode()
