@@ -235,7 +235,7 @@ def test_ecr_refiner_zip():
     # Test case: sections_to_include = None
     expected_response = refined_test_no_parameters
     response = client.post(
-        "/ecr-upload",
+        "/zip-upload",
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 200
@@ -246,7 +246,7 @@ def test_ecr_refiner_zip():
     # Test case: sections_to_include = "29762-2"
     expected_response = refined_test_eICR_social_history_only
     response = client.post(
-        "/ecr-upload?",
+        "/zip-upload?",
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 200
@@ -256,7 +256,7 @@ def test_ecr_refiner_zip():
 
     # Test case: invalid section
     response = client.post(
-        "/ecr-upload?sections_to_include=blah blah blah",
+        "/zip-upload?sections_to_include=blah blah blah",
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 422
@@ -265,7 +265,7 @@ def test_ecr_refiner_zip():
     # Test case: invalid XML (replace eICR with invalid XML)
     bad_zip_bytes = create_test_zip("invalid XML", test_RR_xml)
     response = client.post(
-        "/ecr-upload",
+        "/zip-upload",
         files={"file": ("bad.zip", bad_zip_bytes, "application/zip")},
     )
     assert response.status_code == 400
