@@ -125,7 +125,10 @@ async def refine_ecr_from_zip(
                     )
 
             if not eicr_xml:
-                return Response(content="CDA_eICR.xml not found in ZIP.", status_code=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    content="CDA_eICR.xml not found in ZIP.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Process the extracted XML
             validated_message, error_message = validate_message(eicr_xml)
