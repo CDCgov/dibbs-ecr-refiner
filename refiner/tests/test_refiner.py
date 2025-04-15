@@ -40,10 +40,8 @@ def read_file_from_test_assets(filename: str) -> str:
         return file.read()
 
 
+# Files for /ecr (non zip)
 test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr.xml")
-test_eICR_2_xml = read_file_from_test_assets("message_refiner_test_eicr2.xml")
-test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
-
 
 refined_test_no_parameters = parse_file_from_test_assets(
     "refined_message_no_parameters.xml"
@@ -66,6 +64,12 @@ refined_test_results_chlamydia_condition = parse_file_from_test_assets(
 )
 
 mock_tcr_response = {"lrtc": [{"codes": ["53926-2"], "system": "http://loinc.org"}]}
+
+# Files for /zip-upload
+test_eICR_2_xml = read_file_from_test_assets("message_refiner_test_eicr2.xml")
+test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
+
+refined_zip_response = parse_file_from_test_assets("refined_zip_response.xml")
 
 
 def test_health_check():
@@ -235,23 +239,23 @@ def test_ecr_refiner_zip():
     zip_bytes = create_test_zip(test_eICR_2_xml, test_RR_xml)
 
     # Test case: sections_to_include = None
-    #     expected_response = refined_test_no_parameters
+    expected_response = refined_zip_response
     response = client.post(
         "/zip-upload",
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 200
-    #     actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
-    #     expected_flattened = [i.tag for i in expected_response.iter()]
-    #     assert actual_flattened == expected_flattened
+    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    expected_flattened = [i.tag for i in expected_response.iter()]
+    assert actual_flattened == expected_flattened
 
     # Test case: sections_to_include = "29762-2"
     #     expected_response = refined_test_eICR_social_history_only
-    response = client.post(
-        "/zip-upload?",
-        files={"file": ("test.zip", zip_bytes, "application/zip")},
-    )
-    assert response.status_code == 200
+    #     response = client.post(
+    #         "/zip-upload?",
+    #         files={"file": ("test.zip", zip_bytes, "application/zip")},
+    #     )
+    #     assert response.status_code == 200
     #     actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
     #     expected_flattened = [i.tag for i in expected_response.iter()]
     #     assert actual_flattened == expected_flattened
