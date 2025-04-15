@@ -233,18 +233,18 @@ def test_ecr_refiner_zip():
     zip_bytes = create_test_zip(test_eICR_xml, test_RR_xml)
 
     # Test case: sections_to_include = None
-    expected_response = refined_test_no_parameters
+    #     expected_response = refined_test_no_parameters
     response = client.post(
         "/zip-upload",
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 200
-#     actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
-#     expected_flattened = [i.tag for i in expected_response.iter()]
-#     assert actual_flattened == expected_flattened
+    #     actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    #     expected_flattened = [i.tag for i in expected_response.iter()]
+    #     assert actual_flattened == expected_flattened
 
     # Test case: sections_to_include = "29762-2"
-    expected_response = refined_test_eICR_social_history_only
+    #     expected_response = refined_test_eICR_social_history_only
     response = client.post(
         "/zip-upload?",
         files={"file": ("test.zip", zip_bytes, "application/zip")},
