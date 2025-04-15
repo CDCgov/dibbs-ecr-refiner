@@ -74,12 +74,30 @@ async def health_check():
 )
 async def refine_ecr_from_zip(
     file: UploadFile = File(...),
-    sections_to_include: str | None = Query(
-        None, description="Comma-separated LOINC codes to filter eCR sections."
-    ),
-    conditions_to_include: str | None = Query(
-        None, description="Comma-separated SNOMED condition codes."
-    ),
+    sections_to_include: Annotated[
+        str | None,
+        Query(
+            description="""The sections of an ECR to include in the refined message.
+                Multiples can be delimited by a comma. Valid LOINC codes for sections are:\n
+                46240-8: Encounters--Hospitalizations+outpatient visits narrative\n
+                10164-2: History of present illness\n
+                11369-6: History of immunizations\n
+                29549-3: Medications administered\n
+                18776-5: Plan of treatment: Care plan\n
+                11450-4: Problem--Reported list\n
+                29299-5: Reason for visit\n
+                30954-2: Results--Diagnostic tests/laboratory data narrative\n
+                29762-2: Social history--Narrative\n
+                """
+        ),
+    ] = None,
+    conditions_to_include: Annotated[
+        str | None,
+        Query(
+            description="The SNOMED condition codes to use to search for relevant clinical services in the ECR."
+            + " Multiples can be delimited by a comma."
+        ),
+    ] = None,
 ) -> Response:
     """
     Accepts a ZIP file, extracts `CDA_eICR.xml` and `CDA_RR.xml`,

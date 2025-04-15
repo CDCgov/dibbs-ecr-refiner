@@ -71,7 +71,9 @@ test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
 
 refined_zip_response = parse_file_from_test_assets("refined_zip_response.xml")
 
-refined_message_results = parse_file_from_test_assets("refined_message_results.xml")
+refined_message_results_only = parse_file_from_test_assets(
+    "refined_zip_results_section.xml"
+)
 
 
 def test_health_check():
@@ -252,7 +254,7 @@ def test_ecr_refiner_zip():
     assert actual_flattened == expected_flattened
 
     # Test case: sections_to_include = "30954-2,"
-    expected_response = refined_message_results
+    expected_response = refined_message_results_only
     sections_to_include = "30954-2"
     response = client.post(
         f"/zip-upload?sections_to_include={sections_to_include}",
