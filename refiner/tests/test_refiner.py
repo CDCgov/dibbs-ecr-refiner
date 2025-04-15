@@ -218,6 +218,7 @@ async def test_ecr_refiner_conditions(mock_get):
     ]
     assert "ClinicalDocument" in actual_elements
 
+
 def create_test_zip(eicr_content: str, rr_content: str) -> bytes:
     """Creates an in-memory zip containing CDA_eICR.xml and CDA_RR.xml"""
     mem_zip = io.BytesIO()
@@ -226,6 +227,7 @@ def create_test_zip(eicr_content: str, rr_content: str) -> bytes:
         zf.writestr("CDA_RR.xml", rr_content)
     mem_zip.seek(0)
     return mem_zip.getvalue()
+
 
 def test_ecr_refiner():
     zip_bytes = create_test_zip(test_eICR_xml, test_RR_xml)
