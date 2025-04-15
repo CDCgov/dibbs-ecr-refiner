@@ -255,10 +255,10 @@ def test_ecr_refiner_zip():
 
     # Test case: sections_to_include = "30954-2,"
     expected_response = refined_message_results_only
-    sections_to_include = "30954-2"
+#     sections_to_include = "30954-2"
     response = client.post(
         f"/zip-upload?sections_to_include={sections_to_include}",
-        files={"file": ("test.zip", zip_bytes, "application/zip")},
+        files={"file": ("test.zip", zip_bytes, "application/zip"), "sections_to_include:": sections_to_include},
     )
     assert response.status_code == 200
 
