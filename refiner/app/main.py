@@ -1,10 +1,11 @@
-import chardet
 import io
-from pathlib import Path
-from fastapi import Query, Request, Response, status, UploadFile, File
-from fastapi.openapi.utils import get_openapi
-from typing import Annotated, Optional
 import zipfile
+from pathlib import Path
+from typing import Annotated
+
+import chardet
+from fastapi import File, Query, Request, Response, UploadFile, status
+from fastapi.openapi.utils import get_openapi
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
@@ -73,10 +74,10 @@ async def health_check():
 )
 async def refine_ecr_from_zip(
     file: UploadFile = File(...),
-    sections_to_include: Optional[str] = Query(
+    sections_to_include: str | None = Query(
         None, description="Comma-separated LOINC codes to filter eCR sections."
     ),
-    conditions_to_include: Optional[str] = Query(
+    conditions_to_include: str | None = Query(
         None, description="Comma-separated SNOMED condition codes."
     ),
 ) -> Response:
@@ -123,8 +124,8 @@ async def refine_ecr_from_zip(
                         status_code=status.HTTP_400_BAD_REQUEST,
                     )
 
-            #             if not eicr_xml:
-            #                 return Response(content="CDA_eICR.xml not found in ZIP.", status_code=status.HTTP_400_BAD_REQUEST)
+            if not eicr_xml:
+                return Response(content="CDA_eICR.xml not found in ZIP.", status_code=status.HTTP_400_BAD_REQUEST)
 
             # Process the extracted XML
             validated_message, error_message = validate_message(eicr_xml)

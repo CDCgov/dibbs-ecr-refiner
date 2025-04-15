@@ -1,10 +1,11 @@
-from fastapi.testclient import TestClient
 import io
-from lxml import etree
 import pathlib
-import pytest
-from unittest.mock import AsyncMock, Mock, patch
 import zipfile
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+from fastapi.testclient import TestClient
+from lxml import etree
 
 from app.main import app
 
