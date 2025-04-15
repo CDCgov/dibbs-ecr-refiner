@@ -40,7 +40,7 @@ def read_file_from_test_assets(filename: str) -> str:
         return file.read()
 
 
-test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr.xml")
+test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr2.xml")
 test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
 
 refined_test_no_parameters = parse_file_from_test_assets(
