@@ -261,9 +261,23 @@ def test_ecr_refiner_zip():
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 200
-    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
-    expected_flattened = [i.tag for i in expected_response.iter()]
+
+    actual_flattened = [
+        i.tag
+        for i in etree.fromstring(response.content.decode()).iter()
+        if isinstance(i, etree._Element)
+    ]
+    expected_flattened = [
+        i.tag for i in expected_response.iter() if isinstance(i, etree._Element)
+    ]
     assert actual_flattened == expected_flattened
+
+    actual_elements = [
+        i.tag.split("}")[-1]
+        for i in etree.fromstring(response.content.decode()).iter()
+        if isinstance(i, etree._Element) and isinstance(i.tag, str)
+    ]
+    assert "ClinicalDocument" in actual_elements
 
     # Test case: invalid section
     response = client.post(
