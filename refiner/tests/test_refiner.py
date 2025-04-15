@@ -40,9 +40,6 @@ def read_file_from_test_assets(filename: str) -> str:
         return file.read()
 
 
-test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr2.xml")
-test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
-
 refined_test_no_parameters = parse_file_from_test_assets(
     "refined_message_no_parameters.xml"
 )
@@ -78,6 +75,9 @@ def test_openapi():
 
 
 def test_ecr_refiner():
+    test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr.xml")
+    test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
+
     # Test case: sections_to_include = None
     expected_response = refined_test_no_parameters
     content = test_eICR_xml
@@ -230,6 +230,8 @@ def create_test_zip(eicr_content: str, rr_content: str) -> bytes:
 
 
 def test_ecr_refiner_zip():
+    test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr2.xml")
+    test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
     zip_bytes = create_test_zip(test_eICR_xml, test_RR_xml)
 
     # Test case: sections_to_include = None
