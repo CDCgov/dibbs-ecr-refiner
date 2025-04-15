@@ -1,12 +1,10 @@
-from pathlib import Path
-from typing import Annotated, Optional
-
-from fastapi import Query, Request, Response, status, FastAPI, UploadFile, File
-from fastapi.openapi.utils import get_openapi
-
-import zipfile
-import io
 import chardet
+import io
+from pathlib import Path
+from fastapi import Query, Request, Response, status, UploadFile, File
+from fastapi.openapi.utils import get_openapi
+from typing import Annotated, Optional
+import zipfile
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
@@ -118,7 +116,7 @@ async def refine_ecr_from_zip(
                     if filename.endswith("CDA_eICR.xml"):
                         eicr_xml = decoded
                     elif filename.endswith("CDA_RR.xml"):
-                        rr_xml = decoded
+                        rr_xml = decoded  # noqa
                 except Exception as e:
                     return Response(
                         content=f"Failed to decode {filename}: {str(e)}",
@@ -148,7 +146,7 @@ async def refine_ecr_from_zip(
 
             clinical_services = None
             if conditions_to_include:
-                responses = await get_clinical_services(conditions_to_include)
+                responses = await _get_clinical_services(conditions_to_include)
                 if set([response.status_code for response in responses]) != {200}:
                     error_message = ";".join(
                         [

@@ -1,11 +1,10 @@
-import pathlib
-from unittest.mock import AsyncMock, Mock, patch
-
-import pytest
-import zipfile
-import io
 from fastapi.testclient import TestClient
+import io
 from lxml import etree
+import pathlib
+import pytest
+from unittest.mock import AsyncMock, Mock, patch
+import zipfile
 
 from app.main import app
 
@@ -229,7 +228,7 @@ def create_test_zip(eicr_content: str, rr_content: str) -> bytes:
     return mem_zip.getvalue()
 
 
-def test_ecr_refiner():
+def test_ecr_refiner_zip():
     zip_bytes = create_test_zip(test_eICR_xml, test_RR_xml)
 
     # Test case: sections_to_include = None
