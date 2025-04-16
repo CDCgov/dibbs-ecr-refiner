@@ -1,4 +1,5 @@
 import io
+import os
 import zipfile
 from pathlib import Path
 from typing import Annotated
@@ -6,12 +7,15 @@ from typing import Annotated
 import chardet
 from fastapi import File, Query, Request, Response, UploadFile, status
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
 from app.models import RefineECRResponse
 from app.refine import refine, validate_message, validate_sections_to_include
 from app.utils import create_clinical_services_dict, read_json_from_assets
+
+is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
@@ -23,7 +27,7 @@ app = BaseService(
 ).start()
 
 
-# /ecr endpoint request examples
+# /api/ecr endpoint request examples
 refine_ecr_request_examples = read_json_from_assets("sample_refine_ecr_request.json")
 refine_ecr_response_examples = read_json_from_assets("sample_refine_ecr_response.json")
 
@@ -41,7 +45,7 @@ def custom_openapi():
         description=app.description,
         routes=app.routes,
     )
-    path = openapi_schema["paths"]["/ecr"]["post"]
+    path = openapi_schema["paths"]["/api/ecr"]["post"]
     path["requestBody"] = {
         "content": {
             "application/xml": {
@@ -57,7 +61,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-@app.get("/")
+@app.get("/api/healthcheck")
 async def health_check():
     """
     This endpoint checks service status. If an HTTP 200 status code is returned
@@ -68,7 +72,7 @@ async def health_check():
 
 
 @app.post(
-    "/zip-upload",
+    "/api/zip-upload",
     status_code=200,
     summary="Refine eCR from ZIP",
 )
@@ -200,7 +204,7 @@ async def refine_ecr_from_zip(
 
 
 @app.post(
-    "/ecr",
+    "/api/ecr",
     response_model=RefineECRResponse,
     status_code=200,
     responses=refine_ecr_response_examples,
@@ -288,3 +292,13 @@ def _get_clinical_services(condition_codes: str) -> list[dict]:
     for condition in conditions_list:
         clinical_services_list.append(get_value_sets_for_condition(condition))
     return clinical_services_list
+
+
+# Directory is only checked when running in production since we run the client in another
+# container during development
+if is_production:
+    app.mount(
+        "/",
+        StaticFiles(directory="dist", html=True, check_dir=is_production),
+        name="dist",
+    )
