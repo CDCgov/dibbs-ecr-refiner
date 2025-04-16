@@ -1,35 +1,45 @@
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
+
+async function refine(unrefinedEicr: string): Promise<string> {
+  if (!unrefinedEicr) {
+    throw new Error('eICR XML must be provided as an input.');
+  }
+  const req = await fetch('/api/ecr', {
+    body: unrefinedEicr,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/xml',
+    },
+  });
+  const result = await req.text();
+  return result;
+}
 
 export function Home() {
   const [eicr, setEicr] = useState('');
   const [refinedEicr, setRefinedEicr] = useState('');
   const [error, setError] = useState('');
 
-  async function refine() {
-    if (!eicr) {
-      setError('Please provide an eICR XML input.');
-      return;
-    }
-    const req = await fetch('/api/ecr', {
-      body: eicr,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/xml',
-      },
-    });
-    const result = await req.text();
-    setRefinedEicr(result);
-    setError('');
-  }
+  const { mutate } = useMutation({
+    mutationFn: refine,
+    onSuccess: (data) => {
+      setRefinedEicr(data);
+    },
+    onError: (error) => {
+      setError(error.message);
+    },
+  });
 
-  function onReset() {
+  function onReset(): void {
     setRefinedEicr('');
     setError('');
   }
+
   return (
     <div>
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <button onClick={async () => await refine()}>Refine eICR</button>
+        <button onClick={() => mutate(eicr)}>Refine eICR</button>
         <button onClick={onReset}>Reset</button>
       </div>
       {error ? <p>{error}</p> : null}
