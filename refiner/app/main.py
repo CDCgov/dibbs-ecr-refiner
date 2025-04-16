@@ -1,8 +1,11 @@
+import io
 import os
+import zipfile
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Query, Request, Response, status
+import chardet
+from fastapi import File, Query, Request, Response, UploadFile, status
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
@@ -66,6 +69,138 @@ async def health_check():
     running properly.
     """
     return {"status": "OK"}
+
+
+@app.post(
+    "/api/zip-upload",
+    status_code=200,
+    summary="Refine eCR from ZIP",
+)
+async def refine_ecr_from_zip(
+    file: UploadFile = File(...),
+    sections_to_include: Annotated[
+        str | None,
+        Query(
+            description="""The sections of an ECR to include in the refined message.
+                Multiples can be delimited by a comma. Valid LOINC codes for sections are:\n
+                46240-8: Encounters--Hospitalizations+outpatient visits narrative\n
+                10164-2: History of present illness\n
+                11369-6: History of immunizations\n
+                29549-3: Medications administered\n
+                18776-5: Plan of treatment: Care plan\n
+                11450-4: Problem--Reported list\n
+                29299-5: Reason for visit\n
+                30954-2: Results--Diagnostic tests/laboratory data narrative\n
+                29762-2: Social history--Narrative\n
+                """
+        ),
+    ] = None,
+    conditions_to_include: Annotated[
+        str | None,
+        Query(
+            description="The SNOMED condition codes to use to search for relevant clinical services in the ECR."
+            + " Multiples can be delimited by a comma."
+        ),
+    ] = None,
+) -> Response:
+    """
+    Accepts a ZIP file, extracts `CDA_eICR.xml` and `CDA_RR.xml`,
+    and processes them for refining the eCR message.
+
+    - `file`: The uploaded ZIP file.
+    - `sections_to_include`: Comma-separated LOINC codes for filtering eCR sections.
+    - `conditions_to_include`: Comma-separated SNOMED condition codes.
+
+    Returns:
+    - A refined XML eCR response.
+    """
+
+    try:
+        # Read the uploaded ZIP file
+        zip_bytes = await file.read()
+        zip_stream = io.BytesIO(zip_bytes)
+
+        # Open ZIP archive
+        with zipfile.ZipFile(zip_stream, "r") as z:
+            # Extract relevant XML files
+            eicr_xml = None
+            rr_xml = None
+
+            for filename in z.namelist():
+                try:
+                    # Skip macOS resource fork files
+                    if filename.startswith("__MACOSX/") or filename.startswith("._"):
+                        continue
+
+                    content = z.read(filename)
+                    encoding = chardet.detect(content)["encoding"]
+                    decoded = content.decode(encoding or "utf-8")
+
+                    if filename.endswith("CDA_eICR.xml"):
+                        eicr_xml = decoded
+                    elif filename.endswith("CDA_RR.xml"):
+                        rr_xml = decoded  # noqa
+                except Exception as e:
+                    return Response(
+                        content=f"Failed to decode {filename}: {str(e)}",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            if not eicr_xml:
+                return Response(
+                    content="CDA_eICR.xml not found in ZIP.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Process the extracted XML
+            validated_message, error_message = validate_message(eicr_xml)
+            if error_message:
+                return Response(
+                    content=error_message, status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+            sections = None
+            if sections_to_include:
+                sections, error_message = validate_sections_to_include(
+                    sections_to_include
+                )
+                if error_message:
+                    return Response(
+                        content=error_message,
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    )
+
+            clinical_services = None
+            if conditions_to_include:
+                responses = await _get_clinical_services(conditions_to_include)
+                if set([response.status_code for response in responses]) != {200}:
+                    error_message = ";".join(
+                        [
+                            str(response)
+                            for response in responses
+                            if response.status_code != 200
+                        ]
+                    )
+                    return Response(
+                        content=error_message, status_code=status.HTTP_502_BAD_GATEWAY
+                    )
+                clinical_services = [response.json() for response in responses]
+                clinical_services = create_clinical_services_dict(clinical_services)
+
+            # Refine the extracted eICR data
+            refined_data = refine(validated_message, sections, clinical_services)
+
+            return Response(content=refined_data, media_type="application/xml")
+
+    except zipfile.BadZipFile:
+        return Response(
+            content="Invalid ZIP file.", status_code=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        return Response(
+            content=f"Error processing file: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 @app.post(
