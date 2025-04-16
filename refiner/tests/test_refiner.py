@@ -1,4 +1,6 @@
+import io
 import pathlib
+import zipfile
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -38,6 +40,7 @@ def read_file_from_test_assets(filename: str) -> str:
         return file.read()
 
 
+# Files for /ecr (non zip)
 test_eICR_xml = read_file_from_test_assets("message_refiner_test_eicr.xml")
 
 refined_test_no_parameters = parse_file_from_test_assets(
@@ -62,9 +65,19 @@ refined_test_results_chlamydia_condition = parse_file_from_test_assets(
 
 mock_tcr_response = {"lrtc": [{"codes": ["53926-2"], "system": "http://loinc.org"}]}
 
+# Files for /zip-upload
+test_eICR_2_xml = read_file_from_test_assets("message_refiner_test_eicr2.xml")
+test_RR_xml = read_file_from_test_assets("message_refiner_test_rr.xml")
+
+refined_zip_response = parse_file_from_test_assets("refined_zip_response.xml")
+
+refined_message_results_only = parse_file_from_test_assets(
+    "refined_zip_results_section.xml"
+)
+
 
 def test_health_check():
-    actual_response = client.get("/")
+    actual_response = client.get("/api/healthcheck")
     assert actual_response.status_code == 200
     assert actual_response.json() == {"status": "OK"}
 
@@ -79,7 +92,7 @@ def test_ecr_refiner():
     expected_response = refined_test_no_parameters
     content = test_eICR_xml
     sections_to_include = None
-    endpoint = "/ecr/"
+    endpoint = "/api/ecr/"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -91,7 +104,7 @@ def test_ecr_refiner():
     expected_response = refined_test_eICR_social_history_only
     content = test_eICR_xml
     sections_to_include = "29762-2"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -103,7 +116,7 @@ def test_ecr_refiner():
     expected_response = refined_test_eICR_labs_reason
     content = test_eICR_xml
     sections_to_include = "30954-2,29299-5"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
     actual_flattened = [i.tag for i in etree.fromstring(actual_response.content).iter()]
@@ -114,7 +127,7 @@ def test_ecr_refiner():
     expected_response = "Invalid section provided."
     content = test_eICR_xml
     sections_to_include = "blah blah blah"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 422
     assert actual_response.content.decode() == expected_response
@@ -122,7 +135,7 @@ def test_ecr_refiner():
     # Test case: raw_message is invalid XML
     content = "invalid XML"
     sections_to_include = None
-    endpoint = "/ecr/"
+    endpoint = "/api/ecr/"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 400
     assert "Invalid XML format." in actual_response.content.decode()
@@ -141,7 +154,7 @@ async def test_ecr_refiner_conditions(mock_get):
     expected_response = refined_test_condition_only
     content = test_eICR_xml
     conditions_to_include = "240589008"
-    endpoint = f"/ecr/?conditions_to_include={conditions_to_include}"
+    endpoint = f"/api/ecr/?conditions_to_include={conditions_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -167,7 +180,7 @@ async def test_ecr_refiner_conditions(mock_get):
     content = test_eICR_xml
     conditions_to_include = "240589008"
     sections_to_include = "30954-2"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -194,7 +207,7 @@ async def test_ecr_refiner_conditions(mock_get):
     content = test_eICR_xml
     conditions_to_include = "240589008"
     sections_to_include = "46240-8"
-    endpoint = f"/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
+    endpoint = f"/api/ecr/?sections_to_include={sections_to_include}&conditions_to_include={conditions_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 200
 
@@ -214,3 +227,74 @@ async def test_ecr_refiner_conditions(mock_get):
         if isinstance(i, etree._Element) and isinstance(i.tag, str)
     ]
     assert "ClinicalDocument" in actual_elements
+
+
+def create_test_zip(eicr_content: str, rr_content: str) -> bytes:
+    """Creates an in-memory zip containing CDA_eICR.xml and CDA_RR.xml"""
+    mem_zip = io.BytesIO()
+    with zipfile.ZipFile(mem_zip, mode="w") as zf:
+        zf.writestr("CDA_eICR.xml", eicr_content)
+        zf.writestr("CDA_RR.xml", rr_content)
+    mem_zip.seek(0)
+    return mem_zip.getvalue()
+
+
+def test_ecr_refiner_zip():
+    zip_bytes = create_test_zip(test_eICR_2_xml, test_RR_xml)
+
+    # Test case: sections_to_include = None
+    expected_response = refined_zip_response
+    response = client.post(
+        "/api/zip-upload",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 200
+    actual_flattened = [i.tag for i in etree.fromstring(response.content).iter()]
+    expected_flattened = [i.tag for i in expected_response.iter()]
+    assert actual_flattened == expected_flattened
+
+    # Test case: sections_to_include = "30954-2,"
+    expected_response = refined_message_results_only
+    sections_to_include = "30954-2"
+    response = client.post(
+        "/api/zip-upload",
+        files={
+            "file": ("test.zip", zip_bytes, "application/zip"),
+            "sections_to_include:": sections_to_include,
+        },
+    )
+    assert response.status_code == 200
+
+    actual_flattened = [
+        i.tag
+        for i in etree.fromstring(response.content.decode()).iter()
+        if isinstance(i, etree._Element)
+    ]
+    expected_flattened = [
+        i.tag for i in expected_response.iter() if isinstance(i, etree._Element)
+    ]
+    assert actual_flattened == expected_flattened
+
+    actual_elements = [
+        i.tag.split("}")[-1]
+        for i in etree.fromstring(response.content.decode()).iter()
+        if isinstance(i, etree._Element) and isinstance(i.tag, str)
+    ]
+    assert "ClinicalDocument" in actual_elements
+
+    # Test case: invalid section
+    response = client.post(
+        "/api/zip-upload?sections_to_include=blah blah blah",
+        files={"file": ("test.zip", zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 422
+    assert "Invalid section provided" in response.content.decode()
+
+    # Test case: invalid XML (replace eICR with invalid XML)
+    bad_zip_bytes = create_test_zip("invalid XML", test_RR_xml)
+    response = client.post(
+        "/api/zip-upload",
+        files={"file": ("bad.zip", bad_zip_bytes, "application/zip")},
+    )
+    assert response.status_code == 400
+    assert "Invalid XML format." in response.content.decode()

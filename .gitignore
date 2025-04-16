@@ -28,3 +28,6 @@ coverage.xml
 
 # Tools
 .requests
+
+# Static files
+dist
