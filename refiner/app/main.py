@@ -5,7 +5,16 @@ from pathlib import Path
 from typing import Annotated
 
 import chardet
-from fastapi import File, Query, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
@@ -26,6 +35,7 @@ app = BaseService(
     openapi_url="/message-refiner/openapi.json",
 ).start()
 
+router = APIRouter(prefix="/api")
 
 # /api/ecr endpoint request examples
 refine_ecr_request_examples = read_json_from_assets("sample_refine_ecr_request.json")
@@ -61,7 +71,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-@app.get("/api/healthcheck")
+@router.get("/healthcheck")
 async def health_check():
     """
     This endpoint checks service status. If an HTTP 200 status code is returned
@@ -71,8 +81,8 @@ async def health_check():
     return {"status": "OK"}
 
 
-@app.post(
-    "/api/zip-upload",
+@router.post(
+    "/zip-upload",
     status_code=200,
     summary="Refine eCR from ZIP",
 )
@@ -114,97 +124,39 @@ async def refine_ecr_from_zip(
     Returns:
     - A refined XML eCR response.
     """
+    eicr_xml, _rr_xml = await _read_zip(file)
 
-    try:
-        # Read the uploaded ZIP file
-        zip_bytes = await file.read()
-        zip_stream = io.BytesIO(zip_bytes)
+    # Process the extracted XML
+    validated_message, error_message = validate_message(eicr_xml)
+    if error_message:
+        return Response(content=error_message, status_code=status.HTTP_400_BAD_REQUEST)
 
-        # Open ZIP archive
-        with zipfile.ZipFile(zip_stream, "r") as z:
-            # Extract relevant XML files
-            eicr_xml = None
-            rr_xml = None
+    sections = None
+    if sections_to_include:
+        sections, error_message = validate_sections_to_include(sections_to_include)
+        if error_message:
+            return Response(
+                content=error_message,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
 
-            for filename in z.namelist():
-                try:
-                    # Skip macOS resource fork files
-                    if filename.startswith("__MACOSX/") or filename.startswith("._"):
-                        continue
+    clinical_services = None
+    if conditions_to_include:
+        clinical_services = [
+            service for service in _get_clinical_services(conditions_to_include)
+        ]
 
-                    content = z.read(filename)
-                    encoding = chardet.detect(content)["encoding"]
-                    decoded = content.decode(encoding or "utf-8")
+        # create a simple dictionary structure for refine.py to consume
+        clinical_services = create_clinical_services_dict(clinical_services)
 
-                    if filename.endswith("CDA_eICR.xml"):
-                        eicr_xml = decoded
-                    elif filename.endswith("CDA_RR.xml"):
-                        rr_xml = decoded  # noqa
-                except Exception as e:
-                    return Response(
-                        content=f"Failed to decode {filename}: {str(e)}",
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
+    # Refine the extracted eICR data
+    refined_data = refine(validated_message, sections, clinical_services)
 
-            if not eicr_xml:
-                return Response(
-                    content="CDA_eICR.xml not found in ZIP.",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Process the extracted XML
-            validated_message, error_message = validate_message(eicr_xml)
-            if error_message:
-                return Response(
-                    content=error_message, status_code=status.HTTP_400_BAD_REQUEST
-                )
-
-            sections = None
-            if sections_to_include:
-                sections, error_message = validate_sections_to_include(
-                    sections_to_include
-                )
-                if error_message:
-                    return Response(
-                        content=error_message,
-                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    )
-
-            clinical_services = None
-            if conditions_to_include:
-                responses = await _get_clinical_services(conditions_to_include)
-                if set([response.status_code for response in responses]) != {200}:
-                    error_message = ";".join(
-                        [
-                            str(response)
-                            for response in responses
-                            if response.status_code != 200
-                        ]
-                    )
-                    return Response(
-                        content=error_message, status_code=status.HTTP_502_BAD_GATEWAY
-                    )
-                clinical_services = [response.json() for response in responses]
-                clinical_services = create_clinical_services_dict(clinical_services)
-
-            # Refine the extracted eICR data
-            refined_data = refine(validated_message, sections, clinical_services)
-
-            return Response(content=refined_data, media_type="application/xml")
-
-    except zipfile.BadZipFile:
-        return Response(
-            content="Invalid ZIP file.", status_code=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception as e:
-        return Response(
-            content=f"Error processing file: {str(e)}",
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    return Response(content=refined_data, media_type="application/xml")
 
 
-@app.post(
-    "/api/ecr",
+@router.post(
+    "/ecr",
     response_model=RefineECRResponse,
     status_code=200,
     responses=refine_ecr_response_examples,
@@ -278,6 +230,50 @@ async def refine_ecr(
     return Response(content=data, media_type="application/xml")
 
 
+async def _read_zip(file: UploadFile) -> tuple[str, str]:
+    """
+    Given a zip file containing CDA_eICR.xml and CDA_RR.xml files,
+    this function will read each file and return the contents as a tuple
+    """
+    try:
+        # Read the uploaded ZIP file
+        zip_bytes = await file.read()
+        zip_stream = io.BytesIO(zip_bytes)
+
+        # Open ZIP archive
+        with zipfile.ZipFile(zip_stream, "r") as z:
+            # Extract relevant XML files
+            eicr_xml = None
+            rr_xml = None
+
+            for filename in z.namelist():
+                # Skip macOS resource fork files
+                if filename.startswith("__MACOSX/") or filename.startswith("._"):
+                    continue
+
+                content = z.read(filename)
+                encoding = chardet.detect(content)["encoding"]
+                decoded = content.decode(encoding or "utf-8")
+
+                if filename.endswith("CDA_eICR.xml"):
+                    eicr_xml = decoded
+                elif filename.endswith("CDA_RR.xml"):
+                    rr_xml = decoded  # noqa
+
+            if not eicr_xml:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CDA_eICR.xml not found in ZIP.",
+                )
+
+            return eicr_xml, rr_xml
+    except zipfile.BadZipFile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid zip file. Zip must contain a 'CDA_eICR.xml' and 'CDA_RR.xml' pair.",
+        )
+
+
 def _get_clinical_services(condition_codes: str) -> list[dict]:
     """
     This a function that loops through the provided condition codes. For each
@@ -294,8 +290,11 @@ def _get_clinical_services(condition_codes: str) -> list[dict]:
     return clinical_services_list
 
 
-# Directory is only checked when running in production since we run the client in another
-# container during development
+app.include_router(router)
+
+# When running the application in production we will mount the static client files from the
+# "dist" directory. This directory will typically not exist during development since the client
+# runs separately in its own Docker container.
 if is_production:
     app.mount(
         "/",
