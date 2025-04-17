@@ -40,13 +40,13 @@ export function Home() {
     <div className="flex flex-col gap-4 min-w-full">
       <div className="flex gap-4 min-w-1/2">
         <button
-          className="text-white text-xl font-bold bg-blue-300 px-6 px-4 rounded cursor-pointer"
+          className="text-white text-xl font-bold bg-blue-300 border-1 border-transparent hover:border-white/80 hover:border-1 px-6 px-4 rounded cursor-pointer"
           onClick={() => mutate(eicr)}
         >
           Refine eICR
         </button>
         <button
-          className="text-white text-xl font-bold bg-blue-300 px-6 px-4 rounded cursor-pointer"
+          className="text-white text-xl font-bold bg-blue-300 border-1 border-transparent hover:border-white/80 hover:border-1 px-6 px-4 rounded cursor-pointer"
           onClick={onReset}
         >
           Reset
