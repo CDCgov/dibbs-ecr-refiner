@@ -37,18 +37,28 @@ export function Home() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <button onClick={() => mutate(eicr)}>Refine eICR</button>
-        <button onClick={onReset}>Reset</button>
+    <div className="flex flex-col gap-4 min-w-full">
+      <div className="flex gap-4 min-w-1/2">
+        <button
+          className="text-white text-xl font-bold bg-blue-300 px-6 px-4 rounded cursor-pointer"
+          onClick={() => mutate(eicr)}
+        >
+          Refine eICR
+        </button>
+        <button
+          className="text-white text-xl font-bold bg-blue-300 px-6 px-4 rounded cursor-pointer"
+          onClick={onReset}
+        >
+          Reset
+        </button>
       </div>
-      {error ? <p>{error}</p> : null}
-      <div className="io-container">
-        <div style={{ width: '50%' }}>
+      <div>{error ? <p className="bg-yellow-800 p-2">{error}</p> : null}</div>
+      <div className="flex min-w-full gap-4">
+        <div className="flex flex-col min-w-1/2">
           <label htmlFor="input">Unrefined eICR:</label>
           <textarea
+            className="bg-gray-300 min-h-screen text-black"
             id="input"
-            style={{ minWidth: '100%', minHeight: '100%' }}
             onChange={(e) => {
               e.preventDefault();
               setEicr(e.target.value);
@@ -57,11 +67,11 @@ export function Home() {
             onBlur={() => setError('')}
           />
         </div>
-        <div style={{ minWidth: '50%' }}>
+        <div className="flex flex-col min-w-1/2">
           <label htmlFor="output">Refined eICR:</label>
           <textarea
+            className="bg-gray-600 min-h-screen"
             id="output"
-            style={{ minWidth: '100%', minHeight: '100%' }}
             disabled
             value={refinedEicr}
           />

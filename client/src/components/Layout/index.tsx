@@ -5,23 +5,19 @@ interface LayoutProps {
 }
 export function Layout({ children }: LayoutProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: '100%',
-        padding: '1rem',
-      }}
-    >
-      <header>
-        <h1>DIBBs eCR Refiner</h1>
+    <div className="p-2 text-white bg-blue-500 min-h-screen flex flex-col gap-4">
+      <header className="flex gap-10 items-end">
+        <h1 className="text-2xl">DIBBs eCR Refiner</h1>
+        <nav className="flex gap-4">
+          <Link className="p-1 hover:underline" to="/">
+            Home
+          </Link>
+          <Link className="p-1 hover:underline" to="/about">
+            About
+          </Link>
+        </nav>
       </header>
-      <nav style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-        <Link to="/">Home</Link>
-        <Link to="/about">About</Link>
-      </nav>
-      <main>{children}</main>
-      <footer>footer</footer>
+      <main className="flex flex-1 p-6">{children}</main>
     </div>
   );
 }
