@@ -14,10 +14,6 @@ on:
         required: true
         type: number
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   run-python-linter:
     runs-on: ubuntu-latest
