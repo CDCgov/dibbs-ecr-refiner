@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Public Sans';
-  src: url('assets/fonts/PublicSans-VariableFont_wght.ttf') format("truetype");
+  src: url('assets/fonts/PublicSans-VariableFont_wght.ttf') format('truetype');
 }
 
 @import 'tailwindcss';
@@ -14,7 +14,7 @@
 @theme {
   --font-public-sans: 'Public Sans', 'sans-serif';
 
-  --color-blue-100: #E8F5FF;
+  --color-blue-100: #e8f5ff;
   --color-blue-300: #0076d6;
   --color-blue-500: #112f4e;
 
@@ -25,5 +25,5 @@
   --color-gray-100: #fbfcfd;
   --color-gray-200: #f3f3f3;
 
-  --color-red-300: #E41D3D;
+  --color-red-300: #e41d3d;
 }

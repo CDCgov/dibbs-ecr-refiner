@@ -20,27 +20,27 @@ export default function Demo() {
   });
 
   return (
-    <div className="flex flex-col min-w-screen gap-20 px-20 py-10">
+    <div className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <Link className="hover:underline" to="/">
         &#60;-- Return to landing page
       </Link>
-      <div className="flex justify-center items-center flex-col gap-6">
+      <div className="flex flex-col items-center justify-center gap-6">
         <UploadSuccess />
         <UploadError />
         <ReportableConditions />
         <Container color="blue">
           <img src={UploadSvg} alt="Upload zipfile" />
-          <p className="text-black text-base font-normal">
+          <p className="text-base font-normal text-black">
             We will upload a test file for you to view the refinement results
           </p>
           <button
-            className="font-bold text-white px-5 py-3 bg-blue-300 rounded inline-flex justify-center items-center gap-2.5 overflow-hidden cursor-pointer"
+            className="inline-flex cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded bg-blue-300 px-5 py-3 font-bold text-white"
             onClick={async () => await refetch()}
           >
             Run test
           </button>
           <a
-            className="justify-start text-blue-300 text-base font-bold hover:underline"
+            className="justify-start text-base font-bold text-blue-300 hover:underline"
             href="/api/demo/download"
             download
           >
@@ -48,10 +48,10 @@ export default function Demo() {
           </a>
         </Container>
       </div>
-      <div className="flex flex-col min-h-full gap-2">
+      <div className="flex min-h-full flex-col gap-2">
         <div>
           <button
-            className="text-white text-xl font-bold bg-blue-300 px-6 px-4 rounded cursor-pointer"
+            className="cursor-pointer rounded bg-blue-300 px-4 px-6 text-xl font-bold text-white"
             onClick={() =>
               queryClient.resetQueries({ queryKey: ['upload'], exact: true })
             }
@@ -62,7 +62,7 @@ export default function Demo() {
         <label htmlFor="result">Refined eICR:</label>
         <textarea
           id="result"
-          className="border min-h-full"
+          className="min-h-full border"
           disabled
           value={data}
         />
@@ -78,13 +78,13 @@ function UploadError() {
         src={ErrorSvg}
         alt="Red X indicating an error occured during upload."
       />
-      <p className="text-center text-black text-xl font-bold">
+      <p className="text-center text-xl font-bold text-black">
         The file could not be read.
       </p>
       <p className="leading-snug">
         Please double check the format and size. It must be less than 1GB.
       </p>
-      <button className="font-bold text-white px-5 py-3 bg-black rounded inline-flex justify-start items-center gap-2.5 overflow-hidden">
+      <button className="inline-flex items-center justify-start gap-2.5 overflow-hidden rounded bg-black px-5 py-3 font-bold text-white">
         Try again
       </button>
     </Container>
@@ -98,15 +98,15 @@ function UploadSuccess() {
         src={SuccessSvg}
         alt="Green checkmark indicating a successful upload."
       />
-      <p className="text-center text-black text-xl font-bold">
+      <p className="text-center text-xl font-bold text-black">
         eCR successfully refined!
       </p>
-      <div className="p-6 bg-white rounded-lg inline-flex flex-col justify-start items-center gap-6">
+      <div className="inline-flex flex-col items-center justify-start gap-6 rounded-lg bg-white p-6">
         <div className="flex flex-col gap-6">
           <p className="leading-snug font-bold">
             eCR file size reduced from XXMB to YYMB
           </p>
-          <p className="flex flex-col leading-snug gap-2 items-center">
+          <p className="flex flex-col items-center gap-2 leading-snug">
             <span className="font-bold">
               Found the following data for the condition:
             </span>
@@ -114,7 +114,7 @@ function UploadSuccess() {
           </p>
         </div>
       </div>
-      <button className="font-bold text-white px-5 py-3 bg-black rounded inline-flex justify-start items-center gap-2.5 overflow-hidden">
+      <button className="inline-flex items-center justify-start gap-2.5 overflow-hidden rounded bg-black px-5 py-3 font-bold text-white">
         Download file
       </button>
     </Container>
@@ -126,21 +126,21 @@ function ReportableConditions() {
     <Container color="blue">
       <img src={InformationSvg} alt="Information icon" />
       <div className="flex flex-col gap-2">
-        <p className="text-center text-black text-xl font-bold">
+        <p className="text-center text-xl font-bold text-black">
           We found these reportable conditions:
         </p>
-        <ul className="text-black text-xl font-bold list-disc ml-6">
+        <ul className="ml-6 list-disc text-xl font-bold text-black">
           <li>Example condition</li>
         </ul>
       </div>
-      <div className="flex flex-col gap-2 items-center">
+      <div className="flex flex-col items-center gap-2">
         <p>Would you like to refine the eCR?</p>
         <p>
           Taking this action will retain information relevant only to the
           conditions listed.
         </p>
       </div>
-      <button className="font-bold text-white px-5 py-3 bg-blue-300 rounded inline-flex justify-center items-center gap-2.5 overflow-hidden cursor-pointer">
+      <button className="inline-flex cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded bg-blue-300 px-5 py-3 font-bold text-white">
         Refine eCR
       </button>
     </Container>
@@ -161,7 +161,7 @@ function Container({ color, children, className }: ContainerProps) {
 
   return (
     <div
-      className={`${colors[color]} ${className} px-16 py-10 rounded-lg border-1 border-dashed inline-flex flex-col justify-start items-center gap-6 overflow-hidden`}
+      className={`${colors[color]} ${className} inline-flex flex-col items-center justify-start gap-6 overflow-hidden rounded-lg border-1 border-dashed px-16 py-10`}
     >
       {children}
     </div>
