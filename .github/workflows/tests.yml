@@ -14,12 +14,15 @@ on:
         required: true
         type: number
 
+env:
+  NODE_VERSION: 20
+
 defaults:
   run:
     working-directory: ./refiner
 
 jobs:
-  run-tests:
+  run-python-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,3 +39,18 @@ jobs:
       - name: Run tests
         run: |
           pytest tests
+  run-ts-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{env.NODE_VERSION}}
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm i
+      - name: Run tests
+        working-directory: ./client
+        run: npm test
