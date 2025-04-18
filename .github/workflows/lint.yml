@@ -14,8 +14,12 @@ on:
         required: true
         type: number
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  run-linter:
+  run-python-linter:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,3 +39,12 @@ jobs:
       - name: Run formatter (ruff)
         run: |
           ruff format --check
+  run-ts-linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint client
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run lint:check
