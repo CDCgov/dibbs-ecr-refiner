@@ -24,7 +24,7 @@ export default function Demo() {
       <Link className="hover:underline" to="/">
         &#60;-- Return to landing page
       </Link>
-      <div className="flex justify-center flex-col">
+      <div className="flex justify-center items-center flex-col gap-6">
         <UploadSuccess />
         <UploadError />
         <ReportableConditions />
@@ -34,7 +34,7 @@ export default function Demo() {
             We will upload a test file for you to view the refinement results
           </p>
           <button
-            className="text-white px-5 py-3 bg-blue-300 rounded inline-flex justify-center items-center gap-2.5 overflow-hidden cursor-pointer"
+            className="font-bold text-white px-5 py-3 bg-blue-300 rounded inline-flex justify-center items-center gap-2.5 overflow-hidden cursor-pointer"
             onClick={async () => await refetch()}
           >
             Run test
@@ -161,7 +161,7 @@ function Container({ color, children, className }: ContainerProps) {
 
   return (
     <div
-      className={`${colors[color]} ${className} min-w-[44rem] px-44 py-10 rounded-lg border-1 border-dashed inline-flex flex-col justify-start items-center gap-6 overflow-hidden`}
+      className={`${colors[color]} ${className} px-16 py-10 rounded-lg border-1 border-dashed inline-flex flex-col justify-start items-center gap-6 overflow-hidden`}
     >
       {children}
     </div>
