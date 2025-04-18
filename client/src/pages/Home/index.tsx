@@ -39,7 +39,7 @@ export function Home() {
   }
 
   return (
-    <div className="p-2 text-white bg-blue-500 min-h-screen flex flex-col gap-10 min-w-full">
+    <div className="p-6 text-white bg-blue-500 min-h-screen flex flex-col gap-10 min-w-full">
       <header className="flex gap-20 items-center">
         <Link to="/">
           <h1 className="flex gap-3">
@@ -48,13 +48,13 @@ export function Home() {
           </h1>
         </Link>
         <nav>
-          <Link className="hover:underline" to="zip">
-            Upload zip
+          <Link className="hover:underline" to="demo">
+            Demo
           </Link>
         </nav>
       </header>
       <div className="flex flex-col gap-4">
-        <div className="flex gap-4 min-w-1/2">
+        <div className="flex gap-4">
           <button
             className="text-white text-xl font-bold bg-blue-300 border-1 border-transparent hover:border-white/80 hover:border-1 px-6 px-4 rounded cursor-pointer"
             onClick={() => mutate(eicr)}
@@ -69,7 +69,7 @@ export function Home() {
           </button>
         </div>
         <div>{error ? <p className="bg-yellow-800 p-2">{error}</p> : null}</div>
-        <div className="flex min-w-full gap-4">
+        <div className="flex gap-4">
           <div className="flex flex-col min-w-1/2">
             <label htmlFor="input">Unrefined eICR:</label>
             <textarea

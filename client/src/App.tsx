@@ -1,7 +1,7 @@
 import { Layout } from './components/Layout';
 import { Routes, Route } from 'react-router';
 import { Home } from './pages/Home';
-import UploadZip from './pages/UploadZip';
+import Demo from './pages/Demo';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -9,7 +9,7 @@ function App() {
     <Layout>
       <Routes>
         <Route index element={<Home />} />
-        <Route path="zip" element={<UploadZip />} />
+        <Route path="demo" element={<Demo />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
