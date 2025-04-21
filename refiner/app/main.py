@@ -8,6 +8,7 @@ from typing import Annotated
 import chardet
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     HTTPException,
     Query,
@@ -157,16 +158,23 @@ async def refine_ecr_from_zip(
     return Response(content=refined_data, media_type="application/xml")
 
 
+def _get_demo_zip_path() -> pathlib.Path:
+    return pathlib.Path(__file__).parent.parent / "assets" / "demo" / "monmothma.zip"
+
+
 @router.get("/demo/upload")
-async def demo_upload():
+async def demo_upload(file_path: pathlib.Path = Depends(_get_demo_zip_path)):
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
     try:
         # Grab the demo zip file and turn it into an UploadFile
-        file_path = (
-            pathlib.Path(__file__).parent.parent / "assets" / "demo" / "monmothma.zip"
-        )
+        if not pathlib.Path(file_path).exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Unable to find demo zip file to download.",
+            )
+
         filename = os.path.basename(file_path)
         with open(file_path, "rb") as demo_file:
             zip_content = demo_file.read()
@@ -186,19 +194,22 @@ async def demo_upload():
         return Response(content=refined_data, media_type="application/xml")
     except Exception:
         raise HTTPException(
-            status_code=500, detail="Zip file for demo upload could not be found."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to process demo zip file.",
         )
 
 
 @router.get("/demo/download")
-async def demo_download():
+async def demo_download(file_path: pathlib.Path = Depends(_get_demo_zip_path)):
     """
     Allows the user to download the sample eCR zip file.
     """
     # Grab demo zip and send it along to the client
-    file_path = (
-        pathlib.Path(__file__).parent.parent / "assets" / "demo" / "monmothma.zip"
-    )
+    if not pathlib.Path(file_path).exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unable to find demo zip file to download.",
+        )
     filename = os.path.basename(file_path)
     return FileResponse(
         file_path, media_type="application/octet-stream", filename=filename
