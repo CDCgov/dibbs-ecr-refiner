@@ -167,36 +167,30 @@ async def demo_upload(file_path: pathlib.Path = Depends(_get_demo_zip_path)):
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
-    try:
-        # Grab the demo zip file and turn it into an UploadFile
-        if not pathlib.Path(file_path).exists():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Unable to find demo zip file to download.",
-            )
-
-        filename = os.path.basename(file_path)
-        with open(file_path, "rb") as demo_file:
-            zip_content = demo_file.read()
-
-        file_like = io.BytesIO(zip_content)
-        file_like.seek(0)
-        upload_file = UploadFile(
-            file=file_like,
-            filename=filename,
-            headers={"Content-Type": "application/zip"},
-        )
-
-        # Read the created UploadFile
-        eicr_xml, _rr_xml = await _read_zip(upload_file)
-        validated_message, error_message = validate_message(eicr_xml)
-        refined_data = refine(validated_message, None, None)
-        return Response(content=refined_data, media_type="application/xml")
-    except Exception:
+    # Grab the demo zip file and turn it into an UploadFile
+    if not pathlib.Path(file_path).exists():
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to process demo zip file.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unable to find demo zip file to download.",
         )
+
+    filename = os.path.basename(file_path)
+    with open(file_path, "rb") as demo_file:
+        zip_content = demo_file.read()
+
+    file_like = io.BytesIO(zip_content)
+    file_like.seek(0)
+    upload_file = UploadFile(
+        file=file_like,
+        filename=filename,
+        headers={"Content-Type": "application/zip"},
+    )
+
+    # Read the created UploadFile
+    eicr_xml, _rr_xml = await _read_zip(upload_file)
+    validated_message, error_message = validate_message(eicr_xml)
+    refined_data = refine(validated_message, None, None)
+    return Response(content=refined_data, media_type="application/xml")
 
 
 @router.get("/demo/download")
