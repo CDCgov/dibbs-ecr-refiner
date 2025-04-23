@@ -7,6 +7,7 @@
     "required": true,
     "code_type": "atomic",
     "code": "55751-2",
+    "value_code": null,
     "contains": {
       "1.1": [
         "2.16.840.1.113883.10.20.22.2.22.1:2015-08-01",
@@ -29,6 +30,7 @@
     "required": true,
     "code_type": "atomic",
     "code": "55751-2",
+    "value_code": null,
     "contains": {
       "3.1": [
         "1.3.6.1.4.1.19376.1.5.3.1.3.18",
@@ -58,12 +60,13 @@
   },
   "2.16.840.1.113883.10.20.22.2.22.1:2015-08-01": {
     "type": "section",
-    "display_name": "Encounters",
+    "display_name": "Encounters Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "46240-8",
+    "value_code": null,
     "contains": {
       "1.1": [
         "2.16.840.1.113883.10.20.15.2.3.5:2016-12-01",
@@ -74,22 +77,24 @@
   },
   "1.3.6.1.4.1.19376.1.5.3.1.3.4": {
     "type": "section",
-    "display_name": "History of Present Illness",
+    "display_name": "History of Present Illness Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "10164-2",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.2.1:2015-08-01": {
     "type": "section",
-    "display_name": "Immunizations",
+    "display_name": "Immunizations Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "11369-6",
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": [
@@ -100,12 +105,13 @@
   },
   "2.16.840.1.113883.10.20.22.2.38:2014-06-09": {
     "type": "section",
-    "display_name": "Medications Administered",
+    "display_name": "Medications Administered Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "29549-3",
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": ["2.16.840.1.113883.10.20.15.2.3.36:2019-04-01"]
@@ -113,12 +119,13 @@
   },
   "2.16.840.1.113883.10.20.22.2.10:2014-06-09": {
     "type": "section",
-    "display_name": "Plan of Treatment",
+    "display_name": "Plan of Treatment Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "18776-5",
+    "value_code": null,
     "contains": {
       "1.1": ["2.16.840.1.113883.10.20.15.2.3.4:2016-12-01"],
       "3.1": [
@@ -132,12 +139,13 @@
   },
   "2.16.840.1.113883.10.20.22.2.5.1:2015-08-01": {
     "type": "section",
-    "display_name": "Problems",
+    "display_name": "Problem Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "11450-4",
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": ["2.16.840.1.113883.10.20.15.2.3.3:2021-01-01"]
@@ -145,22 +153,24 @@
   },
   "2.16.840.1.113883.10.20.22.2.12": {
     "type": "section",
-    "display_name": "Reason for Visit",
+    "display_name": "Reason for Visit Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "29299-5",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.3.1:2015-08-01": {
     "type": "section",
-    "display_name": "Results",
+    "display_name": "Results Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "30954-2",
+    "value_code": null,
     "contains": {
       "1.1": ["2.16.840.1.113883.10.20.15.2.3.2:2016-12-01"],
       "3.1": [
@@ -171,12 +181,13 @@
   },
   "2.16.840.1.113883.10.20.22.2.17:2015-08-01": {
     "type": "section",
-    "display_name": "Social History",
+    "display_name": "Social History Section",
     "spec": "eICR",
     "version": ["1.1", "3.1"],
     "required": true,
     "code_type": "atomic",
     "code": "29762-2",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.43:2015-08-01": {
@@ -187,16 +198,18 @@
     "required": false,
     "code_type": "atomic",
     "code": "46241-6",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.44:2015-08-01": {
     "type": "section",
-    "display_name": "Admission Medications",
+    "display_name": "Admission Medications Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "42346-7",
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": ["2.16.840.1.113883.10.20.15.2.3.36:2019-04-01"]
@@ -210,6 +223,7 @@
     "required": true,
     "code_type": "atomic",
     "code": "10154-3",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.24:2015-08-01": {
@@ -220,26 +234,29 @@
     "required": false,
     "code_type": "atomic",
     "code": "11535-2",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.2.4:2021-01-01": {
     "type": "section",
-    "display_name": "Emergency Outbreak Information",
+    "display_name": "Emergency Outbreak Information Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "83910-0",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.1.1:2014-06-09": {
     "type": "section",
-    "display_name": "Medications",
+    "display_name": "Medications Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "10160-0",
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": ["2.16.840.1.113883.10.20.15.2.3.36:2019-04-01"]
@@ -253,26 +270,29 @@
     "required": false,
     "code_type": "atomic",
     "code": "11348-0",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.80:2018-04-01": {
     "type": "section",
-    "display_name": "Pregnancy",
+    "display_name": "Pregnancy Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "90767-5",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.7.1:2014-06-09": {
     "type": "section",
-    "display_name": "Procedures",
+    "display_name": "Procedures Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "47519-4",
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": [
@@ -285,47 +305,51 @@
   },
   "2.16.840.1.113883.10.20.15.2.2.5:2021-01-01": {
     "type": "section",
-    "display_name": "Reportability Response Information",
+    "display_name": "Reportability Response Information Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "88085-6",
+    "value_code": null,
     "contains": null
   },
   "1.3.6.1.4.1.19376.1.5.3.1.3.18": {
     "type": "section",
-    "display_name": "Review of Systems",
+    "display_name": "Review of Systems Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "10187-3",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.17:2020-09-01": {
     "type": "section",
-    "display_name": "Occupational Data for Health Template Requirements",
+    "display_name": "Occupational Data for Health Template Requirements Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "29762-2",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.22.2.4.1:2015-08-01": {
     "type": "section",
-    "display_name": "Vital Signs",
+    "display_name": "Vital Signs Section",
     "spec": "eICR",
     "version": ["3.1"],
     "required": false,
     "code_type": "atomic",
     "code": "8716-3",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.5:2016-12-01": {
     "type": "observation",
-    "display_name": "Initial Case Report Manual Initiation Reason",
+    "display_name": "Initial Case Report Manual Initiation Reason Observation",
     "spec": "eICR",
     "version": ["1.1"],
     "required": false,
@@ -341,6 +365,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.3:2016-12-01": {
@@ -351,6 +376,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.3:2021-01-01": {
@@ -361,6 +387,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.4:2016-12-01": {
@@ -371,6 +398,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.4:2019-04-01": {
@@ -381,6 +409,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.2:2016-12-01": {
@@ -391,6 +420,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.2:2019-04-01": {
@@ -401,6 +431,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": ["2.16.840.1.113883.10.20.22.4.419:2018-09-01"]
@@ -414,6 +445,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.36:2019-04-01": {
@@ -424,6 +456,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.41:2021-01-01": {
@@ -434,6 +467,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.43:2021-01-01": {
@@ -444,6 +478,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.42:2021-01-01": {
@@ -454,6 +489,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.45:2021-01-01": {
@@ -464,6 +500,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.46:2021-01-01": {
@@ -474,6 +511,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.44:2021-01-01": {
@@ -484,6 +522,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.35:2022-05-01": {
@@ -494,6 +533,7 @@
     "required": false,
     "code_type": "flexible",
     "code": null,
+    "value_code": null,
     "contains": {
       "1.1": null,
       "3.1": ["2.16.840.1.113883.10.20.15.2.3.2:2019-04-01"]
@@ -507,6 +547,7 @@
     "required": false,
     "code_type": "atomic",
     "code": "92236-9",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.1.2:2017-04-01": {
@@ -517,16 +558,24 @@
     "required": true,
     "code_type": "atomic",
     "code": "88085-6",
-    "contains": null
+    "value_code": null,
+    "contains": {
+      "1.1": [
+        "2.16.840.1.113883.10.20.15.2.2.1:2017-04-01",
+        "2.16.840.1.113883.10.20.15.2.2.2:2017-04-01",
+        "2.16.840.1.113883.10.20.15.2.2.3:2017-04-01"
+      ]
+    }
   },
   "2.16.840.1.113883.10.20.15.2.2.3:2017-04-01": {
     "type": "section",
-    "display_name": "Electronic Initial Case Report",
+    "display_name": "Electronic Initial Case Report Section",
     "spec": "RR",
     "version": ["1.1"],
     "required": true,
     "code_type": "atomic",
     "code": "88082-3",
+    "value_code": null,
     "contains": {
       "1.1": [
         "2.16.840.1.113883.10.20.15.2.3.9:2017-04-01:2017-04-01",
@@ -537,29 +586,60 @@
   },
   "2.16.840.1.113883.10.20.15.2.2.1:2017-04-01": {
     "type": "section",
-    "display_name": "Reportability Response Subject",
+    "display_name": "Reportability Response Subject Section",
     "spec": "RR",
     "version": ["1.1"],
     "required": false,
     "code_type": "atomic",
     "code": "88084-9",
+    "value_code": null,
     "contains": {
       "1.1": ["2.16.840.1.113883.10.20.15.2.3.7:2017-04-01"]
     }
   },
   "2.16.840.1.113883.10.20.15.2.2.2:2017-04-01": {
     "type": "section",
-    "display_name": "Reportability Response Summary",
+    "display_name": "Reportability Response Summary Section",
     "spec": "RR",
     "version": ["1.1"],
     "required": false,
     "code_type": "atomic",
     "code": "55112-7",
+    "value_code": null,
     "contains": {
       "1.1": [
         "2.16.840.1.113883.10.20.15.2.3.34:2017-04-01",
         "2.16.840.1.113883.10.20.15.2.3.8:2017-04-01",
         "2.16.840.1.113883.10.20.15.2.3.30:2017-04-01"
+      ]
+    }
+  },
+  "2.16.840.1.113883.10.20.15.2.3.34:2017-04-01": {
+    "type": "organizer",
+    "display_name": "Reportability Response Coded Information Organizer",
+    "spec": "RR",
+    "version": ["1.1"],
+    "required": true,
+    "code_type": "atomic",
+    "code": "RR11",
+    "value_code": null,
+    "contains": {
+      "1.1": ["2.16.840.1.113883.10.20.15.2.3.12:2017-04-01"]
+    }
+  },
+  "2.16.840.1.113883.10.20.15.2.3.12:2017-04-01": {
+    "type": "observation",
+    "display_name": "Relevant Reportable Condition Observation",
+    "spec": "RR",
+    "version": ["1.1"],
+    "required": true,
+    "code_type": "atomic",
+    "code": "64572001",
+    "value_code": null,
+    "contains": {
+      "1.1": [
+        "2.16.840.1.113883.10.20.15.2.3.13:2017-04-01",
+        "2.16.840.1.113883.10.20.15.2.3.20:2017-04-01"
       ]
     }
   },
@@ -571,6 +651,12 @@
     "required": true,
     "code_type": "atomic",
     "code": "RR1",
+    "value_code": {
+      "RRVS1": "Reportable",
+      "RRVS2": "May be reportable",
+      "RRVS3": "Not reportable",
+      "RRVS4": "No rule met"
+    },
     "contains": {
       "1.1": [
         "2.16.840.1.113883.10.20.15.2.3.26:2017-04-01",
@@ -586,6 +672,16 @@
     "required": false,
     "code_type": "atomic",
     "code": "RR2",
+    "value_code": {
+      "RRVS23": "eICR was not processed due to an error of: fatal problem with the eICR that was received",
+      "RRVS24": "eICR was not processed due to an error of: an ongoing server problem",
+      "RRVS25": "eICR was not processed due to an error of: significant content or format issues",
+      "RRVS26": "eICR was processed with the warning of: invalid eICR identifier",
+      "RRVS27": "eICR was processed with the warning of: required data not found",
+      "RRVS28": "eICR was processed with the warning of: content or format issues",
+      "RRVS30": "eICR was processed with the warning of: RCTC code deprecated by coding system",
+      "RRVS29": "eICR was processed with the warning of: outdated RCTC version"
+    },
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.27:2017-04-01": {
@@ -596,6 +692,7 @@
     "required": false,
     "code_type": "atomic",
     "code": "RR3",
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.29:2017-04-01": {
@@ -611,6 +708,7 @@
       "RRVS22": "eICR was not processed - error",
       "RRVS21": "eICR was processed - with a severe warning"
     },
+    "value_code": null,
     "contains": {
       "1.1": [
         "2.16.840.1.113883.10.20.15.2.3.21:2017-04-01",
@@ -626,6 +724,16 @@
     "required": false,
     "code_type": "atomic",
     "code": "RR6",
+    "value_code": {
+      "RRVS23": "eICR was not processed due to an error of: fatal problem with the eICR that was received",
+      "RRVS24": "eICR was not processed due to an error of: an ongoing server problem",
+      "RRVS25": "eICR was not processed due to an error of: significant content or format issues",
+      "RRVS26": "eICR was processed with the warning of: invalid eICR identifier",
+      "RRVS27": "eICR was processed with the warning of: required data not found",
+      "RRVS28": "eICR was processed with the warning of: content or format issues",
+      "RRVS30": "eICR was processed with the warning of: RCTC code deprecated by coding system",
+      "RRVS29": "eICR was processed with the warning of: outdated RCTC version"
+    },
     "contains": {
       "1.1": ["2.16.840.1.113883.10.20.15.2.3.32:2017-04-01"]
     }
@@ -642,6 +750,7 @@
       "RRVS32": "Inactive RCTC code detail",
       "RRVS33": "Expected RCTC Version Detail"
     },
+    "value_code": null,
     "contains": null
   },
   "2.16.840.1.113883.10.20.15.2.3.33:2017-04-01": {
@@ -652,6 +761,7 @@
     "required": false,
     "code_type": "atomic",
     "code": "RR10",
+    "value_code": null,
     "contains": null
   }
 }
