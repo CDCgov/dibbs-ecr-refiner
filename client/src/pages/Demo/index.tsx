@@ -3,22 +3,10 @@ import UploadSvg from '../../assets/upload.svg';
 import ErrorSvg from '../../assets/red-x.svg';
 import SuccessSvg from '../../assets/green-check.svg';
 import InformationSvg from '../../assets/information.svg';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-
-async function upload(): Promise<string> {
-  const resp = await fetch('/api/demo/upload');
-  return resp.text();
-}
+import { useDemoUpload } from '../../services/demo';
 
 export default function Demo() {
-  const queryClient = useQueryClient();
-  const { data, refetch } = useQuery({
-    queryKey: ['upload'],
-    queryFn: upload,
-    enabled: false,
-    initialData: '',
-  });
-
+  const { resetData, refetch, data } = useDemoUpload();
   return (
     <div className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <Link className="hover:underline" to="/">
@@ -54,9 +42,7 @@ export default function Demo() {
         <div>
           <button
             className="cursor-pointer rounded bg-blue-300 px-4 px-6 text-xl font-bold text-white"
-            onClick={() =>
-              queryClient.resetQueries({ queryKey: ['upload'], exact: true })
-            }
+            onClick={async () => await resetData()}
           >
             Reset
           </button>
