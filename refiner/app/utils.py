@@ -1,5 +1,10 @@
 import json
 import pathlib
+from io import BytesIO
+from zipfile import BadZipFile, ZipFile
+
+from chardet import detect
+from fastapi import HTTPException, UploadFile, status
 
 
 def read_json_from_assets(filename: str) -> dict:
@@ -69,3 +74,47 @@ def create_clinical_services_dict(
                     transformed_dict[shorthand_system] = []
                 transformed_dict[shorthand_system].extend(entry.get("codes", []))
     return transformed_dict
+
+
+async def read_zip(file: UploadFile) -> tuple[str, str]:
+    """
+    Given a zip file containing CDA_eICR.xml and CDA_RR.xml files,
+    this function will read each file and return the contents as a tuple
+    """
+    try:
+        # Read the uploaded ZIP file
+        zip_bytes = await file.read()
+        zip_stream = BytesIO(zip_bytes)
+
+        # Open ZIP archive
+        with ZipFile(zip_stream, "r") as z:
+            # Extract relevant XML files
+            eicr_xml = None
+            rr_xml = None
+
+            for filename in z.namelist():
+                # Skip macOS resource fork files
+                if filename.startswith("__MACOSX/") or filename.startswith("._"):
+                    continue
+
+                content = z.read(filename)
+                encoding = detect(content)["encoding"]
+                decoded = content.decode(encoding or "utf-8")
+
+                if filename.endswith("CDA_eICR.xml"):
+                    eicr_xml = decoded
+                elif filename.endswith("CDA_RR.xml"):
+                    rr_xml = decoded  # noqa
+
+            if not eicr_xml:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CDA_eICR.xml not found in ZIP.",
+                )
+
+            return eicr_xml, rr_xml
+    except BadZipFile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid zip file. Zip must contain a 'CDA_eICR.xml' and 'CDA_RR.xml' pair.",
+        )
