@@ -1,81 +1,68 @@
-import { Link } from 'react-router';
 import UploadSvg from '../../assets/upload.svg';
 import ErrorSvg from '../../assets/red-x.svg';
 import SuccessSvg from '../../assets/green-check.svg';
 import InformationSvg from '../../assets/information.svg';
-import { useDemoUpload } from '../../services/demo';
+import { LandingPageLink } from '../../components/LandingPageLink';
+import { Button } from '../../components/Button';
+import classNames from 'classnames';
 
 export default function Demo() {
-  const { resetData, refetch, data } = useDemoUpload();
   return (
     <div className="flex min-w-screen flex-col gap-20 px-20 py-10">
-      <Link className="hover:underline" to="/">
-        &#60;-- Return to landing page
-      </Link>
+      <LandingPageLink />
       <div className="flex flex-col items-center justify-center gap-6">
-        <UploadSuccess />
         <UploadError />
+        <UploadSuccess />
         <ReportableConditions />
-        <Container color="blue">
-          <Content>
-            <img src={UploadSvg} alt="Upload zipfile" />
-            <p className="text-base font-normal text-black">
-              We will upload a test file for you to view the refinement results
-            </p>
-            <button
-              className="inline-flex cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded bg-blue-300 px-5 py-3 font-bold text-white"
-              onClick={async () => await refetch()}
-            >
-              Run test
-            </button>
-            <a
-              className="justify-start text-base font-bold text-blue-300 hover:underline"
-              href="/api/demo/download"
-              download
-            >
-              Download test file
-            </a>
-          </Content>
-        </Container>
-      </div>
-      <div className="flex min-h-full flex-col gap-2">
-        <div>
-          <button
-            className="cursor-pointer rounded bg-blue-300 px-4 px-6 text-xl font-bold text-white"
-            onClick={async () => await resetData()}
-          >
-            Reset
-          </button>
-        </div>
-        <label htmlFor="result">Refined eICR:</label>
-        <textarea
-          id="result"
-          className="min-h-full border"
-          disabled
-          value={data}
-        />
+        <RunTest />
       </div>
     </div>
+  );
+}
+
+function RunTest() {
+  return (
+    <Container color="blue">
+      <Content className="flex gap-3">
+        <img src={UploadSvg} alt="" className="p-3" />
+        <div className="flex flex-col items-center gap-6">
+          <p className="text-base font-normal text-black">
+            We will upload a test file for you to view the refinement results
+          </p>
+          <Button>Run test</Button>
+          <a
+            className="justify-start text-base font-bold text-blue-300 hover:underline"
+            href="/api/demo/download"
+            download
+          >
+            Download test file
+          </a>
+        </div>
+      </Content>
+    </Container>
   );
 }
 
 function UploadError() {
   return (
     <Container color="red">
-      <Content>
-        <img
-          src={ErrorSvg}
-          alt="Red X indicating an error occured during upload."
-        />
-        <p className="text-center text-xl font-bold text-black">
-          The file could not be read.
-        </p>
-        <p className="leading-snug">
-          Please double check the format and size. It must be less than 1GB.
-        </p>
-        <button className="inline-flex items-center justify-start gap-2.5 overflow-hidden rounded bg-black px-5 py-3 font-bold text-white">
-          Try again
-        </button>
+      <Content className="gap-10">
+        <div className="flex flex-col items-center">
+          <img
+            className="p-8"
+            src={ErrorSvg}
+            alt="Red X indicating an error occured during upload."
+          />
+          <div className="flex flex-col items-center gap-6">
+            <p className="text-xl font-bold text-black">
+              The file could not be read.
+            </p>
+            <p className="leading-snug">
+              Please double check the format and size. It must be less than 1GB.
+            </p>
+          </div>
+        </div>
+        <Button color="black">Try again</Button>
       </Content>
     </Container>
   );
@@ -83,59 +70,66 @@ function UploadError() {
 
 function UploadSuccess() {
   return (
-    <Container color="green">
-      <Content>
-        <img
-          src={SuccessSvg}
-          alt="Green checkmark indicating a successful upload."
-        />
-        <p className="text-center text-xl font-bold text-black">
+    <Container color="green" className="w-full !p-8">
+      <Content className="flex flex-col items-start gap-4">
+        <p className="text-xl font-bold text-black">
           eCR successfully refined!
         </p>
-        <div className="inline-flex flex-col items-center justify-start gap-6 rounded-lg bg-white p-6">
-          <div className="flex flex-col gap-6">
-            <p className="leading-snug font-bold">
-              eCR file size reduced from XXMB to YYMB
-            </p>
-            <p className="flex flex-col items-center gap-2 leading-snug">
-              <span className="font-bold">
-                Found the following data for the condition:
-              </span>
-              <span>XX labs, Y medications</span>
-            </p>
+        <div className="flex min-w-full justify-between">
+          <div className="flex gap-4">
+            <div className="rounded-lg bg-white p-4">
+              <div className="flex gap-2">
+                <GreenCheck />
+                <p className="leading-snug font-bold">
+                  eCR file size reduced by 14%
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-white p-4">
+              <GreenCheck />
+              <p className="flex flex-col items-center gap-2 leading-snug font-bold">
+                Found 32 observations relevant to the condition(s)
+              </p>
+            </div>
           </div>
+          <Button color="black">Download refined eCR</Button>
         </div>
-        <button className="inline-flex items-center justify-start gap-2.5 overflow-hidden rounded bg-black px-5 py-3 font-bold text-white">
-          Download file
-        </button>
       </Content>
     </Container>
   );
 }
 
+function GreenCheck() {
+  return <img className="h-6 w-6" src={SuccessSvg} alt="" />;
+}
+
 function ReportableConditions() {
   return (
     <Container color="blue">
-      <Content>
-        <img src={InformationSvg} alt="Information icon" />
-        <div className="flex flex-col gap-2">
-          <p className="text-center text-xl font-bold text-black">
-            We found these reportable conditions:
-          </p>
-          <ul className="ml-6 list-disc text-xl font-bold text-black">
-            <li>Example condition</li>
-          </ul>
+      <Content className="flex flex-col">
+        <img className="p-3" src={InformationSvg} alt="Information icon" />
+        <div className="flex flex-col items-center gap-10">
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-center text-xl font-bold text-black">
+                We found the following reportable condition(s):
+              </p>
+              <ul className="list-disc text-xl font-bold text-black">
+                <li>Chlamydia trachomatis infection</li>
+              </ul>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <p>Would you like to refine the eCR?</p>
+              <p>
+                Taking this action will retain information relevant only to the
+                conditions listed.
+              </p>
+            </div>
+          </div>
+          <div>
+            <Button>Refine eCR</Button>
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-2">
-          <p>Would you like to refine the eCR?</p>
-          <p>
-            Taking this action will retain information relevant only to the
-            conditions listed.
-          </p>
-        </div>
-        <button className="inline-flex cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded bg-blue-300 px-5 py-3 font-bold text-white">
-          Refine eCR
-        </button>
       </Content>
     </Container>
   );
@@ -147,15 +141,15 @@ interface ContainerProps {
   className?: string;
 }
 function Container({ color, children, className }: ContainerProps) {
-  const colorOptions = {
-    blue: 'bg-blue-100 border-blue-300',
-    red: 'bg-rose-600/10 border-red-300',
-    green: 'bg-green-500/10 border-green-500',
-  };
-
+  const defaultStyles =
+    'items-center gap-6 rounded-lg border-1 border-dashed px-20 py-8';
   return (
     <div
-      className={`${colorOptions[color]} ${className} items-center gap-6 rounded-lg border-1 border-dashed px-20 py-8`}
+      className={classNames(defaultStyles, className, {
+        'border-blue-300 bg-blue-100': color === 'blue',
+        'border-red-300 bg-rose-600/10': color === 'red',
+        'border-green-500 bg-green-500/10': color === 'green',
+      })}
     >
       {children}
     </div>
@@ -164,8 +158,13 @@ function Container({ color, children, className }: ContainerProps) {
 
 interface ContentProps {
   children: React.ReactNode;
+  className?: string;
 }
 
-function Content({ children }: ContentProps) {
-  return <div className="flex flex-col items-center gap-6">{children}</div>;
+function Content({ children, className }: ContentProps) {
+  return (
+    <div className={classNames('flex flex-col items-center', className)}>
+      {children}
+    </div>
+  );
 }
