@@ -1,78 +1,103 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
-# Check if branch name is provided
-if [ -z "$1" ]; then
-    echo "Usage: $0 <branch-name>"
-    exit 1
-fi
+# set error handling
+set -e
 
-BRANCH_NAME=$1
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" &> /dev/null
-}
-
-# Install Homebrew if it's not already installed
-if ! command_exists brew; then
-    echo "Homebrew not found, installing it now..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
-
-# Update Homebrew
-brew update
-
-# Install Git if it's not already installed
-if ! command_exists git; then
-    brew install git
-fi
-
-# Install Docker if it's not already installed
-if ! command_exists docker; then
-    brew install --cask docker
-fi
-
-# Start Docker
-open /Applications/Docker.app
-echo "Waiting for Docker to launch..."
-while ! docker system info > /dev/null 2>&1; do
-    sleep 1
-done
-
-# Install Docker Compose if it's not already installed
-if ! command_exists docker-compose; then
-    brew install docker-compose
-fi
-
-# Clone the repository if it doesn't exist, otherwise pull the latest changes
+# constants
 REPO_URL="https://github.com/CDCgov/dibbs-ecr-refiner.git"
 REPO_DIR="dibbs-ecr-refiner"
+APP_URL="http://localhost:8081/"
 
-if [ ! -d "$REPO_DIR" ]; then
-    git clone $REPO_URL
-    cd $REPO_DIR
-else
-    cd $REPO_DIR
-    git pull
+# function to display error messages and exit
+error_exit() {
+    echo -e "❌ Error:\n\t$1" >&2
+    exit 1
+}
+
+# function to check for required commands and install if missing
+ensure_command() {
+    local command_name=$1
+    local install_command=$2
+    
+    if ! command -v "$command_name" &> /dev/null; then
+        echo -e "🔍 $command_name not found, installing..."
+        eval "$install_command" || error_exit "Failed to install $command_name"
+        echo -e "✅ Successfully installed $command_name"
+    fi
+}
+
+# function to wait for service availability
+wait_for_service() {
+    local url=$1
+    local message=$2
+    
+    echo -e "⏳ $message"
+    until curl -s -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; do
+        echo -e "🔄 Waiting for service to be available..."
+        sleep 5
+    done
+}
+
+# check if branch name is provided
+if [[ -z "$1" ]]; then
+    error_exit "Did you forget the branch name?\n💡 Try:\n\t$0 <branch-name>"
 fi
 
-# Checkout the specified branch
-git checkout $BRANCH_NAME
+BRANCH_NAME="$1"
+echo -e "🚀 Starting design review setup for branch: $BRANCH_NAME\n"
 
-# Build and run docker-compose
-docker-compose build --no-cache && docker-compose up -d
+# only install homebrew if it's missing (no update)
+if ! command -v brew &> /dev/null; then
+    echo -e "🍺 Homebrew not found, installing..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || \
+        error_exit "Failed to install Homebrew"
+fi
 
-# Wait for the Refiner client to become available
-URL="http://localhost:8081/"
-while ! curl -s -o /dev/null -w "%{http_code}" "$URL" | grep -q "200"; do
-    echo "Waiting for $URL to be available..."
-    sleep 5
-done
+# ensure required tools are installed
+ensure_command "git" "brew install git"
+ensure_command "docker" "brew install --cask docker"
+ensure_command "docker-compose" "brew install docker-compose"
 
+# start docker if not running
+if ! docker info &> /dev/null; then
+    echo -e "🐳 Starting Docker..."
+    open -a Docker
+    while ! docker system info &> /dev/null; do
+        echo -e "⏳ Waiting for Docker to start..."
+        sleep 2
+    done
+fi
 
-# Open in default browser
-open http://localhost:8081/
+# repository handling
+echo -e "📦 Setting up repository..."
+if [[ ! -d "$REPO_DIR" ]]; then
+    echo -e "🔍 Repository not found locally, cloning..."
+    git clone "$REPO_URL" || error_exit "Failed to clone repository"
+    cd "$REPO_DIR" || error_exit "Failed to enter repository directory"
+else
+    cd "$REPO_DIR" || error_exit "Failed to enter repository directory"
+    echo -e "🔄 Updating existing repository..."
+    git fetch origin
+fi
 
-# Prompt to end review session
-read -p "Press enter to end review"
-docker compose down
+# checkout specified branch
+echo -e "🔄 Checking out branch: $BRANCH_NAME"
+git checkout "$BRANCH_NAME" || error_exit "Failed to checkout branch: $BRANCH_NAME"
+git pull origin "$BRANCH_NAME" || error_exit "Failed to pull latest changes"
+
+# build and run containers
+echo -e "🏗️  Building and starting containers..."
+docker-compose build --no-cache && docker-compose up -d || error_exit "Failed to start containers"
+
+# wait for application to be available
+wait_for_service "$APP_URL" "Waiting for application to start..."
+
+# open in default browser
+echo -e "🌐 Opening application in browser..."
+open "$APP_URL"
+
+echo -e "🎉 Review environment is ready!\n"
+echo -e "👋 Press Enter to end review and cleanup containers..."
+read -r
+docker-compose down
+echo -e "✨ Cleanup complete!"
