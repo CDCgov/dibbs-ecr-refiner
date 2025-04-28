@@ -75,8 +75,8 @@ function UploadSuccess() {
         <p className="text-xl font-bold text-black">
           eCR successfully refined!
         </p>
-        <div className="flex min-w-full justify-between">
-          <div className="flex gap-4">
+        <div className="flex min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <div className="rounded-lg bg-white p-4">
               <div className="flex gap-2">
                 <GreenCheck />
@@ -92,7 +92,9 @@ function UploadSuccess() {
               </p>
             </div>
           </div>
-          <Button color="black">Download refined eCR</Button>
+          <div>
+            <Button color="black">Download refined eCR</Button>
+          </div>
         </div>
       </Content>
     </Container>
