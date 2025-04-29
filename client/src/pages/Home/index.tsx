@@ -6,7 +6,7 @@ import { Button } from '../../components/Button';
 export function Home() {
   return (
     <div>
-      <div className="flex flex-col p-10">
+      <div className="p-10">
         <header className="flex items-center gap-20">
           <Link to="/">
             <h1 className="flex gap-3">
@@ -17,7 +17,9 @@ export function Home() {
             </h1>
           </Link>
         </header>
-        <div className="flex justify-center gap-16 p-30">
+      </div>
+      <main>
+        <div className="flex flex-col md:flex-row justify-center gap-16 p-30">
           <div className="flex flex-col gap-8">
             <div className="flex max-w-[28rem] flex-col items-start gap-4">
               <h1 className='font-["Merriweather"] text-4xl font-bold'>
@@ -39,8 +41,8 @@ export function Home() {
             <img src={VideoPlaceholder} alt="" />
           </div>
         </div>
-      </div>
-      <HowItWorks />
+        <HowItWorks />
+      </main>
     </div>
   );
 }

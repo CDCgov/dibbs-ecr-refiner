@@ -8,7 +8,7 @@ import classNames from 'classnames';
 
 export default function Demo() {
   return (
-    <div className="flex min-w-screen flex-col gap-20 px-20 py-10">
+    <main className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <LandingPageLink />
       <div className="flex flex-col items-center justify-center gap-6">
         <UploadError />
@@ -16,7 +16,7 @@ export default function Demo() {
         <ReportableConditions />
         <RunTest />
       </div>
-    </div>
+    </main>
   );
 }
 
