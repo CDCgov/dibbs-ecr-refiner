@@ -159,6 +159,7 @@ interface EicrTextProps {
   title: string;
   xml: string;
 }
+
 function EicrText({ title, xml }: EicrTextProps) {
   return (
     <div className="flex w-1/2 flex-col gap-2">
