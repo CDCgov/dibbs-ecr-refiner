@@ -19,7 +19,7 @@ export function Home() {
         </header>
       </div>
       <main>
-        <div className="flex flex-col md:flex-row justify-center gap-16 p-30">
+        <div className="flex flex-col justify-center gap-16 p-30 md:flex-row">
           <div className="flex flex-col gap-8">
             <div className="flex max-w-[28rem] flex-col items-start gap-4">
               <h1 className='font-["Merriweather"] text-4xl font-bold'>
