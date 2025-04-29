@@ -15,7 +15,7 @@ on:
         type: number
 
 jobs:
-  run-linter:
+  run-python-linter:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,3 +35,19 @@ jobs:
       - name: Run formatter (ruff)
         run: |
           ruff format --check
+  run-ts-linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        working-directory: ./client
+        run: |
+          npm ci
+      - name: Client linting check
+        working-directory: ./client
+        run: |
+          npm run lint:check
+      - name: Client formatting check
+        working-directory: ./client
+        run: |
+          npm run fmt:check

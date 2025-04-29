@@ -1,10 +1,24 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen } from '@testing-library/react';
 
-import App from "./App";
+import App from './App';
+import { BrowserRouter } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-describe("App", () => {
-  it("App renders expected text", () => {
-    render(<App />);
-    expect(screen.getByText("DIBBs eCR Refiner")).toBeInTheDocument();
+const queryClient = new QueryClient();
+const renderApp = () => {
+  return render(
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
+
+describe('App', () => {
+  it('App renders expected text', () => {
+    renderApp();
+    expect(screen.getByText('Unrefined eICR:')).toBeInTheDocument();
+    expect(screen.getByText('Refined eICR:')).toBeInTheDocument();
   });
 });
