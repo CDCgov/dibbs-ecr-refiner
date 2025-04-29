@@ -6,6 +6,7 @@ async function upload(): Promise<string> {
 }
 
 const uploadKey = 'upload';
+
 export function useDemoUpload() {
   const queryClient = useQueryClient();
 
