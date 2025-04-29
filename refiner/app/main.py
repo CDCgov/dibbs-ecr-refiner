@@ -1,16 +1,10 @@
-import io
 import os
-import pathlib
-import zipfile
 from pathlib import Path
 from typing import Annotated
 
-import chardet
 from fastapi import (
     APIRouter,
-    Depends,
     File,
-    HTTPException,
     Query,
     Request,
     Response,
@@ -18,14 +12,15 @@ from fastapi import (
     status,
 )
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
 from app.models import RefineECRResponse
 from app.refine import refine, validate_message, validate_sections_to_include
-from app.utils import create_clinical_services_dict, read_json_from_assets
+from app.utils import create_clinical_services_dict, read_json_from_assets, read_zip
+
+from .routes import demo
 
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
@@ -39,6 +34,7 @@ app = BaseService(
 ).start()
 
 router = APIRouter(prefix="/api")
+router.include_router(demo.router)
 
 # /api/ecr endpoint request examples
 refine_ecr_request_examples = read_json_from_assets("sample_refine_ecr_request.json")
@@ -127,7 +123,7 @@ async def refine_ecr_from_zip(
     Returns:
     - A refined XML eCR response.
     """
-    eicr_xml, _rr_xml = await _read_zip(file)
+    eicr_xml, _rr_xml = await read_zip(file)
 
     # Process the extracted XML
     validated_message, error_message = validate_message(eicr_xml)
@@ -156,58 +152,6 @@ async def refine_ecr_from_zip(
     refined_data = refine(validated_message, sections, clinical_services)
 
     return Response(content=refined_data, media_type="application/xml")
-
-
-def _get_demo_zip_path() -> pathlib.Path:
-    return pathlib.Path(__file__).parent.parent / "assets" / "demo" / "monmothma.zip"
-
-
-@router.get("/demo/upload")
-async def demo_upload(file_path: pathlib.Path = Depends(_get_demo_zip_path)):
-    """
-    Grabs an eCR zip file from the file system and runs it through the upload/refine process.
-    """
-    # Grab the demo zip file and turn it into an UploadFile
-    if not pathlib.Path(file_path).exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Unable to find demo zip file to download.",
-        )
-
-    filename = os.path.basename(file_path)
-    with open(file_path, "rb") as demo_file:
-        zip_content = demo_file.read()
-
-    file_like = io.BytesIO(zip_content)
-    file_like.seek(0)
-    upload_file = UploadFile(
-        file=file_like,
-        filename=filename,
-        headers={"Content-Type": "application/zip"},
-    )
-
-    # Read the created UploadFile
-    eicr_xml, _rr_xml = await _read_zip(upload_file)
-    validated_message, error_message = validate_message(eicr_xml)
-    refined_data = refine(validated_message, None, None)
-    return Response(content=refined_data, media_type="application/xml")
-
-
-@router.get("/demo/download")
-async def demo_download(file_path: pathlib.Path = Depends(_get_demo_zip_path)):
-    """
-    Allows the user to download the sample eCR zip file.
-    """
-    # Grab demo zip and send it along to the client
-    if not pathlib.Path(file_path).exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Unable to find demo zip file to download.",
-        )
-    filename = os.path.basename(file_path)
-    return FileResponse(
-        file_path, media_type="application/octet-stream", filename=filename
-    )
 
 
 @router.post(
@@ -283,50 +227,6 @@ async def refine_ecr(
     data = refine(validated_message, sections, clinical_services)
 
     return Response(content=data, media_type="application/xml")
-
-
-async def _read_zip(file: UploadFile) -> tuple[str, str]:
-    """
-    Given a zip file containing CDA_eICR.xml and CDA_RR.xml files,
-    this function will read each file and return the contents as a tuple
-    """
-    try:
-        # Read the uploaded ZIP file
-        zip_bytes = await file.read()
-        zip_stream = io.BytesIO(zip_bytes)
-
-        # Open ZIP archive
-        with zipfile.ZipFile(zip_stream, "r") as z:
-            # Extract relevant XML files
-            eicr_xml = None
-            rr_xml = None
-
-            for filename in z.namelist():
-                # Skip macOS resource fork files
-                if filename.startswith("__MACOSX/") or filename.startswith("._"):
-                    continue
-
-                content = z.read(filename)
-                encoding = chardet.detect(content)["encoding"]
-                decoded = content.decode(encoding or "utf-8")
-
-                if filename.endswith("CDA_eICR.xml"):
-                    eicr_xml = decoded
-                elif filename.endswith("CDA_RR.xml"):
-                    rr_xml = decoded  # noqa
-
-            if not eicr_xml:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="CDA_eICR.xml not found in ZIP.",
-                )
-
-            return eicr_xml, rr_xml
-    except zipfile.BadZipFile:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid zip file. Zip must contain a 'CDA_eICR.xml' and 'CDA_RR.xml' pair.",
-        )
 
 
 def _get_clinical_services(condition_codes: str) -> list[dict]:
