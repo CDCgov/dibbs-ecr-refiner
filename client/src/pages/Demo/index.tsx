@@ -164,7 +164,7 @@ function EicrText({ title, xml }: EicrTextProps) {
   return (
     <div className="flex w-1/2 flex-col gap-2">
       <h2 className="text-3xl font-bold">{title}</h2>
-      <p className="bg-gray-200">{xml}</p>
+      <p className="bg-gray-200 px-10 py-7">{xml}</p>
     </div>
   );
 }
