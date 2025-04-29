@@ -15,6 +15,10 @@ export default function Demo() {
         <UploadSuccess />
         <ReportableConditions />
         <RunTest />
+        <EicrComparison
+          unrefinedEicr="<data>unrefined eICR data</data>"
+          refinedEicr="<data>refined eICR data</data>"
+        />
       </div>
     </main>
   );
@@ -134,6 +138,33 @@ function ReportableConditions() {
         </div>
       </Content>
     </Container>
+  );
+}
+
+interface EicrComparisonProps {
+  unrefinedEicr: string;
+  refinedEicr: string;
+}
+
+function EicrComparison({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
+  return (
+    <div className="flex w-full justify-between gap-10">
+      <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
+      <EicrText title="Refined eICR" xml={refinedEicr} />
+    </div>
+  );
+}
+
+interface EicrTextProps {
+  title: string;
+  xml: string;
+}
+function EicrText({ title, xml }: EicrTextProps) {
+  return (
+    <div className="flex w-1/2 flex-col gap-2">
+      <h2 className="text-3xl font-bold">{title}</h2>
+      <p className="bg-gray-200">{xml}</p>
+    </div>
   );
 }
 
