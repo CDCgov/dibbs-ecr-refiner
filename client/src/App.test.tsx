@@ -18,7 +18,6 @@ const renderApp = () => {
 describe('App', () => {
   it('App renders expected text', () => {
     renderApp();
-    expect(screen.getByText('Unrefined eICR:')).toBeInTheDocument();
-    expect(screen.getByText('Refined eICR:')).toBeInTheDocument();
+    expect(screen.getByText('Focus on what matters.')).toBeInTheDocument();
   });
 });
