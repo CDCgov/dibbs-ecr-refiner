@@ -3,44 +3,54 @@ import { Success } from './Success';
 import { ReportableConditions } from './ReportableConditions';
 import { Error } from './Error';
 import { RunTest } from './RunTest';
-import { useDemoUpload } from '../../services/demo';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import {
+  ApiUploadError,
+  DemoUploadResponse,
+  uploadDemoFile,
+} from '../../services/demo';
+
+type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
 export default function Demo() {
-  const [isComplete, setIsComplete] = useState(false);
-  const {
-    data,
-    resetData,
-    refetch: runTest,
-    isError,
-    isSuccess,
-  } = useDemoUpload();
+  const [view, setView] = useState<View>('run-test');
+  const [uploadResponse, setUploadResponse] =
+    useState<DemoUploadResponse | null>(null);
+  const [uploadError, setUploadError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    async function reset() {
-      await resetData();
+  async function runTest() {
+    try {
+      const resp = await uploadDemoFile();
+      setUploadResponse(resp);
+      setUploadError(null);
+      setView('reportable-conditions');
+    } catch (e: unknown) {
+      setUploadResponse(null);
+      setView('error');
+      if (e instanceof ApiUploadError) {
+        setUploadError(e);
+      }
     }
-    reset();
-  }, []);
+  }
 
   return (
     <main className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <LandingPageLink />
       <div className="flex flex-col items-center justify-center gap-6">
-        {!data && <RunTest onClick={runTest} />}
-        {data && isSuccess && !isComplete && (
+        {view === 'run-test' && <RunTest onClick={runTest} />}
+        {uploadResponse && view === 'reportable-conditions' && (
           <ReportableConditions
             conditions={['Chlamydia trachomatis infection']}
-            onClick={() => setIsComplete(true)}
+            onClick={() => setView('success')}
           />
         )}
-        {isComplete && (
+        {uploadResponse && view === 'success' && (
           <Success
-            unrefinedEicr="<data>unrefined</data>"
-            refinedEicr="<data>refined</data>"
+            unrefinedEicr={uploadResponse.unrefined_eicr}
+            refinedEicr={uploadResponse.refined_eicr}
           />
         )}
-        {isError && <Error />}
+        {uploadError && <Error />}
       </div>
     </main>
   );
