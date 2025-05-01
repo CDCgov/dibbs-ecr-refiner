@@ -1,14 +1,15 @@
 import xml.etree.ElementTree as ET
+
 from fastapi import Response, status
-from typing import Union
 
 NAMESPACES = {
-    'cda': 'urn:hl7-org:v3',
-    'sdtc': 'urn:hl7-org:sdtc',
-    'voc': 'http://www.lantanagroup.com/voc'
+    "cda": "urn:hl7-org:v3",
+    "sdtc": "urn:hl7-org:sdtc",
+    "voc": "http://www.lantanagroup.com/voc",
 }
 
-def parse_xml(rr_xml: str) -> Union[ET.Element, Response]:
+
+def parse_xml(rr_xml: str) -> ET.Element | Response:
     """
     Parses a raw RR XML string and returns the root Element.
 
@@ -27,51 +28,22 @@ def parse_xml(rr_xml: str) -> Union[ET.Element, Response]:
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-# def get_reportable_conditions(root):
-#     """
-#     Returns a comma-separated list of all SNOMED CT codes found
-#     in the Report Summary section (code 55112-7), or None if none.
-#     """
-#     try:
-#         ns = {
-#             'cda': 'urn:hl7-org:v3',
-#             'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
-#         }
-#         codes = []
-#         for section in root.findall(".//cda:section", namespaces=ns):
-#             c = section.find("cda:code", namespaces=ns)
-#             if c is not None and c.attrib.get("code") == "55112-7":
-#                 for ve in section.findall(
-#                     ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
-#                     namespaces=ns
-#                 ):
-#                     code = ve.attrib.get('code')
-#                     if code:
-#                         codes.append(code)
-#         return ",".join(codes) if codes else None
-#
-#     except Exception as e:
-#         print(f"Error retrieving SNOMED codes: {e}")
-#         return None
 
 def get_reportable_conditions(root) -> str | None:
     """
     Scan the Report Summary section for SNOMED CT codes and return
     them as a comma-separated string, or None if none found.
     """
-    ns = {
-        'cda': 'urn:hl7-org:v3',
-        'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
-    }
+    ns = {"cda": "urn:hl7-org:v3", "xsi": "http://www.w3.org/2001/XMLSchema-instance"}
     codes = []
     for section in root.findall(".//cda:section", namespaces=ns):
-        if (c := section.find("cda:code", namespaces=ns)) is not None \
-           and c.attrib.get("code") == "55112-7":
+        if (c := section.find("cda:code", namespaces=ns)) is not None and c.attrib.get(
+            "code"
+        ) == "55112-7":
             for ve in section.findall(
-                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
-                namespaces=ns
+                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']", namespaces=ns
             ):
-                code = ve.attrib.get('code')
+                code = ve.attrib.get("code")
                 if code:
                     codes.append(code)
     return ",".join(codes) if codes else None

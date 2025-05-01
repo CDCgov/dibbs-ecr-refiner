@@ -2,15 +2,7 @@ import os
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import (
-    APIRouter,
-    File,
-    Query,
-    Request,
-    Response,
-    UploadFile,
-    status,
-)
+from fastapi import APIRouter, File, Query, Request, Response, UploadFile, status
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
@@ -18,7 +10,7 @@ from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
 from app.models import RefineECRResponse
 from app.refine import refine, validate_message, validate_sections_to_include
-from app.rr_parser import parse_xml, get_reportable_conditions
+from app.rr_parser import get_reportable_conditions, parse_xml
 from app.utils import create_clinical_services_dict, read_json_from_assets, read_zip
 
 from .routes import demo
