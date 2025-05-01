@@ -2,7 +2,11 @@ import ErrorSvg from '../../assets/red-x.svg';
 import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 
-export function Error() {
+interface ErrorProps {
+  onClick: () => void;
+}
+
+export function Error({ onClick }: ErrorProps) {
   return (
     <Container color="red">
       <Content className="gap-10">
@@ -21,7 +25,9 @@ export function Error() {
             </p>
           </div>
         </div>
-        <Button color="black">Try again</Button>
+        <Button color="black" onClick={onClick}>
+          Try again
+        </Button>
       </Content>
     </Container>
   );

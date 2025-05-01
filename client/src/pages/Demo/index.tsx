@@ -33,6 +33,12 @@ export default function Demo() {
     }
   }
 
+  function reset() {
+    setView('run-test');
+    setUploadResponse(null);
+    setUploadError(null);
+  }
+
   return (
     <main className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <LandingPageLink />
@@ -50,7 +56,7 @@ export default function Demo() {
             refinedEicr={uploadResponse.refined_eicr}
           />
         )}
-        {uploadError && <Error />}
+        {uploadError && <Error onClick={reset} />}
       </div>
     </main>
   );
