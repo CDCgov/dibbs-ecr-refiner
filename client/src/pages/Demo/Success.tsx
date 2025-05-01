@@ -1,15 +1,16 @@
 import SuccessSvg from '../../assets/green-check.svg';
 import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
+import XMLViewer from 'react-xml-viewer';
 
 export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
   return (
     <>
       <Container color="green" className="w-full !p-8">
         <Content className="flex flex-col items-start gap-4">
-          <p className="text-xl font-bold text-black">
+          <h1 className="text-xl font-bold text-black">
             eCR successfully refined!
-          </p>
+          </h1>
           <div className="flex min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="rounded-lg bg-white p-4">
@@ -54,6 +55,7 @@ export function EicrComparison({
   return (
     <div className="flex w-full justify-between gap-10">
       <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
+      <div className="border-1 border-gray-300"></div>
       <EicrText title="Refined eICR" xml={refinedEicr} />
     </div>
   );
@@ -68,7 +70,9 @@ function EicrText({ title, xml }: EicrTextProps) {
   return (
     <div className="flex w-1/2 flex-col gap-2">
       <h2 className="text-3xl font-bold">{title}</h2>
-      <p className="bg-gray-200 px-10 py-7">{xml}</p>
+      <div className="p-4">
+        <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
+      </div>
     </div>
   );
 }
