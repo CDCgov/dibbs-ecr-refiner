@@ -70,7 +70,7 @@ function EicrText({ title, xml }: EicrTextProps) {
   return (
     <div className="flex w-1/2 flex-col gap-2">
       <h2 className="text-3xl font-bold">{title}</h2>
-      <div className="p-4">
+      <div className="p-10">
         <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
       </div>
     </div>
