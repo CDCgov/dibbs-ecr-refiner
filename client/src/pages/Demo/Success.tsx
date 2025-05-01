@@ -1,0 +1,74 @@
+import SuccessSvg from '../../assets/green-check.svg';
+import { Button } from '../../components/Button';
+import { Container, Content } from './Layout';
+
+export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
+  return (
+    <>
+      <Container color="green" className="w-full !p-8">
+        <Content className="flex flex-col items-start gap-4">
+          <p className="text-xl font-bold text-black">
+            eCR successfully refined!
+          </p>
+          <div className="flex min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="rounded-lg bg-white p-4">
+                <div className="flex gap-2">
+                  <GreenCheck />
+                  <p className="leading-snug font-bold">
+                    eCR file size reduced by 14%
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg bg-white p-4">
+                <GreenCheck />
+                <p className="flex flex-col items-center gap-2 leading-snug font-bold">
+                  Found 32 observations relevant to the condition(s)
+                </p>
+              </div>
+            </div>
+            <div>
+              <Button color="black">Download refined eCR</Button>
+            </div>
+          </div>
+        </Content>
+      </Container>
+      <EicrComparison unrefinedEicr={unrefinedEicr} refinedEicr={refinedEicr} />
+    </>
+  );
+}
+
+function GreenCheck() {
+  return <img className="h-6 w-6" src={SuccessSvg} alt="" />;
+}
+
+interface EicrComparisonProps {
+  unrefinedEicr: string;
+  refinedEicr: string;
+}
+
+export function EicrComparison({
+  unrefinedEicr,
+  refinedEicr,
+}: EicrComparisonProps) {
+  return (
+    <div className="flex w-full justify-between gap-10">
+      <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
+      <EicrText title="Refined eICR" xml={refinedEicr} />
+    </div>
+  );
+}
+
+interface EicrTextProps {
+  title: string;
+  xml: string;
+}
+
+function EicrText({ title, xml }: EicrTextProps) {
+  return (
+    <div className="flex w-1/2 flex-col gap-2">
+      <h2 className="text-3xl font-bold">{title}</h2>
+      <p className="bg-gray-200 px-10 py-7">{xml}</p>
+    </div>
+  );
+}

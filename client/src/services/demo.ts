@@ -2,6 +2,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 async function upload(): Promise<string> {
   const resp = await fetch('/api/demo/upload');
+  if (!resp.ok) {
+    throw new Error('Unable to perform demo upload.');
+  }
   return resp.text();
 }
 
@@ -19,7 +22,7 @@ export function useDemoUpload() {
       queryKey: [uploadKey],
       queryFn: upload,
       enabled: false,
-      initialData: '',
+      initialData: null,
     }),
     resetData,
   };
