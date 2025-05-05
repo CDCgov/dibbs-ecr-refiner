@@ -2,15 +2,7 @@ import os
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import (
-    APIRouter,
-    File,
-    Query,
-    Request,
-    Response,
-    UploadFile,
-    status,
-)
+from fastapi import APIRouter, File, Query, Request, Response, UploadFile, status
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
@@ -18,6 +10,7 @@ from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
 from app.models import RefineECRResponse
 from app.refine import refine, validate_message, validate_sections_to_include
+from app.rr_parser import get_reportable_conditions, parse_xml
 from app.utils import create_clinical_services_dict, read_json_from_assets, read_zip
 
 from .routes import demo
@@ -129,6 +122,18 @@ async def refine_ecr_from_zip(
     validated_message, error_message = validate_message(eicr_xml)
     if error_message:
         return Response(content=error_message, status_code=status.HTTP_400_BAD_REQUEST)
+
+    # Parse the RR XML
+    _rr_xml = parse_xml(_rr_xml)
+
+    if isinstance(_rr_xml, Response):
+        return _rr_xml
+
+    reportable_snomeds = get_reportable_conditions(_rr_xml)
+
+    if not conditions_to_include:
+        if reportable_snomeds:
+            conditions_to_include = reportable_snomeds
 
     sections = None
     if sections_to_include:
