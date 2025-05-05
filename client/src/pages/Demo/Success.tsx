@@ -4,6 +4,12 @@ import { Container, Content } from './Layout';
 import XMLViewer from 'react-xml-viewer';
 
 export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
+  // TODO: This will come from the API
+  const successItems = [
+    'eCR file size reduced by 14%',
+    'Found 32 observations relevant to the condition(s)',
+  ];
+
   return (
     <>
       <Container color="green" className="w-full !p-8">
@@ -13,21 +19,9 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
           </h1>
           <div className="flex min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex flex-col gap-4 sm:flex-row">
-              <div className="rounded-lg bg-white p-4">
-                <div className="flex gap-2">
-                  <GreenCheck />
-                  {/* TODO: provide calculated stats when available */}
-                  <p className="leading-snug font-bold">
-                    eCR file size reduced by 14%
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 rounded-lg bg-white p-4">
-                <GreenCheck />
-                <p className="flex flex-col items-center gap-2 leading-snug font-bold">
-                  Found 32 observations relevant to the condition(s)
-                </p>
-              </div>
+              {successItems.map((item) => (
+                <SuccessItem>{item}</SuccessItem>
+              ))}
             </div>
             <div>
               {/* TODO: make this button work */}
@@ -38,6 +32,21 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
       </Container>
       <EicrComparison unrefinedEicr={unrefinedEicr} refinedEicr={refinedEicr} />
     </>
+  );
+}
+
+interface SuccessItemProps {
+  children: React.ReactNode;
+}
+
+function SuccessItem({ children }: SuccessItemProps) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-white p-4">
+      <GreenCheck />
+      <p className="flex flex-col items-center gap-2 leading-snug font-bold">
+        {children}
+      </p>
+    </div>
   );
 }
 
