@@ -4,11 +4,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.routes.demo import _get_demo_zip_path
+from app.routes.demo import _get_demo_zip_path, _get_file_size_difference_percentage
 
 client = TestClient(app)
 
 api_route_base = "/api/demo"
+
+
+def test_demo_file_same_doc_size():
+    test_doc = "this is a test"
+    result = _get_file_size_difference_percentage(test_doc, test_doc)
+    assert result == 0
 
 
 def test_demo_upload_success():

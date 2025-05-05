@@ -14,6 +14,20 @@ def _get_demo_zip_path() -> Path:
     return Path(__file__).parent.parent.parent / "assets" / "demo" / "monmothma.zip"
 
 
+def _get_file_size_difference_percentage(
+    unrefined_document: str, refined_document: str
+) -> int:
+    megabyte = 1024 * 1024
+    unrefined_mb = len(unrefined_document.encode("utf-8")) / megabyte
+    refined_mb = len(refined_document.encode("utf-8")) / megabyte
+
+    if unrefined_mb == 0:
+        return 0
+
+    percent_diff = (unrefined_mb - refined_mb) / unrefined_mb * 100
+    return round(percent_diff)
+
+
 @router.get("/upload")
 async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)):
     """
