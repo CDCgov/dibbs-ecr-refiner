@@ -35,6 +35,7 @@ export default function Demo() {
       <div className="flex flex-col items-center justify-center gap-6">
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
+          // TODO: provide list of reportable conditions from backend
           <ReportableConditions
             conditions={['Chlamydia trachomatis infection']}
             onClick={() => setView('success')}

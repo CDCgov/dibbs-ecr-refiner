@@ -16,6 +16,7 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
               <div className="rounded-lg bg-white p-4">
                 <div className="flex gap-2">
                   <GreenCheck />
+                  {/* TODO: provide calculated stats when available */}
                   <p className="leading-snug font-bold">
                     eCR file size reduced by 14%
                   </p>
@@ -29,6 +30,7 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
               </div>
             </div>
             <div>
+              {/* TODO: make this button work */}
               <Button color="black">Download refined eCR</Button>
             </div>
           </div>
