@@ -17,7 +17,7 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
           <h1 className="text-xl font-bold text-black">
             eCR successfully refined!
           </h1>
-          <div className="flex min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex min-h-full min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex flex-col gap-4 sm:flex-row">
               {successItems.map((item) => (
                 <SuccessItem>{item}</SuccessItem>
@@ -81,7 +81,9 @@ function EicrText({ title, xml }: EicrTextProps) {
   return (
     <div className="flex w-1/2 flex-col gap-2">
       <h2 className="text-3xl font-bold">{title}</h2>
-      <div className="p-10">
+      {/* There's not an easy way to apply classes directly to XMLViewer 
+      so we're using Tailwind to target the child XMLViewer div instead */}
+      <div className="p-10 [&>div]:h-170 [&>div]:w-full [&>div]:overflow-auto">
         <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
       </div>
     </div>
