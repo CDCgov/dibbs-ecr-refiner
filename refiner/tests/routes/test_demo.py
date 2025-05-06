@@ -11,10 +11,17 @@ client = TestClient(app)
 api_route_base = "/api/demo"
 
 
-def test_demo_file_same_doc_size():
-    test_doc = "this is a test"
-    result = _get_file_size_difference_percentage(test_doc, test_doc)
-    assert result == 0
+@pytest.mark.parametrize(
+    "unrefined, refined, expected",
+    [
+        ("this is a test", "this is a test", 0),  # Same doc
+        ("", "", 0),  # Empty docs
+        ("A" * 2_000_000, "A" * 1_000_000, 50),  # 50% reduction
+    ],
+)
+def test_file_size_difference_percentage(unrefined, refined, expected):
+    result = _get_file_size_difference_percentage(unrefined, refined)
+    assert result == expected
 
 
 def test_demo_upload_success():
