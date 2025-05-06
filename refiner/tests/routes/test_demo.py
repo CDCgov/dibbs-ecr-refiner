@@ -3,8 +3,8 @@ import pathlib
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.v1.demo import _get_demo_zip_path
 from app.main import app
-from app.routes.demo import _get_demo_zip_path
 
 client = TestClient(app)
 
@@ -59,7 +59,7 @@ def test_demo_upload_processing_error(monkeypatch, tmp_path):
             raise ValueError("Broken zip")
 
         # patching this so that it will fail
-        monkeypatch.setattr("app.routes.demo.read_zip", raise_error)
+        monkeypatch.setattr("app.api.v1.demo.read_zip", raise_error)
 
         response = client.get(f"{api_route_base}/upload")
 

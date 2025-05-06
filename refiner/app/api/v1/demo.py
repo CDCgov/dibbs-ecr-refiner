@@ -4,8 +4,8 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
-from app.refine import refine, validate_message
-from app.utils import read_zip
+from ...services.refine import refine, validate_message
+from ...services.utils import read_zip
 
 router = APIRouter(prefix="/demo")
 

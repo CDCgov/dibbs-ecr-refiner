@@ -14,7 +14,9 @@ def read_json_from_assets(filename: str) -> dict:
     :param filename: The name of the file to read.
     :return: A dictionary containing the contents of the file.
     """
-    return json.load(open(pathlib.Path(__file__).parent.parent / "assets" / filename))
+    return json.load(
+        open(pathlib.Path(__file__).parent.parent.parent / "assets" / filename)
+    )
 
 
 def load_section_loincs(loinc_json: dict) -> tuple[list, dict]:

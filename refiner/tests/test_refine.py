@@ -3,7 +3,7 @@ import pathlib
 import pytest
 from lxml import etree
 
-from app.refine import (
+from app.services.refine import (
     _are_elements_present,
     _create_minimal_section,
     _create_or_update_text_element,

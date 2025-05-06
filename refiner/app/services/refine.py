@@ -2,7 +2,7 @@ import logging
 
 from lxml import etree
 
-from app.utils import read_json_from_assets
+from .utils import read_json_from_assets
 
 log = logging.getLogger(__name__).error
 

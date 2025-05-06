@@ -6,14 +6,17 @@ from fastapi import APIRouter, File, Query, Request, Response, UploadFile, statu
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
-from app.base_service import BaseService
-from app.db import get_value_sets_for_condition
-from app.models import RefineECRResponse
-from app.refine import refine, validate_message, validate_sections_to_include
-from app.rr_parser import get_reportable_conditions, parse_xml
-from app.utils import create_clinical_services_dict, read_json_from_assets, read_zip
-
-from .routes import demo
+from .api.v1 import demo
+from .core.base_service import BaseService
+from .core.models import RefineECRResponse
+from .services.db import get_value_sets_for_condition
+from .services.refine import refine, validate_message, validate_sections_to_include
+from .services.rr_parser import get_reportable_conditions, parse_xml
+from .services.utils import (
+    create_clinical_services_dict,
+    read_json_from_assets,
+    read_zip,
+)
 
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
