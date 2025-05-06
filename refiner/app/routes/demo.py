@@ -18,14 +18,13 @@ def _get_demo_zip_path() -> Path:
 def _get_file_size_difference_percentage(
     unrefined_document: str, refined_document: str
 ) -> int:
-    megabyte = 1024 * 1024
-    unrefined_mb = len(unrefined_document.encode("utf-8")) / megabyte
-    refined_mb = len(refined_document.encode("utf-8")) / megabyte
+    unrefined_bytes = len(unrefined_document.encode("utf-8"))
+    refined_bytes = len(refined_document.encode("utf-8"))
 
-    if unrefined_mb == 0:
+    if unrefined_bytes == 0:
         return 0
 
-    percent_diff = (unrefined_mb - refined_mb) / unrefined_mb * 100
+    percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
     return round(percent_diff)
 
 
