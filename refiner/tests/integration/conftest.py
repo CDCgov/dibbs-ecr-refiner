@@ -13,7 +13,7 @@ def setup(request):
     refiner_service = DockerCompose(path, compose_file_name=compose_file_name)
 
     refiner_service.start()
-    refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
+    refiner_service.wait_for("http://0.0.0.0:8080/api/v1/healthcheck")
     print("Message refiner services ready to test!")
 
     def teardown():

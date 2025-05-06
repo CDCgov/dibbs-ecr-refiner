@@ -8,7 +8,7 @@ from app.main import app
 
 client = TestClient(app)
 
-api_route_base = "/api/demo"
+api_route_base = "/api/v1/demo"
 
 
 def test_demo_upload_success():
