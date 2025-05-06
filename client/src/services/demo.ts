@@ -1,26 +1,20 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-
-async function upload(): Promise<string> {
-  const resp = await fetch('/api/demo/upload');
-  return resp.text();
+export class ApiUploadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiUploadError';
+    Object.setPrototypeOf(this, ApiUploadError.prototype);
+  }
 }
 
-const uploadKey = 'upload';
+export interface DemoUploadResponse {
+  unrefined_eicr: string;
+  refined_eicr: string;
+}
 
-export function useDemoUpload() {
-  const queryClient = useQueryClient();
-
-  async function resetData() {
-    await queryClient.resetQueries({ queryKey: [uploadKey], exact: true });
+export async function uploadDemoFile(): Promise<DemoUploadResponse> {
+  const resp = await fetch('/api/demo/upload');
+  if (!resp.ok) {
+    throw new ApiUploadError('Unable to perform demo upload.');
   }
-
-  return {
-    ...useQuery({
-      queryKey: [uploadKey],
-      queryFn: upload,
-      enabled: false,
-      initialData: '',
-    }),
-    resetData,
-  };
+  return resp.json();
 }

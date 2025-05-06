@@ -1,8 +1,9 @@
 import io
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.refine import refine, validate_message
 from app.utils import read_zip
@@ -56,7 +57,11 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)):
     eicr_xml, _rr_xml = await read_zip(upload_file)
     validated_message, _error_message = validate_message(eicr_xml)
     refined_data = refine(validated_message, None, None)
-    return Response(content=refined_data, media_type="application/xml")
+    return JSONResponse(
+        content=jsonable_encoder(
+            {"unrefined_eicr": eicr_xml, "refined_eicr": refined_data}
+        )
+    )
 
 
 @router.get("/download")
