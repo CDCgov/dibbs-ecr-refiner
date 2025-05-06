@@ -20,7 +20,7 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
           <div className="flex min-h-full min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex flex-col gap-4 sm:flex-row">
               {successItems.map((item) => (
-                <SuccessItem>{item}</SuccessItem>
+                <SuccessItem key={item}>{item}</SuccessItem>
               ))}
             </div>
             <div>
