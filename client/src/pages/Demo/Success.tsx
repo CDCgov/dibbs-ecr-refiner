@@ -3,13 +3,11 @@ import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import XMLViewer from 'react-xml-viewer';
 
-export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
-  // TODO: This will come from the API
-  const successItems = [
-    'eCR file size reduced by 14%',
-    'Found 32 observations relevant to the condition(s)',
-  ];
-
+export function Success({
+  unrefinedEicr,
+  refinedEicr,
+  stats,
+}: EicrComparisonProps) {
   return (
     <>
       <Container color="green" className="w-full !p-8">
@@ -19,8 +17,8 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
           </h1>
           <div className="flex min-h-full min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex flex-col gap-4 sm:flex-row">
-              {successItems.map((item) => (
-                <SuccessItem key={item}>{item}</SuccessItem>
+              {stats.map((stat) => (
+                <SuccessItem key={stat}>{stat}</SuccessItem>
               ))}
             </div>
             <div>
@@ -30,7 +28,11 @@ export function Success({ unrefinedEicr, refinedEicr }: EicrComparisonProps) {
           </div>
         </Content>
       </Container>
-      <EicrComparison unrefinedEicr={unrefinedEicr} refinedEicr={refinedEicr} />
+      <EicrComparison
+        unrefinedEicr={unrefinedEicr}
+        refinedEicr={refinedEicr}
+        stats={stats}
+      />
     </>
   );
 }
@@ -57,6 +59,7 @@ function GreenCheck() {
 interface EicrComparisonProps {
   unrefinedEicr: string;
   refinedEicr: string;
+  stats: string[];
 }
 
 export function EicrComparison({
