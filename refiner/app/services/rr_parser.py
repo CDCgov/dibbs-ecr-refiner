@@ -1,7 +1,6 @@
-from typing import Any
-
-from fastapi import Response, status
 from lxml import etree
+
+from ..core.exceptions import XMLProcessingError, XMLValidationError
 
 NAMESPACES = {
     "cda": "urn:hl7-org:v3",
@@ -11,7 +10,7 @@ NAMESPACES = {
 }
 
 
-def parse_xml(rr_xml: str) -> Any | Response:
+def parse_xml(rr_xml: str) -> etree._Element:
     """
     Parses a raw RR XML string and returns the root Element.
 
@@ -19,16 +18,27 @@ def parse_xml(rr_xml: str) -> Any | Response:
         rr_xml (str): The raw XML string.
 
     Returns:
-        etree._Element if successful, or FastAPI Response on error.
+        etree._Element: The parsed XML element tree
+
+    Raises:
+        XMLValidationError: If the XML is invalid
+        XMLProcessingError: If XML processing fails
     """
+    if not rr_xml:
+        raise XMLValidationError("XML content cannot be empty")
+
     try:
         parser = etree.XMLParser(remove_blank_text=True)
         rr_root = etree.fromstring(rr_xml.encode("utf-8"), parser=parser)
         return rr_root
     except etree.ParseError as e:
-        return Response(
-            content=f"Failed to parse RR XML: {str(e)}",
-            status_code=status.HTTP_400_BAD_REQUEST,
+        raise XMLProcessingError(
+            message="Failed to parse XML content",
+            details={
+                "error": str(e),
+                "line": getattr(e, "line", None),
+                "column": getattr(e, "column", None),
+            },
         )
 
 

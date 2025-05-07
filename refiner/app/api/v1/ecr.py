@@ -1,8 +1,22 @@
 from typing import Annotated
 
-from fastapi import APIRouter, File, Query, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 
 from ...core.examples import ECR_RESPONSE_EXAMPLES
+from ...core.exceptions import (
+    SectionValidationError,
+    XMLValidationError,
+    ZipValidationError,
+)
 from ...core.models import RefineECRResponse
 from ...services.refine import refine, validate_message, validate_sections_to_include
 from ...services.rr_parser import get_reportable_conditions, parse_xml
@@ -59,47 +73,47 @@ async def refine_ecr_from_zip(
     Returns:
     - A refined XML eCR response.
     """
-    eicr_xml, _rr_xml = await read_zip(file)
+    try:
+        # extract and validate XML
+        eicr_xml, _rr_xml = await read_zip(file)
+        validated_message = validate_message(eicr_xml)
 
-    # Process the extracted XML
-    validated_message, error_message = validate_message(eicr_xml)
-    if error_message:
-        return Response(content=error_message, status_code=status.HTTP_400_BAD_REQUEST)
+        # parse RR XML
+        _rr_xml = parse_xml(_rr_xml)
 
-    # Parse the RR XML
-    _rr_xml = parse_xml(_rr_xml)
-
-    if isinstance(_rr_xml, Response):
-        return _rr_xml
-
-    reportable_snomeds = get_reportable_conditions(_rr_xml)
-
-    if not conditions_to_include:
-        if reportable_snomeds:
+        # get reportable conditions
+        reportable_snomeds = get_reportable_conditions(_rr_xml)
+        if not conditions_to_include and reportable_snomeds:
             conditions_to_include = reportable_snomeds
 
-    sections = None
-    if sections_to_include:
-        sections, error_message = validate_sections_to_include(sections_to_include)
-        if error_message:
-            return Response(
-                content=error_message,
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            )
+        # process sections if provided
+        sections = None
+        if sections_to_include:
+            sections = validate_sections_to_include(sections_to_include)
 
-    clinical_services = None
-    if conditions_to_include:
-        clinical_services = [
-            service for service in _get_clinical_services(conditions_to_include)
-        ]
+        # process conditions if provided
+        clinical_services = None
+        if conditions_to_include:
+            clinical_services = [
+                service for service in _get_clinical_services(conditions_to_include)
+            ]
+            clinical_services = create_clinical_services_dict(clinical_services)
 
-        # create a simple dictionary structure for refine.py to consume
-        clinical_services = create_clinical_services_dict(clinical_services)
+        # refine the data
+        refined_data = refine(validated_message, sections, clinical_services)
 
-    # Refine the extracted eICR data
-    refined_data = refine(validated_message, sections, clinical_services)
+        return Response(content=refined_data, media_type="application/xml")
 
-    return Response(content=refined_data, media_type="application/xml")
+    except (XMLValidationError, ZipValidationError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e), "details": e.details},
+        )
+    except SectionValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"message": str(e), "details": e.details},
+        )
 
 
 @router.post(
@@ -149,29 +163,32 @@ async def refine_ecr(
       relevant clinical services in the eCR.
     - :return: The RefineeCRResponse, the refined XML as a string.
     """
-    data = await refiner_input.body()
 
-    validated_message, error_message = validate_message(data)
-    if error_message:
-        return Response(content=error_message, status_code=status.HTTP_400_BAD_REQUEST)
+    try:
+        data = await refiner_input.body()
+        validated_message = validate_message(data)
 
-    sections = None
-    if sections_to_include:
-        sections, error_message = validate_sections_to_include(sections_to_include)
-        if error_message:
-            return Response(
-                content=error_message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
-            )
+        sections = None
+        if sections_to_include:
+            sections = validate_sections_to_include(sections_to_include)
 
-    clinical_services = None
-    if conditions_to_include:
-        clinical_services = [
-            service for service in _get_clinical_services(conditions_to_include)
-        ]
+        clinical_services = None
+        if conditions_to_include:
+            clinical_services = [
+                service for service in _get_clinical_services(conditions_to_include)
+            ]
+            clinical_services = create_clinical_services_dict(clinical_services)
 
-        # create a simple dictionary structure for refine.py to consume
-        clinical_services = create_clinical_services_dict(clinical_services)
+        refined_data = refine(validated_message, sections, clinical_services)
+        return Response(content=refined_data, media_type="application/xml")
 
-    data = refine(validated_message, sections, clinical_services)
-
-    return Response(content=data, media_type="application/xml")
+    except XMLValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e), "details": e.details},
+        )
+    except SectionValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"message": str(e), "details": e.details},
+        )

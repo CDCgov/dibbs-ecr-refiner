@@ -2,6 +2,7 @@ import logging
 
 from lxml import etree
 
+from ..core.exceptions import SectionValidationError, XMLValidationError
 from .utils import read_json_from_assets
 
 log = logging.getLogger(__name__).error
@@ -22,48 +23,75 @@ TRIGGER_CODE_TEMPLATE_IDS = [
 ]
 
 
-def validate_message(raw_message: str) -> tuple[bytes | None, str]:
+def validate_message(message: bytes | str) -> etree.Element:
     """
-    Validates that an incoming XML message can be parsed by lxml's etree.
+    Validates an XML message and returns the parsed element.
 
-    :param raw_message: The XML input.
-    :return: The validation result as a string.
+    Args:
+        message: The XML message to validate (can by bytes or string)
+
+    Returns:
+        etree.Element: The validated and parsed XML element
+
+    Raises:
+        XMLValidationError: If validation fails
     """
-    error_message = ""
+    if not message:
+        raise XMLValidationError(
+            message="XML message cannot be empty",
+            details={"provided_length": len(message)},
+        )
+
     try:
-        validated_message = etree.fromstring(raw_message)
-        return (validated_message, error_message)
-    except etree.XMLSyntaxError as error:
-        error_message = "Invalid XML format."
-        log(f"XMLSyntaxError: {error}")
-        return (None, error_message)
+        # parse the XML message
+        parser = etree.XMLParser(remove_blank_text=True)
+        if isinstance(message, str):
+            message = message.encode("utf-8")
+        xml_root = etree.fromstring(message, parser=parser)
+        return xml_root
+    except etree.ParseError as e:
+        raise XMLValidationError(
+            message="Failed to parse XML",
+            details={
+                "error": str(e),
+                "line": getattr(e, "line", None),
+                "column": getattr(e, "column", None),
+            },
+        )
 
 
-def validate_sections_to_include(sections_to_include: str | None) -> tuple[list, str]:
+def validate_sections_to_include(
+    sections_to_include: str | None,
+) -> list[str] | None:
     """
-    Validates the sections to include in the refined message and returns them as a list
-    of corresponding LOINC codes.
+    Validates section codes from query parameter.
 
-    :param sections_to_include: The sections to include in the refined message.
-    :raises ValueError: When at least one of the sections_to_include is invalid.
-    :return: A tuple that includes the sections to include in the refined message as a
-    list of LOINC codes corresponding to the sections and an error message. If there is
-    no error in validating the sections to include, the error message will be an empty
-    string.
+    Args:
+        sections_to_include: Comma-separated section codes
+
+    Returns:
+        list[str] | None: List of validated section codes, or None if no sections provided
+
+    Raises:
+        SectionValidationError: If any section code is invalid
     """
-    if sections_to_include in [None, ""]:
-        return (None, "")
+    if sections_to_include is None:
+        return None
 
-    section_loincs = []
-    sections = sections_to_include.split(",")
-    for section in sections:
-        if section not in SECTION_LOINCS:
-            error_message = "Invalid section provided."
-            log(f"Invalid section: {section}")
-            return (section_loincs, error_message)
-        section_loincs.append(section)
+    sections = [s.strip() for s in sections_to_include.split(",") if s.strip()]
+    valid_sections = set(REFINER_DETAILS["sections"].keys())
 
-    return (section_loincs, "")
+    invalid_sections = [s for s in sections if s not in valid_sections]
+    if invalid_sections:
+        raise SectionValidationError(
+            message=f"Invalid section codes: {', '.join(invalid_sections)}",
+            details={
+                "invalid_sections": invalid_sections,
+                "valid_sections": list(valid_sections),
+            },
+        )
+
+    return sections
 
 
 def refine(

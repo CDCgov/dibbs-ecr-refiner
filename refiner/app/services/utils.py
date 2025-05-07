@@ -4,15 +4,19 @@ from io import BytesIO
 from zipfile import BadZipFile, ZipFile
 
 from chardet import detect
-from fastapi import HTTPException, UploadFile, status
+from fastapi import UploadFile
+
+from ..core.exceptions import ZipValidationError
 
 
 def read_json_from_assets(filename: str) -> dict:
     """
     Reads a JSON file from the assets directory.
 
-    :param filename: The name of the file to read.
-    :return: A dictionary containing the contents of the file.
+    Args:
+        filename: The name of the file to read.
+    Returns:
+        dict: Contents of the JSON file.
     """
     return json.load(
         open(pathlib.Path(__file__).parent.parent.parent / "assets" / filename)
@@ -48,10 +52,16 @@ def create_clinical_services_dict(
     clinical_services_list: list[dict],
 ) -> dict[str, list[str]]:
     """
-    Transform the original Trigger Code Reference API response to have keys as systems
-    and values as lists of codes, while ensuring the systems are recognized and using their
-    shorthand names so that we can both dynamically construct XPaths and post-filter matches
-    to system name varients.
+    Transform the original Trigger Code Reference API response.
+
+    Args:
+        clinical_services_list: List of clinical services from TCR API
+
+    Returns:
+        dict[str, list[str]]: Transformed dictionary with shorthand system names
+
+    Raises:
+        ZipValidationError: If an unrecognized clinical service system is found
     """
     system_dict = {
         "http://hl7.org/fhir/sid/icd-9-cm": "icd9",
@@ -67,9 +77,13 @@ def create_clinical_services_dict(
         for service_type, entries in clinical_services.items():
             for entry in entries:
                 system = entry.get("system")
-                if system not in system_dict.keys():
-                    raise KeyError(
-                        f"{system} not a recognized clinical service system."
+                if system not in system_dict:
+                    raise ZipValidationError(
+                        message=f"Unrecognized clinical service system: {system}",
+                        details={
+                            "system": system,
+                            "valid_systems": list(system_dict.keys()),
+                        },
                     )
                 shorthand_system = system_dict[system]
                 if shorthand_system not in transformed_dict:
@@ -80,22 +94,27 @@ def create_clinical_services_dict(
 
 async def read_zip(file: UploadFile) -> tuple[str, str]:
     """
-    Given a zip file containing CDA_eICR.xml and CDA_RR.xml files,
-    this function will read each file and return the contents as a tuple
+    Read CDA_eICR.xml and CDA_RR.xml files from a ZIP archive.
+
+    Args:
+        file: The uploaded ZIP file
+
+    Returns:
+        tuple[str, str]: Contents of eICR and RR XML files
+
+    Raises:
+        ZipValidationError: If ZIP file is invalid or required files are missing
     """
     try:
-        # Read the uploaded ZIP file
         zip_bytes = await file.read()
         zip_stream = BytesIO(zip_bytes)
 
-        # Open ZIP archive
         with ZipFile(zip_stream, "r") as z:
-            # Extract relevant XML files
             eicr_xml = None
             rr_xml = None
 
             for filename in z.namelist():
-                # Skip macOS resource fork files
+                # skip macOS resource fork files
                 if filename.startswith("__MACOSX/") or filename.startswith("._"):
                     continue
 
@@ -106,17 +125,28 @@ async def read_zip(file: UploadFile) -> tuple[str, str]:
                 if filename.endswith("CDA_eICR.xml"):
                     eicr_xml = decoded
                 elif filename.endswith("CDA_RR.xml"):
-                    rr_xml = decoded  # noqa
+                    rr_xml = decoded
 
             if not eicr_xml:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="CDA_eICR.xml not found in ZIP.",
+                raise ZipValidationError(
+                    message="Required file CDA_eICR.xml not found in ZIP",
+                    details={
+                        "files_found": [
+                            f
+                            for f in z.namelist()
+                            if not (f.startswith("__MACOSX/") or f.startswith("._"))
+                        ],
+                        "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
+                    },
                 )
 
             return eicr_xml, rr_xml
+
     except BadZipFile:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid zip file. Zip must contain a 'CDA_eICR.xml' and 'CDA_RR.xml' pair.",
+        raise ZipValidationError(
+            message="Invalid ZIP file provided",
+            details={
+                "error": "File is not a valid ZIP archive",
+                "requirements": "ZIP must contain CDA_eICR.xml and CDA_RR.xml files",
+            },
         )

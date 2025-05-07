@@ -124,21 +124,26 @@ def test_ecr_refiner():
     assert actual_flattened == expected_flattened
 
     # Test case: sections_to_include is invalid
-    expected_response = "Invalid section provided."
     content = test_eICR_xml
     sections_to_include = "blah blah blah"
     endpoint = f"/api/v1/ecr/?sections_to_include={sections_to_include}"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 422
-    assert actual_response.content.decode() == expected_response
+    error_response = actual_response.json()
+    assert (
+        "Invalid section codes: blah blah blah" in error_response["detail"]["message"]
+    )
+    assert "blah blah blah" in error_response["detail"]["details"]["invalid_sections"]
 
-    # Test case: raw_message is invalid XML
+    # Test case: message is invalid XML
     content = "invalid XML"
     sections_to_include = None
     endpoint = "/api/v1/ecr/"
     actual_response = client.post(endpoint, content=content)
     assert actual_response.status_code == 400
-    assert "Invalid XML format." in actual_response.content.decode()
+    error_response = actual_response.json()
+    assert "Failed to parse XML" in error_response["detail"]["message"]
+    assert "Start tag expected" in error_response["detail"]["details"]["error"]
 
 
 @pytest.mark.asyncio
@@ -288,7 +293,7 @@ def test_ecr_refiner_zip():
         files={"file": ("test.zip", zip_bytes, "application/zip")},
     )
     assert response.status_code == 422
-    assert "Invalid section provided" in response.content.decode()
+    assert "Invalid section" in response.json()["detail"]["message"]
 
     # Test case: invalid XML (replace eICR with invalid XML)
     bad_zip_bytes = create_test_zip("invalid XML", test_RR_xml)
@@ -297,4 +302,6 @@ def test_ecr_refiner_zip():
         files={"file": ("bad.zip", bad_zip_bytes, "application/zip")},
     )
     assert response.status_code == 400
-    assert "Invalid XML format." in response.content.decode()
+    error_response = response.json()
+    assert "Failed to parse XML" in error_response["detail"]["message"]
+    assert "Start tag expected" in error_response["detail"]["details"]["error"]

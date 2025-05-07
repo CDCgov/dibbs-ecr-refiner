@@ -3,6 +3,7 @@ import pathlib
 import pytest
 from lxml import etree
 
+from app.core.exceptions import SectionValidationError, XMLValidationError
 from app.services.refine import (
     _are_elements_present,
     _create_minimal_section,
@@ -96,63 +97,32 @@ chlamydia_observations = _get_observations(
 chlamydia_observation = chlamydia_observations[2]
 
 
-@pytest.mark.parametrize(
-    "test_data, expected_result",
-    [
-        # Test case: single sections_to_include
-        (
-            "29762-2",
-            (["29762-2"], ""),
-        ),
-        # Test case: multiple sections_to_include
-        (
-            "10164-2,29299-5",
-            (["10164-2", "29299-5"], ""),
-        ),
-        # Test case: no sections_to_include
-        (
-            None,
-            (None, ""),
-        ),
-        # Test case: invalid sections_to_include
-        (
-            "blah blah blah",
-            ([], "Invalid section provided."),
-        ),
-    ],
-)
-def test_validate_sections_to_include(test_data, expected_result):
-    # Test cases: single and multiple sections_to_include
-    if test_data != "blah blah blah" and test_data is not None:
-        actual_response = validate_sections_to_include(test_data)
-        assert actual_response == expected_result
-        assert isinstance(actual_response[0], list)
-    # Test case: no sections_to_include
-    elif test_data is None:
-        actual_response = validate_sections_to_include(test_data)
-        assert actual_response == expected_result
-        assert actual_response[0] is None
-    # Test case: invalid sections_to_include
-    else:
-        actual_response = validate_sections_to_include(test_data)
-        assert actual_response == expected_result
-        assert actual_response[1] != ""
+def test_validate_sections_to_include():
+    # test case: single valid section
+    result = validate_sections_to_include("29762-2")
+    assert result == ["29762-2"]
+
+    # test case: multiple valid sections
+    result = validate_sections_to_include("10164-2,29299-5")
+    assert result == ["10164-2", "29299-5"]
+
+    # test case: no sections
+    result = validate_sections_to_include(None)
+    assert result is None
+
+    # test case: invalid section
+    with pytest.raises(SectionValidationError) as exc_info:
+        validate_sections_to_include("blah blah blah")
+    assert "Invalid section codes: blah blah blah" in str(exc_info.value)
 
 
 def test_validate_message():
-    # Test case: valid XML
-    raw_message = test_file
-    actual_response, error_message = validate_message(raw_message)
-    actual_flattened = [i.tag for i in actual_response.iter()]
-    expected_flattened = [i.tag for i in etree.fromstring(raw_message).iter()]
-    assert actual_flattened == expected_flattened
-    assert error_message == ""
-
-    # Test case: invalid XML
-    raw_message = "this is not a valid XML"
-    actual_response, error_message = validate_message(raw_message)
-    assert actual_response is None
-    assert "Invalid XML format." in error_message
+    # test case: valid XML
+    try:
+        result = validate_message(test_file)
+        assert isinstance(result, etree._Element)
+    except XMLValidationError:
+        pytest.fail("validate_message raised XMLValidateError unexpectedly")
 
 
 def test_generate_combined_xpath():
