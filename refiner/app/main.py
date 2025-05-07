@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, File, Query, Request, Response, UploadFile, status
 from fastapi.openapi.utils import get_openapi
@@ -34,7 +34,7 @@ refine_ecr_request_examples = read_json_from_assets("sample_refine_ecr_request.j
 refine_ecr_response_examples = read_json_from_assets("sample_refine_ecr_response.json")
 
 
-def custom_openapi():
+def custom_openapi() -> dict[str, Any]:
     """
     This customizes the FastAPI response to allow example requests given that the
     raw Request cannot have annotations.
@@ -64,7 +64,7 @@ app.openapi = custom_openapi
 
 
 @router.get("/healthcheck")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """
     This endpoint checks service status. If an HTTP 200 status code is returned
     along with `{"status": "OK"}'` then the Message Refiner is available and
