@@ -86,7 +86,7 @@ function EicrText({ title, xml }: EicrTextProps) {
       <h2 className="text-3xl font-bold">{title}</h2>
       {/* There's not an easy way to apply classes directly to XMLViewer 
       so we're using Tailwind to target the child XMLViewer div instead */}
-      <div className="p-10 [&>div]:h-170 [&>div]:w-full [&>div]:overflow-auto">
+      <div className="[&>div]:h-190 [&>div]:w-full [&>div]:overflow-auto [&>div]:p-10">
         <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
       </div>
     </div>
