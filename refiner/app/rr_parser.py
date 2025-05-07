@@ -29,7 +29,7 @@ def parse_xml(rr_xml: str) -> ET.Element | Response:
         )
 
 
-def get_reportable_conditions(root) -> str | None:
+def get_reportable_conditions(root: ET.Element) -> str | None:
     """
     Scan the Report Summary section for SNOMED CT codes and return
     them as a comma-separated string, or None if none found.
