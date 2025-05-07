@@ -29,7 +29,7 @@ def _get_file_size_difference_percentage(
 
 
 @router.get("/upload")
-async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)):
+async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
@@ -73,7 +73,7 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)):
 
 
 @router.get("/download")
-async def demo_download(file_path: Path = Depends(_get_demo_zip_path)):
+async def demo_download(file_path: Path = Depends(_get_demo_zip_path)) -> FileResponse:
     """
     Allows the user to download the sample eCR zip file.
     """

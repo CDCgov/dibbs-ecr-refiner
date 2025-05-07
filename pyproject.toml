@@ -7,6 +7,9 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = [
+  "ANN001", # flake8 type annotations
+  "ANN002",
+  "ANN201",
   "F",    # Pyflakes
   "E4",   # Pydocstyle errors
   "E7",
@@ -22,5 +25,6 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/*" = ["D", "S"]
+"**/tests/*" = ["D", "S", "ANN"]
+"**/scripts/*" = ["ANN"]
 "**/__init__.py" = ["D"]
