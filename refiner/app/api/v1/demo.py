@@ -17,6 +17,19 @@ def _get_demo_zip_path() -> Path:
     return Path(__file__).parent.parent.parent / "assets" / "demo" / "monmothma.zip"
 
 
+def _get_file_size_difference_percentage(
+    unrefined_document: str, refined_document: str
+) -> int:
+    unrefined_bytes = len(unrefined_document.encode("utf-8"))
+    refined_bytes = len(refined_document.encode("utf-8"))
+
+    if unrefined_bytes == 0:
+        return 0
+
+    percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
+    return round(percent_diff)
+
+
 @router.get("/upload")
 async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResponse:
     """
@@ -54,7 +67,16 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
     refined_data = refine(validated_message, None, None)
     return JSONResponse(
         content=jsonable_encoder(
-            {"unrefined_eicr": eicr_xml, "refined_eicr": refined_data}
+            {
+                "unrefined_eicr": eicr_xml,
+                "refined_eicr": refined_data,
+                "stats": [
+                    f"eCR file size reduced by {
+                        _get_file_size_difference_percentage(eicr_xml, refined_data)
+                    }%",
+                    "Found X observations relevant to the condition(s)",
+                ],
+            }
         )
     )
 
