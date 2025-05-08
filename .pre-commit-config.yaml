@@ -1,28 +1,36 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+# pre-commit configuration
 default_language_version:
     python: python3.13
+
 repos:
+# core formatting and check hooks
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+    # - prevent large file commits
     -   id: check-added-large-files
+    # - validate toml syntax
     -   id: check-toml
+    # - validate yaml syntax
     -   id: check-yaml
         args:
         -   --unsafe
+    # - ensure files end with newline
     -   id: end-of-file-fixer
+    # - remove trailing whitespace
     -   id: trailing-whitespace
 
+# ruff linting and formatting
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.8
     hooks:
-      # Run the linter.
-      - id: ruff
-        args: [--fix]
-      # Run the formatter.
-      - id: ruff-format
+    # - run the linter with auto-fixes
+    -   id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+    # - run the formatter
+    -   id: ruff-format
 
+# CI configuration
 ci:
     autofix_commit_msg: 🎨 [pre-commit.ci] Auto format from pre-commit.com hooks
     autoupdate_commit_msg: ⬆ [pre-commit.ci] pre-commit autoupdate

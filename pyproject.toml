@@ -1,62 +1,84 @@
 [tool.ruff]
+# core configuration
+# - skip checking these directories/files
 exclude = [".git", ".pytest_cache", "__pycache__", "docs", "examples/"]
+# - match black's default line length
 line-length = 88
 indent-width = 4
 show-fixes = true
 target-version = "py313"
 
 [tool.ruff.lint]
-select = [
-  # flake8 type annotations
+# rule selection with comments for clarity
+extend-select = [
+  # type annotation rules
+  # - missing type annotation for function argument
   "ANN001",
+  # - missing type annotation for *args
   "ANN002",
+  # - missing return type annotation for public function
   "ANN201",
-  # Pyflakes
-  "F",
-  # Pydocstyle errors
-  "E4",
-  "E7",
-  "E9",
-  # Pydocstyle warnings
+
+  # standard rules
+  # - errors and style from pycodestyle
+  "E",
   "W",
-  # Missing docstring in public module
-  "D100",
-  # Missing docstring in public class
-  "D101",
-  # Pydocstyle undocumented-public-method
-  "D102",
-  # Pydocstyle undocumented-public-function
-  "D103",
-  # Pydocstyle undocumented-public-package
-  "D104",
-  # Pydocstyle undocumented-magic-method
-  "D105",
-  # Pydocstyle undocumented-public-nested-class
-  "D106",
-  # One-line docstring should fit on one line
-  "D200",
-  # 1 blank line required between summary line and description
-  "D205",
-  # Docstring is over-indented
-  "D208",
-  # Multi-line docstring closing quotes should be on a separate line
-  "D209",
-  # No whitespaces allowed surrounding docstring text
-  "D210",
-  # Use """triple double quotes"""
-  "D300",
-  # Use r""" if any backslashes in a docstring
-  "D301",
-  # isort
+  # - pyflakes logical error checks
+  "F",
+
+  # TODO: add to avoid common bug patterns; will require
+  # a bit of effort to make corrections
+  # - bugbear common bug patterns
+  # "B",
+
+  # - comprehension checks
+  "C4",
+  # - docstring rules
+  "D",
+  # - import sorting
   "I",
-  # pyupgrade
+  # - python code modernization
   "UP",
 ]
 
+# rules we explicitly disable
+ignore = [
+  # - allow function calls in argument defaults (FastAPI pattern)
+  "B008",
+  # - one-line docstring rule (too restrictive)
+  "D200",
+  # - allow blank lines after docstrings
+  "D202",
+  # - allow multi-line docstrings to start on second line
+  "D212",
+  # - allow indented first lines in docstrings
+  "D213",
+  # - first line imperative mood (too restrictive for APIs)
+  "D401",
+  # - line too long (handled by black/formatter)
+  "E501",
+]
+
+# file-specific rule exclusions
+[tool.ruff.lint.per-file-ignores]
+# - disable docstring/type/security rules in tests
+"**/tests/*" = ["D", "S", "ANN"]
+# - disable type annotation rules in scripts
+"**/scripts/*" = ["ANN"]
+# - allow missing docstrings in __init__
+"__init__.py" = ["D"]
+
+# configure docstring checking to use Google style
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# import configuration
 [tool.ruff.lint.isort]
+# - project-specific imports
+known-first-party = ["app"]
+# - key third-party imports
 known-third-party = ["fastapi", "pydantic", "starlette"]
 
-[tool.ruff.lint.per-file-ignores]
-"**/tests/*" = ["D", "S", "ANN"]
-"**/scripts/*" = ["ANN"]
-"**/__init__.py" = ["D"]
+# keep runtime type annotations
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
