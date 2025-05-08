@@ -11,9 +11,7 @@ export function Home() {
           <Link to="/">
             <h1 className="flex gap-3">
               <img src={DibbsLogo} alt="DIBBs" />
-              <span className="font-['Merriweather'] text-2xl">
-                eCR Refiner
-              </span>
+              <span className="font-merriweather text-2xl">eCR Refiner</span>
             </h1>
           </Link>
         </header>
@@ -22,7 +20,7 @@ export function Home() {
         <div className="flex flex-col justify-center gap-16 p-30 md:flex-row">
           <div className="flex flex-col gap-8">
             <div className="flex max-w-[28rem] flex-col items-start gap-4">
-              <h1 className='font-["Merriweather"] text-4xl font-bold'>
+              <h1 className="font-merriweather text-4xl font-bold">
                 Focus on what matters.
               </h1>
               <p className="text-xl font-normal">
