@@ -1,13 +1,3 @@
-@font-face {
-  font-family: 'Public Sans';
-  src: url('assets/fonts/PublicSans-VariableFont_wght.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Merriweather';
-  src: url('assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.ttf') format('truetype');
-}
-
 @import 'tailwindcss';
 
 @layer base {
@@ -17,8 +7,8 @@
 }
 
 @theme {
-  --font-public-sans: 'Public Sans', 'sans-serif';
-  --font-merriweather: 'Merriweather', 'serif';
+  --font-public-sans: 'Public Sans Variable', 'sans-serif';
+  --font-merriweather: 'Merriweather Variable', 'serif';
 
   --color-blue-100: #e8f5ff;
   --color-blue-300: #0076d6;
