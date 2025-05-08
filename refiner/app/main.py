@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter
 from fastapi.openapi.utils import get_openapi
@@ -25,7 +26,7 @@ router.include_router(demo.router)
 router.include_router(ecr.router)
 
 
-def custom_openapi():
+def custom_openapi() -> dict[str, Any]:
     """
     This customizes the FastAPI response to allow example requests given that the
     raw Request cannot have annotations.
@@ -55,7 +56,7 @@ app.openapi = custom_openapi
 
 
 @router.get("/healthcheck")
-async def health_check():
+async def health_check() -> dict[str, str]:
     """
     This endpoint checks service status. If an HTTP 200 status code is returned
     along with `{"status": "OK"}'` then the Message Refiner is available and

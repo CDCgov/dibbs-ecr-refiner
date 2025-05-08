@@ -81,7 +81,7 @@ class BaseService:
     add_health_check_endpoint methods.
     """
 
-    def add_path_rewrite_middleware(self):
+    def add_path_rewrite_middleware(self) -> None:
         """
         Add middleware to the FastAPI instance to strip the service_path
         from the URL path if it is present. This is useful when the service
@@ -101,7 +101,7 @@ class BaseService:
                 request.scope["path"] = "/"
             return await call_next(request)
 
-    def add_health_check_endpoint(self):
+    def add_health_check_endpoint(self) -> None:
         """
         Adds a health check endpoint to the web service.
         """
