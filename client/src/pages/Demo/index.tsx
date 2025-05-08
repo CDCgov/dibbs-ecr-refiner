@@ -45,6 +45,7 @@ export default function Demo() {
           <Success
             unrefinedEicr={uploadResponse.unrefined_eicr}
             refinedEicr={uploadResponse.refined_eicr}
+            stats={uploadResponse.stats}
           />
         )}
         {view === 'error' && <Error onClick={reset} />}

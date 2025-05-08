@@ -9,6 +9,7 @@ export class ApiUploadError extends Error {
 export interface DemoUploadResponse {
   unrefined_eicr: string;
   refined_eicr: string;
+  stats: string[];
 }
 
 export async function uploadDemoFile(): Promise<DemoUploadResponse> {

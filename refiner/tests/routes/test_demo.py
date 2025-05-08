@@ -4,11 +4,24 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.routes.demo import _get_demo_zip_path
+from app.routes.demo import _get_demo_zip_path, _get_file_size_difference_percentage
 
 client = TestClient(app)
 
 api_route_base = "/api/demo"
+
+
+@pytest.mark.parametrize(
+    "unrefined, refined, expected",
+    [
+        ("this is a test", "this is a test", 0),  # Same doc
+        ("", "", 0),  # Empty docs
+        ("A" * 2_000_000, "A" * 1_000_000, 50),  # 50% reduction
+    ],
+)
+def test_file_size_difference_percentage(unrefined, refined, expected):
+    result = _get_file_size_difference_percentage(unrefined, refined)
+    assert result == expected
 
 
 def test_demo_upload_success():

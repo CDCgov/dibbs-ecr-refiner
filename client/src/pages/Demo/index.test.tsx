@@ -11,6 +11,7 @@ import { BrowserRouter } from 'react-router';
 const mockUploadResponse: DemoUploadResponse = {
   unrefined_eicr: '<data>tons of data here</data>',
   refined_eicr: '<data>less data</data>',
+  stats: ['eCR reduced by 59%'],
 };
 
 vi.mock(import('../../services/demo.ts'), async (importOriginal) => {
@@ -53,6 +54,7 @@ describe('Demo', () => {
     expect(screen.getByText('eCR successfully refined!')).toBeInTheDocument();
     expect(screen.getByText('tons of data here')).toBeInTheDocument();
     expect(screen.getByText('less data')).toBeInTheDocument();
+    expect(screen.getByText('eCR reduced by 59%')).toBeInTheDocument();
   });
 
   it('should navigate to the error view when the upload request fails', async () => {
