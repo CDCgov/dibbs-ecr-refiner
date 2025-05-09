@@ -45,6 +45,8 @@ extend-select = [
 ignore = [
   # - allow function calls in argument defaults (FastAPI pattern)
   "B008",
+  # - ignore missing module docstring rule
+  "D100",
   # - one-line docstring rule (too restrictive)
   "D200",
   # - allow blank lines after docstrings
