@@ -6,8 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 
 
 class SPAFallbackMiddleware(BaseHTTPMiddleware):
-    DIST_DIR = Path("dist")
-    INDEX_FILE = DIST_DIR / "index.html"
+    INDEX_FILE = Path("dist") / "index.html"
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -20,6 +19,7 @@ class SPAFallbackMiddleware(BaseHTTPMiddleware):
         appear to be for a static file (i.e., lacks a file extension), this
         middleware returns index.html so the client-side router can handle the route.
         """
+
         response = await call_next(request)
 
         path = request.url.path
