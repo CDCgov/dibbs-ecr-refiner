@@ -30,7 +30,7 @@ Accept: application/xml
 ###
 
 # request with sections to include
-# we're passing in the loinc codes for the results (labs) and 
+# we're passing in the loinc codes for the results (labs) and
 # reason for visit sections
 POST http://{{refiner}}/api/ecr?sections_to_include=30954-2,29299-5
 Content-Type: application/xml
@@ -51,7 +51,7 @@ Accept: application/xml
 ###
 
 # post request with conditions and sections to include
-# we're passing the loinc code for the results (labs) section 
+# we're passing the loinc code for the results (labs) section
 # and the snomed code for chlamydia
 POST http://{{refiner}}/api/ecr?conditions_to_include=240589008&sections_to_include=30954-2
 Content-Type: application/xml
@@ -62,7 +62,7 @@ Accept: application/xml
 ###
 
 # post request with conditions and sections to include
-# we're passing the loinc code for the encounters section 
+# we're passing the loinc code for the encounters section
 # and the snomed code for chlamydia
 POST http://{{refiner}}/api/ecr?conditions_to_include=240589008&sections_to_include=46240-8
 Content-Type: application/xml
@@ -70,7 +70,7 @@ Accept: application/xml
 
 < CDA_eICR.xml
 
-### 
+###
 
 # post request with a zip that contains an eICR and RR
 # no query params
@@ -83,7 +83,7 @@ Content-Type: application/zip
 
 < mon-mothma.zip
 
-------WebKitFormBoundary{{$timestamp}}-- 
+------WebKitFormBoundary{{$timestamp}}--
 
 ###
 

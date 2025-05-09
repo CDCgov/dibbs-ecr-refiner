@@ -2,56 +2,56 @@
 <!--
     File:               CDAR2_IG_PHCASERPT_R2_STU1.1_Sample.xml
     Specification:      Public Health Case Report, Release 1, STU Release 1.1 - US Realm
-    
+
     Created:            Eric M Haas, Health eData Inc, on behalf of HL7 PHER Working Group
-    
-    Revision History:   11/09/2015              Eric M Haas     Pre-publication 
+
+    Revision History:   11/09/2015              Eric M Haas     Pre-publication
                         Oct-Dec 2016            Sarah Gaunt     Additions/Revisions for 1st update to STU Release 1 (Release 2, STU
-Release 1.1) 
+Release 1.1)
 -->
 <!--
-    Disclaimer: 
+    Disclaimer:
     This sample file is informative only.
-    This sample file contains representative data elements from the eICR IG. 
+    This sample file contains representative data elements from the eICR IG.
     The file depicts a fictional character's health data. Any resemblance to a real person is
 coincidental.
     To illustrate as many data elements as possible, the clinical scenario may not be entirely
-plausible. 
+plausible.
     The data in this sample file is not intended to represent a real patients, people or clinical
-events. 
+events.
     This sample is designed to be used in conjunction with the eICR IG.
-     
+
     Where guidance has been given to the conformance or cardinality of elements or
     attributes and there is a discrepancy with the IG, the IG is always the normative
     source of truth.
-    
-    Please note:  This sample is valid against the Schema and Schematron for ERRORS (not warnings). 
-    Logical schematron WARNINGS will generate from the sample file. 
+
+    Please note:  This sample is valid against the Schema and Schematron for ERRORS (not warnings).
+    Logical schematron WARNINGS will generate from the sample file.
     It is logical to generate a samples file from a system with valid warnings.
 -->
-<!-- 
-    Templates are identified in comments above their template id.  
+<!--
+    Templates are identified in comments above their template id.
     The IG in which the template version was first published is identified in square brackets before
 the template name.
-    
+
     e.g.: [C-CDA 2.1] Continuity of Care (CCD) (V3)       indicates that the Discharge Summary (V3) template
 was first published in IG C-CDA R2.1
           [C-CDA R2.0] Plan of Treatment Section (V2)     indicates that the Plan of Treatment Section (V2)
 template was first published in IG C-CDA R2.0
           [C-CDA R1.1] History of Present Illness Section indicates that the Hospital Course Section was
 first published in IG C-CDA R1.1
-          
+
     Even though all 3 templates above are included in IG C-CDA 2.1, because there have been no new
-versions of 
+versions of
     the History of Present Illness Section template in IGs later than C-CDA R1.1, it is considered to
-be published in R1.1. 
+be published in R1.1.
     Similarly, there have been no new versions of the Plan of Treatment Section template later than
-C-CDA R.2 so it 
+C-CDA R.2 so it
     is considered to be published in R2.0.
 -->
 <!--
     While assertion of conformance with both C-CDA R2.1 and C-CDA R1.1 is NOT a requirement of the eICR
-IG, it is recommended that, if the 
+IG, it is recommended that, if the
     originating system includes both the versioned and un-versioned templateId, then both these
 templateIds SHOULD be preserved in the eICR document.
     The examples and sample file included with this IG illustrate the optional use of the C-CDA R1.1
@@ -103,8 +103,8 @@ templateId.
         <city>Coruscant</city>
         <state>GA</state>
         <postalCode>30302</postalCode>
-        <!-- Although "county" is not explicitly specified in the US Realm Address, 
-                     it is not precluded from use and for the purposes of this IG it is 
+        <!-- Although "county" is not explicitly specified in the US Realm Address,
+                     it is not precluded from use and for the purposes of this IG it is
                      recommended to be included. -->
         <county>Fulton County</county>
         <country>US</country>
@@ -375,7 +375,7 @@ templateId.
               <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Lab Test Order -->
               <templateId root="2.16.840.1.113883.10.20.15.2.3.4" extension="2016-12-01" />
               <id root="b52bee94-c34b-4e2c-8c15-5ad9d6def205" />
-              <!-- This code is from the trigger codes for laboratory test order 
+              <!-- This code is from the trigger codes for laboratory test order
                                  value set (2.16.840.1.113762.1.4.1146.166) -->
               <code code="80825-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
                 displayName="Zika virus envelope (E) gene [Presence] in Serum by Probe and target amplification method"
@@ -1441,7 +1441,7 @@ templateId.
                 <high value="20161107" />
               </effectiveTime>
               <component>
-                <!-- This observation is a trigger code final result observation - 
+                <!-- This observation is a trigger code final result observation -
                                      only the code is a trigger code and thus
                                      only the code must contain @sdtc:valueSet and @sdtc:valueSetVersion.
                                      Final result is indicated by statusCode="final"  -->
@@ -1477,7 +1477,7 @@ templateId.
                       </value>
 
                       <!-- This interpretation code denotes that this reference range is for normal
-                      results. 
+                      results.
                                                 This is not the interpretation of a specific patient value-->
                       <interpretationCode code="N" codeSystem="2.16.840.1.113883.5.83"
                         displayName="Normal" />
@@ -1504,8 +1504,8 @@ templateId.
                 <high value="20161107" />
               </effectiveTime>
               <component>
-                <!-- This observation is a trigger code preliminary result observation - 
-                                     both the code and value are trigger codes and thus 
+                <!-- This observation is a trigger code preliminary result observation -
+                                     both the code and value are trigger codes and thus
                                      both the code and the value must contain @sdtc:valueSet and @sdtc:valueSetVersion.
                                      Preliminary result is indicated by statusCode="active" -->
                 <observation classCode="OBS" moodCode="EVN">
@@ -1517,7 +1517,7 @@ templateId.
                   <templateId root="2.16.840.1.113883.10.20.15.2.3.2" extension="2016-12-01" />
                   <id root="bf9c0a26-4524-4395-b3ce-100450b9c9ac" />
                   <!-- This code is a trigger code from RCTC subset: "Trigger code for laboratory
-                  test names" 
+                  test names"
                                          @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
                   <code code="548-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
                     displayName="Bordetella pertussis [Presence] in Throat by Organism specific culture"
@@ -1527,13 +1527,13 @@ templateId.
                   <statusCode code="active" />
                   <effectiveTime value="20161107" />
                   <!-- This value is a trigger code from RCTC subset: "Trigger code for organism or
-                  substance" 
+                  substance"
                                          @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
                   <value xsi:type="CD" code="5247005" displayName="Bordetella pertussis (organism)"
                     codeSystem="2.16.840.1.113883.6.96"
                     codeSystemName="SNOMED CT" sdtc:valueSet="2.16.840.1.114222.4.11.7508"
                     sdtc:valueSetVersion="19/05/2016" />
-                  <!-- This interpretation code denotes that this patient value is abnormal 
+                  <!-- This interpretation code denotes that this patient value is abnormal
                                          (bordetella pertussis (organism) was present in the culture) -->
                   <interpretationCode code="A" displayName="Abnormal"
                     codeSystem="2.16.840.1.113883.5.83" codeSystemName="ObservationInterpretation"
@@ -1931,7 +1931,7 @@ templateId.
             </act>
           </entry>
           <entry typeCode="DRIV">
-            <!-- Travel History - participant location with addr 
+            <!-- Travel History - participant location with addr
                          specific to city and state (province) -->
             <act classCode="ACT" moodCode="EVN">
               <!-- [eICR R2 STU1.1] Travel History -->
@@ -1957,7 +1957,7 @@ templateId.
             </act>
           </entry>
           <entry typeCode="DRIV">
-            <!-- Travel History - participant location with addr 
+            <!-- Travel History - participant location with addr
                          specific to city and state -->
             <act classCode="ACT" moodCode="EVN">
               <!-- [eICR R2 STU1.1] Travel History -->
@@ -2013,7 +2013,7 @@ templateId.
             <!-- To assert a patient was not pregnant during a specified date range (contained in
             effectiveTime), set @negationInd="true"
                              To indicate that a patient's pregnancy status was unknown, set @nullFlavor="UNK" and an
-            effectiveTime element can be 
+            effectiveTime element can be
                              included to assert the period over which it was unknown -->
             <observation classCode="OBS" moodCode="EVN" negationInd="true">
               <!-- [C-CDA R1.1] Pregnancy Observation -->

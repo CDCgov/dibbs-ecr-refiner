@@ -19,12 +19,12 @@ def print_response(label, response):
     print(f"TEST: {label}")
     print(f"URL: {response.url}")
     print(f"Status: {response.status_code}")
-    
+
     try:
         data = response.json()
         print("\nSample Response:")
         # print first 500 chars since the responses are really long
-        print(json.dumps(data, indent=2)[:500])  
+        print(json.dumps(data, indent=2)[:500])
         if isinstance(data, dict) and "entry" in data:
             print(f"\nFound {len(data['entry'])} items")
     except ValueError:
@@ -46,7 +46,7 @@ def run_tests():
     # 4. search by title/description
     r = requests.get(f"{API_URL}/ValueSet?title=Hepatitis+B&status=active", headers=headers)
     print_response("4. Search by title (Hepatitis B)", r)
-    
+
     r = requests.get(f"{API_URL}/ValueSet?description=Influenza", headers=headers)
     print_response("4. Search by description (Influenza)", r)
 
@@ -65,7 +65,7 @@ def run_tests():
             vs_id = r.json()["entry"][0]["resource"]["id"]
             r = requests.get(f"{API_URL}/ValueSet/{vs_id}/$expand", headers=headers)
             print_response(f"7a. $expand for ValueSet {vs_id}", r)
-            
+
             # validate a sample code if expansion exists
             if r.status_code == 200:
                 expanded = r.json()

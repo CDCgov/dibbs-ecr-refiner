@@ -40,8 +40,8 @@
                 <city>Coruscant</city>
                 <state>GA</state>
                 <postalCode>30302</postalCode>
-                <!-- Although "county" is not explicitly specified in the US Realm Address, 
-                     it is not precluded from use and for the purposes of this IG it is 
+                <!-- Although "county" is not explicitly specified in the US Realm Address,
+                     it is not precluded from use and for the purposes of this IG it is
                      recommended to be included. -->
                 <county>Fulton County</county>
                 <country>US</country>
@@ -286,7 +286,7 @@
                             <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Lab Test Order -->
                             <templateId root="2.16.840.1.113883.10.20.15.2.3.4" extension="2016-12-01"/>
                             <id root="b52bee94-c34b-4e2c-8c15-5ad9d6def205"/>
-                            <!-- This code is from the trigger codes for laboratory test order 
+                            <!-- This code is from the trigger codes for laboratory test order
                                  value set (2.16.840.1.113762.1.4.1146.166) -->
                             <code code="80825-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Zika virus envelope (E) gene [Presence] in Serum by Probe and target amplification method" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="19/05/2016"/>
                             <statusCode code="active"/>
@@ -531,7 +531,7 @@
                                 <high value="20161107"/>
                             </effectiveTime>
                             <component>
-                                <!-- This observation is a trigger code final result observation - 
+                                <!-- This observation is a trigger code final result observation -
                                      only the code is a trigger code and thus
                                      only the code must contain @sdtc:valueSet and @sdtc:valueSetVersion.
                                      Final result is indicated by statusCode="final"  -->
@@ -561,7 +561,7 @@
                                                 <high inclusive="false" unit="[iU]/mL" value="45"/>
                                             </value>
                                             <!-- This interpretation code denotes that this reference range is for normal
-                      results. 
+                      results.
                                                 This is not the interpretation of a specific patient value-->
                                             <interpretationCode code="N" codeSystem="2.16.840.1.113883.5.83" displayName="Normal"/>
                                         </observationRange>
@@ -586,8 +586,8 @@
                                 <high value="20161107"/>
                             </effectiveTime>
                             <component>
-                                <!-- This observation is a trigger code preliminary result observation - 
-                                     both the code and value are trigger codes and thus 
+                                <!-- This observation is a trigger code preliminary result observation -
+                                     both the code and value are trigger codes and thus
                                      both the code and the value must contain @sdtc:valueSet and @sdtc:valueSetVersion.
                                      Preliminary result is indicated by statusCode="active" -->
                                 <observation classCode="OBS" moodCode="EVN">
@@ -599,17 +599,17 @@
                                     <templateId root="2.16.840.1.113883.10.20.15.2.3.2" extension="2016-12-01"/>
                                     <id root="bf9c0a26-4524-4395-b3ce-100450b9c9ac"/>
                                     <!-- This code is a trigger code from RCTC subset: "Trigger code for laboratory
-                  test names" 
+                  test names"
                                          @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
                                     <code code="548-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Bordetella pertussis [Presence] in Throat by Organism specific culture" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="19/05/2016"/>
                                     <!-- statusCode is set to active indicating that this is a preliminary result -->
                                     <statusCode code="active"/>
                                     <effectiveTime value="20161107"/>
                                     <!-- This value is a trigger code from RCTC subset: "Trigger code for organism or
-                  substance" 
+                  substance"
                                          @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
                                     <value xsi:type="CD" code="5247005" displayName="Bordetella pertussis (organism)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="19/05/2016"/>
-                                    <!-- This interpretation code denotes that this patient value is abnormal 
+                                    <!-- This interpretation code denotes that this patient value is abnormal
                                          (bordetella pertussis (organism) was present in the culture) -->
                                     <interpretationCode code="A" displayName="Abnormal" codeSystem="2.16.840.1.113883.5.83" codeSystemName="ObservationInterpretation"/>
                                 </observation>

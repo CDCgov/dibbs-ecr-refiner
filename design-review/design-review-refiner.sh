@@ -18,7 +18,7 @@ error_exit() {
 ensure_command() {
     local command_name=$1
     local install_command=$2
-    
+
     if ! command -v "$command_name" &> /dev/null; then
         echo -e "🔍 $command_name not found, installing..."
         eval "$install_command" || error_exit "Failed to install $command_name"
@@ -30,7 +30,7 @@ ensure_command() {
 wait_for_service() {
     local url=$1
     local message=$2
-    
+
     echo -e "⏳ $message"
     until curl -s -o /dev/null -w "%{http_code}" "$url" | grep -q "200"; do
         echo -e "🔄 Waiting for service to be available..."

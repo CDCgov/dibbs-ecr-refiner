@@ -6,8 +6,10 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """
-    Settings confirms the URLs for each of the services being called;
-    These urls need to live in a .env file at the root level and should be set.
+    Configuration settings loaded from environment variables.
+
+    Manages service URLs and configuration values that must be defined
+    in a .env file at the root level of the project.
     """
 
     TRIGGER_CODE_REFERENCE_URL: str = Field(
@@ -19,11 +21,13 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """
-    Load the values specified in the Settings class from the environment and return a
-    dictionary containing them. The dictionary is cached to reduce overhead accessing
-    these values.
+    Get cached application settings from environment variables.
 
-    :return: the specified Settings. The value of each key is read from the
-    corresponding environment variable.
+    Creates and caches a Settings instance to reduce overhead when
+    accessing configuration values.
+
+    Returns:
+        Settings: Application settings loaded from environment variables.
     """
+
     return Settings().model_dump()

@@ -1,30 +1,86 @@
 [tool.ruff]
+# core configuration
+# - skip checking these directories/files
 exclude = [".git", ".pytest_cache", "__pycache__", "docs", "examples/"]
+# - match black's default line length
 line-length = 88
 indent-width = 4
 show-fixes = true
 target-version = "py313"
 
 [tool.ruff.lint]
-select = [
-  "ANN001", # flake8 type annotations
+# rule selection with comments for clarity
+extend-select = [
+  # type annotation rules
+  # - missing type annotation for function argument
+  "ANN001",
+  # - missing type annotation for *args
   "ANN002",
+  # - missing return type annotation for public function
   "ANN201",
-  "F",    # Pyflakes
-  "E4",   # Pydocstyle errors
-  "E7",
-  "E9",
-  "W",    # Pydocstyle warnings
-  "D102", # Pydocstyle undocumented-public-method
-  "D103", # Pydocstyle undocumented-public-function
-  "D104", # Pydocstyle undocumented-public-package
-  "D105", # Pydocstyle undocumented-magic-method
-  "D106", # Pydocstyle undocumented-public-nested-class
-  "I",    # isort
-  "UP",   # pyupgrade
+
+  # standard rules
+  # - errors and style from pycodestyle
+  "E",
+  "W",
+  # - pyflakes logical error checks
+  "F",
+
+  # TODO: add to avoid common bug patterns; will require
+  # a bit of effort to make corrections
+  # - bugbear common bug patterns
+  # "B",
+
+  # - comprehension checks
+  "C4",
+  # - docstring rules
+  "D",
+  # - import sorting
+  "I",
+  # - python code modernization
+  "UP",
 ]
 
+# rules we explicitly disable
+ignore = [
+  # - allow function calls in argument defaults (FastAPI pattern)
+  "B008",
+  # - ignore missing module docstring rule
+  "D100",
+  # - one-line docstring rule (too restrictive)
+  "D200",
+  # - allow blank lines after docstrings
+  "D202",
+  # - allow multi-line docstrings to start on second line
+  "D212",
+  # - allow indented first lines in docstrings
+  "D213",
+  # - first line imperative mood (too restrictive for APIs)
+  "D401",
+  # - line too long (handled by black/formatter)
+  "E501",
+]
+
+# file-specific rule exclusions
 [tool.ruff.lint.per-file-ignores]
+# - disable docstring/type/security rules in tests
 "**/tests/*" = ["D", "S", "ANN"]
+# - disable type annotation rules in scripts
 "**/scripts/*" = ["ANN"]
-"**/__init__.py" = ["D"]
+# - allow missing docstrings in __init__
+"__init__.py" = ["D"]
+
+# configure docstring checking to use Google style
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# import configuration
+[tool.ruff.lint.isort]
+# - project-specific imports
+known-first-party = ["app"]
+# - key third-party imports
+known-third-party = ["fastapi", "pydantic", "starlette"]
+
+# keep runtime type annotations
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
