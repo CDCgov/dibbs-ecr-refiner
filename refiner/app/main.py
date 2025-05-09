@@ -4,7 +4,9 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, File, Query, Request, Response, UploadFile, status
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from app.base_service import BaseService
 from app.db import get_value_sets_for_condition
@@ -255,9 +257,40 @@ app.include_router(router)
 # When running the application in production we will mount the static client files from the
 # "dist" directory. This directory will typically not exist during development since the client
 # runs separately in its own Docker container.
-if is_production:
-    app.mount(
-        "/",
-        StaticFiles(directory="dist", html=True, check_dir=is_production),
-        name="dist",
-    )
+DIST_DIR = Path("dist")
+INDEX_FILE = DIST_DIR / "index.html"
+app.mount(
+    "/dist",
+    StaticFiles(directory="dist", html=True, check_dir=is_production),
+    name="dist",
+)
+
+
+class SPAFallbackMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> FileResponse | Response:
+        """
+        Middleware that serves the index.html file for unknown non-API routes,
+        enabling client-side routing to kick in.
+
+        If a request results in a 404, does not target the API, and does not
+        appear to be for a static file (i.e., lacks a file extension), this
+        middleware returns index.html so the client-side router can handle the route.
+        """
+        response = await call_next(request)
+
+        path = request.url.path
+
+        if (
+            response.status_code == 404
+            and not path.startswith("/api")
+            and "." not in Path(path).name
+        ):
+            if INDEX_FILE.exists():
+                return FileResponse(INDEX_FILE)
+
+        return response
+
+
+app.add_middleware(SPAFallbackMiddleware)
