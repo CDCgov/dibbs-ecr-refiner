@@ -32,8 +32,9 @@ SQLModel.metadata.create_all(_engine)
 
 def _get_engine():
     """
-    Returns the engine for the database
+    Returns the engine for the database.
     """
+
     return _engine
 
 
@@ -41,6 +42,7 @@ def _retrieve_tes_info_and_save(concept_code_to_type_dict: dict[str, list[str]])
     """
     Fetches Condition and Concept data from the TES API and builds out the SQLite database.
     """
+
     with Session(_get_engine()) as session:
         current_iteration = 0
         conditions: set[Condition] = set()
@@ -121,6 +123,7 @@ def _build_concept(
     """
     Creates a new Concept and its associated data.
     """
+
     concept_code_and_system = (currentConcept.code, currentSystem.system)
 
     if concept_code_and_system in all_concepts:
@@ -147,8 +150,9 @@ def _get_concept_types(
     conceptCode: str, concept_code_to_type_dict: dict
 ) -> list[ConceptType]:
     """
-    Helper function that returns a list of concept types associated with a Concept
+    Helper function that returns a list of concept types associated with a Concept.
     """
+
     new_types = []
     for type in concept_code_to_type_dict.get(conceptCode, []):
         new_type = ConceptType(type=type)
@@ -158,8 +162,9 @@ def _get_concept_types(
 
 def _get_coding(valueSet: ValueSet) -> list[str]:
     """
-    Helper function that takes a ValueSet and returns a filtered list
+    Helper function that takes a ValueSet and returns a filtered list.
     """
+
     return list(
         filter(
             lambda x: x.code.code == "focus"
@@ -172,8 +177,9 @@ def _get_coding(valueSet: ValueSet) -> list[str]:
 
 def _fetch_conditions_bundle(current_iteration: int) -> Bundle:
     """
-    Makes a request to the TES API and returns the data as a FHIR bundle
+    Makes a request to the TES API and returns the data as a FHIR bundle.
     """
+
     response = requests.get(
         _TES_API_URL,
         params={
@@ -197,9 +203,17 @@ def _fetch_conditions_bundle(current_iteration: int) -> Bundle:
 
 def _build_concept_type_by_code_dict() -> dict[str, list[str]]:
     """
-    Makes a request to the TES API and builds a dictionary from the results. This
-    dictionary maps a Concept to one or more types.
+    Build a dictionary mapping concepts to their types from TES API.
+
+    Makes a request to the TES API and creates a mapping between
+    concepts and their associated types.
+
+    Returns:
+        dict[str, list[str]]: Dictionary where:
+            - key: Concept identifier
+            - value: List of associated concept types
     """
+
     # Make a request to grab all 6 available concept types
     response = requests.get(
         _TES_API_URL,
@@ -245,17 +259,21 @@ def _build_concept_type_by_code_dict() -> dict[str, list[str]]:
 
 def _get_gem_formatted_code(code: str) -> str:
     """
-    Takes a code and converts it to the Generalized Equivalency Mapping code format
+    Takes a code and converts it to the Generalized Equivalency Mapping code format.
     """
+
     return code.translate(str.maketrans("", "", string.punctuation))
 
 
 def _build_crosswalk_table():
     """
-    Reads the ICD-10-CM Generalized Equivalency Mappings file published by CMS
-    to create a crosswalk table between ICD10 codes and a selected set of ICD9
-    codes (the selected set are those relevant to ICD10 codes).
+    Create ICD-9/ICD-10 code crosswalk table from CMS mappings.
+
+    Processes the ICD-10-CM Generalized Equivalency Mappings (GEM) file
+    from CMS to establish relationships between ICD-10 codes and their
+    relevant ICD-9 equivalents.
     """
+
     with Session(_get_engine()) as session:
         table_rows = []
         row_id = 1

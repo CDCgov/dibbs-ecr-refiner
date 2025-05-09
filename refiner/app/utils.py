@@ -9,22 +9,31 @@ from fastapi import HTTPException, UploadFile, status
 
 def read_json_from_assets(filename: str) -> dict:
     """
-    Reads a JSON file from the assets directory.
+    Read a JSON file from the assets directory.
 
-    :param filename: The name of the file to read.
-    :return: A dictionary containing the contents of the file.
+    Args:
+        filename: The name of the file to read.
+
+    Returns:
+        dict: Contents of the JSON file as a dictionary.
     """
+
     return json.load(open(pathlib.Path(__file__).parent.parent / "assets" / filename))
 
 
 def load_section_loincs(loinc_json: dict) -> tuple[list, dict]:
     """
-    Reads section LOINC json to create two constants needed for parsing
-    section data and creating refined sections.
-    :param loinc_dict: Nested dictionary containing the nested section LOINCs
-    :return: a list of all section LOINCs currently supported by the API;
-             a dictionary of all required section LOINCs to pass validation
+    Read section LOINC JSON to create parsing and validation constants.
+
+    Args:
+        loinc_json: Nested dictionary containing the nested section LOINCs.
+
+    Returns:
+        tuple[list, dict]: A tuple containing:
+            - list: All section LOINCs currently supported by the API
+            - dict: All required section LOINCs to pass validation
     """
+
     # LOINC codes for eICR sections our refiner API accepts
     section_list = list(loinc_json.keys())
 
@@ -46,11 +55,19 @@ def create_clinical_services_dict(
     clinical_services_list: list[dict],
 ) -> dict[str, list[str]]:
     """
-    Transform the original Trigger Code Reference API response to have keys as systems
-    and values as lists of codes, while ensuring the systems are recognized and using their
-    shorthand names so that we can both dynamically construct XPaths and post-filter matches
-    to system name varients.
+    Transform Trigger Code Reference API response to system-based dictionary.
+
+    Converts the API response to use system names as keys and code lists as values.
+    Systems are normalized to recognized shorthand names for XPath construction and
+    system name variant filtering.
+
+    Args:
+        clinical_services_list: List of dictionaries containing clinical services data.
+
+    Returns:
+        dict[str, list[str]]: Dictionary mapping system names to their code lists.
     """
+
     system_dict = {
         "http://hl7.org/fhir/sid/icd-9-cm": "icd9",
         "http://hl7.org/fhir/sid/icd-10-cm": "icd10",
@@ -78,9 +95,17 @@ def create_clinical_services_dict(
 
 async def read_zip(file: UploadFile) -> tuple[str, str]:
     """
-    Given a zip file containing CDA_eICR.xml and CDA_RR.xml files,
-    this function will read each file and return the contents as a tuple
+    Read CDA_eICR.xml and CDA_RR.xml files from a zip file.
+
+    Args:
+        file: The uploaded zip file containing the XML documents.
+
+    Returns:
+        tuple[str, str]: A tuple containing the contents of both XML files:
+            - str: Contents of CDA_eICR.xml
+            - str: Contents of CDA_RR.xml
     """
+
     try:
         # Read the uploaded ZIP file
         zip_bytes = await file.read()
