@@ -13,6 +13,7 @@ from app.refine import refine, validate_message, validate_sections_to_include
 from app.rr_parser import get_reportable_conditions, parse_xml
 from app.utils import create_clinical_services_dict, read_json_from_assets, read_zip
 
+from .middleware import SPAFallbackMiddleware
 from .routes import demo
 
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
@@ -280,13 +281,9 @@ def _get_clinical_services(condition_codes: str) -> list[dict]:
 
 
 app.include_router(router)
-
-# When running the application in production we will mount the static client files from the
-# "dist" directory. This directory will typically not exist during development since the client
-# runs separately in its own Docker container.
-if is_production:
-    app.mount(
-        "/",
-        StaticFiles(directory="dist", html=True, check_dir=is_production),
-        name="dist",
-    )
+app.mount(
+    "/dist",
+    StaticFiles(directory="dist", html=True, check_dir=is_production),
+    name="dist",
+)
+app.add_middleware(SPAFallbackMiddleware)
