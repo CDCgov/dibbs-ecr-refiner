@@ -6,14 +6,17 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 
 
 class SPAFallbackMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware class designed to handle serving the built SPA files.
+    """
+
     INDEX_FILE = Path("dist") / "index.html"
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> FileResponse | Response:
         """
-        Middleware that serves the index.html file for unknown non-API routes,
-        enabling client-side routing to kick in.
+        Middleware that serves the index.html file for unknown non-API routes, enabling client-side routing to kick in.
 
         If a request results in a 404, does not target the API, and does not
         appear to be for a static file (i.e., lacks a file extension), this
