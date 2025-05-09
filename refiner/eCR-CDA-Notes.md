@@ -1,6 +1,6 @@
 # eCR CDA Notes
 
-> **Last Updated**: 2025-04-08  
+> **Last Updated**: 2025-04-08
 > **Author**: [`robertmitchellv`](https://github.com/robertmitchellv)
 
 ## Overview
@@ -59,7 +59,7 @@ det --> rsn
 
 In volume 2 of the CDA-phcaserpt-1.1.1 and volume 2 of the CDA-phcr-rr-1.1.1 specifications there are tables that explain the hierarchical relationship that comprises an both an eICR and RR document. There are specific blocks of elements that are named and these names have associated metadata that both signal and connect them to other nested named blocks of elements. You can think of these named blocks of elements almost like classes in object oriented programming but without inheritance in a strict sense. Rather than inheritance they signal the hierarchical relationship between the named block of elements. Each named block of elements is governed by a template that describes what metadata it must, should, or may contain as well as the order of these metadata.
 
-> [!TIP] 
+> [!TIP]
 > The `root` value of a `templateId`, which is an Object ID (OID), is the _best_ way to find a specific named block of elements within a CDA document broadly and eICR and RR specifically. Every single named block of elements has a unique `templateId` that can be queried via XPath.
 
 Section-level templates are higher up the hierarchy while entry-level templates are children of section-level templates. Some sections are **required** in order for an eICR or RR document to be valid based on their associated schematrons (these can be found on the spcifications' GitHub repositories that are both linked in the [overview](#overview). As discussed, every single template has a unique id (`templateId`) that is used to track and test each row of a template; these rules are called conf numbers (`CONF#`). When validating an eICR or RR document against their associated schematrons the messages coming back are based on the `CONF#` and whether or not this is a fatal error, an error, or a warning. Our goal in this work is to not introduce additional errors or warnings given that both eICR and RR documents have likely already undergone validation on the AIMS platform.
@@ -382,9 +382,9 @@ This `<entry>` **must** contain what is called a "results organizer", which is t
 
 ### Reportability
 
-**Reportability** is: 
+**Reportability** is:
 
-> "the quality or state of being reportable or not". 
+> "the quality or state of being reportable or not".
 
 Reportability **does not equate to the patient having a condition or meeting a case definition** (definitively being “a case”).
 
@@ -408,7 +408,7 @@ subgraph RR_Doc["RR Document Structure"]
     coded[Coded Information]
     container[RR11 Container]
     condition[Reportable Condition]
-    
+
     doc --> coded --> container --> condition
 end
 
@@ -422,7 +422,7 @@ subgraph Determination["Determination Information"]
     direction TB
     det[RR1: Determination]
     reason[RR3: Reason]
-    
+
     subgraph Values["Determination Values"]
         direction TB
         reportable[RRVS1: Reportable]
@@ -481,7 +481,7 @@ This is the main container that holds all coded information about reportability.
 ```xml
 <organizer classCode="CLUSTER" moodCode="EVN">
   <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.3.34"/>
-  <code code="RR11" 
+  <code code="RR11"
         codeSystem="2.16.840.1.114222.4.5.232"
         codeSystemName="PHIN Questions"
         displayName="Reportability Response Coded Information"/>
@@ -533,7 +533,7 @@ The reason for the determination is provided in `RR3`:
     <code code="RR3" codeSystem="2.16.840.1.114222.4.5.232"
           codeSystemName="PHIN Questions"
           displayName="Determination of reportability rule"/>
-    <value xsi:type="ST">All results of tests for detection of SARS-CoV-2 nucleic acid 
+    <value xsi:type="ST">All results of tests for detection of SARS-CoV-2 nucleic acid
           in a clinical specimen by any method</value>
   </observation>
 </entryRelationship>
@@ -548,7 +548,7 @@ flowchart LR
 
 subgraph Flow["Document Exchange Flow"]
     direction TB
-    
+
     subgraph eICR["eICR Document Sources"]
         direction TB
         m[Manual Initiation]
@@ -556,13 +556,13 @@ subgraph Flow["Document Exchange Flow"]
         p[Problem]
         r[Result]
     end
-    
+
     subgraph Process["Processing"]
         direction TB
         match[Trigger Code Match<br><code>SNOMED CT</code>]
         eval[Evaluate Reportability<br><code>2.16.840.1.113883.10.20.15.2.5.3</code>]
     end
-    
+
     subgraph Response["RR Response"]
         direction TB
         det[RR1: Determination<br><code>2.16.840.1.113883.10.20.15.2.3.19</code>]

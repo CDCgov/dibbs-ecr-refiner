@@ -26,7 +26,7 @@ The TES FHIR server provides terminology services that organize medical terminol
 1. **Triggering categories (eRSD)**: Grouped by types of clinical events (medications, lab orders, etc.)
 2. **Condition categories (TES)**: Grouped by health conditions (influenza, anthrax, etc.)
 
-> [!NOTE] 
+> [!NOTE]
 > **Specification category**: This server currently contains released eRSD and TES data bundles. They both contain very similar data, but are grouped/organized in different ways. The eRSD groups data by "triggering categories" that are maintained by RCKMS to generate electronic initial case reports for tracked health conditions. TES data bundles are grouped by overarching "condition categories".
 
 ### Content Structure
@@ -37,7 +37,7 @@ The TES uses two primary types of ValueSets to organize terminology:
 
 A **Condition Grouper** is a grouping ValueSet that contains Reporting Specification Groupers that typically share the same overarching condition.
 
-For instance, an influenza condition grouper may contain two reporting specification groupers: one a more general ValueSet addressing the Influenza condition, and another related to Influenza Associated Hospitalization condition. 
+For instance, an influenza condition grouper may contain two reporting specification groupers: one a more general ValueSet addressing the Influenza condition, and another related to Influenza Associated Hospitalization condition.
 
 Condition Groupers themselves do not have an explicit association with a specific condition code, unlike their contents (Reporting Specification Groupers).
 
@@ -129,7 +129,7 @@ def find_valuesets_by_code(code, code_system=None):
     return make_tes_request("/ValueSet", params)
 
 # example: find ValueSets containing SNOMED code for Abdominal colic (9991008)
-abdominal_colic_vs = find_valuesets_by_code("9991008")  
+abdominal_colic_vs = find_valuesets_by_code("9991008")
 if abdominal_colic_vs:
     print(f"Found {len(abdominal_colic_vs.get('entry', []))} ValueSets containing code 9991008")
 ```
@@ -143,7 +143,7 @@ def find_valuesets_by_condition(snomed_code):
     return make_tes_request("/ValueSet", params)
 
 # example: find Hepatitis B (66071002) ValueSets
-hepatitis_b_vs = find_valuesets_by_condition("66071002")  
+hepatitis_b_vs = find_valuesets_by_condition("66071002")
 if hepatitis_b_vs:
     print(f"Found {hepatitis_b_vs.get('total', 0)} Hepatitis B ValueSets")  # Returns 12 in production
 ```
@@ -228,7 +228,7 @@ TES works with multiple standard healthcare terminology systems. Here's a brief 
 
 **SNOMED Clinical Terms** is a comprehensive clinical terminology system used for the electronic exchange of clinical health information. It provides a standardized vocabulary for clinical documentation and reporting.
 
-Example SNOMED code: `66071002` - "Hepatitis B" 
+Example SNOMED code: `66071002` - "Hepatitis B"
 
 ### LOINC
 
@@ -332,4 +332,3 @@ There is a saved version of this response here [`tes-CapabilityStatement.json`](
 ```bash
 jq '.rest[].resource[] | select(.type=="ValueSet") | .searchParam[]' tes-CapabilityStatement.json
 ```
-
