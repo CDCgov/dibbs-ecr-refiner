@@ -19,6 +19,7 @@ def parse_xml(rr_xml: str) -> ET.Element | Response:
     Returns:
         ElementTree.Element if successful, or FastAPI Response on error.
     """
+
     try:
         rr_root = ET.fromstring(rr_xml)
         return rr_root
@@ -31,9 +32,9 @@ def parse_xml(rr_xml: str) -> ET.Element | Response:
 
 def get_reportable_conditions(root: ET.Element) -> str | None:
     """
-    Scan the Report Summary section for SNOMED CT codes and return
-    them as a comma-separated string, or None if none found.
+    Scan the Report Summary section for SNOMED CT codes and return them as a comma-separated string, or None if none found.
     """
+
     ns = {"cda": "urn:hl7-org:v3", "xsi": "http://www.w3.org/2001/XMLSchema-instance"}
     codes = []
     for section in root.findall(".//cda:section", namespaces=ns):

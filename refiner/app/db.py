@@ -5,17 +5,17 @@ _TES_DB_URL = "./app/tes.db"
 
 def get_value_sets_for_condition(condition_code: str) -> dict:
     """
-    For a given condition, queries and returns the value set of clinical
-    services associated with that condition.
+    Query and return clinical services value set for a condition.
 
-    :param condition_code: A query param supplied as a string representing a
-      single SNOMED condition code.
-    :param filter_concepts: (Optional) A comma-separated string of
-      value set types (defined by the abbreviation codes above) to
-      keep. By default, all (currently) 6 value set types are
-      returned; use this parameter to return only types of interest.
-    :return: An HTTP Response containing the value sets of the queried code.
+    Args:
+        condition_code: Single SNOMED condition code as string.
+
+    Returns:
+        dict: Value sets associated with the queried code, containing:
+            - Value set type as key
+            - List of clinical services with their codes and systems
     """
+
     if condition_code is None or condition_code == "":
         return {}
     else:
@@ -27,20 +27,23 @@ def get_value_sets_for_condition(condition_code: str) -> dict:
 
 def _get_concepts_dict(concept_list: list[tuple]) -> dict:
     """
-    This function parses a list of tuples containing data on clinical codes
-    into a dictionary for use in the /get-value-sets API endpoint.
+    Parse clinical code tuples into a dictionary for the get-value-sets API.
 
-    There is an optional parameter to return select value set type(s)
-    specified as either a string or a list.
+    Takes a list of tuples containing clinical code data and organizes them
+    into a structured dictionary for API response.
 
-    :param concept_list: A list of tuples with value set type,
-    a delimited-string of relevant codes and code systems as objects within.
-    :param filter_concept_list: (Optional) List of value set types
-    specified to keep. By default, all (currently) 6 value set types are
-    returned; use this parameter to return only types of interest.
-    :return: A nested dictionary with value set type as the key, a list
-    of the relevant codes and code systems as objects within.
+    Args:
+        concept_list: List of tuples containing:
+            - Value set type
+            - Delimited string of codes
+            - Code systems
+
+    Returns:
+        dict: Nested dictionary with:
+            - Value set type as key
+            - List of relevant codes and systems as values
     """
+
     # Convert to the final structured format
     concept_dict = {}
     for concept_type, codes_string, system in concept_list:
@@ -57,17 +60,19 @@ def _get_concepts_dict(concept_list: list[tuple]) -> dict:
 
 def _get_concepts_list_tes(snomed_code: list) -> list[tuple]:
     """
-    Given a SNOMED code, this function runs a SQL query to get the
-    concept type, concept codes, and concept system
-    from the TES database grouped by concept type and system. It
-    also uses the GEM crosswalk tables to find any ICD-9 conversion
-    codes that might be represented under the given condition's
-    umbrella.
+    Query TES database for concept details using SNOMED code.
 
-    :param snomed_code: SNOMED code to check
-    :return: A list of tuples with concept type, a delimited-string of
-      the relevant codes (including any found ICD-9 conversions, if they
-      exist), and code systems as objects within.
+    Executes SQL query to retrieve concept type, codes, and systems.
+    Includes ICD-9 conversion codes found through GEM crosswalk tables.
+
+    Args:
+        snomed_code: List containing a single SNOMED code to query.
+
+    Returns:
+        list[tuple]: Each tuple contains:
+            - Concept type
+            - Delimited string of relevant codes (including ICD-9 conversions)
+            - Code systems
     """
 
     query = """
@@ -91,6 +96,7 @@ def _get_concepts_list_tes(snomed_code: list) -> list[tuple]:
     GROUP BY
         ct.type, cs.system
     """
+
     # Connect to the SQLite database, execute sql query, then close
     try:
         with sqlite3.connect(_TES_DB_URL) as conn:
@@ -115,16 +121,21 @@ def _get_concepts_list_tes(snomed_code: list) -> list[tuple]:
 
 def _format_icd9_crosswalks(db_list: list[tuple]) -> list[tuple]:
     """
-    Utility function to transform the returned tuple rows from the DB into a
-    list of properly formatted three-part tuples. This function handles ICD-9
-    formatting, since the GEM files only give us the relationship between ICD
-    9 and 10 rather than system and OID information itself, so this inserts
-    the missing formatting expected by the rest of the system.
+    Format database rows for ICD-9 crosswalk entries.
 
-    :param db_list: The list of returned tuples from the SQLite DB.
-    :return: A list of tuples three elements long, formatted as the return for
-      `get_concepts_list`.
+    Transforms database tuple rows into properly formatted three-part tuples,
+    handling ICD-9 specific formatting requirements from GEM files.
+
+    Args:
+        db_list: Raw tuple rows from SQLite database.
+
+    Returns:
+        list[tuple]: Formatted tuples containing:
+            - System information
+            - Code value
+            - OID reference
     """
+
     formatted_list = []
     for vs_type in db_list:
         if vs_type[3] is not None and vs_type[3] != "":
@@ -139,8 +150,9 @@ def _format_icd9_crosswalks(db_list: list[tuple]) -> list[tuple]:
 
 def _get_condition_id_from_snowmed_code_tes(condition_code: str) -> str:
     """
-    Given a condition code, this function retrieves the condition id
+    Given a condition code, this function retrieves the condition id.
     """
+
     with sqlite3.connect(_TES_DB_URL) as conn:
         row = conn.execute(
             "SELECT id FROM condition WHERE code = ?", (condition_code,)
@@ -151,12 +163,21 @@ def _get_condition_id_from_snowmed_code_tes(condition_code: str) -> str:
 
 def get_clean_snomed_code(snomed_code: list | str | int | float) -> list:
     """
-    This is a small helper function that takes a SNOMED code, sanitizes it,
-    then checks to confirm only one SNOMED code has been provided.
+    Sanitize and validate SNOMED code input.
 
-    :param snomed_code: SNOMED code to check.
-    :return: A one-item list of a cleaned SNOMED code.
+    Cleans the provided SNOMED code and ensures only one code is present.
+
+    Args:
+        snomed_code: SNOMED code in various possible formats:
+            - list: List containing code
+            - str: String representation of code
+            - int: Integer representation of code
+            - float: Float representation of code
+
+    Returns:
+        list: Single-item list containing the cleaned SNOMED code.
     """
+
     clean_snomed_code = _convert_inputs_to_list(snomed_code)
     if len(clean_snomed_code) != 1:
         return {
@@ -168,14 +189,22 @@ def get_clean_snomed_code(snomed_code: list | str | int | float) -> list:
 
 def _convert_inputs_to_list(value: list | str | int | float) -> list:
     """
-    Small helper function that checks the type of the input.
-    Our code wants items to be in a list and will transform int/float to list
-    and will check if a string could potentially be a list.
-    It will also remove any excess characters from the list.
+    Convert various input types to a clean list.
 
-    :param value: string, int, float, list to check
-    :return: A list free of excess whitespace
+    Handles different input types and converts them to a standardized list format,
+    removing excess whitespace and characters.
+
+    Args:
+        value: Input to convert, can be:
+            - list: Already in list format
+            - str: String to convert
+            - int: Integer to convert
+            - float: Float to convert
+
+    Returns:
+        list: Cleaned list with standardized format and no excess whitespace.
     """
+
     if isinstance(value, int | float):
         return [str(value)]
     elif isinstance(value, str):

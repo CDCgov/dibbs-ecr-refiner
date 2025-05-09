@@ -36,9 +36,15 @@ refine_ecr_response_examples = read_json_from_assets("sample_refine_ecr_response
 
 def custom_openapi() -> dict[str, Any]:
     """
-    This customizes the FastAPI response to allow example requests given that the
-    raw Request cannot have annotations.
+    Customize FastAPI OpenAPI response to support example requests.
+
+    Modifies the OpenAPI schema to allow example requests where raw Request
+    objects cannot have annotations.
+
+    Returns:
+        dict[str, Any]: Customized OpenAPI schema.
     """
+
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
@@ -66,10 +72,13 @@ app.openapi = custom_openapi
 @router.get("/healthcheck")
 async def health_check() -> dict[str, str]:
     """
-    This endpoint checks service status. If an HTTP 200 status code is returned
-    along with `{"status": "OK"}'` then the Message Refiner is available and
-    running properly.
+    Check service health status.
+
+    Returns:
+        dict[str, str]: Service status response:
+            - {"status": "OK"} with HTTP 200 if service is healthy
     """
+
     return {"status": "OK"}
 
 
@@ -106,16 +115,20 @@ async def refine_ecr_from_zip(
     ] = None,
 ) -> Response:
     """
-    Accepts a ZIP file, extracts `CDA_eICR.xml` and `CDA_RR.xml`,
-    and processes them for refining the eCR message.
+    Process and refine an eCR message from uploaded ZIP file.
 
-    - `file`: The uploaded ZIP file.
-    - `sections_to_include`: Comma-separated LOINC codes for filtering eCR sections.
-    - `conditions_to_include`: Comma-separated SNOMED condition codes.
+    Extracts CDA_eICR.xml and CDA_RR.xml from the uploaded ZIP file and
+    refines the eCR message based on specified sections and conditions.
+
+    Args:
+        file: ZIP file containing CDA_eICR.xml and CDA_RR.xml.
+        sections_to_include: Comma-separated LOINC codes for filtering eCR sections.
+        conditions_to_include: Comma-separated SNOMED condition codes for filtering.
 
     Returns:
-    - A refined XML eCR response.
+        Response: The refined XML eCR document.
     """
+
     eicr_xml, _rr_xml = await read_zip(file)
 
     # Process the extracted XML
@@ -146,9 +159,7 @@ async def refine_ecr_from_zip(
 
     clinical_services = None
     if conditions_to_include:
-        clinical_services = [
-            service for service in _get_clinical_services(conditions_to_include)
-        ]
+        clinical_services = list(_get_clinical_services(conditions_to_include))
 
         # create a simple dictionary structure for refine.py to consume
         clinical_services = create_clinical_services_dict(clinical_services)
@@ -194,18 +205,32 @@ async def refine_ecr(
     ] = None,
 ) -> Response:
     """
-    This endpoint refines an incoming XML eCR message based on sections to include and/or trigger code
-    conditions to include, based on the parameters included in the endpoint.
+    Refine an XML eCR message based on specified sections and conditions.
 
-    The return will be a formatted, refined XML, limited to just the data specified.
+    Takes an XML eCR message and refines it by filtering sections and clinical
+    services based on provided parameters. Returns a formatted XML limited to
+    the specified data.
 
-    ### Inputs and Outputs
-    - :param refiner_input: The request object containing the XML input.
-    - :param sections_to_include: The fields to include in the refined message.
-    - :param conditions_to_include: The SNOMED condition codes to use to search for
-      relevant clinical services in the eCR.
-    - :return: The RefineeCRResponse, the refined XML as a string.
+    Args:
+        refiner_input: Request object containing the XML input.
+        sections_to_include: Comma-separated LOINC codes for filtering eCR sections.
+            Valid codes include:
+            - 46240-8: Encounters--Hospitalizations+outpatient visits
+            - 10164-2: History of present illness
+            - 11369-6: History of immunizations
+            - 29549-3: Medications administered
+            - 18776-5: Plan of treatment
+            - 11450-4: Problem list
+            - 29299-5: Reason for visit
+            - 30954-2: Results--Diagnostic tests/laboratory
+            - 29762-2: Social history
+        conditions_to_include: Comma-separated SNOMED condition codes for
+            searching relevant clinical services.
+
+    Returns:
+        Response: The refined XML eCR document.
     """
+
     data = await refiner_input.body()
 
     validated_message, error_message = validate_message(data)
@@ -222,9 +247,7 @@ async def refine_ecr(
 
     clinical_services = None
     if conditions_to_include:
-        clinical_services = [
-            service for service in _get_clinical_services(conditions_to_include)
-        ]
+        clinical_services = list(_get_clinical_services(conditions_to_include))
 
         # create a simple dictionary structure for refine.py to consume
         clinical_services = create_clinical_services_dict(clinical_services)
@@ -236,13 +259,19 @@ async def refine_ecr(
 
 def _get_clinical_services(condition_codes: str) -> list[dict]:
     """
-    This a function that loops through the provided condition codes. For each
-    condition code provided, it returns the value set of clinical services associated
-    with that condition.
+    Get clinical services associated with provided condition codes.
 
-    :param condition_codes: SNOMED condition codes to look up in the TES DB
-    :return: List of clinical services associated with a condition code
+    Queries the TES database to find and return all clinical services
+    associated with the given SNOMED condition codes.
+
+    Args:
+        condition_codes: Comma-separated SNOMED condition codes to look up.
+
+    Returns:
+        list[dict]: Clinical services associated with the condition codes.
+            Each dictionary contains the service details.
     """
+
     clinical_services_list = []
     conditions_list = condition_codes.split(",")
     for condition in conditions_list:
