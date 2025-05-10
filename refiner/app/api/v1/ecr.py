@@ -20,7 +20,7 @@ from ...core.exceptions import (
 from ...core.models import RefineECRResponse
 from ...services.refine import refine, validate_message, validate_sections_to_include
 from ...services.rr_parser import get_reportable_conditions, parse_xml
-from ...services.terminology import _get_clinical_services
+from ...services.terminology import get_clinical_services
 from ...services.utils import (
     create_clinical_services_dict,
     read_zip,
@@ -97,7 +97,7 @@ async def refine_ecr_from_zip(
         # process conditions if provided
         clinical_services = None
         if conditions_to_include:
-            clinical_services = list(_get_clinical_services(conditions_to_include))
+            clinical_services = list(get_clinical_services(conditions_to_include))
             clinical_services = create_clinical_services_dict(clinical_services)
 
         # refine the data
@@ -181,7 +181,7 @@ async def refine_ecr(
 
         clinical_services = None
         if conditions_to_include:
-            clinical_services = list(_get_clinical_services(conditions_to_include))
+            clinical_services = list(get_clinical_services(conditions_to_include))
             clinical_services = create_clinical_services_dict(clinical_services)
 
         refined_data = refine(validated_message, sections, clinical_services)
