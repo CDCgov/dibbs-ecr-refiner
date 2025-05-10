@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from app.refine import refine, validate_message
-from app.utils import read_zip
+from ...core.exceptions import XMLValidationError
+from ...services.refine import refine, validate_message
+from ...services.utils import read_zip
 
+# create a router instance for this file
 router = APIRouter(prefix="/demo")
 
 
@@ -54,7 +56,14 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
 
     # Read the created UploadFile
     eicr_xml, _rr_xml = await read_zip(upload_file)
-    validated_message, _error_message = validate_message(eicr_xml)
+
+    try:
+        validated_message = validate_message(eicr_xml)
+    except XMLValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e), "details": e.details},
+        )
     refined_data = refine(validated_message, None, None)
     return JSONResponse(
         content=jsonable_encoder(

@@ -2,7 +2,6 @@ chardet
 fastapi>=0.109.1
 httpx
 lxml
-pathlib
 pydantic-settings
 pydantic>=2.0.0
 python-multipart

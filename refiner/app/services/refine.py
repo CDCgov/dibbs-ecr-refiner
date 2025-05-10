@@ -2,7 +2,8 @@ import logging
 
 from lxml import etree
 
-from app.utils import read_json_from_assets
+from ..core.exceptions import SectionValidationError, XMLValidationError
+from .utils import read_json_from_assets
 
 log = logging.getLogger(__name__).error
 
@@ -22,58 +23,77 @@ TRIGGER_CODE_TEMPLATE_IDS = [
 ]
 
 
-def validate_message(raw_message: str) -> tuple[bytes | None, str]:
+def validate_message(message: bytes | str) -> etree.Element:
     """
-    Validate that an incoming XML message can be parsed by lxml's etree.
+    Validates an XML message and returns the parsed element.
 
     Args:
-        raw_message: The XML input string to validate.
+        message: The XML message to validate (can by bytes or string)
 
     Returns:
-        tuple[bytes | None, str]: A tuple containing:
-            - bytes | None: The parsed XML if valid, None if invalid
-            - str: The validation result message
-    """
-
-    error_message = ""
-    try:
-        validated_message = etree.fromstring(raw_message)
-        return (validated_message, error_message)
-    except etree.XMLSyntaxError as error:
-        error_message = "Invalid XML format."
-        log(f"XMLSyntaxError: {error}")
-        return (None, error_message)
-
-
-def validate_sections_to_include(sections_to_include: str | None) -> tuple[list, str]:
-    """
-    Validate sections for message refinement and convert to LOINC codes.
-
-    Args:
-        sections_to_include: The sections to include in the refined message.
+        etree.Element: The validated and parsed XML element
 
     Raises:
-        ValueError: When at least one of the sections_to_include is invalid.
-
-    Returns:
-        tuple[list, str]: A tuple containing:
-            - list: LOINC codes corresponding to the valid sections
-            - str: Error message (empty string if validation successful)
+        XMLValidationError: If validation fails
     """
 
-    if sections_to_include in [None, ""]:
-        return (None, "")
+    if not message:
+        raise XMLValidationError(
+            message="XML message cannot be empty",
+            details={"provided_length": len(message)},
+        )
 
-    section_loincs = []
-    sections = sections_to_include.split(",")
-    for section in sections:
-        if section not in SECTION_LOINCS:
-            error_message = "Invalid section provided."
-            log(f"Invalid section: {section}")
-            return (section_loincs, error_message)
-        section_loincs.append(section)
+    try:
+        # parse the XML message
+        parser = etree.XMLParser(remove_blank_text=True)
+        if isinstance(message, str):
+            message = message.encode("utf-8")
+        xml_root = etree.fromstring(message, parser=parser)
+        return xml_root
+    except etree.ParseError as e:
+        raise XMLValidationError(
+            message="Failed to parse XML",
+            details={
+                "error": str(e),
+                "line": getattr(e, "line", None),
+                "column": getattr(e, "column", None),
+            },
+        )
 
-    return (section_loincs, "")
+
+def validate_sections_to_include(
+    sections_to_include: str | None,
+) -> list[str] | None:
+    """
+    Validates section codes from query parameter.
+
+    Args:
+        sections_to_include: Comma-separated section codes
+
+    Returns:
+        list[str] | None: List of validated section codes, or None if no sections provided
+
+    Raises:
+        SectionValidationError: If any section code is invalid
+    """
+
+    if sections_to_include is None:
+        return None
+
+    sections = [s.strip() for s in sections_to_include.split(",") if s.strip()]
+    valid_sections = set(REFINER_DETAILS["sections"].keys())
+
+    invalid_sections = [s for s in sections if s not in valid_sections]
+    if invalid_sections:
+        raise SectionValidationError(
+            message=f"Invalid section codes: {', '.join(invalid_sections)}",
+            details={
+                "invalid_sections": invalid_sections,
+                "valid_sections": list(valid_sections),
+            },
+        )
+
+    return sections
 
 
 def refine(
@@ -113,6 +133,7 @@ def refine(
     Returns:
         str: The refined eICR XML document as a string.
     """
+
     # dictionary that will hold the section processing instructions
     # this is based on the combination of parameters passed to `refine`
     # as well as deails from REFINER_DETAILS
@@ -218,6 +239,7 @@ def _process_section(
         template_ids: The list of template IDs to check.
         clinical_services_codes: Optional list of clinical service codes to check.
     """
+
     check_elements = _are_elements_present(
         section, "templateId", template_ids, namespaces
     )
@@ -244,6 +266,7 @@ def _generate_combined_xpath(
     """
     Generate a combined XPath expression for templateIds and all codes across all systems, ensuring they are within 'observation' elements.
     """
+
     xpath_conditions = []
 
     # add templateId conditions within <observation> elements if needed
@@ -346,6 +369,7 @@ def _are_elements_present(
     Returns:
         bool: True if any specified elements are present, False otherwise.
     """
+
     if search_type == "templateId":
         xpath_queries = [
             f'.//hl7:templateId[@root="{value}"]' for value in search_values
@@ -361,6 +385,7 @@ def _find_path_to_entry(element: etree.Element) -> list[etree.Element]:
     """
     Helper function to find the path from a given element to the parent <entry> element.
     """
+
     path = []
     current_element = element
     while current_element.tag != "{urn:hl7-org:v3}entry":
@@ -413,6 +438,7 @@ def _extract_observation_data(
     Returns:
         dict[str, str | bool]: Dictionary containing the extracted observation data.
     """
+
     template_id_elements = observation.findall(
         ".//hl7:templateId", namespaces={"hl7": "urn:hl7-org:v3"}
     )
@@ -449,6 +475,7 @@ def _create_or_update_text_element(observations: list[etree.Element]) -> etree.E
     Returns:
         etree.Element: The created or updated text element.
     """
+
     text_element = etree.Element("{urn:hl7-org:v3}text")
     title = etree.SubElement(text_element, "title")
     title.text = "Output from CDC PRIME DIBBs `message-refiner` API by request of STLT"
@@ -509,6 +536,7 @@ def _create_minimal_section(section: etree.Element) -> None:
     Args:
         section: The section element to update.
     """
+
     namespaces = {"hl7": "urn:hl7-org:v3"}
     text_element = section.find(".//hl7:text", namespaces=namespaces)
 

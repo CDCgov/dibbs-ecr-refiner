@@ -1,4 +1,4 @@
-from app.utils import create_clinical_services_dict
+from app.services.utils import create_clinical_services_dict
 
 
 def test_create_clinical_services_dict():
