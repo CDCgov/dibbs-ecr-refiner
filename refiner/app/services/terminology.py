@@ -1,7 +1,7 @@
 from .db import get_value_sets_for_condition
 
 
-def _get_clinical_services(condition_codes: str) -> list[dict]:
+def get_clinical_services(condition_codes: str) -> list[dict]:
     """
     Get clinical services associated with condition codes.
 
