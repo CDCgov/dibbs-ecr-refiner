@@ -2,6 +2,14 @@ class BaseApplicationException(Exception):
     """Base exception for all application-specific exceptions."""
 
     def __init__(self, message: str, details: dict | None = None):
+        """
+        Initialize the base application exception.
+
+        Args:
+            message: The error message to be displayed.
+            details: Optional dictionary containing additional error details.
+        """
+
         self.message = message
         self.details = details or {}
         super().__init__(self.message)

@@ -24,6 +24,7 @@ def parse_xml(rr_xml: str) -> etree._Element:
         XMLValidationError: If the XML is invalid
         XMLProcessingError: If XML processing fails
     """
+
     if not rr_xml:
         raise XMLValidationError("XML content cannot be empty")
 
@@ -42,11 +43,20 @@ def parse_xml(rr_xml: str) -> etree._Element:
         )
 
 
-def get_reportable_conditions(root) -> str | None:
+def get_reportable_conditions(root: etree.Element) -> str | None:
     """
+    Get SNOMED CT codes from the Report Summary section.
+
     Scan the Report Summary section for SNOMED CT codes and return
     them as a comma-separated string, or None if none found.
+
+    Args:
+        root: The root element of the XML document to parse.
+
+    Returns:
+        str | None: Comma-separated SNOMED CT codes or None if none found.
     """
+
     codes = []
 
     # find sections with loinc code 55112-7

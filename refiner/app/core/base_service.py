@@ -34,6 +34,21 @@ class StatusResponse(BaseModel):
 
 
 class BaseService:
+    """
+    Base service class for DIBBs FastAPI applications.
+
+    This reusable class provides common functionality for DIBBs services including:
+    - FastAPI application setup with standard metadata
+    - Path rewriting middleware for gateway compatibility
+    - Optional health check endpoint
+    - License and OpenAPI configuration
+
+    Note:
+        Middlewares and endpoints must be added after class instantiation by
+        calling the start() method, which calls add_path_rewrite_middleware()
+        and add_health_check_endpoint().
+    """
+
     def __init__(
         self,
         service_name: str,
@@ -46,22 +61,20 @@ class BaseService:
         """
         Initialize a BaseService instance.
 
-        :param service_name: The name of the service.
-        :param service_path: The path to used to access the service from a gateway.
-        :param description_path: The path to a markdown file containing a description of
-          the service.
-        :param include_health_check_endpoint: If True, the standard DIBBs health check
-          endpoint will be added.
-        :param license_info: If empty, the standard DIBBs Creative Commons Zero v1.0
-          Universal license will be used. The other available option is to use the
-          MIT license.
-        :param openapi_url: Optionally, the url of the OpenAPI.json file that FastAPI
-          should use when auto-constructing docs at the `/redoc` endpoint. For
-          services deployed in public environments managed by application gateways
-          or other routers, this parameter should be set to
-          "/{service-name}/openapi.json". If omitted, the parameter is set to the
-          FastAPI default.
+        Args:
+            service_name: Name of the service.
+            service_path: Path used to access the service from a gateway.
+            description_path: Path to markdown file containing service description.
+            include_health_check_endpoint: Whether to add standard DIBBs health
+                check endpoint. Defaults to True.
+            license_info: License to use for the service. Options:
+                - "CreativeCommonsZero" (default): CC0 v1.0 Universal
+                - "MIT": MIT License
+            openapi_url: URL for OpenAPI.json used by FastAPI for /redoc.
+                For services behind gateways, use "/{service-name}/openapi.json".
+                Defaults to "/openapi.json".
         """
+
         description = Path(description_path).read_text(encoding="utf-8")
         self.service_path = service_path
         self.include_health_check_endpoint = include_health_check_endpoint
@@ -74,18 +87,12 @@ class BaseService:
             openapi_url=openapi_url,
         )
 
-    """
-    Because this is a reusable class, middlewares and endpoints need to be
-    added after the class is instantiated. This is done by calling the start
-    method, which in turn calls the add_path_rewrite_middleware and
-    add_health_check_endpoint methods.
-    """
-
     def add_path_rewrite_middleware(self) -> None:
         """
-        Add middleware to the FastAPI instance to strip the service_path
-        from the URL path if it is present. This is useful when the service
-        is behind a gateway that is using a path-based routing strategy.
+        Add path rewriting middleware for gateway compatibility.
+
+        Adds middleware to strip service_path from URL paths when present.
+        Useful for services behind gateways using path-based routing.
         """
 
         @self.app.middleware("http")
@@ -108,20 +115,24 @@ class BaseService:
 
         @self.app.get("/")
         async def health_check() -> StatusResponse:
-            """
-            This endpoint checks service status. If an HTTP 200 status code is returned along with
-            '{"status": "OK"}' then the service is available and running properly.
+            """Check service health status.
+
+            Returns:
+                StatusResponse: {"status": "OK"} with HTTP 200 if service is healthy.
             """
             return STATUS_OK
 
     def start(self) -> FastAPI:
         """
-        Return a FastAPI instance with DIBBs metadata set. If
-        `include_health_check_endpoint` is True, then the health check endpoint
-        will be added.
+        Initialize and return the configured FastAPI instance.
 
-        :return: The FastAPI instance.
+        Adds middleware and optional health check endpoint before returning
+        the FastAPI application instance.
+
+        Returns:
+            FastAPI: Configured FastAPI instance with DIBBs metadata.
         """
+
         self.add_path_rewrite_middleware()
         if self.include_health_check_endpoint:
             self.add_health_check_endpoint()

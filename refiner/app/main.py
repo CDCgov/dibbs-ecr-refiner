@@ -28,9 +28,15 @@ router.include_router(ecr.router)
 
 def custom_openapi() -> dict[str, Any]:
     """
-    This customizes the FastAPI response to allow example requests given that the
-    raw Request cannot have annotations.
+    Customize FastAPI OpenAPI response to support example requests.
+
+    Modifies the OpenAPI schema to allow example requests where raw Request
+    objects cannot have annotations.
+
+    Returns:
+        dict[str, Any]: Customized OpenAPI schema.
     """
+
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
@@ -58,10 +64,13 @@ app.openapi = custom_openapi
 @router.get("/healthcheck")
 async def health_check() -> dict[str, str]:
     """
-    This endpoint checks service status. If an HTTP 200 status code is returned
-    along with `{"status": "OK"}'` then the Message Refiner is available and
-    running properly.
+    Check service health status.
+
+    Returns:
+        dict[str, str]: Service status response:
+            - {"status": "OK"} with HTTP 200 if service is healthy
     """
+
     return {"status": "OK"}
 
 

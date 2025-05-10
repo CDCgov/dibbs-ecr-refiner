@@ -41,7 +41,7 @@ Please copy the acceptance criteria from your ticket and paste it here for your 
 <!--
 1. Install dependencies: `npm install`
 2. Run tests: `npm test`
-3. Start application: `npm start` 
+3. Start application: `npm start`
 4. Navigate to http://localhost:3000
 5. Enter sample data in the user profile form and verify validation works
 

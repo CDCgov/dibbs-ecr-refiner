@@ -11,13 +11,15 @@ from ..core.exceptions import ZipValidationError
 
 def read_json_from_assets(filename: str) -> dict:
     """
-    Reads a JSON file from the assets directory.
+    Read a JSON file from the assets directory.
 
     Args:
         filename: The name of the file to read.
+
     Returns:
         dict: Contents of the JSON file.
     """
+
     return json.load(
         open(pathlib.Path(__file__).parent.parent.parent / "assets" / filename)
     )
@@ -25,12 +27,17 @@ def read_json_from_assets(filename: str) -> dict:
 
 def load_section_loincs(loinc_json: dict) -> tuple[list, dict]:
     """
-    Reads section LOINC json to create two constants needed for parsing
-    section data and creating refined sections.
-    :param loinc_dict: Nested dictionary containing the nested section LOINCs
-    :return: a list of all section LOINCs currently supported by the API;
-             a dictionary of all required section LOINCs to pass validation
+    Read section LOINC JSON to create parsing and validation constants.
+
+    Args:
+        loinc_json: Nested dictionary containing the nested section LOINCs.
+
+    Returns:
+        tuple[list, dict]: A tuple containing:
+            - list: All section LOINCs currently supported by the API
+            - dict: All required section LOINCs to pass validation
     """
+
     # LOINC codes for eICR sections our refiner API accepts
     section_list = list(loinc_json.keys())
 
@@ -52,7 +59,12 @@ def create_clinical_services_dict(
     clinical_services_list: list[dict],
 ) -> dict[str, list[str]]:
     """
-    Transform the original Trigger Code Reference API response.
+    Transform Trigger Code Reference API response to system-based dictionary.
+
+    Converts the API response to use system names as keys and code lists as values.
+    Systems are normalized to recognized shorthand names for XPath construction and
+    system name variant filtering.
+
 
     Args:
         clinical_services_list: List of clinical services from TCR API
@@ -63,6 +75,7 @@ def create_clinical_services_dict(
     Raises:
         ZipValidationError: If an unrecognized clinical service system is found
     """
+
     system_dict = {
         "http://hl7.org/fhir/sid/icd-9-cm": "icd9",
         "http://hl7.org/fhir/sid/icd-10-cm": "icd10",
@@ -105,6 +118,7 @@ async def read_zip(file: UploadFile) -> tuple[str, str]:
     Raises:
         ZipValidationError: If ZIP file is invalid or required files are missing
     """
+
     try:
         zip_bytes = await file.read()
         zip_stream = BytesIO(zip_bytes)

@@ -63,15 +63,18 @@ async def refine_ecr_from_zip(
     ] = None,
 ) -> Response:
     """
+    Process and refine eCR messages from uploaded ZIP files.
+
     Accepts a ZIP file, extracts `CDA_eICR.xml` and `CDA_RR.xml`,
     and processes them for refining the eCR message.
 
-    - `file`: The uploaded ZIP file.
-    - `sections_to_include`: Comma-separated LOINC codes for filtering eCR sections.
-    - `conditions_to_include`: Comma-separated SNOMED condition codes.
+    Args:
+        file: The uploaded ZIP file.
+        sections_to_include: Comma-separated LOINC codes for filtering eCR sections.
+        conditions_to_include: Comma-separated SNOMED condition codes.
 
     Returns:
-    - A refined XML eCR response.
+        Response: A refined XML eCR response.
     """
     try:
         # extract and validate XML
@@ -94,9 +97,7 @@ async def refine_ecr_from_zip(
         # process conditions if provided
         clinical_services = None
         if conditions_to_include:
-            clinical_services = [
-                service for service in _get_clinical_services(conditions_to_include)
-            ]
+            clinical_services = list(_get_clinical_services(conditions_to_include))
             clinical_services = create_clinical_services_dict(clinical_services)
 
         # refine the data
@@ -151,17 +152,23 @@ async def refine_ecr(
     ] = None,
 ) -> Response:
     """
+    Refine an XML eCR message based on specified parameters.
+
     This endpoint refines an incoming XML eCR message based on sections to include and/or trigger code
     conditions to include, based on the parameters included in the endpoint.
 
     The return will be a formatted, refined XML, limited to just the data specified.
 
     ### Inputs and Outputs
-    - :param refiner_input: The request object containing the XML input.
-    - :param sections_to_include: The fields to include in the refined message.
-    - :param conditions_to_include: The SNOMED condition codes to use to search for
-      relevant clinical services in the eCR.
-    - :return: The RefineeCRResponse, the refined XML as a string.
+
+    Args:
+        refiner_input: The request object containing the XML input.
+        sections_to_include: The fields to include in the refined message.
+        conditions_to_include: The SNOMED condition codes to use to search for
+            relevant clinical services in the eCR.
+
+    Returns:
+        Response: The RefineeCRResponse, the refined XML as a string.
     """
 
     try:
@@ -174,9 +181,7 @@ async def refine_ecr(
 
         clinical_services = None
         if conditions_to_include:
-            clinical_services = [
-                service for service in _get_clinical_services(conditions_to_include)
-            ]
+            clinical_services = list(_get_clinical_services(conditions_to_include))
             clinical_services = create_clinical_services_dict(clinical_services)
 
         refined_data = refine(validated_message, sections, clinical_services)
