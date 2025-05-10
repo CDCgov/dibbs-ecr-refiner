@@ -99,7 +99,7 @@ class BaseService:
         async def rewrite_path(request: Request, call_next: callable) -> Response:
             if (
                 request.url.path.startswith(self.service_path)
-                and "openapi.json" not in request.url.path
+                and "api/openapi.json" not in request.url.path
             ):
                 request.scope["path"] = request.scope["path"].replace(
                     self.service_path, ""

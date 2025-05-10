@@ -1,67 +1,26 @@
 import os
 from pathlib import Path
-from typing import Any
 
 from fastapi import APIRouter
-from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
-from .api.v1 import demo, ecr
+from .api.v1.v1_router import router as v1_router
 from .core.base_service import BaseService
-from .core.examples import ECR_REQUEST_EXAMPLES
+from .core.openapi import create_custom_openapi
 
+# environment configuration
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
-# Instantiate FastAPI via DIBBs' BaseService class
-app = BaseService(
-    service_name="Message Refiner",
-    service_path="/message-refiner",
-    description_path=Path(__file__).parent.parent / "README.md",
-    include_health_check_endpoint=False,
-    openapi_url="/openapi.json",
-).start()
+# service router
+service_router = APIRouter()
 
-router = APIRouter(prefix="/api/v1")
-router.include_router(demo.router)
-router.include_router(ecr.router)
+# api router
+router = APIRouter(prefix="/api")
+router.include_router(v1_router)
 
 
-def custom_openapi() -> dict[str, Any]:
-    """
-    Customize FastAPI OpenAPI response to support example requests.
-
-    Modifies the OpenAPI schema to allow example requests where raw Request
-    objects cannot have annotations.
-
-    Returns:
-        dict[str, Any]: Customized OpenAPI schema.
-    """
-
-    if app.openapi_schema:
-        return app.openapi_schema
-    openapi_schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-    path = openapi_schema["paths"]["/api/v1/ecr"]["post"]
-    path["requestBody"] = {
-        "content": {
-            "application/xml": {
-                "schema": {"type": "Raw eCR XML payload"},
-                "examples": ECR_REQUEST_EXAMPLES,
-            }
-        }
-    }
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-
-app.openapi = custom_openapi
-
-
-@router.get("/healthcheck")
+# define health check endpoint at the service level
+@service_router.get("/healthcheck")
 async def health_check() -> dict[str, str]:
     """
     Check service health status.
@@ -74,6 +33,21 @@ async def health_check() -> dict[str, str]:
     return {"status": "OK"}
 
 
+# Instantiate FastAPI via DIBBs' BaseService class
+app = BaseService(
+    service_name="Message Refiner",
+    service_path="/message-refiner",
+    description_path=Path(__file__).parent.parent / "README.md",
+    include_health_check_endpoint=False,
+    openapi_url="/message-refiner/api/openapi.json",
+).start()
+
+# configure app state and openapi
+app.state.service_path = "/message-refiner"
+app.openapi = lambda: create_custom_openapi(app)
+
+# include routers in app
+app.include_router(service_router)
 app.include_router(router)
 
 # When running the application in production we will mount the static client files from the
