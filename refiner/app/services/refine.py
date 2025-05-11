@@ -2,14 +2,15 @@ import logging
 
 from lxml import etree
 
-from ..core.exceptions import SectionValidationError, XMLValidationError
-from .utils import read_json_from_assets
+from ..core.exceptions import SectionValidationError
+from ..core.models.types import XMLFiles
+from .file_io import read_json_asset
 
 log = logging.getLogger(__name__).error
 
 
 # read json that contains details for refining and is the base of what drives `refine`
-REFINER_DETAILS = read_json_from_assets("refiner_details.json")
+REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 # extract section LOINC codes from the REFINER_DETAILS dictionary
 SECTION_LOINCS = list(REFINER_DETAILS["sections"].keys())
@@ -21,44 +22,6 @@ TRIGGER_CODE_TEMPLATE_IDS = [
     "2.16.840.1.113883.10.20.15.2.3.4",
     "2.16.840.1.113883.10.20.15.2.3.2",
 ]
-
-
-def validate_message(message: bytes | str) -> etree.Element:
-    """
-    Validates an XML message and returns the parsed element.
-
-    Args:
-        message: The XML message to validate (can by bytes or string)
-
-    Returns:
-        etree.Element: The validated and parsed XML element
-
-    Raises:
-        XMLValidationError: If validation fails
-    """
-
-    if not message:
-        raise XMLValidationError(
-            message="XML message cannot be empty",
-            details={"provided_length": len(message)},
-        )
-
-    try:
-        # parse the XML message
-        parser = etree.XMLParser(remove_blank_text=True)
-        if isinstance(message, str):
-            message = message.encode("utf-8")
-        xml_root = etree.fromstring(message, parser=parser)
-        return xml_root
-    except etree.ParseError as e:
-        raise XMLValidationError(
-            message="Failed to parse XML",
-            details={
-                "error": str(e),
-                "line": getattr(e, "line", None),
-                "column": getattr(e, "column", None),
-            },
-        )
 
 
 def validate_sections_to_include(
@@ -96,8 +59,63 @@ def validate_sections_to_include(
     return sections
 
 
-def refine(
-    validated_message: etree.Element,
+def get_reportable_conditions(root: etree.Element) -> str | None:
+    """
+    Get SNOMED CT codes from the Report Summary section.
+
+    Scan the Report Summary section for SNOMED CT codes and return
+    them as a comma-separated string, or None if none found.
+
+    Args:
+        root: The root element of the XML document to parse.
+
+    Returns:
+        str | None: Comma-separated SNOMED CT codes or None if none found.
+    """
+
+    codes = []
+
+    namespaces = {
+        "cda": "urn:hl7-org:v3",
+        "sdtc": "urn:hl7-org:sdtc",
+        "voc": "http://www.lantanagroup.com/voc",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    }
+    # find sections with loinc code 55112-7
+    for section in root.xpath(
+        ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
+    ):
+        # find all values with the specified codeSystem
+        values = section.xpath(
+            ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']/@code",
+            namespaces=namespaces,
+        )
+        codes.extend(values)
+
+    return ",".join(codes) if codes else None
+
+
+def process_rr(xml_files: XMLFiles) -> dict:
+    """
+    Process the RR XML document to extract relevant information.
+
+    Args:
+        xml_files: Container with both eICR and RR XML content
+                  (currently only using RR)
+
+    Returns:
+        dict: Extracted information from the RR document
+    """
+
+    rr_root = xml_files.parse_rr()
+
+    return {
+        "reportable_conditions": get_reportable_conditions(rr_root),
+    }
+
+
+def refine_eicr(
+    xml_files: XMLFiles,
     sections_to_include: list[str] | None = None,
     clinical_services: dict[str, list[str]] | None = None,
 ) -> str:
@@ -123,7 +141,7 @@ def refine(
         - For other sections: Process normally
 
     Args:
-        validated_message: The eICR XML document to refine.
+        xml_files: The NamedTuple XMLFiles that contains the eICR XML document to refine.
         sections_to_include: Optional list of section LOINC codes. When provided
             alone, preserves these sections. When provided with clinical_services,
             focuses the search to these sections.
@@ -133,6 +151,9 @@ def refine(
     Returns:
         str: The refined eICR XML document as a string.
     """
+
+    # parse the eicr document
+    validated_message = xml_files.parse_eicr()
 
     # dictionary that will hold the section processing instructions
     # this is based on the combination of parameters passed to `refine`

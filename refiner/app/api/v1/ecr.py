@@ -11,20 +11,16 @@ from fastapi import (
     status,
 )
 
-from ...core.examples import ECR_RESPONSE_EXAMPLES
+from ...core.config import ECR_RESPONSE_EXAMPLES
 from ...core.exceptions import (
     SectionValidationError,
     XMLValidationError,
     ZipValidationError,
 )
 from ...core.models import RefineECRResponse
-from ...services.refine import refine, validate_message, validate_sections_to_include
-from ...services.rr_parser import get_reportable_conditions, parse_xml
-from ...services.terminology import get_clinical_services
-from ...services.utils import (
-    create_clinical_services_dict,
-    read_zip,
-)
+from ...core.models.types import XMLFiles
+from ...services import file_io, refine
+from ...services.terminology import create_clinical_services_dict, get_clinical_services
 
 # create a router instance for this file
 router = APIRouter(prefix="/ecr")
@@ -77,22 +73,21 @@ async def refine_ecr_from_zip(
         Response: A refined XML eCR response.
     """
     try:
-        # extract and validate XML
-        eicr_xml, _rr_xml = await read_zip(file)
-        validated_message = validate_message(eicr_xml)
+        # read both xml files
+        xml_files = await file_io.read_xml_zip(file)
 
-        # parse RR XML
-        _rr_xml = parse_xml(_rr_xml)
+        # process RR to get reportable conditions
+        rr_results = refine.process_rr(xml_files)
+        reportable_conditions = rr_results["reportable_conditions"]
 
-        # get reportable conditions
-        reportable_snomeds = get_reportable_conditions(_rr_xml)
-        if not conditions_to_include and reportable_snomeds:
-            conditions_to_include = reportable_snomeds
+        # use RR conditions if none specified
+        if not conditions_to_include and reportable_conditions:
+            conditions_to_include = reportable_conditions
 
-        # process sections if provided
+        # validate sections if provided
         sections = None
         if sections_to_include:
-            sections = validate_sections_to_include(sections_to_include)
+            sections = refine.validate_sections_to_include(sections_to_include)
 
         # process conditions if provided
         clinical_services = None
@@ -100,8 +95,8 @@ async def refine_ecr_from_zip(
             clinical_services = list(get_clinical_services(conditions_to_include))
             clinical_services = create_clinical_services_dict(clinical_services)
 
-        # refine the data
-        refined_data = refine(validated_message, sections, clinical_services)
+        # refine the eICR
+        refined_data = refine.refine_eicr(xml_files, sections, clinical_services)
 
         return Response(content=refined_data, media_type="application/xml")
 
@@ -172,19 +167,25 @@ async def refine_ecr(
     """
 
     try:
+        # get raw xml data
         data = await refiner_input.body()
-        validated_message = validate_message(data)
 
+        # create XMLFiles with empty RR since this endpoint only processes eICR
+        xml_files = XMLFiles(eicr=data.decode("utf-8"), rr="")
+
+        # validate sections if provided
         sections = None
         if sections_to_include:
-            sections = validate_sections_to_include(sections_to_include)
+            sections = refine.validate_sections_to_include(sections_to_include)
 
+        # process conditions if provided
         clinical_services = None
         if conditions_to_include:
             clinical_services = list(get_clinical_services(conditions_to_include))
             clinical_services = create_clinical_services_dict(clinical_services)
 
-        refined_data = refine(validated_message, sections, clinical_services)
+        # refine the eICR
+        refined_data = refine.refine_eicr(xml_files, sections, clinical_services)
         return Response(content=refined_data, media_type="application/xml")
 
     except XMLValidationError as e:

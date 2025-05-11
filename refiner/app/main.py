@@ -5,8 +5,8 @@ from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
 
 from .api.v1.v1_router import router as v1_router
-from .core.base_service import BaseService
-from .core.openapi import create_custom_openapi
+from .core.app.base import BaseService
+from .core.app.openapi import create_custom_openapi
 
 # environment configuration
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"

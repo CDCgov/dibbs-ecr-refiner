@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
-from .examples import ECR_REQUEST_EXAMPLES
+from ..models.api import ECR_REQUEST_EXAMPLES
 
 
 def create_custom_openapi(app: FastAPI) -> dict:

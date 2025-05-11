@@ -3,34 +3,9 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Request, Response
-from pydantic import BaseModel
 
-# create a class with the DIBBs default Creative Commons Zero v1.0 and
-# MIT license to be used by the BaseService class
-LICENSES = {
-    "CreativeCommonsZero": {
-        "name": "Creative Commons Zero v1.0 Universal",
-        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
-    },
-    "MIT": {"name": "The MIT License", "url": "https://mit-license.org/"},
-}
-
-DIBBS_CONTACT = {
-    "name": "CDC Public Health Data Infrastructure",
-    "url": "https://cdcgov.github.io/dibbs-site/",
-    "email": "dibbs@cdc.gov",
-}
-
-
-STATUS_OK = {"status": "OK"}
-
-
-class StatusResponse(BaseModel):
-    """
-    The schema for the response from the health check endpoint.
-    """
-
-    status: Literal["OK"]
+from ..config import DIBBS_CONTACT, LICENSES
+from ..models.api import StatusResponse
 
 
 class BaseService:
@@ -120,7 +95,7 @@ class BaseService:
             Returns:
                 StatusResponse: {"status": "OK"} with HTTP 200 if service is healthy.
             """
-            return STATUS_OK
+            return {"status": "OK"}
 
     def start(self) -> FastAPI:
         """
