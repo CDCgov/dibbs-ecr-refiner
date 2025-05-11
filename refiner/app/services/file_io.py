@@ -45,6 +45,12 @@ def parse_xml(xml_content: str | bytes) -> etree.Element:
         XMLValidationError: If XML is invalid or empty
     """
 
+    if xml_content is None:
+        raise XMLValidationError(
+            message="XML content cannot be empty",
+            details={"provided_content": None},
+        )
+    # This handles empty string/bytes
     if not xml_content:
         raise XMLValidationError(
             message="XML content cannot be empty",

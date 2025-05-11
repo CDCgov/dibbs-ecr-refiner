@@ -1,38 +1,136 @@
 import os
 from pathlib import Path
+from zipfile import ZipFile
 
-import lxml.etree as ET
 import pytest
+from lxml import etree
+
+from app.core.models.types import XMLFiles
+
+NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
+
+TRIGGER_CODE_TEMPLATE_IDS: list[str] = [
+    "2.16.840.1.113883.10.20.15.2.3.5",
+    "2.16.840.1.113883.10.20.15.2.3.3",
+    "2.16.840.1.113883.10.20.15.2.3.4",
+    "2.16.840.1.113883.10.20.15.2.3.2",
+]
+
+# file names that read_xml_zip looks for
+EICR_FILENAME = "CDA_eICR.xml"
+RR_FILENAME = "CDA_RR.xml"
 
 
 def pytest_configure():
-    """Add Trigger Code Reference service URL"""
+    """
+    Add Trigger Code Reference service URL for testing environment.
+    """
+
     os.environ["TRIGGER_CODE_REFERENCE_URL"] = (
         "http://trigger-code-reference-service:8080"
     )
 
 
 @pytest.fixture(scope="session")
-def read_file_from_test_assets():
+def test_assets_path() -> Path:
+    """
+    Return the path to the test assets directory.
+    """
+
+    return Path(__file__).parent / "assets"
+
+
+@pytest.fixture(scope="session")
+def read_test_file():
+    """
+    Fixture to read file contents from test assets.
+    """
+
     def _read_file(filename: str) -> str:
+        """Read a file from the test assets directory.
+
+        Args:
+            filename: Name of the file in the test assets directory
+
+        Returns:
+            str: Contents of the file
         """
-        Reads a file from the test assets directory.
-        """
-        with open(Path(__file__).parent / "assets" / filename) as file:
+
+        with open(
+            Path(__file__).parent / "assets" / filename, encoding="utf-8"
+        ) as file:
             return file.read()
 
     return _read_file
 
 
 @pytest.fixture(scope="session")
-def parse_file_from_test_assets():
-    def _parse_file(filename: str) -> ET.ElementTree:
-        """
-        Parses a file from the assets directory into an ElementTree.
-        """
-        with open(Path(__file__).parent / "assets" / filename) as file:
-            parser = ET.XMLParser()
-            tree = ET.parse(file, parser)
-            return tree
+def read_test_xml():
+    """
+    Fixture to read and parse XML files from test assets.
+    """
 
-    return _parse_file
+    def _read_xml(filename: str) -> etree.Element:
+        """
+        Read and parse an XML file from test assets.
+
+        Args:
+            filename: Name of the XML file in test assets directory
+
+        Returns:
+            etree.Element: Parsed XML root element
+        """
+
+        parser = etree.XMLParser(remove_blank_text=True)
+        tree = etree.parse(Path(__file__).parent / "assets" / filename, parser)
+        return tree.getroot()
+
+    return _read_xml
+
+
+@pytest.fixture
+def create_test_zip():
+    def _create_zip(tmp_path: Path, files: dict[str, str]) -> Path:
+        """
+        Create a test ZIP file with given content.
+
+        Args:
+            tmp_path: Path to create ZIP in
+            files: Dict of {zip_path: source_path} for files to include
+
+        Returns:
+            Path to created ZIP file
+        """
+
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            for zip_name, source_path in files.items():
+                zf.write(source_path, zip_name)
+        return zip_path
+
+    return _create_zip
+
+
+@pytest.fixture(scope="session")
+def sample_xml_files(read_test_file) -> XMLFiles:
+    """
+    Fixture to provide sample eICR and RR XML files.
+
+    Returns:
+        XMLFiles: Container with sample eICR and RR content
+    """
+
+    return XMLFiles(
+        eicr=read_test_file("mon-mothma-covid-lab-positive_eicr.xml"),
+        rr=read_test_file("mon-mothma-covid-lab-positive_RR.xml"),
+    )
+
+
+def normalize_xml(xml: str) -> str:
+    """
+    Normalize XML string for comparison.
+    """
+
+    return etree.tostring(
+        etree.fromstring(xml), pretty_print=True, encoding="unicode"
+    ).strip()
