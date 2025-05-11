@@ -11,13 +11,12 @@ from fastapi import (
     status,
 )
 
-from ...core.config import ECR_RESPONSE_EXAMPLES
 from ...core.exceptions import (
     SectionValidationError,
     XMLValidationError,
     ZipValidationError,
 )
-from ...core.models import RefineECRResponse
+from ...core.models.api import ECR_RESPONSE_EXAMPLES, RefineECRResponse
 from ...core.models.types import XMLFiles
 from ...services import file_io, refine
 from ...services.terminology import create_clinical_services_dict, get_clinical_services
