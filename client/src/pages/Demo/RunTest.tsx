@@ -17,7 +17,7 @@ export function RunTest({ onClick }: RunTestProps) {
           <Button onClick={onClick}>Run test</Button>
           <a
             className="justify-start text-base font-bold text-blue-300 hover:underline"
-            href="/api/demo/download"
+            href="/api/v1/demo/download"
             download
           >
             Download test file
