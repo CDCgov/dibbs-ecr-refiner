@@ -13,7 +13,11 @@ router = APIRouter(prefix="/demo")
 
 
 def _get_demo_zip_path() -> Path:
-    return Path(__file__).parent.parent.parent / "assets" / "demo" / "monmothma.zip"
+    """
+    Get the path to the demo ZIP file.
+    """
+
+    return file_io.get_asset_path("demo", "monmothma.zip")
 
 
 def _get_file_size_difference_percentage(
@@ -36,7 +40,7 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
     """
 
     # Grab the demo zip file and turn it into an UploadFile
-    if not Path(file_path).exists():
+    if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",

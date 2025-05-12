@@ -1,3 +1,4 @@
+from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
@@ -180,3 +181,36 @@ async def test_read_xml_zip_general_error():
     with pytest.raises(FileProcessingError) as exc_info:
         await file_io.read_xml_zip(BrokenFileUpload())
     assert "Failed to process ZIP file" in str(exc_info.value)
+
+
+def test_get_asset_path_single():
+    """
+    Test getting asset path with single filename.
+    """
+
+    path = file_io.get_asset_path("refiner_details.json")
+    assert path.name == "refiner_details.json"
+    assert path.parent.name == "assets"
+    assert isinstance(path, Path)
+
+
+def test_get_asset_path_nested():
+    """
+    Test getting asset path with nested directory structure.
+    """
+
+    path = file_io.get_asset_path("demo", "monmothma.zip")
+    assert path.name == "monmothma.zip"
+    assert path.parent.name == "demo"
+    assert path.parent.parent.name == "assets"
+    assert isinstance(path, Path)
+
+
+def test_get_asset_path_empty():
+    """
+    Test getting base assets directory path.
+    """
+
+    path = file_io.get_asset_path()
+    assert path.name == "assets"
+    assert isinstance(path, Path)
