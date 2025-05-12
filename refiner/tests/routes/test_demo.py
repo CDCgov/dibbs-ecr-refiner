@@ -17,7 +17,7 @@ api_route_base = "message-refiner/api/v1/demo"
     [
         ("this is a test", "this is a test", 0),  # Same doc
         ("", "", 0),  # Empty docs
-        ("A" * 2_000_000, "A" * 1_000_000, 50),  # 50% reduction
+        ("A" * 20_000, "A" * 10_000, 50),  # 50% reduction
     ],
 )
 def test_file_size_difference_percentage(
