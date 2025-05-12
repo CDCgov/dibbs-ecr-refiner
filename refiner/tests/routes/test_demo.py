@@ -47,9 +47,7 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     Test successful demo file upload and processing
     """
 
-    from app.api.v1.demo import (
-        _get_demo_zip_path,  # Import here to avoid circular import
-    )
+    from app.api.v1.demo import _get_demo_zip_path
 
     def mock_path_dep() -> pathlib.Path:
         return test_assets_path / "demo" / "monmothma.zip"
@@ -75,9 +73,7 @@ def test_demo_download_success(test_assets_path: pathlib.Path) -> None:
     Test successful demo file download
     """
 
-    from app.api.v1.demo import (
-        _get_demo_zip_path,  # Import here to avoid circular import
-    )
+    from app.api.v1.demo import _get_demo_zip_path
 
     def mock_path_dep() -> pathlib.Path:
         return test_assets_path / "demo" / "monmothma.zip"
@@ -98,13 +94,15 @@ def test_demo_file_not_found() -> None:
     Test error handling when demo file is missing
     """
 
+    from app.api.v1.demo import _get_demo_zip_path  # Import the actual function
+
     def mock_missing_path() -> pathlib.Path:
         return pathlib.Path("/nonexistent/demo.zip")
 
-    # Mock the dependency without importing it directly
-    app.dependency_overrides["_get_demo_zip_path"] = mock_missing_path  # type: ignore
+    # use the actual function reference, not a string
+    app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
 
-    # Test both endpoints with missing file
+    # test both endpoints with missing file
     for endpoint in ["upload", "download"]:
         response = client.get(f"{api_route_base}/{endpoint}")
         assert response.status_code == 404
