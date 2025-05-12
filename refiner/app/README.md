@@ -145,6 +145,7 @@ All error responses follow a consistent format:
 ## Development
 
 ### Required Environment Variables
+
 - `APP_VERSION`: Application version (default: "1.0.0")
 - Additional configuration as needed
 
