@@ -9,7 +9,7 @@ from app.main import app
 
 client = TestClient(app)
 
-api_route_base = "message-refiner/api/v1/demo"
+api_route_base = "/api/v1/demo"
 
 
 @pytest.mark.parametrize(

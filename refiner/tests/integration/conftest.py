@@ -25,7 +25,7 @@ def base_url():
     Service base URL
     """
 
-    return "http://0.0.0.0:8080/message-refiner"
+    return "http://0.0.0.0:8080/"
 
 
 def normalize_xml(xml: str) -> str:
@@ -41,7 +41,7 @@ def normalize_xml(xml: str) -> str:
 @pytest.fixture(scope="session")
 def setup(request):
     """
-    Use docer compose to run the service and test and then tear down container services.
+    Use docker compose to run the service and test and then tear down container services.
     """
 
     print("🚀 Setting up tests...")
@@ -50,7 +50,7 @@ def setup(request):
     refiner_service = DockerCompose(path, compose_file_name=compose_file_name)
 
     refiner_service.start()
-    refiner_service.wait_for("http://0.0.0.0:8080/message-refiner/healthcheck")
+    refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
 
     def teardown():

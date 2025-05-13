@@ -13,12 +13,12 @@ class TestHealthAndDocs:
     """
 
     def test_health_check(self):
-        response = client.get("/message-refiner/healthcheck")
+        response = client.get("/api/healthcheck")
         assert response.status_code == 200
         assert response.json() == {"status": "OK"}
 
     def test_openapi_docs(self):
-        response = client.get("/message-refiner/api/openapi.json")
+        response = client.get("/api/openapi.json")
         assert response.status_code == 200
 
 
@@ -32,9 +32,7 @@ class TestECREndpoint:
         Test basic XML refinement without parameters
         """
 
-        response = client.post(
-            "/message-refiner/api/v1/ecr", content=sample_xml_files.eicr
-        )
+        response = client.post("/api/v1/ecr", content=sample_xml_files.eicr)
         assert response.status_code == 200
         # we should create a fixture for expected output and verify against that
         assert response.headers["content-type"] == "application/xml"
@@ -57,7 +55,7 @@ class TestECREndpoint:
         """
 
         response = client.post(
-            f"/message-refiner/api/v1/ecr?sections_to_include={sections}",
+            f"/api/v1/ecr?sections_to_include={sections}",
             content=sample_xml_files.eicr,
         )
         assert response.status_code == 200
@@ -78,14 +76,14 @@ class TestECREndpoint:
         """
 
         # invalid xml
-        response = client.post("/message-refiner/api/v1/ecr", content="invalid xml")
+        response = client.post("/api/v1/ecr", content="invalid xml")
         assert response.status_code == 400
         error = response.json()
         assert "Failed to parse XML" in error["detail"]["message"]
 
         # invalid section code
         response = client.post(
-            "/message-refiner/api/v1/ecr?sections_to_include=invalid",
+            "/api/v1/ecr?sections_to_include=invalid",
             content=sample_xml_files.eicr,
         )
         assert response.status_code == 422
@@ -112,7 +110,7 @@ class TestZipUploadEndpoint:
 
         with open(zip_path, "rb") as f:
             response = client.post(
-                "/message-refiner/api/v1/ecr/zip-upload",
+                "/api/v1/ecr/zip-upload",
                 files={"file": ("test.zip", f, "application/zip")},
             )
         assert response.status_code == 200
@@ -134,7 +132,7 @@ class TestZipUploadEndpoint:
 
         with open(zip_path, "rb") as f:
             response = client.post(
-                "/message-refiner/api/v1/ecr/zip-upload?sections_to_include=30954-2",
+                "/api/v1/ecr/zip-upload?sections_to_include=30954-2",
                 files={"file": ("test.zip", f, "application/zip")},
             )
         assert response.status_code == 200
@@ -161,7 +159,7 @@ class TestZipUploadEndpoint:
             zf.writestr("CDA_RR.xml", "also invalid")
 
         response = client.post(
-            "/message-refiner/api/v1/ecr/zip-upload",
+            "/api/v1/ecr/zip-upload",
             files={"file": ("test.zip", zip_buffer.getvalue(), "application/zip")},
         )
         assert response.status_code == 400

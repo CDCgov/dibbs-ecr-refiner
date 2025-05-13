@@ -14,7 +14,7 @@ def test_health_check(setup):
     Test service health check endpoint
     """
 
-    response = httpx.get("http://0.0.0.0:8080/message-refiner/healthcheck")
+    response = httpx.get("http://0.0.0.0:8080/api/healthcheck")
     assert response.status_code == 200
     assert response.json() == {"status": "OK"}
 
@@ -25,7 +25,7 @@ def test_openapi_docs(setup):
     Test OpenAPI documentation endpoint
     """
 
-    response = httpx.get("http://0.0.0.0:8080/message-refiner/api/openapi.json")
+    response = httpx.get("http://0.0.0.0:8080/api/openapi.json")
     assert response.status_code == 200
     # verify basic OpenAPI structure
     openapi = response.json()
@@ -40,7 +40,7 @@ def test_ecr_refinement(setup, sample_xml_files):
     """
 
     response = httpx.post(
-        "http://0.0.0.0:8080/message-refiner/api/v1/ecr", content=sample_xml_files.eicr
+        "http://0.0.0.0:8080/api/v1/ecr", content=sample_xml_files.eicr
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/xml"
@@ -65,7 +65,7 @@ def test_ecr_section_filtering(setup, sample_xml_files):
 
     results_section_code = "30954-2"
     response = httpx.post(
-        f"http://0.0.0.0:8080/message-refiner/api/v1/ecr?sections_to_include={results_section_code}",
+        f"http://0.0.0.0:8080/api/v1/ecr?sections_to_include={results_section_code}",
         content=sample_xml_files.eicr,
     )
     assert response.status_code == 200
@@ -106,9 +106,7 @@ def test_zip_upload(setup, sample_xml_files):
         zf.writestr("CDA_RR.xml", sample_xml_files.rr)
 
     files = {"file": ("test.zip", zip_buffer.getvalue(), "application/zip")}
-    response = httpx.post(
-        "http://0.0.0.0:8080/message-refiner/api/v1/ecr/zip-upload", files=files
-    )
+    response = httpx.post("http://0.0.0.0:8080/api/v1/ecr/zip-upload", files=files)
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/xml"
 
@@ -131,15 +129,13 @@ def test_error_handling(setup, sample_xml_files):
     """
 
     # invalid XML
-    response = httpx.post(
-        "http://0.0.0.0:8080/message-refiner/api/v1/ecr", content="invalid xml"
-    )
+    response = httpx.post("http://0.0.0.0:8080/api/v1/ecr", content="invalid xml")
     assert response.status_code == 400
     assert "Failed to parse XML" in response.json()["detail"]["message"]
 
     # invalid section code
     response = httpx.post(
-        "http://0.0.0.0:8080/message-refiner/api/v1/ecr?sections_to_include=invalid",
+        "http://0.0.0.0:8080/api/v1/ecr?sections_to_include=invalid",
         content=sample_xml_files.eicr,
     )
     assert response.status_code == 422
@@ -155,7 +151,7 @@ def test_service_interactions(setup, sample_xml_files):
     # test with COVID-19 condition code
     condition_code = "840539006"  # COVID-19
     response = httpx.post(
-        f"http://0.0.0.0:8080/message-refiner/api/v1/ecr?conditions_to_include={condition_code}",
+        f"http://0.0.0.0:8080/api/v1/ecr?conditions_to_include={condition_code}",
         content=sample_xml_files.eicr,
     )
     assert response.status_code == 200

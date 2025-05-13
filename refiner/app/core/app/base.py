@@ -95,6 +95,7 @@ class BaseService:
             Returns:
                 StatusResponse: {"status": "OK"} with HTTP 200 if service is healthy.
             """
+
             return {"status": "OK"}
 
     def start(self) -> FastAPI:

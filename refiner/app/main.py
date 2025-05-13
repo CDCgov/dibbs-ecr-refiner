@@ -11,16 +11,13 @@ from .core.app.openapi import create_custom_openapi
 # environment configuration
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
-# service router
-service_router = APIRouter()
-
-# api router
+# create router
 router = APIRouter(prefix="/api")
 router.include_router(v1_router)
 
 
 # define health check endpoint at the service level
-@service_router.get("/healthcheck")
+@router.get("/healthcheck")
 async def health_check() -> dict[str, str]:
     """
     Check service health status.
@@ -39,15 +36,15 @@ app = BaseService(
     service_path="/message-refiner",
     description_path=Path(__file__).parent.parent / "README.md",
     include_health_check_endpoint=False,
-    openapi_url="/message-refiner/api/openapi.json",
+    openapi_url="/api/openapi.json",
 ).start()
 
-# configure app state and openapi
-app.state.service_path = "/message-refiner"
+# set service_path in app state
+# add open api configuration
+app.state.service_path = "/api"
 app.openapi = lambda: create_custom_openapi(app)
 
-# include routers in app
-app.include_router(service_router)
+# include the router in the app
 app.include_router(router)
 
 # When running the application in production we will mount the static client files from the
