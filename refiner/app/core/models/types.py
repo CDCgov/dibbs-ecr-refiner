@@ -52,6 +52,12 @@ class FileUpload(Protocol):
 class XMLFiles(NamedTuple):
     """
     Container for eICR and RR XML documents.
+
+    Note:
+        parse_xml is imported inside methods to avoid circular imports:
+        - types.py defines XMLFiles
+        - file_io.py uses XMLFiles
+        - XMLFiles methods use parse_xml from file_io.py
     """
 
     eicr: str
