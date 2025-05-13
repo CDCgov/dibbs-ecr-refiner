@@ -5,6 +5,7 @@ import pytest
 from fastapi import Response
 from fastapi.testclient import TestClient
 
+from app.api.v1.demo import _get_file_size_difference_percentage
 from app.main import app
 
 client = TestClient(app)
@@ -27,18 +28,7 @@ def test_file_size_difference_percentage(
     Test the file size difference calculation function
     """
 
-    # Test the function logic directly without importing
-    def calculate_size_diff(unrefined_doc: str, refined_doc: str) -> int:
-        unrefined_bytes = len(unrefined_doc.encode("utf-8"))
-        refined_bytes = len(refined_doc.encode("utf-8"))
-
-        if unrefined_bytes == 0:
-            return 0
-
-        percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
-        return round(percent_diff)
-
-    result = calculate_size_diff(unrefined, refined)
+    result = _get_file_size_difference_percentage(unrefined, refined)
     assert result == expected
 
 
