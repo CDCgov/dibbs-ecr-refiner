@@ -73,7 +73,8 @@ def parse_xml(xml_content: str | bytes) -> etree.Element:
         )
 
     try:
-        parser = etree.XMLParser(remove_blank_text=True)
+        # we can use remove_blank_text=True if we want a more aggressive removal of whitespace
+        parser = etree.XMLParser()
         if isinstance(xml_content, str):
             xml_content = xml_content.encode("utf-8")
         return etree.fromstring(xml_content, parser=parser)
