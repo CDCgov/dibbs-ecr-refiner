@@ -1,7 +1,11 @@
-from app.utils import create_clinical_services_dict
+from app.services.terminology import create_clinical_services_dict
 
 
 def test_create_clinical_services_dict():
+    """
+    Test the unpacking of clinical services into a dictionary
+    """
+
     clinical_services_list = [
         {
             "dxtc": [

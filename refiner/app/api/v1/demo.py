@@ -5,14 +5,19 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from app.refine import refine, validate_message
-from app.utils import read_zip
+from ...core.exceptions import XMLValidationError
+from ...services import file_io, refine
 
+# create a router instance for this file
 router = APIRouter(prefix="/demo")
 
 
 def _get_demo_zip_path() -> Path:
-    return Path(__file__).parent.parent.parent / "assets" / "demo" / "monmothma.zip"
+    """
+    Get the path to the demo ZIP file.
+    """
+
+    return file_io.get_asset_path("demo", "monmothma.zip")
 
 
 def _get_file_size_difference_percentage(
@@ -33,8 +38,9 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
+
     # Grab the demo zip file and turn it into an UploadFile
-    if not Path(file_path).exists():
+    if not file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",
@@ -52,24 +58,33 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
         headers={"Content-Type": "application/zip"},
     )
 
-    # Read the created UploadFile
-    eicr_xml, _rr_xml = await read_zip(upload_file)
-    validated_message, _error_message = validate_message(eicr_xml)
-    refined_data = refine(validated_message, None, None)
-    return JSONResponse(
-        content=jsonable_encoder(
-            {
-                "unrefined_eicr": eicr_xml,
-                "refined_eicr": refined_data,
-                "stats": [
-                    f"eCR file size reduced by {
-                        _get_file_size_difference_percentage(eicr_xml, refined_data)
-                    }%",
-                    "Found X observations relevant to the condition(s)",
-                ],
-            }
+    try:
+        xml_files = await file_io.read_xml_zip(upload_file)
+        rr_results = refine.process_rr(xml_files)
+        refined_eicr = refine.refine_eicr(xml_files)
+
+        return JSONResponse(
+            content=jsonable_encoder(
+                {
+                    "unrefined_eicr": xml_files.eicr,
+                    "refined_eicr": refined_eicr,
+                    "reportable_conditions": rr_results["reportable_conditions"],
+                    "stats": [
+                        f"eCR file size reduced by {
+                            _get_file_size_difference_percentage(
+                                xml_files.eicr, refined_eicr
+                            )
+                        }%",
+                        "Found X observations relevant to the condition(s)",
+                    ],
+                }
+            )
         )
-    )
+    except XMLValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e), "details": e.details},
+        )
 
 
 @router.get("/download")
@@ -77,6 +92,7 @@ async def demo_download(file_path: Path = Depends(_get_demo_zip_path)) -> FileRe
     """
     Allows the user to download the sample eCR zip file.
     """
+
     # Grab demo zip and send it along to the client
     if not Path(file_path).exists():
         raise HTTPException(

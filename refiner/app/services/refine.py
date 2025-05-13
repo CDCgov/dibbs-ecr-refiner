@@ -2,13 +2,15 @@ import logging
 
 from lxml import etree
 
-from app.utils import read_json_from_assets
+from ..core.exceptions import SectionValidationError
+from ..core.models.types import XMLFiles
+from .file_io import read_json_asset
 
 log = logging.getLogger(__name__).error
 
 
 # read json that contains details for refining and is the base of what drives `refine`
-REFINER_DETAILS = read_json_from_assets("refiner_details.json")
+REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 # extract section LOINC codes from the REFINER_DETAILS dictionary
 SECTION_LOINCS = list(REFINER_DETAILS["sections"].keys())
@@ -22,62 +24,98 @@ TRIGGER_CODE_TEMPLATE_IDS = [
 ]
 
 
-def validate_message(raw_message: str) -> tuple[bytes | None, str]:
+def validate_sections_to_include(
+    sections_to_include: str | None,
+) -> list[str] | None:
     """
-    Validate that an incoming XML message can be parsed by lxml's etree.
+    Validates section codes from query parameter.
 
     Args:
-        raw_message: The XML input string to validate.
+        sections_to_include: Comma-separated section codes
 
     Returns:
-        tuple[bytes | None, str]: A tuple containing:
-            - bytes | None: The parsed XML if valid, None if invalid
-            - str: The validation result message
-    """
-
-    error_message = ""
-    try:
-        validated_message = etree.fromstring(raw_message)
-        return (validated_message, error_message)
-    except etree.XMLSyntaxError as error:
-        error_message = "Invalid XML format."
-        log(f"XMLSyntaxError: {error}")
-        return (None, error_message)
-
-
-def validate_sections_to_include(sections_to_include: str | None) -> tuple[list, str]:
-    """
-    Validate sections for message refinement and convert to LOINC codes.
-
-    Args:
-        sections_to_include: The sections to include in the refined message.
+        list[str] | None: List of validated section codes, or None if no sections provided
 
     Raises:
-        ValueError: When at least one of the sections_to_include is invalid.
-
-    Returns:
-        tuple[list, str]: A tuple containing:
-            - list: LOINC codes corresponding to the valid sections
-            - str: Error message (empty string if validation successful)
+        SectionValidationError: If any section code is invalid
     """
 
-    if sections_to_include in [None, ""]:
-        return (None, "")
+    if sections_to_include is None:
+        return None
 
-    section_loincs = []
-    sections = sections_to_include.split(",")
-    for section in sections:
-        if section not in SECTION_LOINCS:
-            error_message = "Invalid section provided."
-            log(f"Invalid section: {section}")
-            return (section_loincs, error_message)
-        section_loincs.append(section)
+    sections = [s.strip() for s in sections_to_include.split(",") if s.strip()]
+    valid_sections = set(REFINER_DETAILS["sections"].keys())
 
-    return (section_loincs, "")
+    invalid_sections = [s for s in sections if s not in valid_sections]
+    if invalid_sections:
+        raise SectionValidationError(
+            message=f"Invalid section codes: {', '.join(invalid_sections)}",
+            details={
+                "invalid_sections": invalid_sections,
+                "valid_sections": list(valid_sections),
+            },
+        )
+
+    return sections
 
 
-def refine(
-    validated_message: etree.Element,
+def get_reportable_conditions(root: etree.Element) -> str | None:
+    """
+    Get SNOMED CT codes from the Report Summary section.
+
+    Scan the Report Summary section for SNOMED CT codes and return
+    them as a comma-separated string, or None if none found.
+
+    Args:
+        root: The root element of the XML document to parse.
+
+    Returns:
+        str | None: Comma-separated SNOMED CT codes or None if none found.
+    """
+
+    codes = []
+
+    namespaces = {
+        "cda": "urn:hl7-org:v3",
+        "sdtc": "urn:hl7-org:sdtc",
+        "voc": "http://www.lantanagroup.com/voc",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    }
+    # find sections with loinc code 55112-7
+    for section in root.xpath(
+        ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
+    ):
+        # find all values with the specified codeSystem
+        values = section.xpath(
+            ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']/@code",
+            namespaces=namespaces,
+        )
+        codes.extend(values)
+
+    return ",".join(codes) if codes else None
+
+
+def process_rr(xml_files: XMLFiles) -> dict:
+    """
+    Process the RR XML document to extract relevant information.
+
+    Args:
+        xml_files: Container with both eICR and RR XML content
+                  (currently only using RR)
+
+    Returns:
+        dict: Extracted information from the RR document
+    """
+
+    rr_root = xml_files.parse_rr()
+
+    return {
+        "reportable_conditions": get_reportable_conditions(rr_root),
+    }
+
+
+def refine_eicr(
+    xml_files: XMLFiles,
     sections_to_include: list[str] | None = None,
     clinical_services: dict[str, list[str]] | None = None,
 ) -> str:
@@ -103,7 +141,7 @@ def refine(
         - For other sections: Process normally
 
     Args:
-        validated_message: The eICR XML document to refine.
+        xml_files: The NamedTuple XMLFiles that contains the eICR XML document to refine.
         sections_to_include: Optional list of section LOINC codes. When provided
             alone, preserves these sections. When provided with clinical_services,
             focuses the search to these sections.
@@ -113,6 +151,10 @@ def refine(
     Returns:
         str: The refined eICR XML document as a string.
     """
+
+    # parse the eicr document
+    validated_message = xml_files.parse_eicr()
+
     # dictionary that will hold the section processing instructions
     # this is based on the combination of parameters passed to `refine`
     # as well as deails from REFINER_DETAILS
@@ -218,6 +260,7 @@ def _process_section(
         template_ids: The list of template IDs to check.
         clinical_services_codes: Optional list of clinical service codes to check.
     """
+
     check_elements = _are_elements_present(
         section, "templateId", template_ids, namespaces
     )
@@ -244,6 +287,7 @@ def _generate_combined_xpath(
     """
     Generate a combined XPath expression for templateIds and all codes across all systems, ensuring they are within 'observation' elements.
     """
+
     xpath_conditions = []
 
     # add templateId conditions within <observation> elements if needed
@@ -346,6 +390,7 @@ def _are_elements_present(
     Returns:
         bool: True if any specified elements are present, False otherwise.
     """
+
     if search_type == "templateId":
         xpath_queries = [
             f'.//hl7:templateId[@root="{value}"]' for value in search_values
@@ -361,6 +406,7 @@ def _find_path_to_entry(element: etree.Element) -> list[etree.Element]:
     """
     Helper function to find the path from a given element to the parent <entry> element.
     """
+
     path = []
     current_element = element
     while current_element.tag != "{urn:hl7-org:v3}entry":
@@ -413,6 +459,7 @@ def _extract_observation_data(
     Returns:
         dict[str, str | bool]: Dictionary containing the extracted observation data.
     """
+
     template_id_elements = observation.findall(
         ".//hl7:templateId", namespaces={"hl7": "urn:hl7-org:v3"}
     )
@@ -449,6 +496,7 @@ def _create_or_update_text_element(observations: list[etree.Element]) -> etree.E
     Returns:
         etree.Element: The created or updated text element.
     """
+
     text_element = etree.Element("{urn:hl7-org:v3}text")
     title = etree.SubElement(text_element, "title")
     title.text = "Output from CDC PRIME DIBBs `message-refiner` API by request of STLT"
@@ -509,6 +557,7 @@ def _create_minimal_section(section: etree.Element) -> None:
     Args:
         section: The section element to update.
     """
+
     namespaces = {"hl7": "urn:hl7-org:v3"}
     text_element = section.find(".//hl7:text", namespaces=namespaces)
 

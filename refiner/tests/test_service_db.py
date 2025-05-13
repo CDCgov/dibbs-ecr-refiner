@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.db import get_value_sets_for_condition
+from app.services.db import get_value_sets_for_condition
 
 
 @pytest.fixture

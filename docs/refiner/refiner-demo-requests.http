@@ -11,7 +11,7 @@ Accept: application/json
 ###
 
 # request with no parameters
-POST http://{{refiner}}/api/ecr
+POST http://{{refiner}}/api/v1/ecr
 Content-Type: application/xml
 Accept: application/xml
 
@@ -21,7 +21,7 @@ Accept: application/xml
 
 # request with sections to include
 # we're passing the loinc code for the social history section
-POST http://{{refiner}}/api/ecr?sections_to_include=29762-2
+POST http://{{refiner}}/api/v1/ecr?sections_to_include=29762-2
 Content-Type: application/xml
 Accept: application/xml
 
@@ -32,7 +32,7 @@ Accept: application/xml
 # request with sections to include
 # we're passing in the loinc codes for the results (labs) and
 # reason for visit sections
-POST http://{{refiner}}/api/ecr?sections_to_include=30954-2,29299-5
+POST http://{{refiner}}/api/v1/ecr?sections_to_include=30954-2,29299-5
 Content-Type: application/xml
 Accept: application/xml
 
@@ -42,7 +42,7 @@ Accept: application/xml
 
 # post request with conditions to include
 # we're passing the snomed code for chlamydia
-POST http://{{refiner}}/api/ecr?conditions_to_include=240589008
+POST http://{{refiner}}/api/v1/ecr?conditions_to_include=240589008
 Content-Type: application/xml
 Accept: application/xml
 
@@ -53,7 +53,7 @@ Accept: application/xml
 # post request with conditions and sections to include
 # we're passing the loinc code for the results (labs) section
 # and the snomed code for chlamydia
-POST http://{{refiner}}/api/ecr?conditions_to_include=240589008&sections_to_include=30954-2
+POST http://{{refiner}}/api/v1/ecr?conditions_to_include=240589008&sections_to_include=30954-2
 Content-Type: application/xml
 Accept: application/xml
 
@@ -64,7 +64,7 @@ Accept: application/xml
 # post request with conditions and sections to include
 # we're passing the loinc code for the encounters section
 # and the snomed code for chlamydia
-POST http://{{refiner}}/api/ecr?conditions_to_include=240589008&sections_to_include=46240-8
+POST http://{{refiner}}/api/v1/ecr?conditions_to_include=240589008&sections_to_include=46240-8
 Content-Type: application/xml
 Accept: application/xml
 
@@ -74,7 +74,7 @@ Accept: application/xml
 
 # post request with a zip that contains an eICR and RR
 # no query params
-POST http://{{refiner}}/api/zip-upload HTTP/1.1
+POST http://{{refiner}}/api/v1/ecr/zip-upload HTTP/1.1
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
 
 ------WebKitFormBoundary{{$timestamp}}
@@ -89,7 +89,7 @@ Content-Type: application/zip
 
 # post request with a zip that contains an eICR and RR
 # query param include social history section
-POST http://{{refiner}}/api/zip-upload?sections_to_include=29762-2 HTTP/1.1
+POST http://{{refiner}}/api/v1/ecr/zip-upload?sections_to_include=29762-2 HTTP/1.1
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
 
 ------WebKitFormBoundary{{$timestamp}}
