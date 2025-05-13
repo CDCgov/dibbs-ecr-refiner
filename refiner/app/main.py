@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
 
+from .api.middleware.spa import SPAFallbackMiddleware
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
@@ -46,13 +47,9 @@ app.openapi = lambda: create_custom_openapi(app)
 
 # include the router in the app
 app.include_router(router)
-
-# When running the application in production we will mount the static client files from the
-# "dist" directory. This directory will typically not exist during development since the client
-# runs separately in its own Docker container.
-if is_production:
-    app.mount(
-        "/",
-        StaticFiles(directory="dist", html=True, check_dir=is_production),
-        name="dist",
-    )
+app.mount(
+    "/dist",
+    StaticFiles(directory="dist", html=True, check_dir=is_production),
+    name="dist",
+)
+app.add_middleware(SPAFallbackMiddleware)
