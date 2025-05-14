@@ -1,13 +1,48 @@
+import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
 import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import XMLViewer from 'react-xml-viewer';
 
+interface SuccessProps {
+  unrefinedEicr: string;
+  refinedEicr: string;
+  stats: string[];
+  downloadToken: string;
+}
+
 export function Success({
   unrefinedEicr,
   refinedEicr,
   stats,
-}: EicrComparisonProps) {
+  downloadToken,
+}: SuccessProps) {
+  const [downloadError, setDownloadError] = useState<string>('');
+
+  async function downloadFile(token: string) {
+    try {
+      const resp = await fetch(`/api/v1/demo/download/${token}`);
+      if (!resp.ok) {
+        const errorMsg = `Failed to download refined eCR with token: ${token}`;
+        setDownloadError(errorMsg);
+        throw Error(errorMsg);
+      }
+
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'ecr_download.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   return (
     <>
       <Container color="green" className="w-full !p-8">
@@ -21,9 +56,15 @@ export function Success({
                 <SuccessItem key={stat}>{stat}</SuccessItem>
               ))}
             </div>
-            <div>
+            <div className="flex flex-col items-center">
               {/* TODO: make this button work */}
-              <Button color="black">Download refined eCR</Button>
+              <Button
+                onClick={async () => await downloadFile(downloadToken)}
+                color="black"
+              >
+                Download refined eCR
+              </Button>
+              {downloadError ? <span>File download has expired.</span> : null}
             </div>
           </div>
         </Content>

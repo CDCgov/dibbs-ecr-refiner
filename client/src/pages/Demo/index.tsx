@@ -46,6 +46,7 @@ export default function Demo() {
             unrefinedEicr={uploadResponse.unrefined_eicr}
             refinedEicr={uploadResponse.refined_eicr}
             stats={uploadResponse.stats}
+            downloadToken={uploadResponse.refined_download_token}
           />
         )}
         {view === 'error' && <Error onClick={reset} />}
