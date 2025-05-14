@@ -57,7 +57,6 @@ export function Success({
               ))}
             </div>
             <div className="flex flex-col items-center">
-              {/* TODO: make this button work */}
               <Button
                 onClick={async () => await downloadFile(downloadToken)}
                 color="black"
