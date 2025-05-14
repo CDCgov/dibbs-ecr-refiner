@@ -23,7 +23,7 @@ router = APIRouter(prefix="/demo")
 
 async def run_expired_file_cleanup_task() -> None:
     """
-    Runs the task to delete files in the `refined-ecr` directory every 5 minutes.
+    Runs a task to delete files in the `refined-ecr` directory every 5 minutes.
 
     This function will run periodically within its own thread upon application startup.
     """
@@ -37,11 +37,13 @@ def _cleanup_expired_files() -> None:
     """
     Attempts to clean up files that exist beyond their time-to-live value (2 minutes) according to their `timestamp`.
     """
-    file_ttl = 120
+    file_ttl_seconds = 120  # 2 minutes
     now = time.time()
 
     to_delete = [
-        key for key, meta in file_store.items() if now - meta["timestamp"] > file_ttl
+        key
+        for key, meta in file_store.items()
+        if now - meta["timestamp"] > file_ttl_seconds
     ]
     for key in to_delete:
         try:
@@ -60,6 +62,11 @@ def _get_demo_zip_path() -> Path:
 
 
 def _get_processed_ecr_directory() -> Path:
+    """
+    Returns the path to the directory where refined eCRs live.
+
+    This directory will be created if it doesn't already exist on the file system.
+    """
     REFINED_ECR_DIR = "refined-ecr"
     if not os.path.exists(REFINED_ECR_DIR):
         os.mkdir(REFINED_ECR_DIR)
@@ -78,6 +85,40 @@ def _get_file_size_difference_percentage(
 
     percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
     return round(percent_diff)
+
+
+def _create_refined_ecr_zip(
+    refined_eicr: str, unrefined_rr: str
+) -> tuple[str, Path, str]:
+    """
+    Writes a zip file to disk containing the refined eICR and unrefined RR files.
+    """
+    token = str(uuid.uuid4())
+    output_file_name = f"{token}_{FILE_NAME_SUFFIX}"
+
+    output_dir = _get_processed_ecr_directory()
+    output_file_path = Path(output_dir, output_file_name)
+
+    with ZipFile(output_file_path, "w") as zf:
+        zf.writestr("CDA_eICR.xml", refined_eicr)
+        zf.writestr("CDA_RR.xml", unrefined_rr)
+
+    return output_file_name, output_file_path, token
+
+
+def _update_file_store(
+    output_file_name: str, output_file_path: Path, token: str
+) -> None:
+    """
+    Updates the dictionary with required metadata for the refined eCR available to download.
+
+    This information is used by `_cleanup_expired_files()` in order to delete expired eCR zip files.
+    """
+    file_store[token] = {
+        "path": output_file_path,
+        "timestamp": time.time(),
+        "filename": output_file_name,
+    }
 
 
 @router.get("/upload")
@@ -109,22 +150,10 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
         refined_eicr = refine.refine_eicr(xml_files)
-
-        token = str(uuid.uuid4())
-        filename = f"{token}_{FILE_NAME_SUFFIX}"
-
-        output_dir = _get_processed_ecr_directory()
-        output_file_path = Path(output_dir, filename)
-
-        with ZipFile(output_file_path, "w") as zf:
-            zf.writestr("CDA_eICR.xml", refined_eicr)
-            zf.writestr("CDA_RR.xml", xml_files.rr)
-
-        file_store[token] = {
-            "path": output_file_path,
-            "timestamp": time.time(),
-            "filename": filename,
-        }
+        output_file_name, output_file_path, token = _create_refined_ecr_zip(
+            refined_eicr, xml_files.rr
+        )
+        _update_file_store(output_file_name, output_file_path, token)
 
         return JSONResponse(
             content=jsonable_encoder(
@@ -154,15 +183,18 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
 @router.get("/download/{token}")
 async def download_refined_ecr(token: str) -> FileResponse:
     """
-    Download a refined eCR zip file given a token.
+    Download a refined eCR zip file given a unique token.
     """
 
     if token not in file_store:
-        raise HTTPException(status_code=404, detail="File not found or expired")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found or has expired.",
+        )
 
     file_path = file_store[token]["path"]
-    print(file_path)
     filename = file_store[token]["filename"]
+
     return FileResponse(
         file_path, media_type="application/octet-stream", filename=filename
     )
