@@ -3,6 +3,7 @@ import io
 import os
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -14,6 +15,7 @@ from ...core.exceptions import XMLValidationError
 from ...services import file_io, refine
 
 # Keep track of files available for download / what needs to be cleaned up
+REFINED_ECR_DIR = "refined-ecr"
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 file_store: dict[str, dict] = {}
 
@@ -25,7 +27,7 @@ async def run_expired_file_cleanup_task() -> None:
     """
     Runs a task to delete files in the `refined-ecr` directory every 5 minutes.
 
-    This function will run periodically within its own thread upon application startup.
+    This function will run periodically within its own thread upon application startup, configured in `main.py`
     """
     seconds = 300  # 5 minutes
     while True:
@@ -61,17 +63,17 @@ def _get_demo_zip_path() -> Path:
     return file_io.get_asset_path("demo", "monmothma.zip")
 
 
-def _get_processed_ecr_directory() -> Path:
+def _get_processed_ecr_directory(base_path: Path) -> Path:
     """
     Returns the path to the directory where refined eCRs live.
 
     This directory will be created if it doesn't already exist on the file system.
     """
-    REFINED_ECR_DIR = "refined-ecr"
-    if not os.path.exists(REFINED_ECR_DIR):
-        os.mkdir(REFINED_ECR_DIR)
 
-    return REFINED_ECR_DIR
+    if not os.path.exists(base_path):
+        os.mkdir(base_path)
+
+    return base_path
 
 
 def _get_file_size_difference_percentage(
@@ -88,15 +90,22 @@ def _get_file_size_difference_percentage(
 
 
 def _create_refined_ecr_zip(
-    refined_eicr: str, unrefined_rr: str
+    refined_eicr: str, unrefined_rr: str, output_dir: Path
 ) -> tuple[str, Path, str]:
     """
     Writes a zip file to disk containing the refined eICR and unrefined RR files.
+
+    Args:
+        refined_eicr: the refined eICR XML document
+        unrefined_rr: the unrefined RR XML document
+        output_dir: path to the directory where the file will be stored
+
+    Returns:
+        tuple[str, Path, str]: A tuple containing the created file's name, the full created file's path,
+        and a unique token to identify the file used for downloading
     """
     token = str(uuid.uuid4())
     output_file_name = f"{token}_{FILE_NAME_SUFFIX}"
-
-    output_dir = _get_processed_ecr_directory()
     output_file_path = Path(output_dir, output_file_name)
 
     with ZipFile(output_file_path, "w") as zf:
@@ -106,23 +115,38 @@ def _create_refined_ecr_zip(
     return output_file_name, output_file_path, token
 
 
-def _update_file_store(
-    output_file_name: str, output_file_path: Path, token: str
-) -> None:
+def _update_file_store(filename: str, path: Path, token: str) -> None:
     """
-    Updates the dictionary with required metadata for the refined eCR available to download.
+    Updates the in-memory dictionary with required metadata for the refined eCR available to download.
 
     This information is used by `_cleanup_expired_files()` in order to delete expired eCR zip files.
+
+    Args:
+        filename: name of the file to keep track of
+        path: full path of the file to keep track of
+        token: a unique token to identify the file
     """
     file_store[token] = {
-        "path": output_file_path,
+        "path": path,
         "timestamp": time.time(),
-        "filename": output_file_name,
+        "filename": filename,
     }
 
 
+def get_zip_creator() -> Callable[[str, str, Path], tuple[str, Path, str]]:
+    """
+    Dependency injected function responsible for passing the function that'll write the ouput zip file to the handler.
+    """
+    return _create_refined_ecr_zip
+
+
 @router.get("/upload")
-async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResponse:
+async def demo_upload(
+    file_path: Path = Depends(_get_demo_zip_path),
+    zip_creator: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
+        get_zip_creator
+    ),
+) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
@@ -150,8 +174,10 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
         refined_eicr = refine.refine_eicr(xml_files)
-        output_file_name, output_file_path, token = _create_refined_ecr_zip(
-            refined_eicr, xml_files.rr
+
+        write_to_dir = _get_processed_ecr_directory(REFINED_ECR_DIR)
+        output_file_name, output_file_path, token = zip_creator(
+            refined_eicr, xml_files.rr, write_to_dir
         )
         _update_file_store(output_file_name, output_file_path, token)
 
