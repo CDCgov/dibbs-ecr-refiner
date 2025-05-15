@@ -25,11 +25,11 @@ router = APIRouter(prefix="/demo")
 
 async def run_expired_file_cleanup_task() -> None:
     """
-    Runs a task to delete files in the `refined-ecr` directory every 5 minutes.
+    Runs a task to delete files in the `refined-ecr` directory.
 
     This function will run periodically within its own thread upon application startup, configured in `main.py`
     """
-    seconds = 300  # 5 minutes
+    seconds = 120  # 2 minutes
     while True:
         await asyncio.to_thread(_cleanup_expired_files)
         await asyncio.sleep(seconds)
@@ -63,11 +63,9 @@ def _get_demo_zip_path() -> Path:
     return file_io.get_asset_path("demo", "monmothma.zip")
 
 
-def _get_processed_ecr_directory(base_path: Path) -> Path:
+def _create_zipfile_output_directory(base_path: Path) -> Path:
     """
-    Returns the path to the directory where refined eCRs live.
-
-    This directory will be created if it doesn't already exist on the file system.
+    Creates (if needed) and returns the path to the directory where refined eCRs live.
     """
 
     if not os.path.exists(base_path):
@@ -140,26 +138,34 @@ def get_zip_creator() -> Callable[[str, str, Path], tuple[str, Path, str]]:
     return _create_refined_ecr_zip
 
 
+def _get_refined_ecr_output_dir() -> Path:
+    """
+    Dependency injected function responsible for getting the processed eCR output directory path.
+    """
+    return REFINED_ECR_DIR
+
+
 @router.get("/upload")
 async def demo_upload(
-    file_path: Path = Depends(_get_demo_zip_path),
-    zip_creator: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
+    demo_zip_path: Path = Depends(_get_demo_zip_path),
+    create_output_zip: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
         get_zip_creator
     ),
+    refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
 
     # Grab the demo zip file and turn it into an UploadFile
-    if not file_path.exists():
+    if not demo_zip_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",
         )
 
-    filename = file_path.name
-    with open(file_path, "rb") as demo_file:
+    filename = demo_zip_path.name
+    with open(demo_zip_path, "rb") as demo_file:
         zip_content = demo_file.read()
 
     file_like = io.BytesIO(zip_content)
@@ -171,13 +177,15 @@ async def demo_upload(
     )
 
     try:
+        # Read in and process XML data from demo file
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
         refined_eicr = refine.refine_eicr(xml_files)
 
-        write_to_dir = _get_processed_ecr_directory(REFINED_ECR_DIR)
-        output_file_name, output_file_path, token = zip_creator(
-            refined_eicr, xml_files.rr, write_to_dir
+        # Create a zip with refined data and store it on the server
+        full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
+        output_file_name, output_file_path, token = create_output_zip(
+            refined_eicr, xml_files.rr, full_zip_output_path
         )
         _update_file_store(output_file_name, output_file_path, token)
 

@@ -1,5 +1,4 @@
 import asyncio
-import os
 import pathlib
 import time
 from typing import Any
@@ -11,8 +10,8 @@ from fastapi.testclient import TestClient
 from app.api.v1.demo import (
     _cleanup_expired_files,
     _create_refined_ecr_zip,
+    _create_zipfile_output_directory,
     _get_file_size_difference_percentage,
-    _get_processed_ecr_directory,
     _update_file_store,
     file_store,
 )
@@ -49,11 +48,10 @@ def test_create_refined_ecr_zip(tmp_path):
     )
     assert file_name == f"{token}_refined_ecr.zip"
     assert pathlib.Path(file_path).exists()
-    os.remove(file_path)
 
 
 def test_get_processed_ecr_directory(tmp_path):
-    result = _get_processed_ecr_directory(tmp_path / "refined-ecr")
+    result = _create_zipfile_output_directory(tmp_path / "refined-ecr")
 
     assert result.exists()
     assert result.name == "refined-ecr"
@@ -105,15 +103,23 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     Test successful demo file upload and processing
     """
 
-    from app.api.v1.demo import _get_demo_zip_path, get_zip_creator
+    from app.api.v1.demo import (
+        _get_demo_zip_path,
+        _get_refined_ecr_output_dir,
+        get_zip_creator,
+    )
 
-    def mock_path_dep() -> pathlib.Path:
+    def mock_path_dep():
         return test_assets_path / "demo" / "monmothma.zip"
 
     def mock_zip_creator():
         return lambda refined, unrefined, path: ("fake", pathlib.Path("fake"), "fake")
 
+    def mock_output_dir():
+        return "/tmp"
+
     # Use the actual function reference, not a string
+    app.dependency_overrides[_get_refined_ecr_output_dir] = mock_output_dir
     app.dependency_overrides[_get_demo_zip_path] = mock_path_dep
     app.dependency_overrides[get_zip_creator] = mock_zip_creator
 
