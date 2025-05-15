@@ -106,7 +106,7 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     from app.api.v1.demo import (
         _get_demo_zip_path,
         _get_refined_ecr_output_dir,
-        get_zip_creator,
+        _get_zip_creator,
     )
 
     def mock_path_dep():
@@ -121,7 +121,7 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     # Use the actual function reference, not a string
     app.dependency_overrides[_get_refined_ecr_output_dir] = mock_output_dir
     app.dependency_overrides[_get_demo_zip_path] = mock_path_dep
-    app.dependency_overrides[get_zip_creator] = mock_zip_creator
+    app.dependency_overrides[_get_zip_creator] = mock_zip_creator
 
     response = client.get(f"{api_route_base}/upload")
     assert response.status_code == 200

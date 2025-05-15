@@ -131,7 +131,7 @@ def _update_file_store(filename: str, path: Path, token: str) -> None:
     }
 
 
-def get_zip_creator() -> Callable[[str, str, Path], tuple[str, Path, str]]:
+def _get_zip_creator() -> Callable[[str, str, Path], tuple[str, Path, str]]:
     """
     Dependency injected function responsible for passing the function that'll write the ouput zip file to the handler.
     """
@@ -149,7 +149,7 @@ def _get_refined_ecr_output_dir() -> Path:
 async def demo_upload(
     demo_zip_path: Path = Depends(_get_demo_zip_path),
     create_output_zip: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
-        get_zip_creator
+        _get_zip_creator
     ),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
 ) -> JSONResponse:
