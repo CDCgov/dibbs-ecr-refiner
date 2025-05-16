@@ -1,5 +1,11 @@
+import asyncio
 import io
+import os
+import time
+import uuid
+from collections.abc import Callable
 from pathlib import Path
+from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.encoders import jsonable_encoder
@@ -8,8 +14,45 @@ from fastapi.responses import FileResponse, JSONResponse
 from ...core.exceptions import XMLValidationError
 from ...services import file_io, refine
 
+# Keep track of files available for download / what needs to be cleaned up
+REFINED_ECR_DIR = "refined-ecr"
+FILE_NAME_SUFFIX = "refined_ecr.zip"
+file_store: dict[str, dict] = {}
+
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
+
+
+async def run_expired_file_cleanup_task() -> None:
+    """
+    Runs a task to delete files in the `refined-ecr` directory.
+
+    This function will run periodically within its own thread upon application startup, configured in `main.py`
+    """
+    seconds = 120  # 2 minutes
+    while True:
+        await asyncio.to_thread(_cleanup_expired_files)
+        await asyncio.sleep(seconds)
+
+
+def _cleanup_expired_files() -> None:
+    """
+    Attempts to clean up files that exist beyond their time-to-live value (2 minutes) according to their `timestamp`.
+    """
+    file_ttl_seconds = 120  # 2 minutes
+    now = time.time()
+
+    to_delete = [
+        key
+        for key, meta in file_store.items()
+        if now - meta["timestamp"] > file_ttl_seconds
+    ]
+    for key in to_delete:
+        try:
+            os.remove(file_store[key]["path"])
+        except FileNotFoundError:
+            pass
+        del file_store[key]
 
 
 def _get_demo_zip_path() -> Path:
@@ -18,6 +61,17 @@ def _get_demo_zip_path() -> Path:
     """
 
     return file_io.get_asset_path("demo", "monmothma.zip")
+
+
+def _create_zipfile_output_directory(base_path: Path) -> Path:
+    """
+    Creates (if needed) and returns the path to the directory where refined eCRs live.
+    """
+
+    if not os.path.exists(base_path):
+        os.mkdir(base_path)
+
+    return base_path
 
 
 def _get_file_size_difference_percentage(
@@ -33,21 +87,85 @@ def _get_file_size_difference_percentage(
     return round(percent_diff)
 
 
+def _create_refined_ecr_zip(
+    refined_eicr: str, unrefined_rr: str, output_dir: Path
+) -> tuple[str, Path, str]:
+    """
+    Writes a zip file to disk containing the refined eICR and unrefined RR files.
+
+    Args:
+        refined_eicr: the refined eICR XML document
+        unrefined_rr: the unrefined RR XML document
+        output_dir: path to the directory where the file will be stored
+
+    Returns:
+        tuple[str, Path, str]: A tuple containing the created file's name, the full created file's path,
+        and a unique token to identify the file used for downloading
+    """
+    token = str(uuid.uuid4())
+    output_file_name = f"{token}_{FILE_NAME_SUFFIX}"
+    output_file_path = Path(output_dir, output_file_name)
+
+    with ZipFile(output_file_path, "w") as zf:
+        zf.writestr("CDA_eICR.xml", refined_eicr)
+        zf.writestr("CDA_RR.xml", unrefined_rr)
+
+    return output_file_name, output_file_path, token
+
+
+def _update_file_store(filename: str, path: Path, token: str) -> None:
+    """
+    Updates the in-memory dictionary with required metadata for the refined eCR available to download.
+
+    This information is used by `_cleanup_expired_files()` in order to delete expired eCR zip files.
+
+    Args:
+        filename: name of the file to keep track of
+        path: full path of the file to keep track of
+        token: a unique token to identify the file
+    """
+    file_store[token] = {
+        "path": path,
+        "timestamp": time.time(),
+        "filename": filename,
+    }
+
+
+def _get_zip_creator() -> Callable[[str, str, Path], tuple[str, Path, str]]:
+    """
+    Dependency injected function responsible for passing the function that'll write the ouput zip file to the handler.
+    """
+    return _create_refined_ecr_zip
+
+
+def _get_refined_ecr_output_dir() -> Path:
+    """
+    Dependency injected function responsible for getting the processed eCR output directory path.
+    """
+    return REFINED_ECR_DIR
+
+
 @router.get("/upload")
-async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResponse:
+async def demo_upload(
+    demo_zip_path: Path = Depends(_get_demo_zip_path),
+    create_output_zip: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
+        _get_zip_creator
+    ),
+    refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
+) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
 
     # Grab the demo zip file and turn it into an UploadFile
-    if not file_path.exists():
+    if not demo_zip_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",
         )
 
-    filename = file_path.name
-    with open(file_path, "rb") as demo_file:
+    filename = demo_zip_path.name
+    with open(demo_zip_path, "rb") as demo_file:
         zip_content = demo_file.read()
 
     file_like = io.BytesIO(zip_content)
@@ -59,9 +177,17 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
     )
 
     try:
+        # Read in and process XML data from demo file
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
         refined_eicr = refine.refine_eicr(xml_files)
+
+        # Create a zip with refined data and store it on the server
+        full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
+        output_file_name, output_file_path, token = create_output_zip(
+            refined_eicr, xml_files.rr, full_zip_output_path
+        )
+        _update_file_store(output_file_name, output_file_path, token)
 
         return JSONResponse(
             content=jsonable_encoder(
@@ -77,6 +203,7 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
                         }%",
                         "Found X observations relevant to the condition(s)",
                     ],
+                    "refined_download_token": token,
                 }
             )
         )
@@ -87,10 +214,30 @@ async def demo_upload(file_path: Path = Depends(_get_demo_zip_path)) -> JSONResp
         )
 
 
+@router.get("/download/{token}")
+async def download_refined_ecr(token: str) -> FileResponse:
+    """
+    Download a refined eCR zip file given a unique token.
+    """
+
+    if token not in file_store:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found or has expired.",
+        )
+
+    file_path = file_store[token]["path"]
+    filename = file_store[token]["filename"]
+
+    return FileResponse(
+        file_path, media_type="application/octet-stream", filename=filename
+    )
+
+
 @router.get("/download")
 async def demo_download(file_path: Path = Depends(_get_demo_zip_path)) -> FileResponse:
     """
-    Allows the user to download the sample eCR zip file.
+    Download the unrefined sample eCR zip file.
     """
 
     # Grab demo zip and send it along to the client

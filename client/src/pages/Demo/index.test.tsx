@@ -12,6 +12,7 @@ const mockUploadResponse: DemoUploadResponse = {
   unrefined_eicr: '<data>tons of data here</data>',
   refined_eicr: '<data>less data</data>',
   stats: ['eCR reduced by 59%'],
+  refined_download_token: 'test-token',
 };
 
 vi.mock(import('../../services/demo.ts'), async (importOriginal) => {

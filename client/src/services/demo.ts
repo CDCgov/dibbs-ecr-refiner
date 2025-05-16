@@ -10,6 +10,7 @@ export interface DemoUploadResponse {
   unrefined_eicr: string;
   refined_eicr: string;
   stats: string[];
+  refined_download_token: string;
 }
 
 export async function uploadDemoFile(): Promise<DemoUploadResponse> {
