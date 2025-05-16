@@ -25,3 +25,5 @@ jobs:
     uses: ./.github/workflows/tests.yml
     with:
       python_runner_version: 3.13
+  run-build:
+    uses: ./.github/workflows/build.yml
