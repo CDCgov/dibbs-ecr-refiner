@@ -3,7 +3,7 @@ name: Build and push Refiner image to GHCR
 on:
   push:
     branches:
-      - "**" # change this back to `main`
+      - main
 
   workflow_dispatch:
     inputs:
