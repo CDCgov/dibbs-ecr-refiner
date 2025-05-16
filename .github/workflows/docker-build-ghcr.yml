@@ -4,17 +4,16 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "Dockerfile"
-      - "**/*.py"
-      - ".github/workflows/docker-ghcr.yml"
 
   workflow_dispatch:
     inputs:
       ref:
-        description: "Git ref (branch or tag) to build"
+        description: "Git ref (branch or tag) to build from"
         required: false
         default: main
+      version_tag:
+        description: "Optional Docker tag to use instead of branch name (`1.2.3`)"
+        required: false
 
 jobs:
   build-and-push:
@@ -38,18 +37,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Sanitize branch name for tagging
+      - name: Determine Docker tags
         id: vars
         run: |
-          BRANCH_NAME="${{ github.event.inputs.ref || github.ref_name }}"
-          SAFE_TAG=$(echo "$BRANCH_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
-          echo "safe_branch=$SAFE_TAG" >> $GITHUB_OUTPUT
+          # Get the branch/ref and version tag
+          REF_NAME="${{ github.event.inputs.ref || github.ref_name }}"
+          VERSION_TAG="${{ github.event.inputs.version_tag }}"
+
+          # Sanitize ref so it's a valid image tag
+          if [ -z "$VERSION_TAG" ]; then
+            TAG=$(echo "$REF_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
+          else
+            TAG="$VERSION_TAG"
+          fi
+
+          # If building `main`, include a `latest` tag
+          if [ "$REF_NAME" = "main" ]; then
+            echo "tags=ghcr.io/${{ github.repository_owner }}/dibbs-ecr-refiner:$TAG,ghcr.io/${{ github.repository_owner }}/dibbs-ecr-refiner:latest" >> $GITHUB_OUTPUT
+          else
+            echo "tags=ghcr.io/${{ github.repository_owner }}/dibbs-ecr-refiner:$TAG" >> $GITHUB_OUTPUT
+          fi
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/dibbs-ecr-refiner:latest
-            ghcr.io/${{ github.repository_owner }}/dibbs-ecr-refiner:${{ steps.vars.outputs.safe_branch }}
+          push: true
+          tags: ${{ steps.vars.outputs.tags }}
