@@ -59,21 +59,21 @@ def validate_sections_to_include(
     return sections
 
 
-def get_reportable_conditions(root: etree.Element) -> str | None:
+def get_reportable_conditions(root: etree.Element) -> list[dict[str, str]] | None:
     """
-    Get SNOMED CT codes from the Report Summary section.
+    Get SNOMED CT codes and display names from the Report Summary section.
 
     Scan the Report Summary section for SNOMED CT codes and return
-    them as a comma-separated string, or None if none found.
+    them as a list of dictionaries, or None if none found.
 
     Args:
         root: The root element of the XML document to parse.
 
     Returns:
-        str | None: Comma-separated SNOMED CT codes or None if none found.
+        list[dict[str, str]] | None: List of dictionaries with 'code' and 'displayName',
+        or None if none found.
     """
-
-    codes = []
+    conditions = []
 
     namespaces = {
         "cda": "urn:hl7-org:v3",
@@ -81,18 +81,26 @@ def get_reportable_conditions(root: etree.Element) -> str | None:
         "voc": "http://www.lantanagroup.com/voc",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     }
-    # find sections with loinc code 55112-7
+
+    # Find sections with LOINC code 55112-7
     for section in root.xpath(
         ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
     ):
-        # find all values with the specified codeSystem
+        # Find all value elements with the specified codeSystem
         values = section.xpath(
-            ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']/@code",
+            ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
             namespaces=namespaces,
         )
-        codes.extend(values)
+        for value in values:
+            code = value.get("code")
+            display_name = value.get("displayName")
+            if code:
+                conditions.append({
+                    "code": code,
+                    "displayName": display_name
+                })
 
-    return ",".join(codes) if codes else None
+    return conditions if conditions else None
 
 
 def process_rr(xml_files: XMLFiles) -> dict:

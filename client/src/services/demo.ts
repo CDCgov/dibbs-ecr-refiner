@@ -11,6 +11,7 @@ export interface DemoUploadResponse {
   refined_eicr: string;
   stats: string[];
   refined_download_token: string;
+  reportable_conditions: string[];
 }
 
 export async function uploadDemoFile(): Promise<DemoUploadResponse> {
