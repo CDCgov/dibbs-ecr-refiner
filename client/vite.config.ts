@@ -11,6 +11,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: 'tests/setup.ts',
   },
+  css: {
+    modules: {
+      localsConvention: 'camelCaseOnly',
+    },
+  },
   server: {
     host: true,
     strictPort: true,
