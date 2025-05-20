@@ -69,7 +69,7 @@ export function EicrComparison({
   return (
     <div className="flex w-full justify-between gap-10">
       <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
-      <div className="border-1 border-gray-300"></div>
+      <div className="border-thin border-gray-300"></div>
       <EicrText title="Refined eICR" xml={refinedEicr} />
     </div>
   );

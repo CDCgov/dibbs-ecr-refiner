@@ -1,5 +1,5 @@
 import ErrorSvg from '../../assets/red-x.svg';
-import { Button } from '../../components/Button';
+import { Button } from '@trussworks/react-uswds';
 import { Container, Content } from './Layout';
 
 interface ErrorProps {
@@ -25,7 +25,7 @@ export function Error({ onClick }: ErrorProps) {
             </p>
           </div>
         </div>
-        <Button color="black" onClick={onClick}>
+        <Button type="button" onClick={onClick}>
           Try again
         </Button>
       </Content>
