@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Request, Response
+from fastapi.applications import AppType
+from starlette.types import Lifespan
 
 from ..config import DIBBS_CONTACT, LICENSES
 from ..models.api import StatusResponse
@@ -29,6 +31,7 @@ class BaseService:
         service_name: str,
         service_path: str,
         description_path: str,
+        lifespan: Lifespan[AppType],
         include_health_check_endpoint: bool = True,
         license_info: Literal["CreativeCommonsZero", "MIT"] = "CreativeCommonsZero",
         openapi_url: str = "/openapi.json",
@@ -40,6 +43,7 @@ class BaseService:
             service_name: Name of the service.
             service_path: Path used to access the service from a gateway.
             description_path: Path to markdown file containing service description.
+            lifespan: A Starlette `Lifespan` object
             include_health_check_endpoint: Whether to add standard DIBBs health
                 check endpoint. Defaults to True.
             license_info: License to use for the service. Options:
@@ -60,6 +64,7 @@ class BaseService:
             license_info=LICENSES[license_info],
             description=description,
             openapi_url=openapi_url,
+            lifespan=lifespan,
         )
 
     def add_path_rewrite_middleware(self) -> None:
