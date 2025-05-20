@@ -1,10 +1,13 @@
+import asyncio
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from .api.middleware.spa import SPAFallbackMiddleware
+from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
@@ -31,6 +34,13 @@ async def health_check() -> dict[str, str]:
     return {"status": "OK"}
 
 
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    # Start the cleanup task in the background
+    asyncio.create_task(run_expired_file_cleanup_task())
+    yield
+
+
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
     service_name="Message Refiner",
@@ -38,6 +48,7 @@ app = BaseService(
     description_path=Path(__file__).parent.parent / "README.md",
     include_health_check_endpoint=False,
     openapi_url="/api/openapi.json",
+    lifespan=_lifespan,
 ).start()
 
 # set service_path in app state
