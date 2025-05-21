@@ -57,10 +57,7 @@ export function Success({
               ))}
             </div>
             <div className="flex flex-col items-center">
-              <Button
-                onClick={async () => await downloadFile(downloadToken)}
-                color="black"
-              >
+              <Button onClick={async () => await downloadFile(downloadToken)}>
                 Download refined eCR
               </Button>
               {downloadError ? <span>File download has expired.</span> : null}

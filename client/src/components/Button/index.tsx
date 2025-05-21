@@ -1,23 +1,26 @@
-import classNames from 'classnames';
 import { Link } from 'react-router';
-import { ButtonProps as UswdsButtonProps } from '@trussworks/react-uswds';
-import styles from './button.module.scss';
+import {
+  ButtonProps as UswdsButtonProps,
+  Button as UswdsButton,
+} from '@trussworks/react-uswds';
+import classNames from 'classnames';
 
-interface ButtonProps extends UswdsButtonProps {
-  variant: 'primary' | 'secondary';
+interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
+  type?: UswdsButtonProps['type'];
+  variant?: 'primary' | 'secondary';
   to?: string;
 }
 
 export function Button({
   children,
   variant = 'primary',
+  type = 'button',
   to,
   onClick,
+  ...props
 }: ButtonProps) {
-  const defaultStyles = 'usa-button';
-
-  const btnClass = classNames(defaultStyles, {
-    [styles.btnPrimary]: variant === 'primary',
+  const styles = classNames('usa-button', {
+    'usa-button--secondary': variant === 'secondary',
   });
 
   if (to) {
@@ -25,15 +28,20 @@ export function Button({
       | React.MouseEventHandler<HTMLAnchorElement>
       | undefined;
     return (
-      <Link onClick={sideEffect} to={to} className={btnClass}>
+      <Link onClick={sideEffect} to={to} className={styles}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button onClick={onClick} className={btnClass}>
+    <UswdsButton
+      {...props}
+      secondary={variant === 'secondary'}
+      onClick={onClick}
+      type={type}
+    >
       {children}
-    </button>
+    </UswdsButton>
   );
 }
