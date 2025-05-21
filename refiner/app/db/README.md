@@ -11,7 +11,7 @@ app/
 ├── db/
 │   ├── __init__.py
 │   ├── schema.sql       # Database schema
-│   ├── base.py          # Connection management, basic setup
+│   ├── connection.py    # Connection management, basic setup
 │   ├── models.py        # Models for database data
 │   └── operations.py    # All database operations
 ```
