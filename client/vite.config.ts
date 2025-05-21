@@ -19,7 +19,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        quietDeps: true, // tons of deprectation warnings caused by uswds
+        quietDeps: true, // tons of deprecation warnings caused by uswds
         loadPaths: uswdsIncludePaths,
       },
     },
