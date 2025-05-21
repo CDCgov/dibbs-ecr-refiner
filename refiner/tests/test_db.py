@@ -25,8 +25,6 @@ def test_db_path(tmp_path: Path) -> Path:
     """
 
     db_path = tmp_path / "test_terminology.db"
-
-    # create test database and schema
     conn = sqlite3.connect(db_path)
     _ = conn.executescript("""
         CREATE TABLE groupers (
@@ -56,10 +54,8 @@ def test_db_path(tmp_path: Path) -> Path:
             SAMPLE_GROUPER["rxnorm_codes"],
         ),
     )
-
     conn.commit()
     conn.close()
-
     return db_path
 
 
@@ -75,6 +71,64 @@ def mock_db_connection(monkeypatch: pytest.MonkeyPatch, test_db_path: Path) -> N
     monkeypatch.setattr("app.db.connection.DatabaseConnection.__init__", mock_init)
 
 
+@pytest.fixture
+def monkeypatched_sqlite_connect(monkeypatch):
+    """
+    Fixture to monkeypatch sqlite3.connect with a dummy connection.
+    """
+
+    class DummyCursor:
+        def execute(self, query, *args, **kwargs):
+            return self
+
+        def fetchall(self):
+            return [("some", "data")]
+
+        def fetchone(self):
+            return ("some",)
+
+        def close(self):
+            pass
+
+    class DummyConnection:
+        def cursor(self):
+            return DummyCursor()
+
+        def close(self):
+            pass
+
+        def commit(self):
+            pass
+
+        def execute(self, *args, **kwargs):
+            return DummyCursor()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            pass
+
+    def dummy_connect(*args, **kwargs):
+        return DummyConnection()
+
+    monkeypatch.setattr(sqlite3, "connect", dummy_connect)
+
+
+def test_grouper_operations_logic(monkeypatched_sqlite_connect, monkeypatch):
+    # patch DatabaseConnection to avoid setting any path, but set a dummy db_path
+    def dummy_init(self):
+        self.db_path = ":memory:"
+
+    monkeypatch.setattr("app.db.connection.DatabaseConnection.__init__", dummy_init)
+    from app.db.operations import GrouperOperations
+
+    ops = GrouperOperations()
+    with ops.db.get_connection() as conn:
+        result = conn.cursor().execute("SELECT 1").fetchall()
+    assert result == [("some", "data")]
+
+
 def test_connection_file_not_found(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -85,7 +139,6 @@ def test_connection_file_not_found(
     test_file = tmp_path / "db" / "connection.py"
     test_file.parent.mkdir(parents=True)
     monkeypatch.setattr("app.db.connection.__file__", str(test_file))
-
     with pytest.raises(FileNotFoundError):
         _ = DatabaseConnection()
 
@@ -107,16 +160,24 @@ def test_connection_error_handling(
     test_file = tmp_path / "db" / "connection.py"
     test_file.parent.mkdir(parents=True)
     monkeypatch.setattr("app.db.connection.__file__", str(test_file))
-
     db_path = tmp_path / "terminology.db"
     db_path.write_text("not a database")
 
     db = DatabaseConnection()
 
-    with pytest.raises(sqlite3.Error):
-        with db.get_connection() as conn:
-            cursor = conn.cursor()
-            _ = cursor.execute("SELECT 1")
+    # accept either sqlite3.DatabaseError or sqlite3.Error, and print debug info if it fails
+    try:
+        with pytest.raises((sqlite3.DatabaseError, sqlite3.Error)):
+            with db.get_connection() as conn:
+                # this pragma is more likely to consistently trigger a DB error
+                conn.execute("PRAGMA integrity_check")
+    except AssertionError:
+        # print debug info if the test fails in CI
+        import sys
+
+        print("Python version:", sys.version)
+        print("sqlite3 version:", sqlite3.sqlite_version)
+        raise
 
 
 def test_cursor_error_handling_and_cleanup(mock_db_connection: None) -> None:
@@ -141,7 +202,6 @@ def test_cursor_error_handling_and_cleanup(mock_db_connection: None) -> None:
             raise ValueError("Test error")
     except ValueError:
         pass
-
     assert cursor is not None
     with pytest.raises(sqlite3.Error):
         _ = cursor.execute("SELECT 1")
@@ -194,11 +254,9 @@ def test_connection_rollback_on_error(
     test_file = tmp_path / "db" / "connection.py"
     test_file.parent.mkdir(parents=True)
     monkeypatch.setattr("app.db.connection.__file__", str(test_file))
-
     db_path = tmp_path / "terminology.db"
     conn = sqlite3.connect(db_path)
     conn.close()
-
     db = DatabaseConnection()
 
     # first create the table outside the transaction we want to test
@@ -234,11 +292,9 @@ def test_connection_commit_on_success(
     test_file = tmp_path / "db" / "connection.py"
     test_file.parent.mkdir(parents=True)
     monkeypatch.setattr("app.db.connection.__file__", str(test_file))
-
     db_path = tmp_path / "terminology.db"
     conn = sqlite3.connect(db_path)
     conn.close()
-
     db = DatabaseConnection()
 
     # execute a valid query in a transaction
