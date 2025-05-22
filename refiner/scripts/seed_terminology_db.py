@@ -273,14 +273,11 @@ class TESDataLoader:
                 )
                 continue
 
-            codes[code_type].extend(
-                [
-                    CodeableConcept(
-                        code=concept["code"], display=concept.get("display", "")
-                    )
-                    for concept in concepts
-                ]
-            )
+            for concept in concepts:
+                codeable = CodeableConcept(
+                    code=concept["code"], display=concept.get("display", "")
+                )
+                codes[code_type].append(codeable)
 
         return codes
 
