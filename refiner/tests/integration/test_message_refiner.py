@@ -149,7 +149,7 @@ def test_service_interactions(setup, sample_xml_files):
     """
 
     # test with COVID-19 condition code
-    condition_code = "840539006"  # COVID-19
+    condition_code = "840539006"
     response = httpx.post(
         f"http://0.0.0.0:8080/api/v1/ecr?conditions_to_include={condition_code}",
         content=sample_xml_files.eicr,
