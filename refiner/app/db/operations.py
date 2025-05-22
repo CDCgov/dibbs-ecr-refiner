@@ -1,3 +1,12 @@
+import sqlite3
+
+from app.core.exceptions import (
+    DatabaseConnectionError,
+    DatabaseQueryError,
+    InputValidationError,
+    ResourceNotFoundError,
+)
+
 from .connection import DatabaseConnection
 from .models import GrouperRow
 
@@ -23,7 +32,7 @@ class GrouperOperations:
 
         self.db = DatabaseConnection()
 
-    def get_grouper_by_condition(self, condition: str) -> GrouperRow | None:
+    def get_grouper_by_condition(self, condition: str) -> GrouperRow:
         """
         Get a single grouper by condition code.
 
@@ -31,32 +40,54 @@ class GrouperOperations:
             condition: SNOMED CT code for the condition
 
         Returns:
-            GrouperRow if found, None if not found
+            GrouperRow containing the grouper data
 
         Raises:
-            sqlite3.Error: If there's a database error
+            ResourceNotFoundError: If no grouper with specified condition is found
+            DatabaseQueryError: If database query execution fails
+            DatabaseConnectionError: If database connection fails
+            InputValidationError: If the condition parameter is invalid
         """
+
+        if not condition or not isinstance(condition, str):
+            raise InputValidationError(
+                message="Invalid condition code", details={"condition": condition}
+            )
 
         query = """
             SELECT condition, display_name, loinc_codes, snomed_codes,
-                   icd10_codes, rxnorm_codes
+                icd10_codes, rxnorm_codes
             FROM groupers
             WHERE condition = ?
         """
 
-        with self.db.get_cursor() as cursor:
-            # use _ to indicate intentionally unused result
-            _ = cursor.execute(query, (condition,))
-            row = cursor.fetchone()
+        try:
+            with self.db.get_cursor() as cursor:
+                cursor.execute(query, (condition,))
+                row = cursor.fetchone()
 
-            if row is None:
-                return None
+                if row is None:
+                    raise ResourceNotFoundError(
+                        message="Grouper with condition not found",
+                        details={"condition": condition},
+                    )
 
-            return GrouperRow(
-                condition=str(row["condition"]),
-                display_name=str(row["display_name"]),
-                loinc_codes=str(row["loinc_codes"]),
-                snomed_codes=str(row["snomed_codes"]),
-                icd10_codes=str(row["icd10_codes"]),
-                rxnorm_codes=str(row["rxnorm_codes"]),
+                return GrouperRow(
+                    condition=str(row["condition"]),
+                    display_name=str(row["display_name"]),
+                    loinc_codes=str(row["loinc_codes"]),
+                    snomed_codes=str(row["snomed_codes"]),
+                    icd10_codes=str(row["icd10_codes"]),
+                    rxnorm_codes=str(row["rxnorm_codes"]),
+                )
+        except (ResourceNotFoundError, InputValidationError):
+            # re-raise these exceptions directly
+            raise
+        except sqlite3.Error as e:
+            raise DatabaseQueryError(
+                message="Failed to query grouper",
+                detail={"condition": condition, "error": str(e)},
             )
+        except DatabaseConnectionError:
+            # re-raise database connection errors
+            raise

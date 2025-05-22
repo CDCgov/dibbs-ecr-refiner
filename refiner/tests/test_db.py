@@ -3,6 +3,13 @@ from pathlib import Path
 
 import pytest
 
+from app.core.exceptions import (
+    DatabaseConnectionError,
+    DatabaseQueryError,
+    InputValidationError,
+    ProcessingError,
+    ResourceNotFoundError,
+)
 from app.db.connection import DatabaseConnection
 from app.db.models import GrouperRow
 from app.db.operations import GrouperOperations
@@ -139,15 +146,21 @@ def test_connection_file_not_found(
     test_file = tmp_path / "db" / "connection.py"
     test_file.parent.mkdir(parents=True)
     monkeypatch.setattr("app.db.connection.__file__", str(test_file))
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(ResourceNotFoundError):
         _ = DatabaseConnection()
 
     # also test that the error message contains the expected path
     try:
         _ = DatabaseConnection()
-    except FileNotFoundError as e:
+    except ResourceNotFoundError as e:
         expected_db_path = tmp_path / "terminology.db"
-        assert str(expected_db_path) in str(e)
+
+        # check the message is correct
+        assert "Database file not found" == e.message
+
+        # check the details contain the correct path
+        assert "path" in e.details
+        assert str(expected_db_path) == e.details["path"]
 
 
 def test_connection_error_handling(
@@ -165,19 +178,12 @@ def test_connection_error_handling(
 
     db = DatabaseConnection()
 
-    # accept either sqlite3.DatabaseError or sqlite3.Error, and print debug info if it fails
-    try:
-        with pytest.raises((sqlite3.DatabaseError, sqlite3.Error)):
-            with db.get_connection() as conn:
-                # this pragma is more likely to consistently trigger a DB error
-                conn.execute("PRAGMA integrity_check")
-    except AssertionError:
-        # print debug info if the test fails in CI
-        import sys
+    with pytest.raises(DatabaseConnectionError) as exc_info:
+        with db.get_connection() as conn:
+            conn.execute("PRAGMA integrity_check")
 
-        print("Python version:", sys.version)
-        print("sqlite3 version:", sqlite3.sqlite_version)
-        raise
+    assert "Failed to connect to database" == exc_info.value.message
+    assert "path" in exc_info.value.details
 
 
 def test_cursor_error_handling_and_cleanup(mock_db_connection: None) -> None:
@@ -187,24 +193,20 @@ def test_cursor_error_handling_and_cleanup(mock_db_connection: None) -> None:
 
     ops = GrouperOperations()
 
-    # test 1: cursor errors after connection close
-    with ops.db.get_connection() as conn:
-        _ = conn.execute("SELECT 1")
-        conn.close()
-        with pytest.raises(sqlite3.Error):
-            _ = conn.execute("SELECT 1")
+    # test 1: database query errors are correctly wrapped
+    with pytest.raises(DatabaseQueryError) as exc_info:
+        with ops.db.get_cursor() as cursor:
+            cursor.execute("SELECT * FROM nonexistent_table")
 
-    # test 2: cursor cleanup after error
-    cursor = None
-    try:
+    assert "Database operation failed" == exc_info.value.message
+    assert "error_type" in exc_info.value.details
+
+    # test 2: other exceptions are wrapped as ProcessingError
+    with pytest.raises(ProcessingError):
         with ops.db.get_cursor() as cursor:
             _ = cursor.execute("SELECT 1")
+            # Force a non-database error
             raise ValueError("Test error")
-    except ValueError:
-        pass
-    assert cursor is not None
-    with pytest.raises(sqlite3.Error):
-        _ = cursor.execute("SELECT 1")
 
 
 def test_get_grouper_successful_retrieval(mock_db_connection: None) -> None:
@@ -240,8 +242,35 @@ def test_get_grouper_by_condition_not_found(mock_db_connection: None) -> None:
     """
 
     ops = GrouperOperations()
-    result = ops.get_grouper_by_condition("nonexistent")
-    assert result is None
+
+    with pytest.raises(ResourceNotFoundError) as exc_info:
+        ops.get_grouper_by_condition("nonexistent")
+
+    assert "Grouper with condition not found" == exc_info.value.message
+    assert "condition" in exc_info.value.details
+    assert "nonexistent" == exc_info.value.details["condition"]
+
+
+def test_get_grouper_input_validation(mock_db_connection: None) -> None:
+    """
+    Test input validation for get_grouper_by_condition.
+    """
+
+    ops = GrouperOperations()
+
+    # test with empty string
+    with pytest.raises(InputValidationError) as exc_info:
+        ops.get_grouper_by_condition("")
+
+    assert "Invalid condition code" == exc_info.value.message
+
+    # test with None
+    with pytest.raises(InputValidationError):
+        ops.get_grouper_by_condition(None)  # type: ignore
+
+    # test with non-string
+    with pytest.raises(InputValidationError):
+        ops.get_grouper_by_condition(123)
 
 
 def test_connection_rollback_on_error(
@@ -264,14 +293,12 @@ def test_connection_rollback_on_error(
         _ = cursor.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)")
 
     # try to execute an invalid insert in a transaction
-    try:
+    with pytest.raises(DatabaseQueryError):
         with db.get_cursor() as cursor:
             _ = cursor.execute("INSERT INTO test VALUES (1)")  # This will succeed
             _ = cursor.execute(
                 "INSERT INTO test VALUES (1)"
             )  # This will fail (duplicate primary key)
-    except sqlite3.Error:
-        pass
 
     # verify the first insert was rolled back
     with db.get_cursor() as cursor:
