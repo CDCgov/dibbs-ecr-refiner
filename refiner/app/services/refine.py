@@ -3,7 +3,15 @@ import logging
 from lxml import etree
 from lxml.etree import _Element
 
-from ..core.exceptions import SectionValidationError
+from ..core.exceptions import (
+    ConditionCodeError,
+    DatabaseConnectionError,
+    DatabaseQueryError,
+    ResourceNotFoundError,
+    SectionValidationError,
+    StructureValidationError,
+    XMLParsingError,
+)
 from ..core.models.types import XMLFiles
 from ..db.operations import GrouperOperations
 from .file_io import read_json_asset
@@ -74,6 +82,9 @@ def get_reportable_conditions(root: _Element) -> str | None:
 
     Returns:
         str | None: Comma-separated SNOMED CT codes or None if none found.
+
+    Raises:
+        XMLParsingError
     """
 
     codes = []
@@ -84,16 +95,24 @@ def get_reportable_conditions(root: _Element) -> str | None:
         "voc": "http://www.lantanagroup.com/voc",
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     }
-    # find sections with loinc code 55112-7
-    for section in root.xpath(
-        ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
-    ):
-        # find all values with the specified codeSystem
-        values = section.xpath(
-            ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']/@code",
-            namespaces=namespaces,
+
+    try:
+        # find sections with loinc code 55112-7
+        for section in root.xpath(
+            ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
+        ):
+            # find all values with the specified codeSystem
+            values = section.xpath(
+                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']/@code",
+                namespaces=namespaces,
+            )
+            codes.extend(values)
+
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message="Failed to evaluate XPath expression in RR document",
+            details={"xpath_error": str(e)},
         )
-        codes.extend(values)
 
     return ",".join(codes) if codes else None
 
@@ -108,13 +127,18 @@ def process_rr(xml_files: XMLFiles) -> dict:
 
     Returns:
         dict: Extracted information from the RR document
+
+    Raises:
+        XMLParsingError
     """
 
-    rr_root = xml_files.parse_rr()
-
-    return {
-        "reportable_conditions": get_reportable_conditions(rr_root),
-    }
+    try:
+        rr_root = xml_files.parse_rr()
+        return {"reportable_conditions": get_reportable_conditions(rr_root)}
+    except etree.XMLSyntaxError as e:
+        raise XMLParsingError(
+            message="Failed to parse RR document", details={"error": str(e)}
+        )
 
 
 def refine_eicr(
@@ -154,60 +178,74 @@ def refine_eicr(
         str: The refined eICR XML document as a string.
     """
 
-    # parse the eicr document
-    validated_message = xml_files.parse_eicr()
+    try:
+        # parse the eicr document
+        validated_message = xml_files.parse_eicr()
 
-    # dictionary that will hold the section processing instructions
-    # this is based on the combination of parameters passed to `refine`
-    # as well as deails from REFINER_DETAILS
-    section_processing = dict(REFINER_DETAILS["sections"].items())
+        # dictionary that will hold the section processing instructions
+        # this is based on the combination of parameters passed to `refine`
+        # as well as deails from REFINER_DETAILS
+        section_processing = dict(REFINER_DETAILS["sections"].items())
 
-    namespaces = {"hl7": "urn:hl7-org:v3"}
-    structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
+        namespaces = {"hl7": "urn:hl7-org:v3"}
+        structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
 
-    # if we don't have a structuredBody this is a major problem
-    if structured_body is None:
-        raise SectionValidationError("No structured body found in eICR")
+        # if we don't have a structuredBody this is a major problem
+        if structured_body is None:
+            raise StructureValidationError(
+                message="No structured body found in eICR",
+                details={"document_type": "eICR"},
+            )
 
-    # case 1 and 3:
-    # -> prepare xpath expressions for templateIds and/or conditions codes
+        # case 1 and 3:
+        # -> prepare xpath expressions for templateIds and/or conditions codes
 
-    # generate templateId xpath (used in all cases as fallback)
-    template_xpath = _get_template_id_xpath(TRIGGER_CODE_TEMPLATE_IDS) or ""
-    # case 3:
-    # -> if condition_codes provided, generate code-based xpath
-    #    in the future this should **always** be the case since we
-    #    will no longer process **only** an eICR without an RR
-    if condition_codes:
-        code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
-        combined_xpath = f"{code_xpath} | {template_xpath}"
-    else:
-        # case 1:
-        # -> base case--only templateId xpath
-        #    this will be phased out soon
-        combined_xpath = template_xpath
+        # generate templateId xpath (used in all cases as fallback)
+        template_xpath = _get_template_id_xpath(TRIGGER_CODE_TEMPLATE_IDS) or ""
+        # case 3:
+        # -> if condition_codes provided, generate code-based xpath
+        #    in the future this should **always** be the case since we
+        #    will no longer process **only** an eICR without an RR
+        if condition_codes:
+            code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
+            combined_xpath = f"{code_xpath} | {template_xpath}"
+        else:
+            # case 1:
+            # -> base case--only templateId xpath
+            #    this will be phased out soon
+            combined_xpath = template_xpath
 
-    # case 2 and 4:
-    # -> handle sections_to_include parameter
-    if sections_to_include is not None:
-        # case 2 or 4:
-        # -> skip processing for included sections
-        section_processing = {
-            code: details
-            for code, details in section_processing.items()
-            if code not in sections_to_include
-        }
+        # case 2 and 4:
+        # -> handle sections_to_include parameter
+        if sections_to_include is not None:
+            # case 2 or 4:
+            # -> skip processing for included sections
+            section_processing = {
+                code: details
+                for code, details in section_processing.items()
+                if code not in sections_to_include
+            }
 
-    # process each section based on the applicable case
-    for code, details in section_processing.items():
-        section = _get_section_by_code(structured_body, code, namespaces)
-        if section is None:
-            continue
+        # process each section based on the applicable case
+        for code, details in section_processing.items():
+            section = _get_section_by_code(structured_body, code, namespaces)
+            if section is None:
+                continue
 
-        _process_section(section, combined_xpath, namespaces)
+            _process_section(section, combined_xpath, namespaces)
 
-    # Format and return the result
-    return etree.tostring(validated_message, encoding="unicode")
+        # Format and return the result
+        return etree.tostring(validated_message, encoding="unicode")
+
+    except etree.XMLSyntaxError as e:
+        raise XMLParsingError(
+            message="Failed to parse eICR document", details={"error": str(e)}
+        )
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message="Failed to evaluate XPath expression in eICR document",
+            details={"error": str(e)},
+        )
 
 
 def _process_section(
@@ -223,26 +261,44 @@ def _process_section(
         combined_xpath: XPath query that combines template ID and code conditions
         namespaces: XML namespaces for XPath evaluation
     """
-    # Find all matching observations using the combined XPath
-    observations = section.xpath(combined_xpath, namespaces=namespaces)
 
-    if observations:
-        # If we found matches, preserve those elements
-        # Find paths to all matching entries to avoid pruning their parents
-        entry_paths = []
-        for observation in observations:
-            entry_path = _find_path_to_entry(observation)
-            if entry_path is not None:
-                entry_paths.append(entry_path)
+    if not isinstance(section, _Element):
+        raise SectionValidationError(
+            message="Invalid section element provided",
+            details={"section_type": type(section).__name__},
+        )
 
-        # Remove entries that don't contain relevant observations
-        _prune_unwanted_siblings(entry_paths, observations, section)
-
-        # Use the original function with whatever parameters it expects
-        _update_text_element(section, observations)
-    else:
-        # If no matches, create a minimal section
+    if not combined_xpath:
+        log("Warning: Empty XPath query provided to _process_section")
         _create_minimal_section(section)
+        return
+
+    try:
+        # Find all matching observations using the combined XPath
+        observations = section.xpath(combined_xpath, namespaces=namespaces)
+
+        if observations:
+            # if we found matches, preserve those elements
+            # find paths to all matching entries to avoid pruning their parents
+            entry_paths = []
+            for observation in observations:
+                entry_path = _find_path_to_entry(observation)
+                if entry_path is not None:
+                    entry_paths.append(entry_path)
+
+            # remove entries that don't contain relevant observations
+            _prune_unwanted_siblings(entry_paths, observations, section)
+
+            # use the original function with whatever parameters it expects
+            _update_text_element(section, observations)
+        else:
+            # if no matches, create a minimal section
+            _create_minimal_section(section)
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message="Invalid XPath expression",
+            details={"xpath": combined_xpath, "error": str(e)},
+        )
 
 
 def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
@@ -258,6 +314,12 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
 
     Returns:
         str: Combined XPath expression to find relevant elements, or empty string
+
+    Raises:
+        DatabaseConnectionError
+        DatabaseQueryError
+        ResourceNotFoundError
+        ConditionCodeError
     """
 
     if not condition_codes:
@@ -275,14 +337,28 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
     # of code systems and codes and another that is a combined XPath for all codes. this way we
     # loop less, search less, and aim for simplicity
 
-    # process each condition code
-    for code in condition_codes.split(","):
-        grouper_row = grouper_ops.get_grouper_by_condition(code)
-        if grouper_row:
-            processed = ProcessedGrouper.from_grouper_row(grouper_row)
-            xpath = processed.build_xpath(search_in="observation")
-            if xpath:
-                xpath_conditions.append(xpath)
+    try:
+        # process each condition code
+        for code in condition_codes.split(","):
+            try:
+                grouper_row = grouper_ops.get_grouper_by_condition(code)
+                if grouper_row:
+                    processed = ProcessedGrouper.from_grouper_row(grouper_row)
+                    xpath = processed.build_xpath(search_in="observation")
+                    if xpath:
+                        xpath_conditions.append(xpath)
+            except (DatabaseConnectionError, DatabaseQueryError) as e:
+                # log but continue with other codes
+                log(f"Database error processing condition code {code}: {str(e)}")
+            except ResourceNotFoundError:
+                # log that the code wasn't found but continue
+                log(f"Condition code not found: {code}")
+
+    except Exception as e:
+        raise ConditionCodeError(
+            message="Error processing condition codes",
+            details={"error": str(e), "condition_codes": condition_codes},
+        )
 
     # combine XPath conditions with union operator
     if not xpath_conditions:
@@ -324,12 +400,22 @@ def _get_section_by_code(
 
     Returns:
         _Element: The section element or None if not found
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails
     """
 
-    xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
-    section = structured_body.xpath(xpath_query, namespaces=namespaces)
-    if section is not None and len(section) == 1:
-        return section[0]
+    try:
+        xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
+        section = structured_body.xpath(xpath_query, namespaces=namespaces)
+        if section is not None and len(section) == 1:
+            return section[0]
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message=f"Failed to evaluate XPath for section code {loinc_code}",
+            details={"xpath_query": xpath_query, "error": str(e)},
+        )
+    return None
 
 
 def _find_path_to_entry(element: _Element) -> _Element | None:
@@ -351,7 +437,10 @@ def _find_path_to_entry(element: _Element) -> _Element | None:
     ):
         current_element = current_element.getparent()
         if current_element is None:
-            raise ValueError("Parent <entry> element not found.")
+            raise StructureValidationError(
+                message="Parent <entry> element not found.",
+                details={"element_tag": element.tag},
+            )
 
     return current_element
 
@@ -395,7 +484,8 @@ def _extract_observation_data(
         observation: The observation element to extract data from.
 
     Returns:
-        dict[str, str | bool]: Dictionary containing the extracted observation data.
+        dict[str, str | bool]: Dictionary containing the extracted observation data
+                               with display_text, code, code_system and is_trigger_code.
     """
 
     template_id_elements = observation.findall(
@@ -502,6 +592,9 @@ def _create_minimal_section(section: _Element) -> None:
 
     Args:
         section: The section element to update.
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails
     """
 
     namespaces = {"hl7": "urn:hl7-org:v3"}

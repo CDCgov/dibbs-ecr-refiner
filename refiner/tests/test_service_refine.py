@@ -3,7 +3,11 @@ from typing import Any
 import pytest
 from lxml import etree
 
-from app.core.exceptions import SectionValidationError, XMLValidationError
+from app.core.exceptions import (
+    SectionValidationError,
+    StructureValidationError,
+    XMLValidationError,
+)
 from app.core.models.types import XMLFiles
 from app.services.refine import (
     _create_or_update_text_element,
@@ -420,43 +424,6 @@ def test_process_section_with_error():
     assert not result  # Empty list means no elements found
 
 
-# def test_process_section_with_error():
-#     """
-#     Test error handling in _process_section.
-#     """
-#
-#     section = etree.fromstring("""
-#         <section xmlns="urn:hl7-org:v3">
-#             <code code="invalid"/>
-#             <entry>
-#                 <observation>
-#                     <code code="nonexistent"/>
-#                 </observation>
-#             </entry>
-#         </section>
-#     """)
-#
-#     # Use the helper function to generate xpath like the original test
-#     combined_xpath = _generate_combined_xpath(
-#         template_ids=TRIGGER_CODE_TEMPLATE_IDS,
-#         clinical_services_dict={"loinc": ["nonexistent-code"]},
-#     )
-#
-#     _process_section(
-#         section=section,
-#         combined_xpaths=combined_xpath,
-#         namespaces=NAMESPACES,
-#         template_ids=TRIGGER_CODE_TEMPLATE_IDS,
-#     )
-#     # verify that:
-#     # - 1. The section still exists
-#     # - 2. Text element exists (even if empty)
-#     # - 3. No matching elements were processed
-#     assert section.find("{urn:hl7-org:v3}code") is not None
-#     assert section.find("{urn:hl7-org:v3}text") is not None
-#     assert not _are_elements_present(section, "code", ["nonexistent-code"], NAMESPACES)
-
-
 def test_create_or_update_text_invalid_section():
     """
     Test creating text element with invalid section.
@@ -488,7 +455,7 @@ def test_find_path_to_entry_no_match():
         </observation>
     """)
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(StructureValidationError) as exc_info:
         _find_path_to_entry(observation)
     assert "Parent <entry> element not found" in str(exc_info.value)
 

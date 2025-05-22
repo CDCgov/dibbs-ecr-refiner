@@ -50,6 +50,30 @@ class SectionValidationError(ValidationError):
     pass
 
 
+class XMLParsingError(BaseApplicationException):
+    """
+    Raised when XML parsing or XPath evaluation fails.
+    """
+
+    pass
+
+
+class ConditionCodeError(BaseApplicationException):
+    """
+    Raised when processing condition codes fails.
+    """
+
+    pass
+
+
+class StructureValidationError(BaseApplicationException):
+    """
+    Raised when XML structure doesn't match expected format.
+    """
+
+    pass
+
+
 # processing Exceptions
 class ProcessingError(BaseApplicationException):
     """

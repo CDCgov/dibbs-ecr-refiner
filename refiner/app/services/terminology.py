@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 
+from ..core.exceptions import InputValidationError
 from ..db.models import GrouperRow
 
 
@@ -39,7 +40,8 @@ class ProcessedGrouper:
                 for item in codes_list
                 if isinstance(item, dict) and "code" in item
             }
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError, KeyError):
+            # TODO: should we add logging here? something to consider in the future
             return set()
 
     @classmethod
@@ -69,9 +71,15 @@ class ProcessedGrouper:
         Build xpath to find any of our codes in the specified element.
         """
 
+        if not search_in:
+            # just validate this since it's a parameter
+            raise InputValidationError(
+                message="Empty search element specified",
+                details={"search_in": search_in},
+            )
+
         if not self.codes:
             return ""
 
         code_conditions = " or ".join(f'@code="{code}"' for code in self.codes)
-
         return f"//hl7:{search_in}//hl7:code[{code_conditions}]"
