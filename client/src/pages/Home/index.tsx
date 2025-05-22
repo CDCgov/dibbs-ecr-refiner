@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import VideoPlaceholder from '../../assets/video-placeholder.svg';
-import { Button } from '../../components/Button';
 
 export function Home() {
   return (
@@ -30,9 +29,9 @@ export function Home() {
               </p>
             </div>
             <div>
-              <Button color="blue" to="/demo">
+              <Link className="usa-button" to="/demo">
                 Try it out
-              </Button>
+              </Link>
             </div>
           </div>
           <div>

@@ -2,7 +2,13 @@
 
 @layer base {
   html {
-    @apply font-public-sans;
+    @apply !font-public-sans;
+  }
+}
+
+@layer utilities {
+  .border-thin {
+    @apply border-1;
   }
 }
 
