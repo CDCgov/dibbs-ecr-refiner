@@ -70,6 +70,17 @@ def validate_sections_to_include(
     return sections
 
 
+# In lxml, use _Element for type hints and etree.Element in code.
+# -> _Element (from lxml.etree) is the actual type of xml element objects, suitable for
+#    type annotations and for static type checkers
+# -> etree.Element is a factory function that creates and returns _Element instances; use
+#    it in code to create nodes.
+# NOTE: Do not use etree.Element for type hints; it's not a class, but a function.
+# See: https://lxml.de/api/lxml.etree._Element-class.html
+# NOTE: this will change in lxml 6.0
+# See: on this PR: https://github.com/lxml/lxml/pull/405
+
+
 def get_reportable_conditions(root: _Element) -> str | None:
     """
     Get SNOMED CT codes from the Report Summary section.
