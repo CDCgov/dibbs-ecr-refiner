@@ -95,10 +95,7 @@ def get_reportable_conditions(root: etree.Element) -> list[dict[str, str]] | Non
             code = value.get("code")
             display_name = value.get("displayName")
             if code:
-                conditions.append({
-                    "code": code,
-                    "displayName": display_name
-                })
+                conditions.append({"code": code, "displayName": display_name})
 
     return conditions if conditions else None
 
