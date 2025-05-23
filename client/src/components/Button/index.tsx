@@ -1,47 +1,47 @@
-import classNames from 'classnames';
 import { Link } from 'react-router';
+import {
+  ButtonProps as UswdsButtonProps,
+  Button as UswdsButton,
+} from '@trussworks/react-uswds';
+import classNames from 'classnames';
 
-interface ButtonProps {
-  children: React.ReactNode;
-  color?: 'blue' | 'black';
-  inverted?: boolean;
+interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
+  type?: UswdsButtonProps['type'];
+  variant?: 'primary' | 'secondary';
   to?: string;
-  onClick?: () => void;
 }
 
 export function Button({
   children,
-  color = 'blue',
-  inverted = false,
+  variant = 'primary',
+  type = 'button',
   to,
   onClick,
+  ...props
 }: ButtonProps) {
-  const defaultStyles =
-    'inline-flex cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded px-5 py-3 font-bold';
-
-  const btnClass = classNames(
-    {
-      'bg-blue-300': color === 'blue' && !inverted,
-      'bg-black': color === 'black' && !inverted,
-      'hover:text-slate-200':
-        (color === 'blue' || color === 'black') && !inverted,
-      'text-white': !inverted,
-      'hover:bg-slate-200 bg-white text-blue-300 border-blue-300': inverted,
-    },
-    defaultStyles
-  );
+  const styles = classNames('usa-button', {
+    'usa-button--secondary': variant === 'secondary',
+  });
 
   if (to) {
+    const sideEffect = onClick as
+      | React.MouseEventHandler<HTMLAnchorElement>
+      | undefined;
     return (
-      <Link onClick={onClick} to={to} className={btnClass}>
+      <Link onClick={sideEffect} to={to} className={styles}>
         {children}
       </Link>
     );
   }
 
   return (
-    <button onClick={onClick} className={btnClass}>
+    <UswdsButton
+      {...props}
+      secondary={variant === 'secondary'}
+      onClick={onClick}
+      type={type}
+    >
       {children}
-    </button>
+    </UswdsButton>
   );
 }

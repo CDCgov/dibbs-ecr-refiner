@@ -57,10 +57,7 @@ export function Success({
               ))}
             </div>
             <div className="flex flex-col items-center">
-              <Button
-                onClick={async () => await downloadFile(downloadToken)}
-                color="black"
-              >
+              <Button onClick={async () => await downloadFile(downloadToken)}>
                 Download refined eCR
               </Button>
               {downloadError ? <span>File download has expired.</span> : null}
@@ -109,7 +106,7 @@ export function EicrComparison({
   return (
     <div className="flex w-full justify-between gap-10">
       <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
-      <div className="border-1 border-gray-300"></div>
+      <div className="border-thin border-gray-300"></div>
       <EicrText title="Refined eICR" xml={refinedEicr} />
     </div>
   );

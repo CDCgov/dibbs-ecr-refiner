@@ -19,7 +19,6 @@ from ...core.exceptions import (
 from ...core.models.api import ECR_RESPONSE_EXAMPLES, RefineECRResponse
 from ...core.models.types import XMLFiles
 from ...services import file_io, refine
-from ...services.terminology import create_clinical_services_dict, get_clinical_services
 
 # create a router instance for this file
 router = APIRouter(prefix="/ecr")
@@ -88,14 +87,8 @@ async def refine_ecr_from_zip(
         if sections_to_include:
             sections = refine.validate_sections_to_include(sections_to_include)
 
-        # process conditions if provided
-        clinical_services = None
-        if conditions_to_include:
-            clinical_services = list(get_clinical_services(conditions_to_include))
-            clinical_services = create_clinical_services_dict(clinical_services)
-
         # refine the eICR
-        refined_data = refine.refine_eicr(xml_files, sections, clinical_services)
+        refined_data = refine.refine_eicr(xml_files, sections, conditions_to_include)
 
         return Response(content=refined_data, media_type="application/xml")
 
@@ -177,14 +170,8 @@ async def refine_ecr(
         if sections_to_include:
             sections = refine.validate_sections_to_include(sections_to_include)
 
-        # process conditions if provided
-        clinical_services = None
-        if conditions_to_include:
-            clinical_services = list(get_clinical_services(conditions_to_include))
-            clinical_services = create_clinical_services_dict(clinical_services)
-
         # refine the eICR
-        refined_data = refine.refine_eicr(xml_files, sections, clinical_services)
+        refined_data = refine.refine_eicr(xml_files, sections, conditions_to_include)
         return Response(content=refined_data, media_type="application/xml")
 
     except XMLValidationError as e:
