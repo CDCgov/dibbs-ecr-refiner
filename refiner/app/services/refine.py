@@ -83,10 +83,10 @@ def validate_sections_to_include(
 
 def get_reportable_conditions(root: _Element) -> str | None:
     """
-    Get SNOMED CT codes from the Report Summary section.
+    Get SNOMED CT codes and display names from the Report Summary section.
 
     Scan the Report Summary section for SNOMED CT codes and return
-    them as a comma-separated string, or None if none found.
+    them as a list of dictionaries, or None if none found.
 
     Args:
         root: The root element of the XML document to parse.
@@ -97,8 +97,7 @@ def get_reportable_conditions(root: _Element) -> str | None:
     Raises:
         XMLParsingError
     """
-
-    codes = []
+    conditions = []
 
     namespaces = {
         "cda": "urn:hl7-org:v3",
@@ -112,12 +111,16 @@ def get_reportable_conditions(root: _Element) -> str | None:
         for section in root.xpath(
             ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
         ):
-            # find all values with the specified codeSystem
+            # Find all value elements with the specified codeSystem
             values = section.xpath(
-                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']/@code",
+                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
                 namespaces=namespaces,
             )
-            codes.extend(values)
+            for value in values:
+                code = value.get("code")
+                display_name = value.get("displayName")
+                if code:
+                    conditions.append({"code": code, "displayName": display_name})
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(
@@ -125,7 +128,7 @@ def get_reportable_conditions(root: _Element) -> str | None:
             details={"xpath_error": str(e)},
         )
 
-    return ",".join(codes) if codes else None
+    return conditions if conditions else None
 
 
 def process_rr(xml_files: XMLFiles) -> dict:
@@ -218,7 +221,12 @@ def refine_eicr(
         #    in the future this should **always** be the case since we
         #    will no longer process **only** an eICR without an RR
         if condition_codes:
-            code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
+            code_string = (
+                ",".join([c["code"] for c in condition_codes])
+                if isinstance(condition_codes, list)
+                else condition_codes
+            )
+            code_xpath = _get_xpath_from_condition_codes(code_string) or ""
             combined_xpath = f"{code_xpath} | {template_xpath}"
         else:
             # case 1:
