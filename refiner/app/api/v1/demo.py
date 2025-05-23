@@ -189,8 +189,6 @@ async def demo_upload(
         )
         _update_file_store(output_file_name, output_file_path, token)
 
-        print(rr_results)
-
         return JSONResponse(
             content=jsonable_encoder(
                 {
