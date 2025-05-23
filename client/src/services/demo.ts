@@ -11,8 +11,14 @@ export interface DemoUploadResponse {
   refined_eicr: string;
   stats: string[];
   refined_download_token: string;
-  reportable_conditions: string[];
+  reportable_conditions: Condition[];
 }
+
+type Condition = {
+  code: string;
+  displayName: string;
+};
+
 
 export async function uploadDemoFile(): Promise<DemoUploadResponse> {
   const resp = await fetch('/api/v1/demo/upload');
