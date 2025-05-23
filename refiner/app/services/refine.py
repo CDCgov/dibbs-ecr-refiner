@@ -70,7 +70,6 @@ def validate_sections_to_include(
     return sections
 
 
-
 # In lxml, use _Element for type hints and etree.Element in code.
 # -> _Element (from lxml.etree) is the actual type of xml element objects, suitable for
 #    type annotations and for static type checkers
@@ -97,7 +96,6 @@ def get_reportable_conditions(root: _Element) -> str | None:
 
     Raises:
         XMLParsingError
->>>>>>> main
     """
     conditions = []
 
@@ -113,18 +111,16 @@ def get_reportable_conditions(root: _Element) -> str | None:
         for section in root.xpath(
             ".//cda:section[cda:code/@code='55112-7']", namespaces=namespaces
         ):
-           # Find all value elements with the specified codeSystem
-           values = section.xpath(
-               ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
-               namespaces=namespaces,
-           )
-           for value in values:
-               code = value.get("code")
-               display_name = value.get("displayName")
-               if code:
-                   conditions.append({"code": code, "displayName": display_name})
-
-            codes.extend(values)
+            # Find all value elements with the specified codeSystem
+            values = section.xpath(
+                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
+                namespaces=namespaces,
+            )
+            for value in values:
+                code = value.get("code")
+                display_name = value.get("displayName")
+                if code:
+                    conditions.append({"code": code, "displayName": display_name})
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(
@@ -132,8 +128,7 @@ def get_reportable_conditions(root: _Element) -> str | None:
             details={"xpath_error": str(e)},
         )
 
-
-   return conditions if conditions else None
+    return conditions if conditions else None
 
 
 def process_rr(xml_files: XMLFiles) -> dict:
