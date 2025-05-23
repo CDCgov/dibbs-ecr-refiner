@@ -36,7 +36,9 @@ export default function Demo() {
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
           <ReportableConditions
-            conditions={uploadResponse.reportable_conditions.map(condition => condition.displayName)}
+            conditions={uploadResponse.reportable_conditions.map(
+              (condition) => condition.displayName
+            )}
             onClick={() => setView('success')}
           />
         )}
