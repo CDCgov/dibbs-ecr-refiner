@@ -19,7 +19,6 @@ type Condition = {
   displayName: string;
 };
 
-
 export async function uploadDemoFile(): Promise<DemoUploadResponse> {
   const resp = await fetch('/api/v1/demo/upload');
   if (!resp.ok) {
