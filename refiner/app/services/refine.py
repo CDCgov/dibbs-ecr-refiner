@@ -221,7 +221,12 @@ def refine_eicr(
         #    in the future this should **always** be the case since we
         #    will no longer process **only** an eICR without an RR
         if condition_codes:
-            code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
+            code_string = (
+                ",".join([c["code"] for c in condition_codes])
+                if isinstance(condition_codes, list)
+                else condition_codes
+            )
+            code_xpath = _get_xpath_from_condition_codes(code_string) or ""
             combined_xpath = f"{code_xpath} | {template_xpath}"
         else:
             # case 1:
