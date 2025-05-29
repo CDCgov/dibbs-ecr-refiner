@@ -127,11 +127,13 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     assert response.status_code == 200
 
     data: dict[str, Any] = response.json()
-    assert "unrefined_eicr" in data
-    assert "refined_eicr" in data
-    assert "reportable_conditions" in data
-    assert "stats" in data
-    assert any("file size reduced by" in stat for stat in data["stats"])
+    assert "conditions" in data
+    assert "unrefined_eicr" in data["conditions"][0]
+    assert "refined_eicr" in data["conditions"][0]
+    assert "stats" in data["conditions"][0]
+    assert any(
+        "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
+    )
 
     app.dependency_overrides.clear()
 
