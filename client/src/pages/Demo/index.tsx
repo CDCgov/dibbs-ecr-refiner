@@ -4,7 +4,7 @@ import { ReportableConditions } from './ReportableConditions';
 import { Error } from './Error';
 import { RunTest } from './RunTest';
 import { useState } from 'react';
-import { DemoUploadResponse, uploadDemoFile } from '../../services/demo';
+import { DemoUploadResponse } from '../../services/demo';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
@@ -13,9 +13,36 @@ export default function Demo() {
   const [uploadResponse, setUploadResponse] =
     useState<DemoUploadResponse | null>(null);
 
+  const resp: DemoUploadResponse = {
+    conditions: [
+      {
+        code: '101',
+        display_name: 'COVID-19',
+        refined_eicr: '<refined>COVID REFINED</refined>',
+        unrefined_eicr: '<unrefined>COVID UNREFINED</unrefined>',
+        stats: ['Reduced by 14%'],
+      },
+      {
+        code: '102',
+        display_name: 'RSV',
+        refined_eicr: '<refined>RSV REFINED</refined>',
+        unrefined_eicr: '<unrefined>RSV UNREFINED</unrefined>',
+        stats: ['Reduced by 37%'],
+      },
+      {
+        code: '103',
+        display_name: 'Influenza',
+        refined_eicr: '<refined>INFLUENZA REFINED</refined>',
+        unrefined_eicr: '<unrefined>INFLUENZA UNREFINED</unrefined>',
+        stats: ['Reduced by 55%'],
+      },
+    ],
+    refined_download_token: 'sample-token',
+  };
+
   async function runTest() {
     try {
-      const resp = await uploadDemoFile();
+      // const resp = await uploadDemoFile();
       setUploadResponse(resp);
       setView('reportable-conditions');
     } catch {
@@ -35,17 +62,16 @@ export default function Demo() {
       <div className="flex flex-col items-center justify-center gap-6">
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
-          // TODO: provide list of reportable conditions from backend
           <ReportableConditions
-            conditions={['Chlamydia trachomatis infection']}
+            conditionNames={uploadResponse.conditions.map(
+              (c) => c.display_name
+            )}
             onClick={() => setView('success')}
           />
         )}
         {view === 'success' && uploadResponse && (
           <Success
-            unrefinedEicr={uploadResponse.unrefined_eicr}
-            refinedEicr={uploadResponse.refined_eicr}
-            stats={uploadResponse.stats}
+            conditions={uploadResponse.conditions}
             downloadToken={uploadResponse.refined_download_token}
           />
         )}
