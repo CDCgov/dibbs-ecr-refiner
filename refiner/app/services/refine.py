@@ -86,7 +86,7 @@ def get_reportable_conditions(root: _Element) -> str | None:
     Get SNOMED CT codes and display names from the Report Summary section.
 
     Scan the Report Summary section for SNOMED CT codes and return
-    them as a list of dictionaries, or None if none found.
+    them as a comma-separated string, or None if none found.
 
     Args:
         root: The root element of the XML document to parse.
@@ -226,7 +226,7 @@ def refine_eicr(
                 if isinstance(condition_codes, list)
                 else condition_codes
             )
-            code_xpath = _get_xpath_from_condition_codes(code_string) or ""
+            code_xpath = _get_xpath_from_condition_codes(code_string)
             combined_xpath = f"{code_xpath} | {template_xpath}"
         else:
             # case 1:
