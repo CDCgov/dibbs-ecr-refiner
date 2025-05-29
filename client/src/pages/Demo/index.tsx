@@ -69,8 +69,7 @@ export default function Demo() {
 
       setUploadResponse(modifiedResponse);
       setView('reportable-conditions');
-    } catch (e) {
-      console.error(e);
+    } catch {
       setUploadResponse(null);
       setView('error');
     }
