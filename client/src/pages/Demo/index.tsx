@@ -4,48 +4,73 @@ import { ReportableConditions } from './ReportableConditions';
 import { Error } from './Error';
 import { RunTest } from './RunTest';
 import { useState } from 'react';
-import { DemoUploadResponse } from '../../services/demo';
+import { DemoUploadResponse, uploadDemoFile } from '../../services/demo';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
+
+/**
+ * TODO: Remove this later when `additionalSampleConditions` is deleted.
+ */
+type SampleReportableConditions = Pick<DemoUploadResponse, 'conditions'>;
 
 export default function Demo() {
   const [view, setView] = useState<View>('run-test');
   const [uploadResponse, setUploadResponse] =
     useState<DemoUploadResponse | null>(null);
 
-  const resp: DemoUploadResponse = {
+  /**
+   * TODO: Remove this later. See description below.
+   *
+   * This is mock data that gets appended to the response coming from the API when
+   * `runTest()` is called. This is used to show how we'll switch between conditions
+   * using the dropdown on the Success page.
+   */
+  const additionalSampleConditions: SampleReportableConditions = {
     conditions: [
       {
         code: '101',
         display_name: 'COVID-19',
         refined_eicr: '<refined>COVID REFINED</refined>',
         unrefined_eicr: '<unrefined>COVID UNREFINED</unrefined>',
-        stats: ['Reduced by 14%'],
+        stats: ['eCR file size reduced by 14%'],
       },
       {
         code: '102',
         display_name: 'RSV',
         refined_eicr: '<refined>RSV REFINED</refined>',
         unrefined_eicr: '<unrefined>RSV UNREFINED</unrefined>',
-        stats: ['Reduced by 37%'],
+        stats: ['eCR file size reduced by 37%'],
       },
       {
         code: '103',
         display_name: 'Influenza',
         refined_eicr: '<refined>INFLUENZA REFINED</refined>',
         unrefined_eicr: '<unrefined>INFLUENZA UNREFINED</unrefined>',
-        stats: ['Reduced by 55%'],
+        stats: ['eCR file size reduced by 55%'],
       },
     ],
-    refined_download_token: 'sample-token',
   };
 
   async function runTest() {
     try {
-      // const resp = await uploadDemoFile();
-      setUploadResponse(resp);
+      const resp = await uploadDemoFile();
+
+      /**
+       * TODO: Remove this when `additionalSampleConditions` is removed.
+       * Update line below to be `setUploadResponse(resp)`.
+       */
+      const modifiedResponse: DemoUploadResponse = {
+        refined_download_token: resp.refined_download_token,
+        conditions: [
+          ...resp.conditions,
+          ...additionalSampleConditions.conditions,
+        ],
+      };
+
+      setUploadResponse(modifiedResponse);
       setView('reportable-conditions');
-    } catch {
+    } catch (e) {
+      console.error(e);
       setUploadResponse(null);
       setView('error');
     }
