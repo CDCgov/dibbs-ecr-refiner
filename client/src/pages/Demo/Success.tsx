@@ -14,7 +14,7 @@ interface SuccessProps {
 export function Success({ conditions, downloadToken }: SuccessProps) {
   const [downloadError, setDownloadError] = useState<string>('');
 
-  // defaults to first condition
+  // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
   );
@@ -45,7 +45,6 @@ export function Success({ conditions, downloadToken }: SuccessProps) {
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.currentTarget.value;
-    console.log(value);
     const newSelectedCondition = conditions.find((c) => c.code === value);
 
     if (!newSelectedCondition) return selectedCondition;
@@ -61,7 +60,7 @@ export function Success({ conditions, downloadToken }: SuccessProps) {
             <h1 className="!m-0 !p-0 text-xl font-bold text-black">
               eCR successfully refined!
             </h1>
-            <div>
+            <div className="mb-4">
               <Label htmlFor="condition-select" className="text-bold">
                 CONDITION:
               </Label>
@@ -85,7 +84,7 @@ export function Success({ conditions, downloadToken }: SuccessProps) {
                 <SuccessItem key={stat}>{stat}</SuccessItem>
               ))}
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center gap-3">
               <Button onClick={async () => await downloadFile(downloadToken)}>
                 Download refined eCR
               </Button>
