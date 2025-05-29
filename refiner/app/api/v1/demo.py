@@ -192,15 +192,20 @@ async def demo_upload(
         return JSONResponse(
             content=jsonable_encoder(
                 {
-                    "unrefined_eicr": xml_files.eicr,
-                    "refined_eicr": refined_eicr,
-                    "reportable_conditions": rr_results["reportable_conditions"],
-                    "stats": [
-                        f"eCR file size reduced by {
-                            _get_file_size_difference_percentage(
-                                xml_files.eicr, refined_eicr
-                            )
-                        }%",
+                    "conditions": [
+                        {
+                            "code": rr_results["reportable_conditions"],
+                            "display_name": "Sample condition name",  # TODO: use real display name when available
+                            "unrefined_eicr": xml_files.eicr,
+                            "refined_eicr": refined_eicr,
+                            "stats": [
+                                f"eCR file size reduced by {
+                                    _get_file_size_difference_percentage(
+                                        xml_files.eicr, refined_eicr
+                                    )
+                                }%",
+                            ],
+                        }
                     ],
                     "refined_download_token": token,
                 }
