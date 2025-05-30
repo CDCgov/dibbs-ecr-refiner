@@ -22,6 +22,31 @@ file_store: dict[str, dict] = {}
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
 
+# TODO: Remove sample conditions when implementing ticket: https://github.com/CDCgov/dibbs-ecr-refiner/issues/103
+sample_conditions = [
+    {
+        "code": "101",
+        "display_name": "COVID-19",
+        "refined_eicr": "<refined>COVID REFINED</refined>",
+        "unrefined_eicr": "<unrefined>COVID UNREFINED</unrefined>",
+        "stats": ["eCR file size reduced by 14%"],
+    },
+    {
+        "code": "102",
+        "display_name": "RSV",
+        "refined_eicr": "<refined>RSV REFINED</refined>",
+        "unrefined_eicr": "<unrefined>RSV UNREFINED</unrefined>",
+        "stats": ["eCR file size reduced by 37%"],
+    },
+    {
+        "code": "103",
+        "display_name": "Influenza",
+        "refined_eicr": "<refined>INFLUENZA REFINED</refined>",
+        "unrefined_eicr": "<unrefined>INFLUENZA UNREFINED</unrefined>",
+        "stats": ["eCR file size reduced by 55%"],
+    },
+]
+
 
 async def run_expired_file_cleanup_task() -> None:
     """
@@ -205,7 +230,8 @@ async def demo_upload(
                                     )
                                 }%",
                             ],
-                        }
+                        },
+                        *sample_conditions,
                     ],
                     "refined_download_token": token,
                 }
