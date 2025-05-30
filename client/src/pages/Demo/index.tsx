@@ -35,17 +35,16 @@ export default function Demo() {
       <div className="flex flex-col items-center justify-center gap-6">
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
-          // TODO: provide list of reportable conditions from backend
           <ReportableConditions
-            conditions={['Chlamydia trachomatis infection']}
+            conditionNames={uploadResponse.conditions.map(
+              (c) => c.display_name
+            )}
             onClick={() => setView('success')}
           />
         )}
         {view === 'success' && uploadResponse && (
           <Success
-            unrefinedEicr={uploadResponse.unrefined_eicr}
-            refinedEicr={uploadResponse.refined_eicr}
-            stats={uploadResponse.stats}
+            conditions={uploadResponse.conditions}
             downloadToken={uploadResponse.refined_download_token}
           />
         )}

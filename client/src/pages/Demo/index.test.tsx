@@ -9,9 +9,15 @@ import Demo from '.';
 import { BrowserRouter } from 'react-router';
 
 const mockUploadResponse: DemoUploadResponse = {
-  unrefined_eicr: '<data>tons of data here</data>',
-  refined_eicr: '<data>less data</data>',
-  stats: ['eCR reduced by 59%'],
+  conditions: [
+    {
+      code: 'mock-code',
+      display_name: 'mock condition name',
+      unrefined_eicr: '<data>tons of data here</data>',
+      refined_eicr: '<data>less data</data>',
+      stats: ['eCR reduced by 59%'],
+    },
+  ],
   refined_download_token: 'test-token',
 };
 

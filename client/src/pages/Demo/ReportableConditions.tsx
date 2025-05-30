@@ -3,11 +3,11 @@ import InformationSvg from '../../assets/information.svg';
 import { Button } from '../../components/Button';
 
 interface ReportableConditionsProps {
-  conditions: string[];
+  conditionNames: string[];
   onClick: () => void;
 }
 export function ReportableConditions({
-  conditions,
+  conditionNames,
   onClick,
 }: ReportableConditionsProps) {
   return (
@@ -20,10 +20,10 @@ export function ReportableConditions({
               <p className="text-center text-xl font-bold text-black">
                 We found the following reportable condition(s):
               </p>
-              {conditions.length > 0 ? (
+              {conditionNames.length > 0 ? (
                 <ul className="list-disc text-xl font-bold text-black">
-                  {conditions.map((condition) => (
-                    <li key={condition}>{condition}</li>
+                  {conditionNames.map((name) => (
+                    <li key={name}>{name}</li>
                   ))}
                 </ul>
               ) : null}
