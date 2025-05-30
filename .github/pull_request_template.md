@@ -49,7 +49,7 @@ Unit tests
 
 or
 
-Testing the dev environment:
+Testing the application:
 
 1. Run `docker compose up`
 2. Check that both services are up and running with `docker ps`
