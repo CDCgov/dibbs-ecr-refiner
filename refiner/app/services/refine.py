@@ -641,6 +641,7 @@ def _create_minimal_section(section: _Element) -> None:
     # add nullFlavor="NI" to the <section> element
     section.attrib["nullFlavor"] = "NI"
 
+
 def build_condition_eicr_pairs(
     parsed_eicr: etree._Element,
     reportable_conditions: list[dict[str, Any]],
@@ -661,9 +662,11 @@ def build_condition_eicr_pairs(
     condition_eicr_pairs = []
 
     for condition in reportable_conditions:
-        condition_eicr_pairs.append({
-            "reportable_condition": condition,
-            "eicr_copy": deepcopy(parsed_eicr),
-        })
+        condition_eicr_pairs.append(
+            {
+                "reportable_condition": condition,
+                "eicr_copy": deepcopy(parsed_eicr),
+            }
+        )
 
     return condition_eicr_pairs

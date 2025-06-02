@@ -90,7 +90,9 @@ async def refine_ecr_from_zip(
             sections = refine.validate_sections_to_include(sections_to_include)
 
         parsed_eicr = xml_files.parse_eicr()
-        condition_eicr_pairs = refine.build_condition_eicr_pairs(parsed_eicr, reportable_conditions)
+        condition_eicr_pairs = refine.build_condition_eicr_pairs(
+            parsed_eicr, reportable_conditions
+        )
 
         # Store results
         refined_results = []
@@ -105,10 +107,12 @@ async def refine_ecr_from_zip(
                 condition_code=condition["code"],
             )
 
-            refined_results.append({
-                "reportable_condition": condition,
-                "refined_eicr": refined_eicr,
-            })
+            refined_results.append(
+                {
+                    "reportable_condition": condition,
+                    "refined_eicr": refined_eicr,
+                }
+            )
 
         # Return all refined eICRs and their conditions
         return JSONResponse(content=refined_results)

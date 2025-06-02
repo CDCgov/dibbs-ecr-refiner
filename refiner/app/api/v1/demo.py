@@ -181,9 +181,11 @@ async def demo_upload(
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
-#         parsed_eicr = xml_files.parse_eicr()
+        #         parsed_eicr = xml_files.parse_eicr()
 
-        condition_eicr_pairs = refine.build_condition_eicr_pairs(xml_files, reportable_conditions)
+        condition_eicr_pairs = refine.build_condition_eicr_pairs(
+            xml_files, reportable_conditions
+        )
 
         # Refine each pair and collect results
         refined_results = []
@@ -197,10 +199,12 @@ async def demo_upload(
                 condition_codes=condition["code"],
             )
 
-            refined_results.append({
-                "reportable_condition": condition,
-                "refined_eicr": refined_eicr,
-            })
+            refined_results.append(
+                {
+                    "reportable_condition": condition,
+                    "refined_eicr": refined_eicr,
+                }
+            )
 
         # Track output metadata
         refined_outputs = []
@@ -223,11 +227,13 @@ async def demo_upload(
         _update_file_store(output_file_name, output_file_path, token)
 
         # Track output metadata
-        refined_outputs.append({
-            "reportable_condition": condition,
-            "refined_download_token": token,
-            "refined_eicr": refined_eicr
-        })
+        refined_outputs.append(
+            {
+                "reportable_condition": condition,
+                "refined_download_token": token,
+                "refined_eicr": refined_eicr,
+            }
+        )
 
         return JSONResponse(
             content=jsonable_encoder(
