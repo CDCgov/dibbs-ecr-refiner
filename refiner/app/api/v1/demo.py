@@ -201,7 +201,6 @@ async def demo_upload(
                                 xml_files.eicr, refined_eicr
                             )
                         }%",
-                        "Found X observations relevant to the condition(s)",
                     ],
                     "refined_download_token": token,
                 }
