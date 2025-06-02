@@ -180,29 +180,76 @@ async def demo_upload(
         # Read in and process XML data from demo file
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
-        refined_eicr = refine.refine_eicr(xml_files)
+        reportable_conditions = rr_results["reportable_conditions"]
+#         parsed_eicr = xml_files.parse_eicr()
 
+        condition_eicr_pairs = refine.build_condition_eicr_pairs(xml_files, reportable_conditions)
+
+        # Refine each pair and collect results
+        refined_results = []
+
+        for pair in condition_eicr_pairs:
+            condition = pair["reportable_condition"]
+            eicr_copy = pair["eicr_copy"]
+
+            refined_eicr = refine.refine_eicr(
+                xml_files=eicr_copy,
+                condition_codes=condition["code"],
+            )
+
+            refined_results.append({
+                "reportable_condition": condition,
+                "refined_eicr": refined_eicr,
+            })
+
+        # Track output metadata
+        refined_outputs = []
+
+        for idx, result in enumerate(refined_results):
+            condition = result["reportable_condition"]
+            refined_eicr = result["refined_eicr"]
+
+        # Generate a unique name per condition (optional: use code/displayName)
+        condition_code = condition.get("code", f"cond_{idx}")
         # Create a zip with refined data and store it on the server
         full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
         output_file_name, output_file_path, token = create_output_zip(
-            refined_eicr, xml_files.rr, full_zip_output_path
+            refined_eicr,
+            xml_files.rr,
+            full_zip_output_path,
         )
+
+        # Store in file store
         _update_file_store(output_file_name, output_file_path, token)
+
+        # Track output metadata
+        refined_outputs.append({
+            "reportable_condition": condition,
+            "refined_download_token": token,
+            "refined_eicr": refined_eicr
+        })
 
         return JSONResponse(
             content=jsonable_encoder(
                 {
                     "unrefined_eicr": xml_files.eicr,
-                    "refined_eicr": refined_eicr,
                     "reportable_conditions": rr_results["reportable_conditions"],
-                    "stats": [
-                        f"eCR file size reduced by {
-                            _get_file_size_difference_percentage(
-                                xml_files.eicr, refined_eicr
-                            )
-                        }%",
+                    "refined_outputs": [
+                        {
+                            "refined_eicr": result["refined_eicr"],
+                            "reportable_condition": result["reportable_condition"],
+                            "refined_download_token": result["refined_download_token"],
+                            "output_file_name": result["refined_eicr"],
+                            "stats": [
+                                f"eCR file size reduced by {
+                                    _get_file_size_difference_percentage(
+                                        xml_files.eicr, result['refined_eicr']
+                                    )
+                                }%"
+                            ],
+                        }
+                        for result in refined_outputs
                     ],
-                    "refined_download_token": token,
                 }
             )
         )
