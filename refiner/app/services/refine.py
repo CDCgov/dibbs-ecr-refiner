@@ -81,7 +81,7 @@ def validate_sections_to_include(
 # See: on this PR: https://github.com/lxml/lxml/pull/405
 
 
-def get_reportable_conditions(root: _Element) -> list[dict[str,str]] | None:
+def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
     """
     Get SNOMED CT codes and display names from the Report Summary section.
 
@@ -224,6 +224,7 @@ def refine_eicr(
         #    will no longer process **only** an eICR without an RR
         if condition_codes:
             code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
+            combined_xpath = f"{code_xpath} | {template_xpath}"
         else:
             # case 1:
             # -> base case--only templateId xpath
