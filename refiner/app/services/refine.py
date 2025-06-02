@@ -81,7 +81,7 @@ def validate_sections_to_include(
 # See: on this PR: https://github.com/lxml/lxml/pull/405
 
 
-def get_reportable_conditions(root: _Element) -> str | None:
+def get_reportable_conditions(root: _Element) -> list[dict[str,str]] | None:
     """
     Get SNOMED CT codes and display names from the Report Summary section.
 
