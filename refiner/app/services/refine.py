@@ -118,7 +118,9 @@ def get_reportable_conditions(root: _Element) -> str | None:
             )
             for value in values:
                 code = value.get("code")
-                display_name = value.get("displayName")
+                display_name = value.get(
+                    "displayName", "Condition display name not found"
+                )
                 if code:
                     conditions.append({"code": code, "displayName": display_name})
 
@@ -221,13 +223,7 @@ def refine_eicr(
         #    in the future this should **always** be the case since we
         #    will no longer process **only** an eICR without an RR
         if condition_codes:
-            code_string = (
-                ",".join([c["code"] for c in condition_codes])
-                if isinstance(condition_codes, list)
-                else condition_codes
-            )
-            code_xpath = _get_xpath_from_condition_codes(code_string)
-            combined_xpath = f"{code_xpath} | {template_xpath}"
+            code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
         else:
             # case 1:
             # -> base case--only templateId xpath
