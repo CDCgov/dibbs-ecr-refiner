@@ -19,13 +19,6 @@ const mockUploadResponse: DemoUploadResponse = {
     },
   ],
   refined_download_token: 'test-token',
-  reportable_conditions: [
-    {
-      code: '840539006',
-      displayName:
-        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
-    },
-  ],
 };
 
 vi.mock(import('../../services/demo.ts'), async (importOriginal) => {
@@ -62,11 +55,7 @@ describe('Demo', () => {
     expect(
       screen.getByText('We found the following reportable condition(s):')
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('mock condition name')).toBeInTheDocument();
     await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
 
     // check success page
