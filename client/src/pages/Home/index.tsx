@@ -50,7 +50,7 @@ function HowItWorks() {
     <div className="flex grow flex-col items-center gap-6 gap-13 bg-blue-100 px-6 py-20 lg:px-34">
       <h2 className="text-4xl font-bold text-black">How it works</h2>
       <ol className="flex flex-col gap-10 md:flex-row md:justify-between">
-        <li className="flex w-1/3 items-start gap-6">
+        <li className="flex items-start gap-6 md:w-1/3">
           <Number>1</Number>
           <p>
             This early conceptual demonstration of the power of the eCR Refiner
@@ -58,7 +58,7 @@ function HowItWorks() {
             reportability response (RR) file pair.
           </p>
         </li>
-        <li className="flex w-1/3 items-start gap-6">
+        <li className="flex items-start gap-6 md:w-1/3">
           <Number>2</Number>
           <p>
             The Refiner extracts the reportable condition(s) from the RR and
@@ -66,7 +66,7 @@ function HowItWorks() {
             Exchange Service (TES) for each reportable condition.
           </p>
         </li>
-        <li className="flex w-1/3 items-start gap-6">
+        <li className="flex items-start gap-6 md:w-1/3">
           <Number>3</Number>
           <p>
             The Refiner splits the original eICR into child eICRs - one per
