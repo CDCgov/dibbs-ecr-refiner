@@ -80,7 +80,12 @@ async def refine_ecr_from_zip(
 
         # use RR conditions if none specified
         if not conditions_to_include and reportable_conditions:
-            conditions_to_include = reportable_conditions
+            conditions_to_include = ",".join(
+                condition["code"] for condition in rr_results["reportable_conditions"]
+            )
+        #         # use RR conditions if none specified
+        #         if not conditions_to_include and reportable_conditions:
+        #             conditions_to_include = reportable_conditions
 
         # validate sections if provided
         sections = None
