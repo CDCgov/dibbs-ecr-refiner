@@ -17,11 +17,12 @@ export function Button({
   type = 'button',
   to,
   onClick,
+  className,
   ...props
 }: ButtonProps) {
   const purpleButtonStyles = '!bg-violet-warm-60 hover:!bg-violet-warm-70';
 
-  const styles = classNames('usa-button', purpleButtonStyles, {
+  const styles = classNames('usa-button', className, purpleButtonStyles, {
     'usa-button--secondary': variant === 'secondary',
   });
 
@@ -38,11 +39,11 @@ export function Button({
 
   return (
     <UswdsButton
-      {...props}
       secondary={variant === 'secondary'}
       onClick={onClick}
       type={type}
       className="!bg-violet-warm-60 hover:!bg-violet-warm-70"
+      {...props}
     >
       {children}
     </UswdsButton>
