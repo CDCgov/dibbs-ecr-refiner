@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import PlaceholderImg from '../../assets/home/placeholder.png';
+import { Button } from '../../components/Button';
 
 export function Home() {
   return (
@@ -30,9 +31,9 @@ export function Home() {
               </p>
             </div>
             <div>
-              <Link className="usa-button" to="/demo">
+              <Button className="usa-button usa-button--big" to="/demo">
                 Try it out
-              </Link>
+              </Button>
             </div>
           </div>
           <div>

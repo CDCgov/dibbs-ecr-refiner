@@ -189,12 +189,14 @@ async def demo_upload(
         )
         _update_file_store(output_file_name, output_file_path, token)
 
-        return JSONResponse(
-            content=jsonable_encoder(
+        conditions = []
+        for condition in rr_results["reportable_conditions"]:
+            conditions.append(
                 {
+                    "code": condition["code"],
+                    "display_name": condition["displayName"],
                     "unrefined_eicr": xml_files.eicr,
                     "refined_eicr": refined_eicr,
-                    "reportable_conditions": rr_results["reportable_conditions"],
                     "stats": [
                         f"eCR file size reduced by {
                             _get_file_size_difference_percentage(
@@ -202,6 +204,13 @@ async def demo_upload(
                             )
                         }%",
                     ],
+                },
+            )
+
+        return JSONResponse(
+            content=jsonable_encoder(
+                {
+                    "conditions": conditions,
                     "refined_download_token": token,
                 }
             )
