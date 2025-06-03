@@ -1,9 +1,9 @@
 import logging
-
 from copy import deepcopy
+from typing import Any
+
 from lxml import etree
 from lxml.etree import _Element
-from typing import Any
 
 from ..core.exceptions import (
     ConditionCodeError,

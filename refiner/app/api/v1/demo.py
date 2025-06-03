@@ -213,8 +213,6 @@ async def demo_upload(
             condition = result["reportable_condition"]
             refined_eicr = result["refined_eicr"]
 
-        # Generate a unique name per condition (optional: use code/displayName)
-        condition_code = condition.get("code", f"cond_{idx}")
         # Create a zip with refined data and store it on the server
         full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
         output_file_name, output_file_path, token = create_output_zip(

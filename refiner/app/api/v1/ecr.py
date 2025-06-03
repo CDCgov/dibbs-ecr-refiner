@@ -10,6 +10,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import JSONResponse
 
 from ...core.exceptions import (
     SectionValidationError,
@@ -105,6 +106,7 @@ async def refine_ecr_from_zip(
             refined_eicr = refine.refine_eicr(
                 xml_files=eicr_copy,
                 condition_code=condition["code"],
+                sections_to_include=sections,
             )
 
             refined_results.append(
