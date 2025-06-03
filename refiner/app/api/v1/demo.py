@@ -60,7 +60,7 @@ def _get_demo_zip_path() -> Path:
     Get the path to the demo ZIP file.
     """
 
-    return file_io.get_asset_path("demo", "monmothma.zip")
+    return file_io.get_asset_path("demo", "mon-mothma-two-conditions.zip")
 
 
 def _create_zipfile_output_directory(base_path: Path) -> Path:
