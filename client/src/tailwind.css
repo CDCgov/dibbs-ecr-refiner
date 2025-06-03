@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 
 @layer base {
-  html {
+  html,body {
     @apply !font-public-sans;
+    @apply !min-h-screen
   }
 }
 
