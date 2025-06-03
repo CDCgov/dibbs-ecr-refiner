@@ -3,21 +3,21 @@ import SuccessSvg from '../../assets/green-check.svg';
 import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import XMLViewer from 'react-xml-viewer';
+import { Condition } from '../../services/demo';
+import { Label, Select } from '@trussworks/react-uswds';
 
 interface SuccessProps {
-  unrefinedEicr: string;
-  refinedEicr: string;
-  stats: string[];
+  conditions: Condition[];
   downloadToken: string;
 }
 
-export function Success({
-  unrefinedEicr,
-  refinedEicr,
-  stats,
-  downloadToken,
-}: SuccessProps) {
+export function Success({ conditions, downloadToken }: SuccessProps) {
   const [downloadError, setDownloadError] = useState<string>('');
+
+  // defaults to first condition found
+  const [selectedCondition, setSelectedCondition] = useState<Condition>(
+    conditions[0]
+  );
 
   async function downloadFile(token: string) {
     try {
@@ -43,20 +43,51 @@ export function Success({
     }
   }
 
+  function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const value = e.currentTarget.value;
+    const newSelectedCondition = conditions.find((c) => c.code === value);
+
+    if (!newSelectedCondition) return selectedCondition;
+
+    setSelectedCondition(newSelectedCondition);
+  }
+
   return (
     <>
       <Container color="green" className="w-full !p-8">
         <Content className="flex flex-col items-start gap-4">
-          <h1 className="text-xl font-bold text-black">
-            eCR successfully refined!
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="!m-0 !p-0 text-xl font-bold text-black">
+              eCR successfully refined!
+            </h1>
+          </div>
           <div className="flex min-h-full min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex flex-col gap-4 sm:flex-row">
-              {stats.map((stat) => (
-                <SuccessItem key={stat}>{stat}</SuccessItem>
-              ))}
+            <div className="flex items-center gap-10">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="condition-select" className="text-bold !m-0">
+                  CONDITION:
+                </Label>
+                <Select
+                  id="condition-select"
+                  name="condition-select"
+                  className="!m-0"
+                  defaultValue={selectedCondition.code}
+                  onChange={onChange}
+                >
+                  {conditions.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.display_name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="flex flex-col gap-4 sm:flex-row">
+                {selectedCondition.stats.map((stat) => (
+                  <SuccessItem key={stat}>{stat}</SuccessItem>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center gap-3">
               <Button onClick={async () => await downloadFile(downloadToken)}>
                 Download refined eCR
               </Button>
@@ -66,9 +97,9 @@ export function Success({
         </Content>
       </Container>
       <EicrComparison
-        unrefinedEicr={unrefinedEicr}
-        refinedEicr={refinedEicr}
-        stats={stats}
+        unrefinedEicr={selectedCondition.unrefined_eicr}
+        refinedEicr={selectedCondition.refined_eicr}
+        stats={selectedCondition.stats}
       />
     </>
   );
@@ -119,11 +150,11 @@ interface EicrTextProps {
 
 function EicrText({ title, xml }: EicrTextProps) {
   return (
-    <div className="flex w-1/2 flex-col gap-2">
-      <h2 className="text-3xl font-bold">{title}</h2>
+    <div className="mt-10 flex w-1/2 flex-col gap-1">
+      <h2 className="mb-4 text-3xl font-bold">{title}</h2>
       {/* There's not an easy way to apply classes directly to XMLViewer
       so we're using Tailwind to target the child XMLViewer div instead */}
-      <div className="[&>div]:h-190 [&>div]:w-full [&>div]:overflow-auto [&>div]:p-10">
+      <div className="[&>div]:ml-5 [&>div]:h-190 [&>div]:w-full [&>div]:overflow-auto">
         <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
       </div>
     </div>

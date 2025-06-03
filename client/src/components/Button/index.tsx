@@ -19,7 +19,9 @@ export function Button({
   onClick,
   ...props
 }: ButtonProps) {
-  const styles = classNames('usa-button', {
+  const purpleButtonStyles = '!bg-violet-warm-60 hover:!bg-violet-warm-70';
+
+  const styles = classNames('usa-button', purpleButtonStyles, {
     'usa-button--secondary': variant === 'secondary',
   });
 
@@ -40,6 +42,7 @@ export function Button({
       secondary={variant === 'secondary'}
       onClick={onClick}
       type={type}
+      className="!bg-violet-warm-60 hover:!bg-violet-warm-70"
     >
       {children}
     </UswdsButton>

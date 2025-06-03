@@ -36,17 +36,15 @@ export default function Demo() {
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
           <ReportableConditions
-            conditions={uploadResponse.reportable_conditions.map(
-              (condition) => condition.displayName
+            conditionNames={uploadResponse.conditions.map(
+              (c) => c.display_name
             )}
             onClick={() => setView('success')}
           />
         )}
         {view === 'success' && uploadResponse && (
           <Success
-            unrefinedEicr={uploadResponse.unrefined_eicr}
-            refinedEicr={uploadResponse.refined_eicr}
-            stats={uploadResponse.stats}
+            conditions={uploadResponse.conditions}
             downloadToken={uploadResponse.refined_download_token}
           />
         )}
