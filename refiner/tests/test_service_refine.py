@@ -349,7 +349,11 @@ def test_get_reportable_conditions_no_codes():
             </component>
         </ClinicalDocument>
     """)
-    assert get_reportable_conditions(root) is None
+
+    with pytest.raises(StructureValidationError) as exc_info:
+        get_reportable_conditions(root)
+
+    assert "Missing required RR11 Coded Information Organizer" in str(exc_info.value)
 
 
 def test_process_section_no_observations():
