@@ -1,9 +1,9 @@
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Request, Response
-from fastapi.applications import AppType
 from starlette.types import Lifespan
 
 from ..config import DIBBS_CONTACT, LICENSES
@@ -31,7 +31,7 @@ class BaseService:
         service_name: str,
         service_path: str,
         description_path: str,
-        lifespan: Lifespan[AppType],
+        lifespan: Lifespan[FastAPI],
         include_health_check_endpoint: bool = True,
         license_info: Literal["CreativeCommonsZero", "MIT"] = "CreativeCommonsZero",
         openapi_url: str = "/openapi.json",
@@ -76,7 +76,7 @@ class BaseService:
         """
 
         @self.app.middleware("http")
-        async def rewrite_path(request: Request, call_next: callable) -> Response:
+        async def rewrite_path(request: Request, call_next: Callable) -> Response:
             if (
                 request.url.path.startswith(self.service_path)
                 and "api/openapi.json" not in request.url.path
@@ -93,8 +93,8 @@ class BaseService:
         Adds a health check endpoint to the web service.
         """
 
-        @self.app.get("/")
-        async def health_check() -> StatusResponse:
+        @self.app.get("/", response_model=StatusResponse)
+        async def health_check():
             """Check service health status.
 
             Returns:
