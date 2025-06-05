@@ -178,29 +178,49 @@ async def demo_upload(
 
     try:
         # Read in and process XML data from demo file
-        xml_files = await file_io.read_xml_zip(upload_file)
-        rr_results = refine.process_rr(xml_files)
-        refined_eicr = refine.refine_eicr(xml_files)
+        original_xml_files = await file_io.read_xml_zip(upload_file)
+        rr_results = refine.process_rr(original_xml_files)
+        reportable_conditions = rr_results["reportable_conditions"]
 
-        # Create a zip with refined data and store it on the server
-        full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
-        output_file_name, output_file_path, token = create_output_zip(
-            refined_eicr, xml_files.rr, full_zip_output_path
+        condition_eicr_pairs = refine.build_condition_eicr_pairs(
+            original_xml_files, reportable_conditions
         )
-        _update_file_store(output_file_name, output_file_path, token)
+
+        # Refine each pair and collect results
+        refined_results = []
+
+        for pair in condition_eicr_pairs:
+            condition = pair["reportable_condition"]
+            eicr_copy = pair["eicr_copy"]
+
+            refined_eicr = refine.refine_eicr(
+                xml_files=eicr_copy,
+                condition_codes=condition["code"],
+            )
+
+            refined_results.append(
+                {
+                    "reportable_condition": condition,
+                    "refined_eicr": refined_eicr,
+                }
+            )
 
         conditions = []
-        for condition in rr_results["reportable_conditions"]:
+        for idx, condition in enumerate(refined_results):
+            condition_refined_eicr = refined_results[idx][
+                "refined_eicr"
+            ]  # refined eicr for current condition
             conditions.append(
                 {
-                    "code": condition["code"],
-                    "display_name": condition["displayName"],
-                    "unrefined_eicr": xml_files.eicr,
-                    "refined_eicr": refined_eicr,
+                    "code": condition["reportable_condition"]["code"],
+                    "display_name": condition["reportable_condition"]["displayName"],
+                    "unrefined_eicr": original_xml_files.eicr,
+                    "refined_eicr": condition_refined_eicr,
                     "stats": [
                         f"eCR file size reduced by {
                             _get_file_size_difference_percentage(
-                                xml_files.eicr, refined_eicr
+                                original_xml_files.eicr,
+                                condition_refined_eicr,
                             )
                         }%",
                     ],
@@ -211,7 +231,7 @@ async def demo_upload(
             content=jsonable_encoder(
                 {
                     "conditions": conditions,
-                    "refined_download_token": token,
+                    #                     "refined_download_token": token,
                 }
             )
         )

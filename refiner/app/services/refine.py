@@ -1,4 +1,6 @@
 import logging
+from copy import deepcopy
+from typing import Any
 
 from lxml import etree
 from lxml.etree import _Element
@@ -257,7 +259,7 @@ def refine_eicr(
 
         # dictionary that will hold the section processing instructions
         # this is based on the combination of parameters passed to `refine`
-        # as well as deails from REFINER_DETAILS
+        # as well as details from REFINER_DETAILS
         section_processing = dict(REFINER_DETAILS["sections"].items())
 
         namespaces = {"hl7": "urn:hl7-org:v3"}
@@ -695,3 +697,33 @@ def _create_minimal_section(section: _Element) -> None:
 
     # add nullFlavor="NI" to the <section> element
     section.attrib["nullFlavor"] = "NI"
+
+
+def build_condition_eicr_pairs(
+    parsed_eicr: etree._Element,
+    reportable_conditions: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Generate pairs of reportable conditions and a deepcopy of the original eICR XML.
+
+    Each reportable condition gets its own copy of the eICR document so that
+    condition-specific refinement can be performed independently.
+
+    Args:
+        parsed_eicr (etree._Element): The original parsed eICR XML document.
+        reportable_conditions (list[dict]): List of reportable condition objects with 'code' keys.
+
+    Returns:
+        list[dict[str, Any]]: A list of dictionaries, each containing a `reportable_condition` and `eicr_copy`.
+    """
+    condition_eicr_pairs = []
+
+    for condition in reportable_conditions:
+        condition_eicr_pairs.append(
+            {
+                "reportable_condition": condition,
+                "eicr_copy": deepcopy(parsed_eicr),
+            }
+        )
+
+    return condition_eicr_pairs
