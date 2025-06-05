@@ -8,13 +8,13 @@ export class ApiUploadError extends Error {
 
 export interface DemoUploadResponse {
   conditions: Condition[];
+  unrefined_eicr: string;
   refined_download_token: string;
 }
 
 export interface Condition {
   display_name: string;
   code: string;
-  unrefined_eicr: string;
   refined_eicr: string;
   stats: string[];
 }
