@@ -356,6 +356,85 @@ def test_get_reportable_conditions_no_codes():
     assert "Missing required RR11 Coded Information Organizer" in str(exc_info.value)
 
 
+def test_get_reportable_conditions_uniqueness():
+    """
+    Test that get_reportable_conditions returns unique conditions only.
+    Uses sample RR with duplicate reportable conditions to verify deduplication.
+    """
+
+    root = etree.fromstring("""
+        <ClinicalDocument xmlns="urn:hl7-org:v3">
+            <component>
+                <section>
+                    <code code="55112-7"/>
+                    <entry>
+                        <organizer>
+                            <code code="RR11"/>
+                            <!-- First occurrence of condition -->
+                            <component>
+                                <observation>
+                                    <templateId root="2.16.840.1.113883.10.20.15.2.3.12"/>
+                                    <value codeSystem="2.16.840.1.113883.6.96"
+                                          code="840539006"
+                                          displayName="COVID-19"/>
+                                    <entryRelationship>
+                                        <observation>
+                                            <code code="RR1"/>
+                                            <value code="RRVS1"/>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </component>
+                            <!-- Duplicate condition -->
+                            <component>
+                                <observation>
+                                    <templateId root="2.16.840.1.113883.10.20.15.2.3.12"/>
+                                    <value codeSystem="2.16.840.1.113883.6.96"
+                                          code="840539006"
+                                          displayName="COVID-19"/>
+                                    <entryRelationship>
+                                        <observation>
+                                            <code code="RR1"/>
+                                            <value code="RRVS1"/>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </component>
+                            <!-- Different condition -->
+                            <component>
+                                <observation>
+                                    <templateId root="2.16.840.1.113883.10.20.15.2.3.12"/>
+                                    <value codeSystem="2.16.840.1.113883.6.96"
+                                          code="27836007"
+                                          displayName="Pertussis"/>
+                                    <entryRelationship>
+                                        <observation>
+                                            <code code="RR1"/>
+                                            <value code="RRVS1"/>
+                                        </observation>
+                                    </entryRelationship>
+                                </observation>
+                            </component>
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+        </ClinicalDocument>
+    """)
+
+    result = get_reportable_conditions(root)
+
+    # verify we get exactly 2 unique conditions
+    assert len(result) == 2
+
+    # verify the specific conditions are present
+    expected_conditions = [
+        {"code": "840539006", "displayName": "COVID-19"},
+        {"code": "27836007", "displayName": "Pertussis"},
+    ]
+    assert result == expected_conditions
+
+
 def test_process_section_no_observations():
     """
     Test _process_section when no observations are found.
