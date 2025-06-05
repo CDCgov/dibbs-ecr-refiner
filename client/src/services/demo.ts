@@ -8,17 +8,17 @@ export class ApiUploadError extends Error {
 
 
 export interface DemoUploadResponse {
+  conditions: Condition[];
+  refined_download_token: string;
+}
+
+export interface Condition {
+  display_name: string;
+  code: string;
   unrefined_eicr: string;
   refined_eicr: string;
   stats: string[];
-  refined_download_token: string;
-  reportable_conditions: Condition[];
 }
-
-type Condition = {
-  code: string;
-  displayName: string;
-};
 
 export async function uploadDemoFile(): Promise<DemoUploadResponse> {
   const resp = await fetch('/api/v1/demo/upload');

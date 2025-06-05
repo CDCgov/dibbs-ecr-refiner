@@ -9,17 +9,16 @@ import Demo from '.';
 import { BrowserRouter } from 'react-router';
 
 const mockUploadResponse: DemoUploadResponse = {
-  unrefined_eicr: '<data>tons of data here</data>',
-  refined_eicr: '<data>less data</data>',
-  stats: ['eCR reduced by 59%'],
-  refined_download_token: 'test-token',
-  reportable_conditions: [
+  conditions: [
     {
-      code: '840539006',
-      displayName:
-        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
+      code: 'mock-code',
+      display_name: 'mock condition name',
+      unrefined_eicr: '<data>tons of data here</data>',
+      refined_eicr: '<data>less data</data>',
+      stats: ['eCR reduced by 59%'],
     },
   ],
+  refined_download_token: 'test-token',
 };
 
 vi.mock(import('../../services/demo.ts'), async (importOriginal) => {
@@ -56,11 +55,7 @@ describe('Demo', () => {
     expect(
       screen.getByText('We found the following reportable condition(s):')
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('mock condition name')).toBeInTheDocument();
     await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
 
     // check success page
