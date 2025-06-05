@@ -11,8 +11,13 @@ export function RunTest({ onClick }: RunTestProps) {
       <Content className="flex gap-3">
         <img src={UploadSvg} alt="" className="p-3" />
         <div className="flex flex-col items-center gap-6">
-          <p className="font-normal text-black">
-            We will upload a test file for you to view the refinement results
+          <p className="flex max-w-[500px] flex-col gap-4 text-center font-normal text-black">
+            For this demo, we've provided a synthetic eICR/RR pair to test the
+            Refiner that contains two reportable conditions.
+            <span>
+              The "Run test" button below will upload the test files to the
+              Refiner.
+            </span>
           </p>
           <Button onClick={onClick}>Run test</Button>
           <a
