@@ -6,7 +6,6 @@ export class ApiUploadError extends Error {
   }
 }
 
-
 export interface DemoUploadResponse {
   conditions: Condition[];
   refined_download_token: string;

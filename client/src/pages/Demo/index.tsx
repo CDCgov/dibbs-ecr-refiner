@@ -28,7 +28,7 @@ export default function Demo() {
     setView('run-test');
     setUploadResponse(null);
   }
-  
+
   return (
     <main className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <LandingPageLink />
