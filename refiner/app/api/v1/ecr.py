@@ -72,7 +72,6 @@ async def refine_ecr_from_zip(
         Response: A refined XML eCR response.
     """
     try:
-        print(sections_to_include)
         # read both xml files
         xml_files = await file_io.read_xml_zip(file)
 
@@ -91,8 +90,6 @@ async def refine_ecr_from_zip(
         if sections_to_include:
             sections = refine.validate_sections_to_include(sections_to_include)
 
-        print(sections)
-
         condition_eicr_pairs = refine.build_condition_eicr_pairs(
             xml_files, reportable_conditions
         )
@@ -104,9 +101,6 @@ async def refine_ecr_from_zip(
         for pair in condition_eicr_pairs:
             condition = pair["reportable_condition"]
             eicr_copy = pair["eicr_copy"]
-
-            print(sections)
-
 
             refined_eicr = refine.refine_eicr(
                 xml_files=eicr_copy,

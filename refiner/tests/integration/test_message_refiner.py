@@ -110,7 +110,6 @@ def test_zip_upload(setup, sample_xml_files):
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
 
-
     # Load JSON response
     response_json = response.json()
 

@@ -181,7 +181,6 @@ async def demo_upload(
         xml_files = await file_io.read_xml_zip(upload_file)
         rr_results = refine.process_rr(xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
-        print(reportable_conditions)
 
         condition_eicr_pairs = refine.build_condition_eicr_pairs(
             xml_files, reportable_conditions

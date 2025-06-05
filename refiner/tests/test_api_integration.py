@@ -148,7 +148,6 @@ class TestZipUploadEndpoint:
         assert response.status_code == 200
 
         response_json = response.json()
-        print(response_json)  # For debugging purposes
         assert isinstance(response_json, list)
         assert len(response_json) > 0
 
