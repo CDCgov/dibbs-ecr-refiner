@@ -435,6 +435,31 @@ def test_get_reportable_conditions_uniqueness():
     assert result == expected_conditions
 
 
+def test_get_reportable_conditions_empty_rr11():
+    """
+    Test that RR11 organizer with no qualifying observations returns None.
+    """
+
+    root = etree.fromstring("""
+        <ClinicalDocument xmlns="urn:hl7-org:v3">
+            <component>
+                <section>
+                    <code code="55112-7"/>
+                    <entry>
+                        <organizer>
+                            <code code="RR11"/>
+                            <!-- Empty RR11 organizer -->
+                        </organizer>
+                    </entry>
+                </section>
+            </component>
+        </ClinicalDocument>
+    """)
+
+    result = get_reportable_conditions(root)
+    assert result is None
+
+
 def test_process_section_no_observations():
     """
     Test _process_section when no observations are found.
