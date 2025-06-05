@@ -15,7 +15,7 @@ const mockUploadResponse: DemoUploadResponse = {
       display_name: 'mock condition name',
       unrefined_eicr: '<data>tons of data here</data>',
       refined_eicr: '<data>less data</data>',
-      stats: ['eCR reduced by 59%'],
+      stats: ['eICR reduced by 59%'],
     },
   ],
   refined_download_token: 'test-token',
@@ -43,7 +43,7 @@ describe('Demo', () => {
 
     // check that we start on the "run test" page
     const runTestPageText =
-      'We will upload a test file for you to view the refinement results';
+      "For this demo, we've provided a synthetic eICR/RR pair to test the Refiner that contains two reportable conditions.";
     expect(screen.getByText(runTestPageText)).toBeInTheDocument();
 
     // navigate to reportable conditions
@@ -53,16 +53,18 @@ describe('Demo', () => {
 
     // check reportable conditions view
     expect(
-      screen.getByText('We found the following reportable condition(s):')
+      screen.getByText(
+        'We found the following reportable condition(s) in the RR:'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('mock condition name')).toBeInTheDocument();
     await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
 
     // check success page
-    expect(screen.getByText('eCR successfully refined!')).toBeInTheDocument();
+    expect(screen.getByText('eICR successfully refined!')).toBeInTheDocument();
     expect(screen.getByText('tons of data here')).toBeInTheDocument();
     expect(screen.getByText('less data')).toBeInTheDocument();
-    expect(screen.getByText('eCR reduced by 59%')).toBeInTheDocument();
+    expect(screen.getByText('eICR reduced by 59%')).toBeInTheDocument();
   });
 
   it('should navigate to the error view when the upload request fails', async () => {
