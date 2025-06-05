@@ -227,7 +227,7 @@ async def demo_upload(
             content=jsonable_encoder(
                 {
                     "conditions": conditions,
-#                     "refined_download_token": token,
+                    #                     "refined_download_token": token,
                 }
             )
         )
