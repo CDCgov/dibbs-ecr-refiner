@@ -50,7 +50,7 @@ function HowItWorks() {
   return (
     <div className="flex grow flex-col items-center gap-6 gap-13 bg-blue-100 px-10 py-20 xl:px-34">
       <h2 className="text-4xl font-bold text-black">How it works</h2>
-      <ol className="flex flex-col gap-10 lg:flex-row md:justify-between">
+      <ol className="flex flex-col gap-10 md:justify-between lg:flex-row">
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
           <p>
