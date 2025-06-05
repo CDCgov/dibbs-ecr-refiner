@@ -16,7 +16,6 @@ export default function Demo() {
   async function runTest() {
     try {
       const resp = await uploadDemoFile();
-      console.log(resp)
       setUploadResponse(resp);
       setView('reportable-conditions');
     } catch {
