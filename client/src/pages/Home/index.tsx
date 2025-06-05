@@ -17,8 +17,8 @@ export function Home() {
         </header>
       </div>
       <main className="flex grow flex-col">
-        <div className="flex flex-col items-center justify-center gap-16 md:flex-row">
-          <div className="flex flex-col gap-8">
+        <div className="flex flex-col items-center justify-center gap-16 lg:flex-row">
+          <div className="flex flex-col gap-8 p-10 xl:p-0">
             <div className="flex max-w-[36rem] flex-col items-start gap-4">
               <h1 className="font-merriweather !m-0 !text-5xl font-bold">
                 Focus on what matters.
@@ -48,10 +48,10 @@ export function Home() {
 
 function HowItWorks() {
   return (
-    <div className="flex grow flex-col items-center gap-6 gap-13 bg-blue-100 px-6 py-20 lg:px-34">
+    <div className="flex grow flex-col items-center gap-6 gap-13 bg-blue-100 px-10 py-20 xl:px-34">
       <h2 className="text-4xl font-bold text-black">How it works</h2>
-      <ol className="flex flex-col gap-10 md:flex-row md:justify-between">
-        <li className="flex items-start gap-6 md:w-1/3">
+      <ol className="flex flex-col gap-10 lg:flex-row md:justify-between">
+        <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
           <p>
             This early conceptual demonstration of the power of the eCR Refiner
@@ -59,7 +59,7 @@ function HowItWorks() {
             reportability response (RR) file pair.
           </p>
         </li>
-        <li className="flex items-start gap-6 md:w-1/3">
+        <li className="flex items-start gap-6 lg:w-1/3">
           <Number>2</Number>
           <p>
             The Refiner extracts the reportable condition(s) from the RR and
@@ -67,7 +67,7 @@ function HowItWorks() {
             Exchange Service (TES) for each reportable condition.
           </p>
         </li>
-        <li className="flex items-start gap-6 md:w-1/3">
+        <li className="flex items-start gap-6 lg:w-1/3">
           <Number>3</Number>
           <p>
             The Refiner splits the original eICR into child eICRs - one per
