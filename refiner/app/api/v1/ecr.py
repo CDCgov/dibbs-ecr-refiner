@@ -10,6 +10,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import JSONResponse
 
 from ...core.exceptions import (
     SectionValidationError,
@@ -83,19 +84,39 @@ async def refine_ecr_from_zip(
             conditions_to_include = ",".join(
                 condition["code"] for condition in rr_results["reportable_conditions"]
             )
-        #         # use RR conditions if none specified
-        #         if not conditions_to_include and reportable_conditions:
-        #             conditions_to_include = reportable_conditions
 
         # validate sections if provided
         sections = None
         if sections_to_include:
             sections = refine.validate_sections_to_include(sections_to_include)
 
-        # refine the eICR
-        refined_data = refine.refine_eicr(xml_files, sections, conditions_to_include)
+        condition_eicr_pairs = refine.build_condition_eicr_pairs(
+            xml_files, reportable_conditions
+        )
 
-        return Response(content=refined_data, media_type="application/xml")
+        # Store results
+        refined_results = []
+
+        # Loop through and refine each eICR copy using its condition
+        for pair in condition_eicr_pairs:
+            condition = pair["reportable_condition"]
+            eicr_copy = pair["eicr_copy"]
+
+            refined_eicr = refine.refine_eicr(
+                xml_files=eicr_copy,
+                condition_codes=condition["code"],
+                sections_to_include=sections,
+            )
+
+            refined_results.append(
+                {
+                    "reportable_condition": condition,
+                    "refined_eicr": refined_eicr,
+                }
+            )
+
+        # Return all refined eICRs and their conditions
+        return JSONResponse(content=refined_results)
 
     except (XMLValidationError, ZipValidationError) as e:
         raise HTTPException(

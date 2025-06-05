@@ -114,10 +114,20 @@ class TestZipUploadEndpoint:
                 files={"file": ("test.zip", f, "application/zip")},
             )
         assert response.status_code == 200
-        assert response.headers["content-type"] == "application/xml"
-        # verify basic xml structure
-        root = etree.fromstring(response.content)
+        assert response.headers["content-type"] == "application/json"
+
+        # Parse JSON to get refined XML
+        response_json = response.json()
+        assert isinstance(response_json, list)
+        assert len(response_json) > 0
+
+        refined_eicr_xml = response_json[0]["refined_eicr"]
+        root = etree.fromstring(refined_eicr_xml.encode("utf-8"))
+
+        # Verify expected XML structure
         assert root.tag == "{urn:hl7-org:v3}ClinicalDocument"
+        assert root.find(".//{urn:hl7-org:v3}templateId") is not None
+        assert root.find(".//{urn:hl7-org:v3}id") is not None
 
     def test_upload_with_sections(self, tmp_path, create_test_zip, test_assets_path):
         """
@@ -137,12 +147,21 @@ class TestZipUploadEndpoint:
             )
         assert response.status_code == 200
 
-        # verify only requested sections are present
-        root = etree.fromstring(response.content)
+        response_json = response.json()
+        assert isinstance(response_json, list)
+        assert len(response_json) > 0
+
+        # Extract and parse the refined XML
+        refined_xml = response_json[0]["refined_eicr"]
+        root = etree.fromstring(refined_xml.encode("utf-8"))
+
+        # Check that only requested section code is present
         namespaces = {"hl7": "urn:hl7-org:v3"}
         sections = root.findall(".//hl7:section/hl7:code", namespaces)
         section_codes = [s.get("code") for s in sections]
+
         assert "30954-2" in section_codes
+        assert len(section_codes) == 8
 
     def test_upload_errors(self, tmp_path):
         """
