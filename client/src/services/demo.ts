@@ -6,18 +6,13 @@ export class ApiUploadError extends Error {
   }
 }
 
-export interface RefinedOutput {
-  refined_eicr: string;
-  reportable_condition: Condition;
-  refined_download_token: string;
-  output_file_name: string;
-  stats: string[];
-}
 
 export interface DemoUploadResponse {
   unrefined_eicr: string;
+  refined_eicr: string;
+  stats: string[];
+  refined_download_token: string;
   reportable_conditions: Condition[];
-  refined_outputs: RefinedOutput[];
 }
 
 type Condition = {

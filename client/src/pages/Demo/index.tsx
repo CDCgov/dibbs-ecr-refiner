@@ -28,9 +28,7 @@ export default function Demo() {
     setView('run-test');
     setUploadResponse(null);
   }
-
-  console.log(uploadResponse?.refined_outputs[0]);
-
+  
   return (
     <main className="flex min-w-screen flex-col gap-20 px-20 py-10">
       <LandingPageLink />
@@ -44,18 +42,14 @@ export default function Demo() {
             onClick={() => setView('success')}
           />
         )}
-        {view === 'success' &&
-          uploadResponse &&
-          uploadResponse.refined_outputs.length > 0 && (
+        {view === 'success' && uploadResponse && (
             <Success
-              unrefinedEicr={uploadResponse.unrefined_eicr}
-              refinedEicr={uploadResponse.refined_outputs[0].refined_eicr}
-              stats={uploadResponse.refined_outputs[0].stats}
-              downloadToken={
-                uploadResponse.refined_outputs[0].refined_download_token
-              }
+                unrefinedEicr={uploadResponse.unrefined_eicr}
+                refinedEicr={uploadResponse.refined_eicr}
+                stats={uploadResponse.stats}
+                downloadToken={uploadResponse.refined_download_token}
             />
-          )}
+        )}
         {view === 'error' && <Error onClick={reset} />}
       </div>
     </main>
