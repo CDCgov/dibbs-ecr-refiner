@@ -108,16 +108,24 @@ def test_zip_upload(setup, sample_xml_files):
     files = {"file": ("test.zip", zip_buffer.getvalue(), "application/zip")}
     response = httpx.post("http://0.0.0.0:8080/api/v1/ecr/zip-upload", files=files)
     assert response.status_code == 200
-    assert response.headers["content-type"] == "application/xml"
+    assert response.headers["content-type"] == "application/json"
 
-    # verify response xml
-    response_xml = normalize_xml(response.text)
-    root = etree.fromstring(response_xml)
 
-    # should have processed both files
+    # Load JSON response
+    response_json = response.json()
+
+    assert isinstance(response_json, list)
+    assert len(response_json) > 0
+
+    refined_eicr_xml = response_json[0]["refined_eicr"]
+
+    # Parse the XML string
+    root = etree.fromstring(refined_eicr_xml.encode("utf-8"))
+
+    # Should still be a ClinicalDocument
     assert root.tag == "{urn:hl7-org:v3}ClinicalDocument"
 
-    # verify key elements are present
+    # Verify key elements
     assert root.find(".//{urn:hl7-org:v3}templateId") is not None
     assert root.find(".//{urn:hl7-org:v3}id") is not None
 
