@@ -153,28 +153,33 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
                 ".//cda:observation[cda:code/@code='RR1']/cda:value[@code='RRVS1']",
                 namespaces=namespaces,
             )
+            if not determination:
+                continue
 
-            if determination:
-                # per RR spec, each reportable condition observation MUST contain
-                # a valid SNOMED CT code (CONF:3315-552) in its value element
-                # codeSystem 2.16.840.1.113883.6.96 is required for SNOMED CT
-                value = observation.xpath(
-                    ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
-                    namespaces=namespaces,
-                )
-                if value:
-                    code = value[0].get("code")
-                    display_name = value[0].get(
-                        "displayName", "Condition display name not found"
-                    )
-                    if code:
-                        # when a condition is reportable, we must capture its
-                        # required SNOMED CT code and display name and build the
-                        # condition object and ensure uniqueness--duplicate conditions
-                        # should not be reported multiple times
-                        condition = {"code": code, "displayName": display_name}
-                        if condition not in conditions:
-                            conditions.append(condition)
+            # per RR spec, each reportable condition observation MUST contain
+            # a valid SNOMED CT code (CONF:3315-552) in its value element
+            # codeSystem 2.16.840.1.113883.6.96 is required for SNOMED CT
+            value = observation.xpath(
+                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
+                namespaces=namespaces,
+            )
+            if not value:
+                continue
+
+            code = value[0].get("code")
+            display_name = value[0].get(
+                "displayName", "Condition display name not found"
+            )
+            if not code:
+                continue
+
+            # when a condition is reportable, we must capture its
+            # required SNOMED CT code and display name and build the
+            # condition object and ensure uniqueness--duplicate conditions
+            # should not be reported multiple times
+            condition = {"code": code, "displayName": display_name}
+            if condition not in conditions:
+                conditions.append(condition)
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(
