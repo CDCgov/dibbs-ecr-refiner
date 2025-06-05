@@ -206,17 +206,21 @@ async def demo_upload(
             )
 
         conditions = []
-        for condition in refined_results:
+        for idx, condition in enumerate(refined_results):
+            condition_refined_eicr = refined_results[idx][
+                "refined_eicr"
+            ]  # refined eicr for current condition
             conditions.append(
                 {
                     "code": condition["reportable_condition"]["code"],
                     "display_name": condition["reportable_condition"]["displayName"],
                     "unrefined_eicr": original_xml_files.eicr,
-                    "refined_eicr": refined_eicr,
+                    "refined_eicr": condition_refined_eicr,
                     "stats": [
                         f"eCR file size reduced by {
                             _get_file_size_difference_percentage(
-                                original_xml_files.eicr, refined_eicr
+                                original_xml_files.eicr,
+                                condition_refined_eicr,
                             )
                         }%",
                     ],

@@ -15,7 +15,6 @@ interface SuccessProps {
 //   const [downloadError, setDownloadError] = useState<string>('');
 
 export function Success({ conditions }: SuccessProps) {
-
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
