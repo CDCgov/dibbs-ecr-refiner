@@ -719,7 +719,6 @@ def build_condition_eicr_pairs(
     condition_eicr_pairs = []
 
     for condition in reportable_conditions:
-        print("Condition " + condition["code"] + " found in RR document")
         condition_eicr_pairs.append(
             {
                 "reportable_condition": condition,
