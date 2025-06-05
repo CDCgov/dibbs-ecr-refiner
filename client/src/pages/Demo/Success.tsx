@@ -58,7 +58,7 @@ export function Success({ conditions, downloadToken }: SuccessProps) {
         <Content className="flex flex-col items-start gap-4">
           <div className="flex flex-col">
             <h1 className="!m-0 !p-0 text-xl font-bold text-black">
-              eCR successfully refined!
+              eICR successfully refined!
             </h1>
           </div>
           <div className="flex min-h-full min-w-full flex-col items-center justify-between gap-4 sm:flex-row">

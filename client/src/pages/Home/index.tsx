@@ -73,7 +73,7 @@ function HowItWorks() {
             The Refiner splits the original eICR into child eICRs - one per
             reportable condition in the RR - and applies a filter that retains
             only the information associated with the relevant clinical concept
-            codes identified in the TES.
+            codes identified in the TES for that condition.
           </p>
         </li>
       </ol>

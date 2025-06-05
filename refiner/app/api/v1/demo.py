@@ -198,7 +198,7 @@ async def demo_upload(
                     "unrefined_eicr": xml_files.eicr,
                     "refined_eicr": refined_eicr,
                     "stats": [
-                        f"eCR file size reduced by {
+                        f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
                                 xml_files.eicr, refined_eicr
                             )
