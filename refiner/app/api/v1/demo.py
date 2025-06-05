@@ -212,16 +212,18 @@ async def demo_upload(
             condition = result["reportable_condition"]
             refined_eicr = result["refined_eicr"]
 
-        # Create a zip with refined data and store it on the server
-        full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
-        output_file_name, output_file_path, token = create_output_zip(
-            refined_eicr,
-            xml_files.rr,
-            full_zip_output_path,
-        )
+            # Create a zip with refined data and store it on the server
+            full_zip_output_path = _create_zipfile_output_directory(
+                refined_zip_output_dir
+            )
+            output_file_name, output_file_path, token = create_output_zip(
+                refined_eicr,
+                xml_files.rr,
+                full_zip_output_path,
+            )
 
-        # Store in file store
-        _update_file_store(output_file_name, output_file_path, token)
+            # Store in file store
+            _update_file_store(output_file_name, output_file_path, token)
 
         # Track output metadata
         refined_outputs.append(

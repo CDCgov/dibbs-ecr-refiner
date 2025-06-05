@@ -161,7 +161,7 @@ class TestZipUploadEndpoint:
         section_codes = [s.get("code") for s in sections]
 
         assert "30954-2" in section_codes
-        assert len(section_codes) == 8  # Only one section should be included
+        assert len(section_codes) == 8
 
     def test_upload_errors(self, tmp_path):
         """
