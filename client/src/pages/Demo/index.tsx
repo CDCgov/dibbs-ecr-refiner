@@ -45,6 +45,7 @@ export default function Demo() {
         {view === 'success' && uploadResponse && (
           <Success
             conditions={uploadResponse.conditions}
+            unrefinedEicr={uploadResponse.unrefined_eicr}
             downloadToken={uploadResponse.refined_download_token}
           />
         )}

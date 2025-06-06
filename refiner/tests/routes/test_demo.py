@@ -128,7 +128,7 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
 
     data: dict[str, Any] = response.json()
     assert "conditions" in data
-    assert "unrefined_eicr" in data["conditions"][0]
+    assert "unrefined_eicr" in data
     assert "refined_eicr" in data["conditions"][0]
     assert "stats" in data["conditions"][0]
     assert any(

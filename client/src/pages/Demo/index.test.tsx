@@ -13,11 +13,11 @@ const mockUploadResponse: DemoUploadResponse = {
     {
       code: 'mock-code',
       display_name: 'mock condition name',
-      unrefined_eicr: '<data>tons of data here</data>',
       refined_eicr: '<data>less data</data>',
       stats: ['eICR reduced by 59%'],
     },
   ],
+  unrefined_eicr: '<data>tons of data here</data>',
   refined_download_token: 'test-token',
 };
 

@@ -8,13 +8,14 @@ import { Label, Select } from '@trussworks/react-uswds';
 
 interface SuccessProps {
   conditions: Condition[];
+  unrefinedEicr: string;
   downloadToken: string;
 }
 
 // export function Success({ conditions, downloadToken }: SuccessProps) {
 //   const [downloadError, setDownloadError] = useState<string>('');
 
-export function Success({ conditions }: SuccessProps) {
+export function Success({ conditions, unrefinedEicr }: SuccessProps) {
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
@@ -98,7 +99,7 @@ export function Success({ conditions }: SuccessProps) {
         </Content>
       </Container>
       <EicrComparison
-        unrefinedEicr={selectedCondition.unrefined_eicr}
+        unrefinedEicr={unrefinedEicr}
         refinedEicr={selectedCondition.refined_eicr}
         stats={selectedCondition.stats}
       />
