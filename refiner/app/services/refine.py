@@ -12,6 +12,7 @@ from ..core.exceptions import (
     SectionValidationError,
     StructureValidationError,
     XMLParsingError,
+    XMLValidationError,
 )
 from ..core.models.types import XMLFiles
 from ..db.operations import GrouperOperations
@@ -225,42 +226,46 @@ def refine_eicr(
     condition_codes: str | None = None,
 ) -> str:
     """
-    Refine an eICR XML document by processing its sections using ProcessedGrouper codes only.
+    Refine an eICR XML document by processing its sections.
 
-    Processing behavior varies based on provided parameters:
-
-    1. Base Case (no condition_codes):
-        - Create minimal sections for all sections (since no codes to match)
-
-    2. With condition_codes only:
-        - Process all sections with codes from ProcessedGrouper
-        - Create minimal sections where no matches found
-
-    3. With sections_to_include only:
-        - Skip processing for included sections (leave them as-is)
-        - Create minimal sections for all other sections
-
-    4. With both parameters:
-        - Skip processing for included sections
-        - Process other sections with ProcessedGrouper codes
+    Processing behavior:
+        - condition_codes **must** be provided; if missing or empty, the function raises ConditionCodeError.
+        - If sections_to_include is provided, those sections are preserved unmodified.
+        - For all other sections, only entries matching the clinical codes related to the given condition_codes are kept.
+        - If no matching entries are found in a section, it is replaced with a minimal section and marked with nullFlavor="NI".
 
     Args:
         xml_files: The XMLFiles container with the eICR document to refine.
-        sections_to_include: Optional list of section LOINC codes to preserve unmodified.
-        condition_codes: Optional comma-separated string of SNOMED condition codes
+        sections_to_include: Optional list of section LOINC codes to preserve.
+        condition_codes: Comma-separated string of SNOMED condition codes
             to use for filtering sections in an eICR. Each code will be looked up in the
             groupers table in the terminology database to find related clinical codes.
+            **This parameter is required. If not provided, a ConditionCodeError is raised.**
 
     Returns:
         str: The refined eICR XML document as a string.
+
+    Raises:
+        ConditionCodeError: If no condition_codes are provided.
+        SectionValidationError: If any section code is invalid.
+        XMLValidationError: If the XML is invalid.
+        StructureValidationError: If the document structure is invalid.
     """
+
+    if not condition_codes:
+        raise ConditionCodeError(
+            "No condition codes provided to refine_eicr; at least one is required."
+        )
 
     try:
         # parse the eicr document
         validated_message = xml_files.parse_eicr()
 
-        # dictionary that will hold the section processing instructions
-        section_processing = dict(REFINER_DETAILS["sections"].items())
+        # use the constant defined at the top of refine.py
+        # TODO: this only supports eICR 1.1 so we'll need to eventually move to
+        # to the refiner_config.json files with the updated structure for supporting
+        # both eICR 1.1 and eICR 3.1
+        section_loincs = SECTION_LOINCS
 
         namespaces = {"hl7": "urn:hl7-org:v3"}
         structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
@@ -272,36 +277,33 @@ def refine_eicr(
                 details={"document_type": "eICR"},
             )
 
-        # cases 3 & 4: handle sections_to_include (skip processing for these sections)
+        # always require condition_codes
+        # generate code-based xpath for relevant clinical codes
+        code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
+
+        # If sections_to_include is given, skip processing for those sections
         if sections_to_include is not None:
-            section_processing = {
-                code: details
-                for code, details in section_processing.items()
-                if code not in sections_to_include
+            section_loincs = {
+                code for code in section_loincs if code not in sections_to_include
             }
 
-        # build XPath from condition codes using ProcessedGrouper
-        combined_xpath = ""
-        if condition_codes:
-            combined_xpath = _get_xpath_from_condition_codes(condition_codes)
-
-        # process each section based on the applicable case
-        for code, details in section_processing.items():
+        # Process each section based on the applicable rules
+        for code in section_loincs:
             section = _get_section_by_code(structured_body, code, namespaces)
             if section is None:
                 continue
 
-            _process_section(section, combined_xpath, namespaces)
+            _process_section(section, code_xpath, namespaces)
 
-        # format and return the result
+        # Format and return the result
         return etree.tostring(validated_message, encoding="unicode")
 
     except etree.XMLSyntaxError as e:
-        raise XMLParsingError(
+        raise XMLValidationError(
             message="Failed to parse eICR document", details={"error": str(e)}
         )
     except etree.XPathEvalError as e:
-        raise XMLParsingError(
+        raise XMLValidationError(
             message="Failed to evaluate XPath expression in eICR document",
             details={"error": str(e)},
         )
