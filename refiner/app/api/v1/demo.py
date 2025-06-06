@@ -182,6 +182,7 @@ async def demo_upload(
         rr_results = refine.process_rr(original_xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
 
+        # create condition-eICR pairs with XMLFiles objects
         condition_eicr_pairs = refine.build_condition_eicr_pairs(
             original_xml_files, reportable_conditions
         )
@@ -189,15 +190,23 @@ async def demo_upload(
         # Refine each pair and collect results
         refined_results = []
 
+        # for each reportable condition, create a separate XMLFiles copy and refine independently.
+        # this ensures output isolation: each condition produces its own eICR, with only the data relevant to that condition.
+        # using a fresh XMLFiles object per condition also makes it straightforward to support future workflows,
+        # such as processing and returning RR (Reportability Response) documents alongside or in relation to each eICR.
         for pair in condition_eicr_pairs:
             condition = pair["reportable_condition"]
-            eicr_copy = pair["eicr_copy"]
+            xml_files = pair[
+                "xml_files"
+            ]  # Each pair contains a distinct XMLFiles instance.
 
+            # refine the eICR for this specific condition code.
             refined_eicr = refine.refine_eicr(
-                xml_files=eicr_copy,
+                xml_files=xml_files,
                 condition_codes=condition["code"],
             )
 
+            # collect the refined result for this condition.
             refined_results.append(
                 {
                     "reportable_condition": condition,
@@ -205,14 +214,17 @@ async def demo_upload(
                 }
             )
 
+        # build the response so each output is clearly associated with its source condition.
+        # this structure makes it easy for clients to consume and extends naturally if we later return RR artifacts.
         conditions = []
-        for idx, condition in enumerate(refined_results):
-            # Get refined eICR for current condition
-            condition_refined_eicr = refined_results[idx]["refined_eicr"]
+        for result in refined_results:
+            condition_info = result["reportable_condition"]
+            condition_refined_eicr = result["refined_eicr"]
+
             conditions.append(
                 {
-                    "code": condition["reportable_condition"]["code"],
-                    "display_name": condition["reportable_condition"]["displayName"],
+                    "code": condition_info["code"],
+                    "display_name": condition_info["displayName"],
                     "refined_eicr": condition_refined_eicr,
                     "stats": [
                         f"eICR file size reduced by {
@@ -222,15 +234,26 @@ async def demo_upload(
                             )
                         }%",
                     ],
+                    "processing_info": {
+                        "condition_specific": True,
+                        "sections_processed": "All sections scoped to condition codes",
+                        "method": "ProcessedGrouper-based filtering",
+                    },
                 },
             )
 
         return JSONResponse(
             content=jsonable_encoder(
                 {
+                    "message": "Successfully processed eICR with condition-specific refinement",
+                    "conditions_found": len(conditions),
                     "conditions": conditions,
                     "unrefined_eicr": original_xml_files.eicr,
-                    #                     "refined_download_token": token,
+                    "processing_notes": [
+                        "Each condition gets its own refined eICR",
+                        "Sections contain only data relevant to that specific condition",
+                        "Clinical codes matched using ProcessedGrouper database",
+                    ],
                 }
             )
         )

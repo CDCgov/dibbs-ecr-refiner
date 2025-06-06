@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 from typing import Any
 
 from lxml import etree
@@ -13,6 +12,7 @@ from ..core.exceptions import (
     SectionValidationError,
     StructureValidationError,
     XMLParsingError,
+    XMLValidationError,
 )
 from ..core.models.types import XMLFiles
 from ..db.operations import GrouperOperations
@@ -28,12 +28,16 @@ REFINER_DETAILS = read_json_asset("refiner_details.json")
 # extract section LOINC codes from the REFINER_DETAILS dictionary
 SECTION_LOINCS = list(REFINER_DETAILS["sections"].keys())
 
-# ready to use list of all trigger code templateIds for simpler XPath query construction
-TRIGGER_CODE_TEMPLATE_IDS = [
-    "2.16.840.1.113883.10.20.15.2.3.5",
-    "2.16.840.1.113883.10.20.15.2.3.3",
-    "2.16.840.1.113883.10.20.15.2.3.4",
-    "2.16.840.1.113883.10.20.15.2.3.2",
+# <text> constants for refined sections
+REFINER_OUTPUT_TITLE = (
+    "Output from CDC PRIME DIBBs eCR Refiner application by request of STLT"
+)
+MINIMAL_SECTION_MESSAGE = "Section details have been removed as requested"
+OBSERVATION_TABLE_HEADERS = [
+    "Display Text",
+    "Code",
+    "Code System",
+    "Matching Condition Code",
 ]
 
 
@@ -224,43 +228,44 @@ def refine_eicr(
     """
     Refine an eICR XML document by processing its sections.
 
-    Processing behavior varies based on provided parameters:
-
-    1. Base Case (validated_message only):
-        - Check template IDs
-        - Process matching observations or create minimal section
-
-    2. With sections_to_include:
-        - Skip processing for included sections
-        - Process all other sections normally
-
-    3. With condition_codes:
-        - Look up condition code(s) in the groupers table in the terminology database
-        - Process sections based on matching codes or templateIds
-
-    4. With both parameters:
-        - For included sections: Skip processing
-        - For other sections: Look up codes and process normally
+    Processing behavior:
+        - condition_codes **must** be provided; if missing or empty, the function raises ConditionCodeError.
+        - If sections_to_include is provided, those sections are preserved unmodified.
+        - For all other sections, only entries matching the clinical codes related to the given condition_codes are kept.
+        - If no matching entries are found in a section, it is replaced with a minimal section and marked with nullFlavor="NI".
 
     Args:
         xml_files: The XMLFiles container with the eICR document to refine.
         sections_to_include: Optional list of section LOINC codes to preserve.
-        condition_codes: Optional comma-separated string of SNOMED condition codes
+        condition_codes: Comma-separated string of SNOMED condition codes
             to use for filtering sections in an eICR. Each code will be looked up in the
             groupers table in the terminology database to find related clinical codes.
+            **This parameter is required. If not provided, a ConditionCodeError is raised.**
 
     Returns:
         str: The refined eICR XML document as a string.
+
+    Raises:
+        ConditionCodeError: If no condition_codes are provided.
+        SectionValidationError: If any section code is invalid.
+        XMLValidationError: If the XML is invalid.
+        StructureValidationError: If the document structure is invalid.
     """
+
+    if not condition_codes:
+        raise ConditionCodeError(
+            "No condition codes provided to refine_eicr; at least one is required."
+        )
 
     try:
         # parse the eicr document
         validated_message = xml_files.parse_eicr()
 
-        # dictionary that will hold the section processing instructions
-        # this is based on the combination of parameters passed to `refine`
-        # as well as details from REFINER_DETAILS
-        section_processing = dict(REFINER_DETAILS["sections"].items())
+        # use the constant defined at the top of refine.py
+        # TODO: this only supports eICR 1.1 so we'll need to eventually move to
+        # to the refiner_config.json files with the updated structure for supporting
+        # both eICR 1.1 and eICR 3.1
+        section_loincs = SECTION_LOINCS
 
         namespaces = {"hl7": "urn:hl7-org:v3"}
         structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
@@ -272,52 +277,33 @@ def refine_eicr(
                 details={"document_type": "eICR"},
             )
 
-        # case 1 and 3:
-        # -> prepare xpath expressions for templateIds and/or conditions codes
+        # always require condition_codes
+        # generate code-based xpath for relevant clinical codes
+        code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
 
-        # generate templateId xpath (used in all cases as fallback)
-        template_xpath = _get_template_id_xpath(TRIGGER_CODE_TEMPLATE_IDS) or ""
-        # case 3:
-        # -> if condition_codes provided, generate code-based xpath
-        #    in the future this should **always** be the case since we
-        #    will no longer process **only** an eICR without an RR
-        if condition_codes:
-            code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
-            combined_xpath = f"{code_xpath} | {template_xpath}"
-        else:
-            # case 1:
-            # -> base case--only templateId xpath
-            #    this will be phased out soon
-            combined_xpath = template_xpath
-
-        # case 2 and 4:
-        # -> handle sections_to_include parameter
+        # If sections_to_include is given, skip processing for those sections
         if sections_to_include is not None:
-            # case 2 or 4:
-            # -> skip processing for included sections
-            section_processing = {
-                code: details
-                for code, details in section_processing.items()
-                if code not in sections_to_include
+            section_loincs = {
+                code for code in section_loincs if code not in sections_to_include
             }
 
-        # process each section based on the applicable case
-        for code, details in section_processing.items():
+        # Process each section based on the applicable rules
+        for code in section_loincs:
             section = _get_section_by_code(structured_body, code, namespaces)
             if section is None:
                 continue
 
-            _process_section(section, combined_xpath, namespaces)
+            _process_section(section, code_xpath, namespaces)
 
         # Format and return the result
         return etree.tostring(validated_message, encoding="unicode")
 
     except etree.XMLSyntaxError as e:
-        raise XMLParsingError(
+        raise XMLValidationError(
             message="Failed to parse eICR document", details={"error": str(e)}
         )
     except etree.XPathEvalError as e:
-        raise XMLParsingError(
+        raise XMLValidationError(
             message="Failed to evaluate XPath expression in eICR document",
             details={"error": str(e)},
         )
@@ -329,11 +315,11 @@ def _process_section(
     namespaces: dict = {"hl7": "urn:hl7-org:v3"},
 ) -> None:
     """
-    Process a section using the combined XPath query.
+    Process a section using only ProcessedGrouper-generated XPaths.
 
     Args:
         section: The XML section element to process
-        combined_xpath: XPath query that combines template ID and code conditions
+        combined_xpath: XPath query from ProcessedGrouper codes
         namespaces: XML namespaces for XPath evaluation
     """
 
@@ -344,17 +330,16 @@ def _process_section(
         )
 
     if not combined_xpath:
-        log("Warning: Empty XPath query provided to _process_section")
+        # no condition codes provided - create minimal section
         _create_minimal_section(section)
         return
 
     try:
-        # Find all matching observations using the combined XPath
+        # find all matching observations using ProcessedGrouper XPath
         observations = section.xpath(combined_xpath, namespaces=namespaces)
 
         if observations:
-            # if we found matches, preserve those elements
-            # find paths to all matching entries to avoid pruning their parents
+            # process matching observations
             entry_paths = []
             for observation in observations:
                 entry_path = _find_path_to_entry(observation)
@@ -364,11 +349,12 @@ def _process_section(
             # remove entries that don't contain relevant observations
             _prune_unwanted_siblings(entry_paths, observations, section)
 
-            # use the original function with whatever parameters it expects
+            # update section text with observation data
             _update_text_element(section, observations)
         else:
-            # if no matches, create a minimal section
+            # no matching observations found - create minimal section
             _create_minimal_section(section)
+
     except etree.XPathEvalError as e:
         raise XMLParsingError(
             message="Invalid XPath expression",
@@ -378,7 +364,7 @@ def _process_section(
 
 def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
     """
-    Generate XPath from condition codes using the ProcessedGrouper.
+    Generate XPath from condition codes using ProcessedGrouper only.
 
     Takes a comma-separated string of condition codes, queries each one
     in the groupers database, and builds XPath expressions to find any
@@ -403,23 +389,16 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
     grouper_ops = GrouperOperations()
     xpath_conditions = []
 
-    # TODO: we are not currently checking the codeSystemName at this time. this is because
-    # there is variation even within a single eICR in connection to the codeSystemName.
-    # you may see both "LOINC" and "loinc.org" as well as "SNOMED" and "SNOMED CT" in the
-    # same message. dynamically altering the XPath with variant names adds complexity and computation;
-    # we _can_ post filter, which i would suggest as a function that uses this one as its input.
-    # this is why there are two main transformations of the response from the TCR; one that is a dictionary
-    # of code systems and codes and another that is a combined XPath for all codes. this way we
-    # loop less, search less, and aim for simplicity
-
     try:
         # process each condition code
         for code in condition_codes.split(","):
+            code = code.strip()
             try:
                 grouper_row = grouper_ops.get_grouper_by_condition(code)
                 if grouper_row:
                     processed = ProcessedGrouper.from_grouper_row(grouper_row)
-                    xpath = processed.build_xpath(search_in="observation")
+                    # defaults to "observation"
+                    xpath = processed.build_xpath()
                     if xpath:
                         xpath_conditions.append(xpath)
             except (DatabaseConnectionError, DatabaseQueryError) as e:
@@ -440,24 +419,6 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
         return ""
 
     return " | ".join(xpath_conditions)
-
-
-def _get_template_id_xpath(template_ids: list[str]) -> str:
-    """
-    Generate XPath to find elements with specific template IDs.
-
-    Args:
-        template_ids: List of template ID root values to search for
-
-    Returns:
-        str: XPath expression to find elements with matching template IDs
-    """
-
-    template_conditions = [
-        f'.//hl7:observation[hl7:templateId[@root="{tid}"]]' for tid in template_ids
-    ]
-
-    return " | ".join(template_conditions)
 
 
 def _get_section_by_code(
@@ -553,7 +514,7 @@ def _extract_observation_data(
     """
     Extract data from an observation element.
 
-    Includes checking for trigger code templateId.
+    No longer checks for trigger code templateIds since we're using ProcessedGrouper only.
 
     Args:
         observation: The observation element to extract data from.
@@ -563,40 +524,27 @@ def _extract_observation_data(
                                with display_text, code, code_system and is_trigger_code.
     """
 
-    template_id_elements = observation.findall(
-        ".//hl7:templateId", namespaces={"hl7": "urn:hl7-org:v3"}
-    )
-    is_trigger_code = False
-
-    for elem in template_id_elements:
-        root = elem.get("root")
-        if root in TRIGGER_CODE_TEMPLATE_IDS:
-            is_trigger_code = True
-            break
-
-    # check of observation is already a code element
+    # find the code element
     if observation.tag.endswith("code"):
         code_element = observation
     else:
-        # otherwise find the other code element
         code_element = observation.find(
             ".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"}
         )
 
-    # handle the case where the code element might be None
+    # extract basic information
     display_text = code_element.get("displayName") if code_element is not None else None
     code = code_element.get("code") if code_element is not None else None
     code_system = (
         code_element.get("codeSystemName") if code_element is not None else None
     )
 
-    data = {
+    return {
         "display_text": display_text,
         "code": code,
         "code_system": code_system,
-        "is_trigger_code": is_trigger_code,
+        "is_trigger_code": False,  # Always False since we're not using templateIds
     }
-    return data
 
 
 def _create_or_update_text_element(observations: list[_Element]) -> _Element:
@@ -612,11 +560,11 @@ def _create_or_update_text_element(observations: list[_Element]) -> _Element:
 
     text_element = etree.Element("{urn:hl7-org:v3}text")
     title = etree.SubElement(text_element, "title")
-    title.text = "Output from CDC PRIME DIBBs `message-refiner` API by request of STLT"
+    title.text = REFINER_OUTPUT_TITLE
 
     table_element = etree.SubElement(text_element, "table", border="1")
     header_row = etree.SubElement(table_element, "tr")
-    headers = ["Display Text", "Code", "Code System", "Trigger Code Observation"]
+    headers = OBSERVATION_TABLE_HEADERS
 
     for header in headers:
         th = etree.SubElement(header_row, "th")
@@ -630,9 +578,9 @@ def _create_or_update_text_element(observations: list[_Element]) -> _Element:
             td = etree.SubElement(row, "td")
             td.text = data[key.lower().replace(" ", "_")]
 
-        # add boolean flag for trigger code observation
+        # add boolean flag for matching condition code (always TRUE since we only keep matches)
         td = etree.SubElement(row, "td")
-        td.text = "TRUE" if data["is_trigger_code"] else "FALSE"
+        td.text = "TRUE"  # Always TRUE since we filtered to only matching observations
 
     return text_element
 
@@ -682,14 +630,12 @@ def _create_minimal_section(section: _Element) -> None:
     # update the <text> element with the specific message
     text_element.clear()
     title_element = etree.SubElement(text_element, "title")
-    title_element.text = (
-        "Output from CDC PRIME DIBBs `message-refiner` API by request of STLT"
-    )
+    title_element.text = REFINER_OUTPUT_TITLE
 
     table_element = etree.SubElement(text_element, "table", border="1")
     tr_element = etree.SubElement(table_element, "tr")
     td_element = etree.SubElement(tr_element, "td")
-    td_element.text = "Section details have been removed as requested"
+    td_element.text = MINIMAL_SECTION_MESSAGE
 
     # remove all <entry> elements
     for entry in section.findall(".//hl7:entry", namespaces=namespaces):
@@ -700,29 +646,33 @@ def _create_minimal_section(section: _Element) -> None:
 
 
 def build_condition_eicr_pairs(
-    parsed_eicr: etree._Element,
+    original_xml_files: XMLFiles,
     reportable_conditions: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """
-    Generate pairs of reportable conditions and a deepcopy of the original eICR XML.
+    Generate pairs of reportable conditions and fresh XMLFiles copies.
 
-    Each reportable condition gets its own copy of the eICR document so that
+    Each reportable condition gets its own copy of the XMLFiles object so that
     condition-specific refinement can be performed independently.
 
     Args:
-        parsed_eicr (etree._Element): The original parsed eICR XML document.
-        reportable_conditions (list[dict]): List of reportable condition objects with 'code' keys.
+        original_xml_files: The original XMLFiles object containing eICR and RR.
+        reportable_conditions: List of reportable condition objects with 'code' keys.
 
     Returns:
-        list[dict[str, Any]]: A list of dictionaries, each containing a `reportable_condition` and `eicr_copy`.
+        list[dict[str, Any]]: A list of dictionaries, each containing a
+                             `reportable_condition` and `xml_files`.
     """
+
     condition_eicr_pairs = []
 
     for condition in reportable_conditions:
+        # create fresh XMLFiles for each condition to ensure complete isolation
+        condition_xml_files = XMLFiles(original_xml_files.eicr, original_xml_files.rr)
         condition_eicr_pairs.append(
             {
                 "reportable_condition": condition,
-                "eicr_copy": deepcopy(parsed_eicr),
+                "xml_files": condition_xml_files,
             }
         )
 

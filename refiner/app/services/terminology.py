@@ -66,13 +66,19 @@ class ProcessedGrouper:
             codes=all_codes,
         )
 
-    def build_xpath(self, search_in: str = "section") -> str:
+    def build_xpath(self, search_in: str = "observation") -> str:
         """
-        Build xpath to find any of our codes in the specified element.
+        Build xpath to find observations containing any of our codes.
+
+        Args:
+            search_in: Element type to search within. Defaults to "observation".
+                      Should always be "observation" to avoid matching section headers, etc.
+
+        Returns:
+            str: XPath expression that finds observation elements containing matching codes
         """
 
         if not search_in:
-            # just validate this since it's a parameter
             raise InputValidationError(
                 message="Empty search element specified",
                 details={"search_in": search_in},
@@ -81,5 +87,9 @@ class ProcessedGrouper:
         if not self.codes:
             return ""
 
+        # create condition for any of our codes
         code_conditions = " or ".join(f'@code="{code}"' for code in self.codes)
-        return f"//hl7:{search_in}//hl7:code[{code_conditions}]"
+
+        # return xpath that finds observations containing codes that match any of our codes
+        # this scopes the search properly to avoid matching section headers, text elements, etc.
+        return f".//hl7:observation[hl7:code[{code_conditions}]]"

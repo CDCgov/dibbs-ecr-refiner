@@ -7,6 +7,9 @@ from lxml import etree
 
 from tests.integration.conftest import normalize_xml
 
+# test with COVID-19 condition code
+CONDITION_CODE = "840539006"
+
 
 @pytest.mark.integration
 def test_health_check(setup):
@@ -39,8 +42,10 @@ def test_ecr_refinement(setup, sample_xml_files):
     Test basic eICR refinement
     """
 
+    # test with COVID-19 condition code
     response = httpx.post(
-        "http://0.0.0.0:8080/api/v1/ecr", content=sample_xml_files.eicr
+        f"http://0.0.0.0:8080/api/v1/ecr?conditions_to_include={CONDITION_CODE}",
+        content=sample_xml_files.eicr,
     )
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/xml"
@@ -63,9 +68,10 @@ def test_ecr_section_filtering(setup, sample_xml_files):
     Test eICR refinement with section filtering
     """
 
+    # test with COVID-19 condition code
     results_section_code = "30954-2"
     response = httpx.post(
-        f"http://0.0.0.0:8080/api/v1/ecr?sections_to_include={results_section_code}",
+        f"http://0.0.0.0:8080/api/v1/ecr?sections_to_include={results_section_code}&conditions_to_include={CONDITION_CODE}",
         content=sample_xml_files.eicr,
     )
     assert response.status_code == 200
@@ -136,17 +142,41 @@ def test_error_handling(setup, sample_xml_files):
     """
 
     # invalid XML
-    response = httpx.post("http://0.0.0.0:8080/api/v1/ecr", content="invalid xml")
+    response = httpx.post(
+        f"http://0.0.0.0:8080/api/v1/ecr?conditions_to_include={CONDITION_CODE}",
+        content="invalid xml",
+    )
     assert response.status_code == 400
     assert "Failed to parse XML" in response.json()["detail"]["message"]
 
     # invalid section code
     response = httpx.post(
-        "http://0.0.0.0:8080/api/v1/ecr?sections_to_include=invalid",
+        "http://0.0.0.0:8080/api/v1/ecr?sections_to_include=invalid&conditions_to_include={CONDITION_CODE}",
         content=sample_xml_files.eicr,
     )
     assert response.status_code == 422
     assert "Invalid section codes" in response.json()["detail"]["message"]
+
+
+@pytest.mark.integration
+def test_missing_condition_code_returns_error(setup, sample_xml_files):
+    """
+    Test that omitting the required conditions_to_include parameter returns a 400 with a ConditionCodeError.
+    """
+    response = httpx.post(
+        "http://0.0.0.0:8080/api/v1/ecr",
+        content=sample_xml_files.eicr,
+    )
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+
+    # Your handler may just send the message, or may include details as a dict.
+    # Accept either to avoid flakiness.
+    if isinstance(detail, dict):
+        message = detail.get("message", "")
+    else:
+        message = detail
+    assert "No condition codes provided to refine_eicr" in message
 
 
 @pytest.mark.integration
@@ -156,9 +186,8 @@ def test_service_interactions(setup, sample_xml_files):
     """
 
     # test with COVID-19 condition code
-    condition_code = "840539006"
     response = httpx.post(
-        f"http://0.0.0.0:8080/api/v1/ecr?conditions_to_include={condition_code}",
+        f"http://0.0.0.0:8080/api/v1/ecr?conditions_to_include={CONDITION_CODE}",
         content=sample_xml_files.eicr,
     )
     assert response.status_code == 200

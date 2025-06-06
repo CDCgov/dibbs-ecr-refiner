@@ -13,6 +13,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 
 from ...core.exceptions import (
+    ConditionCodeError,
     SectionValidationError,
     XMLValidationError,
     ZipValidationError,
@@ -71,6 +72,7 @@ async def refine_ecr_from_zip(
     Returns:
         Response: A refined XML eCR response.
     """
+
     try:
         # read both xml files
         xml_files = await file_io.read_xml_zip(file)
@@ -79,10 +81,14 @@ async def refine_ecr_from_zip(
         rr_results = refine.process_rr(xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
 
-        # use RR conditions if none specified
-        if not conditions_to_include and reportable_conditions:
+        # if user did not provide, but RR has reportable conditions, use those
+        if not conditions_to_include:
+            if not reportable_conditions:
+                raise ConditionCodeError(
+                    "No condition codes provided to refine_eicr; at least one is required."
+                )
             conditions_to_include = ",".join(
-                condition["code"] for condition in rr_results["reportable_conditions"]
+                condition["code"] for condition in reportable_conditions
             )
 
         # validate sections if provided
@@ -97,13 +103,18 @@ async def refine_ecr_from_zip(
         # Store results
         refined_results = []
 
-        # Loop through and refine each eICR copy using its condition
+        # for each reportable condition, use a separate XMLFiles copy and refine for that condition.
+        # this approach guarantees that each output eICR is isolated and scoped to a single reportable condition,
+        # which avoids data leakage between conditions and makes future per-condition processing (such as RR outputs)
+        # straightforward.
         for pair in condition_eicr_pairs:
             condition = pair["reportable_condition"]
-            eicr_copy = pair["eicr_copy"]
+            # each pair holds a distinct XMLFiles instance
+            xml_files = pair["xml_files"]
 
+            # refine the eICR for the specific condition code.
             refined_eicr = refine.refine_eicr(
-                xml_files=eicr_copy,
+                xml_files=xml_files,
                 condition_codes=condition["code"],
                 sections_to_include=sections,
             )
@@ -122,6 +133,11 @@ async def refine_ecr_from_zip(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": str(e), "details": e.details},
+        )
+    except ConditionCodeError as e:  # <-- this must be here
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
         )
     except SectionValidationError as e:
         raise HTTPException(
@@ -196,6 +212,12 @@ async def refine_ecr(
         if sections_to_include:
             sections = refine.validate_sections_to_include(sections_to_include)
 
+        # REQUIRE conditions_to_include for plain eCR (no RR to fallback on!)
+        if not conditions_to_include:
+            raise ConditionCodeError(
+                "No condition codes provided to refine_eicr; at least one is required."
+            )
+
         # refine the eICR
         refined_data = refine.refine_eicr(xml_files, sections, conditions_to_include)
         return Response(content=refined_data, media_type="application/xml")
@@ -209,4 +231,9 @@ async def refine_ecr(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"message": str(e), "details": e.details},
+        )
+    except ConditionCodeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e)},
         )
