@@ -182,6 +182,7 @@ async def demo_upload(
         rr_results = refine.process_rr(original_xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
 
+        # create condition-eICR pairs with XMLFiles objects
         condition_eicr_pairs = refine.build_condition_eicr_pairs(
             original_xml_files, reportable_conditions
         )
@@ -191,10 +192,11 @@ async def demo_upload(
 
         for pair in condition_eicr_pairs:
             condition = pair["reportable_condition"]
-            eicr_copy = pair["eicr_copy"]
+            xml_files = pair["xml_files"]
 
+            # process the eICR for this specific condition
             refined_eicr = refine.refine_eicr(
-                xml_files=eicr_copy,
+                xml_files=xml_files,
                 condition_codes=condition["code"],
             )
 
@@ -205,15 +207,16 @@ async def demo_upload(
                 }
             )
 
+        # build response data with proper condition isolation
         conditions = []
-        for idx, condition in enumerate(refined_results):
-            condition_refined_eicr = refined_results[idx][
-                "refined_eicr"
-            ]  # refined eicr for current condition
+        for idx, result in enumerate(refined_results):
+            condition_info = result["reportable_condition"]
+            condition_refined_eicr = result["refined_eicr"]
+
             conditions.append(
                 {
-                    "code": condition["reportable_condition"]["code"],
-                    "display_name": condition["reportable_condition"]["displayName"],
+                    "code": condition_info["code"],
+                    "display_name": condition_info["displayName"],
                     "unrefined_eicr": original_xml_files.eicr,
                     "refined_eicr": condition_refined_eicr,
                     "stats": [
@@ -224,14 +227,25 @@ async def demo_upload(
                             )
                         }%",
                     ],
+                    "processing_info": {
+                        "condition_specific": True,
+                        "sections_processed": "All sections scoped to condition codes",
+                        "method": "ProcessedGrouper-based filtering",
+                    },
                 },
             )
 
         return JSONResponse(
             content=jsonable_encoder(
                 {
+                    "message": "Successfully processed eICR with condition-specific refinement",
+                    "conditions_found": len(conditions),
                     "conditions": conditions,
-                    #                     "refined_download_token": token,
+                    "processing_notes": [
+                        "Each condition gets its own refined eICR",
+                        "Sections contain only data relevant to that specific condition",
+                        "Clinical codes matched using ProcessedGrouper database",
+                    ],
                 }
             )
         )
