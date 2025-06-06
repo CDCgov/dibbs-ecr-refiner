@@ -83,14 +83,13 @@ async def refine_ecr_from_zip(
 
         # if user did not provide, but RR has reportable conditions, use those
         if not conditions_to_include:
-            if reportable_conditions:
-                conditions_to_include = ",".join(
-                    condition["code"] for condition in reportable_conditions
-                )
-            else:
+            if not reportable_conditions:
                 raise ConditionCodeError(
                     "No condition codes provided to refine_eicr; at least one is required."
                 )
+            conditions_to_include = ",".join(
+                condition["code"] for condition in reportable_conditions
+            )
 
         # validate sections if provided
         sections = None
