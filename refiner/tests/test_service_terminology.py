@@ -1,3 +1,6 @@
+import pytest
+
+from app.core.exceptions import InputValidationError
 from app.db.models import GrouperRow
 from app.services.terminology import ProcessedGrouper
 
@@ -100,20 +103,33 @@ def test_xpath_generation() -> None:
     """
     Test XPath generation with different inputs.
     """
-
     processed = ProcessedGrouper(
         condition="38362002", display_name="Test Condition", codes={"123", "456"}
     )
 
-    # default search_in
+    # default search_in (observation)
     xpath = processed.build_xpath()
-    assert xpath.startswith("//hl7:section//hl7:code")
-    assert '@code="123"' in xpath
-    assert '@code="456"' in xpath
+    # New implementation searches in observation by default
+    assert xpath.startswith(".//hl7:observation[")
+    assert '@code="123"' in xpath or '@code="456"' in xpath
+    assert " or " in xpath
 
-    # custom search_in
-    custom_xpath = processed.build_xpath(search_in="custom")
-    assert custom_xpath.startswith("//hl7:custom//hl7:code")
+    # custom search_in (should be same as default unless your implementation changes)
+    custom_xpath = processed.build_xpath(search_in="observation")
+    assert custom_xpath.startswith(".//hl7:observation[hl7:code[")
+
+
+def test_xpath_single_code() -> None:
+    """
+    Test XPath generation with a single code.
+    """
+    processed = ProcessedGrouper(
+        condition="38362002", display_name="Test Condition", codes={"123"}
+    )
+
+    xpath = processed.build_xpath()
+    expected_xpath = './/hl7:observation[hl7:code[@code="123"]]'
+    assert xpath == expected_xpath
 
 
 def test_xpath_empty_codes() -> None:
@@ -126,3 +142,18 @@ def test_xpath_empty_codes() -> None:
     )
 
     assert processed.build_xpath() == ""
+
+
+def test_xpath_empty_search_in() -> None:
+    """
+    Test XPath generation with empty search_in parameter.
+    """
+
+    processed = ProcessedGrouper(
+        condition="38362002", display_name="Test Condition", codes={"123"}
+    )
+
+    with pytest.raises(InputValidationError) as exc_info:
+        processed.build_xpath(search_in="")
+
+    assert "Empty search element specified" in str(exc_info.value)

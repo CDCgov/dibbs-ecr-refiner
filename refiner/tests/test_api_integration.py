@@ -4,6 +4,10 @@ from lxml import etree
 
 from app.main import app
 
+# test with COVID-19 condition code
+CONDITION_CODE = "840539006"
+
+
 client = TestClient(app)
 
 
@@ -32,7 +36,10 @@ class TestECREndpoint:
         Test basic XML refinement without parameters
         """
 
-        response = client.post("/api/v1/ecr", content=sample_xml_files.eicr)
+        response = client.post(
+            f"/api/v1/ecr?conditions_to_include={CONDITION_CODE}",
+            content=sample_xml_files.eicr,
+        )
         assert response.status_code == 200
         # we should create a fixture for expected output and verify against that
         assert response.headers["content-type"] == "application/xml"
@@ -55,7 +62,7 @@ class TestECREndpoint:
         """
 
         response = client.post(
-            f"/api/v1/ecr?sections_to_include={sections}",
+            f"/api/v1/ecr?sections_to_include={sections}&conditions_to_include={CONDITION_CODE}",
             content=sample_xml_files.eicr,
         )
         assert response.status_code == 200
@@ -76,14 +83,16 @@ class TestECREndpoint:
         """
 
         # invalid xml
-        response = client.post("/api/v1/ecr", content="invalid xml")
+        response = client.post(
+            f"/api/v1/ecr?conditions_to_include={CONDITION_CODE}", content="invalid xml"
+        )
         assert response.status_code == 400
         error = response.json()
         assert "Failed to parse XML" in error["detail"]["message"]
 
         # invalid section code
         response = client.post(
-            "/api/v1/ecr?sections_to_include=invalid",
+            "/api/v1/ecr?sections_to_include=invalid&conditions_to_include={CONDITION_CODE}",
             content=sample_xml_files.eicr,
         )
         assert response.status_code == 422

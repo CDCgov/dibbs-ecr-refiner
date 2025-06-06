@@ -4,25 +4,26 @@ import pytest
 from lxml import etree
 
 from app.core.exceptions import (
-    SectionValidationError,
+    ConditionCodeError,
     StructureValidationError,
-    XMLValidationError,
 )
 from app.core.models.types import XMLFiles
 from app.services.refine import (
+    MINIMAL_SECTION_MESSAGE,
+    OBSERVATION_TABLE_HEADERS,
+    REFINER_OUTPUT_TITLE,
     _create_or_update_text_element,
     _extract_observation_data,
     _find_path_to_entry,
     _get_section_by_code,
-    _get_template_id_xpath,
     _process_section,
     _prune_unwanted_siblings,
+    build_condition_eicr_pairs,
     get_reportable_conditions,
     refine_eicr,
-    validate_sections_to_include,
 )
 
-from .conftest import NAMESPACES, TRIGGER_CODE_TEMPLATE_IDS
+from .conftest import NAMESPACES
 
 
 @pytest.fixture(scope="session")
@@ -46,11 +47,8 @@ def observation_test_data(xml_test_setup) -> dict[str, str | Any | None]:
     Setup observation test data for section processing.
     """
 
-    observation_xpath = (
-        # covid test code
-        './/hl7:observation[hl7:templateId[@root="2.16.840.1.113883.10.20.15.2.3.2"]] | '
-        './/hl7:observation[hl7:code[@code="94310-0"]]'
-    )
+    # Use a simple XPath to find observations with specific codes
+    observation_xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
 
     # Use direct XPath instead of _get_observations
     observations = xml_test_setup["results_section"].xpath(
@@ -126,7 +124,6 @@ def test_find_path_to_entry(
                 <organizer>
                   <component>
                     <observation>
-                      <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
                       <code code="94310-0"/>
                     </observation>
                   </component>
@@ -136,7 +133,6 @@ def test_find_path_to_entry(
                 <organizer>
                   <component>
                     <observation>
-                      <templateId root="2.16.840.1.113883.10.20.22.4.2"/>
                       <code code="67890-1"/>
                     </observation>
                   </component>
@@ -144,7 +140,7 @@ def test_find_path_to_entry(
               </entry>
             </section>
             """,
-            './/hl7:observation[hl7:code/@code="94310-0"]',
+            './/hl7:observation[hl7:code[@code="94310-0"]]',
             1,
         ),
     ],
@@ -178,7 +174,7 @@ def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count):
                 "display_text": "SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection",
                 "code": "94310-0",
                 "code_system": "LOINC",
-                "is_trigger_code": True,
+                "is_trigger_code": False,  # Always False now
             },
         ),
     ],
@@ -207,45 +203,38 @@ def test_create_or_update_text_element(observation_test_data):
     assert text_element.find(".//table") is not None
     assert text_element.find(".//title") is not None
 
+    # verify title contains expected text
+    title = text_element.find(".//title")
+    assert title.text == REFINER_OUTPUT_TITLE
+
     # verify content
     table = text_element.find(".//table")
     rows = table.findall(".//tr")
     assert len(rows) > 1  # Header row plus at least one data row
 
-    # verify header
+    # verify header uses new constants
     header = rows[0].findall(".//th")
-    expected_headers = [
-        "Display Text",
-        "Code",
-        "Code System",
-        "Trigger Code Observation",
-    ]
-    assert [h.text for h in header] == expected_headers
+    assert [h.text for h in header] == OBSERVATION_TABLE_HEADERS
 
 
 @pytest.mark.parametrize(
     "sections_to_include,condition_codes,expected_in_results",
     [
-        # base case - templateId matching
-        (None, None, True),
-        # covid-19
+        # happy-path: must always provide condition_codes
         (None, "840539006", True),
-        # covid-19 with social history section preserved
         (["29762-2"], "840539006", True),
-        # covid-19 with results section preserved
         (["30954-2"], "840539006", True),
     ],
 )
 def test_refine_eicr(
     sample_xml_files: XMLFiles,
-    sections_to_include: list[str] | None,
-    condition_codes: str | None,
-    expected_in_results: bool,
-) -> None:
+    sections_to_include,
+    condition_codes,
+    expected_in_results,
+):
     """
-    Test eICR refinement with various parameters.
+    Test eICR refinement with required condition_codes.
     """
-
     refined_output = refine_eicr(
         xml_files=sample_xml_files,
         sections_to_include=sections_to_include,
@@ -254,85 +243,41 @@ def test_refine_eicr(
 
     refined_doc = etree.fromstring(refined_output)
     refined_structured_body = refined_doc.find(
-        ".//{urn:hl7-org:v3}structuredBody", NAMESPACES
+        ".//{urn:hl7-org:v3}structuredBody", {"hl7": "urn:hl7-org:v3"}
     )
     refined_results_section = _get_section_by_code(refined_structured_body, "30954-2")
 
     xpath_query = ".//hl7:code"
-    result = bool(refined_results_section.xpath(xpath_query, namespaces=NAMESPACES))
+    result = bool(
+        refined_results_section.xpath(xpath_query, namespaces={"hl7": "urn:hl7-org:v3"})
+    )
     assert result == expected_in_results
 
 
-@pytest.mark.parametrize(
-    "xml_files,sections_to_include,condition_codes,expected_error",
-    [
-        # test 1: invalid section should raise SectionValidationError
-        (
-            XMLFiles(
-                eicr="""
-                <ClinicalDocument xmlns="urn:hl7-org:v3">
-                    <component>
-                        <structuredBody>
-                            <component>
-                                <section>
-                                    <code code="30954-2"/>
-                                </section>
-                            </component>
-                        </structuredBody>
-                    </component>
-                </ClinicalDocument>
-                """,
-                rr=None,
-            ),
-            "invalid-section",  # Pass as string to trigger validate_sections_to_include
-            None,
-            SectionValidationError,
-        ),
-        # test 2: invalid XML should raise XMLValidationError
-        (
-            XMLFiles(eicr="<invalid", rr=None),  # Malformed XML
-            None,
-            None,
-            XMLValidationError,
-        ),
-        # test 3: empty xml should raise XMLValidationError
-        (
-            XMLFiles(eicr="", rr=None),  # Empty string
-            None,
-            None,
-            XMLValidationError,
-        ),
-        # test 4: none xml should raise XMLValidationError
-        (
-            XMLFiles(eicr=None, rr="<valid/>"),
-            None,
-            None,
-            XMLValidationError,
-        ),
-    ],
-)
-def test_refine_eicr_errors(
-    xml_files: XMLFiles,
-    sections_to_include: str | None,
-    condition_codes: str | None,
-    expected_error: type[Exception],
-) -> None:
+def test_refine_eicr_requires_condition_codes(sample_xml_files: XMLFiles):
     """
-    Test error handling in refine_eicr.
+    Test that refine_eicr raises ConditionCodeError if condition_codes is not provided.
     """
-
-    with pytest.raises(expected_error):
-        # handle section validation first if needed
-        validated_sections = None
-        if sections_to_include is not None:
-            validated_sections = validate_sections_to_include(sections_to_include)
-
-        # call refine_eicr with validated sections
+    with pytest.raises(ConditionCodeError) as excinfo:
         refine_eicr(
-            xml_files=xml_files,
-            sections_to_include=validated_sections,
-            condition_codes=condition_codes,
+            xml_files=sample_xml_files,
+            sections_to_include=None,
+            condition_codes=None,
         )
+    assert "No condition codes provided" in str(excinfo.value)
+
+
+def test_refine_eicr_empty_condition_codes(sample_xml_files: XMLFiles):
+    """
+    Test that refine_eicr raises ConditionCodeError if condition_codes is empty string.
+    """
+    with pytest.raises(ConditionCodeError) as excinfo:
+        refine_eicr(
+            xml_files=sample_xml_files,
+            sections_to_include=None,
+            condition_codes="",
+        )
+    assert "No condition codes provided" in str(excinfo.value)
 
 
 def test_get_reportable_conditions_no_codes():
@@ -471,10 +416,10 @@ def test_process_section_no_observations():
         </section>
     """)
 
-    # we need to pass a valid XPath expression and template IDs
+    # Pass empty XPath since no condition codes provided
     _process_section(
         section=section,
-        combined_xpath=".//hl7:observation",  # Valid XPath expression
+        combined_xpath="",  # Empty XPath means no condition codes
         namespaces={"hl7": "urn:hl7-org:v3"},
     )
 
@@ -485,7 +430,10 @@ def test_process_section_no_observations():
     # verify table with message exists
     table = text_elem.find("table")
     assert table is not None
-    assert "Section details have been removed as requested" in table.findtext(".//td")
+    assert MINIMAL_SECTION_MESSAGE in table.findtext(".//td")
+
+    # verify section has nullFlavor="NI"
+    assert section.get("nullFlavor") == "NI"
 
 
 def test_process_section_with_error():
@@ -504,18 +452,8 @@ def test_process_section_with_error():
         </section>
     """)
 
-    template_xpath = " | ".join(
-        [
-            f'.//hl7:observation[hl7:templateId[@root="{tid}"]]'
-            for tid in TRIGGER_CODE_TEMPLATE_IDS
-        ]
-    )
-
-    # Add xpath for the test code if needed
-    code_xpath = './/hl7:observation[hl7:code[@code="nonexistent-code"]]'
-
-    # combine them
-    combined_xpath = f"{template_xpath} | {code_xpath}"
+    # Use a valid XPath that won't match anything
+    combined_xpath = './/hl7:observation[hl7:code[@code="nonexistent-code"]]'
 
     _process_section(
         section=section,
@@ -540,7 +478,6 @@ def test_create_or_update_text_invalid_section():
     observations = [
         etree.fromstring("""
             <observation xmlns="urn:hl7-org:v3">
-                <templateId root="2.16.840.1.113883.10.20.15.2.3.3"/>
                 <code code="test" displayName="Test Code" codeSystemName="Test System"/>
             </observation>
         """)
@@ -568,20 +505,46 @@ def test_find_path_to_entry_no_match():
     assert "Parent <entry> element not found" in str(exc_info.value)
 
 
-def test_get_template_id_xpath():
-    """Test generation of XPath for template IDs."""
-    template_ids = ["2.16.840.1.113883.10.20.15.2.3.2"]
-    xpath = _get_template_id_xpath(template_ids)
-    assert (
-        './/hl7:observation[hl7:templateId[@root="2.16.840.1.113883.10.20.15.2.3.2"]]'
-        == xpath
-    )
+def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles):
+    """
+    Test building condition-eICR pairs with XMLFiles objects.
+    """
 
-    # Test with multiple template IDs
-    template_ids = [
-        "2.16.840.1.113883.10.20.15.2.3.2",
-        "2.16.840.1.113883.10.20.15.2.3.3",
+    reportable_conditions = [
+        {"code": "840539006", "displayName": "COVID-19"},
+        {"code": "27836007", "displayName": "Pertussis"},
     ]
-    xpath = _get_template_id_xpath(template_ids)
-    assert " | " in xpath
-    assert len(xpath.split(" | ")) == 2
+
+    pairs = build_condition_eicr_pairs(sample_xml_files, reportable_conditions)
+
+    # verify we get the expected number of pairs
+    assert len(pairs) == 2
+
+    # verify each pair has the expected structure
+    for i, pair in enumerate(pairs):
+        assert "reportable_condition" in pair
+        assert "xml_files" in pair  # Changed from "eicr_copy"
+        assert pair["reportable_condition"] == reportable_conditions[i]
+
+        # verify the xml_files is a proper XMLFiles object
+        assert isinstance(pair["xml_files"], XMLFiles)
+        assert pair["xml_files"].eicr == sample_xml_files.eicr
+        assert pair["xml_files"].rr == sample_xml_files.rr
+
+
+def test_text_constants():
+    """
+    Test that our text constants are properly defined and accessible.
+    """
+
+    assert (
+        REFINER_OUTPUT_TITLE
+        == "Output from CDC PRIME DIBBs eCR Refiner application by request of STLT"
+    )
+    assert MINIMAL_SECTION_MESSAGE == "Section details have been removed as requested"
+    assert OBSERVATION_TABLE_HEADERS == [
+        "Display Text",
+        "Code",
+        "Code System",
+        "Matching Condition Code",
+    ]

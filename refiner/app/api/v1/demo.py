@@ -190,16 +190,23 @@ async def demo_upload(
         # Refine each pair and collect results
         refined_results = []
 
+        # for each reportable condition, create a separate XMLFiles copy and refine independently.
+        # this ensures output isolation: each condition produces its own eICR, with only the data relevant to that condition.
+        # using a fresh XMLFiles object per condition also makes it straightforward to support future workflows,
+        # such as processing and returning RR (Reportability Response) documents alongside or in relation to each eICR.
         for pair in condition_eicr_pairs:
             condition = pair["reportable_condition"]
-            xml_files = pair["xml_files"]
+            xml_files = pair[
+                "xml_files"
+            ]  # Each pair contains a distinct XMLFiles instance.
 
-            # process the eICR for this specific condition
+            # refine the eICR for this specific condition code.
             refined_eicr = refine.refine_eicr(
                 xml_files=xml_files,
                 condition_codes=condition["code"],
             )
 
+            # collect the refined result for this condition.
             refined_results.append(
                 {
                     "reportable_condition": condition,
@@ -207,7 +214,8 @@ async def demo_upload(
                 }
             )
 
-        # build response data with proper condition isolation
+        # build the response so each output is clearly associated with its source condition.
+        # this structure makes it easy for clients to consume and extends naturally if we later return RR artifacts.
         conditions = []
         for idx, result in enumerate(refined_results):
             condition_info = result["reportable_condition"]
