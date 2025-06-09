@@ -1,48 +1,34 @@
-import { Link } from 'react-router';
-import DibbsLogo from '../../assets/dibbs-logo.svg';
 import PlaceholderImg from '../../assets/home/placeholder.png';
 import { Button } from '../../components/Button';
 
 export function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="p-10">
-        <header className="flex items-center">
-          <Link to="/">
-            <h1 className="flex gap-3">
-              <img src={DibbsLogo} alt="DIBBs" />
-              <span className="font-merriweather text-2xl">eCR Refiner</span>
+    <>
+      <div className="flex flex-col items-center justify-center gap-16 lg:flex-row">
+        <div className="flex flex-col gap-8 p-10 xl:p-0">
+          <div className="flex max-w-[36rem] flex-col items-start gap-4">
+            <h1 className="font-merriweather !m-0 !text-5xl font-bold">
+              Focus on what matters.
             </h1>
-          </Link>
-        </header>
-      </div>
-      <main className="flex grow flex-col">
-        <div className="flex flex-col items-center justify-center gap-16 lg:flex-row">
-          <div className="flex flex-col gap-8 p-10 xl:p-0">
-            <div className="flex max-w-[36rem] flex-col items-start gap-4">
-              <h1 className="font-merriweather !m-0 !text-5xl font-bold">
-                Focus on what matters.
-              </h1>
-              <p className="text-2xl font-normal">
-                eCR Refiner tailors each case report to retain only the data
-                jurisdictions need — providing tools for reducing file size,
-                increasing data relevancy, and safeguarding sensitive patient
-                information.
-              </p>
-            </div>
-            <div>
-              <Button className="usa-button usa-button--big" to="/demo">
-                Try it out
-              </Button>
-            </div>
+            <p className="text-2xl font-normal">
+              eCR Refiner tailors each case report to retain only the data
+              jurisdictions need — providing tools for reducing file size,
+              increasing data relevancy, and safeguarding sensitive patient
+              information.
+            </p>
           </div>
           <div>
-            <img className="max-h-[500px]" src={PlaceholderImg} alt="" />
+            <Button className="usa-button usa-button--big" to="/demo">
+              Try it out
+            </Button>
           </div>
         </div>
-        <HowItWorks />
-      </main>
-    </div>
+        <div>
+          <img className="max-h-[500px]" src={PlaceholderImg} alt="" />
+        </div>
+      </div>
+      <HowItWorks />
+    </>
   );
 }
 

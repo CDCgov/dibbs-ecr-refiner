@@ -1,6 +1,62 @@
+import { Link } from 'react-router';
+import DibbsLogo from '../../assets/dibbs-logo.svg';
+import CdcLogo from '../../assets/cdc-logo.svg';
+
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 export function Layout({ children }: LayoutProps) {
-  return <main className="flex flex-1">{children}</main>;
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex grow flex-col">{children}</main>
+      <Footer />
+    </div>
+  );
+}
+
+export function Header() {
+  return (
+    <header>
+      <div className="bg-blue-cool-80 flex items-center justify-between px-20 py-4">
+        <div>
+          <Link to="/">
+            <h1 className="flex items-center gap-3">
+              <img src={DibbsLogo} alt="DIBBs" />
+              <span className="font-merriweather text-2xl text-white">
+                eCR Refiner
+              </span>
+            </h1>
+          </Link>
+        </div>
+        <div>
+          <p>right</p>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+export function Footer() {
+  return (
+    <footer>
+      <div className="bg-blue-cool-80 flex items-center justify-between px-20 py-5">
+        <div>
+          <img src={CdcLogo} alt="" />
+        </div>
+        <div>
+          <p className="!m-0 !p-0 text-white">
+            For more information about this solution, send us an email at{' '}
+            <a
+              className="font-bold hover:underline"
+              href="mailto:dibbs@cdc.gov"
+            >
+              dibbs@cdc.gov
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
 }
