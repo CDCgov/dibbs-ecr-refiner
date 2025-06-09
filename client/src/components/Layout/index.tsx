@@ -40,7 +40,13 @@ export function Footer() {
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-20 py-5 md:flex-row">
         <div>
-          <img src={CdcLogo} alt="" />
+          <a
+            href="https://www.cdc.gov"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <img src={CdcLogo} alt="" />
+          </a>
         </div>
         <div>
           <p className="!m-0 !p-0 text-white">
