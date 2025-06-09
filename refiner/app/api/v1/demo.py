@@ -217,7 +217,7 @@ async def demo_upload(
         # build the response so each output is clearly associated with its source condition.
         # this structure makes it easy for clients to consume and extends naturally if we later return RR artifacts.
         conditions = []
-        for idx, result in enumerate(refined_results):
+        for result in refined_results:
             condition_info = result["reportable_condition"]
             condition_refined_eicr = result["refined_eicr"]
 
@@ -225,7 +225,6 @@ async def demo_upload(
                 {
                     "code": condition_info["code"],
                     "display_name": condition_info["displayName"],
-                    "unrefined_eicr": original_xml_files.eicr,
                     "refined_eicr": condition_refined_eicr,
                     "stats": [
                         f"eICR file size reduced by {
@@ -249,6 +248,7 @@ async def demo_upload(
                     "message": "Successfully processed eICR with condition-specific refinement",
                     "conditions_found": len(conditions),
                     "conditions": conditions,
+                    "unrefined_eicr": original_xml_files.eicr,
                     "processing_notes": [
                         "Each condition gets its own refined eICR",
                         "Sections contain only data relevant to that specific condition",
