@@ -1,0 +1,38 @@
+name: Run type checking
+
+on:
+  workflow_call:
+    inputs:
+      python_runner_version:
+        default: 3.13
+        required: true
+        type: number
+  workflow_dispatch:
+    inputs:
+      python_runner_version:
+        default: 3.13
+        required: true
+        type: number
+
+defaults:
+  run:
+    working-directory: ./refiner
+
+jobs:
+  run-python-type-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup python ${{inputs.python_runner_version}}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{inputs.python_runner_version}}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -U pip
+          pip install -r requirements-dev.txt -r requirements.txt
+      - name: Run mypy
+        run: |
+          mypy
