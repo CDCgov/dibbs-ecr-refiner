@@ -84,3 +84,7 @@ known-third-party = ["fastapi", "pydantic", "starlette"]
 # keep runtime type annotations
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
+
+# mypy type checking
+[tool.mypy]
+files = ["app/**/*.py"]
