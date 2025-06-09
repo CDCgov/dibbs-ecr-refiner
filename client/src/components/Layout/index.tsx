@@ -30,9 +30,6 @@ export function Header() {
             </h1>
           </Link>
         </div>
-        <div>
-          <p>right</p>
-        </div>
       </div>
     </header>
   );
@@ -41,7 +38,7 @@ export function Header() {
 export function Footer() {
   return (
     <footer>
-      <div className="bg-blue-cool-80 flex items-center justify-between px-20 py-5">
+      <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-20 py-5 md:flex-row">
         <div>
           <img src={CdcLogo} alt="" />
         </div>
