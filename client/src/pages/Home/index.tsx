@@ -1,10 +1,10 @@
-import PlaceholderImg from '../../assets/home/placeholder.png';
+import IllustrationImg from '../../assets/home/illustration.svg';
 import { Button } from '../../components/Button';
 
 export function Home() {
   return (
     <>
-      <div className="flex flex-col items-center justify-center gap-16 lg:flex-row">
+      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-30 lg:flex-row">
         <div className="flex flex-col gap-8 p-10 xl:p-0">
           <div className="flex max-w-[36rem] flex-col items-start gap-4">
             <h1 className="font-merriweather !m-0 !text-5xl font-bold">
@@ -23,9 +23,7 @@ export function Home() {
             </Button>
           </div>
         </div>
-        <div>
-          <img className="max-h-[500px]" src={PlaceholderImg} alt="" />
-        </div>
+        <img src={IllustrationImg} alt="" />
       </div>
       <HowItWorks />
     </>
@@ -34,9 +32,9 @@ export function Home() {
 
 function HowItWorks() {
   return (
-    <div className="flex grow flex-col items-center gap-6 gap-13 bg-blue-100 px-10 py-20 xl:px-34">
+    <div className="flex flex-col items-center gap-13 px-10 py-10 xl:px-34">
       <h2 className="text-4xl font-bold text-black">How it works</h2>
-      <ol className="flex flex-col gap-10 md:justify-between lg:flex-row">
+      <ol className="flex flex-col gap-6 md:justify-between lg:flex-row">
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
           <p>
