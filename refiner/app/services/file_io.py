@@ -128,6 +128,19 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     },
                 )
 
+            if not rr_xml:
+                raise ZipValidationError(
+                    message="Required file CDA_RR.xml not found in ZIP",
+                    details={
+                        "files_found": [
+                            f
+                            for f in z.namelist()
+                            if not (f.startswith("__MACOSX/") or f.startswith("._"))
+                        ],
+                        "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
+                    },
+                )
+
             return XMLFiles(eicr_xml, rr_xml)
 
     except BadZipFile:
