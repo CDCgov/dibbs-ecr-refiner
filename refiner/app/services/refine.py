@@ -124,8 +124,7 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
     try:
         # the summary section (55112-7) must contain exactly one RR11 organizer
         # this is specified in the RR IG
-        coded_info_organizers = cast(
-            list[_Element],
+        coded_info_organizers = (
             root.xpath(
                 ".//cda:section[cda:code/@code='55112-7']"
                 "//cda:entry/cda:organizer[cda:code/@code='RR11']",
