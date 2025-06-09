@@ -144,7 +144,7 @@ async def test_zip_missing_rr(test_assets_path, tmp_path):
     with ZipFile(test_zip, "w") as zf:
         # Copy the existing eICR file but use the expected name
         with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_eICR.xml", "rb"
+            test_assets_path / "mon-mothma-covid-lab-positive_eicr.xml", "rb"
         ) as src:
             zf.writestr("CDA_eICR.xml", src.read())
 
