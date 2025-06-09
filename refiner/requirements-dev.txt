@@ -10,3 +10,4 @@ sqlmodel
 testcontainers[compose]>=3.7.1
 tqdm
 mypy==1.15.0
+lxml-stubs
