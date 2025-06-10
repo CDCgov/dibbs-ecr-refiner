@@ -20,10 +20,10 @@ export function Button({
   className,
   ...props
 }: ButtonProps) {
-  const purpleButtonStyles = '!bg-violet-warm-60 hover:!bg-violet-warm-70';
-
-  const styles = classNames('usa-button', className, purpleButtonStyles, {
-    'usa-button--secondary': variant === 'secondary',
+  const styles = classNames('usa-button', className, {
+    '!bg-violet-warm-60 hover:!bg-violet-warm-70': variant === 'primary',
+    '!bg-white !text-violet-warm-60 !border-violet-warm-60 !border-[2px] !rounded-sm hover:!border-violet-warm-70 hover:!text-violet-warm-70':
+      variant === 'secondary',
   });
 
   if (to) {
@@ -38,13 +38,7 @@ export function Button({
   }
 
   return (
-    <UswdsButton
-      secondary={variant === 'secondary'}
-      onClick={onClick}
-      type={type}
-      className="!bg-violet-warm-60 hover:!bg-violet-warm-70"
-      {...props}
-    >
+    <UswdsButton onClick={onClick} type={type} className={styles} {...props}>
       {children}
     </UswdsButton>
   );

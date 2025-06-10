@@ -12,14 +12,12 @@ export function RunTest({ onClick }: RunTestProps) {
         <img src={UploadSvg} alt="" className="p-3" />
         <div className="flex flex-col items-center gap-6">
           <p className="flex max-w-[500px] flex-col gap-4 text-center font-normal text-black">
-            For this demo, we've provided a synthetic eICR/RR pair to test the
-            Refiner that contains two reportable conditions.
-            <span>
-              The "Run test" button below will upload the test files to the
-              Refiner.
-            </span>
+            Don't have a file ready?
+            <span>You can try out eCR Refiner with our test file.</span>
           </p>
-          <Button onClick={onClick}>Run test</Button>
+          <Button variant="secondary" onClick={onClick}>
+            Use test file
+          </Button>
           <a
             className="justify-start font-bold text-blue-300 hover:underline"
             href="/api/v1/demo/download"
