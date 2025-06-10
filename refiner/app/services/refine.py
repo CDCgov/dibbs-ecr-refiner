@@ -590,7 +590,10 @@ def _create_or_update_text_element(observations: list[_Element]) -> _Element:
         row = etree.SubElement(table_element, "tr")
         for key in headers[:-1]:  # Exclude the last header as it's for the boolean flag
             td = etree.SubElement(row, "td")
-            td.text = cast(str | None, data[key.lower().replace(" ", "_")])
+            value = data[key.lower().replace(" ", "_")]
+            if value is not None and not isinstance(value, str):
+                value = str(value)
+            td.text = value
 
         # add boolean flag for matching condition code (always TRUE since we only keep matches)
         td = etree.SubElement(row, "td")
