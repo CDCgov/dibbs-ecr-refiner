@@ -42,26 +42,24 @@ describe('Demo', () => {
     renderDemoView();
 
     // check that we start on the "run test" page
-    const runTestPageText =
-      "For this demo, we've provided a synthetic eICR/RR pair to test the Refiner that contains two reportable conditions.";
-    expect(screen.getByText(runTestPageText)).toBeInTheDocument();
+    expect(
+      screen.getByText('You can try out eCR Refiner with our test file.')
+    ).toBeInTheDocument();
 
     // navigate to reportable conditions
     vi.mocked(uploadDemoFile).mockResolvedValue(mockUploadResponse);
-    await user.click(screen.getByText('Run test'));
+    await user.click(screen.getByText('Use test file'));
     expect(uploadDemoFile).toHaveBeenCalledOnce();
 
     // check reportable conditions view
     expect(
-      screen.getByText(
-        'We found the following reportable condition(s) in the RR:'
-      )
+      screen.getByText('We found these reportable conditions:')
     ).toBeInTheDocument();
     expect(screen.getByText('mock condition name')).toBeInTheDocument();
     await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
 
     // check success page
-    expect(screen.getByText('eICR successfully refined!')).toBeInTheDocument();
+    expect(screen.getByText('eCR refinement results')).toBeInTheDocument();
     expect(screen.getByText('tons of data here')).toBeInTheDocument();
     expect(screen.getByText('less data')).toBeInTheDocument();
     expect(screen.getByText('eICR reduced by 59%')).toBeInTheDocument();
@@ -75,7 +73,7 @@ describe('Demo', () => {
     vi.mocked(uploadDemoFile).mockRejectedValue(
       new ApiUploadError('API call failed')
     );
-    await user.click(screen.getByText('Run test'));
+    await user.click(screen.getByText('Use test file'));
 
     // check that we made it to the error view
     expect(screen.getByText('The file could not be read.')).toBeInTheDocument();
@@ -83,7 +81,7 @@ describe('Demo', () => {
     // return to the start to try again
     await user.click(screen.getByText('Try again'));
     expect(
-      screen.getByText('Run test', { selector: 'button' })
+      screen.getByText('Use test file', { selector: 'button' })
     ).toBeInTheDocument();
   });
 });
