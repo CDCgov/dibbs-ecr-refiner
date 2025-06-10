@@ -4,26 +4,28 @@ import { Button } from '../../components/Button';
 export function Home() {
   return (
     <>
-      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 p-38 lg:flex-row">
-        <div className="flex w-2/3 flex-col gap-8">
-          <div className="flex flex-col items-start gap-4">
-            <h1 className="font-merriweather !m-0 !text-5xl font-bold">
-              Focus on what matters.
-            </h1>
-            <p className="text-2xl font-normal">
-              eCR Refiner tailors each case report to retain only the data
-              jurisdictions need — providing tools for reducing file size,
-              increasing data relevancy, and safeguarding sensitive patient
-              information.
-            </p>
+      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 p-10 lg:p-38">
+        <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
+          <div className="flex w-2/3 flex-col gap-8">
+            <div className="flex flex-col items-start gap-4">
+              <h1 className="font-merriweather !m-0 font-bold lg:!text-5xl">
+                Focus on what matters.
+              </h1>
+              <p className="text-lg font-normal lg:text-2xl">
+                eCR Refiner tailors each case report to retain only the data
+                jurisdictions need — providing tools for reducing file size,
+                increasing data relevancy, and safeguarding sensitive patient
+                information.
+              </p>
+            </div>
+            <div>
+              <Button className="usa-button usa-button--big" to="/demo">
+                Try it out
+              </Button>
+            </div>
           </div>
-          <div>
-            <Button className="usa-button usa-button--big" to="/demo">
-              Try it out
-            </Button>
-          </div>
+          <img className="min w-1/3" src={IllustrationImg} alt="" />
         </div>
-        <img className="w-1/3" src={IllustrationImg} alt="" />
       </div>
       <HowItWorks />
     </>
@@ -33,7 +35,9 @@ export function Home() {
 function HowItWorks() {
   return (
     <div className="flex flex-col items-center gap-13 px-10 py-10 xl:px-34">
-      <h2 className="text-4xl font-bold text-black">How it works</h2>
+      <h2 className="text-2xl font-bold text-black lg:text-4xl">
+        How it works
+      </h2>
       <ol className="flex flex-col gap-6 md:justify-between lg:flex-row">
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
