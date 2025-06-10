@@ -8,7 +8,7 @@ interface ContainerProps {
 
 export function Container({ color, children, className }: ContainerProps) {
   const defaultStyles =
-    'items-center gap-6 rounded-lg border-thin border-dashed px-20 py-8';
+    'items-center gap-6 rounded-lg border-thin border-dashed px-10 py-4 md:px-20 md:py-8';
   return (
     <div
       className={classNames(defaultStyles, className, {
