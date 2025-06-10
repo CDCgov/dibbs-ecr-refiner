@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
 // import { Button } from '../../components/Button';
-import { Container, Content } from './Layout';
 import XMLViewer from 'react-xml-viewer';
 import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
@@ -55,55 +54,50 @@ export function Success({ conditions, unrefinedEicr }: SuccessProps) {
   }
 
   return (
-    <>
-      <Container color="green" className="w-full !p-8">
-        <Content className="flex flex-col items-start gap-4">
-          <div className="flex flex-col">
-            <h1 className="!m-0 !p-0 text-xl font-bold text-black">
-              eICR successfully refined!
-            </h1>
-          </div>
-          <div className="flex min-h-full min-w-full flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-10">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="condition-select" className="text-bold !m-0">
-                  CONDITION:
-                </Label>
-                <Select
-                  id="condition-select"
-                  name="condition-select"
-                  className="!m-0"
-                  defaultValue={selectedCondition.code}
-                  onChange={onChange}
-                >
-                  {conditions.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.display_name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                {selectedCondition.stats.map((stat) => (
-                  <SuccessItem key={stat}>{stat}</SuccessItem>
-                ))}
-              </div>
-            </div>
-            {/*<div className="flex flex-col items-center gap-3">*/}
-            {/*  <Button onClick={async () => await downloadFile(downloadToken)}>*/}
-            {/*    Download refined eCR*/}
-            {/*  </Button>*/}
-            {/*  {downloadError ? <span>File download has expired.</span> : null}*/}
-            {/*</div>*/}
-          </div>
-        </Content>
-      </Container>
+    <div className="max-w-full">
+      <h2 className="font-merriweather text-3xl font-bold text-black">
+        eCR refinement results
+      </h2>
+      <hr className="border-blue-cool-20 mt-12 mb-12" />
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <Label htmlFor="condition-select" className="text-bold !m-0">
+            CONDITION:
+          </Label>
+          <Select
+            id="condition-select"
+            name="condition-select"
+            className="!m-0"
+            defaultValue={selectedCondition.code}
+            onChange={onChange}
+          >
+            {conditions.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.display_name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex flex-col gap-4 lg:flex-row">
+          {selectedCondition.stats.map((stat) => (
+            <SuccessItem key={stat}>{stat}</SuccessItem>
+          ))}
+        </div>
+        <div>
+          {/*<div className="flex flex-col items-center gap-3">*/}
+          {/*  <Button onClick={async () => await downloadFile(downloadToken)}>*/}
+          {/*    Download refined eCR*/}
+          {/*  </Button>*/}
+          {/*  {downloadError ? <span>File download has expired.</span> : null}*/}
+          {/*</div>*/}
+        </div>
+      </div>
       <EicrComparison
         unrefinedEicr={unrefinedEicr}
         refinedEicr={selectedCondition.refined_eicr}
         stats={selectedCondition.stats}
       />
-    </>
+    </div>
   );
 }
 
@@ -113,11 +107,9 @@ interface SuccessItemProps {
 
 function SuccessItem({ children }: SuccessItemProps) {
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-white p-4">
+    <div className="flex items-center gap-3 p-4">
       <GreenCheck />
-      <p className="flex flex-col items-center gap-2 leading-snug font-bold">
-        {children}
-      </p>
+      <p className="leading-snug">{children}</p>
     </div>
   );
 }
@@ -137,9 +129,8 @@ export function EicrComparison({
   refinedEicr,
 }: EicrComparisonProps) {
   return (
-    <div className="flex w-full justify-between gap-10">
+    <div className="flex flex-col justify-between gap-10 xl:flex-row">
       <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
-      <div className="border-thin border-gray-300"></div>
       <EicrText title="Refined eICR" xml={refinedEicr} />
     </div>
   );
@@ -152,11 +143,11 @@ interface EicrTextProps {
 
 function EicrText({ title, xml }: EicrTextProps) {
   return (
-    <div className="mt-10 flex w-1/2 flex-col gap-1">
-      <h2 className="mb-4 text-3xl font-bold">{title}</h2>
+    <div className="mt-10 flex flex-col gap-1 xl:w-1/2">
+      <h3 className="font-public-sans mb-4 text-3xl font-bold">{title}</h3>
       {/* There's not an easy way to apply classes directly to XMLViewer
       so we're using Tailwind to target the child XMLViewer div instead */}
-      <div className="[&>div]:ml-5 [&>div]:h-190 [&>div]:w-full [&>div]:overflow-auto">
+      <div className="rounded-lg bg-white px-10 py-7 [&>div]:ml-5 [&>div]:h-190 [&>div]:overflow-auto">
         <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
       </div>
     </div>
