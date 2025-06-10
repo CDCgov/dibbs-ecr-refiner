@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 
 interface ContainerProps {
-  color: 'blue' | 'red' | 'green';
+  color: 'blue' | 'red' | 'green' | 'white';
   children: React.ReactNode;
   className?: string;
 }
@@ -15,6 +15,7 @@ export function Container({ color, children, className }: ContainerProps) {
         'border-blue-cool-20 bg-blue-cool-5': color === 'blue',
         'border-red-300 bg-rose-600/10': color === 'red',
         'border-green-500 bg-green-500/10': color === 'green',
+        'border-blue-cool-20 bg-white': color === 'white',
       })}
     >
       {children}
