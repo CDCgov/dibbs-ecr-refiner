@@ -10,7 +10,7 @@ export function RunTest({ onClick }: RunTestProps) {
   return (
     <div className="flex flex-col gap-6 md:flex-row">
       <Container color="white">
-        <Content className="flex gap-6">
+        <Content className="flex items-start gap-6">
           <img className="px-3 py-1" src={UploadSvg} alt="" />
           <div className="flex flex-col gap-10">
             <p className="flex flex-col gap-2 text-black">
@@ -26,7 +26,7 @@ export function RunTest({ onClick }: RunTestProps) {
         </Content>
       </Container>
       <Container color="blue">
-        <Content className="flex gap-6">
+        <Content className="flex items-start gap-6">
           <img className="px-3 py-5" src={ForwardSvg} alt="" />
           <div className="flex flex-col gap-10">
             <p className="flex flex-col gap-2 text-black">

@@ -30,8 +30,6 @@ interface ContentProps {
 
 export function Content({ children, className }: ContentProps) {
   return (
-    <div className={classNames('flex flex-col items-start', className)}>
-      {children}
-    </div>
+    <div className={classNames('flex flex-col', className)}>{children}</div>
   );
 }
