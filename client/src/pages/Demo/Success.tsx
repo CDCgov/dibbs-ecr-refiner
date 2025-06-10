@@ -54,7 +54,7 @@ export function Success({ conditions, unrefinedEicr }: SuccessProps) {
   }
 
   return (
-    <div className="max-w-full">
+    <div>
       <h2 className="font-merriweather text-3xl font-bold text-black">
         eCR refinement results
       </h2>
@@ -147,7 +147,7 @@ function EicrText({ title, xml }: EicrTextProps) {
       <h3 className="font-public-sans mb-4 text-3xl font-bold">{title}</h3>
       {/* There's not an easy way to apply classes directly to XMLViewer
       so we're using Tailwind to target the child XMLViewer div instead */}
-      <div className="rounded-lg bg-white px-10 py-7 [&>div]:ml-5 [&>div]:h-190 [&>div]:overflow-auto">
+      <div className="rounded-lg bg-white [&>div]:h-190 [&>div]:overflow-auto md:[&>div]:px-10 md:[&>div]:py-7">
         <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
       </div>
     </div>
