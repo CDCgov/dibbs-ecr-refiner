@@ -5,7 +5,6 @@
     @apply !font-public-sans;
   }
 }
-
 @layer utilities {
   .border-thin {
     @apply border-1;
@@ -15,6 +14,8 @@
 @theme {
   --font-public-sans: 'Public Sans Variable', 'sans-serif';
   --font-merriweather: 'Merriweather Variable', 'serif';
+
+  --color-primary-container: #3A7D950D;
 
   --color-blue-100: #e8f5ff;
   --color-blue-300: #0076d6;
