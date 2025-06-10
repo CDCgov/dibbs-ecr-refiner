@@ -1,6 +1,7 @@
 import { Container, Content } from './Layout';
 import InformationSvg from '../../assets/information.svg';
 import { Button } from '../../components/Button';
+import { Label, Select } from '@trussworks/react-uswds';
 
 interface ReportableConditionsProps {
   conditionNames: string[];
@@ -12,13 +13,13 @@ export function ReportableConditions({
 }: ReportableConditionsProps) {
   return (
     <Container color="blue">
-      <Content className="flex flex-col">
+      <Content className="flex flex-col items-center">
         <img className="p-3" src={InformationSvg} alt="Information icon" />
         <div className="flex flex-col items-center gap-10">
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-col items-center gap-3">
               <p className="text-center text-xl font-bold text-black">
-                We found the following reportable condition(s) in the RR:
+                We found these reportable conditions:
               </p>
               {conditionNames.length > 0 ? (
                 <ul className="list-disc text-xl font-bold text-black">
@@ -28,16 +29,14 @@ export function ReportableConditions({
                 </ul>
               ) : null}
             </div>
-            <div className="flex max-w-[800px] flex-col items-center gap-4 text-center">
-              <p>Would you like to refine the eCR?</p>
-              <p>
-                Taking this action will split the original eICR into two eICRs,
-                one for each reportable condition, and retain content relevant
-                only to that condition as defined in the TES (see landing page
-                for more details).
-              </p>
-            </div>
           </div>
+          <div className="flex w-full flex-col items-center">
+            <Label htmlFor="filter-select">Select filter to test</Label>
+            <Select id="filter-select" name="filter-select" className="w-full">
+              <option>Sample filter</option>
+            </Select>
+          </div>
+
           <div>
             <Button onClick={onClick}>Refine eCR</Button>
           </div>
