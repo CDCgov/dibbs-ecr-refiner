@@ -32,3 +32,6 @@ coverage.xml
 # Static files
 dist
 refined-ecr
+
+# Local testing
+.scratch
