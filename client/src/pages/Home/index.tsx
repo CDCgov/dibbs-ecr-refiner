@@ -4,9 +4,9 @@ import { Button } from '../../components/Button';
 export function Home() {
   return (
     <>
-      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-30 lg:flex-row">
-        <div className="flex flex-col gap-8 p-10 xl:p-0">
-          <div className="flex max-w-[36rem] flex-col items-start gap-4">
+      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 p-38 lg:flex-row">
+        <div className="flex w-2/3 flex-col gap-8">
+          <div className="flex flex-col items-start gap-4">
             <h1 className="font-merriweather !m-0 !text-5xl font-bold">
               Focus on what matters.
             </h1>
@@ -23,7 +23,7 @@ export function Home() {
             </Button>
           </div>
         </div>
-        <img src={IllustrationImg} alt="" />
+        <img className="w-1/3" src={IllustrationImg} alt="" />
       </div>
       <HowItWorks />
     </>
