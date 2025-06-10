@@ -1,7 +1,6 @@
 import { Container, Content } from './Layout';
 import InformationSvg from '../../assets/information.svg';
 import { Button } from '../../components/Button';
-import { Label, Select } from '@trussworks/react-uswds';
 
 interface ReportableConditionsProps {
   conditionNames: string[];
@@ -30,13 +29,6 @@ export function ReportableConditions({
               ) : null}
             </div>
           </div>
-          <div className="flex w-full flex-col items-center">
-            <Label htmlFor="filter-select">Select filter to test</Label>
-            <Select id="filter-select" name="filter-select" className="w-full">
-              <option>Sample filter</option>
-            </Select>
-          </div>
-
           <div>
             <Button onClick={onClick}>Refine eCR</Button>
           </div>
