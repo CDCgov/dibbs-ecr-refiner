@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
 export function Header() {
   return (
     <header>
-      <div className="bg-blue-cool-80 flex items-center justify-between px-20 py-4">
+      <div className="bg-blue-cool-80 flex items-center justify-between px-2 py-4 xl:px-20">
         <div>
           <Link to="/">
             <h1 className="flex items-center gap-3">
