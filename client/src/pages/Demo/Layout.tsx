@@ -12,7 +12,7 @@ export function Container({ color, children, className }: ContainerProps) {
   return (
     <div
       className={classNames(defaultStyles, className, {
-        'border-blue-300 bg-blue-100': color === 'blue',
+        'border-blue-cool-20 bg-blue-cool-5': color === 'blue',
         'border-red-300 bg-rose-600/10': color === 'red',
         'border-green-500 bg-green-500/10': color === 'green',
       })}
@@ -29,7 +29,7 @@ interface ContentProps {
 
 export function Content({ children, className }: ContentProps) {
   return (
-    <div className={classNames('flex flex-col items-center', className)}>
+    <div className={classNames('flex flex-col items-start', className)}>
       {children}
     </div>
   );

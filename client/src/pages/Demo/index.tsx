@@ -30,9 +30,9 @@ export default function Demo() {
   }
 
   return (
-    <main className="flex min-w-screen flex-col gap-20 px-20 py-10">
+    <div className="p-2 py-10 md:px-20">
       <LandingPageLink />
-      <div className="flex flex-col items-center justify-center gap-6">
+      <div className="flex flex-col items-center justify-center gap-6 py-10 md:px-20">
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
           <ReportableConditions
@@ -51,6 +51,6 @@ export default function Demo() {
         )}
         {view === 'error' && <Error onClick={reset} />}
       </div>
-    </main>
+    </div>
   );
 }
