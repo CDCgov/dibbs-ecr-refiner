@@ -30,8 +30,8 @@ export default function Demo() {
   }
 
   return (
-    <div className="flex justify-center p-2 py-10 md:px-20">
-      <div className="flex flex-col gap-6 py-10 md:px-20">
+    <div className="flex justify-center px-10 md:px-20">
+      <div className="flex flex-col gap-10 py-10">
         <LandingPageLink />
         {view === 'run-test' && <RunTest onClick={runTest} />}
         {view === 'reportable-conditions' && uploadResponse && (
