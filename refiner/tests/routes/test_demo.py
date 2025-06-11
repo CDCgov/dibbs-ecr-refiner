@@ -123,7 +123,7 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     app.dependency_overrides[_get_demo_zip_path] = mock_path_dep
     app.dependency_overrides[_get_zip_creator] = mock_zip_creator
 
-    response = client.get(f"{api_route_base}/upload")
+    response = client.post(f"{api_route_base}/upload")
     assert response.status_code == 200
 
     data: dict[str, Any] = response.json()
@@ -173,11 +173,12 @@ def test_demo_file_not_found() -> None:
     app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
 
     # test both endpoints with missing file
-    for endpoint in ["upload", "download"]:
-        response = client.get(f"{api_route_base}/{endpoint}")
-        assert response.status_code == 404
-        assert response.json() == {
-            "detail": "Unable to find demo zip file to download."
-        }
+    response = client.post(f"{api_route_base}/upload")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Unable to find demo zip file to download."}
+
+    response = client.get(f"{api_route_base}/download")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Unable to find demo zip file to download."}
 
     app.dependency_overrides.clear()

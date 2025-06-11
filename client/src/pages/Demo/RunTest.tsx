@@ -1,11 +1,13 @@
 import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
+import { ChangeEvent } from 'react';
 
 interface RunTestProps {
   onClick: () => void;
+  onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
-export function RunTest({ onClick }: RunTestProps) {
+export function RunTest({ onClick, onSelectedFileChange }: RunTestProps) {
   return (
     <Container color="blue">
       <Content className="flex gap-3">
@@ -19,6 +21,10 @@ export function RunTest({ onClick }: RunTestProps) {
               Refiner.
             </span>
           </p>
+          <UploadZipFile
+            onClick={onClick}
+            onSelectedFileChange={onSelectedFileChange}
+          />
           <Button onClick={onClick}>Run test</Button>
           <a
             className="justify-start font-bold text-blue-300 hover:underline"
@@ -30,5 +36,14 @@ export function RunTest({ onClick }: RunTestProps) {
         </div>
       </Content>
     </Container>
+  );
+}
+
+function UploadZipFile({ onClick, onSelectedFileChange }: RunTestProps) {
+  return (
+    <div className="flex flex-col items-start gap-3">
+      <input type="file" accept=".zip" onChange={onSelectedFileChange} />
+      <Button onClick={onClick}>Upload .zip file</Button>
+    </div>
   );
 }

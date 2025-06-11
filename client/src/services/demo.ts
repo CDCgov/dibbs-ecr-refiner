@@ -19,10 +19,19 @@ export interface Condition {
   stats: string[];
 }
 
-export async function uploadDemoFile(): Promise<DemoUploadResponse> {
-  const resp = await fetch('/api/v1/demo/upload');
+export async function uploadDemoFile(
+  formData?: FormData
+): Promise<DemoUploadResponse> {
+  const options: RequestInit = {
+    method: 'POST',
+    ...(formData ? { body: formData } : {}),
+  };
+
+  const resp = await fetch('/api/v1/demo/upload', options);
+
   if (!resp.ok) {
     throw new ApiUploadError('Unable to perform demo upload.');
   }
+
   return resp.json();
 }

@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 from zipfile import ZipFile
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
@@ -19,6 +19,9 @@ from ...services import file_io, refine
 REFINED_ECR_DIR = "refined-ecr"
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 file_store: dict[str, dict] = {}
+
+# File uploads
+MAX_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -146,8 +149,45 @@ def _get_refined_ecr_output_dir() -> Path:
     return Path(REFINED_ECR_DIR)
 
 
-@router.get("/upload")
+def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
+    filename = demo_zip_path.name
+    with open(demo_zip_path, "rb") as demo_file:
+        zip_content = demo_file.read()
+
+    file_like = io.BytesIO(zip_content)
+    file_like.seek(0)
+    file = UploadFile(
+        file=file_like,
+        filename=filename,
+        headers=Headers({"Content-Type": "application/zip"}),
+    )
+    return file
+
+
+def _validate_zip_file(file: UploadFile) -> UploadFile:
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only .zip files are allowed.",
+        )
+
+    if file.size is None or file.size == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=".zip must not be empty.",
+        )
+
+    if file.size > MAX_UPLOAD_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=".zip file must be less than 10MB in size.",
+        )
+    return file
+
+
+@router.post("/upload")
 async def demo_upload(
+    uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(_get_demo_zip_path),
     create_output_zip: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
         _get_zip_creator
@@ -165,21 +205,15 @@ async def demo_upload(
             detail="Unable to find demo zip file to download.",
         )
 
-    filename = demo_zip_path.name
-    with open(demo_zip_path, "rb") as demo_file:
-        zip_content = demo_file.read()
-
-    file_like = io.BytesIO(zip_content)
-    file_like.seek(0)
-    upload_file = UploadFile(
-        file=file_like,
-        filename=filename,
-        headers=Headers({"Content-Type": "application/zip"}),
-    )
+    file = None
+    if uploaded_file:
+        file = _validate_zip_file(uploaded_file)
+    else:
+        file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
         # Read in and process XML data from demo file
-        original_xml_files = await file_io.read_xml_zip(upload_file)
+        original_xml_files = await file_io.read_xml_zip(file)
         rr_results = refine.process_rr(original_xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
 
