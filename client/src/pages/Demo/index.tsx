@@ -4,7 +4,11 @@ import { ReportableConditions } from './ReportableConditions';
 import { Error } from './Error';
 import { RunTest } from './RunTest';
 import { ChangeEvent, useState } from 'react';
-import { DemoUploadResponse, uploadDemoFile } from '../../services/demo';
+import {
+  DemoUploadResponse,
+  uploadCustomZipFile,
+  uploadDemoFile,
+} from '../../services/demo';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
@@ -25,14 +29,20 @@ export default function Demo() {
     }
   }
 
-  async function runTest() {
+  async function runTestWithCustomFile() {
     try {
-      const formData = new FormData();
-      if (selectedFile) {
-        // The `name` needs to match the UploadFile arg name in the /demo route
-        formData.append('uploaded_file', selectedFile);
-      }
-      const resp = await uploadDemoFile(selectedFile ? formData : undefined);
+      const resp = await uploadCustomZipFile(selectedFile);
+      setUploadResponse(resp);
+      setView('reportable-conditions');
+    } catch {
+      setUploadResponse(null);
+      setView('error');
+    }
+  }
+
+  async function runTestWithSampleFile() {
+    try {
+      const resp = await uploadDemoFile();
       setUploadResponse(resp);
       setView('reportable-conditions');
     } catch {
@@ -52,7 +62,8 @@ export default function Demo() {
       <div className="flex flex-col items-center justify-center gap-6">
         {view === 'run-test' && (
           <RunTest
-            onClick={runTest}
+            onClickSampleFile={runTestWithSampleFile}
+            onClickCustomFile={runTestWithCustomFile}
             onSelectedFileChange={onSelectedFileChange}
           />
         )}

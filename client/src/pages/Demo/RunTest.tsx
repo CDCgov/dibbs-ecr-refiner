@@ -4,10 +4,15 @@ import UploadSvg from '../../assets/upload.svg';
 import { ChangeEvent } from 'react';
 
 interface RunTestProps {
-  onClick: () => void;
+  onClickCustomFile: () => Promise<void>;
+  onClickSampleFile: () => Promise<void>;
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
-export function RunTest({ onClick, onSelectedFileChange }: RunTestProps) {
+export function RunTest({
+  onSelectedFileChange,
+  onClickCustomFile,
+  onClickSampleFile,
+}: RunTestProps) {
   return (
     <Container color="blue">
       <Content className="flex gap-3">
@@ -22,10 +27,10 @@ export function RunTest({ onClick, onSelectedFileChange }: RunTestProps) {
             </span>
           </p>
           <UploadZipFile
-            onClick={onClick}
+            onClick={onClickCustomFile}
             onSelectedFileChange={onSelectedFileChange}
           />
-          <Button onClick={onClick}>Run test</Button>
+          <Button onClick={onClickSampleFile}>Run test</Button>
           <a
             className="justify-start font-bold text-blue-300 hover:underline"
             href="/api/v1/demo/download"
@@ -39,7 +44,12 @@ export function RunTest({ onClick, onSelectedFileChange }: RunTestProps) {
   );
 }
 
-function UploadZipFile({ onClick, onSelectedFileChange }: RunTestProps) {
+interface UploadZipFile {
+  onClick: () => Promise<void>;
+  onSelectedFileChange: RunTestProps['onSelectedFileChange'];
+}
+
+function UploadZipFile({ onClick, onSelectedFileChange }: UploadZipFile) {
   return (
     <div className="flex flex-col items-start gap-3">
       <input type="file" accept=".zip" onChange={onSelectedFileChange} />
