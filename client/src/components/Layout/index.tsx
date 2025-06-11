@@ -22,16 +22,14 @@ export function Header() {
   return (
     <header>
       <div className="bg-blue-cool-80 flex items-center justify-between px-2 py-4 xl:px-20">
-        <div>
-          <Link to="/">
-            <h1 className="flex items-center gap-3">
-              <img src={DibbsLogo} alt="DIBBs" />
-              <span className="font-merriweather text-2xl text-white">
-                eCR Refiner
-              </span>
-            </h1>
-          </Link>
-        </div>
+        <Link to="/">
+          <h1 className="flex items-center gap-3">
+            <img src={DibbsLogo} alt="DIBBs" />
+            <span className="font-merriweather text-2xl text-white">
+              eCR Refiner
+            </span>
+          </h1>
+        </Link>
       </div>
     </header>
   );
