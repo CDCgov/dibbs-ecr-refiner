@@ -1,6 +1,28 @@
 # DIBBs eCR Refiner
 
-🚧 The DIBBs eCR Refiner is under construction 🚧
+The DIBBs eCR Refiner tailors each Electronic Case Report (eCR) to retain only the data jurisdictions need — providing tools for reducing file size, increasing data relevancy, and safeguarding sensitive patient information.
+
+## Running the project locally
+
+The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `.docker-compose.yaml` file:
+
+```sh
+docker compose up -d
+```
+
+This will start up the FastAPI server and the Vite client development server. The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/).
+
+## Creating a production build
+
+The DIBBs eCR Refiner runs enitrely within a single container in a production environment. All build versions, including the very latest, can be downloaded from the [Refiner's GitHub Container Registry](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner).
+
+### Automatic builds
+
+A production-ready Docker image is created automatically every time code is merged into `main`. The Docker image produced will be tagged as both `main` and `latest`.
+
+### Manually creating a production build
+
+A production build of the application can be created using the [`Build and push Refiner image to GHCR`](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/docker-build-ghcr.yml) GitHub Actions workflow. This will build the image and will store it in the Refiner's GitHub Container Registry.
 
 ## Running the linter
 
@@ -19,7 +41,3 @@ The linter can be run two different ways: either manually via the `ruff` command
 3. Run `pre-commit run --all-files` to check that the tool is working properly
 
 The `pre-commit` hook will automatically fix any linter issues and will also format the code.
-
-## Running the eCR Refiner with Docker
-
-The project can be run from the top-level directory with `docker compose up`.
