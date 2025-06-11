@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pytest
-from lxml import etree
 from testcontainers.compose import DockerCompose
 
 
@@ -20,28 +19,30 @@ def setup_logging():
 
 
 @pytest.fixture(scope="session")
-def base_url():
+def base_url() -> str:
     """
-    Service base URL
+    Provides the base URL for the service under test.
+
+    Returns:
+        str: The base URL (e.g., "http://0.0.0.0:8080/")
     """
 
     return "http://0.0.0.0:8080/"
 
 
-def normalize_xml(xml: str) -> str:
-    """
-    Normalize XML string for comparison.
-    """
-
-    return etree.tostring(
-        etree.fromstring(xml), pretty_print=True, encoding="unicode"
-    ).strip()
-
-
 @pytest.fixture(scope="session")
 def setup(request):
     """
-    Use docker compose to run the service and test and then tear down container services.
+    Manages the lifecycle of the service running via Docker Compose
+
+    This fixture will:
+      1. Start the Docker services defined in `docker-compose.yaml`
+      2. Wait for the main application service to become healthy (via its healthcheck endpoint)
+      3. Yield control to the test session
+      4. After all tests in the session complete, it will tear down (stop) the Docker services
+
+    Args:
+        request: The pytest request object, used to add a finalizer for teardown
     """
 
     print("🚀 Setting up tests...")
@@ -54,6 +55,10 @@ def setup(request):
     print("✨ Message refiner services ready to test!")
 
     def teardown():
+        """
+        Registered finalizer to stop Docker Compose services.
+        """
+
         print("🧹 Tests finished! Tearing down.")
 
     request.addfinalizer(teardown)

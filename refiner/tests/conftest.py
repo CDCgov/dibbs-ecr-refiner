@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -9,26 +8,10 @@ from app.core.models.types import XMLFiles
 
 NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 
-TRIGGER_CODE_TEMPLATE_IDS: list[str] = [
-    "2.16.840.1.113883.10.20.15.2.3.5",
-    "2.16.840.1.113883.10.20.15.2.3.3",
-    "2.16.840.1.113883.10.20.15.2.3.4",
-    "2.16.840.1.113883.10.20.15.2.3.2",
-]
 
 # file names that read_xml_zip looks for
 EICR_FILENAME = "CDA_eICR.xml"
 RR_FILENAME = "CDA_RR.xml"
-
-
-def pytest_configure():
-    """
-    Add Trigger Code Reference service URL for testing environment.
-    """
-
-    os.environ["TRIGGER_CODE_REFERENCE_URL"] = (
-        "http://trigger-code-reference-service:8080"
-    )
 
 
 @pytest.fixture(scope="session")
