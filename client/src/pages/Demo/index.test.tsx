@@ -53,7 +53,9 @@ describe('Demo', () => {
 
     // check reportable conditions view
     expect(
-      screen.getByText('We found these reportable conditions:')
+      screen.getByText(
+        'We found the following reportable condition(s) in the RR:'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('mock condition name')).toBeInTheDocument();
     await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
