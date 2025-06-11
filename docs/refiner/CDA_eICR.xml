@@ -230,16 +230,12 @@
           <!-- [C-CDA R1.1] Encounters Section (entries optional) -->
           <templateId root="2.16.840.1.113883.10.20.22.2.22" />
           <!-- [C-CDA R2.1] Encounters Section (entries optional) (V3) -->
-          <templateId extension="2015-08-01"
-            root="2.16.840.1.113883.10.20.22.2.22" />
-          <templateId
-            root="2.16.840.1.113883.10.20.22.2.22.1" />
+          <templateId root="2.16.840.1.113883.10.20.22.2.22" extension="2015-08-01" />
+          <!-- [C-CDA R1.1] Encounters Section (entries required) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1" />
           <!-- [C-CDA R2.1] Encounters Section (entries required) (V3) -->
-          <templateId extension="2015-08-01"
-            root="2.16.840.1.113883.10.20.22.2.22.1" />
-          <code code="46240-8"
-            codeSystem="2.16.840.1.113883.6.1"
-            codeSystemName="LOINC"
+          <templateId root="2.16.840.1.113883.10.20.22.2.22.1" extension="2015-08-01" />
+          <code code="46240-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
             displayName="History of encounters" />
           <title>Encounters</title>
           <text>
@@ -252,27 +248,255 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <!-- Initial Visit -->
+                <tr ID="encounter_20250216_ref">
                   <td>Office outpatient visit 15 minutes</td>
-                  <td>02/16/2025</td>
-                  <td>Grand Republic Medical Facility Clinic</td>
+                  <td>Feb 16, 2025</td>
+                  <td>
+                    <list styleCode="none">
+                      <item>
+                        <content styleCode="Italics">Grand Republic Medical Facility Clinic</content>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <!-- Follow-up Visit -->
+                <tr ID="encounter_20250217_ref">
+                  <td>Office outpatient visit - followup</td>
+                  <td>Feb 17, 2025</td>
+                  <td>
+                    <list styleCode="none">
+                      <item>
+                        <content styleCode="Italics">Grand Republic Medical Facility Clinic</content>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <!-- Results Visit with Diagnoses -->
+                <tr ID="encounter_20250221_ref">
+                  <td>Office outpatient visit - results review</td>
+                  <td>Feb 21, 2025</td>
+                  <td>
+                    <list styleCode="none">
+                      <item>
+                        <content styleCode="Italics">Grand Republic Medical Facility Clinic</content>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="20">
+                    <list styleCode="none">
+                      <item>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Encounter Diagnosis Type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Diagnosis</td>
+                            </tr>
+                            <tr>
+                              <td colspan="20">
+                                <list styleCode="none">
+                                  <item>
+                                    <table>
+                                      <thead>
+                                        <tr>
+                                          <th>Initial Case Report Trigger Code Problem Observation</th>
+                                          <th>Problem</th>
+                                          <th>Trigger Code</th>
+                                          <th>Trigger Code codeSystem</th>
+                                          <th>RCTC OID</th>
+                                          <th>RCTC Version</th>
+                                          <th>Date(s)</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr ID="covid_diagnosis_ref">
+                                          <td>Diagnosis</td>
+                                          <td>Disease caused by severe acute respiratory syndrome
+                                            coronavirus 2 (disorder)</td>
+                                          <td>840539006</td>
+                                          <td>SNOMED CT</td>
+                                          <td>2.16.840.1.114222.4.11.7508</td>
+                                          <td>20250216</td>
+                                          <td>Feb 21, 2025</td>
+                                        </tr>
+                                        <tr ID="influenza_diagnosis_ref">
+                                          <td>Diagnosis</td>
+                                          <td>Influenza A virus infection (disorder)</td>
+                                          <td>719865001</td>
+                                          <td>SNOMED CT</td>
+                                          <td>2.16.840.1.114222.4.11.7508</td>
+                                          <td>20250216</td>
+                                          <td>Feb 21, 2025</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </item>
+                                </list>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </text>
+          <!-- Initial Visit Entry -->
           <entry typeCode="DRIV">
             <encounter classCode="ENC" moodCode="EVN">
-              <!-- [C-CDA R1.1] Encounter Activities -->
               <templateId root="2.16.840.1.113883.10.20.22.4.49" />
-              <!-- [C-CDA R2.1] Encounter Activities (V3) -->
-              <templateId extension="2015-08-01"
-                root="2.16.840.1.113883.10.20.22.4.49" />
-              <id root="fd7ee2ec-4d8e-4169-aeb6-836731cc7201" />
-              <code code="99213"
-                codeSystem="2.16.840.1.113883.6.12"
-                codeSystemName="CPT-4"
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01" />
+              <id root="d4994d30-b5a0-4526-a512-d8d7a5c7c1f3" />
+              <code code="99213" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4"
                 displayName="Office outpatient visit 15 minutes" />
               <effectiveTime value="20250216" />
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation"
+                    displayName="Grand Republic Medical Facility Clinic" />
+                </participantRole>
+              </participant>
+              <performer>
+                <assignedEntity>
+                  <id extension="1234567890" root="2.16.840.1.113883.4.6" />
+                  <assignedPerson>
+                    <name>
+                      <prefix>Dr</prefix>
+                      <given>Royce</given>
+                      <family>Hemlock</family>
+                    </name>
+                  </assignedPerson>
+                </assignedEntity>
+              </performer>
+            </encounter>
+          </entry>
+          <!-- Follow-up Visit Entry -->
+          <entry typeCode="DRIV">
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01" />
+              <id root="c7a76229-eda1-4948-9332-05416f11a457" />
+              <code code="99213" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4"
+                displayName="Office outpatient visit - followup" />
+              <effectiveTime value="20250217" />
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation"
+                    displayName="Grand Republic Medical Facility Clinic" />
+                </participantRole>
+              </participant>
+              <performer>
+                <assignedEntity>
+                  <id extension="1234567890" root="2.16.840.1.113883.4.6" />
+                  <assignedPerson>
+                    <name>
+                      <prefix>Dr</prefix>
+                      <given>Royce</given>
+                      <family>Hemlock</family>
+                    </name>
+                  </assignedPerson>
+                </assignedEntity>
+              </performer>
+            </encounter>
+          </entry>
+          <!-- Results Visit with Diagnoses -->
+          <entry typeCode="DRIV">
+            <encounter classCode="ENC" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.49" extension="2015-08-01" />
+              <id root="6e12d84f-9e8a-45cb-b1d7-f43a72a86cc5" />
+              <code code="99212" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4"
+                displayName="Office outpatient visit - results review" />
+              <effectiveTime value="20250221" />
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation"
+                    displayName="Grand Republic Medical Facility Clinic" />
+                </participantRole>
+              </participant>
+              <performer>
+                <assignedEntity>
+                  <id extension="1234567890" root="2.16.840.1.113883.4.6" />
+                  <assignedPerson>
+                    <name>
+                      <prefix>Dr</prefix>
+                      <given>Royce</given>
+                      <family>Hemlock</family>
+                    </name>
+                  </assignedPerson>
+                </assignedEntity>
+              </performer>
+              <!-- Link to COVID-19 Diagnosis -->
+              <entryRelationship typeCode="COMP">
+                <act classCode="ACT" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.80" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.80" extension="2015-08-01" />
+                  <code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Diagnosis" />
+                  <entryRelationship typeCode="SUBJ">
+                    <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+                      <templateId root="2.16.840.1.113883.10.20.15.2.3.3" extension="2016-12-01" />
+                      <id root="5e3c9b57-fa2e-48a2-be29-47d9873e3c13" />
+                      <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                        displayName="Condition">
+                        <translation code="282291009" codeSystem="2.16.840.1.113883.6.96"
+                          codeSystemName="SNOMED CT" displayName="Diagnosis" />
+                      </code>
+                      <statusCode code="completed" />
+                      <effectiveTime>
+                        <low value="20250221" />
+                      </effectiveTime>
+                      <value xsi:type="CD" code="840539006" codeSystem="2.16.840.1.113883.6.96"
+                        codeSystemName="SNOMED-CT"
+                        displayName="Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)"
+                        sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216" />
+                    </observation>
+                  </entryRelationship>
+                </act>
+              </entryRelationship>
+              <!-- Link to Influenza Diagnosis -->
+              <entryRelationship typeCode="COMP">
+                <act classCode="ACT" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.80" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.80" extension="2015-08-01" />
+                  <code code="29308-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Diagnosis" />
+                  <entryRelationship typeCode="SUBJ">
+                    <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                      <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.4" extension="2015-08-01" />
+                      <templateId root="2.16.840.1.113883.10.20.15.2.3.3" extension="2016-12-01" />
+                      <id root="7f32bd91-c5f3-422b-8a9d-3bc24c1e8bc1" />
+                      <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                        displayName="Condition">
+                        <translation code="282291009" codeSystem="2.16.840.1.113883.6.96"
+                          codeSystemName="SNOMED CT" displayName="Diagnosis" />
+                      </code>
+                      <statusCode code="completed" />
+                      <effectiveTime>
+                        <low value="20250221" />
+                      </effectiveTime>
+                      <value xsi:type="CD" code="772828001" codeSystem="2.16.840.1.113883.6.96"
+                        codeSystemName="SNOMED-CT"
+                        displayName="Influenza caused by Influenza A virus subtype H5N1 (disorder)"
+                        sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216" />
+                    </observation>
+                  </entryRelationship>
+                </act>
+              </entryRelationship>
             </encounter>
           </entry>
         </section>
@@ -280,14 +504,21 @@
 
       <!-- History of Present Illness Section -->
       <component>
-        <section nullFlavor="NI">
+        <section>
           <templateId root="1.3.6.1.4.1.19376.1.5.3.1.3.4" />
-          <code code="10164-2"
-            codeSystem="2.16.840.1.113883.6.1"
-            codeSystemName="LOINC"
-            displayName="History of Present Illness" />
+          <code code="10164-2" codeSystem="2.16.840.1.113883.6.1"
+            codeSystemName="LOINC" displayName="History of Present Illness" />
           <title>History of Present Illness</title>
-          <text>No history of present illness</text>
+          <text mediaType="text/x-hl7-text+xml">
+            <paragraph>The patient initially presented on February 16, 2025 with difficulty
+              breathing and fever. At follow-up on February 17, patient reported worsening symptoms
+              including cough. Patient disclosed recent travel to a known COVID-19 hot zone from
+              February 8-14, 2025, prompting SARS-CoV-2 testing.</paragraph>
+            <paragraph>On February 21, 2025, test results returned positive for SARS-CoV-2. Patient
+              also reported increased muscle aches, headache, and fatigue. Additional testing
+              revealed concurrent Influenza A infection. Patient diagnosis updated to confirmed
+              COVID-19 and Influenza A co-infection.</paragraph>
+          </text>
         </section>
       </component>
 
@@ -311,7 +542,7 @@
       <!-- Problems Section -->
       <component>
         <section>
-          <!-- [C-CDA R1.1] Problem Section (entries optional) -->
+          <!-- [C-CDA R1.1] Problem Section (entries optional)-->
           <templateId root="2.16.840.1.113883.10.20.22.2.5" />
           <!-- [C-CDA R2.1] Problem Section (entries optional) (V3) -->
           <templateId extension="2015-08-01"
@@ -343,9 +574,8 @@
                   <td>
                     <list>
                       <item>
-                        <paragraph>*** In the table below, row entries
-                          with values under RCTC columns triggered this
-                          Electronic Initial Case Report (eICR)</paragraph>
+                        <paragraph>*** In the table below, row entries with values under RCTC
+                          columns triggered this Electronic Initial Case Report (eICR)</paragraph>
                         <table>
                           <thead>
                             <tr>
@@ -361,7 +591,7 @@
                           <tbody>
                             <tr>
                               <td>symptom</td>
-                              <td>Difficulty Breathing</td>
+                              <td>Difficulty Breathing (finding)</td>
                               <td>02/16/2025</td>
                               <td>230145002</td>
                               <td>SNOMED-CT</td>
@@ -370,10 +600,28 @@
                             </tr>
                             <tr>
                               <td>symptom</td>
+                              <td>Coronavirus infection (disorder)</td>
+                              <td>02/16/2025</td>
+                              <td>186747009</td>
+                              <td>SNOMED-CT</td>
+                              <td>2.16.840.1.114222.4.11.7508</td>
+                              <td>20250216</td>
+                            </tr>
+                            <tr>
+                              <td>condition</td>
                               <td>Disease caused by severe acute respiratory syndrome coronavirus 2
                                 (disorder)</td>
-                              <td>02/16/2025</td>
+                              <td>02/21/2025</td>
                               <td>840539006</td>
+                              <td>SNOMED-CT</td>
+                              <td>2.16.840.1.114222.4.11.7508</td>
+                              <td>20250216</td>
+                            </tr>
+                            <tr>
+                              <td>condition</td>
+                              <td>Influenza A virus infection (disorder)</td>
+                              <td>02/21/2025</td>
+                              <td>719865001</td>
                               <td>SNOMED-CT</td>
                               <td>2.16.840.1.114222.4.11.7508</td>
                               <td>20250216</td>
@@ -392,38 +640,103 @@
               <!-- [C-CDA 1.1] Problem Concern Act -->
               <templateId root="2.16.840.1.113883.10.20.22.4.3" />
               <!-- [C-CDA 2.1] Problem Concern Act (V3) -->
-              <templateId extension="2015-08-01"
-                root="2.16.840.1.113883.10.20.22.4.3" />
-              <id root="420ffc00-7bd3-4191-82cd-1ebd4367f6a6" />
-              <code code="CONC" codeSystem="2.16.840.1.113883.5.6"
-                displayName="Concern" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.3" />
+              <id root="a1c0c380-eacc-4b40-9207-85164185558d" />
+              <code code="CONC" codeSystem="2.16.840.1.113883.5.6" displayName="Concern" />
               <statusCode code="active" />
               <effectiveTime>
                 <low value="20250216" />
               </effectiveTime>
+              <!-- V1:  First Problem Observation: Difficulty Breathing -->
               <entryRelationship typeCode="SUBJ">
-                <observation classCode="OBS" moodCode="EVN"
-                  negationInd="false">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
                   <!-- [C-CDA R1.1] Problem Observation -->
                   <templateId root="2.16.840.1.113883.10.20.22.4.4" />
-                  <templateId extension="2015-08-01"
-                    root="2.16.840.1.113883.10.20.22.4.4" />
-                  <id root="5024cf76-074d-471b-b0f2-1330f73aa45f" />
-                  <code code="75325-1"
-                    codeSystem="2.16.840.1.113883.6.1"
-                    codeSystemName="LOINC" displayName="SYMPTOM">
-                    <translation code="418799008"
-                      codeSystem="2.16.840.1.113883.6.96"
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <id root="1ab9be3d-7d95-478c-9db1-655bd93f7040" />
+                  <code code="75325-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="SYMPTOM">
+                    <translation code="418799008" codeSystem="2.16.840.1.113883.6.96"
                       codeSystemName="SNOMED CT" displayName="SYMPTOM" />
                   </code>
                   <statusCode code="completed" />
                   <effectiveTime>
                     <low value="20250216" />
                   </effectiveTime>
-                  <value code="230145002"
-                    codeSystem="2.16.840.1.113883.6.96"
+                  <value code="230145002" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT" displayName="Difficulty Breathing (finding)"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V2: Second Problem Observation: Coronavirus infection -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <!-- [C-CDA R1.1] Problem Observation -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Problem Observation -->
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.3" />
+                  <id root="1ea2fc61-9b88-4fd1-a43c-6e3f7502e0e8" />
+                  <code code="75325-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="SYMPTOM">
+                    <translation code="418799008" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="SYMPTOM" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20250216" />
+                  </effectiveTime>
+                  <value code="186747009" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT" displayName="Coronavirus infection (disorder)"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V3: Third Problem Observation: COVID-19 confirmed -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <!-- [C-CDA R1.1] Problem Observation -->
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Problem Observation -->
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.3" />
+                  <id root="5e3c9b57-fa2e-48a2-be29-47d9873e3c13" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="Condition" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20250221" />
+                  </effectiveTime>
+                  <value code="840539006" codeSystem="2.16.840.1.113883.6.96"
                     codeSystemName="SNOMED-CT"
-                    displayName="Difficulty Breathing"
+                    displayName="Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V3: Fourth Problem Observation: Influenza -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.3" />
+                  <id root="7f32bd91-c5f3-422b-8a9d-3bc24c1e8bc1" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="Condition" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20250221" />
+                  </effectiveTime>
+                  <value code="719865001" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Influenza A virus infection (disorder)"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
                     xsi:type="CD" />
                 </observation>
               </entryRelationship>
@@ -475,17 +788,16 @@
               </thead>
               <tbody>
                 <tr>
-                  <td>SARS-like Coronavirus N gene [Presence] in
-                    Unspecified specimen by NAA with probe
-                    detection</td>
+                  <td>SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with
+                    probe detection</td>
                   <td />
                 </tr>
                 <tr>
                   <td>
                     <list>
                       <item>
-                        <paragraph>*** In the table below, row entries
-                          with values under RCTC columns triggered this
+                        <paragraph>*** In the table below, row entries with values under RCTC
+                          columns triggered this
                           Electronic Initial Case Report (eICR)</paragraph>
                         <table>
                           <thead>
@@ -501,9 +813,49 @@
                           </thead>
                           <tbody>
                             <tr>
-                              <td>SARS-like Coronavirus N gene [Presence] in
-                                Unspecified specimen by NAA with probe
-                                detection</td>
+                              <td>SARS-like Coronavirus N gene [Presence] in Unspecified specimen by
+                                NAA with probe detection</td>
+                              <td>2.16.840.1.114222.4.11.7508</td>
+                              <td>20250221</td>
+                              <td>Detected (qualifier value)</td>
+                              <td>02/21/2025</td>
+                              <td />
+                              <td />
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Influenza virus A subtype H5N1 RNA [Presence] in Respiratory specimen by NAA
+                    with probe detection</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td>
+                    <list>
+                      <item>
+                        <paragraph>*** In the table below, row entries with values under RCTC
+                          columns triggered this
+                          Electronic Initial Case Report (eICR)</paragraph>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Test</th>
+                              <th>Lab Test RCTC OID ***</th>
+                              <th>Lab Test RCTC Version ***</th>
+                              <th>Outcome</th>
+                              <th>Date(s)</th>
+                              <th>Lab Result RCTC OID ***</th>
+                              <th>Lab Result RCTC Version ***</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Influenza virus A RNA [Presence] in Respiratory specimen by NAA
+                                with probe detection</td>
                               <td>2.16.840.1.114222.4.11.7508</td>
                               <td>20250221</td>
                               <td>Detected (qualifier value)</td>
@@ -520,17 +872,15 @@
               </tbody>
             </table>
           </text>
+          <!-- COVID-19 Test Result Entry -->
           <entry typeCode="DRIV">
             <organizer classCode="BATTERY" moodCode="EVN">
               <!-- [C-CDA R1.1] Result Organizer -->
               <templateId root="2.16.840.1.113883.10.20.22.4.1" />
               <!-- [C-CDA R2.1] Result Organizer (V3) -->
-              <templateId extension="2015-08-01"
-                root="2.16.840.1.113883.10.20.22.4.1" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
               <id root="2047cca3-559f-45da-8775-406538fa4815" />
-              <code code="94310-0 "
-                codeSystem="2.16.840.1.113883.6.1"
-                codeSystemName="LOINC"
+              <code code="94310-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
                 displayName="SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection" />
               <statusCode code="completed" />
               <effectiveTime>
@@ -542,25 +892,56 @@
                   <!-- [C-CDA R1.1] Result Observation -->
                   <templateId root="2.16.840.1.113883.10.20.22.4.2" />
                   <!-- [C-CDA R2.1] Result Observation (V3) -->
-                  <templateId extension="2015-08-01"
-                    root="2.16.840.1.113883.10.20.22.4.2" />
-                  <templateId extension="2016-12-01"
-                    root="2.16.840.1.113883.10.20.15.2.3.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
                   <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Result Observation -->
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.2" />
                   <id root="9890e2c3-019a-4168-8403-a0a069994440" />
-                  <code code="94310-0 "
-                    codeSystem="2.16.840.1.113883.6.1"
-                    codeSystemName="LOINC"
+                  <code code="94310-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
                     displayName="SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection"
-                    sdtc:valueSet="2.16.840.1.114222.4.11.7508"
-                    sdtc:valueSetVersion="20200429" xsi:type="CD" />
-                  <statusCode code="completed" />
-                  <effectiveTime value="20200513" />
-                  <value code="260373001"
-                    codeSystem="2.16.840.1.113883.6.96"
-                    codeSystemName="SNOMED-CT"
-                    displayName="Detected (qualifier value)"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250221"
                     xsi:type="CD" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" /> <!-- Fixed date from 2020 to 2025 -->
+                  <value code="260373001" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Detected (qualifier value)" xsi:type="CD" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+          <!-- Influenza Test Result Entry -->
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <!-- [C-CDA R1.1] Result Organizer -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" />
+              <!-- [C-CDA R2.1] Result Organizer (V3) -->
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
+              <id root="3f4b84f1-d3f6-4731-8e61-7c63d8f39a70" />
+              <code code="34487-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20250221" />
+                <high value="20250221" />
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <!-- [C-CDA R1.1] Result Observation -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <!-- [C-CDA R2.1] Result Observation (V3) -->
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Result Observation -->
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.2" />
+                  <id root="6c53c5ff-42a9-4f3c-a2c0-d412f019c0de" />
+                  <code code="34487-9" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Influenza virus A RNA [Presence] in Respiratory specimen by NAA with probe detection"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250221"
+                    xsi:type="CD" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value code="260373001" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Detected (qualifier value)" xsi:type="CD" />
                 </observation>
               </component>
             </organizer>
@@ -579,9 +960,8 @@
             codeSystemName="LOINC" displayName="Plan of Treatment" />
           <title>Plan of Treatment</title>
           <text>
-            <paragraph>*** In the table below, row entries with values under
-              RCTC columns triggered this Electronic Initial Case Report
-              (eICR)</paragraph>
+            <paragraph>*** In the table below, row entries with values under RCTC columns triggered
+              this Electronic Initial Case Report (eICR)</paragraph>
             <table>
               <thead>
                 <tr>
@@ -595,38 +975,202 @@
               </thead>
               <tbody>
                 <tr>
-                  <td>SARS-like Coronavirus N gene [Presence] in
-                    Unspecified specimen by NAA with probe
+                  <td>SARS-CoV-2 (COVID-19) RNA panel - Respiratory specimen by NAA with probe
                     detection</td>
-                  <td>94310-0 </td>
+                  <td>94500-6</td>
                   <td>LOINC</td>
                   <td>2.16.840.1.114222.4.11.7508</td>
-                  <td>20200429</td>
+                  <td>20250216</td>
+                  <td>02/17/2025</td>
+                </tr>
+                <tr>
+                  <td>Influenza virus A RNA panel</td>
+                  <td>25836-8</td>
+                  <td>LOINC</td>
+                  <td>2.16.840.1.114222.4.11.7508</td>
+                  <td>20250216</td>
                   <td>02/17/2025</td>
                 </tr>
               </tbody>
             </table>
+
+            <paragraph>Medications</paragraph>
+            <list>
+              <item>Remdesivir 100mg IV daily for 5 days for COVID-19</item>
+              <item>Oseltamivir (Tamiflu) 75mg capsule PO twice daily for 5 days for Influenza A</item>
+            </list>
+
+            <paragraph>Follow-up</paragraph>
+            <list>
+              <item>Follow-up telehealth visit in 3 days to assess response to treatment</item>
+            </list>
           </text>
+          <!-- SARS-CoV-2 Test Order -->
           <entry typeCode="DRIV">
             <!-- This is a request for a test to be performed (a lab test order) -->
             <observation classCode="OBS" moodCode="RQO">
               <!-- [C-CDA R1.1] Plan of Care Activity Observation -->
               <templateId root="2.16.840.1.113883.10.20.22.4.44" />
               <!-- [C-CDA R2.0] Planned Observation (V2) -->
-              <templateId extension="2014-06-09"
-                root="2.16.840.1.113883.10.20.22.4.44" />
-              <templateId extension="2016-12-01"
-                root="2.16.840.1.113883.10.20.15.2.3.4" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.44" extension="2014-06-09" />
               <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Lab Test Order -->
-              <id root="f2a3031b-f71a-4296-9bcd-fdf30031f68f" />
-              <code code="94310-0 " codeSystem="2.16.840.1.113883.6.1"
-                codeSystemName="LOINC"
-                displayName="SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection"
+              <templateId root="2.16.840.1.113883.10.20.15.2.3.4" extension="2016-12-01" />
+              <id root="b52bee94-c34b-4e2b-9187-3f2150c7d331" />
+              <code code="94500-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="SARS-CoV-2 (COVID-19) RNA panel - Respiratory specimen by NAA with probe detection"
                 sdtc:valueSet="2.16.840.1.114222.4.11.7508"
-                sdtc:valueSetVersion="20200429" />
+                sdtc:valueSetVersion="20250216" />
               <statusCode code="active" />
               <effectiveTime value="20250217" />
             </observation>
+          </entry>
+          <!-- Influenza Test Order -->
+          <entry typeCode="DRIV">
+            <!-- This is a request for a test to be performed (a lab test order) -->
+            <observation classCode="OBS" moodCode="RQO">
+              <!-- [C-CDA R1.1] Plan of Care Activity Observation -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.44" />
+              <!-- [C-CDA R2.0] Planned Observation (V2) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.44" extension="2014-06-09" />
+              <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Lab Test Order -->
+              <templateId root="2.16.840.1.113883.10.20.15.2.3.4" extension="2016-12-01" />
+              <id root="4d2f0987-7a37-4f48-9dab-71c34fd837c2" />
+              <code code="25836-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="Influenza virus A RNA panel"
+                sdtc:valueSet="2.16.840.1.114222.4.11.7508"
+                sdtc:valueSetVersion="20250216" />
+              <statusCode code="active" />
+              <effectiveTime value="20250217" />
+            </observation>
+          </entry>
+          <!-- COVID Medication -->
+          <entry>
+            <!-- This is a medication planned to be administered to the patient -->
+            <substanceAdministration classCode="SBADM" moodCode="INT">
+              <!-- [C-CDA R1.1] Medication Activity -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" />
+              <!-- [C-CDA R2.1] Medication Activity (V2) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09" />
+              <id root="cdbd33f0-6cde-11db-9fe1-0800200c9a66" />
+              <statusCode code="active" />
+              <!-- Start and end dates for the medication -->
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20250221" />
+                <high value="20250226" />
+              </effectiveTime>
+              <!-- Frequency of administration (daily) -->
+              <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                <period value="24" unit="h" />
+              </effectiveTime>
+              <routeCode code="47625008" codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT" displayName="Intravenous route" />
+              <doseQuantity value="100" unit="mg" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <!-- [C-CDA R1.1] Medication Information -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" />
+                  <!-- [C-CDA R2.1] Medication Information (V2) -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09" />
+                  <id root="2a620155-9d11-439e-92b3-5d9815ff4ee7" />
+                  <manufacturedMaterial>
+                    <code code="2284960" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"
+                      displayName="remdesivir 100 MG Injection">
+                      <originalText>Remdesivir 100mg IV daily for 5 days</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <!-- Reason for medication (indication) -->
+              <entryRelationship typeCode="RSON">
+                <observation classCode="OBS" moodCode="EVN">
+                  <!-- [C-CDA R1.1] Indication -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" />
+                  <!-- [C-CDA R2.1] Indication (V2) -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" extension="2014-06-09" />
+                  <id root="db734647-fc99-424c-a864-7e3cda82e702" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition" />
+                  <statusCode code="completed" />
+                  <value xsi:type="CD" code="840539006" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)" />
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <!-- Influenza Medication -->
+          <entry>
+            <!-- This is a medication planned to be administered to the patient -->
+            <substanceAdministration classCode="SBADM" moodCode="INT">
+              <!-- [C-CDA R1.1] Medication Activity -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" />
+              <!-- [C-CDA R2.1] Medication Activity (V2) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09" />
+              <id root="91eb919e-5fc3-4a4b-9b22-3897c8e8e180" />
+              <statusCode code="active" />
+              <!-- Start and end dates for the medication -->
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20250221" />
+                <high value="20250227" />
+              </effectiveTime>
+              <!-- Frequency of administration (twice daily) -->
+              <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                <period value="12" unit="h" />
+              </effectiveTime>
+              <routeCode code="26643006" codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT" displayName="Oral route" />
+              <doseQuantity value="1" unit="capsule" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <!-- [C-CDA R1.1] Medication Information -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" />
+                  <!-- [C-CDA R2.1] Medication Information (V2) -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09" />
+                  <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8" />
+                  <manufacturedMaterial>
+                    <code code="371005" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"
+                      displayName="Oseltamivir 75 MG Oral Capsule">
+                      <originalText>Oseltamivir (Tamiflu) 75mg capsule PO twice daily for 5 days</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <!-- Reason for medication (indication) -->
+              <entryRelationship typeCode="RSON">
+                <observation classCode="OBS" moodCode="EVN">
+                  <!-- [C-CDA R1.1] Indication -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" />
+                  <!-- [C-CDA R2.1] Indication (V2) -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" extension="2014-06-09" />
+                  <id root="db734647-fc99-424c-a864-7e3cda82e703" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition" />
+                  <statusCode code="completed" />
+                  <value xsi:type="CD" code="772828001" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Influenza caused by Influenza A virus subtype H5N1 (disorder)" />
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <!-- Follow-up Visit -->
+          <entry>
+            <!-- This is a planned encounter -->
+            <encounter classCode="ENC" moodCode="INT">
+              <!-- [C-CDA R1.1] Plan of Care Activity Encounter -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.40" />
+              <!-- [C-CDA R2.1] Planned Encounter (V2) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.40" extension="2014-06-09" />
+              <id root="5a784260-6856-4f38-9638-80c751aff2fb" />
+              <code code="270427003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"
+                displayName="Patient-initiated encounter" />
+              <statusCode code="active" />  <!-- Adding required statusCode -->
+              <effectiveTime value="20250224" />
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1184-0" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation" displayName="Telemedicine" />
+                </participantRole>
+              </participant>
+            </encounter>
           </entry>
         </section>
       </component>
