@@ -8,7 +8,7 @@ export function Home() {
         <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
           <div className="flex w-2/3 flex-col gap-8">
             <div className="flex flex-col items-start gap-4">
-              <h1 className="font-merriweather !m-0 font-bold lg:!text-5xl">
+              <h1 className="font-merriweather font-bold lg:!text-5xl">
                 Focus on what matters.
               </h1>
               <p className="text-lg font-normal lg:text-2xl">

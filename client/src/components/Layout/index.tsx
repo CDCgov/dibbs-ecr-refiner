@@ -49,7 +49,7 @@ export function Footer() {
           </a>
         </div>
         <div>
-          <p className="!m-0 !p-0 text-white">
+          <p className="text-white">
             For more information about this solution, send us an email at{' '}
             <a
               className="font-bold hover:underline"

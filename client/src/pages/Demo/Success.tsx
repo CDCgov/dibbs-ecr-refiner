@@ -60,13 +60,12 @@ export function Success({ conditions, unrefinedEicr }: SuccessProps) {
       <hr className="border-blue-cool-20 mt-12 mb-12" />
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <Label htmlFor="condition-select" className="text-bold !m-0">
+          <Label htmlFor="condition-select" className="text-bold">
             CONDITION:
           </Label>
           <Select
             id="condition-select"
             name="condition-select"
-            className="!m-0"
             defaultValue={selectedCondition.code}
             onChange={onChange}
           >
