@@ -41,3 +41,7 @@ The linter can be run two different ways: either manually via the `ruff` command
 3. Run `pre-commit run --all-files` to check that the tool is working properly
 
 The `pre-commit` hook will automatically fix any linter issues and will also format the code.
+
+## Type checking
+
+The Refiner's Python server code is type checked using `mypy`. Activate your virtual envrionment and install all dependencies (using the directions above) and run `mypy` in your terminal within the `refiner` directory.
