@@ -4,6 +4,7 @@ import SuccessSvg from '../../assets/green-check.svg';
 import XMLViewer from 'react-xml-viewer';
 import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
+import { Title } from './Title';
 
 interface SuccessProps {
   conditions: Condition[];
@@ -55,9 +56,7 @@ export function Success({ conditions, unrefinedEicr }: SuccessProps) {
 
   return (
     <div>
-      <h2 className="font-merriweather text-3xl font-bold text-black">
-        eCR refinement results
-      </h2>
+      <Title>eCR refinement results</Title>
       <hr className="border-blue-cool-20 mt-12 mb-12" />
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">

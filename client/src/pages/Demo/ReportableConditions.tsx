@@ -1,6 +1,7 @@
 import { Container, Content } from './Layout';
 import InformationSvg from '../../assets/information.svg';
 import { Button } from '../../components/Button';
+import { Title } from './Title';
 
 interface ReportableConditionsProps {
   conditionNames: string[];
@@ -12,9 +13,7 @@ export function ReportableConditions({
 }: ReportableConditionsProps) {
   return (
     <div className="flex flex-col gap-12">
-      <h2 className="font-merriweather text-3xl font-bold text-black">
-        Test filter
-      </h2>
+      <Title>Test filter</Title>
       <Container color="blue">
         <Content className="flex flex-col items-center">
           <img className="p-3" src={InformationSvg} alt="Information icon" />

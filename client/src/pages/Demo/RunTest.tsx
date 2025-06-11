@@ -2,6 +2,7 @@ import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
+import { Title } from './Title';
 
 interface RunTestProps {
   onClick: () => void;
@@ -9,9 +10,9 @@ interface RunTestProps {
 export function RunTest({ onClick }: RunTestProps) {
   return (
     <div className="flex flex-col gap-12">
-      <h2 className="font-merriweather text-3xl font-bold text-black">
+      <Title>
         Test filter
-      </h2>
+      </Title>
       <div className="flex flex-col gap-6 xl:flex-row">
         <Container color="white">
           <Content className="flex items-start gap-6">
