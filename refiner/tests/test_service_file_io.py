@@ -12,8 +12,6 @@ from app.core.exceptions import (
 from app.core.models.types import XMLFiles
 from app.services import file_io
 
-from .conftest import EICR_FILENAME
-
 
 class MockFileUpload:
     def __init__(self, content: bytes):
@@ -136,24 +134,28 @@ async def test_zip_missing_eicr(test_assets_path, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_zip_with_only_eicr(test_assets_path, tmp_path):
+async def test_zip_missing_rr(test_assets_path, tmp_path):
     """
-    Test that zip with only eICR file is valid.
+    Test validation when RR file is missing.
     """
 
-    # create zip with only eICR file
+    # create zip with only RR file
     test_zip = tmp_path / "test.zip"
     with ZipFile(test_zip, "w") as zf:
-        zf.write(test_assets_path / "CDA_eICR.xml", EICR_FILENAME)
+        # Copy the existing eICR file but use the expected name
+        with open(
+            test_assets_path / "mon-mothma-covid-lab-positive_eicr.xml", "rb"
+        ) as src:
+            zf.writestr("CDA_eICR.xml", src.read())
 
     with open(test_zip, "rb") as f:
         mock_file = MockFileUpload(f.read())
 
-    # should not raise an error since RR is optional
-    xml_files = await file_io.read_xml_zip(mock_file)
-    assert isinstance(xml_files, XMLFiles)
-    assert xml_files.eicr is not None
-    assert xml_files.rr is None
+    with pytest.raises(ZipValidationError) as exc_info:
+        await file_io.read_xml_zip(mock_file)
+
+    error = exc_info.value
+    assert "CDA_RR.xml not found" in str(error)
 
 
 @pytest.mark.asyncio

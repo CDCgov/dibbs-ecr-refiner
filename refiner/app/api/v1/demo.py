@@ -8,6 +8,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -142,7 +143,7 @@ def _get_refined_ecr_output_dir() -> Path:
     """
     Dependency injected function responsible for getting the processed eCR output directory path.
     """
-    return REFINED_ECR_DIR
+    return Path(REFINED_ECR_DIR)
 
 
 @router.get("/upload")
@@ -173,7 +174,7 @@ async def demo_upload(
     upload_file = UploadFile(
         file=file_like,
         filename=filename,
-        headers={"Content-Type": "application/zip"},
+        headers=Headers({"Content-Type": "application/zip"}),
     )
 
     try:
