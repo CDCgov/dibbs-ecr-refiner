@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -26,7 +26,7 @@ log = logging.getLogger(__name__).error
 REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 # extract section LOINC codes from the REFINER_DETAILS dictionary
-SECTION_LOINCS = list(REFINER_DETAILS["sections"].keys())
+SECTION_LOINCS = set(REFINER_DETAILS["sections"].keys())
 
 # <text> constants for refined sections
 REFINER_OUTPUT_TITLE = (
@@ -124,10 +124,13 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
     try:
         # the summary section (55112-7) must contain exactly one RR11 organizer
         # this is specified in the RR IG
-        coded_info_organizers = root.xpath(
-            ".//cda:section[cda:code/@code='55112-7']"
-            "//cda:entry/cda:organizer[cda:code/@code='RR11']",
-            namespaces=namespaces,
+        coded_info_organizers = cast(
+            list[_Element],
+            root.xpath(
+                ".//cda:section[cda:code/@code='55112-7']"
+                "//cda:entry/cda:organizer[cda:code/@code='RR11']",
+                namespaces=namespaces,
+            ),
         )
 
         # if there is no coded information organizer then the RR is not valid
@@ -146,9 +149,12 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
 
         # find all condition observations using the specified templateId
         # This templateId is fixed in the RR spec and identifies condition observations
-        observations = coded_info_organizer.xpath(
-            ".//cda:observation[cda:templateId[@root='2.16.840.1.113883.10.20.15.2.3.12']]",
-            namespaces=namespaces,
+        observations = cast(
+            list[_Element],
+            coded_info_organizer.xpath(
+                ".//cda:observation[cda:templateId[@root='2.16.840.1.113883.10.20.15.2.3.12']]",
+                namespaces=namespaces,
+            ),
         )
 
         for observation in observations:
@@ -165,9 +171,12 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
             # per RR spec, each reportable condition observation MUST contain
             # a valid SNOMED CT code (CONF:3315-552) in its value element
             # codeSystem 2.16.840.1.113883.6.96 is required for SNOMED CT
-            value = observation.xpath(
-                ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
-                namespaces=namespaces,
+            value = cast(
+                list[_Element],
+                observation.xpath(
+                    ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
+                    namespaces=namespaces,
+                ),
             )
             if not value:
                 continue
@@ -336,7 +345,9 @@ def _process_section(
 
     try:
         # find all matching observations using ProcessedGrouper XPath
-        observations = section.xpath(combined_xpath, namespaces=namespaces)
+        observations = cast(
+            list[_Element], section.xpath(combined_xpath, namespaces=namespaces)
+        )
 
         if observations:
             # process matching observations
@@ -443,7 +454,9 @@ def _get_section_by_code(
 
     try:
         xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
-        section = structured_body.xpath(xpath_query, namespaces=namespaces)
+        section = cast(
+            list[_Element], structured_body.xpath(xpath_query, namespaces=namespaces)
+        )
         if section is not None and len(section) == 1:
             return section[0]
     except etree.XPathEvalError as e:
@@ -465,7 +478,7 @@ def _find_path_to_entry(element: _Element) -> _Element | None:
         The entry element, or None if no entry ancestor found
     """
 
-    current_element = element
+    current_element: _Element | None = element
 
     # walk up the tree until we find an entry element
     while (
@@ -498,7 +511,9 @@ def _prune_unwanted_siblings(
     # find all entries in the section
     namespaces = {"hl7": "urn:hl7-org:v3"}
 
-    all_entries = section.xpath(".//hl7:entry", namespaces=namespaces)
+    all_entries = cast(
+        list[_Element], section.xpath(".//hl7:entry", namespaces=namespaces)
+    )
 
     # remove entries not in our keep list
     for entry in all_entries:
@@ -510,7 +525,7 @@ def _prune_unwanted_siblings(
 
 def _extract_observation_data(
     observation: _Element,
-) -> dict[str, str | bool]:
+) -> dict[str, str | bool | None]:
     """
     Extract data from an observation element.
 
@@ -525,12 +540,11 @@ def _extract_observation_data(
     """
 
     # find the code element
-    if observation.tag.endswith("code"):
-        code_element = observation
-    else:
-        code_element = observation.find(
-            ".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"}
-        )
+    code_element: _Element | None = (
+        observation
+        if observation.tag.endswith("code")
+        else observation.find(".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"})
+    )
 
     # extract basic information
     display_text = code_element.get("displayName") if code_element is not None else None
@@ -576,7 +590,10 @@ def _create_or_update_text_element(observations: list[_Element]) -> _Element:
         row = etree.SubElement(table_element, "tr")
         for key in headers[:-1]:  # Exclude the last header as it's for the boolean flag
             td = etree.SubElement(row, "td")
-            td.text = data[key.lower().replace(" ", "_")]
+            value = data[key.lower().replace(" ", "_")]
+            if value is not None and not isinstance(value, str):
+                value = str(value)
+            td.text = value
 
         # add boolean flag for matching condition code (always TRUE since we only keep matches)
         td = etree.SubElement(row, "td")

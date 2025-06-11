@@ -86,7 +86,7 @@ class GrouperOperations:
         except sqlite3.Error as e:
             raise DatabaseQueryError(
                 message="Failed to query grouper",
-                detail={"condition": condition, "error": str(e)},
+                details={"condition": condition, "error": str(e)},
             )
         except DatabaseConnectionError:
             # re-raise database connection errors

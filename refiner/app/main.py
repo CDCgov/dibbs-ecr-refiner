@@ -54,7 +54,7 @@ app = BaseService(
 # set service_path in app state
 # add open api configuration
 app.state.service_path = "/api"
-app.openapi = lambda: create_custom_openapi(app)
+app.openapi = lambda: create_custom_openapi(app)  # type: ignore
 
 # include the router in the app
 app.include_router(router)
