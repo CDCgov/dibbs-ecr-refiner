@@ -10,9 +10,7 @@ interface RunTestProps {
 export function RunTest({ onClick }: RunTestProps) {
   return (
     <div className="flex flex-col gap-12">
-      <Title>
-        Test filter
-      </Title>
+      <Title>Test filter</Title>
       <div className="flex flex-col gap-6 xl:flex-row">
         <Container color="white">
           <Content className="flex items-start gap-6">

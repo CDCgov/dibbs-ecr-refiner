@@ -1,7 +1,8 @@
 @import 'tailwindcss';
 
 @layer base {
-  html,select {
+  html,
+  select {
     @apply !font-public-sans;
   }
   h1,
@@ -13,8 +14,9 @@
   p {
     @apply !m-0 !p-0;
   }
-  label,select {
-    @apply !m-0
+  label,
+  select {
+    @apply !m-0;
   }
 }
 @layer utilities {
