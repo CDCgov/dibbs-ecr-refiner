@@ -4,7 +4,7 @@ import { Button } from '../../components/Button';
 export function Home() {
   return (
     <>
-      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-4 lg:p-38">
+      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
         <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
           <div className="flex w-2/3 flex-col gap-8">
             <div className="flex flex-col items-start gap-4">
