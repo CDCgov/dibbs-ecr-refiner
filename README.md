@@ -1,6 +1,6 @@
 # DIBBs eCR Refiner
 
-The DIBBs eCR Refiner tailors each Electronic Case Report (eCR) to retain only the data jurisdictions need — providing tools for reducing file size, increasing data relevancy, and safeguarding sensitive patient information.
+The DIBBs eCR Refiner reduces eICR and RR files down to only the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
 
 ## Running the project locally
 
