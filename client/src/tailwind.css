@@ -1,11 +1,24 @@
 @import 'tailwindcss';
 
 @layer base {
-  html {
+  html,
+  select {
     @apply !font-public-sans;
   }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p {
+    @apply !m-0 !p-0;
+  }
+  label,
+  select {
+    @apply !m-0;
+  }
 }
-
 @layer utilities {
   .border-thin {
     @apply border-1;
@@ -16,13 +29,19 @@
   --font-public-sans: 'Public Sans Variable', 'sans-serif';
   --font-merriweather: 'Merriweather Variable', 'serif';
 
+  --color-primary-container: #3a7d950d;
+
   --color-blue-100: #e8f5ff;
   --color-blue-300: #0076d6;
   --color-blue-500: #112f4e;
 
+  --color-blue-cool-5: #e7f2f5;
+  --color-blue-cool-10: #dae9ee;
   --color-blue-cool-20: #adcfdc;
   --color-blue-cool-40: #6499af;
+  --color-blue-cool-50: #3a7d95;
   --color-blue-cool-60: #2e6276;
+  --color-blue-cool-80: #14333d;
 
   --color-gray-100: #fbfcfd;
   --color-gray-200: #f3f3f3;
