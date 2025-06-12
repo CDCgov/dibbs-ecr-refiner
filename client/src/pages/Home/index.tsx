@@ -1,29 +1,17 @@
-import { Link } from 'react-router';
-import DibbsLogo from '../../assets/dibbs-logo.svg';
-import PlaceholderImg from '../../assets/home/placeholder.png';
+import IllustrationImg from '../../assets/home/illustration.svg';
 import { Button } from '../../components/Button';
 
 export function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="p-10">
-        <header className="flex items-center">
-          <Link to="/">
-            <h1 className="flex gap-3">
-              <img src={DibbsLogo} alt="DIBBs" />
-              <span className="font-merriweather text-2xl">eCR Refiner</span>
-            </h1>
-          </Link>
-        </header>
-      </div>
-      <main className="flex grow flex-col">
-        <div className="flex flex-col items-center justify-center gap-16 lg:flex-row">
-          <div className="flex flex-col gap-8 p-10 xl:p-0">
-            <div className="flex max-w-[36rem] flex-col items-start gap-4">
-              <h1 className="font-merriweather !m-0 !text-5xl font-bold">
+    <>
+      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
+        <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
+          <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
+            <div className="flex flex-col items-start gap-4">
+              <h1 className="font-merriweather font-bold lg:!text-5xl">
                 Focus on what matters.
               </h1>
-              <p className="text-2xl font-normal">
+              <p className="text-lg font-normal lg:text-2xl">
                 eCR Refiner tailors each case report to retain only the data
                 jurisdictions need — providing tools for reducing file size,
                 increasing data relevancy, and safeguarding sensitive patient
@@ -36,21 +24,21 @@ export function Home() {
               </Button>
             </div>
           </div>
-          <div>
-            <img className="max-h-[500px]" src={PlaceholderImg} alt="" />
-          </div>
+          <img className="lg:w-1/3" src={IllustrationImg} alt="" />
         </div>
-        <HowItWorks />
-      </main>
-    </div>
+      </div>
+      <HowItWorks />
+    </>
   );
 }
 
 function HowItWorks() {
   return (
-    <div className="flex grow flex-col items-center gap-6 gap-13 bg-blue-100 px-10 py-20 xl:px-34">
-      <h2 className="text-4xl font-bold text-black">How it works</h2>
-      <ol className="flex flex-col gap-10 md:justify-between lg:flex-row">
+    <div className="flex flex-col items-center gap-13 px-10 py-10 xl:px-34">
+      <h2 className="text-2xl font-bold text-black lg:text-4xl">
+        How it works
+      </h2>
+      <ol className="flex flex-col gap-6 md:justify-between lg:flex-row">
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
           <p>
