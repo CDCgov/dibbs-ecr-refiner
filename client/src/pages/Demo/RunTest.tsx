@@ -74,9 +74,9 @@ function UploadZipFile({
         accept=".zip"
         onChange={onSelectedFileChange}
       />
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         {selectedFile ? <p>{selectedFile.name}</p> : null}
-        <div>
+        <div className="flex items-center gap-4">
           {selectedFile ? (
             <Button onClick={onClick}>Upload .zip file</Button>
           ) : null}
