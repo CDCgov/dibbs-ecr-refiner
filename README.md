@@ -2,6 +2,8 @@
 
 The DIBBs eCR Refiner reduces eICR and RR files down to only the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
 
+For more detailed information about the relationship between the eICR and RR documents and what informs the design of the eCR Refiner please see [this document](/refiner/eCR-CDA-Notes.md).
+
 ## Running the project locally
 
 The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `.docker-compose.yaml` file:
