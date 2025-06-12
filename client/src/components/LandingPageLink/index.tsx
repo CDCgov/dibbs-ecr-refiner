@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 export function LandingPageLink() {
   return (
     <Link
-      className="flex items-center gap-2 self-start text-blue-300 underline-offset-4 hover:underline"
+      className="text-blue-cool-50 flex items-center gap-2 self-start underline-offset-4 hover:underline"
       to="/"
     >
       <svg
@@ -12,7 +12,7 @@ export function LandingPageLink() {
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="fill-blue-300"
+        className="fill-blue-cool-50"
       >
         <path
           fillRule="evenodd"

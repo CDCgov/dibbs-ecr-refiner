@@ -5,6 +5,7 @@ from zipfile import BadZipFile, ZipFile
 
 from chardet import detect
 from lxml import etree
+from lxml.etree import _Element
 
 from ..core.exceptions import (
     FileProcessingError,
@@ -46,7 +47,7 @@ def read_json_asset(filename: str) -> dict:
         return json.load(f)
 
 
-def parse_xml(xml_content: str | bytes) -> etree.Element:
+def parse_xml(xml_content: str | bytes) -> _Element:
     """
     Parse XML content into an element tree.
 
@@ -54,7 +55,7 @@ def parse_xml(xml_content: str | bytes) -> etree.Element:
         xml_content: XML content as string or bytes
 
     Returns:
-        etree.Element: Parsed XML element tree
+        _Element: Parsed XML element tree
 
     Raises:
         XMLValidationError: If XML is invalid or empty
@@ -118,6 +119,19 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
             if not eicr_xml:
                 raise ZipValidationError(
                     message="Required file CDA_eICR.xml not found in ZIP",
+                    details={
+                        "files_found": [
+                            f
+                            for f in z.namelist()
+                            if not (f.startswith("__MACOSX/") or f.startswith("._"))
+                        ],
+                        "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
+                    },
+                )
+
+            if not rr_xml:
+                raise ZipValidationError(
+                    message="Required file CDA_RR.xml not found in ZIP",
                     details={
                         "files_found": [
                             f

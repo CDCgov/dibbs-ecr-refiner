@@ -30,7 +30,7 @@ class BaseService:
         self,
         service_name: str,
         service_path: str,
-        description_path: str,
+        description_path: Path,
         lifespan: Lifespan[FastAPI],
         include_health_check_endpoint: bool = True,
         license_info: Literal["CreativeCommonsZero", "MIT"] = "CreativeCommonsZero",
@@ -54,7 +54,7 @@ class BaseService:
                 Defaults to "/openapi.json".
         """
 
-        description = Path(description_path).read_text(encoding="utf-8")
+        description = description_path.read_text(encoding="utf-8")
         self.service_path = service_path
         self.include_health_check_endpoint = include_health_check_endpoint
         self.app = FastAPI(
