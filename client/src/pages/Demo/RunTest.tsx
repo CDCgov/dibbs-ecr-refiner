@@ -2,15 +2,18 @@ import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import { ChangeEvent } from 'react';
+import classNames from 'classnames';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
   onClickSampleFile: () => Promise<void>;
+  selectedFile: File | null;
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 export function RunTest({
   onSelectedFileChange,
   onClickCustomFile,
+  selectedFile,
   onClickSampleFile,
 }: RunTestProps) {
   return (
@@ -28,6 +31,7 @@ export function RunTest({
           </p>
           <UploadZipFile
             onClick={onClickCustomFile}
+            selectedFile={selectedFile}
             onSelectedFileChange={onSelectedFileChange}
           />
           <Button onClick={onClickSampleFile}>Run test</Button>
@@ -46,14 +50,45 @@ export function RunTest({
 
 interface UploadZipFile {
   onClick: () => Promise<void>;
+  selectedFile: RunTestProps['selectedFile'];
   onSelectedFileChange: RunTestProps['onSelectedFileChange'];
 }
 
-function UploadZipFile({ onClick, onSelectedFileChange }: UploadZipFile) {
+function UploadZipFile({
+  onClick,
+  selectedFile,
+  onSelectedFileChange,
+}: UploadZipFile) {
+  const labelStyling = classNames({
+    'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
+    'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer':
+      selectedFile,
+  });
+
   return (
     <div className="flex flex-col items-start gap-3">
-      <input type="file" accept=".zip" onChange={onSelectedFileChange} />
-      <Button onClick={onClick}>Upload .zip file</Button>
+      <input
+        id="zip-upload"
+        type="file"
+        className="hidden"
+        accept=".zip"
+        onChange={onSelectedFileChange}
+      />
+      <div className="flex flex-col gap-4">
+        {selectedFile ? <p>{selectedFile.name}</p> : null}
+        <div>
+          {selectedFile ? (
+            <Button onClick={onClick}>Upload .zip file</Button>
+          ) : null}
+          <label className={labelStyling} htmlFor="zip-upload">
+            {selectedFile ? (
+              <span>Change file</span>
+            ) : (
+              <span>Select .zip file</span>
+            )}
+          </label>
+        </div>
+      </div>
     </div>
   );
 }

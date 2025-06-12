@@ -25,6 +25,7 @@ export default function Demo() {
         setSelectedFile(file);
       } else {
         console.error('No file input or incorrect file type.');
+        setSelectedFile(null);
       }
     }
   }
@@ -64,6 +65,7 @@ export default function Demo() {
           <RunTest
             onClickSampleFile={runTestWithSampleFile}
             onClickCustomFile={runTestWithCustomFile}
+            selectedFile={selectedFile}
             onSelectedFileChange={onSelectedFileChange}
           />
         )}
