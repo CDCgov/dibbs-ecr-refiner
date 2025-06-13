@@ -3,17 +3,45 @@ import { Success } from './Success';
 import { ReportableConditions } from './ReportableConditions';
 import { Error } from './Error';
 import { RunTest } from './RunTest';
-import { useState } from 'react';
-import { DemoUploadResponse, uploadDemoFile } from '../../services/demo';
+import { ChangeEvent, useState } from 'react';
+import {
+  DemoUploadResponse,
+  uploadCustomZipFile,
+  uploadDemoFile,
+} from '../../services/demo';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
 export default function Demo() {
   const [view, setView] = useState<View>('run-test');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResponse, setUploadResponse] =
     useState<DemoUploadResponse | null>(null);
 
-  async function runTest() {
+  function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      if (file.name.endsWith('.zip')) {
+        setSelectedFile(file);
+      } else {
+        console.error('No file input or incorrect file type.');
+        setSelectedFile(null);
+      }
+    }
+  }
+
+  async function runTestWithCustomFile() {
+    try {
+      const resp = await uploadCustomZipFile(selectedFile);
+      setUploadResponse(resp);
+      setView('reportable-conditions');
+    } catch {
+      setUploadResponse(null);
+      setView('error');
+    }
+  }
+
+  async function runTestWithSampleFile() {
     try {
       const resp = await uploadDemoFile();
       setUploadResponse(resp);
@@ -33,7 +61,14 @@ export default function Demo() {
     <div className="flex justify-center px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
         <LandingPageLink />
-        {view === 'run-test' && <RunTest onClick={runTest} />}
+        {view === 'run-test' && (
+          <RunTest
+            onClickSampleFile={runTestWithSampleFile}
+            onClickCustomFile={runTestWithCustomFile}
+            selectedFile={selectedFile}
+            onSelectedFileChange={onSelectedFileChange}
+          />
+        )}
         {view === 'reportable-conditions' && uploadResponse && (
           <ReportableConditions
             conditionNames={uploadResponse.conditions.map(
