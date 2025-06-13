@@ -1,4 +1,4 @@
-# Schematron Validation in DIBBS ECR Refiner
+# Schematron Validation in DIBBs eCR Refiner
 
 This directory contains the Schematron files and supporting XSLT assets required for validating XML documents (eICR and RR) used in this project.
 
