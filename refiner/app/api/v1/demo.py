@@ -5,7 +5,7 @@ import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
@@ -21,7 +21,9 @@ FILE_NAME_SUFFIX = "refined_ecr.zip"
 file_store: dict[str, dict] = {}
 
 # File uploads
-MAX_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
+MAX_ALLOWED_FILE_COUNT = 2  # zip should only contain CDA_eICR.XML and CDA_RR.xml
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -164,24 +166,88 @@ def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
     return file
 
 
-def _validate_zip_file(file: UploadFile) -> UploadFile:
+def _get_zip_file_count(zip: ZipFile) -> int:
+    count = 0
+    for file in zip.infolist():
+        filename = file.filename
+        # skip macOS resource fork files
+        if filename.startswith("__MACOSX/") or filename.startswith("._"):
+            continue
+        count += 1
+    return count
+
+
+async def _validate_zip_file(file: UploadFile) -> UploadFile:
+    # Check extension
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only .zip files are allowed.",
         )
 
+    # Name safety check
+    if file.filename.startswith("."):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File name cannot start with a period (.).",
+        )
+
+    # Name safety check
+    if ".." in file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File name cannot contain multiple periods (.) in a row",
+        )
+
+    # Ensure file has content
     if file.size is None or file.size == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=".zip must not be empty.",
         )
 
-    if file.size > MAX_UPLOAD_FILE_SIZE:
+    # Ensure compressed size is valid
+    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=".zip file must be less than 10MB in size.",
         )
+
+    try:
+        file_content = await file.read()
+        with ZipFile(io.BytesIO(file_content)) as zf:
+            # Zip must contain only the two expected files
+            file_count = _get_zip_file_count(zf)
+            print(file_count)
+            if file_count > MAX_ALLOWED_FILE_COUNT:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f".zip must contain only 2 files: CDA_eICR.xml and CDA_RR.xml. Found {file_count} files.",
+                )
+
+            # Zip must be able to be processed
+            bad_file = zf.testzip()
+            if bad_file:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Corrupted file found in archive: {bad_file}",
+                )
+
+            # Uncompressed size must be acceptable
+            uncompressed_file_size = sum(zinfo.file_size for zinfo in zf.infolist())
+            if uncompressed_file_size > MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Uncompressed .zip file must not exceed 50MB in size.",
+                )
+
+    except BadZipFile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is not a valid zip archive.",
+        )
+
+    file.file.seek(0)
     return file
 
 
@@ -207,7 +273,7 @@ async def demo_upload(
 
     file = None
     if uploaded_file:
-        file = _validate_zip_file(uploaded_file)
+        file = await _validate_zip_file(uploaded_file)
     else:
         file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
