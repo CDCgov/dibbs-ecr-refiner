@@ -11,6 +11,7 @@ Accept: application/json
 ###
 
 # request with no parameters
+# this should return an error about conditions_to_include being required
 POST http://{{refiner}}/api/v1/ecr
 Content-Type: application/xml
 Accept: application/xml
@@ -21,6 +22,7 @@ Accept: application/xml
 
 # request with sections to include
 # we're passing the loinc code for the social history section
+# this should also return an error about conditions_to_include being required
 POST http://{{refiner}}/api/v1/ecr?sections_to_include=29762-2
 Content-Type: application/xml
 Accept: application/xml
@@ -29,20 +31,10 @@ Accept: application/xml
 
 ###
 
-# request with sections to include
-# we're passing in the loinc codes for the results (labs) and
-# reason for visit sections
-POST http://{{refiner}}/api/v1/ecr?sections_to_include=30954-2,29299-5
-Content-Type: application/xml
-Accept: application/xml
-
-< CDA_eICR.xml
-
-###
-
 # post request with conditions to include
-# we're passing the snomed code for chlamydia
-POST http://{{refiner}}/api/v1/ecr?conditions_to_include=240589008
+# we're passing the snomed code for covid and using
+# the sample data with one condition
+POST http://{{refiner}}/api/v1/ecr?conditions_to_include=840539006
 Content-Type: application/xml
 Accept: application/xml
 
@@ -52,8 +44,9 @@ Accept: application/xml
 
 # post request with conditions and sections to include
 # we're passing the loinc code for the results (labs) section
-# and the snomed code for chlamydia
-POST http://{{refiner}}/api/v1/ecr?conditions_to_include=240589008&sections_to_include=30954-2
+# and the snomed code for covid using the sample data
+# with one condition
+POST http://{{refiner}}/api/v1/ecr?conditions_to_include=840539006&sections_to_include=30954-2
 Content-Type: application/xml
 Accept: application/xml
 
@@ -63,8 +56,9 @@ Accept: application/xml
 
 # post request with conditions and sections to include
 # we're passing the loinc code for the encounters section
-# and the snomed code for chlamydia
-POST http://{{refiner}}/api/v1/ecr?conditions_to_include=240589008&sections_to_include=46240-8
+# and the snomed code for covid using sample data with
+# one condition
+POST http://{{refiner}}/api/v1/ecr?conditions_to_include=840539006&sections_to_include=46240-8
 Content-Type: application/xml
 Accept: application/xml
 
@@ -73,7 +67,9 @@ Accept: application/xml
 ###
 
 # post request with a zip that contains an eICR and RR
-# no query params
+# with one condition; conditions_to_include is no longer needed
+# when the zip contains an RR that contains conditions via its
+# coded information organizer
 POST http://{{refiner}}/api/v1/ecr/zip-upload HTTP/1.1
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
 
@@ -81,14 +77,15 @@ Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
 Content-Disposition: form-data; name="file"; filename="mon-mothma-covid-lab-positive.zip"
 Content-Type: application/zip
 
-< mon-mothma.zip
+< mon-mothma-one-condition.zip
 
 ------WebKitFormBoundary{{$timestamp}}--
 
 ###
 
 # post request with a zip that contains an eICR and RR
-# query param include social history section
+# with one condition + query param that include the social history section
+# this is still a possible way to use the API
 POST http://{{refiner}}/api/v1/ecr/zip-upload?sections_to_include=29762-2 HTTP/1.1
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
 
@@ -96,6 +93,22 @@ Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
 Content-Disposition: form-data; name="file"; filename="mon-mothma-covid-lab-positive.zip"
 Content-Type: application/zip
 
-< mon-mothma.zip
+< mon-mothma-one-condition.zip
+
+------WebKitFormBoundary{{$timestamp}}--
+
+###
+
+# post request with a zip that contains an eICR and RR
+# with two conditions; the response will show the two
+# split eICR documents mapped to the "refined_eicr" key
+POST http://{{refiner}}/api/v1/ecr/zip-upload HTTP/1.1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary{{$timestamp}}
+
+------WebKitFormBoundary{{$timestamp}}
+Content-Disposition: form-data; name="file"; filename="mon-mothma-covid-lab-positive.zip"
+Content-Type: application/zip
+
+< mon-mothma-two-conditions.zip
 
 ------WebKitFormBoundary{{$timestamp}}--
