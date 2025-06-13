@@ -218,7 +218,6 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
         with ZipFile(io.BytesIO(file_content)) as zf:
             # Zip must contain only the two expected files
             file_count = _get_zip_file_count(zf)
-            print(file_count)
             if file_count > MAX_ALLOWED_FILE_COUNT:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
