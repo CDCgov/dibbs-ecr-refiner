@@ -19,6 +19,10 @@ export interface Condition {
   stats: string[];
 }
 
+interface DemoUploadError {
+  detail: string;
+}
+
 const uploadRoute = '/api/v1/demo/upload';
 /**
  * Allows the client to provide their own `formData`, which will have
@@ -44,7 +48,8 @@ export async function uploadCustomZipFile(
   const resp = await fetch(uploadRoute, options);
 
   if (!resp.ok) {
-    throw new ApiUploadError('User-provided .zip file could not be processed.');
+    const errorResp: DemoUploadError = await resp.json();
+    throw new ApiUploadError(errorResp.detail);
   }
 
   return resp.json();

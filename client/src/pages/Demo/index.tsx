@@ -5,6 +5,7 @@ import { Error } from './Error';
 import { RunTest } from './RunTest';
 import { ChangeEvent, useState } from 'react';
 import {
+  ApiUploadError,
   DemoUploadResponse,
   uploadCustomZipFile,
   uploadDemoFile,
@@ -15,6 +16,7 @@ type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 export default function Demo() {
   const [view, setView] = useState<View>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [uploadResponse, setUploadResponse] =
     useState<DemoUploadResponse | null>(null);
 
@@ -34,9 +36,11 @@ export default function Demo() {
     try {
       const resp = await uploadCustomZipFile(selectedFile);
       setUploadResponse(resp);
+      setServerError(null);
       setView('reportable-conditions');
-    } catch {
+    } catch (e: unknown) {
       setUploadResponse(null);
+      handleError(e);
       setView('error');
     }
   }
@@ -45,10 +49,20 @@ export default function Demo() {
     try {
       const resp = await uploadDemoFile();
       setUploadResponse(resp);
+      setServerError(null);
       setView('reportable-conditions');
-    } catch {
+    } catch (e: unknown) {
       setUploadResponse(null);
+      handleError(e);
       setView('error');
+    }
+  }
+
+  function handleError(error: unknown) {
+    if (error instanceof ApiUploadError) {
+      setServerError(error.message);
+    } else {
+      setServerError('Unknown error occurred. Please try again.');
     }
   }
 
@@ -84,7 +98,7 @@ export default function Demo() {
             downloadToken={uploadResponse.refined_download_token}
           />
         )}
-        {view === 'error' && <Error onClick={reset} />}
+        {view === 'error' && <Error message={serverError} onClick={reset} />}
       </div>
     </div>
   );

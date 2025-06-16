@@ -4,10 +4,11 @@ import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 
 interface ErrorProps {
+  message: string | null;
   onClick: () => void;
 }
 
-export function Error({ onClick }: ErrorProps) {
+export function Error({ message, onClick }: ErrorProps) {
   return (
     <Container color="red">
       <Content className="gap-10">
@@ -25,6 +26,7 @@ export function Error({ onClick }: ErrorProps) {
               Please double check the format and size. It must be less than 10MB
               in size.
             </p>
+            {message ? <p>Error: {message}</p> : null}
           </div>
         </div>
         <Button onClick={onClick}>Try again</Button>
