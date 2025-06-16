@@ -27,7 +27,9 @@ const uploadRoute = '/api/v1/demo/upload';
  * @param formData object containing the client's .zip file data
  * @returns client's processed zip file as JSON data
  */
-export async function uploadCustomZipFile(selectedFile: File | null) {
+export async function uploadCustomZipFile(
+  selectedFile: File | null
+): Promise<DemoUploadResponse> {
   if (!selectedFile) throw Error('File must be provided.');
   const formData = new FormData();
 
