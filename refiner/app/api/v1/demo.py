@@ -12,7 +12,7 @@ from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from ...core.exceptions import XMLValidationError
+from ...core.exceptions import XMLValidationError, ZipValidationError
 from ...services import file_io, refine
 
 # Keep track of files available for download / what needs to be cleaned up
@@ -360,8 +360,10 @@ async def demo_upload(
     except XMLValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": str(e), "details": e.details},
+            detail=e.details,
         )
+    except ZipValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
 
 
 @router.get("/download/{token}")
