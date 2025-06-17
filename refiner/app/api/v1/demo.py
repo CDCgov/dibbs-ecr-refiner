@@ -12,7 +12,7 @@ from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from ...core.exceptions import XMLValidationError
+from ...core.exceptions import XMLValidationError, ZipValidationError
 from ...services import file_io, refine
 
 # Keep track of files available for download / what needs to be cleaned up
@@ -166,7 +166,7 @@ def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
     return file
 
 
-async def _validate_zip_file(file: UploadFile) -> UploadFile:
+async def _validate_zip_file(file: UploadFile, file_content: bytes) -> UploadFile:
     # Check extension
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(
@@ -203,7 +203,6 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
         )
 
     try:
-        file_content = await file.read()
         with ZipFile(io.BytesIO(file_content)) as zf:
             # Zip must be able to be processed
             bad_file = zf.testzip()
@@ -227,8 +226,22 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
             detail="Uploaded file is not a valid zip archive.",
         )
 
-    file.file.seek(0)
     return file
+
+
+async def _read_file_content(file: UploadFile) -> bytes:
+    return await file.read()
+
+
+@router.post("/upload2")
+async def upload_two(uploaded_file: UploadFile) -> dict[str, str]:
+    """
+    Test.
+    """
+    file_content = await _read_file_content(uploaded_file)
+    await _validate_zip_file(file=uploaded_file, file_content=file_content)
+    original_xml_files = await file_io.read_xml_zip(file_content)
+    return {"name": uploaded_file.filename, "content": original_xml_files.rr}
 
 
 @router.post("/upload")
@@ -251,15 +264,17 @@ async def demo_upload(
             detail="Unable to find demo zip file to download.",
         )
 
-    file = None
+    file_content = None
     if uploaded_file:
-        file = await _validate_zip_file(uploaded_file)
+        file_content = await _read_file_content(uploaded_file)
+        await _validate_zip_file(file=uploaded_file, file_content=file_content)
     else:
-        file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
+        sample_file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
+        file_content = await _read_file_content(sample_file)
 
     try:
         # Read in and process XML data from demo file
-        original_xml_files = await file_io.read_xml_zip(file)
+        original_xml_files = await file_io.read_xml_zip(file_content)
         rr_results = refine.process_rr(original_xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
 
@@ -343,6 +358,8 @@ async def demo_upload(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": str(e), "details": e.details},
         )
+    except ZipValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.details)
 
 
 @router.get("/download/{token}")

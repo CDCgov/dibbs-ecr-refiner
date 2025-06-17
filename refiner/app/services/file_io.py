@@ -12,7 +12,7 @@ from ..core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ..core.models.types import FileUpload, XMLFiles
+from ..core.models.types import XMLFiles
 
 
 def get_asset_path(*paths: str) -> Path:
@@ -90,31 +90,36 @@ def parse_xml(xml_content: str | bytes) -> _Element:
         )
 
 
-async def read_xml_zip(file: FileUpload) -> XMLFiles:
+def _decode_file(filename: str, zipfile: ZipFile) -> str:
+    content = zipfile.read(filename)
+    encoding = detect(content)["encoding"] or "utf-8"
+    decoded = content.decode(encoding)
+    return decoded
+
+
+async def read_xml_zip(file_content: bytes) -> XMLFiles:
     """
     Read XML files from a ZIP archive.
     """
     try:
-        zip_bytes = await file.read()
-        zip_stream = BytesIO(zip_bytes)
-
-        with ZipFile(zip_stream, "r") as z:
+        with ZipFile(BytesIO(file_content), "r") as z:
             eicr_xml = None
             rr_xml = None
 
-            for filename in z.namelist():
-                # skip macOS resource fork files
-                if filename.startswith("__MACOSX/") or filename.startswith("._"):
+            namelist = z.namelist()
+            for filename in namelist:
+                # skip files we don't need
+                if (
+                    filename.startswith("__MACOSX/")
+                    or filename.startswith("._")
+                    or not filename.endswith(("CDA_eICR.xml", "CDA_RR.xml"))
+                ):
                     continue
 
-                content = z.read(filename)
-                encoding = detect(content)["encoding"] or "utf-8"
-                decoded = content.decode(encoding)
-
                 if filename.endswith("CDA_eICR.xml"):
-                    eicr_xml = decoded
+                    eicr_xml = _decode_file(filename, z)
                 elif filename.endswith("CDA_RR.xml"):
-                    rr_xml = decoded
+                    rr_xml = _decode_file(filename, z)
 
             if not eicr_xml:
                 raise ZipValidationError(
@@ -122,7 +127,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     details={
                         "files_found": [
                             f
-                            for f in z.namelist()
+                            for f in namelist
                             if not (f.startswith("__MACOSX/") or f.startswith("._"))
                         ],
                         "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
@@ -135,7 +140,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     details={
                         "files_found": [
                             f
-                            for f in z.namelist()
+                            for f in namelist
                             if not (f.startswith("__MACOSX/") or f.startswith("._"))
                         ],
                         "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
