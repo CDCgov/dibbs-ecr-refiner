@@ -22,7 +22,8 @@ export function Error({ onClick }: ErrorProps) {
               The file could not be read.
             </p>
             <p className="leading-snug">
-              Please double check the format and size. It must be less than 1GB.
+              Please double check the format and size. It must be less than 10MB
+              in size.
             </p>
           </div>
         </div>

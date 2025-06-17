@@ -1,19 +1,24 @@
 import asyncio
+import io
 import pathlib
 import time
 import zipfile
 from typing import Any
 
 import pytest
-from fastapi import Response
+from fastapi import HTTPException, Response, UploadFile
+from fastapi.datastructures import Headers
 from fastapi.testclient import TestClient
 
 from app.api.v1.demo import (
+    MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE,
+    MAX_ALLOWED_UPLOAD_FILE_SIZE,
     _cleanup_expired_files,
     _create_refined_ecr_zip,
     _create_zipfile_output_directory,
     _get_file_size_difference_percentage,
     _update_file_store,
+    _validate_zip_file,
     file_store,
 )
 from app.main import app
@@ -148,9 +153,8 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     app.dependency_overrides[_get_refined_ecr_output_dir] = mock_output_dir
     app.dependency_overrides[_get_demo_zip_path] = mock_path_dep
     app.dependency_overrides[_get_zip_creator] = mock_zip_creator
-
-    # Make request
-    response = client.get(f"{api_route_base}/upload")
+    # Mock the file store to avoid actual file system changes
+    response = client.post(f"{api_route_base}/upload")
     assert response.status_code == 200
 
     data: dict[str, Any] = response.json()
@@ -200,11 +204,107 @@ def test_demo_file_not_found() -> None:
     app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
 
     # test both endpoints with missing file
-    for endpoint in ["upload", "download"]:
-        response = client.get(f"{api_route_base}/{endpoint}")
-        assert response.status_code == 404
-        assert response.json() == {
-            "detail": "Unable to find demo zip file to download."
-        }
+    response = client.post(f"{api_route_base}/upload")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Unable to find demo zip file to download."}
+
+    response = client.get(f"{api_route_base}/download")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Unable to find demo zip file to download."}
 
     app.dependency_overrides.clear()
+
+
+def create_mock_upload_file(
+    filename: str,
+    content: bytes,
+) -> UploadFile:
+    file_like = io.BytesIO(content)
+    upload = UploadFile(
+        file=file_like,
+        filename=filename,
+        headers=Headers({"Content-Type": "application/zip"}),
+    )
+
+    upload.size = len(content)
+    return upload
+
+
+def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, content in file_dict.items():
+            z.writestr(name, content)
+    return buf.getvalue()
+
+
+@pytest.mark.asyncio
+async def test_valid_zip():
+    zip_bytes = create_zip_file(
+        {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
+    )
+    file = create_mock_upload_file("valid.zip", zip_bytes)
+    validated = await _validate_zip_file(file)
+    assert validated is file
+
+
+@pytest.mark.asyncio
+async def test_invalid_extension():
+    zip_bytes = create_zip_file({"test.txt": b"abc"})
+    file = create_mock_upload_file("invalid.txt", zip_bytes)
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "Only .zip files are allowed" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_filename_starts_with_period():
+    file = create_mock_upload_file(".hidden.zip", b"fake")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "cannot start with a period" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_filename_with_double_dot():
+    file = create_mock_upload_file("bad..name.zip", b"fake")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "cannot contain multiple periods" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_empty_file():
+    file = create_mock_upload_file("empty.zip", b"")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert ".zip must not be empty" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_file_too_large():
+    content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
+    file = create_mock_upload_file("big.zip", content)
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "must be less than 10MB" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_uncompressed_size_too_large():
+    big_content = b"x" * (MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE + 1)
+    zip_bytes = create_zip_file(
+        {"CDA_eICR.xml": big_content, "CDA_RR.xml": b"<xml>RR</xml>"}
+    )
+    file = create_mock_upload_file("too_big_uncompressed.zip", zip_bytes)
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "Uncompressed .zip file must not exceed" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_invalid_zip_file():
+    file = create_mock_upload_file("corrupt.zip", b"not a zip")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "not a valid zip archive" in exc.value.detail
