@@ -1,8 +1,8 @@
 import asyncio
 import pathlib
 import time
-from typing import Any
 import zipfile
+from typing import Any
 
 import pytest
 from fastapi import Response

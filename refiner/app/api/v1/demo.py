@@ -2,9 +2,9 @@ import asyncio
 import io
 import os
 import time
-import uuid
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, List, Tuple
+from uuid import uuid4
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -90,9 +90,9 @@ def _get_file_size_difference_percentage(
 
 def _create_refined_ecr_zip(
     *,
-    files: List[Tuple[str, str]],
+    files: list[tuple[str, str]],
     output_dir: Path,
-) -> Tuple[str, Path, str]:
+) -> tuple[str, Path, str]:
     """
     Create a zip archive containing all provided (filename, content) pairs.
 
@@ -103,9 +103,6 @@ def _create_refined_ecr_zip(
     Returns:
         (filename, filepath, token)
     """
-    from uuid import uuid4
-    import os
-
     token = str(uuid4())
     zip_filename = f"{token}_refined_ecr.zip"
     zip_filepath = output_dir / zip_filename
@@ -135,10 +132,9 @@ def _update_file_store(filename: str, path: Path, token: str) -> None:
     }
 
 
-def _get_zip_creator() -> Callable[..., Tuple[str, Path, str]]:
+def _get_zip_creator() -> Callable[..., tuple[str, Path, str]]:
     """
-    Dependency-injected function responsible for passing the function that will write
-    the output zip file to the handler.
+    Dependency-injected function responsible for passing the function that will write the output zip file to the handler.
 
     Returns:
         A callable that takes a list of (filename, content) tuples and an output directory,
@@ -157,7 +153,7 @@ def _get_refined_ecr_output_dir() -> Path:
 @router.get("/upload")
 async def demo_upload(
     demo_zip_path: Path = Depends(_get_demo_zip_path),
-    create_output_zip: Callable[..., Tuple[str, Path, str]] = Depends(_get_zip_creator),
+    create_output_zip: Callable[..., tuple[str, Path, str]] = Depends(_get_zip_creator),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
 ) -> JSONResponse:
     """
