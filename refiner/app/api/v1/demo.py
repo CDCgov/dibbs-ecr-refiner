@@ -88,7 +88,9 @@ def _get_file_size_difference_percentage(
     return round(percent_diff)
 
 
-def _create_refined_ecr_zip(files: list[tuple[str, str]], output_dir: Path):
+def _create_refined_ecr_zip(
+    *, files: list[tuple[str, str]], output_dir: Path
+) -> tuple[str, Path, str]:
     """
     Create a zip archive containing all provided (filename, content) pairs.
 
