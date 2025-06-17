@@ -233,17 +233,6 @@ async def _read_file_content(file: UploadFile) -> bytes:
     return await file.read()
 
 
-@router.post("/upload2")
-async def upload_two(uploaded_file: UploadFile) -> dict[str, str]:
-    """
-    Test.
-    """
-    file_content = await _read_file_content(uploaded_file)
-    await _validate_zip_file(file=uploaded_file, file_content=file_content)
-    original_xml_files = await file_io.read_xml_zip(file_content)
-    return {"name": uploaded_file.filename, "content": original_xml_files.rr}
-
-
 @router.post("/upload")
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
