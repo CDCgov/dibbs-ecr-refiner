@@ -137,13 +137,9 @@ def _get_zip_creator() -> Callable[
     [list[tuple[str, str]], Path], tuple[str, Path, str]
 ]:
     """
-    Dependency-injected function responsible for passing the function that will write
-    the output zip file to the handler.
-
-    Returns:
-        A callable that takes a list of (filename, content) tuples and an output directory,
-        and returns a tuple (zip_filename, zip_filepath, token).
+    Dependency-injected function responsible for passing the function that'll write the output ZIP file to the handler.
     """
+    # Return the callable directly since it now expects keyword arguments
     return _create_refined_ecr_zip
 
 
