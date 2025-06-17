@@ -11,8 +11,6 @@ from fastapi.datastructures import Headers
 from fastapi.testclient import TestClient
 
 from app.api.v1.demo import (
-    MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE,
-    MAX_ALLOWED_UPLOAD_FILE_SIZE,
     _cleanup_expired_files,
     _create_refined_ecr_zip,
     _create_zipfile_output_directory,
@@ -258,28 +256,9 @@ async def test_empty_file():
 
 @pytest.mark.asyncio
 async def test_file_too_large():
-    content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
+    ten_mb = 10 * 1024 * 1024
+    content = b"x" * (ten_mb + 1)
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
         await _validate_zip_file(file)
     assert "must be less than 10MB" in exc.value.detail
-
-
-@pytest.mark.asyncio
-async def test_uncompressed_size_too_large():
-    big_content = b"x" * (MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE + 1)
-    zip_bytes = create_zip_file(
-        {"CDA_eICR.xml": big_content, "CDA_RR.xml": b"<xml>RR</xml>"}
-    )
-    file = create_mock_upload_file("too_big_uncompressed.zip", zip_bytes)
-    with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
-    assert "Uncompressed .zip file must not exceed" in exc.value.detail
-
-
-@pytest.mark.asyncio
-async def test_invalid_zip_file():
-    file = create_mock_upload_file("corrupt.zip", b"not a zip")
-    with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
-    assert "not a valid zip archive" in exc.value.detail

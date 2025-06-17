@@ -89,6 +89,34 @@ async def test_read_invalid_zip():
     assert "Invalid ZIP file" in str(exc_info.value)
 
 
+@pytest.mark.asyncio
+async def test_uncompressed_zip_size_too_large(test_assets_path, tmp_path):
+    # Create a valid zip that contains a document that is too large to process
+    fifty_mb = 50 * 1024 * 1024
+    big_content = b"x" * (fifty_mb + 1)
+
+    test_zip = tmp_path / "test.zip"
+    with ZipFile(test_zip, "w") as zf:
+        with open(
+            test_assets_path / "mon-mothma-covid-lab-positive_eicr.xml", "rb"
+        ) as src:
+            zf.writestr("CDA_eICR.xml", src.read())
+        with open(
+            test_assets_path / "mon-mothma-covid-lab-positive_RR.xml", "rb"
+        ) as src:
+            zf.writestr("CDA_RR.xml", src.read())
+        # extra large file to be checked
+        zf.writestr("large.xml", big_content)
+
+    with open(test_zip, "rb") as f:
+        zip_bytes = f.read()
+
+    mock_file = MockFileUpload(zip_bytes)
+    with pytest.raises(ZipValidationError) as exc:
+        await file_io.read_xml_zip(mock_file)
+    assert "Uncompressed .zip file must not exceed" in exc.value.message
+
+
 def test_xml_files_container(read_test_file):
     """
     Test XMLFiles container functionality.
