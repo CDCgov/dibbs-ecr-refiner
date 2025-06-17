@@ -2,6 +2,7 @@ import asyncio
 import pathlib
 import time
 from typing import Any
+import zipfile
 
 import pytest
 from fastapi import Response
@@ -43,11 +44,29 @@ async def test_cleanup_expired_files(tmp_path):
 
 
 def test_create_refined_ecr_zip(tmp_path):
+    # Simulated refined files
+    refined_files = [
+        ("covid_condition.xml", "<eICR>Covid Data</eICR>"),
+        ("flu_condition.xml", "<eICR>Flu Data</eICR>"),
+    ]
+
+    # Simulated eICR XML
+    eicr = "<eICR>Some RR Data</eICR>"
+
+    refined_files.append(("CDA_eICR.xml", eicr))
+
     file_name, file_path, token = _create_refined_ecr_zip(
-        "<eICR>", "<RR>", output_dir=tmp_path
+        files=refined_files, output_dir=tmp_path
     )
+
     assert file_name == f"{token}_refined_ecr.zip"
     assert pathlib.Path(file_path).exists()
+
+    with zipfile.ZipFile(file_path, "r") as zipf:
+        namelist = zipf.namelist()
+        assert "covid_condition.xml" in namelist
+        assert "flu_condition.xml" in namelist
+        assert "CDA_eICR.xml" in namelist
 
 
 def test_get_processed_ecr_directory(tmp_path):
@@ -113,7 +132,14 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
         return test_assets_path / "demo" / "monmothma.zip"
 
     def mock_zip_creator():
-        return lambda refined, unrefined, path: ("fake", pathlib.Path("fake"), "fake")
+        def _mock_create_zip(*, files, output_dir):
+            return (
+                "mocked_output.zip",
+                pathlib.Path("/tmp/mocked_output.zip"),
+                "mocked_token",
+            )
+
+        return _mock_create_zip
 
     def mock_output_dir():
         return "/tmp"
@@ -123,13 +149,14 @@ def test_demo_upload_success(test_assets_path: pathlib.Path) -> None:
     app.dependency_overrides[_get_demo_zip_path] = mock_path_dep
     app.dependency_overrides[_get_zip_creator] = mock_zip_creator
 
+    # Make request
     response = client.get(f"{api_route_base}/upload")
     assert response.status_code == 200
 
     data: dict[str, Any] = response.json()
     assert "conditions" in data
     assert "unrefined_eicr" in data
-    assert "refined_eicr" in data["conditions"][0]
+    assert "refined_download_token" in data
     assert "stats" in data["conditions"][0]
     assert any(
         "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
