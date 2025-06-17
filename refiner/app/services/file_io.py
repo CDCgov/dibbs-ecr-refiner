@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from chardet import detect
 from lxml import etree
@@ -12,7 +12,7 @@ from ..core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ..core.models.types import XMLFiles
+from ..core.models.types import FileUpload, XMLFiles
 
 
 def get_asset_path(*paths: str) -> Path:
@@ -97,14 +97,28 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
     return decoded
 
 
-async def read_xml_zip(file_content: bytes) -> XMLFiles:
+def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
+    max_allowed_uncompressed_size = 50 * 1024 * 1024  # 50 MB
+    uncompressed_file_size = sum(zinfo.file_size for zinfo in info)
+    return uncompressed_file_size < max_allowed_uncompressed_size
+
+
+async def read_xml_zip(file: FileUpload) -> XMLFiles:
     """
     Read XML files from a ZIP archive.
     """
     try:
+        file_content = await file.read()
         with ZipFile(BytesIO(file_content), "r") as z:
             eicr_xml = None
             rr_xml = None
+
+            is_valid_size = _is_valid_uncompressed_size(z.infolist())
+
+            if not is_valid_size:
+                raise ZipValidationError(
+                    message="Uncompressed .zip file must not exceed 50MB in size."
+                )
 
             namelist = z.namelist()
             for filename in namelist:

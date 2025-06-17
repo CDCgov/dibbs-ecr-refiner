@@ -5,7 +5,7 @@ import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from zipfile import BadZipFile, ZipFile
+from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
@@ -19,11 +19,6 @@ from ...services import file_io, refine
 REFINED_ECR_DIR = "refined-ecr"
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 file_store: dict[str, dict] = {}
-
-# File uploads
-MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
-MAX_ALLOWED_FILE_COUNT = 2  # zip should only contain CDA_eICR.XML and CDA_RR.xml
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -166,7 +161,7 @@ def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
     return file
 
 
-async def _validate_zip_file(file: UploadFile, file_content: bytes) -> UploadFile:
+async def _validate_zip_file(file: UploadFile) -> UploadFile:
     # Check extension
     if not file.filename or not file.filename.lower().endswith(".zip"):
         raise HTTPException(
@@ -196,41 +191,14 @@ async def _validate_zip_file(file: UploadFile, file_content: bytes) -> UploadFil
         )
 
     # Ensure compressed size is valid
-    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
+    max_allowed_upload_size = 10 * 1024 * 1024  # 10 MB
+    if file.size > max_allowed_upload_size:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=".zip file must be less than 10MB in size.",
         )
 
-    try:
-        with ZipFile(io.BytesIO(file_content)) as zf:
-            # Zip must be able to be processed
-            bad_file = zf.testzip()
-            if bad_file:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Corrupted file found in archive: {bad_file}",
-                )
-
-            # Uncompressed size must be acceptable
-            uncompressed_file_size = sum(zinfo.file_size for zinfo in zf.infolist())
-            if uncompressed_file_size > MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Uncompressed .zip file must not exceed 50MB in size.",
-                )
-
-    except BadZipFile:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file is not a valid zip archive.",
-        )
-
     return file
-
-
-async def _read_file_content(file: UploadFile) -> bytes:
-    return await file.read()
 
 
 @router.post("/upload")
@@ -253,17 +221,15 @@ async def demo_upload(
             detail="Unable to find demo zip file to download.",
         )
 
-    file_content = None
+    file = None
     if uploaded_file:
-        file_content = await _read_file_content(uploaded_file)
-        await _validate_zip_file(file=uploaded_file, file_content=file_content)
+        file = await _validate_zip_file(file=uploaded_file)
     else:
-        sample_file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
-        file_content = await _read_file_content(sample_file)
+        file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
         # Read in and process XML data from demo file
-        original_xml_files = await file_io.read_xml_zip(file_content)
+        original_xml_files = await file_io.read_xml_zip(file)
         rr_results = refine.process_rr(original_xml_files)
         reportable_conditions = rr_results["reportable_conditions"]
 
