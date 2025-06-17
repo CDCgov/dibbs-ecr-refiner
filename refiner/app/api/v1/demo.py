@@ -3,8 +3,8 @@ import io
 import os
 import time
 import uuid
-from collections.abc import Callable
 from pathlib import Path
+from typing import Callable, List, Tuple
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
@@ -89,8 +89,10 @@ def _get_file_size_difference_percentage(
 
 
 def _create_refined_ecr_zip(
-    *, files: list[tuple[str, str]], output_dir: Path
-) -> tuple[str, Path, str]:
+    *,
+    files: List[Tuple[str, str]],
+    output_dir: Path,
+) -> Tuple[str, Path, str]:
     """
     Create a zip archive containing all provided (filename, content) pairs.
 
@@ -133,13 +135,15 @@ def _update_file_store(filename: str, path: Path, token: str) -> None:
     }
 
 
-def _get_zip_creator() -> Callable[
-    [list[tuple[str, str]], Path], tuple[str, Path, str]
-]:
+def _get_zip_creator() -> Callable[..., Tuple[str, Path, str]]:
     """
-    Dependency-injected function responsible for passing the function that'll write the output ZIP file to the handler.
+    Dependency-injected function responsible for passing the function that will write
+    the output zip file to the handler.
+
+    Returns:
+        A callable that takes a list of (filename, content) tuples and an output directory,
+        and returns a tuple (zip_filename, zip_filepath, token).
     """
-    # Return the callable directly since it now expects keyword arguments
     return _create_refined_ecr_zip
 
 
@@ -153,9 +157,7 @@ def _get_refined_ecr_output_dir() -> Path:
 @router.get("/upload")
 async def demo_upload(
     demo_zip_path: Path = Depends(_get_demo_zip_path),
-    create_output_zip: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
-        _get_zip_creator
-    ),
+    create_output_zip: Callable[..., Tuple[str, Path, str]] = Depends(_get_zip_creator),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
 ) -> JSONResponse:
     """
