@@ -344,7 +344,6 @@ async def demo_upload(
         refined_files_to_zip.append(("CDA_EICR.xml", xml_files.eicr))
         refined_files_to_zip.append(("CDA_RR.xml", xml_files.rr))
 
-
         # Now create the combined zip
         output_file_name, output_file_path, token = create_output_zip(
             files=refined_files_to_zip,
