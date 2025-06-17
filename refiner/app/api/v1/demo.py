@@ -340,8 +340,10 @@ async def demo_upload(
         # ✅ Zip all condition files + eICR file into one archive
         full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
 
-        # Add eICR file as well
+        # Add eICR + RR file as well
         refined_files_to_zip.append(("CDA_EICR.xml", xml_files.eicr))
+        refined_files_to_zip.append(("CDA_RR.xml", xml_files.rr))
+
 
         # Now create the combined zip
         output_file_name, output_file_path, token = create_output_zip(
