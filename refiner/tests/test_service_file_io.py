@@ -86,7 +86,7 @@ async def test_read_invalid_zip():
 
     with pytest.raises(ZipValidationError) as exc_info:
         await file_io.read_xml_zip(mock_file)
-    assert "Invalid ZIP file" in str(exc_info.value)
+    assert "Invalid zip file" in str(exc_info.value)
 
 
 def test_xml_files_container(read_test_file):
@@ -167,7 +167,7 @@ async def test_read_xml_zip_processing_error():
     mock_file = MockFileUpload(b"not a zip but also won't raise BadZipFile")
     with pytest.raises(ZipValidationError) as exc_info:
         await file_io.read_xml_zip(mock_file)
-    assert "Invalid ZIP file provided" in str(exc_info.value)
+    assert "Invalid zip file provided" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -182,7 +182,7 @@ async def test_read_xml_zip_general_error():
 
     with pytest.raises(FileProcessingError) as exc_info:
         await file_io.read_xml_zip(BrokenFileUpload())
-    assert "Failed to process ZIP file" in str(exc_info.value)
+    assert "Failed to process zip file" in str(exc_info.value)
 
 
 def test_get_asset_path_single():
