@@ -11,6 +11,7 @@ from fastapi.datastructures import Headers
 from fastapi.testclient import TestClient
 
 from app.api.v1.demo import (
+    MAX_ALLOWED_UPLOAD_FILE_SIZE,
     _cleanup_expired_files,
     _create_refined_ecr_zip,
     _create_zipfile_output_directory,
@@ -256,8 +257,7 @@ async def test_empty_file():
 
 @pytest.mark.asyncio
 async def test_file_too_large():
-    ten_mb = 10 * 1024 * 1024
-    content = b"x" * (ten_mb + 1)
+    content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
         await _validate_zip_file(file)

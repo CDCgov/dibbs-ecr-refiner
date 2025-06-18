@@ -20,6 +20,9 @@ REFINED_ECR_DIR = "refined-ecr"
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 file_store: dict[str, dict] = {}
 
+# File uploads
+MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
 
@@ -191,8 +194,7 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
         )
 
     # Ensure compressed size is valid
-    max_allowed_upload_size = 10 * 1024 * 1024  # 10 MB
-    if file.size > max_allowed_upload_size:
+    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=".zip file must be less than 10MB in size.",
