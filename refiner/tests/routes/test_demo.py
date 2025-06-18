@@ -266,21 +266,6 @@ async def test_file_too_large():
 
 
 @pytest.mark.asyncio
-async def test_too_many_files():
-    zip_bytes = create_zip_file(
-        {
-            "CDA_eICR.xml": b"<xml>eICR</xml>",
-            "CDA_RR.xml": b"<xml>RR</xml>",
-            "extra.xml": b"<xml>extra</xml>",
-        }
-    )
-    file = create_mock_upload_file("too_many.zip", zip_bytes)
-    with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
-    assert "must contain only 2 files" in exc.value.detail
-
-
-@pytest.mark.asyncio
 async def test_uncompressed_size_too_large():
     big_content = b"x" * (MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE + 1)
     zip_bytes = create_zip_file(

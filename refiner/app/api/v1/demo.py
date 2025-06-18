@@ -166,17 +166,6 @@ def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
     return file
 
 
-def _get_zip_file_count(zip: ZipFile) -> int:
-    count = 0
-    for file in zip.infolist():
-        filename = file.filename
-        # skip macOS resource fork files
-        if filename.startswith("__MACOSX/") or filename.startswith("._"):
-            continue
-        count += 1
-    return count
-
-
 async def _validate_zip_file(file: UploadFile) -> UploadFile:
     # Check extension
     if not file.filename or not file.filename.lower().endswith(".zip"):
@@ -216,14 +205,6 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     try:
         file_content = await file.read()
         with ZipFile(io.BytesIO(file_content)) as zf:
-            # Zip must contain only the two expected files
-            file_count = _get_zip_file_count(zf)
-            if file_count > MAX_ALLOWED_FILE_COUNT:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f".zip must contain only 2 files: CDA_eICR.xml and CDA_RR.xml. Found {file_count} files.",
-                )
-
             # Zip must be able to be processed
             bad_file = zf.testzip()
             if bad_file:
