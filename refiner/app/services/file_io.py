@@ -14,6 +14,8 @@ from ..core.exceptions import (
 )
 from ..core.models.types import FileUpload, XMLFiles
 
+MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
+
 
 def get_asset_path(*paths: str) -> Path:
     """
@@ -91,6 +93,18 @@ def parse_xml(xml_content: str | bytes) -> _Element:
 
 
 def _decode_file(filename: str, zipfile: ZipFile) -> str:
+    """
+    Reads and decodes the contents of a file within a zip archive.
+
+    This function detects the file's character encoding and decodes it into a string.
+
+    Args:
+        filename (str): The name of the file inside the zip archive to read.
+        zipfile (ZipFile): The opened zip archive containing the file.
+
+    Returns:
+        str: The decoded contents of the file as a string.
+    """
     content = zipfile.read(filename)
     encoding = detect(content)["encoding"] or "utf-8"
     decoded = content.decode(encoding)
@@ -98,9 +112,16 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
 
 
 def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
-    max_allowed_uncompressed_size = 50 * 1024 * 1024  # 50 MB
-    uncompressed_file_size = sum(zinfo.file_size for zinfo in info)
-    return uncompressed_file_size < max_allowed_uncompressed_size
+    """
+    Determines whether the total uncompressed size of the zip contents is within the allowed limit.
+
+    Args:
+        info (list[ZipInfo]): List of file metadata entries from the zip archive.
+
+    Returns:
+        bool: True if the total uncompressed size is less than 50 MB; otherwise, False.
+    """
+    return sum(zinfo.file_size for zinfo in info) < MAX_UNCOMPRESSED_SIZE
 
 
 async def read_xml_zip(file: FileUpload) -> XMLFiles:
@@ -109,18 +130,16 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
     """
     try:
         file_content = await file.read()
-        with ZipFile(BytesIO(file_content), "r") as z:
+        with ZipFile(BytesIO(file_content), "r") as zf:
             eicr_xml = None
             rr_xml = None
 
-            is_valid_size = _is_valid_uncompressed_size(z.infolist())
-
-            if not is_valid_size:
+            if not _is_valid_uncompressed_size(zf.infolist()):
                 raise ZipValidationError(
                     message="Uncompressed .zip file must not exceed 50MB in size."
                 )
 
-            namelist = z.namelist()
+            namelist = zf.namelist()
             for filename in namelist:
                 # skip files we don't need
                 if (
@@ -131,9 +150,9 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     continue
 
                 if filename.endswith("CDA_eICR.xml"):
-                    eicr_xml = _decode_file(filename, z)
+                    eicr_xml = _decode_file(filename, zf)
                 elif filename.endswith("CDA_RR.xml"):
-                    rr_xml = _decode_file(filename, z)
+                    rr_xml = _decode_file(filename, zf)
 
             if not eicr_xml:
                 raise ZipValidationError(
