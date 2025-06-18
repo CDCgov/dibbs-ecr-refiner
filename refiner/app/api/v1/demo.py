@@ -12,7 +12,11 @@ from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from ...core.exceptions import XMLValidationError, ZipValidationError
+from ...core.exceptions import (
+    FileProcessingError,
+    XMLValidationError,
+    ZipValidationError,
+)
 from ...services import file_io, refine
 
 # Keep track of files available for download / what needs to be cleaned up
@@ -338,13 +342,21 @@ async def demo_upload(
                 }
             )
         )
-    except XMLValidationError as e:
+    except XMLValidationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=e.details,
+            detail="XML file(s) could not be processed.",
         )
-    except ZipValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+    except ZipValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Zip archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+        )
+    except FileProcessingError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File cannot be processed. Please ensure zip archive only contains the required files.",
+        )
 
 
 @router.get("/download/{token}")
