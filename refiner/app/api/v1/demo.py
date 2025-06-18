@@ -5,14 +5,14 @@ import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from zipfile import BadZipFile, ZipFile
+from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from ...core.exceptions import XMLValidationError
+from ...core.exceptions import XMLValidationError, ZipValidationError
 from ...services import file_io, refine
 
 # Keep track of files available for download / what needs to be cleaned up
@@ -22,8 +22,6 @@ file_store: dict[str, dict] = {}
 
 # File uploads
 MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
-MAX_ALLOWED_FILE_COUNT = 2  # zip should only contain CDA_eICR.XML and CDA_RR.xml
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -202,32 +200,6 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
             detail=".zip file must be less than 10MB in size.",
         )
 
-    try:
-        file_content = await file.read()
-        with ZipFile(io.BytesIO(file_content)) as zf:
-            # Zip must be able to be processed
-            bad_file = zf.testzip()
-            if bad_file:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Corrupted file found in archive: {bad_file}",
-                )
-
-            # Uncompressed size must be acceptable
-            uncompressed_file_size = sum(zinfo.file_size for zinfo in zf.infolist())
-            if uncompressed_file_size > MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Uncompressed .zip file must not exceed 50MB in size.",
-                )
-
-    except BadZipFile:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file is not a valid zip archive.",
-        )
-
-    file.file.seek(0)
     return file
 
 
@@ -253,7 +225,7 @@ async def demo_upload(
 
     file = None
     if uploaded_file:
-        file = await _validate_zip_file(uploaded_file)
+        file = await _validate_zip_file(file=uploaded_file)
     else:
         file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
@@ -343,6 +315,8 @@ async def demo_upload(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"message": str(e), "details": e.details},
         )
+    except ZipValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.details)
 
 
 @router.get("/download/{token}")
