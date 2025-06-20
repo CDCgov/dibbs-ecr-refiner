@@ -11,7 +11,7 @@ interface ErrorProps {
 export function Error({ message, onClick }: ErrorProps) {
   return (
     <Container color="red">
-      <Content className="gap-10">
+      <Content className="items-center gap-10">
         <div className="flex flex-col items-center">
           <img
             className="p-8"
