@@ -143,6 +143,9 @@ describe('Demo', () => {
       )
     ).toBeInTheDocument();
 
+    // Server error should be shown to the user
+    expect(screen.getByText('Error: API call failed')).toBeInTheDocument();
+
     // return to the start to try again
     await user.click(screen.getByText('Try again'));
     expect(
