@@ -78,17 +78,19 @@ export function Success({
             ))}
           </Select>
         </div>
-        <div className="flex flex-col gap-4 lg:flex-row">
-          {selectedCondition.stats.map((stat) => (
-            <SuccessItem key={stat}>{stat}</SuccessItem>
-          ))}
-        </div>
-        <div>
-          <div className="flex flex-col items-center gap-3">
-            <Button onClick={async () => await downloadFile(downloadToken)}>
-              Download refined eCR
-            </Button>
-            {downloadError ? <span>File download has expired.</span> : null}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row">
+            {selectedCondition.stats.map((stat) => (
+              <SuccessItem key={stat}>{stat}</SuccessItem>
+            ))}
+          </div>
+          <div>
+            <div className="flex flex-col items-start gap-3">
+              <Button onClick={async () => await downloadFile(downloadToken)}>
+                Download refined eCR
+              </Button>
+              {downloadError ? <span>File download has expired.</span> : null}
+            </div>
           </div>
         </div>
       </div>
