@@ -311,7 +311,7 @@ async def demo_upload(
             condition_code = condition_info.get("code", f"cond_{idx}")
             display_name = condition_info.get("displayName", f"Condition_{idx}")
             safe_name = display_name.replace(" ", "_").replace("/", "_")
-            filename = f"{condition_code}_{safe_name}.xml"
+            filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
 
             # Add to the list of files to include in the ZIP
             refined_files_to_zip.append((filename, condition_refined_eicr))
