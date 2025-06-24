@@ -22,3 +22,12 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Test Refiner Lambda build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.lambda
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
