@@ -19,8 +19,11 @@ from ..db.operations import GrouperOperations
 from .file_io import read_json_asset
 from .terminology import ProcessedGrouper
 
-log = logging.getLogger(__name__).error
+# NOTE:
+# CONSTANTS AND CONFIGURATION
+# =============================================================================
 
+log = logging.getLogger(__name__).error
 
 # read json that contains details for refining and is the base of what drives `refine`
 REFINER_DETAILS = read_json_asset("refiner_details.json")
@@ -33,12 +36,30 @@ REFINER_OUTPUT_TITLE = (
     "Output from CDC PRIME DIBBs eCR Refiner application by request of STLT"
 )
 MINIMAL_SECTION_MESSAGE = "Section details have been removed as requested"
-OBSERVATION_TABLE_HEADERS = [
+CLINICAL_DATA_TABLE_HEADERS = [
     "Display Text",
     "Code",
     "Code System",
+    "Is Trigger Code",
     "Matching Condition Code",
 ]
+
+# NOTE:
+# =============================================================================
+# In lxml, use _Element for type hints and etree.Element in code.
+# -> _Element (from lxml.etree) is the actual type of xml element objects, suitable for
+#    type annotations and for static type checkers
+# -> etree.Element is a factory function that creates and returns _Element instances; use
+#    it in code to create nodes.
+# * Do not use etree.Element for type hints; it's not a class, but a function.
+#   See: https://lxml.de/api/lxml.etree._Element-class.html
+# * this will change in lxml 6.0
+#   See: on this PR: https://github.com/lxml/lxml/pull/405
+
+
+# NOTE:
+# PUBLIC API FUNCTIONS
+# =============================================================================
 
 
 def validate_sections_to_include(
@@ -74,17 +95,6 @@ def validate_sections_to_include(
         )
 
     return sections
-
-
-# In lxml, use _Element for type hints and etree.Element in code.
-# -> _Element (from lxml.etree) is the actual type of xml element objects, suitable for
-#    type annotations and for static type checkers
-# -> etree.Element is a factory function that creates and returns _Element instances; use
-#    it in code to create nodes.
-# NOTE: Do not use etree.Element for type hints; it's not a class, but a function.
-# See: https://lxml.de/api/lxml.etree._Element-class.html
-# NOTE: this will change in lxml 6.0
-# See: on this PR: https://github.com/lxml/lxml/pull/405
 
 
 def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
@@ -270,12 +280,6 @@ def refine_eicr(
         # parse the eicr document
         validated_message = xml_files.parse_eicr()
 
-        # use the constant defined at the top of refine.py
-        # TODO: this only supports eICR 1.1 so we'll need to eventually move to
-        # to the refiner_config.json files with the updated structure for supporting
-        # both eICR 1.1 and eICR 3.1
-        section_loincs = SECTION_LOINCS
-
         namespaces = {"hl7": "urn:hl7-org:v3"}
         structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
 
@@ -290,21 +294,25 @@ def refine_eicr(
         # generate code-based xpath for relevant clinical codes
         code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
 
-        # If sections_to_include is given, skip processing for those sections
-        if sections_to_include is not None:
-            section_loincs = {
-                code for code in section_loincs if code not in sections_to_include
-            }
+        # TODO:
+        # detect version from document. in future we'll have a function here to check
+        # we'll then use the 'refiner_config.json' as the brain for processing in a
+        # config-driven way for section processing where the version will be passed to
+        # _process_section
+        version = "1.1"
 
-        # Process each section based on the applicable rules
-        for code in section_loincs:
-            section = _get_section_by_code(structured_body, code, namespaces)
+        for section_code, section_config in REFINER_DETAILS["sections"].items():
+            # skip if in sections_to_include (preserve unmodified)
+            if sections_to_include and section_code in sections_to_include:
+                continue
+
+            section = _get_section_by_code(structured_body, section_code, namespaces)
             if section is None:
                 continue
 
-            _process_section(section, code_xpath, namespaces)
+            _process_section(section, code_xpath, namespaces, section_config, version)
 
-        # Format and return the result
+        # format and return the result
         return etree.tostring(validated_message, encoding="unicode")
 
     except etree.XMLSyntaxError as e:
@@ -318,25 +326,62 @@ def refine_eicr(
         )
 
 
+def build_condition_eicr_pairs(
+    original_xml_files: XMLFiles,
+    reportable_conditions: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """
+    Generate pairs of reportable conditions and fresh XMLFiles copies.
+
+    Each reportable condition gets its own copy of the XMLFiles object so that
+    condition-specific refinement can be performed independently.
+
+    Args:
+        original_xml_files: The original XMLFiles object containing eICR and RR.
+        reportable_conditions: List of reportable condition objects with 'code' keys.
+
+    Returns:
+        list[dict[str, Any]]: A list of dictionaries, each containing a
+                             `reportable_condition` and `xml_files`.
+    """
+
+    condition_eicr_pairs = []
+
+    for condition in reportable_conditions:
+        # create fresh XMLFiles for each condition to ensure complete isolation
+        condition_xml_files = XMLFiles(original_xml_files.eicr, original_xml_files.rr)
+        condition_eicr_pairs.append(
+            {
+                "reportable_condition": condition,
+                "xml_files": condition_xml_files,
+            }
+        )
+
+    return condition_eicr_pairs
+
+
+# NOTE:
+# SECTION PROCESSING (Core refinement logic)
+# =============================================================================
+
+
 def _process_section(
     section: _Element,
     combined_xpath: str,
     namespaces: dict = {"hl7": "urn:hl7-org:v3"},
+    section_config: dict | None = None,
+    version: str = "1.1",
 ) -> None:
     """
-    Process a section using only ProcessedGrouper-generated XPaths.
+    Process a section using ProcessedGrouper-generated XPaths.
 
     Args:
         section: The XML section element to process
         combined_xpath: XPath query from ProcessedGrouper codes
         namespaces: XML namespaces for XPath evaluation
+        section_config: Configuration for this section from refiner_details.json
+        version: eICR version being processed
     """
-
-    if not isinstance(section, _Element):
-        raise SectionValidationError(
-            message="Invalid section element provided",
-            details={"section_type": type(section).__name__},
-        )
 
     if not combined_xpath:
         # no condition codes provided - create minimal section
@@ -344,26 +389,55 @@ def _process_section(
         return
 
     try:
-        # find all matching observations using ProcessedGrouper XPath
-        observations = cast(
+        # find all matching clinical elements using ProcessedGrouper XPath
+        clinical_elements = cast(
             list[_Element], section.xpath(combined_xpath, namespaces=namespaces)
         )
 
-        if observations:
-            # process matching observations
+        # deduplicate hierarchical matches
+        clinical_elements = _deduplicate_clinical_elements(clinical_elements)
+
+        if clinical_elements:
+            # track trigger codes using a separate set instead of element attributes
+            trigger_code_elements = set()
+
+            # get trigger templates for this section from config
+            trigger_templates = []
+            if section_config and "trigger_codes" in section_config:
+                # extract template_id_root values from trigger_codes
+                for trigger_type, trigger_info in section_config[
+                    "trigger_codes"
+                ].items():
+                    if "template_id_root" in trigger_info:
+                        trigger_templates.append(trigger_info["template_id_root"])
+
+            # mark trigger codes if we have templates
+            for clinical_element in clinical_elements:
+                if _has_trigger_template_ancestor(clinical_element, trigger_templates):
+                    trigger_code_elements.add(id(clinical_element))
+
+            # find parent entries for all matching clinical elements
             entry_paths = []
-            for observation in observations:
-                entry_path = _find_path_to_entry(observation)
+            for clinical_element in clinical_elements:
+                entry_path = _find_path_to_entry(clinical_element)
                 if entry_path is not None:
                     entry_paths.append(entry_path)
 
-            # remove entries that don't contain relevant observations
-            _prune_unwanted_siblings(entry_paths, observations, section)
+            # deduplicate entry paths to prevent overlapping XML branches
+            deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
 
-            # update section text with observation data
-            _update_text_element(section, observations)
+            # remove entries that don't contain relevant clinical elements
+            _prune_unwanted_siblings(
+                deduplicated_entry_paths, clinical_elements, section
+            )
+
+            # clean up all comments from processed sections
+            _remove_all_comments(section)
+
+            # enhanced text generation with trigger code information
+            _update_text_element(section, clinical_elements, trigger_code_elements)
         else:
-            # no matching observations found - create minimal section
+            # no matching clinical elements found - create minimal section
             _create_minimal_section(section)
 
     except etree.XPathEvalError as e:
@@ -408,8 +482,8 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
                 grouper_row = grouper_ops.get_grouper_by_condition(code)
                 if grouper_row:
                     processed = ProcessedGrouper.from_grouper_row(grouper_row)
-                    # defaults to "observation"
-                    xpath = processed.build_xpath()
+                    # Use comprehensive search across all element types
+                    xpath = processed.build_xpath("any")
                     if xpath:
                         xpath_conditions.append(xpath)
             except (DatabaseConnectionError, DatabaseQueryError) as e:
@@ -467,6 +541,11 @@ def _get_section_by_code(
     return None
 
 
+# NOTE:
+# XML TREE MANIPULATION (Entry and element management)
+# =============================================================================
+
+
 def _find_path_to_entry(element: _Element) -> _Element | None:
     """
     Find the nearest entry ancestor of an element.
@@ -496,15 +575,15 @@ def _find_path_to_entry(element: _Element) -> _Element | None:
 
 def _prune_unwanted_siblings(
     entry_paths: list[_Element],
-    observations: list[_Element],
+    clinical_elements: list[_Element],
     section: _Element,
 ) -> None:
     """
-    Remove entries that don't contain relevant observations.
+    Remove entries that don't contain relevant clinical elements.
 
     Args:
         entry_paths: List of entry elements to preserve
-        observations: List of observation elements that matched our search
+        clinical_elements: List of clinical elements that matched our search
         section: The section being processed
     """
 
@@ -523,27 +602,155 @@ def _prune_unwanted_siblings(
                 parent.remove(entry)
 
 
-def _extract_observation_data(
-    observation: _Element,
-) -> dict[str, str | bool | None]:
+def _deduplicate_entry_paths(entry_paths: list[_Element]) -> list[_Element]:
     """
-    Extract data from an observation element.
+    Remove duplicate and nested entry paths to prevent overlapping XML branches.
 
-    No longer checks for trigger code templateIds since we're using ProcessedGrouper only.
+    When XPath matches find nested elements (e.g., both an <act> and an <observation>
+    within that <act>), we could end up with duplicate entries or parent/child entries
+    both being preserved, leading to duplicate content in the refined eICR.
 
     Args:
-        observation: The observation element to extract data from.
+        entry_paths: List of entry elements that may contain duplicates or nested relationships
 
     Returns:
-        dict[str, str | bool]: Dictionary containing the extracted observation data
+        list[_Element]: Deduplicated list with no overlapping branches
+    """
+
+    if not entry_paths:
+        return entry_paths
+
+    # remove exact duplicates first (same entry element referenced multiple times)
+    unique_entries = []
+    seen_entries = set()
+
+    for entry in entry_paths:
+        entry_id = id(entry)  # Use object identity for exact duplicates
+        if entry_id not in seen_entries:
+            unique_entries.append(entry)
+            seen_entries.add(entry_id)
+
+    # remove nested relationships (parent/child entries)
+    # if entry A is an ancestor of entry B, keep only entry A (the parent)
+    final_entries = []
+
+    for current_entry in unique_entries:
+        is_nested_within_another = False
+
+        # check if this entry is a descendant of any other entry
+        for potential_parent_entry in unique_entries:
+            if current_entry is not potential_parent_entry and _is_ancestor(
+                potential_parent_entry, current_entry
+            ):
+                is_nested_within_another = True
+                break
+
+        # only keep entries that are not nested within other entries
+        if not is_nested_within_another:
+            final_entries.append(current_entry)
+
+    return final_entries
+
+
+def _deduplicate_clinical_elements(clinical_elements: list[_Element]) -> list[_Element]:
+    """
+    Remove nested clinical elements that represent the same logical finding.
+
+    When XPath matches both a parent element (like <organizer>) and its child
+    elements (like <observation>), we want to keep only the highest-level
+    parent that contains the complete clinical context.
+    """
+
+    if not clinical_elements:
+        return clinical_elements
+
+    # group elements by their code value to handle same-code hierarchies
+    code_groups = {}
+
+    for elem in clinical_elements:
+        data = _extract_clinical_data(elem)
+        code = data.get("code")
+
+        if code:
+            if code not in code_groups:
+                code_groups[code] = []
+            code_groups[code].append(elem)
+
+    deduplicated = []
+
+    for code, elements in code_groups.items():
+        if len(elements) == 1:
+            # only one element with this code, keep it
+            deduplicated.append(elements[0])
+        else:
+            # multiple elements with same code--keep only the highest ancestor
+            # that contains all the others
+            ancestors = []
+
+            for elem in elements:
+                is_descendant = False
+                for other_elem in elements:
+                    if elem != other_elem and _is_ancestor(other_elem, elem):
+                        is_descendant = True
+                        break
+
+                if not is_descendant:
+                    ancestors.append(elem)
+
+            # add the top-level ancestors
+            deduplicated.extend(ancestors)
+
+    return deduplicated
+
+
+def _is_ancestor(potential_ancestor: _Element, potential_descendant: _Element) -> bool:
+    """
+    Check if one element is an ancestor of another in the XML tree.
+
+    Args:
+        potential_ancestor: Element that might be the ancestor
+        potential_descendant: Element that might be the descendant
+
+    Returns:
+        bool: True if potential_ancestor contains potential_descendant
+    """
+
+    current = potential_descendant.getparent()
+
+    while current is not None:
+        if current is potential_ancestor:
+            return True
+        current = current.getparent()
+
+    return False
+
+
+# NOTE:
+# CLINICAL DATA EXTRACTION AND ANALYSIS
+# =============================================================================
+
+
+def _extract_clinical_data(
+    clinical_element: _Element,
+) -> dict[str, str | bool | None]:
+    """
+    Extract data from a clinical element.
+
+    Now checks for trigger code flag set during processing.
+
+    Args:
+        clinical_element: The clinical element to extract data from.
+
+    Returns:
+        dict[str, str | bool]: Dictionary containing the extracted clinical data
                                with display_text, code, code_system and is_trigger_code.
     """
 
     # find the code element
     code_element: _Element | None = (
-        observation
-        if observation.tag.endswith("code")
-        else observation.find(".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"})
+        clinical_element
+        if clinical_element.tag.endswith("code")
+        else clinical_element.find(".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"})
     )
 
     # extract basic information
@@ -557,61 +764,163 @@ def _extract_observation_data(
         "display_text": display_text,
         "code": code,
         "code_system": code_system,
-        "is_trigger_code": False,  # Always False since we're not using templateIds
+        "is_trigger_code": getattr(clinical_element, "_is_trigger_code", False),
     }
 
 
-def _create_or_update_text_element(observations: list[_Element]) -> _Element:
+def _has_trigger_template_ancestor(
+    element: _Element, trigger_templates: list[str]
+) -> bool:
     """
-    Create or update a text element with observation data.
+    Check if element is within a trigger code template.
 
     Args:
-        observations: List of observation elements to include in the text.
+        element: The XML element to check
+        trigger_templates: List of template IDs that indicate trigger codes
 
     Returns:
-        _Element: The created or updated text element.
+        bool: True if element is within any of the trigger templates
+    """
+
+    if not trigger_templates:
+        return False
+
+    current = element
+    namespaces = {"hl7": "urn:hl7-org:v3"}
+
+    # walk up the tree looking for trigger template IDs
+    while current is not None:
+        template_ids = current.xpath(".//hl7:templateId/@root", namespaces=namespaces)
+        if any(tid in trigger_templates for tid in template_ids):
+            return True
+        current = current.getparent()
+
+    return False
+
+
+# NOTE:
+# TEXT ELEMENT GENERATION (HTML table creation)
+# =============================================================================
+
+
+def _create_or_update_text_element(
+    clinical_elements: list[_Element], trigger_code_elements: set[int]
+) -> _Element:
+    """
+    Create clean, professional text element with trigger code information.
+
+    Simple, clean text generation that clearly shows trigger code status
+    without complex formatting that might break downstream systems.
+
+    Args:
+        clinical_elements: List of clinical elements to include in the text.
+        trigger_code_elements: Set of clinical element IDs that are trigger codes.
+
+    Returns:
+        _Element: The created text element with clean formatting.
     """
 
     text_element = etree.Element("{urn:hl7-org:v3}text")
+
+    # main title
     title = etree.SubElement(text_element, "title")
     title.text = REFINER_OUTPUT_TITLE
 
+    # create table
     table_element = etree.SubElement(text_element, "table", border="1")
+
+    # table header - add back the "Is Trigger Code" column
     header_row = etree.SubElement(table_element, "tr")
-    headers = OBSERVATION_TABLE_HEADERS
+    headers = CLINICAL_DATA_TABLE_HEADERS
 
     for header in headers:
         th = etree.SubElement(header_row, "th")
         th.text = header
 
-    # add observation data to table
-    for observation in observations:
-        data = _extract_observation_data(observation)
-        row = etree.SubElement(table_element, "tr")
-        for key in headers[:-1]:  # Exclude the last header as it's for the boolean flag
-            td = etree.SubElement(row, "td")
-            value = data[key.lower().replace(" ", "_")]
-            if value is not None and not isinstance(value, str):
-                value = str(value)
-            td.text = value
+    # add clinical data rows - trigger codes first
+    trigger_elements = [
+        elem for elem in clinical_elements if id(elem) in trigger_code_elements
+    ]
+    other_elements = [
+        elem for elem in clinical_elements if id(elem) not in trigger_code_elements
+    ]
 
-        # add boolean flag for matching condition code (always TRUE since we only keep matches)
-        td = etree.SubElement(row, "td")
-        td.text = "TRUE"  # Always TRUE since we filtered to only matching observations
+    # add trigger codes first
+    for clinical_element in trigger_elements:
+        _add_clinical_data_row(table_element, clinical_element, is_trigger=True)
+
+    # add other clinical elements
+    for clinical_element in other_elements:
+        _add_clinical_data_row(table_element, clinical_element, is_trigger=False)
 
     return text_element
 
 
-def _update_text_element(section: _Element, observations: list[_Element]) -> None:
+def _add_clinical_data_row(
+    table_element: _Element, clinical_element: _Element, is_trigger: bool
+) -> None:
     """
-    Update a section's text element with observation information.
+    Add a single clinical data row to the table.
+
+    Args:
+        table_element: The table element to add the row to
+        clinical_element: The clinical element
+        is_trigger: Whether this is a trigger code
+    """
+
+    data = _extract_clinical_data(clinical_element)
+    row = etree.SubElement(table_element, "tr")
+
+    # display text
+    td = etree.SubElement(row, "td")
+    display_text = data["display_text"]
+    if is_trigger and display_text:
+        # simple bold formatting for trigger codes
+        b = etree.SubElement(td, "b")
+        b.text = display_text
+    else:
+        td.text = display_text or "Not specified"
+
+    # code
+    td = etree.SubElement(row, "td")
+    code = data["code"]
+    if is_trigger and code:
+        b = etree.SubElement(td, "b")
+        b.text = code
+    else:
+        td.text = code or "Not specified"
+
+    # code System
+    td = etree.SubElement(row, "td")
+    td.text = data["code_system"] or "Not specified"
+
+    # is trigger code
+    td = etree.SubElement(row, "td")
+    td.text = "YES" if is_trigger else "NO"
+
+    # matching condition code (always YES since we only keep matches; if we
+    # filter parts of sections we may need to update how this works)
+    td = etree.SubElement(row, "td")
+    td.text = "YES"
+
+
+def _update_text_element(
+    section: _Element,
+    clinical_elements: list[_Element],
+    trigger_code_elements: set[int],
+) -> None:
+    """
+    Update a section's text element with clinical data information.
 
     Args:
         section: The section element containing the text element to update.
-        observations: List of observation elements to include in the text.
+        clinical_elements: List of clinical elements to include in the text.
+        trigger_code_elements: Set of clinical element IDs that are trigger codes.
     """
 
-    new_text_element = _create_or_update_text_element(observations)
+    new_text_element = _create_or_update_text_element(
+        clinical_elements, trigger_code_elements
+    )
 
     existing_text_element = section.find(
         ".//hl7:text", namespaces={"hl7": "urn:hl7-org:v3"}
@@ -658,39 +967,36 @@ def _create_minimal_section(section: _Element) -> None:
     for entry in section.findall(".//hl7:entry", namespaces=namespaces):
         section.remove(entry)
 
+    # clean up all comments from processed sections
+    _remove_all_comments(section)
+
     # add nullFlavor="NI" to the <section> element
     section.attrib["nullFlavor"] = "NI"
 
 
-def build_condition_eicr_pairs(
-    original_xml_files: XMLFiles,
-    reportable_conditions: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """
-    Generate pairs of reportable conditions and fresh XMLFiles copies.
+# NOTE:
+# XML CLEANUP UTILITIES
+# =============================================================================
 
-    Each reportable condition gets its own copy of the XMLFiles object so that
-    condition-specific refinement can be performed independently.
+
+def _remove_all_comments(section: _Element) -> None:
+    """
+    Remove all XML comments from a processed section.
+
+    After refining a section, comments may no longer be accurate or relevant.
+    This ensures clean output without orphaned or misleading comments.
 
     Args:
-        original_xml_files: The original XMLFiles object containing eICR and RR.
-        reportable_conditions: List of reportable condition objects with 'code' keys.
-
-    Returns:
-        list[dict[str, Any]]: A list of dictionaries, each containing a
-                             `reportable_condition` and `xml_files`.
+        section: The section element to clean up
     """
+    comments = section.xpath(".//comment()")
+    for comment in comments:
+        parent = comment.getparent()
+        if parent is not None:
+            parent.remove(comment)
 
-    condition_eicr_pairs = []
 
-    for condition in reportable_conditions:
-        # create fresh XMLFiles for each condition to ensure complete isolation
-        condition_xml_files = XMLFiles(original_xml_files.eicr, original_xml_files.rr)
-        condition_eicr_pairs.append(
-            {
-                "reportable_condition": condition,
-                "xml_files": condition_xml_files,
-            }
-        )
-
-    return condition_eicr_pairs
+# TODO:
+# it might be beneficial to add a function that will add comments back to the <entry>s that we're
+# persisting in our refined output (even the minimal sections too). we can discuss this at some
+# point in the future
