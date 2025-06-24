@@ -4,10 +4,6 @@ on:
   workflow_call:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-docker-build
-  cancel-in-progress: true
-
 jobs:
   app-build:
     runs-on: ubuntu-latest
