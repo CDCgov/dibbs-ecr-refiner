@@ -2,9 +2,9 @@ import asyncio
 import io
 import os
 import time
-import uuid
 from collections.abc import Callable
 from pathlib import Path
+from uuid import uuid4
 from zipfile import BadZipFile, ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -94,29 +94,29 @@ def _get_file_size_difference_percentage(
 
 
 def _create_refined_ecr_zip(
-    refined_eicr: str, unrefined_rr: str, output_dir: Path
+    *,
+    files: list[tuple[str, str]],
+    output_dir: Path,
 ) -> tuple[str, Path, str]:
     """
-    Writes a zip file to disk containing the refined eICR and unrefined RR files.
+    Create a zip archive containing all provided (filename, content) pairs.
 
     Args:
-        refined_eicr: the refined eICR XML document
-        unrefined_rr: the unrefined RR XML document
-        output_dir: path to the directory where the file will be stored
+        files (list): List of tuples [(filename, content)], content must be string.
+        output_dir (Path): Directory to save the zip file.
 
     Returns:
-        tuple[str, Path, str]: A tuple containing the created file's name, the full created file's path,
-        and a unique token to identify the file used for downloading
+        (filename, filepath, token)
     """
-    token = str(uuid.uuid4())
-    output_file_name = f"{token}_{FILE_NAME_SUFFIX}"
-    output_file_path = Path(output_dir, output_file_name)
+    token = str(uuid4())
+    zip_filename = f"{token}_refined_ecr.zip"
+    zip_filepath = output_dir / zip_filename
 
-    with ZipFile(output_file_path, "w") as zf:
-        zf.writestr("CDA_eICR.xml", refined_eicr)
-        zf.writestr("CDA_RR.xml", unrefined_rr)
+    with ZipFile(zip_filepath, "w") as zf:
+        for filename, content in files:
+            zf.writestr(filename, content)
 
-    return output_file_name, output_file_path, token
+    return zip_filename, zip_filepath, token
 
 
 def _update_file_store(filename: str, path: Path, token: str) -> None:
@@ -137,9 +137,13 @@ def _update_file_store(filename: str, path: Path, token: str) -> None:
     }
 
 
-def _get_zip_creator() -> Callable[[str, str, Path], tuple[str, Path, str]]:
+def _get_zip_creator() -> Callable[..., tuple[str, Path, str]]:
     """
-    Dependency injected function responsible for passing the function that'll write the ouput zip file to the handler.
+    Dependency-injected function responsible for passing the function that will write the output zip file to the handler.
+
+    Returns:
+        A callable that takes a list of (filename, content) tuples and an output directory,
+        and returns a tuple (zip_filename, zip_filepath, token).
     """
     return _create_refined_ecr_zip
 
@@ -235,9 +239,7 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(_get_demo_zip_path),
-    create_output_zip: Callable[[str, str, Path], tuple[str, Path, str]] = Depends(
-        _get_zip_creator
-    ),
+    create_output_zip: Callable[..., tuple[str, Path, str]] = Depends(_get_zip_creator),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
 ) -> JSONResponse:
     """
@@ -298,10 +300,23 @@ async def demo_upload(
         # build the response so each output is clearly associated with its source condition.
         # this structure makes it easy for clients to consume and extends naturally if we later return RR artifacts.
         conditions = []
-        for result in refined_results:
+        refined_files_to_zip = []
+
+        # Track condition metadata and gather refined XMLs to zip
+        for idx, result in enumerate(refined_results):
             condition_info = result["reportable_condition"]
             condition_refined_eicr = result["refined_eicr"]
 
+            # Construct a filename for each XML (e.g. "covid_840539006.xml")
+            condition_code = condition_info.get("code", f"cond_{idx}")
+            display_name = condition_info.get("displayName", f"Condition_{idx}")
+            safe_name = display_name.replace(" ", "_").replace("/", "_")
+            filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+
+            # Add to the list of files to include in the ZIP
+            refined_files_to_zip.append((filename, condition_refined_eicr))
+
+            # Build per-condition metadata (zip token added later)
             conditions.append(
                 {
                     "code": condition_info["code"],
@@ -310,8 +325,7 @@ async def demo_upload(
                     "stats": [
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
-                                original_xml_files.eicr,
-                                condition_refined_eicr,
+                                original_xml_files.eicr, condition_refined_eicr
                             )
                         }%",
                     ],
@@ -320,8 +334,24 @@ async def demo_upload(
                         "sections_processed": "All sections scoped to condition codes",
                         "method": "ProcessedGrouper-based filtering",
                     },
-                },
+                }
             )
+
+        # ✅ Zip all condition files + eICR file into one archive
+        full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
+
+        # Add eICR + RR file as well
+        refined_files_to_zip.append(("CDA_eICR.xml", xml_files.eicr))
+        refined_files_to_zip.append(("CDA_RR.xml", xml_files.rr))
+
+        # Now create the combined zip
+        output_file_name, output_file_path, token = create_output_zip(
+            files=refined_files_to_zip,
+            output_dir=full_zip_output_path,
+        )
+
+        # Store the combined zip
+        _update_file_store(output_file_name, output_file_path, token)
 
         return JSONResponse(
             content=jsonable_encoder(
@@ -335,6 +365,7 @@ async def demo_upload(
                         "Sections contain only data relevant to that specific condition",
                         "Clinical codes matched using ProcessedGrouper database",
                     ],
+                    "refined_download_token": token,
                 }
             )
         )
