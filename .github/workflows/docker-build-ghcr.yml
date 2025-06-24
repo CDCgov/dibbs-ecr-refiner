@@ -63,9 +63,10 @@ jobs:
             echo "tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:$TAG" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push Docker image
+      - name: Build and push Refiner app image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.app
           push: true
           tags: ${{ steps.vars.outputs.tags }}
