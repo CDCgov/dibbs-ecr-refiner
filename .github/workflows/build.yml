@@ -4,8 +4,12 @@ on:
   workflow_call:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-docker-build
+  cancel-in-progress: true
+
 jobs:
-  docker-build:
+  app-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,6 +26,14 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  lambda-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Test Refiner Lambda build
         uses: docker/build-push-action@v6
