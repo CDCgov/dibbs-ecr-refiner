@@ -32,7 +32,7 @@ The linter can be run two different ways: either manually via the `ruff` command
 
 ### Manually
 
-1. Activate the `refiner` virtual environment (steps listed [here](./api/refiner/README.md#running-from-python-source-code))
+1. Activate the `refiner` virtual environment (steps listed [here](./refiner/README.md#running-from-python-source-code))
 2. Install dev dependencies with `pip install -r requirements.txt -r requirements-dev.txt`
 3. Run any `ruff` command you'd like (see [here](https://docs.astral.sh/ruff/linter/))
 
