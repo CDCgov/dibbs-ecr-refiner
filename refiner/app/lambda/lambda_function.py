@@ -48,7 +48,3 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f"Error processing order: {str(e)}")
         raise
-
-
-# Run from `refiner` with `python -m app.lambda.lambda_function`
-lambda_handler({}, {})
