@@ -64,11 +64,8 @@ subgraph service[REST API Service]
 direction TB
 subgraph mr["fab:fa-docker container"]
 refiner["fab:fa-python <code>message-refiner<br>HTTP:8080/</code>"]
+refiner <==> db["fas:fa-database SQLite DB"]
 end
-subgraph tcr["fab:fa-docker container"]
-tcr-service["fab:fa-python <code>trigger-code-reference<br>HTTP:8081/</code>"] <==> db["fas:fa-database SQLite DB"]
-end
-mr <==> |<code>/get-value-sets</code>| tcr
 end
 
 subgraph response["Responses"]
