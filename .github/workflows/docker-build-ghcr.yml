@@ -58,10 +58,10 @@ jobs:
 
           # If building `main`, include a `latest` tag
           if [ "$REF_NAME" = "main" ]; then
-            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:latest" >> $GITHUB_OUTPUT
+            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:latest" >> $GITHUB_OUTPUT
             echo "lambda_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:latest" >> $GITHUB_OUTPUT
           else
-            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:$TAG" >> $GITHUB_OUTPUT
+            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:$TAG" >> $GITHUB_OUTPUT
             echo "lambda_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:$TAG" >> $GITHUB_OUTPUT
           fi
 
