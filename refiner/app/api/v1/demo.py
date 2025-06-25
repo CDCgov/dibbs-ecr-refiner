@@ -385,7 +385,7 @@ async def demo_upload(
     except FileProcessingError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File cannot be processed. Please ensure zip archive only contains the required files.",
+            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
     except Exception:
         raise HTTPException(
