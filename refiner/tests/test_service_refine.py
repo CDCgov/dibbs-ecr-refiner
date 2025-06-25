@@ -9,11 +9,11 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.services.refine import (
-    CLINICAL_DATA_TABLE_HEADERS,  # Changed from OBSERVATION_TABLE_HEADERS
+    CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
     REFINER_OUTPUT_TITLE,
     _create_or_update_text_element,
-    _extract_clinical_data,  # Changed from _extract_observation_data
+    _extract_clinical_data,
     _find_path_to_entry,
     _get_section_by_code,
     _process_section,
@@ -158,7 +158,7 @@ def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count):
     paths = [_find_path_to_entry(elem) for elem in matching_clinical_elements]
 
     # call with the section element (element is the section in this case)
-    _prune_unwanted_siblings(paths, matching_clinical_elements, element)
+    _prune_unwanted_siblings(paths, element)
 
     # verify the result
     remaining_entries = _get_entries_for_section(element)
@@ -522,7 +522,7 @@ def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles):
     # verify each pair has the expected structure
     for i, pair in enumerate(pairs):
         assert "reportable_condition" in pair
-        assert "xml_files" in pair  # Changed from "eicr_copy"
+        assert "xml_files" in pair
         assert pair["reportable_condition"] == reportable_conditions[i]
 
         # verify the xml_files is a proper XMLFiles object

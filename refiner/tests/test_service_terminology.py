@@ -1,6 +1,3 @@
-import pytest
-
-from app.core.exceptions import InputValidationError
 from app.db.models import GrouperRow
 from app.services.terminology import ProcessedGrouper
 
@@ -119,30 +116,6 @@ def test_xpath_generation() -> None:
     assert '@code="456"' in xpath
     assert " | " in xpath  # Union operator
 
-    # test backward compatibility - observation-specific search
-    obs_xpath = processed.build_xpath(search_in="observation")
-    assert obs_xpath.startswith(".//hl7:observation[hl7:code[")
-
-
-def test_xpath_any_search_type() -> None:
-    """
-    Test XPath generation with explicit 'any' search type.
-    """
-
-    processed = ProcessedGrouper(
-        condition="38362002", display_name="Test Condition", codes={"123", "456"}
-    )
-
-    xpath = processed.build_xpath(search_in="any")
-
-    # should match the comprehensive pattern (order-independent checks)
-    assert ".//hl7:*[hl7:code[" in xpath
-    assert ".//hl7:code[" in xpath
-    assert ".//hl7:translation[" in xpath
-    assert '@code="123"' in xpath  # Both codes present
-    assert '@code="456"' in xpath
-    assert " | " in xpath  # Union operator between different searches
-
 
 def test_xpath_empty_codes() -> None:
     """
@@ -154,18 +127,3 @@ def test_xpath_empty_codes() -> None:
     )
 
     assert processed.build_xpath() == ""
-
-
-def test_xpath_empty_search_in() -> None:
-    """
-    Test XPath generation with empty search_in parameter.
-    """
-
-    processed = ProcessedGrouper(
-        condition="38362002", display_name="Test Condition", codes={"123"}
-    )
-
-    with pytest.raises(InputValidationError) as exc_info:
-        processed.build_xpath(search_in="")
-
-    assert "Empty search element specified" in str(exc_info.value)

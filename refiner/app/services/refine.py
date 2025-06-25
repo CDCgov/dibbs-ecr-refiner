@@ -1,5 +1,5 @@
 import logging
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -299,7 +299,7 @@ def refine_eicr(
         # we'll then use the 'refiner_config.json' as the brain for processing in a
         # config-driven way for section processing where the version will be passed to
         # _process_section
-        version = "1.1"
+        version: Literal["1.1"] = "1.1"
 
         for section_code, section_config in REFINER_DETAILS["sections"].items():
             # skip if in sections_to_include (preserve unmodified)
@@ -370,10 +370,16 @@ def _process_section(
     combined_xpath: str,
     namespaces: dict = {"hl7": "urn:hl7-org:v3"},
     section_config: dict | None = None,
-    version: str = "1.1",
+    version: Literal["1.1"] = "1.1",
 ) -> None:
     """
     Process a section using ProcessedGrouper-generated XPaths.
+
+    Processing Logic:
+    1. Find clinical elements that match SNOMED condition codes (contextual filtering)
+    2. Among those matches, identify which also have trigger code template IDs
+    3. Preserve entries containing the contextually relevant matches
+    4. Generate summary text showing both regular and trigger code matches
 
     Args:
         section: The XML section element to process
@@ -389,7 +395,8 @@ def _process_section(
         return
 
     try:
-        # find all matching clinical elements using ProcessedGrouper XPath
+        # STEP 1: Find all clinical elements matching our SNOMED condition codes
+        # this is our primary filter - only contextually relevant elements proceed
         xpath_result = section.xpath(combined_xpath, namespaces=namespaces)
 
         if not isinstance(xpath_result, list):
@@ -398,11 +405,12 @@ def _process_section(
 
         clinical_elements = cast(list[_Element], xpath_result)
 
-        # deduplicate hierarchical matches
+        # deduplicate hierarchical matches within our SNOMED-filtered set
         clinical_elements = _deduplicate_clinical_elements(clinical_elements)
 
         if clinical_elements:
-            # track trigger codes using a separate set instead of element attributes
+            # STEP 2: Among our SNOMED matches, identify trigger codes
+            # we only want trigger codes that are contextually relevant to our condition
             trigger_code_elements = set()
 
             # get trigger templates for this section from config
@@ -415,11 +423,25 @@ def _process_section(
                     if "template_id_root" in trigger_info:
                         trigger_templates.append(trigger_info["template_id_root"])
 
-            # mark trigger codes if we have templates
-            for clinical_element in clinical_elements:
-                if _has_trigger_template_ancestor(clinical_element, trigger_templates):
-                    trigger_code_elements.add(id(clinical_element))
+            # cache template ancestor checks to avoid repeated tree traversals
+            # fresh cache per section ensures clean slate for each processing cycle
+            if trigger_templates:
+                template_cache = {}
 
+                for clinical_element in clinical_elements:
+                    element_id = id(clinical_element)
+
+                    # check cache first to avoid redundant tree traversals
+                    if element_id not in template_cache:
+                        template_cache[element_id] = _has_trigger_template_ancestor(
+                            clinical_element, trigger_templates
+                        )
+
+                    # only add to trigger set if element has trigger template ancestry
+                    if template_cache[element_id]:
+                        trigger_code_elements.add(element_id)
+
+            # STEP 3: Process entry-level operations on our filtered matches
             # find parent entries for all matching clinical elements
             entry_paths = []
             for clinical_element in clinical_elements:
@@ -429,18 +451,18 @@ def _process_section(
             # deduplicate entry paths to prevent overlapping XML branches
             deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
 
-            # remove entries that don't contain relevant clinical elements
-            _prune_unwanted_siblings(
-                deduplicated_entry_paths, clinical_elements, section
-            )
+            # remove entries that don't contain our contextually relevant clinical elements
+            _prune_unwanted_siblings(deduplicated_entry_paths, section)
 
+            # STEP 4: Final cleanup and text generation
             # clean up all comments from processed sections
             _remove_all_comments(section)
 
-            # enhanced text generation with trigger code information
+            # generate summary text showing both regular matches and trigger codes
+            # trigger codes are highlighted but only those within our SNOMED context
             _update_text_element(section, clinical_elements, trigger_code_elements)
         else:
-            # no matching clinical elements found - create minimal section
+            # no matching clinical elements found for our condition--create minimal section
             _create_minimal_section(section)
 
     except etree.XPathEvalError as e:
@@ -486,7 +508,7 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
                 if grouper_row:
                     processed = ProcessedGrouper.from_grouper_row(grouper_row)
                     # Use comprehensive search across all element types
-                    xpath = processed.build_xpath("any")
+                    xpath = processed.build_xpath()
                     if xpath:
                         xpath_conditions.append(xpath)
             except (DatabaseConnectionError, DatabaseQueryError) as e:
@@ -582,7 +604,6 @@ def _find_path_to_entry(element: _Element) -> _Element:
 
 def _prune_unwanted_siblings(
     entry_paths: list[_Element],
-    clinical_elements: list[_Element],
     section: _Element,
 ) -> None:
     """
@@ -590,7 +611,6 @@ def _prune_unwanted_siblings(
 
     Args:
         entry_paths: List of entry elements to preserve
-        clinical_elements: List of clinical elements that matched our search
         section: The section being processed
     """
 
