@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass
 
-from ..core.exceptions import InputValidationError
 from ..db.models import GrouperRow
 
 
@@ -66,7 +65,7 @@ class ProcessedGrouper:
             codes=all_codes,
         )
 
-    def build_xpath(self, search_in: str = "any") -> str:
+    def build_xpath(self) -> str:
         """
         Build XPath to find elements containing any of our codes.
 
@@ -79,20 +78,9 @@ class ProcessedGrouper:
           * <translation code="code">
           * etc
 
-        Args:
-            search_in: Element type to search within.
-                    "observation" for backward compatibility (original behavior)
-                    "any" for comprehensive search across all element types
-
         Returns:
             str: XPath expression that finds elements containing matching codes
         """
-
-        if not search_in:
-            raise InputValidationError(
-                message="Empty search element specified",
-                details={"search_in": search_in},
-            )
 
         if not self.codes:
             return ""
@@ -100,15 +88,13 @@ class ProcessedGrouper:
         # create condition for any of our codes
         code_conditions: str = " or ".join(f'@code="{code}"' for code in self.codes)
 
-        if search_in == "any":
-            # comprehensive but more precise search - find codes in specific contexts
-            xpath_patterns: list[str] = [
-                f".//hl7:*[hl7:code[{code_conditions}]]",  # Elements with matching code children
-                f".//hl7:code[{code_conditions}]",  # Direct code matches
-                f".//hl7:translation[{code_conditions}]",  # Translation elements
-            ]
-            return " | ".join(xpath_patterns)
-        else:
-            # backward compatibility -> original observation-only search
-            # this maintains the exact same behavior as before as fall back
-            return f".//hl7:observation[hl7:code[{code_conditions}]]"
+        # comprehensive but more precise search - find codes in all contexts
+        xpath_patterns: list[str] = [
+            # elements with matching code children
+            f".//hl7:*[hl7:code[{code_conditions}]]",
+            # direct code matches
+            f".//hl7:code[{code_conditions}]",
+            # translation elements
+            f".//hl7:translation[{code_conditions}]",
+        ]
+        return " | ".join(xpath_patterns)
