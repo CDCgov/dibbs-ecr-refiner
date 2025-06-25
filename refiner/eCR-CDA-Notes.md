@@ -635,31 +635,11 @@ This maintains consistency through the entire eCR process while ensuring standar
 
 The refiner processes eICR documents by:
 
-1. **Condition Code Input**: Takes SNOMED condition codes from RR reportable conditions
-2. **Clinical Code Lookup**: Uses the terminology database to find related clinical codes via ProcessedGrouper
+1. **Condition Code Input**: Takes SNOMED condition codes from RR reportability response's coded information organizer
+2. **Clinical Code Lookup**: Uses the terminology database (based on APHL's Terminology Exchange Service) to find related clinical codes via `ProcessedGrouper`
 3. **XPath Generation**: Builds XPath expressions to locate matching clinical elements
 4. **Section Processing**: For each section, preserves only entries that contain matching codes
 5. **Minimal Sections**: Sections with no matches get replaced with minimal content and `nullFlavor="NI"`
-
-### ProcessedGrouper Integration
-
-The `ProcessedGrouper` class bridges condition codes to clinical codes:
-
-```python
-# Example: COVID-19 condition code
-condition_code = "840539006"  # SARS-CoV-2 disease
-
-# ProcessedGrouper finds related clinical codes from terminology database
-processed = ProcessedGrouper.from_grouper_row(grouper_row)
-xpath = processed.build_xpath("any")  # Generates XPath for all element types
-```
-
-### Section Filtering Rules
-
-* **Sections to Include**: If specified, these sections are preserved completely unmodified
-* **Other Sections**: Filtered to keep only entries with matching clinical codes
-* **No Matches**: Section becomes minimal with `nullFlavor="NI"`
-* **Entry Preservation**: Complete `<entry>` elements are kept (not individual codes)
 
 ### XPath Strategy
 
@@ -693,10 +673,5 @@ How does it do this?
 - **Flexible**: Automatically finds codes in any CDA element type without hardcoding
 - **Comprehensive**: Catches direct codes, child codes, and translations
 - **Future-proof**: Will work with new CDA element types as they're added
-
-The `ProcessedGrouper` uses `search_in="any"` for comprehensive matching, ensuring all condition-related clinical data is captured regardless of which CDA element contains it.
-
-**Backward Compatibility:**
-The system maintains `search_in="observation"` for legacy behavior that only searches observation elements.
 
 This ensures all relevant clinical data related to the condition is preserved while removing unrelated entries.
