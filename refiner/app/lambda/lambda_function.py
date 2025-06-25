@@ -41,7 +41,8 @@ def lambda_handler(event, context):
         )
 
         # Test using custom module's code
-        print(file_io.get_asset_path("refiner_details.json"))
+        REFINER_DETAILS = file_io.read_json_asset("refiner_details.json")
+        print(REFINER_DETAILS["sections"]["11369-6"])
 
         return {"statusCode": 200, "message": "Receipt processed successfully"}
 
