@@ -9,6 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy handler
 COPY ./refiner/app/lambda/lambda_function.py app/lambda/lambda_function.py
 
+# Copy assets
+COPY ./refiner/assets ./assets
+
 # Copy refiner modules
 COPY ./refiner/app/core app/core
 COPY ./refiner/app/db app/db
