@@ -390,9 +390,13 @@ def _process_section(
 
     try:
         # find all matching clinical elements using ProcessedGrouper XPath
-        clinical_elements = cast(
-            list[_Element], section.xpath(combined_xpath, namespaces=namespaces)
-        )
+        xpath_result = section.xpath(combined_xpath, namespaces=namespaces)
+
+        if not isinstance(xpath_result, list):
+            _create_minimal_section(section)
+            return
+
+        clinical_elements = cast(list[_Element], xpath_result)
 
         # deduplicate hierarchical matches
         clinical_elements = _deduplicate_clinical_elements(clinical_elements)
@@ -420,8 +424,7 @@ def _process_section(
             entry_paths = []
             for clinical_element in clinical_elements:
                 entry_path = _find_path_to_entry(clinical_element)
-                if entry_path is not None:
-                    entry_paths.append(entry_path)
+                entry_paths.append(entry_path)
 
             # deduplicate entry paths to prevent overlapping XML branches
             deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
@@ -528,10 +531,10 @@ def _get_section_by_code(
 
     try:
         xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
-        section = cast(
-            list[_Element], structured_body.xpath(xpath_query, namespaces=namespaces)
-        )
-        if section is not None and len(section) == 1:
+        xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
+
+        if isinstance(xpath_result, list) and len(xpath_result) == 1:
+            section = cast(list[_Element], xpath_result)
             return section[0]
     except etree.XPathEvalError as e:
         raise XMLParsingError(
@@ -546,7 +549,7 @@ def _get_section_by_code(
 # =============================================================================
 
 
-def _find_path_to_entry(element: _Element) -> _Element | None:
+def _find_path_to_entry(element: _Element) -> _Element:
     """
     Find the nearest entry ancestor of an element.
 
@@ -554,7 +557,10 @@ def _find_path_to_entry(element: _Element) -> _Element | None:
         element: The element to find the entry for
 
     Returns:
-        The entry element, or None if no entry ancestor found
+        The entry element
+
+    Raises:
+        StructureValidationError: If no entry ancestor found
     """
 
     current_element: _Element | None = element
@@ -564,11 +570,12 @@ def _find_path_to_entry(element: _Element) -> _Element | None:
         current_element is not None and current_element.tag != "{urn:hl7-org:v3}entry"
     ):
         current_element = current_element.getparent()
-        if current_element is None:
-            raise StructureValidationError(
-                message="Parent <entry> element not found.",
-                details={"element_tag": element.tag},
-            )
+
+    if current_element is None:
+        raise StructureValidationError(
+            message="Parent <entry> element not found.",
+            details={"element_tag": element.tag},
+        )
 
     return current_element
 
@@ -590,9 +597,11 @@ def _prune_unwanted_siblings(
     # find all entries in the section
     namespaces = {"hl7": "urn:hl7-org:v3"}
 
-    all_entries = cast(
-        list[_Element], section.xpath(".//hl7:entry", namespaces=namespaces)
-    )
+    xpath_result = section.xpath(".//hl7:entry", namespaces=namespaces)
+    if not isinstance(xpath_result, list):
+        return
+
+    all_entries = cast(list[_Element], xpath_result)
 
     # remove entries not in our keep list
     for entry in all_entries:
@@ -665,13 +674,14 @@ def _deduplicate_clinical_elements(clinical_elements: list[_Element]) -> list[_E
         return clinical_elements
 
     # group elements by their code value to handle same-code hierarchies
-    code_groups = {}
+    code_groups: dict[str, list[_Element]] = {}
 
     for elem in clinical_elements:
         data = _extract_clinical_data(elem)
         code = data.get("code")
 
-        if code:
+        # only use string codes for grouping
+        if isinstance(code, str):
             if code not in code_groups:
                 code_groups[code] = []
             code_groups[code].append(elem)
@@ -753,12 +763,23 @@ def _extract_clinical_data(
         else clinical_element.find(".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"})
     )
 
-    # extract basic information
-    display_text = code_element.get("displayName") if code_element is not None else None
-    code = code_element.get("code") if code_element is not None else None
-    code_system = (
-        code_element.get("codeSystemName") if code_element is not None else None
-    )
+    # extract basic information - handle the fact that get() can return True
+    display_text: str | None = None
+    code: str | None = None
+    code_system: str | None = None
+
+    if code_element is not None:
+        display_text_raw = code_element.get("displayName")
+        if isinstance(display_text_raw, str):
+            display_text = display_text_raw
+
+        code_raw = code_element.get("code")
+        if isinstance(code_raw, str):
+            code = code_raw
+
+        code_system_raw = code_element.get("codeSystemName")
+        if isinstance(code_system_raw, str):
+            code_system = code_system_raw
 
     return {
         "display_text": display_text,
@@ -785,14 +806,16 @@ def _has_trigger_template_ancestor(
     if not trigger_templates:
         return False
 
-    current = element
-    namespaces = {"hl7": "urn:hl7-org:v3"}
+    current: _Element | None = element
+    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 
     # walk up the tree looking for trigger template IDs
     while current is not None:
-        template_ids = current.xpath(".//hl7:templateId/@root", namespaces=namespaces)
-        if any(tid in trigger_templates for tid in template_ids):
-            return True
+        xpath_result = current.xpath(".//hl7:templateId/@root", namespaces=namespaces)
+        if isinstance(xpath_result, list):
+            template_ids = xpath_result
+            if any(tid in trigger_templates for tid in template_ids):
+                return True
         current = current.getparent()
 
     return False
@@ -871,9 +894,11 @@ def _add_clinical_data_row(
     data = _extract_clinical_data(clinical_element)
     row = etree.SubElement(table_element, "tr")
 
-    # display text
+    # display text - handle potential non-string values
     td = etree.SubElement(row, "td")
-    display_text = data["display_text"]
+    display_text_raw = data["display_text"]
+    display_text = display_text_raw if isinstance(display_text_raw, str) else None
+
     if is_trigger and display_text:
         # simple bold formatting for trigger codes
         b = etree.SubElement(td, "b")
@@ -881,18 +906,22 @@ def _add_clinical_data_row(
     else:
         td.text = display_text or "Not specified"
 
-    # code
+    # code - handle potential non-string values
     td = etree.SubElement(row, "td")
-    code = data["code"]
+    code_raw = data["code"]
+    code = code_raw if isinstance(code_raw, str) else None
+
     if is_trigger and code:
         b = etree.SubElement(td, "b")
         b.text = code
     else:
         td.text = code or "Not specified"
 
-    # code System
+    # code system - handle potential non-string values
     td = etree.SubElement(row, "td")
-    td.text = data["code_system"] or "Not specified"
+    code_system_raw = data["code_system"]
+    code_system = code_system_raw if isinstance(code_system_raw, str) else None
+    td.text = code_system or "Not specified"
 
     # is trigger code
     td = etree.SubElement(row, "td")
@@ -989,11 +1018,13 @@ def _remove_all_comments(section: _Element) -> None:
     Args:
         section: The section element to clean up
     """
-    comments = section.xpath(".//comment()")
-    for comment in comments:
-        parent = comment.getparent()
-        if parent is not None:
-            parent.remove(comment)
+    xpath_result = section.xpath(".//comment()")
+    if isinstance(xpath_result, list):
+        for comment in xpath_result:
+            if isinstance(comment, etree._Element):
+                parent = comment.getparent()
+                if parent is not None:
+                    parent.remove(comment)
 
 
 # TODO:
