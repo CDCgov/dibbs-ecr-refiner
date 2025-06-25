@@ -92,7 +92,7 @@ def parse_xml(xml_content: str | bytes) -> _Element:
 
 async def read_xml_zip(file: FileUpload) -> XMLFiles:
     """
-    Read XML files from a zip archive.
+    Read XML files from a ZIP archive.
     """
     try:
         zip_bytes = await file.read()
@@ -146,10 +146,10 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
 
     except BadZipFile:
         raise ZipValidationError(
-            message="Invalid zip file provided",
+            message="Invalid ZIP file provided",
             details={
-                "error": "File is not a valid zip archive",
-                "requirements": "zip must contain CDA_eICR.xml and CDA_RR.xml files",
+                "error": "File is not a valid ZIP archive",
+                "requirements": "ZIP must contain CDA_eICR.xml and CDA_RR.xml files",
             },
         )
     except ZipValidationError:
@@ -157,5 +157,5 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
         raise
     except Exception as e:
         raise FileProcessingError(
-            message="Failed to process zip file", details={"error": str(e)}
+            message="Failed to process ZIP file", details={"error": str(e)}
         )
