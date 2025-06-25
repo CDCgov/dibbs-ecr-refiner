@@ -9,11 +9,11 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.services.refine import (
+    CLINICAL_DATA_TABLE_HEADERS,  # Changed from OBSERVATION_TABLE_HEADERS
     MINIMAL_SECTION_MESSAGE,
-    OBSERVATION_TABLE_HEADERS,
     REFINER_OUTPUT_TITLE,
     _create_or_update_text_element,
-    _extract_observation_data,
+    _extract_clinical_data,  # Changed from _extract_observation_data
     _find_path_to_entry,
     _get_section_by_code,
     _process_section,
@@ -29,7 +29,9 @@ from .conftest import NAMESPACES
 @pytest.fixture(scope="session")
 def xml_test_setup(read_test_xml):
     """
-    Setup XML elements for testing section processing."""
+    Setup XML elements for testing section processing.
+    """
+
     test_message = read_test_xml("mon-mothma-covid-lab-positive_eicr.xml")
     structured_body = test_message.find(".//{urn:hl7-org:v3}structuredBody", NAMESPACES)
 
@@ -42,23 +44,29 @@ def xml_test_setup(read_test_xml):
 
 
 @pytest.fixture(scope="session")
-def observation_test_data(xml_test_setup) -> dict[str, str | Any | None]:
+def clinical_test_data(
+    xml_test_setup,
+) -> dict[str, str | Any | None]:  # Renamed from observation_test_data
     """
-    Setup observation test data for section processing.
+    Setup clinical test data for section processing.
     """
 
-    # Use a simple XPath to find observations with specific codes
-    observation_xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
+    # use a simple XPath to find clinical elements with specific codes
+    clinical_xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'  # Renamed from observation_xpath
 
-    # Use direct XPath instead of _get_observations
-    observations = xml_test_setup["results_section"].xpath(
-        observation_xpath, namespaces=NAMESPACES
+    # use direct XPath instead of _get_observations
+    clinical_elements = xml_test_setup[
+        "results_section"
+    ].xpath(  # Renamed from observations
+        clinical_xpath, namespaces=NAMESPACES
     )
 
     return {
-        "xpath": observation_xpath,
-        "observations": observations,
-        "single_observation": observations[0] if observations else None,
+        "xpath": clinical_xpath,
+        "clinical_elements": clinical_elements,  # Renamed from observations
+        "single_clinical_element": clinical_elements[0]
+        if clinical_elements
+        else None,  # Renamed from single_observation
     }
 
 
@@ -90,28 +98,20 @@ def _get_entries_for_section(
     return entries if entries is not None else []
 
 
-@pytest.mark.parametrize(
-    "observation_index,expected_path_length",
-    [
-        # in the new implementation, _find_path_to_entry returns only the entry element
-        (0, 1),
-    ],
-)
-def test_find_path_to_entry(
-    observation_test_data, observation_index, expected_path_length
-):
+def test_find_path_to_entry_no_match():
     """
-    Test finding path from observation to its containing entry.
+    Test finding path when no match exists.
     """
 
-    observation = observation_test_data["observations"][observation_index]
-    entry_element = _find_path_to_entry(observation)
+    clinical_element = etree.fromstring("""
+        <observation xmlns="urn:hl7-org:v3">
+            <code code="different"/>
+        </observation>
+    """)
 
-    # verify we got an entry element
-    assert entry_element.tag.endswith("entry")
-
-    # instead of checking path length, just verify we got an element
-    assert entry_element is not None
+    with pytest.raises(StructureValidationError) as exc_info:
+        _find_path_to_entry(clinical_element)
+    assert "Parent <entry> element not found" in str(exc_info.value)
 
 
 @pytest.mark.parametrize(
@@ -153,12 +153,12 @@ def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count):
     # parse the XML string into an element
     element = etree.fromstring(xml_content)
 
-    # find matching observations using XPath
-    matching_observations = element.xpath(xpath, namespaces=NAMESPACES)
-    paths = [_find_path_to_entry(obs) for obs in matching_observations]
+    # find matching clinical elements using XPath
+    matching_clinical_elements = element.xpath(xpath, namespaces=NAMESPACES)
+    paths = [_find_path_to_entry(elem) for elem in matching_clinical_elements]
 
     # call with the section element (element is the section in this case)
-    _prune_unwanted_siblings(paths, matching_observations, element)
+    _prune_unwanted_siblings(paths, matching_clinical_elements, element)
 
     # verify the result
     remaining_entries = _get_entries_for_section(element)
@@ -166,7 +166,7 @@ def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count):
 
 
 @pytest.mark.parametrize(
-    "observation_index,expected_data",
+    "clinical_index,expected_data",  # Renamed from observation_index
     [
         (
             0,
@@ -179,24 +179,30 @@ def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count):
         ),
     ],
 )
-def test_extract_observation_data(
-    observation_test_data, observation_index, expected_data
+def test_extract_clinical_data(  # Renamed from test_extract_observation_data
+    clinical_test_data,
+    clinical_index,
+    expected_data,  # Updated parameter name
 ):
     """
-    Test extraction of observation metadata.
+    Test extraction of clinical element metadata.
     """
 
-    observation = observation_test_data["observations"][observation_index]
-    data = _extract_observation_data(observation)
+    clinical_element = clinical_test_data["clinical_elements"][clinical_index]
+    data = _extract_clinical_data(clinical_element)
     assert data == expected_data
 
 
-def test_create_or_update_text_element(observation_test_data):
+def test_create_or_update_text_element(clinical_test_data):
     """
-    Test creation of text element from observations.
+    Test creation of text element from clinical elements.
     """
 
-    text_element = _create_or_update_text_element(observation_test_data["observations"])
+    # updated function signature to include trigger_code_elements parameter
+    trigger_code_elements = set()  # Empty set for test
+    text_element = _create_or_update_text_element(
+        clinical_test_data["clinical_elements"], trigger_code_elements
+    )
 
     # verify basic structure
     assert text_element.tag.endswith("text")
@@ -214,7 +220,9 @@ def test_create_or_update_text_element(observation_test_data):
 
     # verify header uses new constants
     header = rows[0].findall(".//th")
-    assert [h.text for h in header] == OBSERVATION_TABLE_HEADERS
+    assert [
+        h.text for h in header
+    ] == CLINICAL_DATA_TABLE_HEADERS  # Updated constant name
 
 
 @pytest.mark.parametrize(
@@ -235,6 +243,7 @@ def test_refine_eicr(
     """
     Test eICR refinement with required condition_codes.
     """
+
     refined_output = refine_eicr(
         xml_files=sample_xml_files,
         sections_to_include=sections_to_include,
@@ -258,6 +267,7 @@ def test_refine_eicr_requires_condition_codes(sample_xml_files: XMLFiles):
     """
     Test that refine_eicr raises ConditionCodeError if condition_codes is not provided.
     """
+
     with pytest.raises(ConditionCodeError) as excinfo:
         refine_eicr(
             xml_files=sample_xml_files,
@@ -271,6 +281,7 @@ def test_refine_eicr_empty_condition_codes(sample_xml_files: XMLFiles):
     """
     Test that refine_eicr raises ConditionCodeError if condition_codes is empty string.
     """
+
     with pytest.raises(ConditionCodeError) as excinfo:
         refine_eicr(
             xml_files=sample_xml_files,
@@ -405,9 +416,9 @@ def test_get_reportable_conditions_empty_rr11():
     assert result is None
 
 
-def test_process_section_no_observations():
+def test_process_section_no_clinical_elements():
     """
-    Test _process_section when no observations are found.
+    Test _process_section when no clinical elements are found.
     """
 
     section = etree.fromstring("""
@@ -416,7 +427,7 @@ def test_process_section_no_observations():
         </section>
     """)
 
-    # Pass empty XPath since no condition codes provided
+    # pass empty XPath since no condition codes provided
     _process_section(
         section=section,
         combined_xpath="",  # Empty XPath means no condition codes
@@ -452,7 +463,7 @@ def test_process_section_with_error():
         </section>
     """)
 
-    # Use a valid XPath that won't match anything
+    # use a valid XPath that won't match anything
     combined_xpath = './/hl7:observation[hl7:code[@code="nonexistent-code"]]'
 
     _process_section(
@@ -475,7 +486,7 @@ def test_create_or_update_text_invalid_section():
     Test creating text element with invalid section.
     """
 
-    observations = [
+    clinical_elements = [  # Renamed from observations
         etree.fromstring("""
             <observation xmlns="urn:hl7-org:v3">
                 <code code="test" displayName="Test Code" codeSystemName="Test System"/>
@@ -483,26 +494,14 @@ def test_create_or_update_text_invalid_section():
         """)
     ]
 
-    text_element = _create_or_update_text_element(observations)
+    # updated function signature
+    trigger_code_elements = set()
+    text_element = _create_or_update_text_element(
+        clinical_elements, trigger_code_elements
+    )
     assert text_element is not None
     assert text_element.tag == "{urn:hl7-org:v3}text"
     assert text_element.find("table") is not None
-
-
-def test_find_path_to_entry_no_match():
-    """
-    Test finding path when no match exists.
-    """
-
-    observation = etree.fromstring("""
-        <observation xmlns="urn:hl7-org:v3">
-            <code code="different"/>
-        </observation>
-    """)
-
-    with pytest.raises(StructureValidationError) as exc_info:
-        _find_path_to_entry(observation)
-    assert "Parent <entry> element not found" in str(exc_info.value)
 
 
 def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles):
@@ -542,9 +541,10 @@ def test_text_constants():
         == "Output from CDC PRIME DIBBs eCR Refiner application by request of STLT"
     )
     assert MINIMAL_SECTION_MESSAGE == "Section details have been removed as requested"
-    assert OBSERVATION_TABLE_HEADERS == [
+    assert CLINICAL_DATA_TABLE_HEADERS == [  # Updated constant name and values
         "Display Text",
         "Code",
         "Code System",
+        "Is Trigger Code",
         "Matching Condition Code",
     ]
