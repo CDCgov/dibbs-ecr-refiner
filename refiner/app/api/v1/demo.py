@@ -12,7 +12,11 @@ from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
-from ...core.exceptions import XMLValidationError
+from ...core.exceptions import (
+    FileProcessingError,
+    XMLValidationError,
+    ZipValidationError,
+)
 from ...services import file_io, refine
 
 # Keep track of files available for download / what needs to be cleaned up
@@ -23,7 +27,6 @@ file_store: dict[str, dict] = {}
 # File uploads
 MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
-MAX_ALLOWED_FILE_COUNT = 2  # zip should only contain CDA_eICR.XML and CDA_RR.xml
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -369,10 +372,25 @@ async def demo_upload(
                 }
             )
         )
-    except XMLValidationError as e:
+    except XMLValidationError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": str(e), "details": e.details},
+            detail="XML file(s) could not be processed.",
+        )
+    except ZipValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+        )
+    except FileProcessingError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server error occurred. Please check your file and try again.",
         )
 
 
