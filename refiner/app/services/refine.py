@@ -373,13 +373,19 @@ def _process_section(
     version: Literal["1.1"] = "1.1",
 ) -> None:
     """
-    Process a section using ProcessedGrouper-generated XPaths.
+    Process a section using a three-step filtering approach.
 
-    Processing Logic:
-    1. Find clinical elements that match SNOMED condition codes (contextual filtering)
-    2. Among those matches, identify which also have trigger code template IDs
-    3. Preserve entries containing the contextually relevant matches
-    4. Generate summary text showing both regular and trigger code matches
+    STEP 1 (Context Filter): Find clinical elements matching SNOMED condition codes
+    STEP 2 (Trigger Identification): Among contextual matches, identify trigger codes
+    STEP 3 (Entry Processing): Preserve relevant entries and generate section summary
+
+    This three-step process ensures we only preserve entries that are:
+    1. Relevant to the reportable condition (contextual filtering)
+    2. Properly marked if they triggered the original eICR (trigger identification)
+    3. Properly structured and summarized in the final output (entry processing)
+
+    The key principle: trigger code identification only happens within an already-filtered
+    context, ensuring we don't keep random trigger codes unrelated to the condition.
 
     Args:
         section: The XML section element to process
@@ -395,81 +401,179 @@ def _process_section(
         return
 
     try:
-        # STEP 1: Find all clinical elements matching our SNOMED condition codes
+        # STEP 1: CONTEXT FILTERING
+        # find all clinical elements matching our SNOMED condition codes
         # this is our primary filter - only contextually relevant elements proceed
-        xpath_result = section.xpath(combined_xpath, namespaces=namespaces)
+        contextual_matches = _find_condition_relevant_elements(
+            section, combined_xpath, namespaces
+        )
 
-        if not isinstance(xpath_result, list):
+        if not contextual_matches:
+            # no matching clinical elements found for our condition
             _create_minimal_section(section)
             return
 
-        clinical_elements = cast(list[_Element], xpath_result)
+        # STEP 2: TRIGGER IDENTIFICATION WITHIN CONTEXT
+        # among our contextual matches, identify which are trigger codes
+        # this ensures trigger codes are only identified within relevant clinical context
+        trigger_analysis = _analyze_trigger_codes_in_context(
+            contextual_matches, section_config
+        )
 
-        # deduplicate hierarchical matches within our SNOMED-filtered set
-        clinical_elements = _deduplicate_clinical_elements(clinical_elements)
-
-        if clinical_elements:
-            # STEP 2: Among our SNOMED matches, identify trigger codes
-            # we only want trigger codes that are contextually relevant to our condition
-            trigger_code_elements = set()
-
-            # get trigger templates for this section from config
-            trigger_templates = []
-            if section_config and "trigger_codes" in section_config:
-                # extract template_id_root values from trigger_codes
-                for trigger_type, trigger_info in section_config[
-                    "trigger_codes"
-                ].items():
-                    if "template_id_root" in trigger_info:
-                        trigger_templates.append(trigger_info["template_id_root"])
-
-            # cache template ancestor checks to avoid repeated tree traversals
-            # fresh cache per section ensures clean slate for each processing cycle
-            if trigger_templates:
-                template_cache = {}
-
-                for clinical_element in clinical_elements:
-                    element_id = id(clinical_element)
-
-                    # check cache first to avoid redundant tree traversals
-                    if element_id not in template_cache:
-                        template_cache[element_id] = _has_trigger_template_ancestor(
-                            clinical_element, trigger_templates
-                        )
-
-                    # only add to trigger set if element has trigger template ancestry
-                    if template_cache[element_id]:
-                        trigger_code_elements.add(element_id)
-
-            # STEP 3: Process entry-level operations on our filtered matches
-            # find parent entries for all matching clinical elements
-            entry_paths = []
-            for clinical_element in clinical_elements:
-                entry_path = _find_path_to_entry(clinical_element)
-                entry_paths.append(entry_path)
-
-            # deduplicate entry paths to prevent overlapping XML branches
-            deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
-
-            # remove entries that don't contain our contextually relevant clinical elements
-            _prune_unwanted_siblings(deduplicated_entry_paths, section)
-
-            # STEP 4: Final cleanup and text generation
-            # clean up all comments from processed sections
-            _remove_all_comments(section)
-
-            # generate summary text showing both regular matches and trigger codes
-            # trigger codes are highlighted but only those within our SNOMED context
-            _update_text_element(section, clinical_elements, trigger_code_elements)
-        else:
-            # no matching clinical elements found for our condition--create minimal section
-            _create_minimal_section(section)
+        # STEP 3: PROCESS ENTRIES AND GENERATE OUTPUT
+        # handle entry-level operations and create final section content
+        _preserve_relevant_entries_and_generate_summary(
+            section, contextual_matches, trigger_analysis, namespaces
+        )
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(
             message="Invalid XPath expression",
             details={"xpath": combined_xpath, "error": str(e)},
         )
+
+
+def _find_condition_relevant_elements(
+    section: _Element, combined_xpath: str, namespaces: dict
+) -> list[_Element]:
+    """
+    STEP 1: Find clinical elements matching SNOMED condition codes.
+
+    This is the context filter - only elements relevant to our reportable
+    condition should proceed to the next step.
+
+    Args:
+        section: The XML section element to search within
+        combined_xpath: XPath query from ProcessedGrouper codes
+        namespaces: XML namespaces for XPath evaluation
+
+    Returns:
+        list[_Element]: Deduplicated list of contextually relevant clinical elements
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails
+    """
+
+    # handle empty XPath early
+    if not combined_xpath or not combined_xpath.strip():
+        return []
+
+    try:
+        # find all clinical elements matching our SNOMED condition codes
+        xpath_result = section.xpath(combined_xpath, namespaces=namespaces)
+
+        if not isinstance(xpath_result, list):
+            return []
+
+        clinical_elements = cast(list[_Element], xpath_result)
+
+        # deduplicate hierarchical matches within our SNOMED-filtered set
+        # this prevents duplicate content when both parent and child elements match
+        return _deduplicate_clinical_elements(clinical_elements)
+
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message="Failed to evaluate XPath for condition-relevant elements",
+            details={"xpath": combined_xpath, "error": str(e)},
+        )
+
+
+def _analyze_trigger_codes_in_context(
+    contextual_matches: list[_Element], section_config: dict | None
+) -> dict[int, bool]:
+    """
+    STEP 2: Identify trigger codes among already-contextually-relevant elements.
+
+    This function performs trigger code identification ONLY within the context
+    of elements that have already been deemed relevant to our reportable condition.
+    This ensures we don't preserve random trigger codes unrelated to the condition.
+
+    Args:
+        contextual_matches: List of clinical elements already filtered for context
+        section_config: Configuration for this section from refiner_details.json
+
+    Returns:
+        dict[int, bool]: Mapping of element_id -> is_trigger_code for each element
+    """
+
+    trigger_analysis = {}
+
+    # get trigger templates for this section from config
+    trigger_templates = []
+    if section_config and "trigger_codes" in section_config:
+        # extract template_id_root values from trigger_codes
+        for trigger_type, trigger_info in section_config["trigger_codes"].items():
+            if "template_id_root" in trigger_info:
+                trigger_templates.append(trigger_info["template_id_root"])
+
+    if not trigger_templates:
+        # no trigger templates defined for this section
+        # mark all contextual matches as non-trigger codes
+        return {id(elem): False for elem in contextual_matches}
+
+    # cache template ancestor checks to avoid repeated tree traversals
+    # fresh cache per section ensures clean slate for each processing cycle
+    template_cache = {}
+
+    for clinical_element in contextual_matches:
+        element_id = id(clinical_element)
+
+        # check cache first to avoid redundant tree traversals
+        if element_id not in template_cache:
+            template_cache[element_id] = _has_trigger_template_ancestor(
+                clinical_element, trigger_templates
+            )
+
+        # store the trigger code analysis for this element
+        is_trigger = template_cache[element_id]
+        trigger_analysis[element_id] = is_trigger
+
+    return trigger_analysis
+
+
+def _preserve_relevant_entries_and_generate_summary(
+    section: _Element,
+    contextual_matches: list[_Element],
+    trigger_analysis: dict[int, bool],
+    namespaces: dict,
+) -> None:
+    """
+    STEP 3: Process entry-level operations and generate final section content.
+
+    This function handles the final processing steps:
+    1. Find and preserve entries containing our contextually relevant elements
+    2. Remove unwanted entries
+    3. Generate summary text showing both regular matches and trigger codes
+
+    Args:
+        section: The XML section element being processed
+        contextual_matches: List of contextually relevant clinical elements
+        trigger_analysis: Mapping of element_id -> is_trigger_code
+        namespaces: XML namespaces for XPath evaluation
+    """
+
+    # find parent entries for all matching clinical elements
+    entry_paths = []
+    for clinical_element in contextual_matches:
+        entry_path = _find_path_to_entry(clinical_element)
+        entry_paths.append(entry_path)
+
+    # deduplicate entry paths to prevent overlapping XML branches
+    deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
+
+    # remove entries that don't contain our contextually relevant clinical elements
+    _prune_unwanted_siblings(deduplicated_entry_paths, section)
+
+    # clean up all comments from processed sections
+    _remove_all_comments(section)
+
+    # generate summary text showing both regular matches and trigger codes
+    # build trigger_code_elements set for compatibility with existing text generation
+    trigger_code_elements = {
+        element_id for element_id, is_trigger in trigger_analysis.items() if is_trigger
+    }
+
+    _update_text_element(section, contextual_matches, trigger_code_elements)
 
 
 def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
@@ -507,7 +611,7 @@ def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
                 grouper_row = grouper_ops.get_grouper_by_condition(code)
                 if grouper_row:
                     processed = ProcessedGrouper.from_grouper_row(grouper_row)
-                    # Use comprehensive search across all element types
+                    # use comprehensive search across all element types
                     xpath = processed.build_xpath()
                     if xpath:
                         xpath_conditions.append(xpath)
@@ -766,7 +870,12 @@ def _extract_clinical_data(
     """
     Extract data from a clinical element.
 
-    Now checks for trigger code flag set during processing.
+    The is_trigger_code field is determined during the two-step processing:
+    1. Element must first pass contextual filtering (SNOMED condition match)
+    2. Then checked for trigger code template ancestry within that context
+
+    This approach ensures trigger codes are only identified among clinically
+    relevant elements, not as standalone artifacts.
 
     Args:
         clinical_element: The clinical element to extract data from.
@@ -801,6 +910,10 @@ def _extract_clinical_data(
         if isinstance(code_system_raw, str):
             code_system = code_system_raw
 
+    # NOTE: _is_trigger_code is determined during processing via trigger_analysis
+    # The getattr here provides a fallback for any elements that might have
+    # the attribute set directly, but the primary mechanism is the two-step
+    # filtering process in _process_section
     return {
         "display_text": display_text,
         "code": code,
@@ -814,6 +927,14 @@ def _has_trigger_template_ancestor(
 ) -> bool:
     """
     Check if element is within a trigger code template.
+
+    This function is called during STEP 2 of the processing pipeline,
+    after elements have already been filtered for contextual relevance.
+
+    Trigger code templateIds are OIDs that indicate something is a trigger code
+    but have no inherent clinical context. Our approach ensures we only identify
+    trigger codes among elements that are already clinically relevant to the
+    reportable condition.
 
     Args:
         element: The XML element to check
@@ -829,7 +950,7 @@ def _has_trigger_template_ancestor(
     current: _Element | None = element
     namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 
-    # walk up the tree looking for trigger template IDs
+    # Walk up the tree looking for trigger template IDs
     while current is not None:
         xpath_result = current.xpath(".//hl7:templateId/@root", namespaces=namespaces)
         if isinstance(xpath_result, list):
