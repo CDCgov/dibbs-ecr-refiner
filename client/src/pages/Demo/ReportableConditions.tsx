@@ -1,5 +1,4 @@
 import { Container, Content } from './Layout';
-import InformationSvg from '../../assets/information.svg';
 import { Button } from '../../components/Button';
 import { Title } from './Title';
 
@@ -15,8 +14,7 @@ export function ReportableConditions({
     <div className="flex flex-col gap-12">
       <Title>Test filter</Title>
       <Container color="blue">
-        <Content className="flex flex-col items-center">
-          <img className="p-3" src={InformationSvg} alt="Information icon" />
+        <Content className="flex flex-col items-center py-5">
           <div className="flex flex-col items-center gap-10">
             <div className="flex flex-col items-center gap-6">
               <div className="flex flex-col items-center gap-3">
