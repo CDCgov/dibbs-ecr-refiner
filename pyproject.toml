@@ -65,6 +65,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # - disable docstring/type/security rules in tests
 "**/tests/*" = ["D", "S", "ANN"]
+# - disable docstring/type/security rules in lambda
+"**/lambda/*" = ["D", "S", "ANN"]
 # - disable type annotation rules in scripts
 "**/scripts/*" = ["ANN"]
 # - allow missing docstrings in __init__

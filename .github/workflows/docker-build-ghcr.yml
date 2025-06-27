@@ -1,4 +1,4 @@
-name: Build and push Refiner image to GHCR
+name: Build and push Refiner images to GHCR
 
 on:
   push:
@@ -58,14 +58,25 @@ jobs:
 
           # If building `main`, include a `latest` tag
           if [ "$REF_NAME" = "main" ]; then
-            echo "tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:latest" >> $GITHUB_OUTPUT
+            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:latest" >> $GITHUB_OUTPUT
+            echo "lambda_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:latest" >> $GITHUB_OUTPUT
           else
-            echo "tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner:$TAG" >> $GITHUB_OUTPUT
+            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:$TAG" >> $GITHUB_OUTPUT
+            echo "lambda_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:$TAG" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push Docker image
+      - name: Build and push Refiner app image
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.app
           push: true
-          tags: ${{ steps.vars.outputs.tags }}
+          tags: ${{ steps.vars.outputs.app_tags }}
+
+      - name: Build and push Refiner Lambda image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.lambda
+          push: true
+          tags: ${{ steps.vars.outputs.lambda_tags }}
