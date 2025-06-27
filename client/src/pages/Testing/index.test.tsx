@@ -9,6 +9,10 @@ import {
 import Demo from '.';
 import { BrowserRouter } from 'react-router';
 
+// TEST: This test was originally written to test the Demo Page. This has
+// been changed to `/testing` as of 2025-06-27. These tests have not been
+// modified althought the page has changed.
+
 const mockUploadResponse: DemoUploadResponse = {
   conditions: [
     {

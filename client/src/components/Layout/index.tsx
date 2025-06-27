@@ -2,6 +2,8 @@ import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 
+import NavigationBar from '../NavigationBar';
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -30,6 +32,7 @@ export function Header() {
             </span>
           </h1>
         </Link>
+        <NavigationBar />
       </div>
     </header>
   );
