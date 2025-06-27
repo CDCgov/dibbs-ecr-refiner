@@ -15,6 +15,9 @@
 # Local Data Storage
 __pycache__/
 node_modules/
+.npm/
+.cache/
+.local/
 
 # Code coverage
 **/coverage/
