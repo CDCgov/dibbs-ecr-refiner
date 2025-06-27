@@ -30,6 +30,23 @@ export function Header() {
             </span>
           </h1>
         </Link>
+        <nav className='flex flex-row min-w-[632px] place-content-end font-public-sans text-lg text-white text-center'>
+          <span className='inline-block border-b-3 mx-6 py-1'>
+            <Link to="/filter-library">
+              Filter library
+            </Link>
+          </span>
+          <span className='inline-block mx-6 py-1'>
+            <Link to="/filter-testing">
+              Filters testing
+            </Link>
+          </span>
+          <span className='inline-block mx-6 py-1'>
+            <Link to="/conditions">
+              Conditions
+            </Link>
+          </span>
+        </nav>
       </div>
     </header>
   );
