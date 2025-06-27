@@ -1,4 +1,4 @@
-import { LandingPageLink } from '../../components/LandingPageLink';
+// import { LandingPageLink } from '../../components/LandingPageLink';
 import { Success } from './Success';
 import { ReportableConditions } from './ReportableConditions';
 import { Error } from './Error';
@@ -74,7 +74,6 @@ export default function Demo() {
   return (
     <div className="flex justify-center px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
-        <LandingPageLink />
         {view === 'run-test' && (
           <RunTest
             onClickSampleFile={runTestWithSampleFile}
