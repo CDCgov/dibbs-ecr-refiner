@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from chardet import detect
 from lxml import etree
@@ -13,6 +13,8 @@ from ..core.exceptions import (
     ZipValidationError,
 )
 from ..core.models.types import FileUpload, XMLFiles
+
+MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 def get_asset_path(*paths: str) -> Path:
@@ -90,31 +92,67 @@ def parse_xml(xml_content: str | bytes) -> _Element:
         )
 
 
+def _decode_file(filename: str, zipfile: ZipFile) -> str:
+    """
+    Reads and decodes the contents of a file within a ZIP archive.
+
+    This function detects the file's character encoding and decodes it into a string.
+
+    Args:
+        filename (str): The name of the file inside the ZIP archive to read.
+        zipfile (ZipFile): The opened ZIP archive containing the file.
+
+    Returns:
+        str: The decoded contents of the file as a string.
+    """
+    content = zipfile.read(filename)
+    encoding = detect(content)["encoding"] or "utf-8"
+    decoded = content.decode(encoding)
+    return decoded
+
+
+def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
+    """
+    Determines whether the total uncompressed size of the ZIP contents is within the allowed limit.
+
+    Args:
+        info (list[ZipInfo]): List of file metadata entries from the ZIP archive.
+
+    Returns:
+        bool: True if the total uncompressed size is less than 50 MB; otherwise, False.
+    """
+    return sum(zinfo.file_size for zinfo in info) < MAX_UNCOMPRESSED_SIZE
+
+
 async def read_xml_zip(file: FileUpload) -> XMLFiles:
     """
     Read XML files from a ZIP archive.
     """
     try:
-        zip_bytes = await file.read()
-        zip_stream = BytesIO(zip_bytes)
-
-        with ZipFile(zip_stream, "r") as z:
+        file_content = await file.read()
+        with ZipFile(BytesIO(file_content), "r") as zf:
             eicr_xml = None
             rr_xml = None
 
-            for filename in z.namelist():
-                # skip macOS resource fork files
-                if filename.startswith("__MACOSX/") or filename.startswith("._"):
+            if not _is_valid_uncompressed_size(zf.infolist()):
+                raise ZipValidationError(
+                    message="Uncompressed .zip file must not exceed 50MB in size."
+                )
+
+            namelist = zf.namelist()
+            for filename in namelist:
+                # skip files we don't need
+                if (
+                    filename.startswith("__MACOSX/")
+                    or filename.startswith("._")
+                    or not filename.endswith(("CDA_eICR.xml", "CDA_RR.xml"))
+                ):
                     continue
 
-                content = z.read(filename)
-                encoding = detect(content)["encoding"] or "utf-8"
-                decoded = content.decode(encoding)
-
                 if filename.endswith("CDA_eICR.xml"):
-                    eicr_xml = decoded
+                    eicr_xml = _decode_file(filename, zf)
                 elif filename.endswith("CDA_RR.xml"):
-                    rr_xml = decoded
+                    rr_xml = _decode_file(filename, zf)
 
             if not eicr_xml:
                 raise ZipValidationError(
@@ -122,7 +160,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     details={
                         "files_found": [
                             f
-                            for f in z.namelist()
+                            for f in namelist
                             if not (f.startswith("__MACOSX/") or f.startswith("._"))
                         ],
                         "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
@@ -135,7 +173,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
                     details={
                         "files_found": [
                             f
-                            for f in z.namelist()
+                            for f in namelist
                             if not (f.startswith("__MACOSX/") or f.startswith("._"))
                         ],
                         "required_files": ["CDA_eICR.xml", "CDA_RR.xml"],
