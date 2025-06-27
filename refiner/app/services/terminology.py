@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass
 
-from ..core.exceptions import InputValidationError
 from ..db.models import GrouperRow
 
 
@@ -66,30 +65,36 @@ class ProcessedGrouper:
             codes=all_codes,
         )
 
-    def build_xpath(self, search_in: str = "observation") -> str:
+    def build_xpath(self) -> str:
         """
-        Build xpath to find observations containing any of our codes.
+        Build XPath to find elements containing any of our codes.
 
-        Args:
-            search_in: Element type to search within. Defaults to "observation".
-                      Should always be "observation" to avoid matching section headers, etc.
+        This XPath search strategy is comprehensive and flexible because it will look in:
+          * <observation><code code="code">
+          * <observation><value code="code">
+          * <manufacturedProduct><code code="code">
+          * <act><code code="code">
+          * <procedure><code code="code">
+          * <translation code="code">
+          * etc
 
         Returns:
-            str: XPath expression that finds observation elements containing matching codes
+            str: XPath expression that finds elements containing matching codes
         """
-
-        if not search_in:
-            raise InputValidationError(
-                message="Empty search element specified",
-                details={"search_in": search_in},
-            )
 
         if not self.codes:
             return ""
 
         # create condition for any of our codes
-        code_conditions = " or ".join(f'@code="{code}"' for code in self.codes)
+        code_conditions: str = " or ".join(f'@code="{code}"' for code in self.codes)
 
-        # return xpath that finds observations containing codes that match any of our codes
-        # this scopes the search properly to avoid matching section headers, text elements, etc.
-        return f".//hl7:observation[hl7:code[{code_conditions}]]"
+        # comprehensive but more precise search - find codes in all contexts
+        xpath_patterns: list[str] = [
+            # elements with matching code children
+            f".//hl7:*[hl7:code[{code_conditions}]]",
+            # direct code matches
+            f".//hl7:code[{code_conditions}]",
+            # translation elements
+            f".//hl7:translation[{code_conditions}]",
+        ]
+        return " | ".join(xpath_patterns)
