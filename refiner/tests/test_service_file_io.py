@@ -91,7 +91,7 @@ async def test_read_invalid_zip():
 
 @pytest.mark.asyncio
 async def test_uncompressed_zip_size_too_large(test_assets_path, tmp_path):
-    # Create a valid zip that contains a document that is too large to process
+    # Create a valid ZIP that contains a document that is too large to process
     big_content = b"x" * (file_io.MAX_UNCOMPRESSED_SIZE + 1)
 
     test_zip = tmp_path / "test.zip"

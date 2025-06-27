@@ -94,13 +94,13 @@ def parse_xml(xml_content: str | bytes) -> _Element:
 
 def _decode_file(filename: str, zipfile: ZipFile) -> str:
     """
-    Reads and decodes the contents of a file within a zip archive.
+    Reads and decodes the contents of a file within a ZIP archive.
 
     This function detects the file's character encoding and decodes it into a string.
 
     Args:
-        filename (str): The name of the file inside the zip archive to read.
-        zipfile (ZipFile): The opened zip archive containing the file.
+        filename (str): The name of the file inside the ZIP archive to read.
+        zipfile (ZipFile): The opened ZIP archive containing the file.
 
     Returns:
         str: The decoded contents of the file as a string.
@@ -113,10 +113,10 @@ def _decode_file(filename: str, zipfile: ZipFile) -> str:
 
 def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
     """
-    Determines whether the total uncompressed size of the zip contents is within the allowed limit.
+    Determines whether the total uncompressed size of the ZIP contents is within the allowed limit.
 
     Args:
-        info (list[ZipInfo]): List of file metadata entries from the zip archive.
+        info (list[ZipInfo]): List of file metadata entries from the ZIP archive.
 
     Returns:
         bool: True if the total uncompressed size is less than 50 MB; otherwise, False.
