@@ -868,21 +868,19 @@ def _extract_clinical_data(
     clinical_element: _Element,
 ) -> dict[str, str | bool | None]:
     """
-    Extract data from a clinical element.
+    Extract basic data from a clinical element.
 
-    The is_trigger_code field is determined during the two-step processing:
-    1. Element must first pass contextual filtering (SNOMED condition match)
-    2. Then checked for trigger code template ancestry within that context
+    Extracts display text, code, and code system from clinical elements.
 
-    This approach ensures trigger codes are only identified among clinically
-    relevant elements, not as standalone artifacts.
+    * Note: Trigger code status is handled separately through the trigger_analysis
+      dictionary in the section processing pipeline.
 
     Args:
         clinical_element: The clinical element to extract data from.
 
     Returns:
-        dict[str, str | bool]: Dictionary containing the extracted clinical data
-                               with display_text, code, code_system and is_trigger_code.
+        dict[str, str | None]: Dictionary containing the extracted clinical data
+                               with display_text, code, and code_system.
     """
 
     # find the code element
@@ -910,15 +908,10 @@ def _extract_clinical_data(
         if isinstance(code_system_raw, str):
             code_system = code_system_raw
 
-    # NOTE: _is_trigger_code is determined during processing via trigger_analysis
-    # The getattr here provides a fallback for any elements that might have
-    # the attribute set directly, but the primary mechanism is the two-step
-    # filtering process in _process_section
     return {
         "display_text": display_text,
         "code": code,
         "code_system": code_system,
-        "is_trigger_code": getattr(clinical_element, "_is_trigger_code", False),
     }
 
 

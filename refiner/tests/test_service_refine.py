@@ -898,8 +898,6 @@ def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count) -> No
                 "display_text": "SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection",
                 "code": "94310-0",
                 "code_system": "LOINC",
-                # always False now
-                "is_trigger_code": False,
             },
         ),
     ],
