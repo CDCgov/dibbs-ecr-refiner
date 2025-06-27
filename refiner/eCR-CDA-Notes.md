@@ -628,3 +628,50 @@ Using COVID-19 example:
 ```
 
 This maintains consistency through the entire eCR process while ensuring standardized terminology and proper determination of reportability.
+
+## Refiner Processing Logic
+
+### How the Refiner Works
+
+The refiner processes eICR documents by:
+
+1. **Condition Code Input**: Takes SNOMED condition codes from RR reportability response's coded information organizer
+2. **Clinical Code Lookup**: Uses the terminology database (based on APHL's Terminology Exchange Service) to find related clinical codes via `ProcessedGrouper`
+3. **XPath Generation**: Builds XPath expressions to locate matching clinical elements
+4. **Section Processing**: For each section, preserves only entries that contain matching codes
+5. **Minimal Sections**: Sections with no matches get replaced with minimal content and `nullFlavor="NI"`
+
+### XPath Strategy
+
+The refiner uses union XPath expressions to find clinical elements:
+
+```xpath
+.//hl7:*[hl7:code[@code='123456' or @code='789012']] |
+.//hl7:code[@code='123456' or @code='789012'] |
+.//hl7:translation[@code='123456' or @code='789012']
+```
+
+Element Types Searched:
+
+* **Observations**: Lab results, vital signs, clinical findings
+* **Organizers**: Result batteries, procedure groups
+* **Acts**: Procedures, encounters, administrative acts
+* **Manufactured Products**: Medications, vaccines, medical devices
+* **Substance Administrations**: Medication administrations, immunizations
+
+How does it do this?
+
+**Search Patterns:**
+- **`hl7:*[hl7:code[...]]`**: Any HL7 element that has a `<code>` child with matching codes
+  - Captures `<observation>`, `<act>`, `<organizer>`, `<procedure>`, `<substanceAdministration>`, etc.
+- **`hl7:code[...]`**: Direct `<code>` element matches
+  - Captures standalone code elements
+- **`hl7:translation[...]`**: Code translation elements
+  - Captures alternative code representations
+
+**Why This Works:**
+- **Flexible**: Automatically finds codes in any CDA element type without hardcoding
+- **Comprehensive**: Catches direct codes, child codes, and translations
+- **Future-proof**: Will work with new CDA element types as they're added
+
+This ensures all relevant clinical data related to the condition is preserved while removing unrelated entries.

@@ -1,6 +1,3 @@
-import pytest
-
-from app.core.exceptions import InputValidationError
 from app.db.models import GrouperRow
 from app.services.terminology import ProcessedGrouper
 
@@ -103,33 +100,21 @@ def test_xpath_generation() -> None:
     """
     Test XPath generation with different inputs.
     """
+
     processed = ProcessedGrouper(
         condition="38362002", display_name="Test Condition", codes={"123", "456"}
     )
 
-    # default search_in (observation)
+    # default search now uses comprehensive "any" search
     xpath = processed.build_xpath()
-    # New implementation searches in observation by default
-    assert xpath.startswith(".//hl7:observation[")
-    assert '@code="123"' in xpath or '@code="456"' in xpath
-    assert " or " in xpath
 
-    # custom search_in (should be same as default unless your implementation changes)
-    custom_xpath = processed.build_xpath(search_in="observation")
-    assert custom_xpath.startswith(".//hl7:observation[hl7:code[")
-
-
-def test_xpath_single_code() -> None:
-    """
-    Test XPath generation with a single code.
-    """
-    processed = ProcessedGrouper(
-        condition="38362002", display_name="Test Condition", codes={"123"}
-    )
-
-    xpath = processed.build_xpath()
-    expected_xpath = './/hl7:observation[hl7:code[@code="123"]]'
-    assert xpath == expected_xpath
+    # verify it contains the expected patterns (order-independent)
+    assert ".//hl7:*[hl7:code[" in xpath
+    assert ".//hl7:code[" in xpath
+    assert ".//hl7:translation[" in xpath
+    assert '@code="123"' in xpath  # Contains both codes
+    assert '@code="456"' in xpath
+    assert " | " in xpath  # Union operator
 
 
 def test_xpath_empty_codes() -> None:
@@ -142,18 +127,3 @@ def test_xpath_empty_codes() -> None:
     )
 
     assert processed.build_xpath() == ""
-
-
-def test_xpath_empty_search_in() -> None:
-    """
-    Test XPath generation with empty search_in parameter.
-    """
-
-    processed = ProcessedGrouper(
-        condition="38362002", display_name="Test Condition", codes={"123"}
-    )
-
-    with pytest.raises(InputValidationError) as exc_info:
-        processed.build_xpath(search_in="")
-
-    assert "Empty search element specified" in str(exc_info.value)
