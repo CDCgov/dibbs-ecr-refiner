@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  docker-build:
+  app-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -14,10 +14,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Test Docker build
+      - name: Test Refiner app build
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.app
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  lambda-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test Refiner Lambda build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.lambda
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
