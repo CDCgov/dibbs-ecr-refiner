@@ -8,8 +8,8 @@ services:
     ports:
     - "8081:8081"
     depends_on:
-      - message-refiner-service
-  message-refiner-service:
+      - refiner-service
+  refiner-service:
     image: python:3.13-slim
     platform: linux/amd64
     command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
@@ -22,3 +22,18 @@ services:
       - PIP_ROOT_USER_ACTION=ignore
     logging:
       driver: "json-file"
+  db:
+    image: postgres:alpine
+    restart: always
+    user: postgres
+    environment:
+      - POSTGRES_PASSWORD=development
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
