@@ -64,7 +64,7 @@ class TESDataLoader:
     TES Data Loader for populating groupers and filters tables with RS-groupers.
     """
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(self, db_path: str, api_version: str = "1.0.0") -> None:
         """
         Initialize the TES Data Loader with database connection and API configuration.
 
@@ -77,6 +77,7 @@ class TESDataLoader:
 
         Args:
             db_path: Path to the SQLite database file
+            api_version: TES API version to use (default: "1.0.0")
 
         Environment Variables Used:
             TES_API_URL: Base URL for the TES API
@@ -90,6 +91,7 @@ class TESDataLoader:
         load_dotenv()
         self.api_url: str = os.getenv("TES_API_URL", "")
         self.api_key: str = os.getenv("TES_API_KEY", "")
+        self.api_version: str = api_version
         self.sleep_interval: float = float(os.getenv("API_SLEEP_INTERVAL", "1.0"))
         self.headers: dict[str, str] = {
             "X-API-KEY": self.api_key,
@@ -195,10 +197,16 @@ class TESDataLoader:
         """
 
         time.sleep(self.sleep_interval)
+        request_params = params or {}
+        
+        # Add version parameter for API v2.0.0+
+        if self.api_version != "1.0.0":
+            request_params["version"] = self.api_version
+            
         response = requests.get(
             f"{self.api_url}/{endpoint}",
             headers=self.headers,
-            params=params or {},
+            params=request_params,
         )
         response.raise_for_status()
         return response.json()
@@ -224,11 +232,70 @@ class TESDataLoader:
                     return link.get("url")
         return None
 
+    def is_relevant_grouper(self, resource: dict[str, Any]) -> bool:
+        """
+        Check if a ValueSet resource is a relevant grouper based on API version.
+        
+        For v1.0.0: Check if ID starts with 'rs-grouper'
+        For v2.0.0+: Check useContext for condition-grouper or additional-context-grouper
+        """
+        
+        if self.api_version == "1.0.0":
+            # Original v1.0.0 logic
+            return (
+                resource.get("compose") 
+                and resource.get("id", "").startswith("rs-grouper")
+            )
+        else:
+            # v2.0.0+ logic: check useContext
+            use_context = resource.get("useContext", [])
+            
+            for context in use_context:
+                if context.get("code", {}).get("code") == "task":
+                    value_concept = context.get("valueCodeableConcept", {})
+                    codings = value_concept.get("coding", [])
+                    
+                    for coding in codings:
+                        if coding.get("code") in ["condition-grouper", "additional-context-grouper"]:
+                            return True
+            return False
+
+    def extract_condition_from_resource(self, resource: dict[str, Any]) -> str | None:
+        """
+        Extract condition SNOMED code from resource based on API version.
+        
+        For v1.0.0: Extract from ID by removing 'rs-grouper-' prefix
+        For v2.0.0+: Extract from useContext focus
+        """
+        
+        if self.api_version == "1.0.0":
+            # Original v1.0.0 logic
+            resource_id = resource.get("id", "")
+            if resource_id.startswith("rs-grouper-"):
+                return resource_id.replace("rs-grouper-", "")
+            return None
+        else:
+            # v2.0.0+ logic: extract from useContext
+            use_context = resource.get("useContext", [])
+            
+            for context in use_context:
+                if context.get("code", {}).get("code") == "focus":
+                    value_concept = context.get("valueCodeableConcept", {})
+                    codings = value_concept.get("coding", [])
+                    
+                    for coding in codings:
+                        if "snomed.info/sct" in coding.get("system", ""):
+                            return coding.get("code")
+            return None
+
     def extract_codes(
         self, resource: dict[str, Any]
     ) -> dict[str, list[CodeableConcept]]:
         """
         Extract codes from a ValueSet resource.
+        
+        Handles both v1.0.0 structure (direct concepts) and v2.0.0 structure 
+        (ValueSet references for main groupers, direct concepts for additional context).
 
         Args:
             resource: FHIR ValueSet resource dictionary
@@ -246,6 +313,14 @@ class TESDataLoader:
 
         compose = resource.get("compose", {})
         for include in compose.get("include", []):
+            # Handle ValueSet references (v2.0.0 main groupers)
+            if "valueSet" in include:
+                # For now, we'll log ValueSet references but skip processing them
+                # as they would require additional API calls to resolve
+                self.logger.info(f"Found ValueSet references: {include['valueSet']}")
+                continue
+            
+            # Handle direct concepts (v1.0.0 and v2.0.0 additional context groupers)
             system_url: str = include.get("system", "")
             concepts: list[dict[str, str]] = include.get("concept", [])
 
@@ -284,12 +359,17 @@ class TESDataLoader:
     def populate_groupers_and_filters(self) -> None:
         """
         Populate the groupers and filters tables with RS-groupers data from TES API.
+        
+        For v2.0.0+: Groups multiple ValueSets per condition and combines their codes.
         """
 
-        self.logger.info("Populating groupers and filters tables")
+        self.logger.info(f"Populating groupers and filters tables (API version: {self.api_version})")
         response = self.make_tes_request(
             "ValueSet", {"status": "active", "_count": 1000}
         )
+
+        # For v2.0.0+, group resources by condition before processing
+        condition_resources: dict[str, list[dict[str, Any]]] = {}
 
         while response and "entry" in response:
             entries = response.get("entry", [])
@@ -299,30 +379,20 @@ class TESDataLoader:
             for entry in entries:
                 resource = entry.get("resource", {})
 
-                # ignore non-RS-groupers
-                if not resource.get("compose") or not resource.get("id", "").startswith(
-                    "rs-grouper"
-                ):
+                # Apply version-appropriate filtering
+                if not resource.get("compose") or not self.is_relevant_grouper(resource):
                     continue
 
-                # extract SNOMED code
-                condition = resource.get("id", "").replace("rs-grouper-", "")
+                # Extract condition code
+                condition = self.extract_condition_from_resource(resource)
+                if not condition:
+                    self.logger.warning(f"Could not extract condition from resource {resource.get('id', 'unknown')}")
+                    continue
 
-                # use `title`; `name` is rs-grouper+SNOMED
-                display_name = resource.get("title") or resource.get("name", "")
-                codes = self.extract_codes(resource)
-
-                if condition and display_name:
-                    self.store_grouper(
-                        condition=condition,
-                        display_name=display_name,
-                        loinc_codes=codes["loinc"],
-                        snomed_codes=codes["snomed"],
-                        icd10_codes=codes["icd10"],
-                        rxnorm_codes=codes["rxnorm"],
-                    )
-
-                    self.store_filter(condition=condition, display_name=display_name)
+                # Group resources by condition (for v2.0.0+ handling multiple ValueSets per condition)
+                if condition not in condition_resources:
+                    condition_resources[condition] = []
+                condition_resources[condition].append(resource)
 
             # handle pagination
             next_url = self.get_next_url(response)
@@ -330,13 +400,62 @@ class TESDataLoader:
                 break
             response = self.make_tes_request_from_url(next_url)
 
+        # Process grouped resources
+        for condition, resources in condition_resources.items():
+            self.logger.info(f"Processing condition {condition} with {len(resources)} ValueSet(s)")
+            
+            # Combine codes from all ValueSets for this condition
+            combined_codes: dict[str, list[CodeableConcept]] = {
+                "loinc": [],
+                "snomed": [],
+                "icd10": [],
+                "rxnorm": [],
+            }
+            
+            # Use the title from the first resource or fall back to name
+            display_name = ""
+            
+            for resource in resources:
+                resource_codes = self.extract_codes(resource)
+                
+                # Combine codes from all systems
+                for system in combined_codes:
+                    combined_codes[system].extend(resource_codes[system])
+                
+                # Use title from the first resource, prefer main grouper over additional context
+                if not display_name or "Additional_Context" not in resource.get("title", ""):
+                    display_name = resource.get("title") or resource.get("name", "")
+
+            if condition and display_name:
+                self.store_grouper(
+                    condition=condition,
+                    display_name=display_name,
+                    loinc_codes=combined_codes["loinc"],
+                    snomed_codes=combined_codes["snomed"],
+                    icd10_codes=combined_codes["icd10"],
+                    rxnorm_codes=combined_codes["rxnorm"],
+                )
+
+                self.store_filter(condition=condition, display_name=display_name)
+
         self.logger.info("Finished populating groupers and filters tables")
 
 
 if __name__ == "__main__":
+    import sys
+    
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     db_path = project_root / "app" / "terminology.db"
 
-    loader = TESDataLoader(str(db_path))
+    # Allow version to be specified as command line argument
+    api_version = "1.0.0"  # Default to v1.0.0 for backward compatibility
+    if len(sys.argv) > 1:
+        api_version = sys.argv[1]
+    
+    # Allow version to be specified via environment variable
+    api_version = os.getenv("TES_API_VERSION", api_version)
+
+    print(f"Using TES API version: {api_version}")
+    loader = TESDataLoader(str(db_path), api_version=api_version)
     loader.populate_groupers_and_filters()
