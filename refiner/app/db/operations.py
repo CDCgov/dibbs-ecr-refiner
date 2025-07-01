@@ -1,4 +1,4 @@
-import sqlite3
+import psycopg
 
 from app.core.exceptions import (
     DatabaseConnectionError,
@@ -58,7 +58,7 @@ class GrouperOperations:
             SELECT condition, display_name, loinc_codes, snomed_codes,
                 icd10_codes, rxnorm_codes
             FROM groupers
-            WHERE condition = ?
+            WHERE condition = %s
         """
 
         try:
@@ -83,7 +83,7 @@ class GrouperOperations:
         except (ResourceNotFoundError, InputValidationError):
             # re-raise these exceptions directly
             raise
-        except sqlite3.Error as e:
+        except psycopg.Error as e:
             raise DatabaseQueryError(
                 message="Failed to query grouper",
                 details={"condition": condition, "error": str(e)},
