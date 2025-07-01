@@ -23,9 +23,6 @@ class DatabaseConnection:
     def __init__(self) -> None:
         """
         Initialize database connection.
-
-        Raises:
-            ResourceNotFoundError: If terminology.db is not found in the app directory.
         """
 
         self.connection_config: dict[str, str] = {
