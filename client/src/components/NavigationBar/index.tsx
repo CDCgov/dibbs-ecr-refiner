@@ -18,12 +18,12 @@ interface NavigationLinkProps {
 }
 
 /**
-  * NavigationLink is a function that wraps React Router's NavLink in a super generic way.
-  */
+ * NavigationLink is a function that wraps React Router's NavLink in a super generic way.
+ */
 function NavigationLink({ location, title }: NavigationLinkProps) {
   return (
     <NavLink to={location}>
-      {({ isActive/* , isPending, isTransitioning  */}) => (
+      {({ isActive /* , isPending, isTransitioning  */ }) => (
         <span
           className={`mx-6 inline-block py-1 ${isActive ? 'border-b-4' : ''}`}
         >
@@ -33,4 +33,3 @@ function NavigationLink({ location, title }: NavigationLinkProps) {
     </NavLink>
   );
 }
-

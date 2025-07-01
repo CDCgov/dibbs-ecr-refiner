@@ -1,8 +1,4 @@
-import {
-  InputPrefix,
-  InputGroup,
-  TextInput,
-} from '@trussworks/react-uswds';
+import { InputPrefix, InputGroup, TextInput } from '@trussworks/react-uswds';
 
 import SearchSvg from '../../assets/sprite.svg';
 
@@ -10,11 +6,9 @@ interface InputPrefixProps {
   placeholder?: string;
 }
 
-export function Search({
-  placeholder = 'Search',
-}: InputPrefixProps) {
+export function Search({ placeholder = 'Search' }: InputPrefixProps) {
   return (
-    <InputGroup className='mx-0'>
+    <InputGroup className="mx-0">
       <InputPrefix>
         <SearchIcon />
       </InputPrefix>

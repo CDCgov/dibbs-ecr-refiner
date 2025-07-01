@@ -13,7 +13,7 @@ export function Configurations() {
         <p>{subtitle}</p>
       </div>
       <div className="flex flex-row justify-between gap-10">
-        <Search placeholder='Search configurations' />
+        <Search placeholder="Search configurations" />
         <Button>Set up new condition</Button>
       </div>
     </section>
