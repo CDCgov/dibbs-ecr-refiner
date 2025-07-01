@@ -1,8 +1,9 @@
 import json
-import sqlite3
-from pathlib import Path
+import os
 from typing import Any
 
+import psycopg
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -28,7 +29,7 @@ EXPECTED_TABLES = {
 }
 
 
-def validate_schema(cursor: sqlite3.Cursor, console: Console) -> list[str]:
+def validate_schema(cursor: psycopg.Cursor, console: Console) -> list[str]:
     """
     Validate database schema against expected structure.
 
@@ -45,7 +46,11 @@ def validate_schema(cursor: sqlite3.Cursor, console: Console) -> list[str]:
     errors: list[str] = []
 
     # get all tables
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    cursor.execute("""
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+    """)
     tables = {row[0] for row in cursor.fetchall()}
 
     # create validation table
@@ -63,35 +68,51 @@ def validate_schema(cursor: sqlite3.Cursor, console: Console) -> list[str]:
             )
             continue
 
-        # get table creation SQL and check columns
+        # 1. Get column names and data types
         cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)
+            """
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = %s AND table_schema = 'public'
+        """,
+            (table,),
         )
-        create_sql = cursor.fetchone()[0].upper()
-        cursor.execute(f"PRAGMA table_info({table})")
-        columns = {row[1]: row[2] for row in cursor.fetchall()}
+        columns = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # 2. Get primary key columns
+        cursor.execute(
+            """
+            SELECT kcu.column_name
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+            WHERE tc.table_name = %s AND tc.constraint_type = 'PRIMARY KEY'
+        """,
+            (table,),
+        )
+        primary_keys = {row[0] for row in cursor.fetchall()}
 
         table_errors = []
         for col, expected_type in EXPECTED_TABLES[table].items():
+            expected_type = expected_type.lower().replace(" primary key", "")
+            actual_type = columns.get(col, "").lower()
+
             if col not in columns:
                 table_errors.append(f"Missing column: {col}")
+                continue
+
+            if col in primary_keys:
+                if "primary key" not in EXPECTED_TABLES[table][col].lower():
+                    table_errors.append(f"Unexpected primary key: {col}")
             else:
-                actual_type = columns[col].upper()
-                expected_type = expected_type.upper()
+                if "primary key" in EXPECTED_TABLES[table][col].lower():
+                    table_errors.append(f"Column {col} should be PRIMARY KEY")
 
-                if "PRIMARY KEY" in expected_type:
-                    is_primary_key = (
-                        f"{col.upper()} TEXT PRIMARY KEY" in create_sql
-                        or f"PRIMARY KEY({col.upper()})" in create_sql
-                    )
-                    if not is_primary_key:
-                        table_errors.append(f"Column {col} should be PRIMARY KEY")
-                    expected_type = expected_type.replace(" PRIMARY KEY", "")
-
-                if actual_type != expected_type:
-                    table_errors.append(
-                        f"Type mismatch for {col}: expected {expected_type}, got {actual_type}"
-                    )
+            if actual_type != expected_type:
+                table_errors.append(
+                    f"Type mismatch for {col}: expected {expected_type}, got {actual_type}"
+                )
 
         if table_errors:
             errors.extend(f"{table}: {err}" for err in table_errors)
@@ -111,7 +132,7 @@ def validate_schema(cursor: sqlite3.Cursor, console: Console) -> list[str]:
     return errors
 
 
-def get_row_counts(cursor: sqlite3.Cursor) -> dict[str, dict[str, Any]]:
+def get_row_counts(cursor: psycopg.Cursor) -> dict[str, dict[str, Any]]:
     """
     Get row counts and sample entries for each table.
 
@@ -197,7 +218,7 @@ def create_row_counts_table(stats: dict[str, dict[str, Any]]) -> Table:
     return counts_table
 
 
-def get_grouper_stats(cursor: sqlite3.Cursor) -> dict[str, int]:
+def get_grouper_stats(cursor: psycopg.Cursor) -> dict[str, int]:
     """
     Get statistics about groupers and their codes.
 
@@ -246,7 +267,7 @@ def get_grouper_stats(cursor: sqlite3.Cursor) -> dict[str, int]:
 
 
 def get_sample_rows(
-    cursor: sqlite3.Cursor,
+    cursor: psycopg.Cursor,
     table: str,
     columns: str,
     limit: int = 5,
@@ -335,107 +356,115 @@ def run_checks() -> None:
     console.print("\n[bold blue]Running Grouper Table Checks...[/bold blue]")
 
     # setup database connection
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    db_path = project_root / "app" / "terminology.db"
+    with psycopg.connect(
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+    ) as conn:
+        with conn.cursor() as cursor:
+            # validate schema
+            errors = validate_schema(cursor, console)
+            if errors:
+                console.print(
+                    "\n[bold red]Schema validation failed. Aborting checks.[/bold red]"
+                )
+                return
 
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
+            # get and display row counts
+            row_counts = get_row_counts(cursor)
+            console.print("\n[bold blue]Table Row Counts[/bold blue]")
+            console.print(create_row_counts_table(row_counts))
 
-        # validate schema
-        errors = validate_schema(cursor, console)
-        if errors:
-            console.print(
-                "\n[bold red]Schema validation failed. Aborting checks.[/bold red]"
+            # get and display statistics
+            stats = get_grouper_stats(cursor)
+            console.print("\n[bold blue]Grouper Statistics[/bold blue]")
+            console.print(create_stats_table(stats))
+
+            # display sample groupers with code counts
+            console.print("\n[bold blue]Sample Groupers[/bold blue]")
+            sample_rows = get_sample_rows(
+                cursor,
+                "groupers",
+                """
+                condition,
+                display_name,
+                json_array_length(NULLIF(loinc_codes, '')::json),
+                json_array_length(NULLIF(snomed_codes, '')::json),
+                json_array_length(NULLIF(icd10_codes, '')::json),
+                json_array_length(NULLIF(rxnorm_codes, '')::json)
+                """,
+                limit=5,
             )
-            return
 
-        # get and display row counts
-        row_counts = get_row_counts(cursor)
-        console.print("\n[bold blue]Table Row Counts[/bold blue]")
-        console.print(create_row_counts_table(row_counts))
+            sample_table = Table(title="Sample Groupers")
+            sample_table.add_column("Condition Code", style="cyan", justify="left")
+            sample_table.add_column("Display Name", style="green", justify="left")
+            sample_table.add_column("LOINC Count", style="magenta", justify="right")
+            sample_table.add_column("SNOMED Count", style="magenta", justify="right")
+            sample_table.add_column("ICD-10 Count", style="magenta", justify="right")
+            sample_table.add_column("RxNorm Count", style="magenta", justify="right")
 
-        # get and display statistics
-        stats = get_grouper_stats(cursor)
-        console.print("\n[bold blue]Grouper Statistics[/bold blue]")
-        console.print(create_stats_table(stats))
+            for row in sample_rows:
+                sample_table.add_row(
+                    *[str(col) if col is not None else "" for col in row]
+                )
+            console.print(sample_table)
 
-        # display sample groupers with code counts
-        console.print("\n[bold blue]Sample Groupers[/bold blue]")
-        sample_rows = get_sample_rows(
-            cursor,
-            "groupers",
-            """
-            condition,
-            display_name,
-            json_array_length(loinc_codes),
-            json_array_length(snomed_codes),
-            json_array_length(icd10_codes),
-            json_array_length(rxnorm_codes)
-            """,
-            limit=5,
-        )
-
-        sample_table = Table(title="Sample Groupers")
-        sample_table.add_column("Condition Code", style="cyan", justify="left")
-        sample_table.add_column("Display Name", style="green", justify="left")
-        sample_table.add_column("LOINC Count", style="magenta", justify="right")
-        sample_table.add_column("SNOMED Count", style="magenta", justify="right")
-        sample_table.add_column("ICD-10 Count", style="magenta", justify="right")
-        sample_table.add_column("RxNorm Count", style="magenta", justify="right")
-
-        for row in sample_rows:
-            sample_table.add_row(*[str(col) if col is not None else "" for col in row])
-        console.print(sample_table)
-
-        # display detailed view of random grouper
-        console.print("\n[bold blue]Sample Groupers[/bold blue]")
-        detail_rows = get_sample_rows(
-            cursor,
-            "groupers",
-            "condition, display_name, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes",
-            limit=1,
-            random=True,
-        )
-
-        detail_table = Table(title="Sample Groupers")
-        detail_table.add_column("Condition", style="cyan", justify="left")
-        detail_table.add_column("Display Name", style="green", justify="left")
-        detail_table.add_column("LOINC Codes", style="magenta", justify="left")
-        detail_table.add_column("SNOMED Codes", style="magenta", justify="left")
-        detail_table.add_column("ICD-10 Codes", style="magenta", justify="left")
-        detail_table.add_column("RxNorm Codes", style="magenta", justify="left")
-
-        for row in detail_rows:
-            detail_table.add_row(
-                str(row[0]),
-                str(row[1]),
-                json.dumps(limit_codes(row[2])),
-                json.dumps(limit_codes(row[3])),
-                json.dumps(limit_codes(row[4])),
-                json.dumps(limit_codes(row[5])),
+            # display detailed view of random grouper
+            console.print("\n[bold blue]Sample Groupers[/bold blue]")
+            detail_rows = get_sample_rows(
+                cursor,
+                "groupers",
+                "condition, display_name, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes",
+                limit=1,
+                random=True,
             )
-        console.print(detail_table)
 
-        # display sample filters
-        console.print("\n[bold blue]Sample Filters[/bold blue]")
-        filter_rows = get_sample_rows(
-            cursor,
-            "filters",
-            "condition, display_name, included_groupers",
-            limit=5,
-            random=True,
-        )
+            detail_table = Table(title="Sample Groupers")
+            detail_table.add_column("Condition", style="cyan", justify="left")
+            detail_table.add_column("Display Name", style="green", justify="left")
+            detail_table.add_column("LOINC Codes", style="magenta", justify="left")
+            detail_table.add_column("SNOMED Codes", style="magenta", justify="left")
+            detail_table.add_column("ICD-10 Codes", style="magenta", justify="left")
+            detail_table.add_column("RxNorm Codes", style="magenta", justify="left")
 
-        filters_table = Table(title="Sample Filters")
-        filters_table.add_column("Condition", style="cyan", justify="left")
-        filters_table.add_column("Display Name", style="green", justify="left")
-        filters_table.add_column("Included Groupers", style="magenta", justify="left")
+            for row in detail_rows:
+                detail_table.add_row(
+                    str(row[0]),
+                    str(row[1]),
+                    json.dumps(limit_codes(row[2])),
+                    json.dumps(limit_codes(row[3])),
+                    json.dumps(limit_codes(row[4])),
+                    json.dumps(limit_codes(row[5])),
+                )
+            console.print(detail_table)
 
-        for row in filter_rows:
-            filters_table.add_row(*[str(col) if col is not None else "" for col in row])
-        console.print(filters_table)
+            # display sample filters
+            console.print("\n[bold blue]Sample Filters[/bold blue]")
+            filter_rows = get_sample_rows(
+                cursor,
+                "filters",
+                "condition, display_name, included_groupers",
+                limit=5,
+                random=True,
+            )
+
+            filters_table = Table(title="Sample Filters")
+            filters_table.add_column("Condition", style="cyan", justify="left")
+            filters_table.add_column("Display Name", style="green", justify="left")
+            filters_table.add_column(
+                "Included Groupers", style="magenta", justify="left"
+            )
+
+            for row in filter_rows:
+                filters_table.add_row(
+                    *[str(col) if col is not None else "" for col in row]
+                )
+            console.print(filters_table)
 
 
 if __name__ == "__main__":
+    load_dotenv()
     run_checks()
