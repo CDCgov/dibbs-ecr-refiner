@@ -14,12 +14,10 @@ describe('Search component', () => {
   it('should have a default placeholder text', async () => {
     renderComponentView();
 
-    expect(
-      screen.getByPlaceholderText('Search')
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search')).toBeInTheDocument();
   });
   it('should have a custom placeholder text', async () => {
-    renderComponentView("My custom placeholder text");
+    renderComponentView('My custom placeholder text');
 
     expect(
       screen.getByPlaceholderText('My custom placeholder text')
