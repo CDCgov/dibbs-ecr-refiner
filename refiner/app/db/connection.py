@@ -1,8 +1,10 @@
-import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
-from pathlib import Path
 
+import psycopg
+from psycopg.rows import dict_row
+
+from app.core.config import ENVIRONMENT
 from app.core.exceptions import (
     DatabaseConnectionError,
     DatabaseQueryError,
@@ -17,28 +19,28 @@ class DatabaseConnection:
     Database connection configuration and context manager.
     """
 
-    db_path: Path
-
     def __init__(self) -> None:
         """
-        Initialize database connection with fixed path to app/terminology.db.
+        Initialize database connection.
 
         Raises:
             ResourceNotFoundError: If terminology.db is not found in the app directory.
         """
 
-        # app/terminology.db
-        current_dir = Path(__file__).parent
-        self.db_path = current_dir.parent / "terminology.db"
+        self.connection_config = {
+            "dbname": ENVIRONMENT["db_name"],
+            "user": ENVIRONMENT["db_user"],
+            "password": ENVIRONMENT["db_password"],
+            "host": ENVIRONMENT["db_host"],
+            "port": ENVIRONMENT["db_port"],
+        }
 
-        if not self.db_path.exists():
-            raise ResourceNotFoundError(
-                message="Database file not found",
-                details={"path": str(self.db_path)},
-            )
+        for k, v in self.connection_config.items():
+            if not v:
+                raise ValueError(f"Missing database config: {k}")
 
     @contextmanager
-    def get_connection(self) -> Generator[sqlite3.Connection]:
+    def get_connection(self) -> Generator[psycopg.Connection]:
         """
         Create a database connection with proper configuration.
 
@@ -46,25 +48,17 @@ class DatabaseConnection:
             DatabaseConnectionError
         """
 
-        try:
-            conn = sqlite3.connect(self.db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+        with psycopg.connect(**self.connection_config) as conn:
             try:
-                # enable foreign key support and row factory
-                # assign to _ to indicate intentionally unused result
-                _ = conn.execute("PRAGMA foreign_keys = ON")
-                conn.row_factory = sqlite3.Row
-
                 yield conn
-            finally:
-                conn.close()
-        except sqlite3.Error as e:
-            raise DatabaseConnectionError(
-                message="Failed to connect to database",
-                details={"path": str(self.db_path), "error": str(e)},
-            )
+            except Exception as e:
+                raise DatabaseConnectionError(
+                    message="Failed to connect to database",
+                    details={"error": str(e)},
+                )
 
     @contextmanager
-    def get_cursor(self) -> Generator[sqlite3.Cursor]:
+    def get_cursor(self) -> Generator[psycopg.Cursor]:
         """
         Get a cursor with an active connection.
 
@@ -78,32 +72,32 @@ class DatabaseConnection:
 
         try:
             with self.get_connection() as conn:
-                cursor = conn.cursor()
-                try:
-                    yield cursor
-                    conn.commit()
-                except sqlite3.Error as e:
-                    conn.rollback()
-                    raise DatabaseQueryError(
-                        message="Database operation failed",
-                        details={
-                            "error_type": type(e).__name__,
-                            "error_message": str(e),
-                        },
-                    )
-                except (ResourceNotFoundError, InputValidationError):
-                    # let these exceptions pass through unchanged
-                    conn.rollback()
-                    raise
-                except Exception as e:
-                    conn.rollback()
-                    raise ProcessingError(
-                        message="Unexpected error during database operation",
-                        details={
-                            "error_type": type(e).__name__,
-                            "error_message": str(e),
-                        },
-                    )
+                with conn.cursor(row_factory=dict_row) as cursor:
+                    try:
+                        yield cursor
+                        conn.commit()
+                    except psycopg.Error as e:
+                        conn.rollback()
+                        raise DatabaseQueryError(
+                            message="Database operation failed",
+                            details={
+                                "error_type": type(e).__name__,
+                                "error_message": str(e),
+                            },
+                        )
+                    except (ResourceNotFoundError, InputValidationError):
+                        # let these exceptions pass through unchanged
+                        conn.rollback()
+                        raise
+                    except Exception as e:
+                        conn.rollback()
+                        raise ProcessingError(
+                            message="Unexpected error during database operation",
+                            details={
+                                "error_type": type(e).__name__,
+                                "error_message": str(e),
+                            },
+                        )
         except DatabaseConnectionError:
             # re-raise database connection errors
             raise
