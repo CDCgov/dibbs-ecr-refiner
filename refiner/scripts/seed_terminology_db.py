@@ -1,12 +1,12 @@
 import json
 import logging
 import os
-import sqlite3
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import psycopg
 import requests
 from dotenv import load_dotenv
 
@@ -64,7 +64,7 @@ class TESDataLoader:
     TES Data Loader for populating groupers and filters tables with RS-groupers.
     """
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(self) -> None:
         """
         Initialize the TES Data Loader with database connection and API configuration.
 
@@ -74,9 +74,6 @@ class TESDataLoader:
         3. Initializes database connection
         4. Configures logging
         5. Creates required database tables
-
-        Args:
-            db_path: Path to the SQLite database file
 
         Environment Variables Used:
             TES_API_URL: Base URL for the TES API
@@ -96,8 +93,14 @@ class TESDataLoader:
             "Accept": "application/fhir+json",
             "Content-Type": "application/fhir+json",
         }
-        self.db_path: str = db_path
-        self.connection: sqlite3.Connection = sqlite3.connect(db_path)
+        self.connection = psycopg.connect(
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=os.getenv("DB_PORT"),
+            autocommit=True,
+        )
         self.setup_logging()
         self.create_tables()
 
@@ -124,10 +127,8 @@ class TESDataLoader:
         schema_path = project_root / "app" / "db" / "schema.sql"
 
         with schema_path.open() as f:
-            cursor = self.connection.cursor()
-            # assign to _ to handle unused result
-            _ = cursor.executescript(f.read())
-            self.connection.commit()
+            with self.connection.cursor() as cursor:
+                cursor.execute(f.read())
 
     def store_grouper(
         self,
@@ -139,53 +140,58 @@ class TESDataLoader:
         rxnorm_codes: list[CodeableConcept],
     ) -> None:
         """Store a grouper in the database."""
-        cursor = self.connection.cursor()
-        # assign to _ to handle unused result
-        _ = cursor.execute(
-            """
-            INSERT OR REPLACE INTO groupers (
-                condition, display_name, loinc_codes,
-                snomed_codes, icd10_codes, rxnorm_codes
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                condition,
-                display_name,
-                json.dumps([c.__dict__ for c in loinc_codes]),
-                json.dumps([c.__dict__ for c in snomed_codes]),
-                json.dumps([c.__dict__ for c in icd10_codes]),
-                json.dumps([c.__dict__ for c in rxnorm_codes]),
-            ),
-        )
-        self.connection.commit()
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO groupers (
+                    condition, display_name, loinc_codes,
+                    snomed_codes, icd10_codes, rxnorm_codes
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (condition) DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    loinc_codes = EXCLUDED.loinc_codes,
+                    snomed_codes = EXCLUDED.snomed_codes,
+                    icd10_codes = EXCLUDED.icd10_codes,
+                    rxnorm_codes = EXCLUDED.rxnorm_codes
+                """,
+                (
+                    condition,
+                    display_name,
+                    json.dumps([c.__dict__ for c in loinc_codes]),
+                    json.dumps([c.__dict__ for c in snomed_codes]),
+                    json.dumps([c.__dict__ for c in icd10_codes]),
+                    json.dumps([c.__dict__ for c in rxnorm_codes]),
+                ),
+            )
 
     def store_filter(self, condition: str, display_name: str) -> None:
         """
         Store a default filter in the filters table.
         """
 
-        cursor = self.connection.cursor()
         default_included_groupers = [{"condition": condition, "display": display_name}]
-        # assign to _ to handle unused result
-        _ = cursor.execute(
-            """
-            INSERT OR REPLACE INTO filters (
-                condition, display_name, ud_loinc_codes,
-                ud_snomed_codes, ud_icd10_codes,
-                ud_rxnorm_codes, included_groupers
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                condition,
-                display_name,
-                "[]",
-                "[]",
-                "[]",
-                "[]",
-                json.dumps(default_included_groupers),
-            ),
-        )
-        self.connection.commit()
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO filters (
+                    condition, display_name, ud_loinc_codes,
+                    ud_snomed_codes, ud_icd10_codes,
+                    ud_rxnorm_codes, included_groupers
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (condition) DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    included_groupers = EXCLUDED.included_groupers
+                """,
+                (
+                    condition,
+                    display_name,
+                    "[]",
+                    "[]",
+                    "[]",
+                    "[]",
+                    json.dumps(default_included_groupers),
+                ),
+            )
 
     def make_tes_request(
         self, endpoint: str, params: dict[str, str | int] | None = None
@@ -334,9 +340,5 @@ class TESDataLoader:
 
 
 if __name__ == "__main__":
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    db_path = project_root / "app" / "terminology.db"
-
-    loader = TESDataLoader(str(db_path))
+    loader = TESDataLoader()
     loader.populate_groupers_and_filters()
