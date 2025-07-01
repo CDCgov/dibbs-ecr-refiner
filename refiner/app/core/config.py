@@ -16,10 +16,30 @@ DIBBS_CONTACT = {
     "email": "dibbs@cdc.gov",
 }
 
-ENVIRONMENT = {
-    "db_name": os.getenv("DB_NAME"),
-    "db_user": os.getenv("DB_USER"),
-    "db_password": os.getenv("DB_PASSWORD"),
-    "db_host": os.getenv("DB_HOST"),
-    "db_port": os.getenv("DB_PORT"),
+
+def _get_env_variable(name: str) -> str:
+    """
+    Grabs a variable by name from the environment. Throws an error if the variable is not present.
+
+    Args:
+        name (str): Name of the environment variable
+
+    Raises:
+        OSError: raised if environment variable is not present
+
+    Returns:
+        str: Name of the environment variable
+    """
+    value = os.getenv(name)
+    if value is None:
+        raise OSError(f"Missing environment variable: {name}")
+    return value
+
+
+ENVIRONMENT: dict[str, str] = {
+    "db_name": _get_env_variable("DB_NAME"),
+    "db_user": _get_env_variable("DB_USER"),
+    "db_password": _get_env_variable("DB_PASSWORD"),
+    "db_host": _get_env_variable("DB_HOST"),
+    "db_port": _get_env_variable("DB_PORT"),
 }

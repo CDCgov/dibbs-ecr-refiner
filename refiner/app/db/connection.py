@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
@@ -27,17 +28,13 @@ class DatabaseConnection:
             ResourceNotFoundError: If terminology.db is not found in the app directory.
         """
 
-        self.connection_config = {
+        self.connection_config: dict[str, str] = {
             "dbname": ENVIRONMENT["db_name"],
             "user": ENVIRONMENT["db_user"],
             "password": ENVIRONMENT["db_password"],
             "host": ENVIRONMENT["db_host"],
             "port": ENVIRONMENT["db_port"],
         }
-
-        for k, v in self.connection_config.items():
-            if not v:
-                raise ValueError(f"Missing database config: {k}")
 
     @contextmanager
     def get_connection(self) -> Generator[psycopg.Connection]:
@@ -48,7 +45,13 @@ class DatabaseConnection:
             DatabaseConnectionError
         """
 
-        with psycopg.connect(**self.connection_config) as conn:
+        with psycopg.connect(
+            dbname=self.connection_config["dbname"],
+            user=self.connection_config["user"],
+            password=self.connection_config["password"],
+            host=self.connection_config["host"],
+            port=self.connection_config["port"],
+        ) as conn:
             try:
                 yield conn
             except Exception as e:
@@ -58,7 +61,7 @@ class DatabaseConnection:
                 )
 
     @contextmanager
-    def get_cursor(self) -> Generator[psycopg.Cursor]:
+    def get_cursor(self) -> Generator[psycopg.Cursor[dict[str, Any]]]:
         """
         Get a cursor with an active connection.
 
