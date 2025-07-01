@@ -4,7 +4,7 @@ import { Button } from '../../components/Button';
 import XMLViewer from 'react-xml-viewer';
 import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
-import { Title } from './Title';
+import { Title } from '../../components/Title';
 
 interface SuccessProps {
   conditions: Condition[];
