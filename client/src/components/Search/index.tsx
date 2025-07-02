@@ -6,9 +6,9 @@ interface InputPrefixProps {
   placeholder?: string;
 }
 
-export function Search({ placeholder = 'Search' }: InputPrefixProps) {
+export function Search({ placeholder = 'Search' }: TextInputProps) {
   return (
-    <InputGroup className="mx-0">
+    <InputGroup className="!m-0">
       <InputPrefix>
         <SearchIcon />
       </InputPrefix>

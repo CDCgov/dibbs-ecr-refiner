@@ -7,14 +7,16 @@ const subtitle = `Set up reportable configurations herer to specifiy the data yo
 
 export function Configurations() {
   return (
-    <section className="usa-container mx-auto max-w-[1203px]">
+    <section className="mx-auto p-3">
       <div className="flex flex-col gap-4 py-10">
         <Title>{title}</Title>
         <p>{subtitle}</p>
       </div>
-      <div className="flex flex-row justify-between gap-10">
+      <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
         <Search placeholder="Search configurations" />
-        <Button>Set up new condition</Button>
+        <div>
+          <Button>Set up new condition</Button>
+        </div>
       </div>
     </section>
   );
