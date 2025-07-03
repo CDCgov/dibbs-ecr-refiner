@@ -2,7 +2,7 @@ import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
-import { Title } from './Title';
+import { Title } from '../../components/Title';
 import { ChangeEvent } from 'react';
 import classNames from 'classnames';
 
