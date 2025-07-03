@@ -8,7 +8,7 @@ export function Configurations() {
       <div className="flex flex-col gap-4 py-10">
         <Title>Your reportable condition configurations</Title>
         <p>
-          Set up reportable configurations herer to specifiy the data you'd like
+          Set up reportable configurations here to specifiy the data you'd like
           to retain in the refined eCRs for that condition.
         </p>
       </div>
