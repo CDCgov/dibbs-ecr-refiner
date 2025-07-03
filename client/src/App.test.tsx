@@ -13,6 +13,8 @@ const renderApp = () => {
 describe('App', () => {
   it('App renders expected text', () => {
     renderApp();
-    expect(screen.getByText('Focus on what matters.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Your reportable condition configurations')
+    ).toBeInTheDocument();
   });
 });

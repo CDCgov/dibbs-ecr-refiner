@@ -1,6 +1,6 @@
 import { Container, Content } from './Layout';
 import { Button } from '../../components/Button';
-import { Title } from './Title';
+import { Title } from '../../components/Title';
 
 interface ReportableConditionsProps {
   conditionNames: string[];
