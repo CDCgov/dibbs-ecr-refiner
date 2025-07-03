@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router';
+import classNames from 'classnames';
+import { NavLink, NavLinkProps } from 'react-router';
 
 export default function NavigationBar() {
   return (
@@ -6,8 +7,8 @@ export default function NavigationBar() {
       aria-label="Primary navigation"
       className="usa-nav flex justify-end !text-lg text-white"
     >
-      <NavigationLink location="/" title="Configurations" />
-      <NavigationLink location="/testing" title="Testing" />
+      <NavigationLink to="/" title="Configurations" />
+      <NavigationLink to="/testing" title="Testing" />
     </nav>
   );
 }
@@ -17,9 +18,9 @@ type NavigationLinkProps = Pick<NavLinkProps, 'to' | 'title'>;
 /**
  * NavigationLink is a function that wraps React Router's NavLink in a super generic way.
  */
-function NavigationLink({ location, title }: NavigationLinkProps) {
+function NavigationLink({ to, title }: NavigationLinkProps) {
   return (
-    <NavLink to={location}>
+    <NavLink to={to}>
       {({ isActive }) => (
         <span
           className={classNames('mx-6 inline-block py-1', {
