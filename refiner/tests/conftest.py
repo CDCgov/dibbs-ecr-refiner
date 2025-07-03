@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -12,6 +13,8 @@ NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 # file names that read_xml_zip looks for
 EICR_FILENAME = "CDA_eICR.xml"
 RR_FILENAME = "CDA_RR.xml"
+
+os.environ["DB_URL"] = "postgres://postgres:refiner@localhost:5432/refiner"
 
 
 @pytest.fixture(scope="session")
