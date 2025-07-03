@@ -5,7 +5,6 @@ from typing import Any
 import psycopg
 from psycopg.rows import dict_row
 
-from app.core.config import get_db_url
 from app.core.exceptions import (
     DatabaseConnectionError,
     DatabaseQueryError,
@@ -20,12 +19,12 @@ class DatabaseConnection:
     Database connection configuration and context manager.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, db_url: str) -> None:
         """
         Initialize database connection.
         """
 
-        self.connection_url = get_db_url()
+        self.connection_url = db_url
 
     @contextmanager
     def get_connection(self) -> Generator[psycopg.Connection]:

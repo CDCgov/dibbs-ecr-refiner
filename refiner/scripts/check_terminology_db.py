@@ -356,13 +356,8 @@ def run_checks() -> None:
     console.print("\n[bold blue]Running Grouper Table Checks...[/bold blue]")
 
     # setup database connection
-    with psycopg.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT"),
-    ) as conn:
+    db_url = os.getenv("DB_URL")
+    with psycopg.connect(db_url) as conn:
         with conn.cursor() as cursor:
             # validate schema
             errors = validate_schema(cursor, console)

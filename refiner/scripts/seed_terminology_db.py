@@ -64,7 +64,7 @@ class TESDataLoader:
     TES Data Loader for populating groupers and filters tables with RS-groupers.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, db_url) -> None:
         """
         Initialize the TES Data Loader with database connection and API configuration.
 
@@ -75,6 +75,9 @@ class TESDataLoader:
         4. Configures logging
         5. Creates required database tables
 
+        Args:
+            db_url: PostgreSQL database URL
+
         Environment Variables Used:
             TES_API_URL: Base URL for the TES API
             TES_API_KEY: Authentication key for the TES API
@@ -84,7 +87,6 @@ class TESDataLoader:
             Ensure .env file contains required API credentials before initialization.
         """
 
-        load_dotenv()
         self.api_url: str = os.getenv("TES_API_URL", "")
         self.api_key: str = os.getenv("TES_API_KEY", "")
         self.sleep_interval: float = float(os.getenv("API_SLEEP_INTERVAL", "1.0"))
@@ -93,14 +95,8 @@ class TESDataLoader:
             "Accept": "application/fhir+json",
             "Content-Type": "application/fhir+json",
         }
-        self.connection = psycopg.connect(
-            dbname=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT"),
-            autocommit=True,
-        )
+        self.db_url = db_url
+        self.connection = psycopg.connect(self.db_url, autocommit=True)
         self.setup_logging()
         self.create_tables()
 
@@ -340,5 +336,7 @@ class TESDataLoader:
 
 
 if __name__ == "__main__":
-    loader = TESDataLoader()
+    load_dotenv()
+    db_url = os.getenv("DB_URL")
+    loader = TESDataLoader(db_url)
     loader.populate_groupers_and_filters()

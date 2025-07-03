@@ -20,11 +20,7 @@ services:
       - "8080:8080"
     environment:
       - PIP_ROOT_USER_ACTION=ignore
-      - DB_NAME=refiner
-      - DB_USER=postgres
-      - DB_PASSWORD=refiner
-      - DB_HOST=db
-      - DB_PORT=5432
+      - DB_URL=postgres://postgres:refiner@db:5432/refiner
     logging:
       driver: "json-file"
   db:

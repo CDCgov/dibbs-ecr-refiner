@@ -7,6 +7,7 @@ from app.core.exceptions import (
     ResourceNotFoundError,
 )
 
+from ..core.config import ENVIRONMENT
 from .connection import DatabaseConnection
 from .models import GrouperRow
 
@@ -30,7 +31,7 @@ class GrouperOperations:
         Initialize grouper operations with database connection.
         """
 
-        self.db = DatabaseConnection()
+        self.db = DatabaseConnection(db_url=ENVIRONMENT["DB_URL"])
 
     def get_grouper_by_condition(self, condition: str) -> GrouperRow:
         """

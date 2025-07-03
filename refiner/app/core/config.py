@@ -1,5 +1,4 @@
 import os
-from urllib.parse import quote_plus
 
 # create a class with the DIBBs default Creative Commons Zero v1.0 and
 # MIT license to be used by the BaseService class
@@ -37,26 +36,4 @@ def _get_env_variable(name: str) -> str:
     return value
 
 
-ENVIRONMENT: dict[str, str] = {
-    "db_name": _get_env_variable("DB_NAME"),
-    "db_user": _get_env_variable("DB_USER"),
-    "db_password": _get_env_variable("DB_PASSWORD"),
-    "db_host": _get_env_variable("DB_HOST"),
-    "db_port": _get_env_variable("DB_PORT"),
-}
-
-
-def get_db_url() -> str:
-    """
-    Get the full PostgreSQL connection string.
-
-    Returns:
-        str: Connection string
-    """
-    user = quote_plus(ENVIRONMENT["db_user"])
-    password = quote_plus(ENVIRONMENT["db_password"])
-    host = ENVIRONMENT["db_host"]
-    port = ENVIRONMENT["db_port"]
-    dbname = ENVIRONMENT["db_name"]
-
-    return f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
+ENVIRONMENT: dict[str, str] = {"DB_URL": _get_env_variable("DB_URL")}

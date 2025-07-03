@@ -29,14 +29,8 @@ def connect_to_db() -> tuple[psycopg.Connection, psycopg.Cursor]:
     Returns:
         Tuple of database connection and cursor
     """
-
-    conn = psycopg.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT"),
-    )
+    db_url = os.getenv("DB_URL")
+    conn = psycopg.connect(db_url)
     cursor = conn.cursor()
     return conn, cursor
 
