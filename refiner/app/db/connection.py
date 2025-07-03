@@ -5,7 +5,7 @@ from typing import Any
 import psycopg
 from psycopg.rows import dict_row
 
-from app.core.config import ENVIRONMENT
+from app.core.config import get_db_url
 from app.core.exceptions import (
     DatabaseConnectionError,
     DatabaseQueryError,
@@ -25,13 +25,7 @@ class DatabaseConnection:
         Initialize database connection.
         """
 
-        self.connection_config: dict[str, str] = {
-            "dbname": ENVIRONMENT["db_name"],
-            "user": ENVIRONMENT["db_user"],
-            "password": ENVIRONMENT["db_password"],
-            "host": ENVIRONMENT["db_host"],
-            "port": ENVIRONMENT["db_port"],
-        }
+        self.connection_url = get_db_url()
 
     @contextmanager
     def get_connection(self) -> Generator[psycopg.Connection]:
@@ -42,13 +36,7 @@ class DatabaseConnection:
             DatabaseConnectionError
         """
 
-        with psycopg.connect(
-            dbname=self.connection_config["dbname"],
-            user=self.connection_config["user"],
-            password=self.connection_config["password"],
-            host=self.connection_config["host"],
-            port=self.connection_config["port"],
-        ) as conn:
+        with psycopg.connect(self.connection_url) as conn:
             try:
                 yield conn
             except Exception as e:
