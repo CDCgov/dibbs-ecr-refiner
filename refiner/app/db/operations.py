@@ -1,4 +1,4 @@
-import sqlite3
+import psycopg
 
 from app.core.exceptions import (
     DatabaseConnectionError,
@@ -7,6 +7,7 @@ from app.core.exceptions import (
     ResourceNotFoundError,
 )
 
+from ..core.config import ENVIRONMENT
 from .connection import DatabaseConnection
 from .models import GrouperRow
 
@@ -30,7 +31,7 @@ class GrouperOperations:
         Initialize grouper operations with database connection.
         """
 
-        self.db = DatabaseConnection()
+        self.db = DatabaseConnection(db_url=ENVIRONMENT["DB_URL"])
 
     def get_grouper_by_condition(self, condition: str) -> GrouperRow:
         """
@@ -58,7 +59,7 @@ class GrouperOperations:
             SELECT condition, display_name, loinc_codes, snomed_codes,
                 icd10_codes, rxnorm_codes
             FROM groupers
-            WHERE condition = ?
+            WHERE condition = %s
         """
 
         try:
@@ -83,7 +84,7 @@ class GrouperOperations:
         except (ResourceNotFoundError, InputValidationError):
             # re-raise these exceptions directly
             raise
-        except sqlite3.Error as e:
+        except psycopg.Error as e:
             raise DatabaseQueryError(
                 message="Failed to query grouper",
                 details={"condition": condition, "error": str(e)},

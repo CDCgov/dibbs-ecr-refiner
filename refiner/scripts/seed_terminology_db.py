@@ -1,12 +1,12 @@
 import json
 import logging
 import os
-import sqlite3
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import psycopg
 import requests
 from dotenv import load_dotenv
 
@@ -64,7 +64,7 @@ class TESDataLoader:
     TES Data Loader for populating groupers and filters tables with RS-groupers.
     """
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(self, db_url) -> None:
         """
         Initialize the TES Data Loader with database connection and API configuration.
 
@@ -76,7 +76,7 @@ class TESDataLoader:
         5. Creates required database tables
 
         Args:
-            db_path: Path to the SQLite database file
+            db_url: PostgreSQL database URL
 
         Environment Variables Used:
             TES_API_URL: Base URL for the TES API
@@ -87,7 +87,6 @@ class TESDataLoader:
             Ensure .env file contains required API credentials before initialization.
         """
 
-        load_dotenv()
         self.api_url: str = os.getenv("TES_API_URL", "")
         self.api_key: str = os.getenv("TES_API_KEY", "")
         self.sleep_interval: float = float(os.getenv("API_SLEEP_INTERVAL", "1.0"))
@@ -96,8 +95,8 @@ class TESDataLoader:
             "Accept": "application/fhir+json",
             "Content-Type": "application/fhir+json",
         }
-        self.db_path: str = db_path
-        self.connection: sqlite3.Connection = sqlite3.connect(db_path)
+        self.db_url = db_url
+        self.connection = psycopg.connect(self.db_url, autocommit=True)
         self.setup_logging()
         self.create_tables()
 
@@ -124,10 +123,8 @@ class TESDataLoader:
         schema_path = project_root / "app" / "db" / "schema.sql"
 
         with schema_path.open() as f:
-            cursor = self.connection.cursor()
-            # assign to _ to handle unused result
-            _ = cursor.executescript(f.read())
-            self.connection.commit()
+            with self.connection.cursor() as cursor:
+                cursor.execute(f.read())
 
     def store_grouper(
         self,
@@ -139,53 +136,58 @@ class TESDataLoader:
         rxnorm_codes: list[CodeableConcept],
     ) -> None:
         """Store a grouper in the database."""
-        cursor = self.connection.cursor()
-        # assign to _ to handle unused result
-        _ = cursor.execute(
-            """
-            INSERT OR REPLACE INTO groupers (
-                condition, display_name, loinc_codes,
-                snomed_codes, icd10_codes, rxnorm_codes
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                condition,
-                display_name,
-                json.dumps([c.__dict__ for c in loinc_codes]),
-                json.dumps([c.__dict__ for c in snomed_codes]),
-                json.dumps([c.__dict__ for c in icd10_codes]),
-                json.dumps([c.__dict__ for c in rxnorm_codes]),
-            ),
-        )
-        self.connection.commit()
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO groupers (
+                    condition, display_name, loinc_codes,
+                    snomed_codes, icd10_codes, rxnorm_codes
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (condition) DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    loinc_codes = EXCLUDED.loinc_codes,
+                    snomed_codes = EXCLUDED.snomed_codes,
+                    icd10_codes = EXCLUDED.icd10_codes,
+                    rxnorm_codes = EXCLUDED.rxnorm_codes
+                """,
+                (
+                    condition,
+                    display_name,
+                    json.dumps([c.__dict__ for c in loinc_codes]),
+                    json.dumps([c.__dict__ for c in snomed_codes]),
+                    json.dumps([c.__dict__ for c in icd10_codes]),
+                    json.dumps([c.__dict__ for c in rxnorm_codes]),
+                ),
+            )
 
     def store_filter(self, condition: str, display_name: str) -> None:
         """
         Store a default filter in the filters table.
         """
 
-        cursor = self.connection.cursor()
         default_included_groupers = [{"condition": condition, "display": display_name}]
-        # assign to _ to handle unused result
-        _ = cursor.execute(
-            """
-            INSERT OR REPLACE INTO filters (
-                condition, display_name, ud_loinc_codes,
-                ud_snomed_codes, ud_icd10_codes,
-                ud_rxnorm_codes, included_groupers
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                condition,
-                display_name,
-                "[]",
-                "[]",
-                "[]",
-                "[]",
-                json.dumps(default_included_groupers),
-            ),
-        )
-        self.connection.commit()
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO filters (
+                    condition, display_name, ud_loinc_codes,
+                    ud_snomed_codes, ud_icd10_codes,
+                    ud_rxnorm_codes, included_groupers
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (condition) DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    included_groupers = EXCLUDED.included_groupers
+                """,
+                (
+                    condition,
+                    display_name,
+                    "[]",
+                    "[]",
+                    "[]",
+                    "[]",
+                    json.dumps(default_included_groupers),
+                ),
+            )
 
     def make_tes_request(
         self, endpoint: str, params: dict[str, str | int] | None = None
@@ -334,9 +336,7 @@ class TESDataLoader:
 
 
 if __name__ == "__main__":
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    db_path = project_root / "app" / "terminology.db"
-
-    loader = TESDataLoader(str(db_path))
+    load_dotenv()
+    db_url = os.getenv("DB_URL")
+    loader = TESDataLoader(db_url)
     loader.populate_groupers_and_filters()

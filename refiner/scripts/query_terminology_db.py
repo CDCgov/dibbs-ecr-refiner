@@ -1,8 +1,9 @@
 import json
-import sqlite3
-from pathlib import Path
+import os
 from typing import Any
 
+import psycopg
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -21,28 +22,21 @@ CODE_TO_SEARCH: dict[str, str] | None = {
 }
 
 
-def connect_to_db() -> tuple[sqlite3.Connection, sqlite3.Cursor]:
+def connect_to_db() -> tuple[psycopg.Connection, psycopg.Cursor]:
     """
     Connect to the terminology database.
 
     Returns:
         Tuple of database connection and cursor
     """
-
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    db_path = project_root / "app" / "terminology.db"
-
-    if not db_path.exists():
-        raise FileNotFoundError(f"Database not found at {db_path}")
-
-    conn = sqlite3.connect(db_path)
+    db_url = os.getenv("DB_URL")
+    conn = psycopg.connect(db_url)
     cursor = conn.cursor()
     return conn, cursor
 
 
 def fetch_grouper_by_condition(
-    cursor: sqlite3.Cursor, condition_code: str
+    cursor: psycopg.Cursor, condition_code: str
 ) -> dict[str, Any] | None:
     """
     Fetch a grouper record by its condition code.
@@ -59,7 +53,7 @@ def fetch_grouper_by_condition(
         """
         SELECT condition, display_name, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes
         FROM groupers
-        WHERE condition = ?
+        WHERE condition = %s
         """,
         (condition_code,),
     )
@@ -272,4 +266,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()
