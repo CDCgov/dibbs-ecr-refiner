@@ -47,6 +47,7 @@ export function Footer() {
             href="https://www.cdc.gov"
             target="_blank"
             rel="noreferrer noopener"
+            className="inline-block"
           >
             <img src={CdcLogo} alt="" />
           </a>
