@@ -44,7 +44,7 @@ async def _lifespan(_: FastAPI):
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
     service_name="Message Refiner",
-    service_path="/message-refiner",
+    service_path="/refiner",
     description_path=Path(__file__).parent.parent / "README.md",
     include_health_check_endpoint=False,
     openapi_url="/api/openapi.json",
