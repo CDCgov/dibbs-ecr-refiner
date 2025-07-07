@@ -1,5 +1,4 @@
 import os
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -56,11 +55,17 @@ def setup(request):
     print("✨ Message refiner services ready to test!")
 
     print("🧠 Seeding database...")
-    load_cmd = (
-        f"docker-compose -f {compose_file_name} exec -T db "
-        "psql -U postgres refiner -f /docker-entrypoint-initdb.d/seed-data.sql"
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "refiner",
+            "-f",
+            "/docker-entrypoint-initdb.d/seed-data.sql",
+        ],
+        "db",
     )
-    subprocess.run(load_cmd, shell=True, check=True, executable="/bin/bash")
     print("Database is ready!")
 
     def teardown():
