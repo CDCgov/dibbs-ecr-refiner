@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 from testcontainers.compose import DockerCompose
 
-os.environ["DB_URL"] = "postgres://postgres:refiner@db:5432/refiner"
+os.environ["DB_URL"] = "postgres://postgres:refiner@localhost:5432/refiner"
+print(os.getenv("DB_URL"))
 
 
 @pytest.fixture(scope="session", autouse=True)
