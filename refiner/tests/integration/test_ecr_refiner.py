@@ -1,4 +1,5 @@
 import inspect
+import json
 from pathlib import Path
 
 import httpx
@@ -126,7 +127,7 @@ def test_zip_upload_mon_mothma_two_conditions(setup):  # 'setup' fixture
 
     # parse the json response from the service
     response_json = response.json()
-    print(response_json[0])
+    print(json.dumps(response_json[0], indent=2))
 
     # assertions on the structure and content of the json response ---
     assert isinstance(response_json, list), (
