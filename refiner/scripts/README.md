@@ -16,4 +16,4 @@ Before you can run the seed script, you'll need to acquire a TES API key. Make a
 6. You should run the `check_terminology_db.py` file to ensure both the schema and data are in the correct shape. This script will validate that the schema is correct and will run through some sample queries so you can inspect the output and verify that the data is structured correctly.
 
 > [!TIP]
-> Each time you run `check_terminology_db.py` a random sample will select new data from the `terminology.db` for you to inspect. You can run it as many times as you like.
+> Each time you run `check_terminology_db.py` a random sample will select new data from the database for you to inspect. You can run it as many times as you like.
