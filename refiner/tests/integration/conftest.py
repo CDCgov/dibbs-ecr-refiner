@@ -4,6 +4,8 @@ from pathlib import Path
 import pytest
 from testcontainers.compose import DockerCompose
 
+os.environ["DB_URL"] = "postgres://postgres:refiner@db:5432/refiner"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_logging():
