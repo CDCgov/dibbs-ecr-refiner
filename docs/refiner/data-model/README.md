@@ -1,0 +1,216 @@
+# eCR Refiner Data Model - v0 Proposal
+
+The goal of this document is to provide a baseline for what the Refiner's v0 data model will look like. While this may change over time, the goal is to give us a starting place.
+
+Please see the DBML code below, which can be viewed and modified at [https://dbdiagram.io/d](https://dbdiagram.io/d).
+
+[Syntax for DBML can be found here](https://dbml.dbdiagram.io/home).
+
+```
+////
+// DIBBS eCR Refiner - Automated Data Pipeline Architecture
+//
+// This diagram illustrates a self-managing, pure PostgreSQL architecture for the DIBBs eCR Refiner
+//
+// It uses a chain of database triggers to automatically process and aggregate data from the
+// base API source (TES) and user-defined configurations into a query-optimized cache table
+//
+// The core strategy is to start with this robust, single-database solution and only
+// introduce further complexity (e.g., an external cache like Redis) if performance
+// benchmarks prove it necessary in the future
+//
+// Key Principles Captured:
+// 1. Condition Groupers provide the aggregated BASE set of codes. If no configuration is used, this serves as the default for its children rs-groupers
+// 2. configurations provide a specific ADDITION for a single reportable condition (each configuration is active for a single rs-grouper condition code)
+// 3. The Refinement Cache stores the final, COMBINED result of (BASE + ADDITION) for a given rs-grouper and jurisdiction
+// 4. A trigger chain automates the entire data pipeline when updates from the TES API land or when a user modifies a configuration
+//
+// To address the canonical URL issue in the TES (the condition grouper url will be the same across versions), we use:
+// 1. Composite Primary Keys: (canonical_url, version) are used for groupers to ensure
+//    each version of a grouper can exist as a unique row
+// 2. Version-Aware Foreign Keys: The `tes_condition_grouper_references` table includes
+//    version columns to create explicit, unambiguous links between specific versions
+//    of parents and children
+////
+
+Project "DIBBs eCR Refiner" {
+  database_type: 'PostgreSQL'
+  Note: '''
+    ### Three-Tier Architecture with an Automated Trigger Chain:
+
+    1.  **Identity & Access:** Manages users and their jurisdictional context
+    2.  **Source of Truth:** A normalized model storing the raw data from the TES API and user-defined configurations. This is the entry point for all data
+    3.  **Runtime Cache:** A denormalized table populated and kept in sync entirely by automated database triggers. This is the single source for high-performance reads by the application
+  '''
+}
+
+// =================================================================================
+// PART 1: User Identity and Jurisdiction Management
+// =================================================================================
+
+// Although we don't store PHI/PII, traceability is a key part of HIPAA-compliant design
+// Storing created_by and last_login helps fulfill audit trail requirements
+Table users {
+  id integer [pk, increment]
+  email text [unique, not null]
+  jurisdiction_id varchar [not null, ref: > jurisdictions.id]
+  full_name varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  last_login timestamp
+}
+
+// Large city jurisdictions may have a combination of id-extension for their city or state that are used in their
+// RRs (RRVS6) depending on how they're receiving their eCR data
+Table jurisdictions {
+  id varchar [pk, note: "The <id extension='code'> from the RR's RRVS6 section. This is the primary lookup key."]
+  name varchar [unique, not null]
+  state_code varchar(2) [note: "Optional state code for reference, e.g., GA, CA, NY"]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+
+// =================================================================================
+// PART 2: The "Source of Truth" - Normalized Relational Model
+// =================================================================================
+
+// Represents a high-level condition (e.g., "Influenza" or "COVID")
+// Its code columns are populated by **Trigger 1**
+// NOTE: Any update to this table subsequently fires **Trigger 2**, updating the refinement_cache
+Table tes_condition_groupers {
+  canonical_url varchar [not null, note: "The stable URL of the condition grouper from TES"]
+  version varchar [not null, note: "The version of the grouper definition, e.g., 2.0.0."]
+  display_name varchar [not null]
+  loinc_codes jsonb [note: "Aggregated BASE codes from all children."]
+  snomed_codes jsonb
+  icd10_codes jsonb
+  rxnorm_codes jsonb
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  indexes {
+    (canonical_url, version) [pk]
+  }
+}
+
+// Represents a specific reporting specification grouper from the TES API. This is the raw source data
+// NOTE: The process of updating this table and the `references` table is what fires **Trigger 1**
+Table tes_reporting_spec_groupers {
+  canonical_url varchar [not null, note: "The stable URL of the rs-grouper from TES."]
+  version varchar [not null, note: "The specific version of the rs-grouper, e.g., a date string YYYYMMDD"]
+  display_name varchar
+  snomed_code varchar [not null]
+  loinc_codes jsonb
+  snomed_codes jsonb
+  icd10_codes jsonb
+  rxnorm_codes jsonb
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (canonical_url, version) [pk]
+    // A SNOMED code is only unique for a given version of an rs-grouper
+    (snomed_code, version) [unique]
+  }
+}
+
+// The "Air Traffic Controller" linking table. It models the parent-child relationships from the TES API
+// This linking table is explicitly version-aware. Any change here fires **Trigger 1**
+Table tes_condition_grouper_references {
+  id integer [pk, increment]
+  parent_grouper_url varchar [not null]
+  parent_grouper_version varchar [not null]
+  child_grouper_url varchar [not null]
+  child_grouper_version varchar [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Ref "fk_parent_grouper": tes_condition_grouper_references.(parent_grouper_url, parent_grouper_version) > tes_condition_groupers.(canonical_url, version)
+Ref "fk_child_grouper": tes_condition_grouper_references.(child_grouper_url, child_grouper_version) > tes_reporting_spec_groupers.(canonical_url, version)
+
+// This table holds user-defined code additions (overrides) for specific jurisdictions
+// Any change in this table fires **Trigger 2**
+Table configurations {
+  id integer [pk, increment]
+  jurisdiction_id varchar [not null, ref: > jurisdictions.id]
+  // Foreign key points to the specific rs-grouper + version this configuration applies to
+  child_grouper_url varchar [not null]
+  child_grouper_version varchar [not null]
+  display_name_override varchar
+  version varchar [note: "The version of the configuration itself, e.g., 1.0, 1.1"]
+  loinc_codes jsonb
+  snomed_codes jsonb
+  icd10_codes jsonb
+  rxnorm_codes jsonb
+  is_active boolean [default: false]
+  created_by integer [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Ref "fk_configuration_to_child_grouper": configurations.(child_grouper_url, child_grouper_version) > tes_reporting_spec_groupers.(canonical_url, version)
+
+// =================================================================================
+// NOTE: Versioning and Update Workflow
+// =================================================================================
+
+Note "User-Driven Versioning Control" {
+ '''
+ This architecture enables a safe, user-controlled workflow for adopting new TES versions
+
+ 1.  **The `configuration` is the explicit control point.** It connects a jurisdiction to a specific version of a `tes_reporting_spec_grouper` (a child)
+ 2.  The system then uses the `tes_condition_grouper_references` table to automatically find the correct version of the parent `tes_condition_grouper` associated with that child
+ 3.  When new TES data is loaded, existing configurations are unaffected. The production rules remain stable
+ 4.  The UI can then prompt the user to "upgrade" their configuration. This action involves updating the `child_grouper_version` the configuration points to, which then triggers the cache update for that jurisdiction
+
+ This process puts the power in the user's hands, preventing untested rules from automatically going live. We can decide exactly what this means for the semantic versioning of a configuration's version
+ '''
+}
+
+// =================================================================================
+// NOTE: TRIGGER DEFINITIONS--THE AUTOMATED PIPELINE
+// =================================================================================
+
+Note "Trigger 1: Aggregating Base Groupers" {
+ '''
+ **Trigger Name:** `trigger_update_parent_on_child_change`
+ **Fires On:** `AFTER INSERT OR UPDATE OR DELETE` on `tes_condition_grouper_references`
+ **Action:** This trigger recalculates the `*_codes` JSONB columns for the parent `tes_condition_grouper` version identified in the reference. It aggregates codes from all its linked children `tes_reporting_spec_grouper` versions
+ **Result:** The `tes_condition_groupers` table is always a correct, aggregated view of the base API data. This update, in turn, fires Trigger 2
+ '''
+}
+
+Note "Trigger 2: Populating the Runtime Cache" {
+ '''
+ **Trigger Name:** `trigger_update_refinement_cache`
+ **Fires On:** `AFTER UPDATE` on `tes_condition_groupers` OR `AFTER INSERT OR UPDATE` on `configurations`
+ **Action:** This trigger identifies the affected `(snomed_code, jurisdiction_id)` pairs. For each pair, it finds the correct parent `tes_condition_grouper` version, fetches the BASE codes, fetches the ADDITION codes from the corresponding `configuration`, aggregates them, and performs an `UPSERT` into the `refinement_cache`
+ **Result:** The `refinement_cache` is always a perfect, up-to-date representation of the final, combined data, ready for production use
+ '''
+}
+
+
+// =================================================================================
+// PART 3: The "Serving Layer" - Denormalized Runtime Cache
+// =================================================================================
+
+Table refinement_cache {
+  // The composite primary key for a fast, unique lookup
+  snomed_code varchar [not null, note: "Maps to tes_reporting_spec_groupers.snomed_code for a specific version"]
+  jurisdiction_id varchar [not null]
+
+  // The essential payload required by the application.
+  aggregated_codes jsonb [not null, note: "The final, combined codes from the condition grouper AND the configuration"]
+
+  // Columns for performance and traceability
+  source_details jsonb [not null, note: 'A JSON object for traceability, e.g., {"parent_version": "2.0.0", "child_version": "20250707", "configuration_id": 123}']
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    (snomed_code, jurisdiction_id) [pk]
+  }
+}
+```
