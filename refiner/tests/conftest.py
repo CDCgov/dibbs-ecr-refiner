@@ -14,7 +14,7 @@ NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 EICR_FILENAME = "CDA_eICR.xml"
 RR_FILENAME = "CDA_RR.xml"
 
-os.environ["DB_URL"] = "postgres://mock:mock@fakedb:5432/refiner"
+os.environ["DB_URL"] = "postgresql://mock:mock@fakedb:5432/refiner"
 
 
 @pytest.fixture(scope="session")
