@@ -2,7 +2,7 @@
 @forward 'uswds';
 
 [href]:focus:not(:focus-visible) {
-  outline:none;
+  outline: none;
 }
 
 input:not([disabled]):focus,
@@ -12,7 +12,7 @@ button:not([disabled]):focus,
 iframe:focus-visible,
 [href]:focus-visible,
 [tabindex]:focus-visible,
-[contentEditable=true]:focus-visible {
+[contentEditable='true']:focus-visible {
   outline: 0.25rem solid var(--color-blue-cool-30);
   outline-offset: 2px;
 }

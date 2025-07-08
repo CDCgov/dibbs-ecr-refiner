@@ -20,11 +20,11 @@ type NavigationLinkProps = Pick<NavLinkProps, 'to' | 'title'>;
  */
 function NavigationLink({ to, title }: NavigationLinkProps) {
   return (
-<NavLink to={to} className="text-blue-cool-5">
+    <NavLink to={to} className="text-blue-cool-5">
       {({ isActive }) => (
         <span
           className={classNames('mx-6 inline-block py-1', {
-            'border-b-4 border-blue-cool-30': isActive,
+            'border-blue-cool-30 border-b-4': isActive,
           })}
         >
           {title}
