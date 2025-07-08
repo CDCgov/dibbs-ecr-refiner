@@ -47,6 +47,7 @@ Table users {
   jurisdiction_id varchar [not null, ref: > jurisdictions.id]
   full_name varchar
   created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
   last_login timestamp
 }
 
@@ -57,6 +58,7 @@ Table jurisdictions {
   name varchar [unique, not null]
   state_code varchar(2) [note: "Optional state code for reference, e.g., GA, CA, NY"]
   created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 }
 
 
@@ -75,6 +77,8 @@ Table tes_condition_groupers {
   snomed_codes jsonb
   icd10_codes jsonb
   rxnorm_codes jsonb
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
   indexes {
     (canonical_url, version) [pk]
   }
@@ -91,6 +95,8 @@ Table tes_reporting_spec_groupers {
   snomed_codes jsonb
   icd10_codes jsonb
   rxnorm_codes jsonb
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 
   indexes {
     (canonical_url, version) [pk]
@@ -107,6 +113,8 @@ Table tes_condition_grouper_references {
   parent_grouper_version varchar [not null]
   child_grouper_url varchar [not null]
   child_grouper_version varchar [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 }
 
 Ref "fk_parent_grouper": tes_condition_grouper_references.(parent_grouper_url, parent_grouper_version) > tes_condition_groupers.(canonical_url, version)
@@ -128,6 +136,8 @@ Table configurations {
   rxnorm_codes jsonb
   is_active boolean [default: false]
   created_by integer [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 }
 
 Ref "fk_configuration_to_child_grouper": configurations.(child_grouper_url, child_grouper_version) > tes_reporting_spec_groupers.(canonical_url, version)
@@ -186,6 +196,9 @@ Table refinement_cache {
 
   // Columns for performance and traceability
   source_details jsonb [not null, note: 'A JSON object for traceability, e.g., {"parent_version": "2.0.0", "child_version": "20250707", "configuration_id": 123}']
+
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
 
   indexes {
     (snomed_code, jurisdiction_id) [pk]
