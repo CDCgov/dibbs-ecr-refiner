@@ -43,11 +43,25 @@
   --color-blue-cool-50: #3a7d95;
   --color-blue-cool-60: #2e6276;
   --color-blue-cool-80: #14333d;
+  --color-blue-cool-90: #0f191c;
 
   --color-gray-100: #fbfcfd;
   --color-gray-200: #f3f3f3;
 
+  --color-gray-cool-10: #dfe1e2;
+  --color-gray-cool-20: #c6cace;
+  --color-gray-cool-30: #a9aeb1;
+  --color-gray-cool-40: #8d9297;
+  --color-gray-cool-50: #71767a;
+  --color-gray-cool-60: #565c65;
+  --color-gray-cool-70: #3d4551;
+  --color-gray-cool-80: #2d2e2f;
+  --color-gray-cool-90: #1c1d1f;
+
   --color-red-300: #e41d3d;
+
+  --color-state-success-dark: #216e1f;
+  --color-state-error-dark: #b50909;
 
   --color-violet-warm-60: #864381;
   --color-violet-warm-70: #5c395a;
