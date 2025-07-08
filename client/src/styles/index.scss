@@ -2,7 +2,8 @@
 @forward 'uswds';
 
 /**
-  * @mixin Sets outline to a better complimentary and WCAG AA rated contrast
+  * @mixin
+  * @desc Sets outline to a better complimentary and WCAG AA rated contrast
   * raio of `5.93:1` which works for graphic and large text.
   * source: https://webaim.org/resources/contrastchecker/?fcolor=82B4C9&bcolor=14333D
   */
@@ -12,18 +13,18 @@
 }
 
 /**
-  * Removes the focus outline when mouse-based or touch-based interactions
-  * interact with any anchors to avoid two visual indicators.
+  * @desc Removes the focus outline when mouse-based or touch-based
+  * interactions interact with any anchors to avoid two visual indicators.
   */
 [href]:focus:not(:focus-visible) {
   outline: none;
 }
 
 /**
-  * Use a custom outline for anything that appears on a dark background such as
-  * the <header /> and <footer /> elements for now. Targets the Tailwind
-  * selector for the dark background set in the HTML rather than specific
-  * HTML elements.
+  * @desc Use a custom outline for anything that appears on a dark background
+  * such as the <header /> and <footer /> elements for now. Targets the
+  * Tailwind selector for the dark background set in the HTML rather than
+  * specific HTML elements.
   */
 .bg-blue-cool-80 {
   input:not([disabled]):focus,
