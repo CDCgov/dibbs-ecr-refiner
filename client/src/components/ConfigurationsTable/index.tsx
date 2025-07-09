@@ -6,7 +6,7 @@ interface HeaderProps {
 }
 
 interface TableBodyProps {
-  data: Array<TableItem>;
+  data: TableItem[];
 }
 
 interface TableItem {
@@ -17,7 +17,7 @@ interface TableItem {
 
 interface ConfigurationsTableProps {
   columns: string[];
-  data: Array<TableItem>;
+  data: TableItem[];
 }
 
 function TableHeader({ items }: HeaderProps) {
