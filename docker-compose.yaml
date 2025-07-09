@@ -39,7 +39,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - ./refiner/tests/seeding/seed-data.sql:/docker-entrypoint-initdb.d/seed-data.sql
+      - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/seed-data.sql
       - pgdata:/var/lib/postgresql/data
 volumes:
   pgdata:
