@@ -11,8 +11,14 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
+      <a className="usa-skipnav" href="#main-content">
+        Skip to main content
+      </a>
       <Header />
-      <main className="bg-primary-container flex grow flex-col">
+      <main
+        id="main-content"
+        className="bg-primary-container flex grow flex-col"
+      >
         {children}
       </main>
       <Footer />
@@ -47,6 +53,7 @@ export function Footer() {
             href="https://www.cdc.gov"
             target="_blank"
             rel="noreferrer noopener"
+            className="inline-block"
           >
             <img src={CdcLogo} alt="" />
           </a>
