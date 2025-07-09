@@ -31,7 +31,7 @@ describe('Configurations Table component', () => {
     renderComponentView();
 
     testData.data.forEach(({ name, status }) => {
-      let row = getByText(screen.getByTestId('table'), name).parentElement;
+      const row = getByText(screen.getByTestId('table'), name).parentElement;
       expect(row).toHaveTextContent(name);
       expect(row).toHaveTextContent(`Refiner ${status}`);
     });
