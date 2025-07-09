@@ -85,13 +85,11 @@
   */
 
 .usa-table {
-  @apply border-gray-cool-30 w-full rounded-sm border-1;
-  box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);
+  @apply border-gray-cool-30 w-full rounded-sm border-1 shadow-[0_4px_8px_0_rgba(0,0,0,0.15)];
 }
 
 .usa-table--borderless thead th {
-  @apply text-blue-cool-90 bg-gray-cool-10 border-none py-3 uppercase;
-  line-height: 26px;
+  @apply text-blue-cool-90 bg-gray-cool-10 border-none py-3 uppercase leading-[26px];
 }
 
 .usa-table tbody th,
