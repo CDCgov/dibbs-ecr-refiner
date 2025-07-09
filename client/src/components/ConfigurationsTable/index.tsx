@@ -25,7 +25,11 @@ function TableHeader({ items }: HeaderProps) {
     <thead>
       <tr>
         {items.map((name, idx) => {
-          return <th key={idx} scope="col">{name}</th>;
+          return (
+            <th key={idx} scope="col">
+              {name}
+            </th>
+          );
         })}
       </tr>
     </thead>

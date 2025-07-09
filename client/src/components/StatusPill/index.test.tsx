@@ -15,12 +15,18 @@ describe('Status pill component', () => {
     renderComponentView('on');
 
     expect(screen.getByTestId('status-pill')).toBeInTheDocument();
-expect(screen.getByTestId('status-pill')).toHaveAttribute('data-configuration-status', 'on')
+    expect(screen.getByTestId('status-pill')).toHaveAttribute(
+      'data-configuration-status',
+      'on'
+    );
   });
   it('should render with status off', async () => {
     renderComponentView('off');
 
     expect(screen.getByTestId('status-pill')).toBeInTheDocument();
-expect(screen.getByTestId('status-pill')).toHaveAttribute('data-configuration-status', 'off')
+    expect(screen.getByTestId('status-pill')).toHaveAttribute(
+      'data-configuration-status',
+      'off'
+    );
   });
 });

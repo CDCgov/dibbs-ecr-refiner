@@ -3,8 +3,6 @@ import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
 
-
-
 export function Configurations() {
   const tableData = {
     columns: ['Reportable condition', 'Status'],
