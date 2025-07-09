@@ -10,7 +10,7 @@ enum ConfigurationStatus {
 
 export function Configurations() {
   const tableData = {
-    columns: ['Reportable condition', 'Status'],
+    columns: { name: 'Reportable condition', status: 'Status' },
     data: [
       {
         name: 'Chlamydia trachomatis infection',
@@ -56,9 +56,7 @@ export function Configurations() {
           name={'search'}
           type={'text'}
         />
-        <div>
-          <Button>Set up new condition</Button>
-        </div>
+        <Button className="m-0!">Set up new condition</Button>
       </div>
       <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
     </section>

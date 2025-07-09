@@ -70,10 +70,10 @@
 
 /**
   * README:
-  * Overriding USWDS styles here with a mixture of raw CSS and applying
-  * Tailwind classes as needed. This makes having the minimal amount of classes
-  * in the components that leverage the USWDS Table HTML to not require having
-  * a lot of Tailwind class names.
+  * Overriding USWDS Table styles with TailwindCSS. This helps standardize the
+  * look of USWDS Tables for the eCR Refiner application.
+  * TODO: Fold these changes into `cdcgov/dibbs-design-system` after it has
+  * TailwindCSS support.
   */
 
 .usa-table {
@@ -81,16 +81,16 @@
 }
 
 .usa-table--borderless thead th {
-  @apply text-blue-cool-90 bg-gray-cool-10 border-none py-3 uppercase leading-[26px];
+  @apply text-blue-cool-90 bg-gray-cool-10 border-none py-3 leading-[26px] uppercase;
 }
 
 .usa-table tbody th,
 .usa-table tbody td {
-  @apply cursor-pointer border-0 py-5;
+  @apply cursor-pointer border-0;
 }
 
 .usa-table tbody tr {
-  @apply border-gray-cool-30 border-t;
+  @apply border-gray-cool-30 h-17 border-t border-b;
 }
 
 .usa-table tbody tr:hover th,
@@ -98,10 +98,15 @@
   @apply bg-gray-200;
 }
 
-.usa-table tbody th {
-  width: 400px;
+.usa-table {
+  @apply max-w-[1208px] table-auto md:table-fixed;
 }
 
-.usa-table tbody td {
-  width: 720px;
+.usa-table--stacked th[data-label]:before,
+.usa-table--stacked td[data-label]:before {
+  @apply bg-gray-cool-10 mb-3! pb-3!;
+}
+
+.usa-table--stacked tr th {
+  @apply border-gray-cool-30 border-b;
 }
