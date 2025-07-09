@@ -3,7 +3,7 @@ import { getByText, render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 
-const tableData = {
+const testData = {
   columns: ['Reportable condition', 'Status'],
   data: [
     {
@@ -22,7 +22,7 @@ const tableData = {
 const renderComponentView = () =>
   render(
     <BrowserRouter>
-      <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
+      <ConfigurationsTable columns={testData.columns} data={testData.data} />
     </BrowserRouter>
   );
 
@@ -30,14 +30,10 @@ describe('Configurations Table component', () => {
   it('should render a table when supplied with data', async () => {
     renderComponentView();
 
-    const table = screen.getByTestId('table');
-    const firstRow = getByText(table, tableData.data[0].name).parentElement;
-    const secondRow = getByText(table, tableData.data[1].name).parentElement;
-
-    expect(table).toBeInTheDocument();
-    expect(firstRow).toHaveTextContent(tableData.data[0].name);
-    expect(firstRow).toHaveTextContent(`Refiner ${tableData.data[0].status}`);
-    expect(secondRow).toHaveTextContent(tableData.data[1].name);
-    expect(secondRow).toHaveTextContent(`Refiner ${tableData.data[1].status}`);
+    testData.data.forEach(({ name, status }) => {
+      let row = getByText(screen.getByTestId('table'), name).parentElement;
+      expect(row).toHaveTextContent(name);
+      expect(row).toHaveTextContent(`Refiner ${status}`);
+    });
   });
 });
