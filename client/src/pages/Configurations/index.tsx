@@ -3,33 +3,38 @@ import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
 
+enum ConfigurationStatus {
+  on = 'on',
+  off = 'off',
+}
+
 export function Configurations() {
   const tableData = {
     columns: ['Reportable condition', 'Status'],
     data: [
       {
         name: 'Chlamydia trachomatis infection',
-        status: 'on',
+        status: ConfigurationStatus.on,
         id: 'asdf-zxcv-qwer-hjkl',
       },
       {
         name: 'Disease caused by Enterovirus',
-        status: 'off',
+        status: ConfigurationStatus.off,
         id: 'asdf-zxcv-qwer-hjkl',
       },
       {
         name: 'Human immunodeficiency virus infection (HIV)',
-        status: 'off',
+        status: ConfigurationStatus.off,
         id: 'asdf-zxcv-qwer-hjkl',
       },
       {
         name: 'Syphilis',
-        status: 'on',
+        status: ConfigurationStatus.on,
         id: 'asdf-zxcv-qwer-hjkl',
       },
       {
         name: 'Viral hepatitis, type A',
-        status: 'on',
+        status: ConfigurationStatus.on,
         id: 'asdf-zxcv-qwer-hjkl',
       },
     ],
