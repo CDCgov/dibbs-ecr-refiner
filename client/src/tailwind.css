@@ -18,6 +18,15 @@
   select {
     @apply !m-0;
   }
+
+  [data-configuration-status='on'] {
+    @apply bg-state-success-dark;
+  }
+
+  [data-configuration-status='off'] {
+    @apply bg-state-error-dark;
+  }
+
 }
 @layer utilities {
   .border-thin {
@@ -66,4 +75,44 @@
   --color-violet-warm-60: #864381;
   --color-violet-warm-70: #5c395a;
   --color-violet-warm-80: #382936;
+}
+
+/**
+  * README:
+  * Overriding USWDS styles here with a mixture of raw CSS and applying
+  * Tailwind classes as needed. This makes having the minimal amount of classes
+  * in the components that leverage the USWDS Table HTML to not require having
+  * a lot of Tailwind class names.
+  */
+
+.usa-table {
+  @apply rounded-sm w-full border-1 border-gray-cool-30;
+  box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.15);
+}
+
+.usa-table--borderless thead th {
+  @apply text-blue-cool-90 bg-gray-cool-10 uppercase py-3 border-none;
+  line-height: 26px;
+}
+
+.usa-table tbody th,
+.usa-table tbody td {
+  @apply py-5 border-0 cursor-pointer;
+}
+
+.usa-table tbody tr {
+  @apply border-gray-cool-30 border-t;
+}
+
+.usa-table tbody tr:hover th,
+.usa-table tbody tr:hover td {
+  @apply bg-gray-200;
+}
+
+.usa-table tbody th {
+  width: 400px;
+}
+
+.usa-table tbody td {
+  width: 720px;
 }

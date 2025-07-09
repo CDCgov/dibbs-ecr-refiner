@@ -1,8 +1,42 @@
 import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
+import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+
+
 
 export function Configurations() {
+  const tableData = {
+    columns: ['Reportable condition', 'Status'],
+    data: [
+      {
+        name: 'Chlamydia trachomatis infection',
+        status: 'on',
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Disease caused by Enterovirus',
+        status: 'off',
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Human immunodeficiency virus infection (HIV)',
+        status: 'off',
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Syphilis',
+        status: 'on',
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Viral hepatitis, type A',
+        status: 'on',
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+    ],
+  };
+
   return (
     <section className="mx-auto p-3">
       <div className="flex flex-col gap-4 py-10">
@@ -23,6 +57,7 @@ export function Configurations() {
           <Button>Set up new condition</Button>
         </div>
       </div>
+      <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
     </section>
   );
 }
