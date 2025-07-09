@@ -11,7 +11,7 @@ interface TableBodyProps {
 
 interface TableItem {
   name: string;
-  status: string;
+  status: 'on' | 'off';
   id: string;
 }
 
@@ -39,12 +39,12 @@ function TableHeader({ items }: HeaderProps) {
 function TableBody({ data }: TableBodyProps) {
   return (
     <tbody>
-      {data.map((row, idx) => {
+      {data.map(({ name, status }, idx) => {
         return (
           <tr key={idx}>
-            <th scope="row">{row.name}</th>
+            <th scope="row">{name}</th>
             <td>
-              <StatusPill status={row.status} />
+              <StatusPill status={status} />
             </td>
           </tr>
         );

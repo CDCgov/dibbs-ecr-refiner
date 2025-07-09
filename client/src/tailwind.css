@@ -18,14 +18,6 @@
   select {
     @apply !m-0;
   }
-
-  [data-configuration-status='on'] {
-    @apply bg-state-success-dark;
-  }
-
-  [data-configuration-status='off'] {
-    @apply bg-state-error-dark;
-  }
 }
 @layer utilities {
   .border-thin {

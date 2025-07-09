@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { StatusPill } from '.';
 
-const renderComponentView = (status: string) =>
+const renderComponentView = (status: 'on' | 'off') =>
   render(
     <BrowserRouter>
       <StatusPill status={status} />
@@ -14,19 +14,11 @@ describe('Status pill component', () => {
   it('should render with status on', async () => {
     renderComponentView('on');
 
-    expect(screen.getByTestId('status-pill')).toBeInTheDocument();
-    expect(screen.getByTestId('status-pill')).toHaveAttribute(
-      'data-configuration-status',
-      'on'
-    );
+    expect(screen.getByText('Refiner on')).toBeInTheDocument();
   });
   it('should render with status off', async () => {
     renderComponentView('off');
 
-    expect(screen.getByTestId('status-pill')).toBeInTheDocument();
-    expect(screen.getByTestId('status-pill')).toHaveAttribute(
-      'data-configuration-status',
-      'off'
-    );
+    expect(screen.getByText('Refiner off')).toBeInTheDocument();
   });
 });

@@ -1,15 +1,14 @@
+import classNames from 'classnames';
+
 interface StatusPillProps {
-  status: string;
+  status: 'on' | 'off';
 }
 
 export function StatusPill({ status }: StatusPillProps) {
-  return (
-    <span
-      data-configuration-status={status}
-      data-testid="status-pill"
-      className="rounded-full px-2 py-1 font-bold text-white"
-    >
-      Refiner {status}
-    </span>
-  );
+  const styles = classNames('rounded-full px-2 py-1 font-bold text-white', {
+    'bg-state-success-dark': status === 'on',
+    'bg-state-error-dark': status === 'off',
+  });
+
+  return <span className={styles}>Refiner {status}</span>;
 }
