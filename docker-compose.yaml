@@ -20,13 +20,16 @@ services:
       - "8080:8080"
     environment:
       - PIP_ROOT_USER_ACTION=ignore
+      - AUTH_PROVIDER=keycloak
+      - AUTH_CLIENT_ID=refinerclient
+      - AUTH_CLIENT_SECRET=VFgmdE2lPIRj0fkFjI9OpQeRXY4UUDA3
+      - AUTH_ISSUER=http://auth:8082/realms/refiner
     logging:
       driver: "json-file"
   auth:
     image: quay.io/keycloak/keycloak:26.3.1
     command:
       - "start-dev"
-      - "--import-realm"
     ports:
       - "8082:8080"
     environment:
