@@ -1,18 +1,18 @@
+set working-directory := '../../client'
+
 alias h := _default
 alias help := _default
-
-alias d := dev
-alias r := run
 
 @_default:
     just --list client
 
-set working-directory := '../../client'
+alias d := dev
 
 [doc('Bring up development environment using Docker Compose')]
 dev:
     docker-compose -f {{ absolute_path('../docker-compose.yaml') }} up
 
+alias r := run
 
 [doc('Run arbitrary `npm run *` commands within `client/`')]
 run *ARGS:

@@ -4,7 +4,6 @@ alias help := _default
 @_default:
     just --list
 
-
 [doc('Alias for `client`')]
 mod c './.justscripts/just/client.just'
 
