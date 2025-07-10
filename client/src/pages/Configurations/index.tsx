@@ -1,8 +1,45 @@
 import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
+import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+
+enum ConfigurationStatus {
+  on = 'on',
+  off = 'off',
+}
 
 export function Configurations() {
+  const tableData = {
+    columns: { name: 'Reportable condition', status: 'Status' },
+    data: [
+      {
+        name: 'Chlamydia trachomatis infection',
+        status: ConfigurationStatus.on,
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Disease caused by Enterovirus',
+        status: ConfigurationStatus.off,
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Human immunodeficiency virus infection (HIV)',
+        status: ConfigurationStatus.off,
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Syphilis',
+        status: ConfigurationStatus.on,
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+      {
+        name: 'Viral hepatitis, type A',
+        status: ConfigurationStatus.on,
+        id: 'asdf-zxcv-qwer-hjkl',
+      },
+    ],
+  };
+
   return (
     <section className="mx-auto p-3">
       <div className="flex flex-col gap-4 py-10">
@@ -19,10 +56,9 @@ export function Configurations() {
           name={'search'}
           type={'text'}
         />
-        <div>
-          <Button>Set up new condition</Button>
-        </div>
+        <Button className="m-0!">Set up new condition</Button>
       </div>
+      <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
     </section>
   );
 }

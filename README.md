@@ -12,6 +12,8 @@ The Refiner is a containerized application and can be easily run using [Docker](
 docker compose up -d
 ```
 
+With the containers running, you'll now want to seed the database with TES data and mock application data. Please follow the [seeding steps here](./refiner/scripts/README.md).
+
 This will start up the FastAPI server and the Vite client development server. The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/).
 
 ## Creating a production build

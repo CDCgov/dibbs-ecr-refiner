@@ -54,6 +54,20 @@ def setup(request):
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
 
+    print("🧠 Seeding database...")
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "refiner",
+            "-f",
+            "/docker-entrypoint-initdb.d/seed-data.sql",
+        ],
+        "db",
+    )
+    print("Database is ready!")
+
     def teardown():
         """
         Registered finalizer to stop Docker Compose services.

@@ -8,8 +8,8 @@ services:
     ports:
     - "8081:8081"
     depends_on:
-      - message-refiner-service
-  message-refiner-service:
+      - refiner-service
+  refiner-service:
     image: python:3.13-slim
     platform: linux/amd64
     command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
@@ -20,6 +20,7 @@ services:
       - "8080:8080"
     environment:
       - PIP_ROOT_USER_ACTION=ignore
+      - DB_URL=postgresql://postgres:refiner@db:5432/refiner
       - AUTH_PROVIDER=keycloak
       - AUTH_CLIENT_ID=refinerclient
       - AUTH_CLIENT_SECRET=VFgmdE2lPIRj0fkFjI9OpQeRXY4UUDA3
@@ -38,3 +39,23 @@ services:
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
     volumes:
       - ./keycloak/exports:/opt/keycloak/data/import
+  db:
+    image: postgres:alpine
+    restart: on-failure
+    user: postgres
+    environment:
+      - POSTGRES_DB=refiner
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=refiner
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/seed-data.sql
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
