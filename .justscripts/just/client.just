@@ -11,7 +11,7 @@ set working-directory := '../../client'
 
 [doc('Bring up development environment using Docker Compose')]
 dev:
-    docker-compose -f '../../docker-compose.yaml' up
+    docker-compose -f {{ absolute_path('../docker-compose.yaml') }} up
 
 
 [doc('Run arbitrary `npm run *` commands within `client/`')]
