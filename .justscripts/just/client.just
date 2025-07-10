@@ -8,9 +8,9 @@ alias help := _default
 
 alias d := dev
 
-[doc('Bring up development environment using Docker Compose')]
-dev:
-    docker-compose -f {{ absolute_path('../docker-compose.yaml') }} up
+[doc("Run abitrary `docker compose *` commands using project's docker-compose.yaml file.")]
+dev +ARGS:
+    docker compose -f {{ absolute_path('../docker-compose.yaml') }} {{ ARGS }}
 
 alias r := run
 
