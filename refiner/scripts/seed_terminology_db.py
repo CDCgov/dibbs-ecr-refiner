@@ -353,7 +353,7 @@ def dump_postgres_db_from_url(conn_str: str, output_file: str):
     user, dbname = match.groups()
 
     # Compose the command
-    dump_cmd = f"docker-compose exec db pg_dump -U {user} {dbname} > {output_file}"
+    dump_cmd = f"docker compose exec db pg_dump -U {user} {dbname} > {output_file}"
 
     try:
         print(f"Dumping database to: {output_file}")
