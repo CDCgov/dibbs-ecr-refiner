@@ -39,7 +39,7 @@ To build the Docker image for the Message Refiner from source instead of downloa
 1. Ensure that both [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) and [Docker](https://docs.docker.com/get-docker/) are installed.
 2. Clone the repository with `git clone https://github.com/CDCgov/dibbs-ecr-refiner`.
 3. Navigate to the top-level directory of this repository.
-4. Run `docker build -t message-refiner .`.
+4. Run `docker build -t refiner .`.
 
 ## The API
 
@@ -63,8 +63,8 @@ end
 subgraph service[REST API Service]
 direction TB
 subgraph mr["fab:fa-docker container"]
-refiner["fab:fa-python <code>message-refiner<br>HTTP:8080/</code>"]
-refiner <==> db["fas:fa-database SQLite DB"]
+refiner["fab:fa-python <code>refiner<br>HTTP:8080/</code>"]
+refiner <==> db["fas:fa-database PostgreSQL"]
 end
 end
 

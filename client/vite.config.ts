@@ -33,7 +33,7 @@ export default defineConfig({
     port: 8081,
     proxy: {
       '/api': {
-        target: 'http://message-refiner-service:8080',
+        target: 'http://refiner-service:8080',
         changeOrigin: true,
       },
     },
