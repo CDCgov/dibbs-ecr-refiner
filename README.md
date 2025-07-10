@@ -1,5 +1,10 @@
 # DIBBs eCR Refiner
 
+> [!TIP]
+> This project leverages `just` as a command runner. To learn more about `just`
+> view the documentation at: [https://just.systems/man/en](). Run `just help`
+> for a list of commands.
+
 The DIBBs eCR Refiner reduces eICR and RR files down to only the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
 
 For more detailed information about the relationship between the eICR and RR documents and what informs the design of the eCR Refiner please see [this document](/refiner/eCR-CDA-Notes.md).
