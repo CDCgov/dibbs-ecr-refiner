@@ -37,4 +37,4 @@ services:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
     volumes:
-      - ./keycloak/refiner-realm.json:/opt/keycloak/data/import/refiner-realm.json
+      - ./keycloak/exports:/opt/keycloak/data/import
