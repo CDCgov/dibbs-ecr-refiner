@@ -10,8 +10,8 @@ repos:
     # - prevent large file commits
     -   id: check-added-large-files
         args:
-        # 5mb == 5120kb
-        -   --maxkb=5120
+        # 20mb == 20480kb
+        -   --maxkb=20480
     # - validate toml syntax
     -   id: check-toml
     # - validate yaml syntax

@@ -1,85 +1,174 @@
 ### 1. Basic Server Information
+
 # Get CapabilityStatement - Returns metadata about the FHIR server's capabilities
 # This is often the first call to understand what operations the server supports
-GET {{API_URL}}/metadata
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/metadata HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### 2. Basic ValueSet Searches
+
 # Get all active value sets - Retrieves ValueSets with status=active
 # Basic filter by resource status
-GET {{API_URL}}/ValueSet?status=active
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?status=active HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Get first 20 ValueSets with _count parameter
+
 # Pagination control with _count
-GET {{API_URL}}/ValueSet?_count=20
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?_count=20 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Find ValueSets updated since a specific date
+
 # Temporal filtering with date parameter
-GET {{API_URL}}/ValueSet?date=ge2023-01-01
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?date=ge2023-01-01 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### 3. Code-Based Searches
+
 # Get ValueSets containing a specific code (SNOMED code 9991008 for "Abdominal colic")
 # Searches ValueSets that include this specific code in their compositions
-GET {{API_URL}}/ValueSet?code=9991008
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?code=9991008 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Find ValueSets that include codes from a specific CodeSystem (LOINC in this case)
+
 # Searches by referenced CodeSystem
-GET {{API_URL}}/ValueSet?reference=http://loinc.org
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?reference=http://loinc.org HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### 4. Text-Based Searches
+
 # Search by ValueSet name (exact match)
 # title: Cyanobacteria and Cyanotoxin Poisoning
-GET {{API_URL}}/ValueSet?name=ReportingSpecificationGrouper41439009
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?name=ReportingSpecificationGrouper41439009 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Search by title (contains match - "Cyanobacteria")
-GET {{API_URL}}/ValueSet?title=Cyanobacteria
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?title=Cyanobacteria HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Search by description (contains match - "poisoning")
-GET {{API_URL}}/ValueSet?description=poisoning
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?description=poisoning HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Search by description for Hepatitis B
-GET {{API_URL}}/ValueSet?description=Hepatitis B
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?description=Hepatitis B HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Search by description for Influenza
-GET {{API_URL}}/ValueSet?description=Influenza
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?description=Influenza HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### 5. Context-Based Searches
+
 # Search by context type (finds ValueSets with "focus" context)
 # Uses the usage-context-type CodeSystem
-GET {{API_URL}}/ValueSet?context-type=http://terminology.hl7.org/CodeSystem/usage-context-type|focus
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?context-type=http://terminology.hl7.org/CodeSystem/usage-context-type|focus HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Search by SNOMED context (finds ValueSets associated with SNOMED code 240589008 "Trichinosis")
-GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|240589008
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|240589008 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### Search by SNOMED context for Hepatitis B (code 66071002)
-GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|66071002
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?context=http://snomed.info/sct|66071002 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### 6. Combined Parameter Searches
+
 # Combined title and status search (active ValueSets with "Hepatitis B" in title)
 # Demonstrates AND logic between parameters
-GET {{API_URL}}/ValueSet?title=Hepatitis B&status=active
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet?title=Hepatitis B&status=active HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### 7. ValueSet Operations
+
 # $expand operation - Gets all codes in a specific ValueSet
 # Requires the ValueSet ID (rs-grouper-240589008 in this example)
-GET {{API_URL}}/ValueSet/rs-grouper-240589008/$expand
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet/rs-grouper-240589008/$expand HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
 
 ### $validate-code operation - Checks if a code is in a ValueSet
+
 # Requires ValueSet ID, code, and code system
-GET {{API_URL}}/ValueSet/rs-grouper-240589008/$validate-code?code=100356-5&system=http://loinc.org
-X-API-KEY: {{API_KEY}}
+
+GET {{API_URL}}/ValueSet/rs-grouper-240589008/$validate-code?code=100356-5&system=http://loinc.org HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
+
+### 8. Get specific versions of reporting specification groupers
+
+# this will get the rs-grouper associated with the 1.0.0 condition grouper it is a child of
+# must search both by url and version
+
+GET {{API_URL}}/ValueSet?url={{API_URL}}/ValueSet/rs-grouper-240589008&version=20241008 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
+
+### Get specific versions of reporting specification groupers
+
+# this will get the rs-grouper associated with the 2.0.0 condition grouper it is a child of
+# must search both by url and version
+
+GET {{API_URL}}/ValueSet?url={{API_URL}}/ValueSet/rs-grouper-240589008&version=20250328 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
+
+### Get specific versions of reporting specification groupers
+
+# this will get the rs-grouper associated with the 2.0.0 condition grouper it is a child of
+# must search both by url and version
+
+GET {{API_URL}}/ValueSet?url={{API_URL}}/ValueSet/rs-grouper-240589008&version=20250328 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
+
+### Get specific versions of condition groupers
+
+# this will get the 1.0.0 condition grouper for Hep B
+# must search both by url and version
+
+GET {{API_URL}}/ValueSet?url={{API_URL}}/ValueSet/ceea7958-2eb3-44d2-8bfc-e74631f20cc5&version=1.0.0 HTTP/1.1
+X-Api-Key: {{API_KEY}}
+
+
+### Get specific versions of condition groupers
+
+# this will get the 2.0.0 condition grouper for Hep B
+# must search both by url and version
+
+GET {{API_URL}}/ValueSet?url={{API_URL}}/ValueSet/ceea7958-2eb3-44d2-8bfc-e74631f20cc5&version=2.0.0 HTTP/1.1
+X-Api-Key: {{API_KEY}}

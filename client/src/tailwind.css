@@ -43,13 +43,70 @@
   --color-blue-cool-50: #3a7d95;
   --color-blue-cool-60: #2e6276;
   --color-blue-cool-80: #14333d;
+  --color-blue-cool-90: #0f191c;
 
   --color-gray-100: #fbfcfd;
   --color-gray-200: #f3f3f3;
 
+  --color-gray-cool-10: #dfe1e2;
+  --color-gray-cool-20: #c6cace;
+  --color-gray-cool-30: #a9aeb1;
+  --color-gray-cool-40: #8d9297;
+  --color-gray-cool-50: #71767a;
+  --color-gray-cool-60: #565c65;
+  --color-gray-cool-70: #3d4551;
+  --color-gray-cool-80: #2d2e2f;
+  --color-gray-cool-90: #1c1d1f;
+
   --color-red-300: #e41d3d;
+
+  --color-state-success-dark: #216e1f;
+  --color-state-error-dark: #b50909;
 
   --color-violet-warm-60: #864381;
   --color-violet-warm-70: #5c395a;
   --color-violet-warm-80: #382936;
+}
+
+/**
+  * README:
+  * Overriding USWDS Table styles with TailwindCSS. This helps standardize the
+  * look of USWDS Tables for the eCR Refiner application.
+  * TODO: Fold these changes into `cdcgov/dibbs-design-system` after it has
+  * TailwindCSS support.
+  */
+
+.usa-table {
+  @apply border-gray-cool-30 w-full rounded-sm border-1 shadow-[0_4px_8px_0_rgba(0,0,0,0.15)];
+}
+
+.usa-table--borderless thead th {
+  @apply text-blue-cool-90 bg-gray-cool-10 border-none py-3 leading-[26px] uppercase;
+}
+
+.usa-table tbody th,
+.usa-table tbody td {
+  @apply cursor-pointer border-0;
+}
+
+.usa-table tbody tr {
+  @apply border-gray-cool-30 h-17 border-t border-b;
+}
+
+.usa-table tbody tr:hover th,
+.usa-table tbody tr:hover td {
+  @apply bg-gray-200;
+}
+
+.usa-table {
+  @apply max-w-[1208px] table-auto md:table-fixed;
+}
+
+.usa-table--stacked th[data-label]:before,
+.usa-table--stacked td[data-label]:before {
+  @apply bg-gray-cool-10 mb-3! pb-3!;
+}
+
+.usa-table--stacked tr th {
+  @apply border-gray-cool-30 border-b;
 }
