@@ -11,8 +11,10 @@ const renderPageView = () =>
   );
 
 describe('Configurations', () => {
-  it.skip('should contain a table with certain columns', async () => {
-    assert.fail('NOT IMPLEMENTED');
+  it('should contain a table with certain columns', async () => {
+    renderPageView();
+
+    expect(screen.getByTestId('table')).toBeInTheDocument();
   });
   it('should contain a call-to-action button', async () => {
     renderPageView();
