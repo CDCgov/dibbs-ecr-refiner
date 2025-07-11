@@ -1,12 +1,13 @@
 import asyncio
 import os
+import urllib
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -85,10 +86,63 @@ async def auth_callback(request: Request) -> dict[str, str]:
         token = await oauth.keycloak.authorize_access_token(request)
         nonce = request.session.get("nonce")
         user = await oauth.keycloak.parse_id_token(token, nonce)
-        return dict(user)
+
+        request.session["id_token"] = token["id_token"]
+        request.session["user"] = user
+
+        # print(dict(user))
+
+        return RedirectResponse(url="http://localhost:8081")
     except Exception as e:
         print("Callback error:", e)
         raise e
+
+
+@router.get("/user")
+async def get_user(request: Request) -> JSONResponse:
+    """
+    Returns the current logged-in user's information.
+
+    Reads user info from the session or token.
+
+    Returns:
+        JSON object with user claims if authenticated.
+
+    Raises:
+        HTTPException 401 if user not authenticated.
+    """
+    print("user requested")
+    user = request.session.get("user")  # or wherever you store user info
+    print(user)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return JSONResponse(content=user)
+
+
+@router.get("/logout")
+async def logout(request: Request) -> RedirectResponse:
+    """
+    Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.
+
+    Args:
+        request (Request): The incoming HTTP request.
+
+    Returns:
+        RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.
+    """
+    # Clear the session
+    request.session.clear()
+
+    # Redirect to client
+    post_logout_redirect_uri = "http://localhost:8081"
+
+    # Logout from auth provider
+    auth_provider_logout_url = (
+        "http://localhost:8082/realms/refiner/protocol/openid-connect/logout?"
+        + urllib.parse.urlencode({"redirect_uri": post_logout_redirect_uri})
+    )
+
+    return RedirectResponse(url=auth_provider_logout_url)
 
 
 @asynccontextmanager
