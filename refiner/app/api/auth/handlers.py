@@ -22,7 +22,7 @@ async def login(request: Request) -> RedirectResponse:
 
 
 @auth_router.get("/auth/callback")
-async def auth_callback(request: Request) -> dict[str, str]:
+async def auth_callback(request: Request) -> RedirectResponse:
     """
     Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
 
@@ -102,12 +102,3 @@ async def logout(request: Request) -> RedirectResponse:
     )
 
     return RedirectResponse(url=auth_provider_logout_url)
-
-
-# def get_current_user(request: Request):
-#     user = request.session.get("user")
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-#         )
-#     return user
