@@ -3,14 +3,21 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from authlib.integrations.starlette_client import OAuth
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
 from .api.middleware.spa import SPAFallbackMiddleware
 from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
+from .core.config import ENVIRONMENT
+
+SECRET_KEY = "super-secret-key"
 
 # environment configuration
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
@@ -18,6 +25,16 @@ is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 # create router
 router = APIRouter(prefix="/api")
 router.include_router(v1_router)
+
+
+oauth = OAuth()
+oauth.register(
+    name=ENVIRONMENT["AUTH_PROVIDER"],
+    client_id=ENVIRONMENT["AUTH_CLIENT_ID"],
+    client_secret=ENVIRONMENT["AUTH_CLIENT_SECRET"],
+    server_metadata_url=f"{ENVIRONMENT['AUTH_ISSUER']}/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
 
 
 # define health check endpoint at the service level
@@ -32,6 +49,46 @@ async def health_check() -> dict[str, str]:
     """
 
     return {"status": "OK"}
+
+
+@router.get("/login")
+async def login(request: Request) -> RedirectResponse:
+    """
+    Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.
+
+    Args:
+        request (Request): The incoming HTTP request.
+
+    Returns:
+        RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.
+    """
+    redirect_uri = "http://localhost:8080/api/auth/callback"
+    return await oauth.keycloak.authorize_redirect(request, redirect_uri)
+
+
+@router.get("/auth/callback")
+async def auth_callback(request: Request) -> dict[str, str]:
+    """
+    Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
+
+    Args:
+        request (Request): The incoming HTTP request containing the authorization code.
+
+    Returns:
+        dict[str, str]: A dictionary of user claims extracted from the ID token.
+
+    Raises:
+        Exception: If token exchange or ID token parsing fails.
+    """
+
+    try:
+        token = await oauth.keycloak.authorize_access_token(request)
+        nonce = request.session.get("nonce")
+        user = await oauth.keycloak.parse_id_token(token, nonce)
+        return dict(user)
+    except Exception as e:
+        print("Callback error:", e)
+        raise e
 
 
 @asynccontextmanager
@@ -63,4 +120,13 @@ app.mount(
     StaticFiles(directory="dist", html=True, check_dir=is_production),
     name="dist",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8081"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(SPAFallbackMiddleware)
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)

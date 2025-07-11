@@ -1,3 +1,4 @@
+Authlib==1.6.0
 chardet
 fastapi>=0.109.1
 httpx
@@ -9,3 +10,4 @@ python-multipart
 requests
 rich
 uvicorn
+itsdangerous

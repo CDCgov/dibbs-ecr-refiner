@@ -39,6 +39,12 @@ export function Header() {
           </h1>
         </Link>
         <NavigationBar />
+        <a
+          className="text-white hover:cursor-pointer hover:underline"
+          href="/api/login"
+        >
+          Login
+        </a>
       </div>
     </header>
   );
