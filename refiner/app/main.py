@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -111,11 +111,9 @@ async def get_user(request: Request) -> JSONResponse:
     Raises:
         HTTPException 401 if user not authenticated.
     """
-    print("user requested")
-    user = request.session.get("user")  # or wherever you store user info
-    print(user)
+    user = request.session.get("user")
     if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        return JSONResponse(content=user)
     return JSONResponse(content=user)
 
 
