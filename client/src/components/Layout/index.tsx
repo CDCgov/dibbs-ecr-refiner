@@ -3,7 +3,6 @@ import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 
 import NavigationBar from '../NavigationBar';
-import { useLogin } from '../../hooks/Login';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,7 +27,6 @@ export function Layout({ children }: LayoutProps) {
 }
 
 export function Header() {
-  const user = useLogin();
   return (
     <header>
       <div className="bg-blue-cool-80 flex items-center justify-between px-2 py-4 xl:px-20">
@@ -41,21 +39,12 @@ export function Header() {
           </h1>
         </Link>
         <NavigationBar />
-        {user ? (
-          <a
-            className="text-white hover:cursor-pointer hover:underline"
-            href="/api/logout"
-          >
-            Logout
-          </a>
-        ) : (
-          <a
-            className="text-white hover:cursor-pointer hover:underline"
-            href="/api/login"
-          >
-            Login
-          </a>
-        )}
+        <a
+          className="text-white hover:cursor-pointer hover:underline"
+          href="/api/logout"
+        >
+          Logout
+        </a>
       </div>
     </header>
   );
