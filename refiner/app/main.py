@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .api.auth.config import SESSION_SECRET_KEY
 from .api.auth.handlers import auth_router
-from .api.auth.middleware import get_current_user
+from .api.auth.middleware import get_logged_in_user
 from .api.middleware.spa import SPAFallbackMiddleware
 from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api")
 router.include_router(auth_router)
 
 # Private routes
-router.include_router(v1_router, dependencies=[Depends(get_current_user)])
+router.include_router(v1_router, dependencies=[Depends(get_logged_in_user)])
 
 
 # define health check endpoint at the service level

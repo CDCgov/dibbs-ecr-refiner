@@ -44,8 +44,6 @@ async def auth_callback(request: Request) -> RedirectResponse:
         request.session["id_token"] = token["id_token"]
         request.session["user"] = user
 
-        # print(dict(user))
-
         return RedirectResponse(url="http://localhost:8081")
     except Exception as e:
         print("Callback error:", e)

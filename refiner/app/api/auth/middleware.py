@@ -4,7 +4,7 @@ from fastapi import HTTPException, Request, status
 
 
 # This function can be used as an auth check for handlers or routers
-def get_current_user(request: Request) -> dict[str, Any]:
+def get_logged_in_user(request: Request) -> dict[str, Any]:
     """
     Gets the current user from the session. Throws an error if the user is unauthenticated.
 
