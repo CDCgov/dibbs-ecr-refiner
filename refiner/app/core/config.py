@@ -36,4 +36,10 @@ def _get_env_variable(name: str) -> str:
     return value
 
 
-ENVIRONMENT: dict[str, str] = {"DB_URL": _get_env_variable("DB_URL")}
+ENVIRONMENT: dict[str, str] = {
+    "DB_URL": _get_env_variable("DB_URL"),
+    "AUTH_PROVIDER": _get_env_variable("AUTH_PROVIDER"),
+    "AUTH_CLIENT_ID": _get_env_variable("AUTH_CLIENT_ID"),
+    "AUTH_CLIENT_SECRET": _get_env_variable("AUTH_CLIENT_SECRET"),
+    "AUTH_ISSUER": _get_env_variable("AUTH_ISSUER"),
+}

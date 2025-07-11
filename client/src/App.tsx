@@ -3,8 +3,22 @@ import { Configurations } from './pages/Configurations';
 import Testing from './pages/Testing';
 import NotFound from './pages/NotFound';
 import { Layout } from './components/Layout';
+import { useLogin } from './hooks/Login';
+import { Home } from './pages/Home';
 
 function App() {
+  const [user, isLoading] = useLogin();
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
+
+  if (!user)
+    return (
+      <Routes>
+        <Route index element={<Home />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
   return (
     <Layout>
       <Routes>

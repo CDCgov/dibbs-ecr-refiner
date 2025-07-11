@@ -3,9 +3,14 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
+from .api.auth.config import SESSION_SECRET_KEY
+from .api.auth.handlers import auth_router
+from .api.auth.middleware import get_logged_in_user
 from .api.middleware.spa import SPAFallbackMiddleware
 from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
@@ -17,7 +22,12 @@ is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
 # create router
 router = APIRouter(prefix="/api")
-router.include_router(v1_router)
+
+# Public routes
+router.include_router(auth_router)
+
+# Private routes
+router.include_router(v1_router, dependencies=[Depends(get_logged_in_user)])
 
 
 # define health check endpoint at the service level
@@ -63,4 +73,13 @@ app.mount(
     StaticFiles(directory="dist", html=True, check_dir=is_production),
     name="dist",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8081"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(SPAFallbackMiddleware)
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET_KEY)
