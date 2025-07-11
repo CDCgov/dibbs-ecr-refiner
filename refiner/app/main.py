@@ -1,6 +1,5 @@
 import asyncio
 import os
-import urllib
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -128,16 +127,23 @@ async def logout(request: Request) -> RedirectResponse:
     Returns:
         RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.
     """
-    # Clear the session
-    request.session.clear()
 
     # Redirect to client
     post_logout_redirect_uri = "http://localhost:8081"
 
+    id_token = request.session.get("id_token")
+    if not id_token:
+        # Fallback if user is not logged in
+        return RedirectResponse(post_logout_redirect_uri)
+
+    # Clear the session
+    request.session.clear()
+
     # Logout from auth provider
     auth_provider_logout_url = (
-        "http://localhost:8082/realms/refiner/protocol/openid-connect/logout?"
-        + urllib.parse.urlencode({"redirect_uri": post_logout_redirect_uri})
+        "http://localhost:8082/realms/refiner/protocol/openid-connect/logout"
+        f"?post_logout_redirect_uri=http://localhost:8081"
+        f"&id_token_hint={id_token}"
     )
 
     return RedirectResponse(url=auth_provider_logout_url)
