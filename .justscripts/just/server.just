@@ -9,9 +9,9 @@ alias help := _default
 set dotenv-load
 
 # Convinience paths to scripts
-seed_terminology_db := absolute_path('scripts/seed_terminology_db.py')
-check_terminology_db := absolute_path('scripts/check_terminology_db.py')
-query_terminology_db := absolute_path('scripts/query_terminology_db.py')
+seed_db := absolute_path('scripts/query_terminology_db.py')
+check_db := absolute_path('scripts/check_terminology_db.py')
+query_db := absolute_path('scripts/query_terminology_db.py')
 
 # WARN: Required environment variables that we want to break execution on when
 # using Just
@@ -22,14 +22,14 @@ TES_API_KEY := env('TES_API_KEY')
 [group('db')]
 [doc('Seed the database with the terminology from TES')]
 seed-db:
-    python {{ seed_terminology_db }}
+    python {{ seed_db }}
 
 [group('db')]
 [doc('Check the terminology in the database')]
 check-db:
-    python {{ check_terminology_db }}
+    python {{ check_db }}
 
 [group('db')]
 [doc('Query the terminology in the database')]
 query-db:
-    python {{ query_terminology_db }}
+    python {{ query_db }}
