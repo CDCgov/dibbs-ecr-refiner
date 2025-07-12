@@ -9,7 +9,7 @@ alias help := _default
 set dotenv-load
 
 # Convinience paths to scripts
-seed_db := absolute_path('scripts/query_terminology_db.py')
+seed_db := absolute_path('scripts/seed_terminology_db.py')
 check_db := absolute_path('scripts/check_terminology_db.py')
 query_db := absolute_path('scripts/query_terminology_db.py')
 
