@@ -6,6 +6,7 @@ alias help := _default
 @_default:
     just --list server
 
+set dotenv-load
 
 # Convinience paths to scripts
 seed_terminology_db := absolute_path('scripts/seed_terminology_db.py')
