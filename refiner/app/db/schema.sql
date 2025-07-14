@@ -24,13 +24,13 @@ CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     email TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- table for storing logged-in user sessions --
 CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     user_id TEXT NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMP NOT NULL
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL
 );
