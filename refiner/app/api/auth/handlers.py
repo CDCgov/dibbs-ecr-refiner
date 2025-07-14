@@ -87,7 +87,7 @@ async def logout(request: Request) -> RedirectResponse:
     id_token = request.session.get("id_token")
     if not id_token:
         # Fallback if user is not logged in
-        return RedirectResponse(post_logout_redirect_uri)
+        return RedirectResponse(url=post_logout_redirect_uri)
 
     # Clear the session
     request.session.clear()
