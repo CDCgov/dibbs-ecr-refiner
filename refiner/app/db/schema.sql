@@ -18,3 +18,19 @@ CREATE TABLE IF NOT EXISTS filters (
     ud_rxnorm_codes TEXT DEFAULT '[]',    -- JSON array of user-defined RxNorm codes
     included_groupers TEXT DEFAULT '[]'   -- JSON array of grouper condition codes
 );
+
+-- table for storing local user info --
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    email TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- table for storing logged-in user sessions --
+CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP NOT NULL
+);
