@@ -3,14 +3,19 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 from .api.middleware.spa import SPAFallbackMiddleware
 from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
+
+from .core.config import ENVIRONMENT
+from .db.connection import DatabaseConnection
 
 # environment configuration
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
@@ -28,11 +33,25 @@ async def health_check() -> dict[str, str]:
 
     Returns:
         dict[str, str]: Service status response:
-            - {"status": "OK"} with HTTP 200 if service is healthy
+            - {"status": "OK", "db": "OK"} with HTTP 200 if service is healthy
+            - {"status": "FAIL", "db": "FAIL"} with HTTP 503 if service
+              database connection cannot be made
     """
 
-    return {"status": "OK"}
+    db = DatabaseConnection(db_url=ENVIRONMENT["DB_URL"])
 
+    try:
+        with db.get_cursor() as cursor:
+            cursor.execute('SELECT 1')
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content=jsonable_encoder({"status": "OK", "db": "OK"}),
+            )
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=jsonable_encoder({"status": "FAIL", "db": "FAIL"}),
+        )
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
