@@ -2,7 +2,7 @@ from authlib.integrations.starlette_client import OAuth, StarletteOAuth2App
 
 from ...core.config import ENVIRONMENT
 
-SESSION_SECRET_KEY = "super-secret-key"
+_SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"]
 
 _oauth = OAuth()
 _oauth.register(
@@ -30,3 +30,13 @@ def get_oauth_provider() -> StarletteOAuth2App:
         authentication flows.
     """
     return _OAUTH_PROVIDER
+
+
+def get_session_secret_key() -> str:
+    """
+    Retrieves the session secret key needed to configure the SessionManager.
+
+    Returns:
+        str: Session secret key
+    """
+    return _SESSION_SECRET_KEY

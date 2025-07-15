@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from .api.auth.config import SESSION_SECRET_KEY
+from .api.auth.config import get_session_secret_key
 from .api.auth.handlers import auth_router
 from .api.auth.middleware import get_logged_in_user
 from .api.auth.session import run_expired_session_cleanup_task
@@ -89,4 +89,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(SPAFallbackMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())

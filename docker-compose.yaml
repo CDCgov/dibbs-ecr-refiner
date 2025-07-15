@@ -23,6 +23,7 @@ services:
     environment:
       - PIP_ROOT_USER_ACTION=ignore
       - DB_URL=postgresql://postgres:refiner@db:5432/refiner
+      - SESSION_SECRET_KEY=super-secret-key
       - AUTH_PROVIDER=keycloak
       - AUTH_CLIENT_ID=refinerclient
       - AUTH_CLIENT_SECRET=5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
