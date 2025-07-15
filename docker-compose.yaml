@@ -22,6 +22,7 @@ services:
         - "localhost:host-gateway"
     environment:
       - PIP_ROOT_USER_ACTION=ignore
+      - ENV=local
       - DB_URL=postgresql://postgres:refiner@db:5432/refiner
       - SESSION_SECRET_KEY=super-secret-key
       - AUTH_PROVIDER=keycloak

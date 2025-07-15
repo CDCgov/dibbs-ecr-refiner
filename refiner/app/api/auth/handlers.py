@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from .config import get_oauth_provider
+from .config import ENVIRONMENT, get_oauth_provider
 from .session import create_session, delete_session, get_user_from_session, upsert_user
 
 auth_router = APIRouter()
@@ -56,6 +56,7 @@ async def auth_callback(request: Request) -> RedirectResponse:
             httponly=True,
             max_age=3600,
             samesite="lax",
+            secure=ENVIRONMENT["ENV"] != "local",
         )
         return response
 
