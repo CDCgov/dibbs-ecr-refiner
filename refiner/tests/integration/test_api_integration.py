@@ -1,22 +1,8 @@
 import pytest
-import pytest_asyncio
-from httpx import AsyncClient
 from lxml import etree
 
 # test with COVID-19 condition code
 CONDITION_CODE = "840539006"
-
-
-@pytest.fixture
-def auth_cookie():
-    return {"refiner-session": "test-token"}
-
-
-@pytest_asyncio.fixture
-async def authed_client(auth_cookie, base_url):
-    async with AsyncClient(base_url=base_url) as client:
-        client.cookies.update(auth_cookie)
-        yield client
 
 
 @pytest.mark.integration
