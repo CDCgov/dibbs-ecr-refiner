@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from .config import oauth
+from .config import get_oauth_provider
 from .session import create_session, delete_session, get_user_from_session, upsert_user
 
 auth_router = APIRouter()
@@ -19,7 +19,7 @@ async def login(request: Request) -> RedirectResponse:
         RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.
     """
     redirect_uri = "http://localhost:8080/api/auth/callback"
-    return await oauth.keycloak.authorize_redirect(request, redirect_uri)
+    return await get_oauth_provider().authorize_redirect(request, redirect_uri)
 
 
 @auth_router.get("/auth/callback")
@@ -38,9 +38,9 @@ async def auth_callback(request: Request) -> RedirectResponse:
     """
 
     try:
-        token = await oauth.keycloak.authorize_access_token(request)
+        token = await get_oauth_provider().authorize_access_token(request)
         nonce = request.session.get("nonce")
-        oidc_user = await oauth.keycloak.parse_id_token(token, nonce)
+        oidc_user = await get_oauth_provider().parse_id_token(token, nonce)
 
         # Add or updater user in the Refiner DB
         user_id = await upsert_user(oidc_user)
