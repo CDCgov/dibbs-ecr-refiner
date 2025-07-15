@@ -54,7 +54,23 @@ def setup(request):
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
 
-    print("🧠 Seeding database...")
+    # Set up database schema
+    print("Applying database schema...")
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-f",
+            "/app/db/schema.sql",
+        ],
+        "db",
+    )
+    print("✅ Schema applied")
+
+    print("🧠 Seeding database with TES data...")
     refiner_service.exec_in_container(
         [
             "psql",
@@ -63,6 +79,31 @@ def setup(request):
             "refiner",
             "-f",
             "/docker-entrypoint-initdb.d/seed-data.sql",
+        ],
+        "db",
+    )
+    print("🧠 Seeding database with test user...")
+    seed_user = """
+    DO $$
+    BEGIN
+        INSERT INTO users (id, username, email)
+        VALUES ('test-user', 'test-user', 'test@example.com')
+        ON CONFLICT DO NOTHING;
+
+        INSERT INTO sessions (token, user_id, expires_at)
+        VALUES ('test-token', 'test-user', NOW() + INTERVAL '1 hour')
+        ON CONFLICT DO NOTHING;
+    END $$;
+    """
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-c",
+            seed_user,
         ],
         "db",
     )

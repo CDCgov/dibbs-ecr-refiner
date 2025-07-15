@@ -29,6 +29,9 @@ services:
       - AUTH_ISSUER=http://localhost:8082/realms/refiner
     logging:
       driver: "json-file"
+    depends_on:
+      - db
+      - auth
   auth:
     image: quay.io/keycloak/keycloak:26.3.1
     command:
@@ -61,6 +64,7 @@ services:
       retries: 10
     volumes:
       - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/seed-data.sql
+      - ./refiner/app/db:/app/db
       - pgdata:/var/lib/postgresql/data
 volumes:
   pgdata:
