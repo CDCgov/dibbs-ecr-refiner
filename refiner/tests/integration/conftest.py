@@ -19,6 +19,14 @@ async def authed_client(auth_cookie, base_url):
         yield client
 
 
+@pytest.fixture(scope="session")
+def test_assets_path() -> Path:
+    """
+    Return the path to the test assets directory.
+    """
+    return Path(__file__).parent.parent / "assets"
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_logging():
     """
