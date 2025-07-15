@@ -19,6 +19,7 @@ os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
 os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
 os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
 os.environ["AUTH_ISSUER"] = "http://mock.com"
+os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
 
 
 @pytest.fixture(scope="session")
