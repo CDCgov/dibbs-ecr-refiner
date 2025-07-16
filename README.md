@@ -27,7 +27,7 @@ The eCR Refiner requires the following environment variables to be specified in 
 
 - `ENV`: The environment name (`dev`, `test`, `prod`, etc.)
 - `DB_URL`: The PostgreSQL connection string
-- `SESSION_SECRET_KEY`: A string to be used for creating authenticated user sessions
+- `SESSION_SECRET_KEY`: A string used to compute user session hashes that are stored in the `sessions` table
 - `AUTH_PROVIDER`: Name of the OIDC authentication provider (`keycloak`, `google`, etc.)
 - `AUTH_CLIENT_ID`: OIDC client ID
 - `AUTH_CLIENT_SECRET`: OIDC client secret string
