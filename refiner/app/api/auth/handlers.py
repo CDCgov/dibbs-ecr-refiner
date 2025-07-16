@@ -18,11 +18,17 @@ async def login(request: Request) -> RedirectResponse:
     Returns:
         RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.
     """
-    redirect_uri = "http://localhost:8080/api/auth/callback"
+    env = ENVIRONMENT["ENV"]
+    redirect_uri = (
+        request.url_for("auth_callback")
+        if env != "local"
+        else "http://localhost:8080/api/auth/callback"
+    )
+
     return await get_oauth_provider().authorize_redirect(request, redirect_uri)
 
 
-@auth_router.get("/auth/callback")
+@auth_router.get("/auth/callback", name="auth_callback")
 async def auth_callback(request: Request) -> RedirectResponse:
     """
     Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
@@ -48,7 +54,10 @@ async def auth_callback(request: Request) -> RedirectResponse:
         # Create a session for the user
         session_token = await create_session(user_id)
 
-        response = RedirectResponse(url="http://localhost:8081")
+        env = ENVIRONMENT["ENV"]
+        redirect_uri = "/" if env != "local" else "http://localhost:8081"
+        response = RedirectResponse(url=redirect_uri)
+
         print("Setting browser cookie for user:", user_id)
         response.set_cookie(
             key="refiner-session",
@@ -56,12 +65,12 @@ async def auth_callback(request: Request) -> RedirectResponse:
             httponly=True,
             max_age=3600,
             samesite="lax",
-            secure=ENVIRONMENT["ENV"] != "local",
+            secure=env != "local",  # We'll be serving over https in live envs
         )
         return response
 
     except Exception as e:
-        print("Callback error:", e)
+        print("Idp callback error:", e)
         raise e
 
 
@@ -104,7 +113,8 @@ async def logout(request: Request) -> RedirectResponse:
     """
 
     # Redirect to client
-    post_logout_redirect_uri = "http://localhost:8081"
+    env = ENVIRONMENT["ENV"]
+    post_logout_redirect_uri = "/" if env != "local" else "http://localhost:8081"
 
     session_token = request.cookies.get("refiner-session")
 
@@ -115,7 +125,7 @@ async def logout(request: Request) -> RedirectResponse:
     response.delete_cookie(
         key="refiner-session",
         httponly=True,
-        secure=True,
         samesite="lax",
+        secure=env != "local",  # We'll be serving over https in live envs
     )
     return response
