@@ -48,7 +48,7 @@ async def auth_callback(request: Request) -> RedirectResponse:
         nonce = request.session.get("nonce")
         oidc_user = await get_oauth_provider().parse_id_token(token, nonce)
 
-        # Add or updater user in the Refiner DB
+        # Add or update user in the Refiner DB
         user_id = await upsert_user(oidc_user)
 
         # Create a session for the user
