@@ -21,6 +21,7 @@ async def get_logged_in_user(request: Request) -> dict[str, Any]:
 
     Raises:
         HTTPException: 401 Unauthorized is thrown if no user info exists
+        HTTPException: 500 Internal Server Error is thrown for DB or unknown issues
 
     Returns:
         dict[str, Any]: Returns the user information if it's available
