@@ -21,7 +21,7 @@ export function useLogin(): [User | null, boolean] {
           return;
         }
 
-        const data: User = await resp.json();
+        const data: User | null = await resp.json();
         if (data) {
           setUser(data);
           setIsLoading(false);
