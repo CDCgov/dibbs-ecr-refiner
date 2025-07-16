@@ -103,16 +103,6 @@ async def logout(request: Request) -> RedirectResponse:
         RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.
     """
 
-    post_logout_redirect_uri = "http://localhost:8081"
-
-    # Logout from auth provider
-    # Do we want to do this?
-    # auth_provider_logout_url = (
-    #     "http://localhost:8082/realms/refiner/protocol/openid-connect/logout"
-    #     f"?post_logout_redirect_uri=http://localhost:8081"
-    #     f"&id_token_hint={id_token}"
-    # )
-
     # Redirect to client
     post_logout_redirect_uri = "http://localhost:8081"
 
