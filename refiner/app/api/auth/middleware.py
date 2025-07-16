@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import HTTPException, Request, status
 
 from ...db.pool import db
-from .session import SESSION_TTL
+from .session import SESSION_TTL, get_hashed_token
 
 RENEW_THRESHOLD = timedelta(minutes=15)
 
@@ -22,7 +22,7 @@ async def get_logged_in_user(request: Request) -> dict[str, Any]:
         HTTPException: 401 Unauthorized is thrown if no user info exists
 
     Returns:
-        _type_: Returns the user information if it's available
+        dict[str, Any]: Returns the user information if it's available
     """
     session_token = request.cookies.get("refiner-session")
     if not session_token:
@@ -30,6 +30,8 @@ async def get_logged_in_user(request: Request) -> dict[str, Any]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing session token",
         )
+
+    token_hash = get_hashed_token(session_token)
 
     async with db.get_cursor() as cur:
         now = dt.now(UTC)
@@ -40,7 +42,7 @@ async def get_logged_in_user(request: Request) -> dict[str, Any]:
             JOIN users ON sessions.user_id = users.id
             WHERE sessions.token = %s AND sessions.expires_at > %s
             """,
-            (session_token, now),
+            (token_hash, now),
         )
 
         result = await cur.fetchone()

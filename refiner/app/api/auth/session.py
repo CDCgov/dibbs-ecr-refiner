@@ -1,11 +1,15 @@
 import asyncio
+import hashlib
+import hmac
+import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
-from uuid import uuid4
 
+from ...core.config import ENVIRONMENT
 from ...db.pool import db
 
 SESSION_TTL = timedelta(hours=1)
+SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
 
 
 async def upsert_user(oidc_user_info: dict) -> str:
@@ -38,6 +42,21 @@ async def upsert_user(oidc_user_info: dict) -> str:
     return user_id
 
 
+def get_hashed_token(token: str) -> str:
+    """
+    Given a session token, calculates a hash using the session secret key.
+
+    Args:
+        token (str): Session token
+
+    Returns:
+        str: Hashed session token
+    """
+    return hmac.new(
+        SESSION_SECRET_KEY, token.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
 async def create_session(user_id: str) -> str:
     """
     Upon log in, create a session and associate it with a user ID.
@@ -48,12 +67,14 @@ async def create_session(user_id: str) -> str:
     Returns:
         str: Session token
     """
-    token = str(uuid4())
+    # Create a strong token and hash it using the secret key
+    token = secrets.token_urlsafe(32)
+    token_hash = get_hashed_token(token)
     expires = dt.now(UTC) + SESSION_TTL
 
     query = "INSERT INTO sessions (token, user_id, expires_at) VALUES (%s, %s, %s)"
     params = (
-        token,
+        token_hash,
         user_id,
         expires,
     )
@@ -70,13 +91,14 @@ async def get_user_from_session(token: str) -> dict[str, str] | None:
     Args:
         token (str): Token of the session connected to the user.
     """
+    token_hash = get_hashed_token(token)
     now = dt.now(UTC)
     query = """
         SELECT u.id, u.username FROM sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.token = %s AND s.expires_at > %s
     """
-    params = (token, now)
+    params = (token_hash, now)
 
     async with db.get_cursor() as cur:
         await cur.execute(query, params)

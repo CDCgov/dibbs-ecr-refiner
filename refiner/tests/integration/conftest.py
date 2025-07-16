@@ -6,10 +6,17 @@ import pytest_asyncio
 from httpx import AsyncClient
 from testcontainers.compose import DockerCompose
 
+# Ensure session secret is set before this file gets imported
+os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
+from app.api.auth.session import get_hashed_token
+
+TEST_SESSION_TOKEN = "test-token"
+TEST_SESSION_TOKEN_HASH = get_hashed_token(TEST_SESSION_TOKEN)
+
 
 @pytest.fixture
 def auth_cookie():
-    return {"refiner-session": "test-token"}
+    return {"refiner-session": TEST_SESSION_TOKEN}
 
 
 @pytest_asyncio.fixture
@@ -105,7 +112,7 @@ def setup(request):
         "db",
     )
     print("🧠 Seeding database with test user...")
-    seed_user = """
+    seed_user = f"""
     DO $$
     BEGIN
         INSERT INTO users (id, username, email)
@@ -113,7 +120,7 @@ def setup(request):
         ON CONFLICT DO NOTHING;
 
         INSERT INTO sessions (token, user_id, expires_at)
-        VALUES ('test-token', 'test-user', NOW() + INTERVAL '1 hour')
+        VALUES ('{TEST_SESSION_TOKEN_HASH}', 'test-user', NOW() + INTERVAL '1 hour')
         ON CONFLICT DO NOTHING;
     END $$;
     """
