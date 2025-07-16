@@ -72,7 +72,7 @@ async def create_session(user_id: str) -> str:
     token_hash = get_hashed_token(token)
     expires = dt.now(UTC) + SESSION_TTL
 
-    query = "INSERT INTO sessions (token, user_id, expires_at) VALUES (%s, %s, %s)"
+    query = "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (%s, %s, %s)"
     params = (
         token_hash,
         user_id,
@@ -96,7 +96,7 @@ async def get_user_from_session(token: str) -> dict[str, str] | None:
     query = """
         SELECT u.id, u.username FROM sessions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.token = %s AND s.expires_at > %s
+        WHERE s.token_hash = %s AND s.expires_at > %s
     """
     params = (token_hash, now)
 
@@ -143,7 +143,8 @@ async def delete_session(token: str) -> None:
     Args:
         token (str): Token of the session to be deleted
     """
-    query = "DELETE FROM sessions WHERE token = %s"
-    params = (token,)
+    token_hash = get_hashed_token(token)
+    query = "DELETE FROM sessions WHERE token_hash = %s"
+    params = (token_hash,)
     async with db.get_cursor() as cur:
         await cur.execute(query, params)

@@ -119,7 +119,7 @@ def setup(request):
         VALUES ('test-user', 'test-user', 'test@example.com')
         ON CONFLICT DO NOTHING;
 
-        INSERT INTO sessions (token, user_id, expires_at)
+        INSERT INTO sessions (token_hash, user_id, expires_at)
         VALUES ('{TEST_SESSION_TOKEN_HASH}', 'test-user', NOW() + INTERVAL '1 hour')
         ON CONFLICT DO NOTHING;
     END $$;
