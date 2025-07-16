@@ -34,7 +34,7 @@ def get_oauth_provider() -> StarletteOAuth2App:
 
 def get_session_secret_key() -> str:
     """
-    Retrieves the session secret key needed to configure the SessionManager.
+    Retrieves the session secret key.
 
     Returns:
         str: Session secret key
