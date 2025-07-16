@@ -1,5 +1,4 @@
 import asyncio
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -17,10 +16,8 @@ from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
+from .core.config import ENVIRONMENT
 from .db.pool import db
-
-# environment configuration
-is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 
 # create router
 router = APIRouter(prefix="/api")
@@ -77,16 +74,17 @@ app.openapi = lambda: create_custom_openapi(app)  # type: ignore
 app.include_router(router)
 app.mount(
     "/dist",
-    StaticFiles(directory="dist", html=True, check_dir=is_production),
+    StaticFiles(directory="dist", html=True, check_dir=ENVIRONMENT["ENV"] == "prod"),
     name="dist",
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:8081"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if ENVIRONMENT["ENV"] == "local":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:8081"],  # Client dev server
+        allow_credentials=True,  # Allow sending session cookies
+        allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+        allow_headers=["*"],  # Allow all headers (Authorization, Content-Type, etc.)
+    )
 app.add_middleware(SPAFallbackMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
