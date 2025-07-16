@@ -6,30 +6,29 @@ CONDITION_CODE = "840539006"
 
 
 @pytest.mark.integration
+@pytest.mark.asyncio
 class TestHealthAndDocs:
     """
     Basic service health and documentation endpoints
     """
 
-    @pytest.mark.asyncio
     async def test_health_check(self, setup, authed_client):
         response = await authed_client.get("/api/healthcheck")
         assert response.status_code == 200
         assert response.json() == {"status": "OK"}
 
-    @pytest.mark.asyncio
     async def test_openapi_docs(self, setup, authed_client):
         response = await authed_client.get("/api/openapi.json")
         assert response.status_code == 200
 
 
 @pytest.mark.integration
+@pytest.mark.asyncio
 class TestECREndpoint:
     """
     Tests for /api/v1/ecr endpoint
     """
 
-    @pytest.mark.asyncio
     async def test_basic_refinement(self, setup, sample_xml_files, authed_client):
         """
         Test basic XML refinement without parameters
@@ -55,7 +54,6 @@ class TestECREndpoint:
             "30954-2,29299-5",
         ],
     )
-    @pytest.mark.asyncio
     async def test_section_filtering(
         self, setup, sections, sample_xml_files, authed_client
     ):
@@ -79,7 +77,6 @@ class TestECREndpoint:
         for code in section_codes:
             assert code in found_codes, f"Section {code} not found in response"
 
-    @pytest.mark.asyncio
     async def test_error_handling(self, setup, sample_xml_files, authed_client):
         """
         Test API error responses
@@ -105,12 +102,12 @@ class TestECREndpoint:
 
 
 @pytest.mark.integration
+@pytest.mark.asyncio
 class TestZipUploadEndpoint:
     """
     Tests for /api/v1/ecr/zip-upload endpoint
     """
 
-    @pytest.mark.asyncio
     async def test_basic_upload(
         self, setup, tmp_path, create_test_zip, test_assets_path, authed_client
     ):
@@ -146,7 +143,6 @@ class TestZipUploadEndpoint:
         assert root.find(".//{urn:hl7-org:v3}templateId") is not None
         assert root.find(".//{urn:hl7-org:v3}id") is not None
 
-    @pytest.mark.asyncio
     async def test_upload_with_sections(
         self, setup, tmp_path, create_test_zip, test_assets_path, authed_client
     ):
@@ -183,7 +179,6 @@ class TestZipUploadEndpoint:
         assert "30954-2" in section_codes
         assert len(section_codes) == 8
 
-    @pytest.mark.asyncio
     async def test_upload_errors(self, setup, tmp_path, authed_client):
         """
         Test ZIP upload error handling
