@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "f9ccdff5-0acb-4933-8995-bd7f0ab5f2f7",
+            "receiptHandle": "AQEBXxTS6qQt/m0+Sks+5c+oPtb14YcTCh9LiB9xCSFVIxKHKWIEQuERolcrQVt9sVCTk0R4h9cguymHHaelw6FiI5iGnr42m541Gf7HsJFrwQzs0er2eY1hb3P8qAeYhXTWg1dWvPlHkk6KNbv5yZVNL7vAXwBzpKHl72U0n1YI8ZHoTnm4O0wLiOqxmWMv/XU20AXX9vP7Gux5+5g+WI3cWbjUUH4nX2yJFA92LCMjvshj/oP9i/NZxhcyXvJoo5IQS40mE76XxC4CiyX4pfey4mRthe2Qj84p17U+Gi8TTALTYJNRuVUvqGKYgStAnojiK6onJNgQ9s9QvMFrRERy9HmbMiT8KuuqHUOUuqSyPZWmUn9Y7BogSGjzuZAPyz8xModTHB12KydfB3CgtUZr/38WH41xfADvkZ2jL373TWqZuWkK4i13XUdPDu2EKd1c",
+            "body": "{\"version\":\"0\",\"id\":\"f4dd727b-fe9e-e0e0-04d2-eccd8b2258de\",\"detail-type\":\"Object Created\",\"source\":\"aws.s3\",\"account\":\"123456789012\",\"time\":\"2025-07-16T18:40:59Z\",\"region\":\"us-east-1\",\"resources\":[\"arn:aws:s3:::dibbs-refiner-dev\"],\"detail\":{\"version\":\"0\",\"bucket\":{\"name\":\"dibbs-refiner-dev\"},\"object\":{\"key\":\"RefinerInput/testfile\",\"size\":21,\"etag\":\"8a8d17865cd458051575b649685b532b\",\"version-id\":\"4djoSzLSxw_.CK50V0ohdVh59k9BhDVc\",\"sequencer\":\"006877F23B094C58C1\"},\"request-id\":\"FVX12ADNRS9M1B01\",\"requester\":\"123456789012\",\"source-ip-address\":\"142.190.162.78\",\"reason\":\"PutObject\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1752691260451",
+                "SenderId": "AIDAJXNJGGKNS7OSV23OI",
+                "ApproximateFirstReceiveTimestamp": "1752691260458"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "73beaa841db4e4a90af9da06d9db2243",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:dibbs-refiner-dev-dibbs-refiner-input-RefinerInput",
+            "awsRegion": "us-east-1"
+        }
+    ]
+}
