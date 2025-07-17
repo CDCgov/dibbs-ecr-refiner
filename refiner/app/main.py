@@ -41,7 +41,7 @@ async def health_check() -> dict[str, str]:
 
     try:
         with db.get_cursor() as cursor:
-            cursor.execute('SELECT 1')
+            cursor.execute("SELECT 1")
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content=jsonable_encoder({"status": "OK", "db": "OK"}),
@@ -51,6 +51,7 @@ async def health_check() -> dict[str, str]:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content=jsonable_encoder({"status": "FAIL", "db": "FAIL"}),
         )
+
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
