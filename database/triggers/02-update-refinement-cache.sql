@@ -1,118 +1,98 @@
 -- =============================================================================
--- TRIGGER 2: refinement & caching--this is the final and most critical step. the
--- trigger populates the `refinement_cache` by combining the aggregated "base"
--- codes from a parent grouper with the jurisdiction-specific codes from a user's
--- `configuration`. this trigger is designed to fire in two distinct scenarios:
--- * directly, when a user creates, updates, or deletes a record in the `configurations` table
--- * indirectly, when Trigger 1 updates a parent `tes_condition_grouper`. This change cascades,
---   causing Trigger 2 to re-evaluate and update the cache for every single configuration linked
---   to that parent
+-- TRIGGER 2: populate the denormalized runtime cache
+--
+-- this trigger populates the `refinement_cache` by combining aggregated "base"
+-- codes from a parent grouper with jurisdiction-specific user defined codes from
+-- a user's `configuration`. it fires in two scenarios:
+--   1. directly, when a user changes a record in the `configurations` table.
+--   2. indirectly, when Trigger 1 updates a parent `tes_condition_grouper`
+--
+-- the core logic is delegated to the `update_cache_for_configuration` helper
 -- =============================================================================
 
+-- this is the main trigger function attached to the tables
+-- its only job is to figure out WHICH configuration(s) need updating
 CREATE OR REPLACE FUNCTION update_refinement_cache()
 RETURNS TRIGGER AS $$
 DECLARE
-    -- the record variable must be explicitly typed to match the table.
     conf configurations%ROWTYPE;
 BEGIN
-    -- CASE 1: the change came from a user modifying a configuration.
     IF (TG_TABLE_NAME = 'configurations') THEN
-        IF (TG_OP = 'DELETE') THEN
-            -- on delete, we need to manually clear the cache.
-            -- a simple implementation is to pass the OLD record to the helper,
-            -- which will effectively recalculate based on zero addition codes
-            PERFORM update_cache_for_configuration(OLD, TRUE);
-        ELSE
-            PERFORM update_cache_for_configuration(NEW, FALSE);
-        END IF;
+        -- CASE 1: a configuration was changed. Update this single cache entry
+        -- COALESCE handles INSERT, UPDATE, and DELETE in one line
+        PERFORM update_cache_for_configuration(COALESCE(NEW, OLD));
 
-    -- CASE 2: the change came from an update to the parent grouper itself
     ELSIF (TG_TABLE_NAME = 'tes_condition_groupers' AND TG_OP = 'UPDATE') THEN
-        -- loop through every configuration that is a descendant of the updated parent grouper
+        -- CASE 2: the base data in a parent grouper changed
+        -- we must find and update ALL configurations linked to this parent
         FOR conf IN
-            SELECT *
+            SELECT c.*
             FROM configurations c
             JOIN tes_condition_grouper_references ref
-              ON c.child_grouper_url = ref.child_grouper_url
-             AND c.child_grouper_version = ref.child_grouper_version
-            WHERE ref.parent_grouper_url = NEW.canonical_url
-              AND ref.parent_grouper_version = NEW.version
+              ON c.child_grouper_url = ref.child_grouper_url AND c.child_grouper_version = ref.child_grouper_version
+            WHERE ref.parent_grouper_url = NEW.canonical_url AND ref.parent_grouper_version = NEW.version
         LOOP
-            PERFORM update_cache_for_configuration(conf, FALSE);
+            PERFORM update_cache_for_configuration(conf);
         END LOOP;
     END IF;
-
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
--- helper function to perform the cache update for a single configuration
-CREATE OR REPLACE FUNCTION update_cache_for_configuration(conf configurations, is_delete BOOLEAN)
+
+-- this helper function contains the actual logic to update one cache entry
+CREATE OR REPLACE FUNCTION update_cache_for_configuration(conf configurations)
 RETURNS void AS $$
 DECLARE
     base_codes JSONB;
     addition_codes JSONB;
     combined_codes JSONB;
+    parent_grouper tes_condition_groupers;
     child_snomed_code VARCHAR;
-    parent_url VARCHAR;
-    parent_ver VARCHAR;
 BEGIN
-    SELECT parent_grouper_url, parent_grouper_version
-    INTO parent_url, parent_ver
-    FROM tes_condition_grouper_references
-    WHERE child_grouper_url = conf.child_grouper_url AND child_grouper_version = conf.child_grouper_version
+    -- Step 1: find the parent grouper record associated with this configuration
+    SELECT g.* INTO parent_grouper
+    FROM tes_condition_groupers g
+    JOIN tes_condition_grouper_references ref
+      ON g.canonical_url = ref.parent_grouper_url AND g.version = ref.parent_grouper_version
+    WHERE ref.child_grouper_url = conf.child_grouper_url AND ref.child_grouper_version = conf.child_grouper_version
     LIMIT 1;
 
     IF NOT FOUND THEN RETURN; END IF;
 
-    SELECT (COALESCE(loinc_codes, '[]'::jsonb) || COALESCE(snomed_codes, '[]'::jsonb) || COALESCE(icd10_codes, '[]'::jsonb) || COALESCE(rxnorm_codes, '[]'::jsonb))
-    INTO base_codes
-    FROM tes_condition_groupers
-    WHERE canonical_url = parent_url AND version = parent_ver;
+    -- Step 2: use the helper function to flatten all codes from the parent and the config
+    base_codes := get_all_codes_from_grouper(parent_grouper);
+    addition_codes := get_all_codes_from_grouper(conf);
 
-    -- if the configuration is being deleted, treat its additions as empty.
-    IF is_delete THEN
-        addition_codes := '[]'::jsonb;
-    ELSE
-        addition_codes := (COALESCE(conf.loinc_codes, '[]'::jsonb) || COALESCE(conf.snomed_codes, '[]'::jsonb) || COALESCE(conf.icd10_codes, '[]'::jsonb) || COALESCE(conf.rxnorm_codes, '[]'::jsonb));
-    END IF;
-
-    SELECT jsonb_agg(DISTINCT value)
-    INTO combined_codes
+    -- Step 3: combine the two sets of codes and de-duplicate them
+    SELECT jsonb_agg(DISTINCT value) INTO combined_codes
     FROM (
         SELECT jsonb_array_elements_text(base_codes) AS value
         UNION ALL
         SELECT jsonb_array_elements_text(addition_codes)
     ) AS all_codes;
 
+    -- Step 4: get the child's SNOMED code, which is part of the cache's primary key
     SELECT snomed_code INTO child_snomed_code FROM tes_reporting_spec_groupers
     WHERE canonical_url = conf.child_grouper_url AND version = conf.child_grouper_version;
 
-    -- "upsert" into the cache
+    -- Step 5: "upsert" the final, combined data into the cache table
     INSERT INTO refinement_cache (snomed_code, jurisdiction_id, aggregated_codes, source_details)
     VALUES (
-        child_snomed_code,
-        conf.jurisdiction_id,
-        COALESCE(combined_codes, '[]'::jsonb),
-        jsonb_build_object(
-            'parent_version', parent_ver,
-            'child_version', conf.child_grouper_version,
-            'configuration_id', conf.id
-        )
+        child_snomed_code, conf.jurisdiction_id, COALESCE(combined_codes, '[]'::jsonb),
+        jsonb_build_object('parent_version', parent_grouper.version, 'child_version', conf.child_grouper_version, 'configuration_id', conf.id)
     )
     ON CONFLICT (snomed_code, jurisdiction_id) DO UPDATE SET
-        aggregated_codes = EXCLUDED.aggregated_codes,
-        source_details = EXCLUDED.source_details,
-        updated_at = now();
+        aggregated_codes = EXCLUDED.aggregated_codes, source_details = EXCLUDED.source_details, updated_at = now();
 END;
 $$ LANGUAGE plpgsql;
 
-
--- the trigger definitions remain the same
+-- create a trigger that fires when a user configuration changes
 CREATE TRIGGER trigger_update_cache_on_config_change
 AFTER INSERT OR UPDATE OR DELETE ON configurations
 FOR EACH ROW EXECUTE FUNCTION update_refinement_cache();
 
+-- create a trigger that fires when the aggregated base data changes
 CREATE TRIGGER trigger_update_cache_on_grouper_change
 AFTER UPDATE ON tes_condition_groupers
 FOR EACH ROW EXECUTE FUNCTION update_refinement_cache();

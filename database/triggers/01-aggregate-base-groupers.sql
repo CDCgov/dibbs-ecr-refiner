@@ -1,8 +1,13 @@
 -- =============================================================================
--- TRIGGER 1: aggregation--when child `tes_reporting_spec_groupers`
--- are linked to a parent `tes_condition_grouper`, a trigger fires
--- to aggregate all unique codes (LOINC, SNOMED, ICD-10, RxNorm)
--- from the children into the parent's `jsonb` columns
+-- TRIGGER 1: aggregate base groupers
+--
+-- this trigger keeps the parent `tes_condition_groupers` table in sync with
+-- its children. it fires in two scenarios:
+--   1. when a reference between a parent and child is changed
+--   2. when the data within a child `tes_reporting_spec_groupers` is updated
+--
+-- it uses the `get_aggregated_child_codes` helper function to perform the
+-- actual aggregation of codes into the parent's JSONB columns
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION update_parent_on_child_change()
@@ -11,20 +16,16 @@ DECLARE
     parent_url_to_update VARCHAR;
     parent_version_to_update VARCHAR;
 BEGIN
-    -- CASE 1: a reference was added, changed, or removed
-    -- we need to find the parent from the OLD or NEW reference row
+    -- determine which parent needs updating based on what triggered the function
     IF (TG_TABLE_NAME = 'tes_condition_grouper_references') THEN
-        IF (TG_OP = 'DELETE') THEN
-            parent_url_to_update := OLD.parent_grouper_url;
-            parent_version_to_update := OLD.parent_grouper_version;
-        ELSE
-            parent_url_to_update := NEW.parent_grouper_url;
-            parent_version_to_update := NEW.parent_grouper_version;
-        END IF;
+        -- CASE 1: a reference was inserted, updated, or deleted.
+        -- the parent's identity is in the NEW or OLD reference row itself
+        parent_url_to_update := COALESCE(NEW.parent_grouper_url, OLD.parent_grouper_url);
+        parent_version_to_update := COALESCE(NEW.parent_grouper_version, OLD.parent_grouper_version);
 
-    -- CASE 2: a child RS grouper's codes were updated directly
-    -- we need to find the parent by looking up the reference
     ELSIF (TG_TABLE_NAME = 'tes_reporting_spec_groupers' AND TG_OP = 'UPDATE') THEN
+        -- CASE 2: a child RS grouper's codes were updated directly
+        -- we must look up the parent in the references table
         SELECT parent_grouper_url, parent_grouper_version
         INTO parent_url_to_update, parent_version_to_update
         FROM tes_condition_grouper_references
@@ -32,49 +33,19 @@ BEGIN
         LIMIT 1;
     END IF;
 
-    -- if we have a parent to update, perform the aggregation
+    -- if we found a parent, proceed with the update
     IF parent_url_to_update IS NOT NULL THEN
+        -- call the helper function for each code type to get the aggregated list
         UPDATE tes_condition_groupers
         SET
-            loinc_codes = COALESCE((
-                SELECT jsonb_agg(DISTINCT code)
-                FROM (
-                    SELECT jsonb_array_elements_text(rsg.loinc_codes) as code
-                    FROM tes_reporting_spec_groupers rsg
-                    JOIN tes_condition_grouper_references ref ON rsg.canonical_url = ref.child_grouper_url AND rsg.version = ref.child_grouper_version
-                    WHERE ref.parent_grouper_url = parent_url_to_update AND ref.parent_grouper_version = parent_version_to_update
-                ) as codes
-            ), '[]'::jsonb),
-            snomed_codes = COALESCE((
-                SELECT jsonb_agg(DISTINCT code)
-                FROM (
-                    SELECT jsonb_array_elements_text(rsg.snomed_codes) as code
-                    FROM tes_reporting_spec_groupers rsg
-                    JOIN tes_condition_grouper_references ref ON rsg.canonical_url = ref.child_grouper_url AND rsg.version = ref.child_grouper_version
-                    WHERE ref.parent_grouper_url = parent_url_to_update AND ref.parent_grouper_version = parent_version_to_update
-                ) as codes
-            ), '[]'::jsonb),
-            icd10_codes = COALESCE((
-                SELECT jsonb_agg(DISTINCT code)
-                FROM (
-                    SELECT jsonb_array_elements_text(rsg.icd10_codes) as code
-                    FROM tes_reporting_spec_groupers rsg
-                    JOIN tes_condition_grouper_references ref ON rsg.canonical_url = ref.child_grouper_url AND rsg.version = ref.child_grouper_version
-                    WHERE ref.parent_grouper_url = parent_url_to_update AND ref.parent_grouper_version = parent_version_to_update
-                ) as codes
-            ), '[]'::jsonb),
-            rxnorm_codes = COALESCE((
-                SELECT jsonb_agg(DISTINCT code)
-                FROM (
-                    SELECT jsonb_array_elements_text(rsg.rxnorm_codes) as code
-                    FROM tes_reporting_spec_groupers rsg
-                    JOIN tes_condition_grouper_references ref ON rsg.canonical_url = ref.child_grouper_url AND rsg.version = ref.child_grouper_version
-                    WHERE ref.parent_grouper_url = parent_url_to_update AND ref.parent_grouper_version = parent_version_to_update
-                ) as codes
-            ), '[]'::jsonb)
+            loinc_codes = get_aggregated_child_codes(parent_url_to_update, parent_version_to_update, 'loinc_codes'),
+            snomed_codes = get_aggregated_child_codes(parent_url_to_update, parent_version_to_update, 'snomed_codes'),
+            icd10_codes = get_aggregated_child_codes(parent_url_to_update, parent_version_to_update, 'icd10_codes'),
+            rxnorm_codes = get_aggregated_child_codes(parent_url_to_update, parent_version_to_update, 'rxnorm_codes')
         WHERE canonical_url = parent_url_to_update AND version = parent_version_to_update;
     END IF;
 
+    -- the trigger is an AFTER trigger, so we return NULL
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;

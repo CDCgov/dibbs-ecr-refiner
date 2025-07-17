@@ -10,10 +10,16 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      # The '1_', '2_', and '3_' prefixes ensure they run in the correct order.
-      - ./schema/01-base-schema.sql:/docker-entrypoint-initdb.d/1_schema.sql
-      - ./triggers/01-aggregate-base-groupers.sql:/docker-entrypoint-initdb.d/2_triggers.sql
-      - ./triggers/02-update-refinement-cache.sql:/docker-entrypoint-initdb.d/3_cache_trigger.sql
+      # the numeric prefixes ensure these scripts run in the correct order
+      # 1. base schema must be created first
+      - ./schema/01-base-schema.sql:/docker-entrypoint-initdb.d/10_schema.sql
+      # 2. helper functions must be created before the triggers that use them
+      - ./functions/01-get-aggregated-child-codes.sql:/docker-entrypoint-initdb.d/20_function_get_aggregated_codes.sql
+      - ./functions/02-get-all-codes-from-grouper.sql:/docker-entrypoint-initdb.d/21_function_get_all_codes.sql
+      # 3. triggers are created last, as they depend on the schema and functions
+      - ./triggers/01-aggregate-base-groupers.sql:/docker-entrypoint-initdb.d/30_trigger_aggregate_base.sql
+      - ./triggers/02-update-refinement-cache.sql:/docker-entrypoint-initdb.d/31_trigger_update_cache.sql
+      # mount the persistent data volume
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
