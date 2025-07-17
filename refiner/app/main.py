@@ -26,7 +26,7 @@ router.include_router(v1_router)
 
 # define health check endpoint at the service level
 @router.get("/healthcheck")
-async def health_check() -> dict[str, str]:
+async def health_check() -> JSONResponse:
     """
     Check service health status.
 
