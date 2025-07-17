@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@fontsource-variable/merriweather": "^5.2.2",
-    "@fontsource-variable/public-sans": "^5.2.5",
+    "@fontsource-variable/public-sans": "^5.2.6",
     "@tailwindcss/vite": "^4.1.4",
     "@trussworks/react-uswds": "^10.0.1",
     "classnames": "^2.5.1",
