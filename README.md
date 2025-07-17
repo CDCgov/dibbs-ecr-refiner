@@ -21,6 +21,20 @@ With the containers running, you'll now want to seed the database with TES data 
 
 This will start up the FastAPI server and the Vite client development server. The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/).
 
+## Running the eCR Refiner application in production
+
+The eCR Refiner requires the following environment variables to be specified in order to run the application:
+
+- `ENV`: The environment name (`dev`, `test`, `prod`, etc.)
+- `DB_URL`: The PostgreSQL connection string
+- `SESSION_SECRET_KEY`: A string used to compute user session hashes that are stored in the `sessions` table
+- `AUTH_PROVIDER`: Name of the OIDC authentication provider (`keycloak`, `google`, etc.)
+- `AUTH_CLIENT_ID`: OIDC client ID
+- `AUTH_CLIENT_SECRET`: OIDC client secret string
+- `AUTH_ISSUER`: OIDC auth issuer string
+
+Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
+
 ## Creating a production build
 
 The DIBBs eCR Refiner runs enitrely within a single container in a production environment. All build versions, including the very latest, can be downloaded from the [Refiner's GitHub Container Registry](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner).

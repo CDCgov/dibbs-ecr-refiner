@@ -28,7 +28,7 @@ COPY ./refiner/assets /code/assets
 COPY ./refiner/README.md /code/README.md
 COPY --from=client-builder /src/dist /code/dist
 
-ENV PRODUCTION=true
+ENV ENV=prod
 
 EXPOSE 8080
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

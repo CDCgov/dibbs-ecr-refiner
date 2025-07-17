@@ -27,7 +27,10 @@ EXPECTED_CONDITIONS = {
 
 
 @pytest.mark.integration
-def test_health_check(setup):  # 'setup' fixture is expected to start the service
+@pytest.mark.asyncio
+async def test_health_check(
+    setup, authed_client
+):  # 'setup' fixture is expected to start the service
     """
     Tests the /api/healthcheck endpoint to ensure the service is responsive.
 
@@ -44,7 +47,7 @@ def test_health_check(setup):  # 'setup' fixture is expected to start the servic
 
     try:
         # make a get request to the health check endpoint
-        response = httpx.get(service_url, timeout=10.0)
+        response = await authed_client.get(service_url, timeout=10.0)
         # raise an exception for http error codes (4xx or 5xx)
         response.raise_for_status()
     except httpx.RequestError as exc:
@@ -79,7 +82,10 @@ def test_health_check(setup):  # 'setup' fixture is expected to start the servic
 
 
 @pytest.mark.integration
-def test_zip_upload_mon_mothma_two_conditions(setup):  # 'setup' fixture
+@pytest.mark.asyncio
+async def test_zip_upload_mon_mothma_two_conditions(
+    setup, authed_client
+):  # 'setup' fixture
     """
     Tests the eICR refinement process via ZIP upload using 'mon-mothma-two-conditions.zip'.
 
@@ -114,7 +120,7 @@ def test_zip_upload_mon_mothma_two_conditions(setup):  # 'setup' fixture
 
         # make the post request to the service
         # -> * increased timeout for potentially long processing
-        response = httpx.post(service_url, files=files, timeout=30.0)
+        response = await authed_client.post(service_url, files=files, timeout=30.0)
 
     # initial response assertions
     assert response.status_code == 200, (
