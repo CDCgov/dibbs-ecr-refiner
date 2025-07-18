@@ -11,3 +11,4 @@ testcontainers[compose]>=3.7.1
 tqdm
 mypy==1.17.0
 lxml-stubs
+boto3-stubs
