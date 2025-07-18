@@ -7,8 +7,8 @@
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION get_aggregated_child_codes(
-    p_parent_url VARCHAR,
-    p_parent_version VARCHAR,
+    p_parent_url TEXT,
+    p_parent_version TEXT,
     p_code_column_name TEXT
 )
 RETURNS JSONB AS $$

@@ -13,12 +13,12 @@
 CREATE OR REPLACE FUNCTION update_parent_on_child_change()
 RETURNS TRIGGER AS $$
 DECLARE
-    parent_url_to_update VARCHAR;
-    parent_version_to_update VARCHAR;
+    parent_url_to_update TEXT;
+    parent_version_to_update TEXT;
 BEGIN
     -- determine which parent needs updating based on what triggered the function
     IF (TG_TABLE_NAME = 'tes_condition_grouper_references') THEN
-        -- CASE 1: a reference was inserted, updated, or deleted.
+        -- CASE 1: a reference was inserted, updated, or deleted
         -- the parent's identity is in the NEW or OLD reference row itself
         parent_url_to_update := COALESCE(NEW.parent_grouper_url, OLD.parent_grouper_url);
         parent_version_to_update := COALESCE(NEW.parent_grouper_version, OLD.parent_grouper_version);

@@ -18,7 +18,7 @@ DECLARE
     conf configurations%ROWTYPE;
 BEGIN
     IF (TG_TABLE_NAME = 'configurations') THEN
-        -- CASE 1: a configuration was changed. Update this single cache entry
+        -- CASE 1: a configuration was changed; update this single cache entry
         -- COALESCE handles INSERT, UPDATE, and DELETE in one line
         PERFORM update_cache_for_configuration(COALESCE(NEW, OLD));
 
@@ -44,11 +44,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_cache_for_configuration(conf configurations)
 RETURNS void AS $$
 DECLARE
-    base_codes JSONB;
-    addition_codes JSONB;
-    combined_codes JSONB;
+    base_codes TEXT[];
+    addition_codes TEXT[];
+    combined_codes TEXT[];
     parent_grouper tes_condition_groupers;
-    child_snomed_code VARCHAR;
+    child_snomed_code TEXT;
 BEGIN
     -- Step 1: find the parent grouper record associated with this configuration
     SELECT g.* INTO parent_grouper
@@ -65,12 +65,13 @@ BEGIN
     addition_codes := get_all_codes_from_grouper(conf);
 
     -- Step 3: combine the two sets of codes and de-duplicate them
-    SELECT jsonb_agg(DISTINCT value) INTO combined_codes
+    SELECT array_agg(DISTINCT code)
+    INTO combined_codes
     FROM (
-        SELECT jsonb_array_elements_text(base_codes) AS value
+        SELECT unnest(base_codes)
         UNION ALL
-        SELECT jsonb_array_elements_text(addition_codes)
-    ) AS all_codes;
+        SELECT unnest(addition_codes)
+    ) AS all_codes(code);
 
     -- Step 4: get the child's SNOMED code, which is part of the cache's primary key
     SELECT snomed_code INTO child_snomed_code FROM tes_reporting_spec_groupers
@@ -79,7 +80,7 @@ BEGIN
     -- Step 5: "upsert" the final, combined data into the cache table
     INSERT INTO refinement_cache (snomed_code, jurisdiction_id, aggregated_codes, source_details)
     VALUES (
-        child_snomed_code, conf.jurisdiction_id, COALESCE(combined_codes, '[]'::jsonb),
+        child_snomed_code, conf.jurisdiction_id, COALESCE(combined_codes, ARRAY[]::TEXT[]),
         jsonb_build_object('parent_version', parent_grouper.version, 'child_version', conf.child_grouper_version, 'configuration_id', conf.id)
     )
     ON CONFLICT (snomed_code, jurisdiction_id) DO UPDATE SET

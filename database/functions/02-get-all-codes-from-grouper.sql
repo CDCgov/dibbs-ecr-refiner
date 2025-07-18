@@ -1,22 +1,34 @@
 -- =============================================================================
 -- FUNCTION: get_all_codes_from_grouper
 --
--- this helper function takes a single record from either the
--- `tes_condition_groupers` or `configurations` table and returns a single
--- JSONB array containing all of its codes (LOINC, SNOMED, etc.) flattened
--- into one list.
+-- this helper function takes a single record and returns a single TEXT ARRAY
+-- containing all of its codes, extracting them from the various JSONB columns.
+-- This version robustly checks that a code column both exists and contains
+-- a JSON array before attempting to extract elements from it
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION get_all_codes_from_grouper(
     p_grouper_record ANYELEMENT
 )
-RETURNS JSONB AS $$
+RETURNS TEXT[] AS $$
+DECLARE
+    rec_jsonb JSONB := to_jsonb(p_grouper_record);
+    codes_array TEXT[] := ARRAY[]::TEXT[];
 BEGIN
-    RETURN (
-        COALESCE(p_grouper_record.loinc_codes, '[]'::jsonb) ||
-        COALESCE(p_grouper_record.snomed_codes, '[]'::jsonb) ||
-        COALESCE(p_grouper_record.icd10_codes, '[]'::jsonb) ||
-        COALESCE(p_grouper_record.rxnorm_codes, '[]'::jsonb)
-    );
+    -- only process if the key's value is a JSON array
+    IF jsonb_typeof(rec_jsonb->'loinc_codes') = 'array' THEN
+        codes_array := codes_array || ARRAY(SELECT jsonb_array_elements_text(rec_jsonb->'loinc_codes'));
+    END IF;
+    IF jsonb_typeof(rec_jsonb->'snomed_codes') = 'array' THEN
+        codes_array := codes_array || ARRAY(SELECT jsonb_array_elements_text(rec_jsonb->'snomed_codes'));
+    END IF;
+    IF jsonb_typeof(rec_jsonb->'icd10_codes') = 'array' THEN
+        codes_array := codes_array || ARRAY(SELECT jsonb_array_elements_text(rec_jsonb->'icd10_codes'));
+    END IF;
+    IF jsonb_typeof(rec_jsonb->'rxnorm_codes') = 'array' THEN
+        codes_array := codes_array || ARRAY(SELECT jsonb_array_elements_text(rec_jsonb->'rxnorm_codes'));
+    END IF;
+
+    RETURN codes_array;
 END;
 $$ LANGUAGE plpgsql;

@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 # a fictional jurisdiction inspired by star wars
 JURISDICTION = {
-    "id": "SDDH-GC-500",
+    "id": "SDDH",
     "name": "Senate District Health Department",
     "state_code": "GC",
 }
