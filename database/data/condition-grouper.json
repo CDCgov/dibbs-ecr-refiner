@@ -1,0 +1,104 @@
+[
+  {
+    "resourceType": "ValueSet",
+    "id": "1959",
+    "meta": {
+      "versionId": "1",
+      "lastUpdated": "2025-06-04T21:26:59.275+00:00",
+      "source": "#SjRzRywfANoy3Ebi",
+      "profile": [
+        "http://aphl.org/fhir/vsm/StructureDefinition/vsm-conditiongroupervalueset"
+      ],
+      "tag": [
+        {
+          "system": "http://hl7.org/fhir/Library#relatedArtifact.dependsOn",
+          "code": "https://tes.tools.aimsplatform.org/api/fhir/tes-content-library|2.0.0"
+        },
+        {
+          "system": "http://hl7.org/fhir/ValueSet#useContext.context-type-value",
+          "code": "grouper-type$http://aphl.org/fhir/vsm/CodeSystem/usage-context-type|condition-grouper"
+        }
+      ]
+    },
+    "extension": [
+      {
+        "url": "http://hl7.org/fhir/StructureDefinition/valueset-author",
+        "valueContactDetail": {
+          "name": "CSTE Author"
+        }
+      },
+      {
+        "url": "http://hl7.org/fhir/StructureDefinition/valueset-steward",
+        "valueContactDetail": {
+          "name": "CSTE Steward"
+        }
+      }
+    ],
+    "url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+    "version": "2.0.0",
+    "name": "COVID19",
+    "title": "COVID-19",
+    "status": "active",
+    "experimental": false,
+    "date": "2025-04-15T16:38:00-06:00",
+    "publisher": "Association of Public Health Laboratories (APHL)",
+    "description": "The set of all codes from value sets used in Reporting Specifications that are associated with the 'COVID-19' condition. (NOTE: Generated Content)",
+    "useContext": [
+      {
+        "code": {
+          "system": "http://aphl.org/fhir/vsm/CodeSystem/usage-context-type",
+          "code": "grouper-type"
+        },
+        "valueCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://aphl.org/fhir/vsm/CodeSystem/usage-context-type",
+              "code": "condition-grouper",
+              "display": "Condition Grouper"
+            }
+          ],
+          "text": "Condition Grouper"
+        }
+      }
+    ],
+    "compose": {
+      "include": [
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/05bb2a54-e3d2-4964-b504-114c85be746b|2.0.0"
+          ]
+        },
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/c727361f-31be-4a82-94f4-c1b9f6a847b1|2.0.0"
+          ]
+        },
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/rs-grouper-186747009|20250328"
+          ]
+        },
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/29738e88-1332-4e57-86ba-050003102f22|2.0.0"
+          ]
+        },
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/b6c63444-c6af-4518-805a-1222bbac9fcb|2.0.0"
+          ]
+        },
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/a3b1fa4d-2e9b-4c61-b541-6212cc5e7593|2.0.0"
+          ]
+        },
+        {
+          "valueSet": [
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/rs-grouper-840539006|20250328"
+          ]
+        }
+      ]
+    }
+  }
+]
