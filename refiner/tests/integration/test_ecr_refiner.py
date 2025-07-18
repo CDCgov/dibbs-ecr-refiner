@@ -33,7 +33,7 @@ def test_health_check(setup):  # 'setup' fixture is expected to start the servic
 
     Verifies:
     - The endpoint returns a 200 OK status.
-    - The response body is a JSON object `{"status": "OK"}`.
+    - The response body is a JSON object `{"status": "OK", "db": "OK"}`.
     """
 
     current_test_name = inspect.currentframe().f_code.co_name
@@ -71,8 +71,8 @@ def test_health_check(setup):  # 'setup' fixture is expected to start the servic
         )
 
     # assert that the json response matches the expected {"status": "OK"}
-    assert response_json == {"status": "OK"}, (
-        f"[{current_test_name}] Expected JSON response {{'status': 'OK'}}, got {response_json}"
+    assert response_json == {"status": "OK", "db": "OK"}, (
+        f"[{current_test_name}] Expected JSON response {{'status': 'OK', 'db': 'OK'}}, got {response_json}"
     )
 
     print(f"[{current_test_name}] Health check successful: {response_json}")

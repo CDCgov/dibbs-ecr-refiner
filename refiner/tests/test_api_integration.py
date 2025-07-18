@@ -16,10 +16,10 @@ class TestHealthAndDocs:
     Basic service health and documentation endpoints
     """
 
-    def test_health_check(self):
+    def test_health_check_no_db(self):
         response = client.get("/api/healthcheck")
-        assert response.status_code == 200
-        assert response.json() == {"status": "OK"}
+        assert response.status_code == 503
+        assert response.json() == {"db": "FAIL", "status": "FAIL"}
 
     def test_openapi_docs(self):
         response = client.get("/api/openapi.json")
