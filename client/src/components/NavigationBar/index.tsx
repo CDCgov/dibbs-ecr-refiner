@@ -5,7 +5,7 @@ export default function NavigationBar() {
   return (
     <nav
       aria-label="Primary navigation"
-      className="usa-nav flex justify-end !text-lg text-white"
+      className="!text-md flex justify-end gap-4 text-white"
     >
       <NavigationLink to="/" title="Configurations" />
       <NavigationLink to="/testing" title="Testing" />
