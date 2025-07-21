@@ -17,7 +17,7 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...services import file_io, refine
+from ...services import file_io, format, refine
 
 # Keep track of files available for download / what needs to be cleaned up
 REFINED_ECR_DIR = "refined-ecr"
@@ -330,13 +330,21 @@ async def demo_upload(
         # Store the combined zip
         _update_file_store(output_file_name, output_file_path, token)
 
+        # normalize/format condition refined eicrs and unrefined eicr for cleaner diff comparison
+        for cond in conditions:
+            raw_xml = cond["refined_eicr"]
+            # normalize and overwrite (or store to a new key)
+            cond["refined_eicr"] = format.normalize_xml(raw_xml)
+
+        normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
+
         return JSONResponse(
             content=jsonable_encoder(
                 {
                     "message": "Successfully processed eICR with condition-specific refinement",
                     "conditions_found": len(conditions),
                     "conditions": conditions,
-                    "unrefined_eicr": original_xml_files.eicr,
+                    "unrefined_eicr": normalized_unrefined_eicr,
                     "processing_notes": [
                         "Each condition gets its own refined eICR",
                         "Sections contain only data relevant to that specific condition",
