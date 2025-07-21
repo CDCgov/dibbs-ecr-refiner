@@ -14,11 +14,10 @@ def test_lambda():
     with open(event_file_path) as f:
         event = json.load(f)
 
-    s3 = boto3.client("s3", region_name="us-east-1")
-    s3.create_bucket(Bucket="dibbs-refiner-dev")
-
     bucket = "dibbs-refiner-dev"
-    input_key = "RefinerInput/testfile"
+
+    s3 = boto3.client("s3", region_name="us-east-1")
+    s3.create_bucket(Bucket=bucket)
 
     # Define sample input file test data
     test_data = {
@@ -30,6 +29,7 @@ def test_lambda():
     json_str = json.dumps(test_data)
     json_bytes = json_str.encode("utf-8")
 
+    input_key = "RefinerInput/testfile"
     s3.put_object(Bucket=bucket, Key=input_key, Body=json_bytes)
 
     response = lambda_handler(event, context={})
