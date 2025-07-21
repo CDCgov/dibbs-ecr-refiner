@@ -55,7 +55,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip
-          pip install -r app/lambda/requirements-dev.txt -r app/lambda/requirements.txt
+          pip install -r app/lambda/requirements-dev.txt -r app/lambda/requirements-lambda.txt
       - name: Run tests
         run: |
           pytest app/lambda
