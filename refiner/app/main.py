@@ -31,7 +31,7 @@ async def health_check() -> JSONResponse:
     Check service health status.
 
     Returns:
-        dict[str, str]: Service status response:
+        JSONResponse: Service status response:
             - {"status": "OK", "db": "OK"} with HTTP 200 if service is healthy
             - {"status": "FAIL", "db": "FAIL"} with HTTP 503 if service
               database connection cannot be made
