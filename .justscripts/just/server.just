@@ -6,6 +6,8 @@ alias help := _default
 alias t := test
 alias l := lint
 alias c := check
+alias i := install
+alias id := install-dev
 
 @_default:
     just --list server
@@ -28,3 +30,13 @@ lint: _venv
 [doc('Run mypy type checks')]
 check: _venv
     .venv/bin/mypy
+
+[group('dependencies')]
+[doc('Install dependencies locally')]
+install: _venv
+      .venv/bin/pip install -r requirements.txt
+
+[group('dependencies')]
+[doc('Install all dependencies locally')]
+install-dev: _venv
+      .venv/bin/pip install -r requirements-dev.txt -r requirements.txt

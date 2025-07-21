@@ -2,7 +2,7 @@ alias h := _default
 alias help := _default
 
 @_default:
-    just --list
+    just --list --list-submodules
 
 [group('alias')]
 [doc('Alias for `client`')]
@@ -37,7 +37,6 @@ docker := require("docker")
 dev +ARGS:
     {{ docker }} compose -f {{ absolute_path('./docker-compose.yaml') }} {{ ARGS }}
 
-[group('test')]
 [doc('Run linting and formatting rules on all code')]
 lint:
     just client::run lint fmt
