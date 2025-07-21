@@ -89,7 +89,9 @@ def lambda_handler(event, context):
 
             # Update the S3 object with the output paths
             # Use the original s3_object_key with the complete prefix
-            complete_key = s3_object_key.replace(input_prefix, complete_prefix)
+
+            # RefinerComplete/yyyy/mm/dd/filename
+            complete_key = f"{complete_prefix}/{timestamp}/{s3_object_key.replace(f'{input_prefix}/', '')}"
             s3_client.put_object(
                 Bucket=s3_bucket_name,
                 Key=complete_key,
