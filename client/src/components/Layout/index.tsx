@@ -29,7 +29,7 @@ export function Layout({ children }: LayoutProps) {
 export function Header() {
   return (
     <header>
-      <div className="bg-blue-cool-80 flex items-center justify-between px-2 py-4 xl:px-20">
+      <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center xl:px-20">
         <Link to="/">
           <h1 className="flex items-center gap-3">
             <img src={DibbsLogo} alt="DIBBs" />
@@ -38,6 +38,7 @@ export function Header() {
             </span>
           </h1>
         </Link>
+
         <NavigationBar />
         <a
           className="text-white hover:cursor-pointer hover:underline"
