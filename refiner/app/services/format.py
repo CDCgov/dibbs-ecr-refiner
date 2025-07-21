@@ -1,4 +1,3 @@
-
 from lxml import etree
 from lxml.etree import _Element
 
