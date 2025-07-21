@@ -13,8 +13,8 @@ import uuid
 
 import boto3
 
-from ..core.models.types import XMLFiles
-from ..services.refine import build_condition_eicr_pairs, process_rr, refine_eicr
+# from ..core.models.types import XMLFiles
+# from ..services.refine import build_condition_eicr_pairs, process_rr, refine_eicr
 
 # Initialize the logger
 logger = logging.getLogger()
@@ -37,11 +37,8 @@ def lambda_handler(event, context):
     """
     try:
         logger.info(f"Event: {event}")
-        # Parse the input event
-        parsed_event = json.loads(event["Records"])
-
         # Iterate over the records and parse the S3 event
-        for record in parsed_event["Records"]:
+        for record in event["Records"]:
             logger.info(f"Record: {record}")
 
             # Initialize the S3 client
@@ -72,11 +69,7 @@ def lambda_handler(event, context):
             # refined_eicr_docs = run_refinement_process(eicr=eicr, rr=rr)
 
             # Sample data until we have database connectivity
-            refined_eicr_docs = [
-                f"<doc><eicr>{eicr}</eicr></doc>",
-                f"<doc><rr>{rr}</rr></doc>",
-            ]
-            logger.info("Sample data:", refined_eicr_docs)
+            refined_eicr_docs = [eicr, rr]
 
             output_s3_paths = []
             # Upload the output files to S3
@@ -110,45 +103,45 @@ def lambda_handler(event, context):
         raise
 
 
-def run_refinement_process(eicr: str, rr: str) -> list[str]:
-    """
-    Process the RR for reportable conditions, create XML file pairs per condition,
-    and run the refiner against all files. Returns a list of refined eICR XML strings.
+# def run_refinement_process(eicr: str, rr: str) -> list[str]:
+#     """
+#     Process the RR for reportable conditions, create XML file pairs per condition,
+#     and run the refiner against all files. Returns a list of refined eICR XML strings.
 
-    Args:
-        eicr (str): The eICR as an XML string
-        rr (str): The RR as an XML string
+#     Args:
+#         eicr (str): The eICR as an XML string
+#         rr (str): The RR as an XML string
 
-    Returns:
-        list[str]: XML for each refined eICR
-    """
-    # Create XMLFiles from pair
-    original_xml_files = XMLFiles(eicr=eicr, rr=rr)
+#     Returns:
+#         list[str]: XML for each refined eICR
+#     """
+#     # Create XMLFiles from pair
+#     original_xml_files = XMLFiles(eicr=eicr, rr=rr)
 
-    # Process the RR to get reportable conditions
-    rr_results = process_rr(original_xml_files)
-    reportable_conditions = rr_results["reportable_conditions"]
+#     # Process the RR to get reportable conditions
+#     rr_results = process_rr(original_xml_files)
+#     reportable_conditions = rr_results["reportable_conditions"]
 
-    # create condition-eICR pairs with XMLFiles objects
-    condition_eicr_pairs = build_condition_eicr_pairs(
-        original_xml_files, reportable_conditions
-    )
+#     # create condition-eICR pairs with XMLFiles objects
+#     condition_eicr_pairs = build_condition_eicr_pairs(
+#         original_xml_files, reportable_conditions
+#     )
 
-    # Create separate XML file pairs per condition and run the refinement process
-    refined_eicr_docs = []
-    for pair in condition_eicr_pairs:
-        condition = pair["reportable_condition"]
-        xml_files = pair[
-            "xml_files"
-        ]  # Each pair contains a distinct XMLFiles instance.
+#     # Create separate XML file pairs per condition and run the refinement process
+#     refined_eicr_docs = []
+#     for pair in condition_eicr_pairs:
+#         condition = pair["reportable_condition"]
+#         xml_files = pair[
+#             "xml_files"
+#         ]  # Each pair contains a distinct XMLFiles instance.
 
-        # refine the eICR for this specific condition code.
-        refined_eicr = refine_eicr(
-            xml_files=xml_files,
-            condition_codes=condition["code"],
-        )
+#         # refine the eICR for this specific condition code.
+#         refined_eicr = refine_eicr(
+#             xml_files=xml_files,
+#             condition_codes=condition["code"],
+#         )
 
-        # Add refined eICR XML doc to the list
-        refined_eicr_docs.append(refined_eicr)
+#         # Add refined eICR XML doc to the list
+#         refined_eicr_docs.append(refined_eicr)
 
-    return refined_eicr_docs
+#     return refined_eicr_docs
