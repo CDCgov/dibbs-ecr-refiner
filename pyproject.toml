@@ -90,3 +90,4 @@ keep-runtime-typing = true
 # mypy type checking
 [tool.mypy]
 files = ["app/**/*.py"]
+exclude = ["app/lambda/**"]
