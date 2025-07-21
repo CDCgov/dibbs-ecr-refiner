@@ -7,6 +7,10 @@ def normalize_xml(xml: str) -> str:
     Normalize XML string for comparison: parse, strip out all comments, then re-serialize with consistent pretty-printing.
     """
 
+    # Reject non‐string inputs
+    if not isinstance(xml, str):
+        raise ValueError(f"Expected XML as str, got {type(xml).__name__!r}")
+
     # Parse into an Element
     root: _Element = etree.fromstring(xml)
 
