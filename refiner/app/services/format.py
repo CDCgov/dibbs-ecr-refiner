@@ -1,6 +1,5 @@
 from lxml import etree
 from lxml.etree import _Element
-from typing import cast, List
 
 
 def normalize_xml(xml: str) -> str:
@@ -16,7 +15,7 @@ def normalize_xml(xml: str) -> str:
     root: _Element = etree.fromstring(xml)
 
     # Force mypy to treat this as a list of Elements
-    comment_nodes: List[_Element] = root.xpath("//comment()")  # type: ignore[assignment]
+    comment_nodes: list[_Element] = root.xpath("//comment()")  # type: ignore[assignment]
 
     for comment in comment_nodes:
         parent = comment.getparent()
