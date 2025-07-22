@@ -15,7 +15,7 @@ class TestHealthAndDocs:
     async def test_health_check(self, setup, authed_client):
         response = await authed_client.get("/api/healthcheck")
         assert response.status_code == 200
-        assert response.json() == {"status": "OK"}
+        assert response.json() == {"db": "OK", "status": "OK"}
 
     async def test_openapi_docs(self, setup, authed_client):
         response = await authed_client.get("/api/openapi.json")

@@ -2,8 +2,10 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -31,16 +33,29 @@ router.include_router(v1_router, dependencies=[Depends(get_logged_in_user)])
 
 # define health check endpoint at the service level
 @router.get("/healthcheck")
-async def health_check() -> dict[str, str]:
+async def health_check() -> JSONResponse:
     """
     Check service health status.
 
     Returns:
-        dict[str, str]: Service status response:
-            - {"status": "OK"} with HTTP 200 if service is healthy
+        JSONResponse: Service status response:
+            - {"status": "OK", "db": "OK"} with HTTP 200 if service is healthy
+            - {"status": "FAIL", "db": "FAIL"} with HTTP 503 if service
+              database connection cannot be made
     """
 
-    return {"status": "OK"}
+    try:
+        async with db.get_cursor() as cursor:
+            await cursor.execute("SELECT 1")
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content=jsonable_encoder({"status": "OK", "db": "OK"}),
+            )
+    except Exception:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=jsonable_encoder({"status": "FAIL", "db": "FAIL"}),
+        )
 
 
 @asynccontextmanager
