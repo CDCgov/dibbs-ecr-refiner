@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -U pip
-          pip install -r requirements-dev.txt -r requirements.txt
+          pip install -r requirements-dev.txt -r app/lambda/requirements-dev.txt -r requirements.txt
       - name: Run mypy
         run: |
           mypy
