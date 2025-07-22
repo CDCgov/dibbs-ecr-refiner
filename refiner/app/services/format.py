@@ -25,6 +25,7 @@ def normalize_xml(xml: str) -> str:
     normalized = etree.tostring(
         root,
         pretty_print=True,
+        encoding="unicode",
         xml_declaration=False,
         with_tail=True,
     ).strip()
