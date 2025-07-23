@@ -96,6 +96,71 @@ def parse_child_url(url_with_version: str) -> tuple[str, str] | None:
     return None
 
 
+def populate_refinement_cache(connection: Connection) -> None:
+    """
+    Manually populates the refinement_cache after the main seeding is complete.
+
+    This function executes a single, powerful query to calculate the aggregated
+    code sets for every grouper and insert them into the cache. This is more
+    reliable and efficient for a bulk-seeding operation than relying on
+    row-level triggers.
+
+    Args:
+        connection: The active database connection.
+    """
+
+    logging.info("🧮 Populating the refinement_cache...")
+    with connection.cursor() as cursor:
+        try:
+            # this query correctly populates the cache by combining the base
+            # codes from the parent grouper with any overrides from the
+            # jurisdiction-specific configuration. It performs the logic
+            # directly instead of calling a potentially mismatched function
+            cursor.execute(
+                """
+                INSERT INTO refinement_cache (
+                    snomed_code,
+                    jurisdiction_id,
+                    aggregated_codes,
+                    source_details
+                )
+                SELECT
+                    rsg.snomed_code,
+                    conf.jurisdiction_id,
+                    -- Combine the parent's SNOMED codes with the override codes
+                    ARRAY(
+                        SELECT DISTINCT code
+                        FROM (
+                            SELECT jsonb_array_elements_text(cg.snomed_codes) AS code FROM tes_condition_groupers cg
+                            WHERE cg.canonical_url = ref.parent_grouper_url AND cg.version = ref.parent_grouper_version
+                            UNION ALL
+                            SELECT jsonb_array_elements_text(conf.snomed_codes) AS code
+                        ) AS combined_codes
+                    ),
+                    jsonb_build_object(
+                        'source', 'Seeded Configuration',
+                        'parent_grouper_url', ref.parent_grouper_url,
+                        'configuration_id', conf.id
+                    )
+                FROM
+                    configurations conf
+                JOIN
+                    tes_reporting_spec_groupers rsg ON conf.child_grouper_url = rsg.canonical_url AND conf.child_grouper_version = rsg.version
+                JOIN
+                    tes_condition_grouper_references ref ON rsg.canonical_url = ref.child_grouper_url AND rsg.version = ref.child_grouper_version
+                ON CONFLICT (snomed_code, jurisdiction_id) DO NOTHING;
+                """
+            )
+            logging.info(
+                f"  ✨ Successfully populated refinement cache. {cursor.rowcount} rows affected."
+            )
+            connection.commit()
+        except psycopg.Error as e:
+            logging.error(f"❌ Failed to populate refinement cache: {e}")
+            connection.rollback()
+            raise
+
+
 # main seeding logic
 def seed_database() -> None:
     """
@@ -103,7 +168,7 @@ def seed_database() -> None:
 
     This function performs a full refresh of the terminology tables based on
     the JSON ValueSet files located in the /app/data directory. It follows
-    a two-pass strategy to handle dependencies between tables.
+    a three-pass strategy to handle dependencies between tables.
 
     The process is as follows:
     1.  TRUNCATE: All relevant tables are cleared to ensure a clean slate.
@@ -121,6 +186,11 @@ def seed_database() -> None:
         in Pass 1), thus preventing foreign key constraint violations.
     4.  The high-speed `COPY` command is used for inserting references for
         optimal performance.
+    5.  PASS 3 (Populate the refinement cache): The transaction management
+        within the seeding script prevents the triggers from firing in the
+        expected sequence. Our solution here is to not just rely on the triggers
+        _during the seed_; rather, will run a single command at the end of
+        the seed to populate the cache table.
 
     Raises:
         psycopg.Error: If any database operation fails.
@@ -151,6 +221,34 @@ def seed_database() -> None:
                 ]
                 cursor.execute(
                     f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE;"
+                )
+
+                # insert test jurisdiction and user data
+                # * this is required in order for the cache table triggers to work
+                logging.info("➕ Inserting test data (Jurisdiction, User)...")
+                # insert jurisdiction
+                cursor.execute(
+                    """
+                    INSERT INTO jurisdictions (id, name, state_code)
+                    VALUES (%(id)s, %(name)s, %(state_code)s) ON CONFLICT DO NOTHING;
+                    """,
+                    {
+                        "id": "SDDH",
+                        "name": "Senate District Health Department",
+                        "state_code": "GC",
+                    },
+                )
+                # insert user
+                cursor.execute(
+                    """
+                    INSERT INTO users (email, jurisdiction_id, full_name)
+                    VALUES (%(email)s, %(jurisdiction_id)s, %(full_name)s) ON CONFLICT DO NOTHING;
+                    """,
+                    {
+                        "email": "rispi.lacendad@cocotown.clinic.gr.example.com",
+                        "jurisdiction_id": "SDDH",
+                        "full_name": "Dr. Rispi Lacendad",
+                    },
                 )
 
                 # NOTE: this script uses a two-pass approach:
@@ -269,8 +367,31 @@ def seed_database() -> None:
                         f"  ✨ Inserted {len(references_to_insert)} valid references. Triggers will now fire."
                     )
 
+                # insert jurisdiction-specific configuration
+                logging.info("⚙️ Inserting jurisdiction-specific configuration...")
+                cursor.execute(
+                    """
+                    INSERT INTO configurations (jurisdiction_id, child_grouper_url, child_grouper_version, loinc_codes, snomed_codes)
+                    VALUES (%(jurisdiction_id)s, %(child_grouper_url)s, %(child_grouper_version)s, %(loinc_codes)s::jsonb, %(snomed_codes)s::jsonb)
+                    ON CONFLICT DO NOTHING;
+                    """,
+                    {
+                        "jurisdiction_id": "SDDH",
+                        "child_grouper_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/rs-grouper-840539006",
+                        "child_grouper_version": "20250328",
+                        "loinc_codes": '["CORUSCANT-LOINC-1"]',
+                        "snomed_codes": '["11833005"]',
+                    },
+                )
+
                 connection.commit()
                 logging.info("\n🎉 SUCCESS: Database seeding and linking complete!")
+
+            # PASS 3: Populate the refinement cache
+            populate_refinement_cache(connection)
+            logging.info(
+                "\n🏁 SUCCESS: Database seeding and cache population complete!"
+            )
 
     except (psycopg.Error, Exception) as error:
         logging.error(f"❌ Script error: {error}")
