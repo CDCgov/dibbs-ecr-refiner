@@ -90,3 +90,14 @@ keep-runtime-typing = true
 # mypy type checking
 [tool.mypy]
 files = ["app/**/*.py"]
+
+# centralize all pytest configration
+# * where python unit tests are located
+# * make sure integration tests that use testcontainers have custom markers
+[tool.pytest.ini_options]
+testpaths = ["database/tests", "refiner/tests"]
+addopts = "--strict-markers -v"
+asyncio_mode = "strict"
+markers = [
+  "integration: marks tests as integration (deselect with '-m \"not integration\"')",
+]
