@@ -1,2 +1,7 @@
+pre-commit
 pytest
-python-dotenv
+pytest-asyncio
+pytest-cov
+ruff==0.12.4
+testcontainers[compose]>=3.7.1
+mypy==1.17.0
