@@ -12,6 +12,7 @@ from ...core.exceptions import (
     XMLValidationError,
 )
 from ...core.models.types import XMLFiles
+from ...db.connection import DatabaseConnection
 from ..file_io import read_json_asset
 from .helpers import (
     get_condition_codes_xpath,
@@ -1110,12 +1111,15 @@ class RefinedDocument:
     refined_eicr: str
 
 
-def refine_sync(condition_specific_xml_pair: XMLFiles) -> list[RefinedDocument]:
+def refine_sync(
+    condition_specific_xml_pair: XMLFiles, db: DatabaseConnection
+) -> list[RefinedDocument]:
     """
-    Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
+    (Primarily for use in AWS Lambda) Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
 
     Args:
         condition_specific_xml_pair (XMLFiles): an eICR/RR pair
+        db: Established DB connection to use
 
     Returns:
         list[dict[str, str]]: condition code is the key, refined eICR document is the value
@@ -1139,7 +1143,9 @@ def refine_sync(condition_specific_xml_pair: XMLFiles) -> list[RefinedDocument]:
 
         # Generate xpaths based on condition codes
         condition_code = condition["code"]
-        processed_groupers = get_processed_groupers_from_condition_codes(condition_code)
+        processed_groupers = get_processed_groupers_from_condition_codes(
+            condition_code, db
+        )
         condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
 
         # refine the eICR for this specific condition code.

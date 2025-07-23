@@ -5,6 +5,7 @@ from ...core.exceptions import (
     DatabaseQueryError,
     ResourceNotFoundError,
 )
+from ...db.connection import DatabaseConnection
 from ...db.operations import GrouperOperations, GrouperRow
 from ..terminology import ProcessedGrouper
 
@@ -13,13 +14,14 @@ log = logging.getLogger(__name__).error
 
 # Synchronously connect to the DB
 def get_processed_groupers_from_condition_codes(
-    condition_codes: str,
+    condition_codes: str, db: DatabaseConnection
 ) -> list[GrouperRow]:
     """
     Given a list of condition codes, synchronously connects to the database and creates a list of GrouperRow objects.
 
     Args:
         condition_codes (str): Comma separated list of SNOMED condition codes
+        db (DatabaseConnection): Established database connection
 
     Returns:
         list[GrouperRow]: List of GrouperRows built from the given list of condition codes
@@ -29,7 +31,7 @@ def get_processed_groupers_from_condition_codes(
         DatabaseQueryError
         ResourceNotFoundError
     """
-    grouper_ops = GrouperOperations()
+    grouper_ops = GrouperOperations(db)
 
     grouper_rows = []
     for code in condition_codes.split(","):

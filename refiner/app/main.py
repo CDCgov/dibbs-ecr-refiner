@@ -3,7 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,8 +13,7 @@ from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
-from .core.config import ENVIRONMENT
-from .db.connection import DatabaseConnection
+from .db.connection import DatabaseConnection, get_db_connection
 
 # environment configuration
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
@@ -26,7 +25,9 @@ router.include_router(v1_router)
 
 # define health check endpoint at the service level
 @router.get("/healthcheck")
-async def health_check() -> JSONResponse:
+async def health_check(
+    db: DatabaseConnection = Depends(get_db_connection),
+) -> JSONResponse:
     """
     Check service health status.
 
@@ -36,8 +37,6 @@ async def health_check() -> JSONResponse:
             - {"status": "FAIL", "db": "FAIL"} with HTTP 503 if service
               database connection cannot be made
     """
-
-    db = DatabaseConnection(db_url=ENVIRONMENT["DB_URL"])
 
     try:
         with db.get_cursor() as cursor:

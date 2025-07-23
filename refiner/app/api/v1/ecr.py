@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     HTTPException,
     Query,
@@ -20,6 +21,7 @@ from ...core.exceptions import (
 )
 from ...core.models.api import ECR_RESPONSE_EXAMPLES, RefineECRResponse
 from ...core.models.types import XMLFiles
+from ...db.connection import DatabaseConnection, get_db_connection
 from ...services import file_io
 from ...services.refiner import refine
 from ...services.refiner.helpers import (
@@ -62,6 +64,7 @@ async def refine_ecr_from_zip(
             + " Multiples can be delimited by a comma."
         ),
     ] = None,
+    db: DatabaseConnection = Depends(get_db_connection),
 ) -> Response:
     """
     Process and refine eCR messages from uploaded ZIP files.
@@ -73,6 +76,7 @@ async def refine_ecr_from_zip(
         file: The uploaded ZIP file.
         sections_to_include: Comma-separated LOINC codes for filtering eCR sections.
         conditions_to_include: Comma-separated SNOMED condition codes.
+        db: Established database connection (dependency injected)
 
     Returns:
         Response: A refined XML eCR response.
@@ -120,7 +124,7 @@ async def refine_ecr_from_zip(
             # refine the eICR for the specific condition code.
             condition_code = condition["code"]
             processed_groupers = get_processed_groupers_from_condition_codes(
-                condition_code
+                condition_codes=condition_code, db=db
             )
 
             condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
@@ -190,6 +194,7 @@ async def refine_ecr(
             + " Multiples can be delimited by a comma."
         ),
     ] = None,
+    db: DatabaseConnection = Depends(get_db_connection),
 ) -> Response:
     """
     Refine an XML eCR message based on specified parameters.
@@ -206,6 +211,7 @@ async def refine_ecr(
         sections_to_include: The fields to include in the refined message.
         conditions_to_include: The SNOMED condition codes to use to search for
             relevant clinical services in the eCR.
+        db: Established database connection (dependency injected)
 
     Returns:
         Response: The RefineeCRResponse, the refined XML as a string.
@@ -230,7 +236,9 @@ async def refine_ecr(
             )
 
         condition_code = conditions_to_include
-        processed_groupers = get_processed_groupers_from_condition_codes(condition_code)
+        processed_groupers = get_processed_groupers_from_condition_codes(
+            condition_codes=condition_code, db=db
+        )
 
         condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
 
