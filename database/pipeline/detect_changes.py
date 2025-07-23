@@ -125,6 +125,8 @@ def main() -> None:
         }
         with open(MANIFEST_PATH, "w", encoding="utf-8") as manifest_file:
             json.dump(final_manifest, manifest_file, indent=2)
+            # write \n to conform with pre-commit
+            manifest_file.write("\n")
         print(
             f"\n✨ Manifest file updated at: {MANIFEST_PATH.relative_to(DATABASE_DIR)}"
         )
