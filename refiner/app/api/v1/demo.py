@@ -18,11 +18,7 @@ from ...core.exceptions import (
     ZipValidationError,
 )
 from ...services import file_io
-from ...services.refiner import refine
-from ...services.refiner.helpers import (
-    get_condition_codes_xpath,
-    get_processed_groupers_from_condition_codes,
-)
+from ...services.refiner.refine import refine_sync
 
 # Keep track of files available for download / what needs to be cleaned up
 REFINED_ECR_DIR = "refined-ecr"
@@ -242,58 +238,17 @@ async def demo_upload(
         file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
-        # Read in and process XML data from demo file
-        original_xml_files = await file_io.read_xml_zip(file)
-        rr_results = refine.process_rr(original_xml_files)
-        reportable_conditions = rr_results["reportable_conditions"]
-
-        # create condition-eICR pairs with XMLFiles objects
-        condition_eicr_pairs = refine.build_condition_eicr_pairs(
-            original_xml_files, reportable_conditions
-        )
-
         # Refine each pair and collect results
-        refined_results = []
+        original_xml_files = await file_io.read_xml_zip(file)
+        refined_results = refine_sync(original_xml_files)
 
-        # for each reportable condition, create a separate XMLFiles copy and refine independently.
-        # this ensures output isolation: each condition produces its own eICR, with only the data relevant to that condition.
-        # using a fresh XMLFiles object per condition also makes it straightforward to support future workflows,
-        # such as processing and returning RR (Reportability Response) documents alongside or in relation to each eICR.
-        for pair in condition_eicr_pairs:
-            condition = pair["reportable_condition"]
-            xml_files = pair[
-                "xml_files"
-            ]  # Each pair contains a distinct XMLFiles instance.
-
-            # refine the eICR for this specific condition code.
-            condition_code = condition["code"]
-            processed_groupers = get_processed_groupers_from_condition_codes(
-                condition_code
-            )
-            condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
-
-            refined_eicr = refine.refine_eicr(
-                xml_files=xml_files,
-                condition_codes_xpath=condition_codes_xpath,
-            )
-
-            # collect the refined result for this condition.
-            refined_results.append(
-                {
-                    "reportable_condition": condition,
-                    "refined_eicr": refined_eicr,
-                }
-            )
-
-        # build the response so each output is clearly associated with its source condition.
-        # this structure makes it easy for clients to consume and extends naturally if we later return RR artifacts.
         conditions = []
         refined_files_to_zip = []
 
         # Track condition metadata and gather refined XMLs to zip
         for idx, result in enumerate(refined_results):
-            condition_info = result["reportable_condition"]
-            condition_refined_eicr = result["refined_eicr"]
+            condition_info = result.reportable_condition
+            condition_refined_eicr = result.refined_eicr
 
             # Construct a filename for each XML (e.g. "covid_840539006.xml")
             condition_code = condition_info.get("code", f"cond_{idx}")
@@ -329,8 +284,8 @@ async def demo_upload(
         full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
 
         # Add eICR + RR file as well
-        refined_files_to_zip.append(("CDA_eICR.xml", xml_files.eicr))
-        refined_files_to_zip.append(("CDA_RR.xml", xml_files.rr))
+        refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
+        refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
 
         # Now create the combined zip
         output_file_name, output_file_path, token = create_output_zip(

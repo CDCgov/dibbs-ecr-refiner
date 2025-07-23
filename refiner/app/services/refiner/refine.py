@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from typing import Any, Literal, cast
 
 from lxml import etree
@@ -12,6 +13,10 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ..file_io import read_json_asset
+from .helpers import (
+    get_condition_codes_xpath,
+    get_processed_groupers_from_condition_codes,
+)
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -1093,3 +1098,58 @@ def _remove_all_comments(section: _Element) -> None:
 # it might be beneficial to add a function that will add comments back to the <entry>s that we're
 # persisting in our refined output (even the minimal sections too). we can discuss this at some
 # point in the future
+
+
+@dataclass
+class RefinedDocument:
+    """
+    Object to hold a reportable condition and its refined eICR XML string.
+    """
+
+    reportable_condition: str
+    refined_eicr: str
+
+
+def refine_sync(condition_specific_xml_pair: XMLFiles) -> list[RefinedDocument]:
+    """
+    Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
+
+    Args:
+        condition_specific_xml_pair (XMLFiles): an eICR/RR pair
+
+    Returns:
+        list[dict[str, str]]: condition code is the key, refined eICR document is the value
+    """
+
+    # Process RR and find conditions
+    rr_results = process_rr(condition_specific_xml_pair)
+    reportable_conditions = rr_results["reportable_conditions"]
+
+    # create condition-eICR pairs with XMLFiles objects
+    condition_eicr_pairs = build_condition_eicr_pairs(
+        condition_specific_xml_pair, reportable_conditions
+    )
+
+    refined_eicrs = []
+    for pair in condition_eicr_pairs:
+        condition = pair["reportable_condition"]
+        condition_specific_xml_pair = pair[
+            "xml_files"
+        ]  # Each pair contains a distinct XMLFiles instance.
+
+        # Generate xpaths based on condition codes
+        condition_code = condition["code"]
+        processed_groupers = get_processed_groupers_from_condition_codes(condition_code)
+        condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
+
+        # refine the eICR for this specific condition code.
+        refined_eicr = refine_eicr(
+            xml_files=condition_specific_xml_pair,
+            condition_codes_xpath=condition_codes_xpath,
+        )
+
+        refined_eicrs.append(
+            RefinedDocument(reportable_condition=condition, refined_eicr=refined_eicr)
+        )
+
+    return refined_eicrs
