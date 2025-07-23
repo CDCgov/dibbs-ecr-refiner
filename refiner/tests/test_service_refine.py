@@ -5,12 +5,11 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.core.exceptions import (
-    ConditionCodeError,
     StructureValidationError,
     XMLParsingError,
 )
 from app.core.models.types import XMLFiles
-from app.services.refine import (
+from app.services.refiner.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
     REFINER_OUTPUT_TITLE,
@@ -255,7 +254,7 @@ def test_refine_eicr(
     refined_output: str = refine_eicr(
         xml_files=sample_xml_files,
         sections_to_include=sections_to_include,
-        condition_codes=condition_codes,
+        condition_codes_xpath=condition_codes,
     )
 
     refined_doc: _Element = etree.fromstring(refined_output)
@@ -271,34 +270,6 @@ def test_refine_eicr(
         )
     )
     assert result == expected_in_results
-
-
-def test_refine_eicr_requires_condition_codes(sample_xml_files: XMLFiles):
-    """
-    Test that refine_eicr raises ConditionCodeError if condition_codes is not provided.
-    """
-
-    with pytest.raises(ConditionCodeError) as excinfo:
-        refine_eicr(
-            xml_files=sample_xml_files,
-            sections_to_include=None,
-            condition_codes=None,
-        )
-    assert "No condition codes provided" in str(excinfo.value)
-
-
-def test_refine_eicr_empty_condition_codes(sample_xml_files: XMLFiles) -> None:
-    """
-    Test that refine_eicr raises ConditionCodeError if condition_codes is empty string.
-    """
-
-    with pytest.raises(ConditionCodeError) as excinfo:
-        refine_eicr(
-            xml_files=sample_xml_files,
-            sections_to_include=None,
-            condition_codes="",
-        )
-    assert "No condition codes provided" in str(excinfo.value)
 
 
 def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:

@@ -17,7 +17,12 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...services import file_io, refine
+from ...services import file_io
+from ...services.refiner import refine
+from ...services.refiner.helpers import (
+    get_condition_codes_xpath,
+    get_processed_groupers_from_condition_codes,
+)
 
 # Keep track of files available for download / what needs to be cleaned up
 REFINED_ECR_DIR = "refined-ecr"
@@ -261,9 +266,15 @@ async def demo_upload(
             ]  # Each pair contains a distinct XMLFiles instance.
 
             # refine the eICR for this specific condition code.
+            condition_code = condition["code"]
+            processed_groupers = get_processed_groupers_from_condition_codes(
+                condition_code
+            )
+            condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
+
             refined_eicr = refine.refine_eicr(
                 xml_files=xml_files,
-                condition_codes=condition["code"],
+                condition_codes_xpath=condition_codes_xpath,
             )
 
             # collect the refined result for this condition.

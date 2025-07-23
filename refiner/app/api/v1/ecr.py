@@ -20,7 +20,12 @@ from ...core.exceptions import (
 )
 from ...core.models.api import ECR_RESPONSE_EXAMPLES, RefineECRResponse
 from ...core.models.types import XMLFiles
-from ...services import file_io, refine
+from ...services import file_io
+from ...services.refiner import refine
+from ...services.refiner.helpers import (
+    get_condition_codes_xpath,
+    get_processed_groupers_from_condition_codes,
+)
 
 # create a router instance for this file
 router = APIRouter(prefix="/ecr")
@@ -113,9 +118,15 @@ async def refine_ecr_from_zip(
             xml_files = pair["xml_files"]
 
             # refine the eICR for the specific condition code.
+            condition_code = condition["code"]
+            processed_groupers = get_processed_groupers_from_condition_codes(
+                condition_code
+            )
+
+            condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
             refined_eicr = refine.refine_eicr(
                 xml_files=xml_files,
-                condition_codes=condition["code"],
+                condition_codes_xpath=condition_codes_xpath,
                 sections_to_include=sections,
             )
 
@@ -218,8 +229,17 @@ async def refine_ecr(
                 "No condition codes provided to refine_eicr; at least one is required."
             )
 
+        condition_code = conditions_to_include
+        processed_groupers = get_processed_groupers_from_condition_codes(condition_code)
+
+        condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
+
         # refine the eICR
-        refined_data = refine.refine_eicr(xml_files, sections, conditions_to_include)
+        refined_data = refine.refine_eicr(
+            xml_files=xml_files,
+            condition_codes_xpath=condition_codes_xpath,
+            sections_to_include=sections,
+        )
         return Response(content=refined_data, media_type="application/xml")
 
     except XMLValidationError as e:

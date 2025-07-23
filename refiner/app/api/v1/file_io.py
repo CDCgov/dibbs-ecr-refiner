@@ -9,7 +9,8 @@ from ...core.exceptions import (
     ZipValidationError,
 )
 from ...core.models.api import XMLUploadResponse
-from ...services import file_io, refine
+from ...services import file_io
+from ...services.refiner import refine
 
 router = APIRouter()
 
@@ -31,7 +32,7 @@ async def process_xml_zip(file: UploadFile) -> XMLUploadResponse:
         xml_files = await file_io.read_xml_zip(file)
 
         # process both documents
-        refined_eicr = refine.refine_eicr(xml_files)
+        refined_eicr = refine.refine_eicr(xml_files=xml_files, condition_codes_xpath="")
         rr_results = refine.process_rr(xml_files)
 
         return XMLUploadResponse(

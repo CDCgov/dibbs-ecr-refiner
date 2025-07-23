@@ -4,20 +4,14 @@ from typing import Any, Literal, cast
 from lxml import etree
 from lxml.etree import _Element
 
-from ..core.exceptions import (
-    ConditionCodeError,
-    DatabaseConnectionError,
-    DatabaseQueryError,
-    ResourceNotFoundError,
+from ...core.exceptions import (
     SectionValidationError,
     StructureValidationError,
     XMLParsingError,
     XMLValidationError,
 )
-from ..core.models.types import XMLFiles
-from ..db.operations import GrouperOperations
-from .file_io import read_json_asset
-from .terminology import ProcessedGrouper
+from ...core.models.types import XMLFiles
+from ..file_io import read_json_asset
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -241,8 +235,8 @@ def process_rr(xml_files: XMLFiles) -> dict:
 
 def refine_eicr(
     xml_files: XMLFiles,
+    condition_codes_xpath: str,
     sections_to_include: list[str] | None = None,
-    condition_codes: str | None = None,
 ) -> str:
     """
     Refine an eICR XML document by processing its sections.
@@ -256,7 +250,7 @@ def refine_eicr(
     Args:
         xml_files: The XMLFiles container with the eICR document to refine.
         sections_to_include: Optional list of section LOINC codes to preserve.
-        condition_codes: Comma-separated string of SNOMED condition codes
+        condition_codes_xpath: Comma-separated string of SNOMED condition codes
             to use for filtering sections in an eICR. Each code will be looked up in the
             groupers table in the terminology database to find related clinical codes.
             **This parameter is required. If not provided, a ConditionCodeError is raised.**
@@ -271,11 +265,6 @@ def refine_eicr(
         StructureValidationError: If the document structure is invalid.
     """
 
-    if not condition_codes:
-        raise ConditionCodeError(
-            "No condition codes provided to refine_eicr; at least one is required."
-        )
-
     try:
         # parse the eicr document
         validated_message = xml_files.parse_eicr()
@@ -289,10 +278,6 @@ def refine_eicr(
                 message="No structured body found in eICR",
                 details={"document_type": "eICR"},
             )
-
-        # always require condition_codes
-        # generate code-based xpath for relevant clinical codes
-        code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
 
         # TODO:
         # detect version from document. in future we'll have a function here to check
@@ -310,7 +295,9 @@ def refine_eicr(
             if section is None:
                 continue
 
-            _process_section(section, code_xpath, namespaces, section_config, version)
+            _process_section(
+                section, condition_codes_xpath, namespaces, section_config, version
+            )
 
         # format and return the result
         return etree.tostring(validated_message, encoding="unicode")
@@ -574,65 +561,6 @@ def _preserve_relevant_entries_and_generate_summary(
     }
 
     _update_text_element(section, contextual_matches, trigger_code_elements)
-
-
-def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
-    """
-    Generate XPath from condition codes using ProcessedGrouper only.
-
-    Takes a comma-separated string of condition codes, queries each one
-    in the groupers database, and builds XPath expressions to find any
-    matching codes in HL7 XML documents.
-
-    Args:
-        condition_codes: Comma-separated SNOMED condition codes, or None
-
-    Returns:
-        str: Combined XPath expression to find relevant elements, or empty string
-
-    Raises:
-        DatabaseConnectionError
-        DatabaseQueryError
-        ResourceNotFoundError
-        ConditionCodeError
-    """
-
-    if not condition_codes:
-        return ""
-
-    grouper_ops = GrouperOperations()
-    xpath_conditions = []
-
-    try:
-        # process each condition code
-        for code in condition_codes.split(","):
-            code = code.strip()
-            try:
-                grouper_row = grouper_ops.get_grouper_by_condition(code)
-                if grouper_row:
-                    processed = ProcessedGrouper.from_grouper_row(grouper_row)
-                    # use comprehensive search across all element types
-                    xpath = processed.build_xpath()
-                    if xpath:
-                        xpath_conditions.append(xpath)
-            except (DatabaseConnectionError, DatabaseQueryError) as e:
-                # log but continue with other codes
-                log(f"Database error processing condition code {code}: {str(e)}")
-            except ResourceNotFoundError:
-                # log that the code wasn't found but continue
-                log(f"Condition code not found: {code}")
-
-    except Exception as e:
-        raise ConditionCodeError(
-            message="Error processing condition codes",
-            details={"error": str(e), "condition_codes": condition_codes},
-        )
-
-    # combine XPath conditions with union operator
-    if not xpath_conditions:
-        return ""
-
-    return " | ".join(xpath_conditions)
 
 
 def _get_section_by_code(

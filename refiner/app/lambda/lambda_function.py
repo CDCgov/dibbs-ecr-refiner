@@ -14,7 +14,11 @@ import uuid
 import boto3
 
 from ..core.models.types import XMLFiles
-from ..services.refine import build_condition_eicr_pairs, process_rr, refine_eicr
+from ..services.refiner.refine import (
+    build_condition_eicr_pairs,
+    process_rr,
+    refine_eicr,
+)
 
 # Initialize the logger
 logger = logging.getLogger()
@@ -145,7 +149,7 @@ def run_refinement_process(eicr: str, rr: str) -> list[str]:
         # refine the eICR for this specific condition code.
         refined_eicr = refine_eicr(
             xml_files=xml_files,
-            condition_codes=condition["code"],
+            condition_codes_xpath=condition["code"],
         )
 
         # Add refined eICR XML doc to the list
