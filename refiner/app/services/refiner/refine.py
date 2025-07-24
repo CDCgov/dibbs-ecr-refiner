@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from typing import Literal, TypedDict, cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -43,6 +43,17 @@ CLINICAL_DATA_TABLE_HEADERS = [
     "Is Trigger Code",
     "Matching Condition Code",
 ]
+
+
+@dataclass
+class ReportableCondition:
+    """
+    Object to hold the properties of a reportable condition.
+    """
+
+    code: str
+    display_name: str
+
 
 # NOTE:
 # =============================================================================
@@ -97,7 +108,7 @@ def validate_sections_to_include(
     return sections
 
 
-def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
+def get_reportable_conditions(root: _Element) -> list[ReportableCondition] | None:
     """
     Get reportable conditions from the Report Summary section.
 
@@ -202,7 +213,7 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
             # required SNOMED CT code and display name and build the
             # condition object and ensure uniqueness--duplicate conditions
             # should not be reported multiple times
-            condition = {"code": code, "displayName": display_name}
+            condition = ReportableCondition(code=code, display_name=display_name)
             if condition not in conditions:
                 conditions.append(condition)
 
@@ -215,7 +226,15 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
     return conditions if conditions else None
 
 
-def process_rr(xml_files: XMLFiles) -> dict:
+class ProcessedRR(TypedDict):
+    """
+    The returned result of processing an RR.
+    """
+
+    reportable_conditions: list[ReportableCondition]
+
+
+def process_rr(xml_files: XMLFiles) -> ProcessedRR:
     """
     Process the RR XML document to extract relevant information.
 
@@ -321,8 +340,8 @@ def refine_eicr(
 
 def build_condition_eicr_pairs(
     original_xml_files: XMLFiles,
-    reportable_conditions: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+    reportable_conditions: list[ReportableCondition],
+) -> list[tuple[ReportableCondition, XMLFiles]]:
     """
     Generate pairs of reportable conditions and fresh XMLFiles copies.
 
@@ -344,10 +363,10 @@ def build_condition_eicr_pairs(
         # create fresh XMLFiles for each condition to ensure complete isolation
         condition_xml_files = XMLFiles(original_xml_files.eicr, original_xml_files.rr)
         condition_eicr_pairs.append(
-            {
-                "reportable_condition": condition,
-                "xml_files": condition_xml_files,
-            }
+            (
+                condition,
+                condition_xml_files,
+            )
         )
 
     return condition_eicr_pairs
@@ -1107,7 +1126,7 @@ class RefinedDocument:
     Object to hold a reportable condition and its refined eICR XML string.
     """
 
-    reportable_condition: str
+    reportable_condition: ReportableCondition
     refined_eicr: str
 
 
@@ -1142,16 +1161,13 @@ def refine_sync(
 
     refined_eicrs = []
     for pair in condition_eicr_pairs:
-        condition = pair["reportable_condition"]
-        condition_specific_xml_pair = pair[
-            "xml_files"
-        ]  # Each pair contains a distinct XMLFiles instance.
+        condition, condition_specific_xml_pair = pair
 
         # Combine codes found in the RR + additional codes
         condition_codes = (
-            f"{condition['code']}," + additional_condition_codes
+            f"{condition.code}," + additional_condition_codes
             if additional_condition_codes is not None
-            else condition["code"]
+            else condition.code
         )
 
         # Generate xpaths based on condition codes

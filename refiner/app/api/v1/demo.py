@@ -250,14 +250,13 @@ async def demo_upload(
         refined_files_to_zip = []
 
         # Track condition metadata and gather refined XMLs to zip
-        for idx, result in enumerate(refined_results):
-            condition_info = result.reportable_condition
+        for result in refined_results:
+            condition_code = result.reportable_condition.code
+            condition_name = result.reportable_condition.display_name
             condition_refined_eicr = result.refined_eicr
 
             # Construct a filename for each XML (e.g. "covid_840539006.xml")
-            condition_code = condition_info.get("code", f"cond_{idx}")
-            display_name = condition_info.get("displayName", f"Condition_{idx}")
-            safe_name = display_name.replace(" ", "_").replace("/", "_")
+            safe_name = condition_name.replace(" ", "_").replace("/", "_")
             filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
 
             # Add to the list of files to include in the ZIP
@@ -266,8 +265,8 @@ async def demo_upload(
             # Build per-condition metadata (zip token added later)
             conditions.append(
                 {
-                    "code": condition_info["code"],
-                    "display_name": condition_info["displayName"],
+                    "code": condition_code,
+                    "display_name": condition_name,
                     "refined_eicr": condition_refined_eicr,
                     "stats": [
                         f"eICR file size reduced by {
