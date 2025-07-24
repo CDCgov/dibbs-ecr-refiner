@@ -67,6 +67,8 @@ ignore = [
 "**/tests/*" = ["D", "S", "ANN"]
 # - disable docstring/type/security rules in lambda
 "**/lambda/*" = ["D", "S", "ANN"]
+# - disable type annotation rules in scripts
+"**/scripts/*" = ["ANN"]
 # - allow missing docstrings in __init__
 "__init__.py" = ["D"]
 
@@ -87,7 +89,12 @@ keep-runtime-typing = true
 
 # mypy type checking
 [tool.mypy]
-files = ["app/**/*.py", "database/pipeline/**/*.py", "database/scripts/**/*.py"]
+files = [
+  "app/**/*.py",
+  # turn these on after we've moved the database out of refiner/
+  # "database/pipeline/**/*.py",
+  # "database/scripts/**/*.py"
+]
 
 # centralize all pytest configration
 # * where python unit tests are located
