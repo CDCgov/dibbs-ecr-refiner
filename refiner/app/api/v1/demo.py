@@ -17,9 +17,9 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...db.connection import DatabaseConnection, get_db_connection
+from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io
-from ...services.refiner.refine import refine_sync
+from ...services.refiner.refine import refine_async
 
 # Keep track of files available for download / what needs to be cleaned up
 REFINED_ECR_DIR = "refined-ecr"
@@ -220,7 +220,7 @@ async def demo_upload(
     demo_zip_path: Path = Depends(_get_demo_zip_path),
     create_output_zip: Callable[..., tuple[str, Path, str]] = Depends(_get_zip_creator),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
-    db: DatabaseConnection = Depends(get_db_connection),
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
@@ -242,7 +242,7 @@ async def demo_upload(
     try:
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
-        refined_results = refine_sync(
+        refined_results = await refine_async(
             condition_specific_xml_pair=original_xml_files, db=db
         )
 

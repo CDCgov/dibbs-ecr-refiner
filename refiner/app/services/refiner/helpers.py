@@ -7,9 +7,34 @@ from ...core.exceptions import (
 )
 from ...db.connection import DatabaseConnection
 from ...db.operations import GrouperOperations, GrouperRow
+from ...db.pool import AsyncDatabaseConnection
 from ..terminology import ProcessedGrouper
 
 log = logging.getLogger(__name__).error
+
+
+async def get_processed_groupers_from_condition_codes_async(
+    condition_codes: str, db: AsyncDatabaseConnection
+) -> list[GrouperRow]:
+    """
+    Async version of `get_processed_groupers_from_condition_codes_async`.
+    """
+    grouper_ops = GrouperOperations(db)
+
+    grouper_rows = []
+    for code in condition_codes.split(","):
+        code = code.strip()
+        try:
+            row = await grouper_ops.get_grouper_by_condition_async(code)
+            if row:
+                grouper_rows.append(row)
+        except (DatabaseConnectionError, DatabaseQueryError) as e:
+            # log but continue with other codes
+            log(f"Database error processing condition code {code}: {str(e)}")
+        except ResourceNotFoundError:
+            # log that the code wasn't found but continue
+            log(f"Condition code not found: {code}")
+    return grouper_rows
 
 
 # Synchronously connect to the DB

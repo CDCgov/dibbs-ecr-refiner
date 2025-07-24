@@ -13,10 +13,12 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ...db.connection import DatabaseConnection
+from ...db.pool import AsyncDatabaseConnection
 from ..file_io import read_json_asset
 from .helpers import (
     get_condition_codes_xpath,
     get_processed_groupers_from_condition_codes,
+    get_processed_groupers_from_condition_codes_async,
 )
 
 # NOTE:
@@ -258,7 +260,7 @@ def process_rr(xml_files: XMLFiles) -> ProcessedRR:
         )
 
 
-def refine_eicr(
+def _refine_eicr(
     xml_files: XMLFiles,
     condition_codes_xpath: str,
     sections_to_include: list[str] | None = None,
@@ -1171,13 +1173,64 @@ def refine_sync(
         )
 
         # Generate xpaths based on condition codes
+        # DATA: Needs sync db connection
         processed_groupers = get_processed_groupers_from_condition_codes(
             condition_codes, db
         )
         condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
 
         # refine the eICR for this specific condition code.
-        refined_eicr = refine_eicr(
+        refined_eicr = _refine_eicr(
+            xml_files=condition_specific_xml_pair,
+            condition_codes_xpath=condition_codes_xpath,
+            sections_to_include=sections_to_include,
+        )
+
+        refined_eicrs.append(
+            RefinedDocument(reportable_condition=condition, refined_eicr=refined_eicr)
+        )
+
+    return refined_eicrs
+
+
+async def refine_async(
+    condition_specific_xml_pair: XMLFiles,
+    db: AsyncDatabaseConnection,
+    additional_condition_codes: str | None = None,
+    sections_to_include: list[str] | None = None,
+) -> list[RefinedDocument]:
+    """
+    Async version of `refine_sync`.
+    """
+    # Process RR and find conditions
+    rr_results = process_rr(condition_specific_xml_pair)
+    reportable_conditions = rr_results["reportable_conditions"]
+
+    # create condition-eICR pairs with XMLFiles objects
+    condition_eicr_pairs = build_condition_eicr_pairs(
+        condition_specific_xml_pair, reportable_conditions
+    )
+
+    refined_eicrs = []
+    for pair in condition_eicr_pairs:
+        condition, condition_specific_xml_pair = pair
+
+        # Combine codes found in the RR + additional codes
+        condition_codes = (
+            f"{condition.code}," + additional_condition_codes
+            if additional_condition_codes is not None
+            else condition.code
+        )
+
+        # Generate xpaths based on condition codes
+        # DATA: Needs an ASYNC db connection
+        processed_groupers = await get_processed_groupers_from_condition_codes_async(
+            condition_codes, db
+        )
+        condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
+
+        # refine the eICR for this specific condition code.
+        refined_eicr = _refine_eicr(
             xml_files=condition_specific_xml_pair,
             condition_codes_xpath=condition_codes_xpath,
             sections_to_include=sections_to_include,

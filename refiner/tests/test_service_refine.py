@@ -23,9 +23,9 @@ from app.services.refiner.refine import (
     _preserve_relevant_entries_and_generate_summary,
     _process_section,
     _prune_unwanted_siblings,
+    _refine_eicr,
     build_condition_eicr_pairs,
     get_reportable_conditions,
-    refine_eicr,
 )
 
 from .conftest import NAMESPACES
@@ -252,7 +252,7 @@ def test_refine_eicr(
     Test eICR refinement with required condition_codes.
     """
 
-    refined_output: str = refine_eicr(
+    refined_output: str = _refine_eicr(
         xml_files=sample_xml_files,
         sections_to_include=sections_to_include,
         condition_codes_xpath=condition_codes,
