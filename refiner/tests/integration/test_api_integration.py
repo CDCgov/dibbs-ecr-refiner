@@ -1,42 +1,40 @@
 import pytest
-from fastapi.testclient import TestClient
 from lxml import etree
-
-from app.main import app
 
 # test with COVID-19 condition code
 CONDITION_CODE = "840539006"
 
 
-client = TestClient(app)
-
-
+@pytest.mark.integration
+@pytest.mark.asyncio
 class TestHealthAndDocs:
     """
     Basic service health and documentation endpoints
     """
 
-    def test_health_check_no_db(self):
-        response = client.get("/api/healthcheck")
-        assert response.status_code == 503
-        assert response.json() == {"db": "FAIL", "status": "FAIL"}
+    async def test_health_check(self, setup, authed_client):
+        response = await authed_client.get("/api/healthcheck")
+        assert response.status_code == 200
+        assert response.json() == {"db": "OK", "status": "OK"}
 
-    def test_openapi_docs(self):
-        response = client.get("/api/openapi.json")
+    async def test_openapi_docs(self, setup, authed_client):
+        response = await authed_client.get("/api/openapi.json")
         assert response.status_code == 200
 
 
+@pytest.mark.integration
+@pytest.mark.asyncio
 class TestECREndpoint:
     """
     Tests for /api/v1/ecr endpoint
     """
 
-    def test_basic_refinement(self, sample_xml_files):
+    async def test_basic_refinement(self, setup, sample_xml_files, authed_client):
         """
         Test basic XML refinement without parameters
         """
 
-        response = client.post(
+        response = await authed_client.post(
             f"/api/v1/ecr?conditions_to_include={CONDITION_CODE}",
             content=sample_xml_files.eicr,
         )
@@ -56,12 +54,14 @@ class TestECREndpoint:
             "30954-2,29299-5",
         ],
     )
-    def test_section_filtering(self, sections, sample_xml_files):
+    async def test_section_filtering(
+        self, setup, sections, sample_xml_files, authed_client
+    ):
         """
         Test section-based filtering
         """
 
-        response = client.post(
+        response = await authed_client.post(
             f"/api/v1/ecr?sections_to_include={sections}&conditions_to_include={CONDITION_CODE}",
             content=sample_xml_files.eicr,
         )
@@ -77,21 +77,22 @@ class TestECREndpoint:
         for code in section_codes:
             assert code in found_codes, f"Section {code} not found in response"
 
-    def test_error_handling(self, sample_xml_files):
+    async def test_error_handling(self, setup, sample_xml_files, authed_client):
         """
         Test API error responses
         """
 
         # invalid xml
-        response = client.post(
-            f"/api/v1/ecr?conditions_to_include={CONDITION_CODE}", content="invalid xml"
+        response = await authed_client.post(
+            f"/api/v1/ecr?conditions_to_include={CONDITION_CODE}",
+            content="invalid xml",
         )
         assert response.status_code == 400
         error = response.json()
         assert "Failed to parse XML" in error["detail"]["message"]
 
         # invalid section code
-        response = client.post(
+        response = await authed_client.post(
             "/api/v1/ecr?sections_to_include=invalid&conditions_to_include={CONDITION_CODE}",
             content=sample_xml_files.eicr,
         )
@@ -100,12 +101,16 @@ class TestECREndpoint:
         assert "Invalid section codes" in error["detail"]["message"]
 
 
+@pytest.mark.integration
+@pytest.mark.asyncio
 class TestZipUploadEndpoint:
     """
     Tests for /api/v1/ecr/zip-upload endpoint
     """
 
-    def test_basic_upload(self, tmp_path, create_test_zip, test_assets_path):
+    async def test_basic_upload(
+        self, setup, tmp_path, create_test_zip, test_assets_path, authed_client
+    ):
         """
         Test basic ZIP upload processing
         """
@@ -118,7 +123,7 @@ class TestZipUploadEndpoint:
         zip_path = create_test_zip(tmp_path, files)
 
         with open(zip_path, "rb") as f:
-            response = client.post(
+            response = await authed_client.post(
                 "/api/v1/ecr/zip-upload",
                 files={"file": ("test.zip", f, "application/zip")},
             )
@@ -138,7 +143,9 @@ class TestZipUploadEndpoint:
         assert root.find(".//{urn:hl7-org:v3}templateId") is not None
         assert root.find(".//{urn:hl7-org:v3}id") is not None
 
-    def test_upload_with_sections(self, tmp_path, create_test_zip, test_assets_path):
+    async def test_upload_with_sections(
+        self, setup, tmp_path, create_test_zip, test_assets_path, authed_client
+    ):
         """
         Test ZIP upload with section filtering
         """
@@ -150,7 +157,7 @@ class TestZipUploadEndpoint:
         zip_path = create_test_zip(tmp_path, files)
 
         with open(zip_path, "rb") as f:
-            response = client.post(
+            response = await authed_client.post(
                 "/api/v1/ecr/zip-upload?sections_to_include=30954-2",
                 files={"file": ("test.zip", f, "application/zip")},
             )
@@ -172,7 +179,7 @@ class TestZipUploadEndpoint:
         assert "30954-2" in section_codes
         assert len(section_codes) == 8
 
-    def test_upload_errors(self, tmp_path):
+    async def test_upload_errors(self, setup, tmp_path, authed_client):
         """
         Test ZIP upload error handling
         """
@@ -186,7 +193,7 @@ class TestZipUploadEndpoint:
             zf.writestr("CDA_eICR.xml", "invalid xml")
             zf.writestr("CDA_RR.xml", "also invalid")
 
-        response = client.post(
+        response = await authed_client.post(
             "/api/v1/ecr/zip-upload",
             files={"file": ("test.zip", zip_buffer.getvalue(), "application/zip")},
         )
