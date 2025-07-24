@@ -1,5 +1,6 @@
 import pytest
 
+from pipeline import fetch_api_data
 from pipeline.fetch_api_data import dynamic_classify_valueset
 
 
@@ -83,3 +84,24 @@ def test_dynamic_classify_valueset(valueset, expected_category):
     """
 
     assert dynamic_classify_valueset(valueset) == expected_category
+
+
+def test_run_fetch_pipeline(mocker, tmp_path):
+    # mock requests.get to return a fake response
+    class MockTESResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"entry": []}
+
+    mocker.patch("requests.get", return_value=MockTESResponse())
+
+    # should exit after no entries found
+    out = fetch_api_data.run_fetch_pipeline(
+        output_dir=tmp_path,
+        api_key="dummy",
+        sleep_interval=0,
+        log_dir_base=tmp_path,
+    )
+    assert isinstance(out, dict)
