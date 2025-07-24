@@ -1133,7 +1133,7 @@ class RefinedDocument:
 
 
 def refine_sync(
-    condition_specific_xml_pair: XMLFiles,
+    original_xml: XMLFiles,
     db: DatabaseConnection,
     additional_condition_codes: str | None = None,
     sections_to_include: list[str] | None = None,
@@ -1142,7 +1142,7 @@ def refine_sync(
     (Primarily for use in AWS Lambda) Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
 
     Args:
-        condition_specific_xml_pair (XMLFiles): an eICR/RR pair
+        original_xml (XMLFiles): an eICR/RR pair
         db: Established DB connection to use
         additional_condition_codes: Codes to include regardless of whether
             they're discovered in the RR or not
@@ -1153,12 +1153,12 @@ def refine_sync(
     """
 
     # Process RR and find conditions
-    rr_results = process_rr(condition_specific_xml_pair)
+    rr_results = process_rr(original_xml)
     reportable_conditions = rr_results["reportable_conditions"]
 
     # create condition-eICR pairs with XMLFiles objects
     condition_eicr_pairs = build_condition_eicr_pairs(
-        condition_specific_xml_pair, reportable_conditions
+        original_xml, reportable_conditions
     )
 
     refined_eicrs = []
@@ -1194,7 +1194,7 @@ def refine_sync(
 
 
 async def refine_async(
-    condition_specific_xml_pair: XMLFiles,
+    original_xml: XMLFiles,
     db: AsyncDatabaseConnection,
     additional_condition_codes: str | None = None,
     sections_to_include: list[str] | None = None,
@@ -1203,12 +1203,12 @@ async def refine_async(
     Async version of `refine_sync`.
     """
     # Process RR and find conditions
-    rr_results = process_rr(condition_specific_xml_pair)
+    rr_results = process_rr(original_xml)
     reportable_conditions = rr_results["reportable_conditions"]
 
     # create condition-eICR pairs with XMLFiles objects
     condition_eicr_pairs = build_condition_eicr_pairs(
-        condition_specific_xml_pair, reportable_conditions
+        original_xml, reportable_conditions
     )
 
     refined_eicrs = []

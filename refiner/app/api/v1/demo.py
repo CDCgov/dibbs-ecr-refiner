@@ -242,9 +242,7 @@ async def demo_upload(
     try:
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
-        refined_results = await refine_async(
-            condition_specific_xml_pair=original_xml_files, db=db
-        )
+        refined_results = await refine_async(original_xml=original_xml_files, db=db)
 
         conditions = []
         refined_files_to_zip = []
