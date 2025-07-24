@@ -13,6 +13,7 @@ from app.services.refiner.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
     REFINER_OUTPUT_TITLE,
+    ReportableCondition,
     _analyze_trigger_codes_in_context,
     _create_or_update_text_element,
     _extract_clinical_data,
@@ -194,15 +195,15 @@ def test_get_reportable_conditions_uniqueness() -> None:
         </ClinicalDocument>
     """)
 
-    result: list[dict[str, str]] | None = get_reportable_conditions(root)
+    result = get_reportable_conditions(root)
 
     # verify we get exactly 2 unique conditions
     assert len(result) == 2
 
     # verify the specific conditions are present
     expected_conditions: list[dict[str, str]] = [
-        {"code": "840539006", "displayName": "COVID-19"},
-        {"code": "27836007", "displayName": "Pertussis"},
+        ReportableCondition(code="840539006", display_name="COVID-19"),
+        ReportableCondition(code="27836007", display_name="Pertussis"),
     ]
     assert result == expected_conditions
 
@@ -277,12 +278,12 @@ def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
     Test building condition-eICR pairs with XMLFiles objects.
     """
 
-    reportable_conditions: list[dict[str, str]] = [
-        {"code": "840539006", "displayName": "COVID-19"},
-        {"code": "27836007", "displayName": "Pertussis"},
+    reportable_conditions = [
+        ReportableCondition(code="840539006", display_name="COVID-19"),
+        ReportableCondition(code="27836007", display_name="Pertussis"),
     ]
 
-    pairs: list[dict[str, Any]] = build_condition_eicr_pairs(
+    pairs = build_condition_eicr_pairs(
         original_xml_files=sample_xml_files, reportable_conditions=reportable_conditions
     )
 
@@ -291,14 +292,14 @@ def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
 
     # verify each pair has the expected structure
     for i, pair in enumerate(pairs):
-        assert "reportable_condition" in pair
-        assert "xml_files" in pair
-        assert pair["reportable_condition"] == reportable_conditions[i]
+        reportable_condition, xml_files = pair
+        assert reportable_condition is not None
+        assert xml_files is not None
 
         # verify the xml_files is a proper XMLFiles object
-        assert isinstance(pair["xml_files"], XMLFiles)
-        assert pair["xml_files"].eicr == sample_xml_files.eicr
-        assert pair["xml_files"].rr == sample_xml_files.rr
+        assert isinstance(xml_files, XMLFiles)
+        assert xml_files.eicr == sample_xml_files.eicr
+        assert xml_files.rr == sample_xml_files.rr
 
 
 # NOTE:
