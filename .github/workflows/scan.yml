@@ -1,0 +1,117 @@
+name: "Scan GHCR Images for Vulnerabilities"
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to scan (e.g., latest, main, v1.0.0)"
+        required: false
+        default: "latest"
+      severity_level:
+        description: "Vulnerability severity threshold"
+        required: false
+        default: "CRITICAL,HIGH"
+        type: choice
+        options:
+          - "CRITICAL"
+          - "CRITICAL,HIGH"
+          - "CRITICAL,HIGH,MEDIUM"
+  schedule:
+    # Run every day at 6:00 AM UTC (optional - can remove if not needed)
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan-images:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        image:
+          - name: "refiner-app"
+            path: "refiner"
+          - name: "refiner-lambda"
+            path: "lambda"
+      fail-fast: false  # Continue scanning other images if one fails
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make repo owner lowercase
+        id: repo
+        run: |
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Set scan parameters
+        id: params
+        run: |
+          TAG="${{ github.event.inputs.image_tag || 'latest' }}"
+          SEVERITY="${{ github.event.inputs.severity_level || 'CRITICAL,HIGH' }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
+
+      - name: Check if image exists
+        id: check
+        run: |
+          IMAGE="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/${{ matrix.image.path }}:${{ steps.params.outputs.tag }}"
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          
+          # Try to pull image metadata to check if it exists
+          if docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Image found: $IMAGE"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Image not found: $IMAGE"
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        if: steps.check.outputs.exists == 'true'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.check.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-${{ matrix.image.name }}-results.sarif'
+          severity: ${{ steps.params.outputs.severity }}
+          ignore-unfixed: true
+          timeout: '10m'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: steps.check.outputs.exists == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-${{ matrix.image.name }}-results.sarif'
+          category: 'vulnerability-scan-${{ matrix.image.name }}'
+
+      - name: Scan summary for ${{ matrix.image.name }}
+        if: always()
+        run: |
+          if [ "${{ steps.check.outputs.exists }}" = "true" ]; then
+            echo "Vulnerability scan completed for ${{ matrix.image.name }}"
+            echo "Image: ${{ steps.check.outputs.image }}"
+            echo "Severity: ${{ steps.params.outputs.severity }}"
+            echo "Results uploaded to Security tab with category: vulnerability-scan-${{ matrix.image.name }}"
+          else
+            echo "Skipped scanning ${{ matrix.image.name }} - image not found"
+            echo "Attempted image: ${{ steps.check.outputs.image }}"
+          fi
+
+  scan-complete:
+    runs-on: ubuntu-latest
+    needs: scan-images
+    if: always()
+    
+    steps:
+      - name: Overall scan summary
+        run: |
+          echo "Image vulnerability scanning completed"
+          echo "Scan timestamp: $(date -u)"
+          echo "Scanned tag: ${{ github.event.inputs.image_tag || 'latest' }}"
+          echo "Severity threshold: ${{ github.event.inputs.severity_level || 'CRITICAL,HIGH' }}"
+          echo ""
+          echo "Check the Security tab for detailed vulnerability reports"
+          echo "Navigate to: Repository → Security → Code scanning alerts"
