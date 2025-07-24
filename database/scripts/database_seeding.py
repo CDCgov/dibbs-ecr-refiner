@@ -79,9 +79,6 @@ def parse_child_url(url_with_version: str) -> tuple[str, str] | None:
     """
     Parses a versioned FHIR ValueSet URL into its components.
 
-    The FHIR standard often represents versioned ValueSet references in a
-    single string, delimited by a pipe character '|'.
-
     Args:
         url_with_version: The URL string, expected in the format
                           'canonical_url|version'.
@@ -90,9 +87,9 @@ def parse_child_url(url_with_version: str) -> tuple[str, str] | None:
         A tuple containing the (canonical_url, version) if parsing is
         successful, otherwise None.
     """
-
-    if "|" in url_with_version:
-        return tuple(url_with_version.split("|", 1))
+    parts = url_with_version.split("|", 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
     return None
 
 

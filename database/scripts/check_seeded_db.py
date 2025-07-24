@@ -1,70 +1,79 @@
 import os
 import pathlib
 import sys
+from collections.abc import Callable
 
 import psycopg
 from dotenv import load_dotenv
+from psycopg import Connection, Cursor
 from rich.console import Console
 from rich.table import Table
 
 
-def get_db_connection(console: Console) -> psycopg.Connection:
+def get_db_connection(console: Console) -> Connection:
     """
     Constructs a DB connection string from environment variables and connects.
     """
+
     try:
-        # Construct the database URL from individual environment variables
+        # construct the database URL from individual environment variables
         user = os.getenv("POSTGRES_USER")
         password = os.getenv("POSTGRES_PASSWORD")
         dbname = os.getenv("POSTGRES_DB")
         port = os.getenv("POSTGRES_PORT")
-        host = "localhost"  # Default for connecting to Docker container from host
+        host = "localhost"
 
         if not all([user, password, dbname, port]):
             raise ValueError(
-                "Missing one or more required environment variables in .env file: "
-                "POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT"
+                "😓 Missing one or more required environment variables in .env file: ",
+                "POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_PORT",
             )
 
         db_url = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
         return psycopg.connect(db_url, autocommit=True)
 
-    except (psycopg.OperationalError, ValueError) as e:
+    except (psycopg.OperationalError, ValueError) as error:
         console.print(
-            "[bold red]FATAL: Could not connect to the database.[/bold red]\n"
-            "Please ensure the database is running and all required environment variables are set correctly in the .env file.\n"
-            f"Error: {e}"
+            "[bold red]💥 FATAL: Could not connect to the database.[/bold red]\n",
+            "Please ensure the database is running and all required environment variables are set correctly in the .env file.\n",
+            f"💬 Error: {error}",
         )
         sys.exit(1)
 
 
 def run_check(
-    cursor: psycopg.Cursor,
+    cursor: Cursor,
     console: Console,
     title: str,
     query: str,
-    failure_condition,
+    failure_condition: Callable[[list], bool],
     failure_message: str,
 ) -> bool:
-    """A generic function to run a validation check against the database."""
-    console.print(f"[*] Running check: [bold cyan]{title}[/bold cyan]...", end="")
+    """
+    A generic function to run a validation check against the database.
+    """
+
+    console.print(f"🔎 Running check: [bold cyan]{title}[/bold cyan]...", end="")
     cursor.execute(query)
     result = cursor.fetchall()
 
     if failure_condition(result):
-        console.print(" [bold red]FAILED[/bold red]")
-        console.print(f"    Reason: {failure_message}")
+        console.print(" [bold red]❌ FAILED[/bold red]")
+        console.print(f"    💬 Reason: {failure_message}")
         if result and result[0]:
             console.print(f"    Result: {result}")
         return False
     else:
-        console.print(" [bold green]PASSED[/bold green]")
+        console.print(" [bold green]✅ PASSED[/bold green]")
         return True
 
 
-def display_summary_stats(cursor: psycopg.Cursor, console: Console) -> None:
-    """Displays a summary of row counts for key tables."""
-    console.print("\n[bold blue]--- Database Summary Statistics ---[/bold blue]")
+def display_summary_stats(cursor: Cursor, console: Console) -> None:
+    """
+    Displays a summary of row counts for key tables.
+    """
+    console.rule()
+    console.print("\n[bold blue]📊 Database Summary Statistics[/bold blue]\n")
     stats_table = Table(title="Table Row Counts")
     stats_table.add_column("Table Name", style="cyan")
     stats_table.add_column("Row Count", style="magenta", justify="right")
@@ -78,26 +87,33 @@ def display_summary_stats(cursor: psycopg.Cursor, console: Console) -> None:
 
     for table in tables_to_check:
         cursor.execute(f"SELECT COUNT(*) FROM {table};")
-        count = cursor.fetchone()[0]
+        row = cursor.fetchone()
+        if row is not None:
+            count = row[0]
+        else:
+            count = 0
         stats_table.add_row(table, f"{count:,}")
 
     console.print(stats_table)
 
 
 def main() -> None:
-    """Main function to orchestrate all database sanity checks."""
+    """
+    Main function to orchestrate all database sanity checks.
+    """
+
     script_dir = pathlib.Path(__file__).resolve().parent
     dotenv_path = script_dir.parent / ".env"
     load_dotenv(dotenv_path=dotenv_path)
 
     console = Console()
-    console.print("\n[bold blue]Running Database Sanity Checks...[/bold blue]")
-    conn = None
+    console.print("\n[bold blue]🧪 Running Database Sanity Checks...[/bold blue]")
+    connection = None
     all_checks_passed = True
     try:
-        conn = get_db_connection(console)
-        with conn.cursor() as cursor:
-            # Critical checks...
+        connection = get_db_connection(console)
+        with connection.cursor() as cursor:
+            # critical checks...
             if not run_check(
                 cursor,
                 console,
@@ -144,26 +160,26 @@ def main() -> None:
             ):
                 all_checks_passed = False
 
-            # --- Summary ---
+            # summary
             if all_checks_passed:
                 console.print(
-                    "\n[bold green]✓ All critical sanity checks passed.[/bold green]"
+                    "\n[bold green]🎉 All critical sanity checks passed.[/bold green]\n"
                 )
                 display_summary_stats(cursor, console)
             else:
                 console.print(
-                    "\n[bold red]✗ One or more critical sanity checks failed.[/bold red]"
+                    "\n[bold red]❌ One or more critical sanity checks failed.[/bold red]"
                 )
                 sys.exit(1)
 
-    except psycopg.Error as e:
+    except psycopg.Error as error:
         console.print(
-            f"\n[bold red]An unexpected database error occurred: {e}[/bold red]"
+            f"\n[bold red]💥 An unexpected database error occurred: {error}[/bold red]"
         )
         sys.exit(1)
     finally:
-        if conn:
-            conn.close()
+        if connection:
+            connection.close()
 
 
 if __name__ == "__main__":

@@ -67,8 +67,6 @@ ignore = [
 "**/tests/*" = ["D", "S", "ANN"]
 # - disable docstring/type/security rules in lambda
 "**/lambda/*" = ["D", "S", "ANN"]
-# - disable type annotation rules in scripts
-"**/scripts/*" = ["ANN"]
 # - allow missing docstrings in __init__
 "__init__.py" = ["D"]
 
@@ -79,9 +77,9 @@ convention = "google"
 # import configuration
 [tool.ruff.lint.isort]
 # - project-specific imports
-known-first-party = ["app"]
+known-first-party = ["app", "pipeline"]
 # - key third-party imports
-known-third-party = ["fastapi", "pydantic", "starlette"]
+known-third-party = ["fastapi", "pydantic", "starlette", "psycopg"]
 
 # keep runtime type annotations
 [tool.ruff.lint.pyupgrade]
@@ -89,7 +87,7 @@ keep-runtime-typing = true
 
 # mypy type checking
 [tool.mypy]
-files = ["app/**/*.py"]
+files = ["app/**/*.py", "database/pipeline/**/*.py", "database/scripts/**/*.py"]
 
 # centralize all pytest configration
 # * where python unit tests are located

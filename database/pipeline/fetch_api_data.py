@@ -66,7 +66,7 @@ def run_fetch_pipeline(
     BATCH_SIZE = 250
 
     file_handlers = {}
-    record_counts = defaultdict(int)
+    record_counts: defaultdict[str, int] = defaultdict(int)
     ignored_count = 0
 
     try:
