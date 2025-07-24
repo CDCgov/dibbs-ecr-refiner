@@ -229,8 +229,8 @@ def test_get_reportable_conditions_empty_rr11() -> None:
         </ClinicalDocument>
     """)
 
-    result: list[dict[str, str]] | None = get_reportable_conditions(root)
-    assert result is None
+    result = get_reportable_conditions(root)
+    assert result == []
 
 
 @pytest.mark.parametrize(

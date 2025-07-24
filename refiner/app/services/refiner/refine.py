@@ -108,7 +108,7 @@ def validate_sections_to_include(
     return sections
 
 
-def get_reportable_conditions(root: _Element) -> list[ReportableCondition] | None:
+def get_reportable_conditions(root: _Element) -> list[ReportableCondition]:
     """
     Get reportable conditions from the Report Summary section.
 
@@ -124,7 +124,7 @@ def get_reportable_conditions(root: _Element) -> list[ReportableCondition] | Non
         root: The root element of the XML document to parse.
 
     Returns:
-        list[dict[str, str]] | None: List of reportable conditions or None if none found.
+        list[ReportableCondition] | None: List of reportable conditions.
         Each condition is a dict with 'code' and 'displayName' keys.
 
     Raises:
@@ -223,7 +223,7 @@ def get_reportable_conditions(root: _Element) -> list[ReportableCondition] | Non
             details={"xpath_error": str(e)},
         )
 
-    return conditions if conditions else None
+    return conditions
 
 
 class ProcessedRR(TypedDict):
