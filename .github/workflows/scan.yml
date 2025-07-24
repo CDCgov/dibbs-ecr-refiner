@@ -1,0 +1,20 @@
+name: Scan Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to scan"
+        required: false
+        default: "latest"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test step
+        run: echo "Scanning workflow is working!"
