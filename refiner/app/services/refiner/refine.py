@@ -1112,7 +1112,10 @@ class RefinedDocument:
 
 
 def refine_sync(
-    condition_specific_xml_pair: XMLFiles, db: DatabaseConnection
+    condition_specific_xml_pair: XMLFiles,
+    db: DatabaseConnection,
+    additional_condition_codes: str | None = None,
+    sections_to_include: list[str] | None = None,
 ) -> list[RefinedDocument]:
     """
     (Primarily for use in AWS Lambda) Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
@@ -1120,6 +1123,9 @@ def refine_sync(
     Args:
         condition_specific_xml_pair (XMLFiles): an eICR/RR pair
         db: Established DB connection to use
+        additional_condition_codes: Codes to include regardless of whether
+            they're discovered in the RR or not
+        sections_to_include: list of section codes to include, or None
 
     Returns:
         list[dict[str, str]]: condition code is the key, refined eICR document is the value
@@ -1141,10 +1147,16 @@ def refine_sync(
             "xml_files"
         ]  # Each pair contains a distinct XMLFiles instance.
 
+        # Combine codes found in the RR + additional codes
+        condition_codes = (
+            f"{condition['code']}," + additional_condition_codes
+            if additional_condition_codes is not None
+            else condition["code"]
+        )
+
         # Generate xpaths based on condition codes
-        condition_code = condition["code"]
         processed_groupers = get_processed_groupers_from_condition_codes(
-            condition_code, db
+            condition_codes, db
         )
         condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
 
@@ -1152,6 +1164,7 @@ def refine_sync(
         refined_eicr = refine_eicr(
             xml_files=condition_specific_xml_pair,
             condition_codes_xpath=condition_codes_xpath,
+            sections_to_include=sections_to_include,
         )
 
         refined_eicrs.append(
