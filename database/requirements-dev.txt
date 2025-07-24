@@ -2,6 +2,9 @@ pre-commit
 pytest
 pytest-asyncio
 pytest-cov
+requests
+rich
 ruff==0.12.4
 testcontainers[compose]>=3.7.1
+types-requests
 mypy==1.17.0
