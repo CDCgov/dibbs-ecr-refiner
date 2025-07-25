@@ -13,9 +13,6 @@ import uuid
 
 import boto3
 
-# from ..core.models.types import XMLFiles
-# from ..services.refine import build_condition_eicr_pairs, process_rr, refine_eicr
-
 # Initialize the logger
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -23,6 +20,9 @@ logger.setLevel("INFO")
 input_prefix = os.environ.get("REFINER_INPUT_PREFIX") or "RefinerInput"
 output_prefix = os.environ.get("REFINER_OUTPUT_PREFIX") or "RefinerOutput"
 complete_prefix = os.environ.get("REFINER_COMPLETE_PREFIX") or "RefinerComplete"
+
+# WIP DB connection
+# db = DatabaseConnection(db_url="postgresql://postgres:refiner@db:5432/refiner")
 
 
 def lambda_handler(event, context):
@@ -66,10 +66,12 @@ def lambda_handler(event, context):
 
             # Process the EICR and RR using the refiner
             # NOTE: Need a database for this to work
-            # refined_eicr_docs = run_refinement_process(eicr=eicr, rr=rr)
+            # xml_files = XMLFiles(eicr=eicr, rr=rr)
+            # refined_eicr_docs = refine_sync(original_xml=xml_files, db=db)
+            refined_eicr_docs = [eicr, rr]
 
             # Sample data until we have database connectivity
-            refined_eicr_docs = [eicr, rr]
+            # refined_eicr_docs = [eicr, rr]
 
             output_s3_paths = []
             # Upload the output files to S3
@@ -103,47 +105,3 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f"Error processing: {str(e)}")
         raise
-
-
-# def run_refinement_process(eicr: str, rr: str) -> list[str]:
-#     """
-#     Process the RR for reportable conditions, create XML file pairs per condition,
-#     and run the refiner against all files. Returns a list of refined eICR XML strings.
-
-#     Args:
-#         eicr (str): The eICR as an XML string
-#         rr (str): The RR as an XML string
-
-#     Returns:
-#         list[str]: XML for each refined eICR
-#     """
-#     # Create XMLFiles from pair
-#     original_xml_files = XMLFiles(eicr=eicr, rr=rr)
-
-#     # Process the RR to get reportable conditions
-#     rr_results = process_rr(original_xml_files)
-#     reportable_conditions = rr_results["reportable_conditions"]
-
-#     # create condition-eICR pairs with XMLFiles objects
-#     condition_eicr_pairs = build_condition_eicr_pairs(
-#         original_xml_files, reportable_conditions
-#     )
-
-#     # Create separate XML file pairs per condition and run the refinement process
-#     refined_eicr_docs = []
-#     for pair in condition_eicr_pairs:
-#         condition = pair["reportable_condition"]
-#         xml_files = pair[
-#             "xml_files"
-#         ]  # Each pair contains a distinct XMLFiles instance.
-
-#         # refine the eICR for this specific condition code.
-#         refined_eicr = refine_eicr(
-#             xml_files=xml_files,
-#             condition_codes=condition["code"],
-#         )
-
-#         # Add refined eICR XML doc to the list
-#         refined_eicr_docs.append(refined_eicr)
-
-#     return refined_eicr_docs
