@@ -4,11 +4,13 @@ import pytest
 from lxml import etree
 from lxml.etree import _Element
 
+from app.core.config import ENVIRONMENT
 from app.core.exceptions import (
     StructureValidationError,
     XMLParsingError,
 )
 from app.core.models.types import XMLFiles
+from app.db.connection import DatabaseConnection
 from app.services.refiner.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
@@ -23,9 +25,9 @@ from app.services.refiner.refine import (
     _preserve_relevant_entries_and_generate_summary,
     _process_section,
     _prune_unwanted_siblings,
-    _refine_eicr,
     build_condition_eicr_pairs,
     get_reportable_conditions,
+    refine_sync,
 )
 
 from .conftest import NAMESPACES
@@ -252,13 +254,16 @@ def test_refine_eicr(
     Test eICR refinement with required condition_codes.
     """
 
-    refined_output: str = _refine_eicr(
-        xml_files=sample_xml_files,
+    refined_output = refine_sync(
+        original_xml=sample_xml_files,
+        db=DatabaseConnection(db_url=ENVIRONMENT["DB_URL"]),
         sections_to_include=sections_to_include,
-        condition_codes_xpath=condition_codes,
+        additional_condition_codes=condition_codes,
     )
 
-    refined_doc: _Element = etree.fromstring(refined_output)
+    assert len(refined_output) == 1
+
+    refined_doc: _Element = etree.fromstring(refined_output[0].refined_eicr)
     refined_structured_body: _Element | None = refined_doc.find(
         path=".//{urn:hl7-org:v3}structuredBody", namespaces={"hl7": "urn:hl7-org:v3"}
     )
