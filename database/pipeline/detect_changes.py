@@ -35,9 +35,19 @@ def calculate_sha256(filepath: Path) -> str:
 
     Returns:
         The hex digest of the file's SHA256 hash.
+
+    Note:
+        The file is read in chunks (8192 bytes at a time) rather than all at once.
+        This allows the function to handle large files efficiently without using
+        excessive memory. The chunk size (8192) is a commonly used buffer size
+        for file operations and does not affect the hash result. It is *not* a
+        salt or security parameter—it's just a performance consideration.
     """
 
     sha256 = hashlib.sha256()
+    # read the file in 8 KB chunks
+    # * this is for memory efficiency—especially for large files
+    # * the hash is computed over the file's actual contents; no salt is involved
     with open(filepath, "rb") as file:
         while chunk := file.read(8192):
             sha256.update(chunk)
