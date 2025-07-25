@@ -252,7 +252,7 @@ def process_rr(xml_files: XMLFiles) -> ProcessedRR:
 
     try:
         rr_root = xml_files.parse_rr()
-        return {"": get_reportable_conditions(rr_root)}
+        return {"reportable_conditions": get_reportable_conditions(rr_root)}
     except etree.XMLSyntaxError as e:
         raise XMLParsingError(
             message="Failed to parse RR document", details={"error": str(e)}
