@@ -1,7 +1,7 @@
-import psycopg
+from psycopg import Cursor
 
 
-def test_database_connection(db_cursor: psycopg.Cursor):
+def test_database_connection(db_cursor: Cursor) -> None:
     """
     Tests that a connection to the database can be successfully established.
     """
@@ -10,7 +10,7 @@ def test_database_connection(db_cursor: psycopg.Cursor):
     assert not db_cursor.closed
 
 
-def test_tables_exist(db_cursor: psycopg.Cursor):
+def test_tables_exist(db_cursor: Cursor) -> None:
     """
     Tests that the core tables have been created by the schema scripts.
     """

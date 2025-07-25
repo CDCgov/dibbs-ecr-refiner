@@ -79,9 +79,9 @@ convention = "google"
 # import configuration
 [tool.ruff.lint.isort]
 # - project-specific imports
-known-first-party = ["app"]
+known-first-party = ["app", "pipeline"]
 # - key third-party imports
-known-third-party = ["fastapi", "pydantic", "starlette"]
+known-third-party = ["fastapi", "pydantic", "starlette", "psycopg"]
 
 # keep runtime type annotations
 [tool.ruff.lint.pyupgrade]
@@ -89,4 +89,20 @@ keep-runtime-typing = true
 
 # mypy type checking
 [tool.mypy]
-files = ["app/**/*.py"]
+files = [
+  "app/**/*.py",
+  # turn these on after we've moved the database out of refiner/
+  # "database/pipeline/**/*.py",
+  # "database/scripts/**/*.py"
+]
+
+# centralize all pytest configration
+# * where python unit tests are located
+# * make sure integration tests that use testcontainers have custom markers
+[tool.pytest.ini_options]
+testpaths = ["database/tests", "refiner/tests"]
+addopts = "--strict-markers -v"
+asyncio_mode = "strict"
+markers = [
+  "integration: marks tests as integration (deselect with '-m \"not integration\"')",
+]
