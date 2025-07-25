@@ -23,6 +23,13 @@
   .border-thin {
     @apply border-1;
   }
+
+  .button-enabled {
+    @apply !bg-violet-warm-60 hover:!bg-violet-warm-70 !text-white !cursor-pointer;
+  }
+  .button-disabled {
+    @apply !bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed;
+  }
 }
 
 @theme {
@@ -57,6 +64,10 @@
   --color-gray-cool-70: #3d4551;
   --color-gray-cool-80: #2d2e2f;
   --color-gray-cool-90: #1c1d1f;
+
+  --color-disabled-light: #dfe1e2;
+  --color-disabled-dark: #565c65;
+  --color-disabled: #a9aeb1;
 
   --color-red-300: #e41d3d;
 
