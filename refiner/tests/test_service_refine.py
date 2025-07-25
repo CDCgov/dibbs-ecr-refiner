@@ -299,6 +299,7 @@ def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
     for i, pair in enumerate(pairs):
         reportable_condition, xml_files = pair
         assert reportable_condition is not None
+        assert reportable_condition == reportable_conditions[i]
         assert xml_files is not None
 
         # verify the xml_files is a proper XMLFiles object
