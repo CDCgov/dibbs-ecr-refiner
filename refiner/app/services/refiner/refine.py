@@ -126,8 +126,7 @@ def get_reportable_conditions(root: _Element) -> list[ReportableCondition]:
         root: The root element of the XML document to parse.
 
     Returns:
-        list[ReportableCondition] | None: List of reportable conditions.
-        Each condition is a dict with 'code' and 'displayName' keys.
+        list[ReportableCondition]
 
     Raises:
         StructureValidationError: If RR11 Coded Information Organizer is missing (invalid RR)
