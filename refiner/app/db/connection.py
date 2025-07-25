@@ -13,8 +13,6 @@ from app.core.exceptions import (
     ResourceNotFoundError,
 )
 
-from ..core.config import ENVIRONMENT
-
 
 class DatabaseConnection:
     """
@@ -90,18 +88,3 @@ class DatabaseConnection:
         except DatabaseConnectionError:
             # re-raise database connection errors
             raise
-
-
-# Don't use this directly, call the function below
-# TODO: set up the connection in Lambda instead
-_db_connection = DatabaseConnection(ENVIRONMENT["DB_URL"])
-
-
-def get_db_connection() -> DatabaseConnection:
-    """
-    Gets an established, sync database connection.
-
-    Returns:
-        DatabaseConnection: The established connection
-    """
-    return _db_connection
