@@ -252,7 +252,7 @@ def process_rr(xml_files: XMLFiles) -> ProcessedRR:
 
     try:
         rr_root = xml_files.parse_rr()
-        return {"reportable_conditions": get_reportable_conditions(rr_root)}
+        return {"": get_reportable_conditions(rr_root)}
     except etree.XMLSyntaxError as e:
         raise XMLParsingError(
             message="Failed to parse RR document", details={"error": str(e)}
@@ -268,7 +268,6 @@ def _refine_eicr(
     Refine an eICR XML document by processing its sections.
 
     Processing behavior:
-        - condition_codes **must** be provided; if missing or empty, the function raises ConditionCodeError.
         - If sections_to_include is provided, those sections are preserved unmodified.
         - For all other sections, only entries matching the clinical codes related to the given condition_codes are kept.
         - If no matching entries are found in a section, it is replaced with a minimal section and marked with nullFlavor="NI".
@@ -276,16 +275,12 @@ def _refine_eicr(
     Args:
         xml_files: The XMLFiles container with the eICR document to refine.
         sections_to_include: Optional list of section LOINC codes to preserve.
-        condition_codes_xpath: Comma-separated string of SNOMED condition codes
-            to use for filtering sections in an eICR. Each code will be looked up in the
-            groupers table in the terminology database to find related clinical codes.
-            **This parameter is required. If not provided, a ConditionCodeError is raised.**
+        condition_codes_xpath: The xpath of the condition codes
 
     Returns:
         str: The refined eICR XML document as a string.
 
     Raises:
-        ConditionCodeError: If no condition_codes are provided.
         SectionValidationError: If any section code is invalid.
         XMLValidationError: If the XML is invalid.
         StructureValidationError: If the document structure is invalid.
@@ -354,8 +349,8 @@ def build_condition_eicr_pairs(
         reportable_conditions: List of reportable condition objects with 'code' keys.
 
     Returns:
-        list[dict[str, Any]]: A list of dictionaries, each containing a
-                             `reportable_condition` and `xml_files`.
+        list[tuple[ReportableCondition, XMLFiles]]: A list of tuples containing a ReportableCondition
+        and XMLFiles pair.
     """
 
     condition_eicr_pairs = []
@@ -1141,14 +1136,14 @@ def refine_sync(
     (Primarily for use in AWS Lambda) Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
 
     Args:
-        original_xml (XMLFiles): an eICR/RR pair
-        db: Established DB connection to use
+        original_xml: an eICR/RR pair
+        db: Established sync DB connection to use
         additional_condition_codes: Codes to include regardless of whether
             they're discovered in the RR or not
         sections_to_include: list of section codes to include, or None
 
     Returns:
-        list[dict[str, str]]: condition code is the key, refined eICR document is the value
+        list[RefinedDocument]: A list of `RefinedDocument`s
     """
 
     # Process RR and find conditions
@@ -1199,7 +1194,7 @@ async def refine_async(
     sections_to_include: list[str] | None = None,
 ) -> list[RefinedDocument]:
     """
-    Async version of `refine_sync`.
+    Async version of `refine_sync`. This should be called when refining documents in FastAPI handlers.
     """
     # Process RR and find conditions
     rr_results = process_rr(original_xml)
