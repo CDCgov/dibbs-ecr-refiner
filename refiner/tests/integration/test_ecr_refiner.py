@@ -133,21 +133,21 @@ async def test_zip_upload_mon_mothma_two_conditions(
     # parse the json response from the service
     response_json = response.json()
 
-    conditions_resp = response_json["conditions"]
+    conditions = response_json["conditions"]
     # assertions on the structure and content of the json response ---
-    assert isinstance(conditions_resp, list), (
-        f"[{current_test_name}] Response should be a JSON list, got {type(response_json)}"
+    assert isinstance(conditions, list), (
+        f"[{current_test_name}] Response should be a JSON list, got {type(conditions)}"
     )
     # verify that the number of returned eICR items matches the number of expected conditions
-    assert len(conditions_resp) == len(EXPECTED_CONDITIONS), (
-        f"[{current_test_name}] Expected {len(EXPECTED_CONDITIONS)} refined eICRs, but got {len(response_json)}. Response: {response_json}"
+    assert len(conditions) == len(EXPECTED_CONDITIONS), (
+        f"[{current_test_name}] Expected {len(EXPECTED_CONDITIONS)} refined eICRs, but got {len(conditions)}. Response: {conditions}"
     )
 
     # keep track of the condition codes found in the response to ensure all expected ones are present
     found_condition_codes = set()
 
     # iterate through each eICR item returned in the json array
-    for i, eicr_item in enumerate(conditions_resp):
+    for i, eicr_item in enumerate(conditions):
         item_label = f"eICR item #{i + 1}"
         print(f"\n[{current_test_name}] Processing {item_label} from response...")
 
