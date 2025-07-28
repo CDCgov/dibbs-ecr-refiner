@@ -15,27 +15,27 @@ export function Configurations() {
       {
         name: 'Chlamydia trachomatis infection',
         status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'chlamydia-id',
       },
       {
         name: 'Disease caused by Enterovirus',
         status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'enterovirus-id',
       },
       {
         name: 'Human immunodeficiency virus infection (HIV)',
         status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'hiv-id',
       },
       {
         name: 'Syphilis',
         status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'syphilis-id',
       },
       {
         name: 'Viral hepatitis, type A',
         status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'viral-hep-id',
       },
     ],
   };
@@ -52,9 +52,9 @@ export function Configurations() {
       <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
         <Search
           placeholder="Search configurations"
-          id={'search-configurations'}
-          name={'search'}
-          type={'text'}
+          id="search-configurations"
+          name="search"
+          type="text"
         />
         <Button className="m-0!">Set up new condition</Button>
       </div>

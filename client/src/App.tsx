@@ -5,6 +5,7 @@ import NotFound from './pages/NotFound';
 import { Layout } from './components/Layout';
 import { useLogin } from './hooks/Login';
 import { Home } from './pages/Home';
+import ConfigurationDetail from './pages/ConfigurationDetail';
 
 function App() {
   const [user, isLoading] = useLogin();
@@ -15,15 +16,16 @@ function App() {
   if (!user)
     return (
       <Routes>
-        <Route index element={<Home />} />
+        <Route path="/" index element={<Home />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     );
   return (
     <Layout>
       <Routes>
-        <Route index element={<Configurations />} />
-        <Route path="testing" element={<Testing />} />
+        <Route path="/" index element={<Configurations />} />
+        <Route path="/configurations/:id" element={<ConfigurationDetail />} />
+        <Route path="/testing" element={<Testing />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
