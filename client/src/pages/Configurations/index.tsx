@@ -15,27 +15,27 @@ export function Configurations() {
       {
         name: 'Chlamydia trachomatis infection',
         status: ConfigurationStatus.on,
-        id: 'chlamydia-id',
+        id: 'chlamydia-config-id',
       },
       {
         name: 'Disease caused by Enterovirus',
         status: ConfigurationStatus.off,
-        id: 'enterovirus-id',
+        id: 'enterovirus-config-id',
       },
       {
         name: 'Human immunodeficiency virus infection (HIV)',
         status: ConfigurationStatus.off,
-        id: 'hiv-id',
+        id: 'hiv-config-id',
       },
       {
         name: 'Syphilis',
         status: ConfigurationStatus.on,
-        id: 'syphilis-id',
+        id: 'syphilis-config-id',
       },
       {
         name: 'Viral hepatitis, type A',
         status: ConfigurationStatus.on,
-        id: 'viral-hep-id',
+        id: 'viral-hep-config-id',
       },
     ],
   };

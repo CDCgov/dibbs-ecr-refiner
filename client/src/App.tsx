@@ -5,7 +5,9 @@ import NotFound from './pages/NotFound';
 import { Layout } from './components/Layout';
 import { useLogin } from './hooks/Login';
 import { Home } from './pages/Home';
-import ConfigurationDetail from './pages/ConfigurationDetail';
+import ConfigBuild from './pages/Configurations/ConfigBuild';
+import ConfigTest from './pages/Configurations/ConfigTest';
+import ConfigActivate from './pages/Configurations/ConfigActivate';
 
 function App() {
   const [user, isLoading] = useLogin();
@@ -27,7 +29,12 @@ function App() {
         <Route path="/" element={<Navigate to="/configurations" replace />} />
 
         <Route path="/configurations" element={<Configurations />} />
-        <Route path="/configurations/:id" element={<ConfigurationDetail />} />
+        <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+        <Route path="/configurations/:id/test" element={<ConfigTest />} />
+        <Route
+          path="/configurations/:id/activate"
+          element={<ConfigActivate />}
+        />
         <Route path="/testing" element={<Testing />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
