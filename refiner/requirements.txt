@@ -1,4 +1,4 @@
-Authlib==1.6.0
+Authlib==1.6.1
 chardet
 fastapi>=0.109.1
 httpx
