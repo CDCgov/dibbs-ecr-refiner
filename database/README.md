@@ -1,86 +1,178 @@
-# Database for DIBBs eCR Refiner
+# Database for the DIBBs eCR Refiner
 
-This directory contains everything needed to create and test a self-contained PostgreSQL database environment for the DIBBS eCR Refiner.
+This directory contains the complete, self-contained PostgreSQL database environment for the DIBBS eCR Refiner. It includes the schema, data pipeline, seeding scripts, and Docker configuration required to build, populate, and run the database.
 
-The database is designed with a trigger-based automation pipeline to pre-calculate and cache refined code sets, ensuring high performance for the main application.
+## Directory Structure
+
+The project is organized into the following key directories:
+
+- `data/`: Stores the raw JSON ValueSet files downloaded from the TES API source. This directory is populated by the `pipeline` scripts.
+- `docker-compose.yaml` & `Dockerfile`: Defines the Docker environment for building and running the PostgreSQL container.
+- `functions/`: Contains SQL function definitions that are applied to the database.
+- `pipeline/`: Python scripts responsible for fetching the latest TES data (ValueSets) from the source API and saving them as flat files in the `data/` directory.
+- `schema/`: Contains the core SQL `CREATE TABLE` statements that define the database structure.
+- `scripts/`: Contains the Python scripts for orchestrating the database setup, including `database_seeding.py` for the initial data load and `check_seeded_db.py` for verification/sanity check.
+- `tests/`: Contains integration and unit tests for the database logic and pipeline scripts.
+- `triggers/`: Contains the SQL trigger definitions that handle ongoing, incremental data updates after the initial seed.
+
+### Naming conventions
+
+To ensure that we have an extensible structure in place for naming as the database grows into a mature production PostgrSQL database, we are using the following as a classification schema for naming and organizing the `.sql` files.
+
+| Series | Range   | Directory   | Purpose/Examples                          | Example File                                      |
+|--------|---------|-------------|-------------------------------------------|--------------------------------------------------|
+| **100s**   | `100–199` | `schema`      | Table/view definitions, indexes           | `100-schema-base.sql`                            |
+| **200s**   | `200–299` | `functions`   | SQL/stored functions, procedures          | `200-functions-aggregated-child-codes.sql`       |
+| **210s**   | `210–219` | `functions`   | Additional or specialized functions       | `210-functions-get-all-codes-from-grouper.sql`   |
+| **300s**   | `300–399` | `triggers`    | Triggers, trigger helpers                 | `300-triggers-aggregate-base-groupers.sql`       |
+| **310s**   | `310–319` | `triggers`    | Additional/specialized triggers           | `310-triggers-update-refinement-cache.sql`       |
+| **400s**   | `400–499` | (future)    | Initial/reference data, fixtures          | `400-data-countries.sql` (future)                |
+| **500s**   | `500–599` | (future)    | Migrations                                | `500-migration-add-user-profile.sql` (future)    |
+| **600s**   | `600–699` | (future)    | Permissions, roles, grants                | `600-permissions-readonly.sql` (future)          |
+| **700s**   | `700–799` | (future)    | Extensions                                | `700-extension-pg_stat_statements.sql` (future)  |
+| **800s**   | `800–899` | (future)    | Monitoring, logging                       | `800-logging-user-actions.sql` (future)          |
+| **900s**   | `900–999` | (future)    | Misc, experiments, patches                | `900-experimental-alter-table.sql` (future)      |
+
+### Numbering Gap Policy
+
+To allow for future growth and the need to insert new scripts between existing ones, we use numeric prefixes with the following gap sizes:
+- **Schema files (`100–199`):** increment by 10 (e.g., `100`, `110`, `120`), since schema changes are frequent during active development
+- **Functions (`200–299`):** increment by 5 (e.g., `200`, `205`, `210`), as functions are added more incrementally
+- **Triggers (`300–399`):** increment by 10 (e.g., `300`, `310`, `320`), allowing for future audit or logic triggers.
+- **Other categories (`400`+):** increment by 10 until we have a clear policy in place
+
+> ![NOTE]
+> If you need to insert more than the available room, renaming is always possible, but the gap policy should minimize such needs.
 
 ## Core Concepts
 
-The data pipeline works in two stages, automated by database triggers:
+The database is designed to pre-calculate and cache refined code sets, ensuring high performance for the main Refiner application. While database triggers are in place to handle incremental updates during normal operation, the initial setup is performed by a dedicated seeding script for reliability and speed.
 
-1.  **Aggregation (Trigger 1):** When child `tes_reporting_spec_groupers` are linked to a parent `tes_condition_grouper` (or when the data in a child grouper is updated), this trigger fires. It aggregates all unique codes (LOINC, SNOMED, etc.) from all children into the parent's `jsonb` columns.
+### The `refinement_cache` Table
 
-2.  **Refinement & Caching (Trigger 2):** This is the final and most critical step. The trigger populates the `refinement_cache` by combining the aggregated "base" codes from a parent grouper with the jurisdiction-specific codes from a user's `configuration`. This trigger is designed to fire in two distinct scenarios:
-    *   **Directly**, when a user creates, updates, or deletes a record in the `configurations` table.
-    *   **Indirectly**, when Trigger 1 updates a parent `tes_condition_grouper`. This change cascades, causing Trigger 2 to re-evaluate and update the cache for every single configuration linked to that parent.
+The primary goal of this database is to populate the `refinement_cache` table. To get a single row in this table, you need a complete, unbroken chain of five distinct records across five different tables. The cache generation process is driven entirely by the `configurations` table.
 
-## Prerequisites
+Here are the five essential ingredients, in logical order:
+
+1. **A "Parent" Grouper**: A record in `tes_condition_groupers`.
+  * **What it is**: A broad category of a condition (e.g., "COVID-19"). It contains all of the RS Grouper ValueSets that are referenced by the parent Condition Grouper.
+  * **Why it's needed**: This is the foundational set of codes that will give us the right context to start as our "blank slate" in a Configuration.
+2. **A "Child" Grouper**: A record in `tes_reporting_spec_groupers`.
+  * **What it is**: The RS Grouper matches 1:1 with the SNOMED code that is found both in the RR's Coded Information Organizer (`RR11`) and the codes in RCKMS used to author the condition rulesets.
+  * **Why it's needed**: The SNOMED code in the RR, in addition to the STLT's jurisdiction code, are how the Refiner will know what set of codes should be used in the refining process.
+3. **A Link**: A record in `tes_condition_grouper_references`.
+  * **What it is**: The "glue" that explicitly connects the Parent Grouper (Ingredient #1) to the Child Grouper (Ingredient #2).
+  * **Why it's needed**: Without this reference, the system has no way of knowing that the specific "Child" belongs to the broader "Parent" category. This is a part of our normalized "source of truth".
+4. **A Jurisdiction**: A record in the `jurisdictions` table.
+  * **What it is**: The entity (e.g., a state or local health department) that is applying the refinement rules.
+  * **Why it's needed**: The cache is jurisdiction-specific. This is how the Refiner will be able to work independently on AIMS to process eCR data at scale.
+5. **A Configuration**: A record in the `configurations` table.
+  * **What it is**: This is the **most critical ingredient**. It's the "activator" record that ties everything together. It explicitly states: "Jurisdiction X (Ingredient #4) wants to apply a specific set of override rules to Child Grouper Y (Ingredient #2)."
+  * **Why it's needed**: This record initiates the entire cache generation process for a specific `snomed_code` and `jurisdiction_id`. **No configuration, no cache entry**.
+
+## Local Development Workflow
+
+Follow these steps to set up and run the database environment on your local machine.
+
+### Prerequisites
 
 *   Docker and Docker Compose
-*   Python 3.10+
-*   `pip` for installing Python packages
+*   Python 3.13 & `pip`
 
-## Quickstart: Setup and Testing
+### Step 1: Install Dependencies
 
-To spin up the database and verify that the entire trigger pipeline is working correctly, follow these steps.
-
-### 1. Install Dependencies
-
-Install the required Python packages (currently just `psycopg` and `python-dotenv`).
+Install the required Python packages from the requirements files.
 
 ```bash
 pip install -r requirements.txt && pip install -r requirements-dev.txt
 ```
 
-### 2. Start the Database
+### Step 2: Fetch TES Data
 
-Use Docker Compose to build the PostgreSQL container. This command will also create the database schema and apply the triggers from the `schema/` and `triggers/` directories.
+Run the pipeline script to download the latest ValueSet data from the TES source API. This will populate the `./data` directory with the JSON files needed for seeding.
 
-```bash
-docker compose up -d
-```
-
-You can check the status of the container to ensure it's running and healthy:
+> [!NOTE]
+> You will need an API key and it will need to be in your `.env` file in order for the scripts to work.
 
 ```bash
-docker ps
+# in the database/ directory
+python pipeline/detect_changes.py
+
+# or if the above doesn't work
+python -m pipeline.detect_changes
 ```
 
-### 3. Run Unit Tests (Optional)
+### Step 3: Build and Start the Database
 
-The project includes a simple `pytest` suite that verifies a connection to the database can be established. This is a quick way to check that your environment is configured correctly after starting the container.
-
-Then, run the tests:
+Use Docker Compose to build and start the PostgreSQL container. On the first run, Docker will:
+1.  Initialize the PostgreSQL server.
+2.  Apply the schemas from `./schema/`.
+3.  Apply the functions and triggers from `./functions/` and `./triggers/`.
+4.  Execute the `./scripts/run_seeding.sh` script, which runs `database_seeding.py` to populate the database with the data from `./data`.
 
 ```bash
-pytest -vv tests
+docker compose up --build -d
 ```
 
-### 4. Run the Full Integration Test
-
-The `seed.py` script performs a full, end-to-end integration test of the data pipeline. It will:
-1.  Wipe all existing data.
-2.  Seed fictional, non-real data for jurisdictions, users, and base condition groupers.
-3.  Fire **Trigger 1** by linking the test groupers and verify the result.
-4.  Fire **Trigger 2** by creating a test user configuration and verify the cache.
-5.  Simulate an update to the base data, which re-fires the trigger chain.
-6.  Verify the cache was correctly and automatically updated after the change.
-
-Execute the script from the `database` directory:
+You can view the logs to monitor the startup and seeding process:
 
 ```bash
-python seed.py
+docker logs -f database-refiner-db-dev-1
 ```
 
-A successful run will end with the following message:
+> [!TIP]
+> You can also try the wonderful [LazyDocker](https://github.com/jesseduffield/lazydocker) tool!
+
+### Step 4: Verify the Seeded Database
+
+After the container is running and the seeding script has finished, run the `check_seeded_db.py` script. This performs a series of sanity checks to ensure the database was populated correctly.
+
+```bash
+# you can run this from database/ or database/scripts/
+python scripts/check_seeded_db.py
+```
+
+A successful run will end with the message: `🎉 All critical sanity checks passed.` and look roughly like this:
 
 ```
-🎉 Success! The cache was correctly updated after a change to the base data
+🧪 Running Database Sanity Checks...
+🔎 Running check: No Orphaned References... ✅ PASSED
+🔎 Running check: No Duplicate Condition Groupers... ✅ PASSED
+🔎 Running check: No Duplicate Reporting Spec Groupers... ✅ PASSED
+🔎 Running check: Refinement Cache Populated... ✅ PASSED
+
+🎉 All critical sanity checks passed.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+📊 Database Summary Statistics
+
+                Table Row Counts
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Table Name                       ┃ Row Count ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ tes_condition_groupers           │       419 │
+│ tes_reporting_spec_groupers      │       502 │
+│ tes_condition_grouper_references │       500 │
+│ refinement_cache                 │         1 │
+└──────────────────────────────────┴───────────┘
+
 ```
 
-### 5. Shutting Down
+### Step 5: Run Tests (Optional)
 
-To stop and remove the database container and its associated volume (deleting all data), run:
+To run the full test suite, which includes tests for the data pipeline and database logic, use `pytest`.
+
+```bash
+pytest -vv tests/
+```
+
+> [!NOTE]
+> You do not need to have the container running for the tests. We are using the `testcontainers` library to run all of our unit and integration tests.
+
+### Step 6: Shutting Down
+
+To stop and remove the database container and its associated data volume, run:
 
 ```bash
 docker compose down -v
