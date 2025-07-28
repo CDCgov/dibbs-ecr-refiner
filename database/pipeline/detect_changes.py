@@ -45,7 +45,7 @@ def calculate_sha256(filepath: Path) -> str:
     """
 
     sha256 = hashlib.sha256()
-    # read the file in 8 KB chunks
+    # read the file in 8kb chunks:
     # * this is for memory efficiency—especially for large files
     # * the hash is computed over the file's actual contents; no salt is involved
     with open(filepath, "rb") as file:

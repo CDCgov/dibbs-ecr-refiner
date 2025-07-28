@@ -6,6 +6,7 @@ from collections.abc import Callable
 import psycopg
 from dotenv import load_dotenv
 from psycopg import Connection, Cursor
+from psycopg.rows import dict_row
 from rich.console import Console
 from rich.table import Table
 
@@ -30,7 +31,7 @@ def get_db_connection(console: Console) -> Connection:
             )
 
         db_url = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
-        return psycopg.connect(db_url, autocommit=True)
+        return psycopg.connect(db_url, row_factory=dict_row, autocommit=True)
 
     except (psycopg.OperationalError, ValueError) as error:
         console.print(
@@ -72,6 +73,7 @@ def display_summary_stats(cursor: Cursor, console: Console) -> None:
     """
     Displays a summary of row counts for key tables.
     """
+
     console.rule()
     console.print("\n[bold blue]📊 Database Summary Statistics[/bold blue]\n")
     stats_table = Table(title="Table Row Counts")
@@ -89,7 +91,7 @@ def display_summary_stats(cursor: Cursor, console: Console) -> None:
         cursor.execute(f"SELECT COUNT(*) FROM {table};")
         row = cursor.fetchone()
         if row is not None:
-            count = row[0]
+            count = row["count"]
         else:
             count = 0
         stats_table.add_row(table, f"{count:,}")
@@ -117,46 +119,46 @@ def main() -> None:
             if not run_check(
                 cursor,
                 console,
-                "No Orphaned References",
-                """
+                title="No Orphaned References",
+                query="""
                     SELECT COUNT(*)
                     FROM tes_condition_grouper_references ref
                     LEFT JOIN tes_reporting_spec_groupers child
                     ON ref.child_grouper_url = child.canonical_url AND ref.child_grouper_version = child.version
                     WHERE child.canonical_url IS NULL;
                 """,
-                lambda res: res[0][0] > 0,
-                "Found references pointing to non-existent child groupers.",
+                failure_condition=lambda res: res[0]["count"] > 0,
+                failure_message="Found references pointing to non-existent child groupers.",
             ):
                 all_checks_passed = False
 
             if not run_check(
                 cursor,
                 console,
-                "No Duplicate Condition Groupers",
-                "SELECT COUNT(*) FROM (SELECT canonical_url, version, COUNT(*) FROM tes_condition_groupers GROUP BY canonical_url, version HAVING COUNT(*) > 1) as duplicates;",
-                lambda res: res[0][0] > 0,
-                "Found duplicate entries in tes_condition_groupers.",
+                title="No Duplicate Condition Groupers",
+                query="SELECT COUNT(*) FROM (SELECT canonical_url, version, COUNT(*) FROM tes_condition_groupers GROUP BY canonical_url, version HAVING COUNT(*) > 1) as duplicates;",
+                failure_condition=lambda res: res[0]["count"] > 0,
+                failure_message="Found duplicate entries in tes_condition_groupers.",
             ):
                 all_checks_passed = False
 
             if not run_check(
                 cursor,
                 console,
-                "No Duplicate Reporting Spec Groupers",
-                "SELECT COUNT(*) FROM (SELECT canonical_url, version, COUNT(*) FROM tes_reporting_spec_groupers GROUP BY canonical_url, version HAVING COUNT(*) > 1) as duplicates;",
-                lambda res: res[0][0] > 0,
-                "Found duplicate entries in tes_reporting_spec_groupers.",
+                title="No Duplicate Reporting Spec Groupers",
+                query="SELECT COUNT(*) FROM (SELECT canonical_url, version, COUNT(*) FROM tes_reporting_spec_groupers GROUP BY canonical_url, version HAVING COUNT(*) > 1) as duplicates;",
+                failure_condition=lambda res: res[0]["count"] > 0,
+                failure_message="Found duplicate entries in tes_reporting_spec_groupers.",
             ):
                 all_checks_passed = False
 
             if not run_check(
                 cursor,
                 console,
-                "Refinement Cache Populated",
-                "SELECT COUNT(*) FROM refinement_cache;",
-                lambda res: res[0][0] == 0,
-                "The refinement_cache table is empty, indicating triggers may not have fired.",
+                title="Refinement Cache Populated",
+                query="SELECT COUNT(*) FROM refinement_cache;",
+                failure_condition=lambda res: res[0]["count"] == 0,
+                failure_message="The refinement_cache table is empty, indicating triggers may not have fired.",
             ):
                 all_checks_passed = False
 
