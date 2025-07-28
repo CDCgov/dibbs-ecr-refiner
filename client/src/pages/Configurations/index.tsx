@@ -12,6 +12,7 @@ import {
   Form,
   Label,
   ComboBox,
+  ComboBoxRef,
 } from '@trussworks/react-uswds';
 import { SyntheticEvent, useRef, useState } from 'react';
 
@@ -20,37 +21,31 @@ enum ConfigurationStatus {
   off = 'off',
 }
 
+interface SelectedCondition {
+  value: string;
+  label: string;
+}
+
+interface ConfigurationsData {
+  name: string;
+  status: ConfigurationStatus;
+  id: string;
+}
+
+interface ConfigurationsColumns {
+  [key: string]: string;
+}
+
+interface ConfigurationsTable {
+  columns: ConfigurationsColumns;
+  data: ConfigurationsData[];
+}
+
 export function Configurations() {
-  const tableData = {
+  const [table, setTable] = useState<ConfigurationsTable>({
     columns: { name: 'Reportable condition', status: 'Status' },
-    data: [
-      {
-        name: 'Chlamydia trachomatis infection',
-        status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Disease caused by Enterovirus',
-        status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Human immunodeficiency virus infection (HIV)',
-        status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Syphilis',
-        status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Viral hepatitis, type A',
-        status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-    ],
-  };
+    data: [],
+  });
 
   const conditionData = {
     // TODO: Figure out what this data should look like and require using real
@@ -68,14 +63,43 @@ export function Configurations() {
   }));
 
   const modalRef = useRef<ModalRef>(null);
+  const listRef = useRef<ComboBoxRef>(null);
 
-  const [formValid, setFormValid] = useState(false);
+  const [formValid, setFormValid] = useState<boolean>(false);
+  const [condition, setCondition] = useState<SelectedCondition | undefined>(
+    undefined
+  );
 
   function handleSubmit(e: SyntheticEvent) {
-    // e.preventDefault();
+    e.preventDefault();
+    if (!condition) {
+      return;
+    }
+
+    const newData: ConfigurationsData = {
+      name: condition.label,
+      id: condition.value,
+      status: ConfigurationStatus.off,
+    };
+    setTable((prevTable) => ({
+      ...prevTable,
+      data: [...prevTable.data, newData],
+    }));
+
+    modalRef.current?.toggleModal();
+    listRef.current?.clearSelection();
   }
-  function handleChange(e: string | undefined) {
-    setFormValid(e !== undefined);
+  function handleChange(selectedValue: string | undefined) {
+    if (selectedValue) {
+      const selectedOption = conditionList.find(
+        (option) => option.value === selectedValue
+      );
+      setCondition(selectedOption);
+      setFormValid(true);
+    } else {
+      setCondition(undefined);
+      setFormValid(false);
+    }
   }
 
   return (
@@ -119,6 +143,7 @@ export function Configurations() {
               Condition
             </Label>
             <ComboBox
+              ref={listRef}
               id="new-condition"
               name="new-condition"
               options={conditionList}
@@ -136,7 +161,7 @@ export function Configurations() {
           </Form>
         </Modal>
       </div>
-      <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
+      <ConfigurationsTable columns={table.columns} data={table.data} />
     </section>
   );
 }
