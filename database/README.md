@@ -15,6 +15,35 @@ The project is organized into the following key directories:
 - `tests/`: Contains integration and unit tests for the database logic and pipeline scripts.
 - `triggers/`: Contains the SQL trigger definitions that handle ongoing, incremental data updates after the initial seed.
 
+### Naming conventions
+
+To ensure that we have an extensible structure in place for naming as the database grows into a mature production PostgrSQL database, we are using the following as a classification schema for naming and organizing the `.sql` files.
+
+| Series | Range   | Directory   | Purpose/Examples                          | Example File                                      |
+|--------|---------|-------------|-------------------------------------------|--------------------------------------------------|
+| **100s**   | `100–199` | `schema`      | Table/view definitions, indexes           | `100-schema-base.sql`                            |
+| **200s**   | `200–299` | `functions`   | SQL/stored functions, procedures          | `200-functions-aggregated-child-codes.sql`       |
+| **210s**   | `210–219` | `functions`   | Additional or specialized functions       | `210-functions-get-all-codes-from-grouper.sql`   |
+| **300s**   | `300–399` | `triggers`    | Triggers, trigger helpers                 | `300-triggers-aggregate-base-groupers.sql`       |
+| **310s**   | `310–319` | `triggers`    | Additional/specialized triggers           | `310-triggers-update-refinement-cache.sql`       |
+| **400s**   | `400–499` | (future)    | Initial/reference data, fixtures          | `400-data-countries.sql` (future)                |
+| **500s**   | `500–599` | (future)    | Migrations                                | `500-migration-add-user-profile.sql` (future)    |
+| **600s**   | `600–699` | (future)    | Permissions, roles, grants                | `600-permissions-readonly.sql` (future)          |
+| **700s**   | `700–799` | (future)    | Extensions                                | `700-extension-pg_stat_statements.sql` (future)  |
+| **800s**   | `800–899` | (future)    | Monitoring, logging                       | `800-logging-user-actions.sql` (future)          |
+| **900s**   | `900–999` | (future)    | Misc, experiments, patches                | `900-experimental-alter-table.sql` (future)      |
+
+### Numbering Gap Policy
+
+To allow for future growth and the need to insert new scripts between existing ones, we use numeric prefixes with the following gap sizes:
+- **Schema files (`100–199`):** increment by 10 (e.g., `100`, `110`, `120`), since schema changes are frequent during active development
+- **Functions (`200–299`):** increment by 5 (e.g., `200`, `205`, `210`), as functions are added more incrementally
+- **Triggers (`300–399`):** increment by 10 (e.g., `300`, `310`, `320`), allowing for future audit or logic triggers.
+- **Other categories (`400`+):** increment by 10 until we have a clear policy in place
+
+> ![NOTE]
+> If you need to insert more than the available room, renaming is always possible, but the gap policy should minimize such needs.
+
 ## Core Concepts
 
 The database is designed to pre-calculate and cache refined code sets, ensuring high performance for the main Refiner application. While database triggers are in place to handle incremental updates during normal operation, the initial setup is performed by a dedicated seeding script for reliability and speed.
