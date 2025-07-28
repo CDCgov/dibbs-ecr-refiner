@@ -139,7 +139,11 @@ export function Configurations() {
             Set up new condition
           </ModalHeading>
           <Form onSubmit={handleSubmit}>
-            <Label htmlFor="new-condition" className="!leading-6">
+            <Label
+              htmlFor="new-condition"
+              className="!leading-6"
+              data-focus="true"
+            >
               Condition
             </Label>
             <ComboBox
