@@ -68,6 +68,9 @@ Run the pipeline script to download the latest ValueSet data from the TES source
 ```bash
 # in the database/ directory
 python pipeline/detect_changes.py
+
+# or if the above doesn't work
+python -m pipeline.detect_changes
 ```
 
 ### Step 3: Build and Start the Database
@@ -100,18 +103,21 @@ After the container is running and the seeding script has finished, run the `che
 python scripts/check_seeded_db.py
 ```
 
-A successful run will end with the message: `✓ All critical sanity checks passed.` and look roughly like this:
+A successful run will end with the message: `🎉 All critical sanity checks passed.` and look roughly like this:
 
 ```
-Running Database Sanity Checks...
-[*] Running check: No Orphaned References... PASSED
-[*] Running check: No Duplicate Condition Groupers... PASSED
-[*] Running check: No Duplicate Reporting Spec Groupers... PASSED
-[*] Running check: Refinement Cache Populated... PASSED
+🧪 Running Database Sanity Checks...
+🔎 Running check: No Orphaned References... ✅ PASSED
+🔎 Running check: No Duplicate Condition Groupers... ✅ PASSED
+🔎 Running check: No Duplicate Reporting Spec Groupers... ✅ PASSED
+🔎 Running check: Refinement Cache Populated... ✅ PASSED
 
-✓ All critical sanity checks passed.
+🎉 All critical sanity checks passed.
 
---- Database Summary Statistics ---
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+📊 Database Summary Statistics
+
                 Table Row Counts
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┓
 ┃ Table Name                       ┃ Row Count ┃
