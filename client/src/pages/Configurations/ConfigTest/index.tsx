@@ -13,11 +13,11 @@ export default function ConfigTest() {
   return (
     <div>
       <NavigationContainer>
-        <Title>Name</Title>
+        <Title>Condition name</Title>
         <StepsContainer>
           <Steps configurationId={id} />
           <Button to={`/configurations/${id}/activate`}>
-            Next: Turn on Configuration
+            Next: Turn on configuration
           </Button>
         </StepsContainer>
       </NavigationContainer>

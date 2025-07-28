@@ -12,7 +12,7 @@ export default function ConfigActivate() {
   return (
     <div>
       <NavigationContainer>
-        <Title>Name</Title>
+        <Title>Condition name</Title>
         <StepsContainer>
           <Steps configurationId={id} />
         </StepsContainer>

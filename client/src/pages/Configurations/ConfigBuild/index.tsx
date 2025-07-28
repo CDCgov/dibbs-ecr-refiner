@@ -15,11 +15,11 @@ export default function ConfigBuild() {
   return (
     <div>
       <NavigationContainer>
-        <Title>Name</Title>
+        <Title>Condition name</Title>
         <StepsContainer>
           <Steps configurationId={id} />
           <Button to={`/configurations/${id}/test`}>
-            Next: Test Configuration
+            Next: Test configuration
           </Button>
         </StepsContainer>
       </NavigationContainer>
