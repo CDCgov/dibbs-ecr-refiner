@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router';
+import { Routes, Route, Navigate } from 'react-router';
 import { Configurations } from './pages/Configurations';
 import Testing from './pages/Testing';
 import NotFound from './pages/NotFound';
@@ -23,7 +23,10 @@ function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" index element={<Configurations />} />
+        {/* this is the home page for authenticated users */}
+        <Route path="/" element={<Navigate to="/configurations" replace />} />
+
+        <Route path="/configurations" element={<Configurations />} />
         <Route path="/configurations/:id" element={<ConfigurationDetail />} />
         <Route path="/testing" element={<Testing />} />
         <Route path="*" element={<NotFound />} />
