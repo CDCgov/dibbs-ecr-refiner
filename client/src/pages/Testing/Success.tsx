@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
 import { Button } from '../../components/Button';
-import XMLViewer from 'react-xml-viewer';
 import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
+import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
+import { FaColumns, FaAlignLeft } from 'react-icons/fa'; // Icons for split and inline
 
 interface SuccessProps {
   conditions: Condition[];
@@ -22,6 +23,8 @@ export function Success({
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
   );
+  const [showDiffOnly, setShowDiffOnly] = useState(false);
+  const [splitView, setSplitView] = useState(true);
 
   async function downloadFile(token: string) {
     try {
@@ -78,14 +81,16 @@ export function Success({
             ))}
           </Select>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-4 lg:flex-row">
+      </div>
+      <div className="diff-header">
+        <div className="diff-header-left">
+          <div className="diff-stats">
             {selectedCondition.stats.map((stat) => (
               <SuccessItem key={stat}>{stat}</SuccessItem>
             ))}
           </div>
           <div>
-            <div className="flex flex-col items-start gap-3">
+            <div className="diff-download">
               <Button onClick={async () => await downloadFile(downloadToken)}>
                 Download results
               </Button>
@@ -93,11 +98,49 @@ export function Success({
             </div>
           </div>
         </div>
+        <div className="diff-header-right">
+          <div className="diff-layout-group">
+            <span className="diff-label">Layout</span>
+            <button
+              onClick={() => setSplitView(true)}
+              className={`diff-layout-btn ${splitView ? 'active' : ''}`}
+            >
+              <FaColumns />
+            </button>
+            <button
+              onClick={() => setSplitView(false)}
+              className={`diff-layout-btn ${!splitView ? 'active' : ''}`}
+            >
+              <FaAlignLeft />
+            </button>
+          </div>
+          <div className="diff-toggle-group">
+            <span className="diff-label">Content</span>
+            <div className="diff-pill-group">
+              <button
+                onClick={() => setShowDiffOnly(false)}
+                className={`diff-pill ${!showDiffOnly ? 'active' : ''}`}
+              >
+                Show all
+              </button>
+              <button
+                onClick={() => setShowDiffOnly(true)}
+                className={`diff-pill ${showDiffOnly ? 'active' : ''}`}
+              >
+                Diff only
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <EicrComparison
-        unrefinedEicr={unrefinedEicr}
-        refinedEicr={selectedCondition.refined_eicr}
-        stats={selectedCondition.stats}
+      <ReactDiffViewer
+        oldValue={unrefinedEicr}
+        newValue={selectedCondition.refined_eicr}
+        splitView={splitView}
+        showDiffOnly={showDiffOnly}
+        compareMethod={DiffMethod.WORDS_WITH_SPACE}
+        leftTitle={'Original eICR'}
+        rightTitle={'Refined eICR'}
       />
     </div>
   );
@@ -118,40 +161,4 @@ function SuccessItem({ children }: SuccessItemProps) {
 
 function GreenCheck() {
   return <img className="h-6 w-6" src={SuccessSvg} alt="" />;
-}
-
-interface EicrComparisonProps {
-  unrefinedEicr: string;
-  refinedEicr: string;
-  stats: string[];
-}
-
-export function EicrComparison({
-  unrefinedEicr,
-  refinedEicr,
-}: EicrComparisonProps) {
-  return (
-    <div className="flex flex-col justify-between gap-10 xl:flex-row">
-      <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
-      <EicrText title="Refined eICR" xml={refinedEicr} />
-    </div>
-  );
-}
-
-interface EicrTextProps {
-  title: string;
-  xml: string;
-}
-
-function EicrText({ title, xml }: EicrTextProps) {
-  return (
-    <div className="mt-10 flex flex-col gap-1 xl:w-1/2">
-      <h3 className="font-public-sans mb-4 text-3xl font-bold">{title}</h3>
-      {/* There's not an easy way to apply classes directly to XMLViewer
-      so we're using Tailwind to target the child XMLViewer div instead */}
-      <div className="rounded-lg bg-white [&>div]:h-190 [&>div]:overflow-auto md:[&>div]:px-10 md:[&>div]:py-7">
-        <XMLViewer xml={xml} collapsible theme={{ commentColor: 'black' }} />
-      </div>
-    </div>
-  );
 }
