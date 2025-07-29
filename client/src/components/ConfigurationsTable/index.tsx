@@ -71,7 +71,7 @@ export function ConfigurationsTable({
                   navigate(`/configurations/${id}/build`);
                 }
               }}
-              aria-label={`View configuration ${name}`}
+              aria-label={`View configuration for ${name}`}
             >
               <th data-label={columns['name']} scope="row">
                 {name}
