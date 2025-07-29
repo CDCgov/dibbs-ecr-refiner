@@ -15,13 +15,15 @@ function App() {
     return <p>Loading...</p>;
   }
 
-  if (!user)
+  if (!user) {
     return (
       <Routes>
         <Route path="/" index element={<Home />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     );
+  }
+
   return (
     <Layout>
       <Routes>
