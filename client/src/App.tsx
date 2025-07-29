@@ -35,6 +35,7 @@ function App() {
           path="/configurations/:id/activate"
           element={<ConfigActivate />}
         />
+
         <Route path="/testing" element={<Testing />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
