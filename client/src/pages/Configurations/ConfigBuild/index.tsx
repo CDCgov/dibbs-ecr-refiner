@@ -3,7 +3,11 @@ import NotFound from '../../NotFound';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { Steps, StepsContainer } from '../Steps';
-import { NavigationContainer, SectionContainer, TitleContainer } from '../layout';
+import {
+  NavigationContainer,
+  SectionContainer,
+  TitleContainer,
+} from '../layout';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
