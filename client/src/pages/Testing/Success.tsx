@@ -61,23 +61,22 @@ export function Success({
 
   return (
     <div>
-      <Title>eCR refinement results</Title>
-      <hr className="border-blue-cool-20 mt-12 mb-12" />
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+      <div className="flex items-center">
+        <Title>eCR refinement results</Title>
+        <div className="condition-dropdown">
           <Label htmlFor="condition-select" className="text-bold">
             CONDITION:
           </Label>
           <Select
-            id="condition-select"
-            name="condition-select"
-            defaultValue={selectedCondition.code}
-            onChange={onChange}
+              id="condition-select"
+              name="condition-select"
+              defaultValue={selectedCondition.code}
+              onChange={onChange}
           >
             {conditions.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.display_name}
-              </option>
+                <option key={c.code} value={c.code}>
+                  {c.display_name}
+                </option>
             ))}
           </Select>
         </div>
@@ -141,6 +140,15 @@ export function Success({
         compareMethod={DiffMethod.WORDS_WITH_SPACE}
         leftTitle={'Original eICR'}
         rightTitle={'Refined eICR'}
+        styles={{
+          titleBlock: {
+            fontFamily: 'Public Sans, sans-serif',
+            fontSize: '16px',
+          },
+          diffContainer: {
+            borderRadius: '4px',
+          },
+        }}
       />
     </div>
   );
