@@ -3,7 +3,7 @@ import NotFound from '../../NotFound';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { Steps, StepsContainer } from '../Steps';
-import { NavigationContainer, SectionContainer } from '../layout';
+import { NavigationContainer, SectionContainer, TitleContainer } from '../layout';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
@@ -14,8 +14,10 @@ export default function ConfigBuild() {
 
   return (
     <div>
-      <NavigationContainer>
+      <TitleContainer>
         <Title>Condition name</Title>
+      </TitleContainer>
+      <NavigationContainer>
         <StepsContainer>
           <Steps configurationId={id} />
           <Button to={`/configurations/${id}/test`}>

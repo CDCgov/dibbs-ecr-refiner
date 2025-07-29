@@ -1,4 +1,8 @@
-import { NavigationContainer, SectionContainer } from '../layout';
+import {
+  NavigationContainer,
+  SectionContainer,
+  TitleContainer,
+} from '../layout';
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
 import NotFound from '../../NotFound';
@@ -12,8 +16,10 @@ export default function ConfigTest() {
 
   return (
     <div>
-      <NavigationContainer>
+      <TitleContainer>
         <Title>Condition name</Title>
+      </TitleContainer>
+      <NavigationContainer>
         <StepsContainer>
           <Steps configurationId={id} />
           <Button to={`/configurations/${id}/activate`}>

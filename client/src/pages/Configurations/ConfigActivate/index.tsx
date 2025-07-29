@@ -1,7 +1,11 @@
 import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
 import NotFound from '../../NotFound';
-import { NavigationContainer, SectionContainer } from '../layout';
+import {
+  NavigationContainer,
+  SectionContainer,
+  TitleContainer,
+} from '../layout';
 import { StepsContainer, Steps } from '../Steps';
 
 export default function ConfigActivate() {
@@ -11,8 +15,10 @@ export default function ConfigActivate() {
 
   return (
     <div>
-      <NavigationContainer>
+      <TitleContainer>
         <Title>Condition name</Title>
+      </TitleContainer>
+      <NavigationContainer>
         <StepsContainer>
           <Steps configurationId={id} />
         </StepsContainer>
