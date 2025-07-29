@@ -25,7 +25,7 @@
   }
 
   .button-enabled {
-    @apply !bg-violet-warm-60 hover:!bg-violet-warm-70 !text-white !cursor-pointer;
+    @apply !bg-violet-warm-60 hover:!bg-violet-warm-70 !cursor-pointer !text-white;
   }
   .button-disabled {
     @apply !bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed;
