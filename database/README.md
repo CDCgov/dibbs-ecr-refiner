@@ -41,7 +41,7 @@ To allow for future growth and the need to insert new scripts between existing o
 - **Triggers (`300–399`):** increment by 10 (e.g., `300`, `310`, `320`), allowing for future audit or logic triggers.
 - **Other categories (`400`+):** increment by 10 until we have a clear policy in place
 
-> ![NOTE]
+> [!NOTE]
 > If you need to insert more than the available room, renaming is always possible, but the gap policy should minimize such needs.
 
 ## Core Concepts
