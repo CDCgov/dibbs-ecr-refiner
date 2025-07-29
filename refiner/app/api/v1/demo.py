@@ -298,7 +298,7 @@ async def demo_upload(
                 {
                     "code": condition_info["code"],
                     "display_name": condition_info["displayName"],
-                    "refined_eicr": condition_refined_eicr,
+                    "refined_eicr": format.normalize_xml(condition_refined_eicr),
                     "stats": [
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
@@ -329,12 +329,6 @@ async def demo_upload(
 
         # Store the combined zip
         _update_file_store(output_file_name, output_file_path, token)
-
-        # normalize/format condition refined eicrs and unrefined eicr for cleaner diff comparison
-        for cond in conditions:
-            raw_xml = cond["refined_eicr"]
-            # normalize and overwrite (or store to a new key)
-            cond["refined_eicr"] = format.normalize_xml(raw_xml)
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
 
