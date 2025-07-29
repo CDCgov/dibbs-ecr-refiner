@@ -18,11 +18,37 @@ services:
       - ./refiner:/app
     ports:
       - "8080:8080"
+    extra_hosts:
+        - "localhost:host-gateway"
     environment:
       - PIP_ROOT_USER_ACTION=ignore
+      - ENV=local
       - DB_URL=postgresql://postgres:refiner@db:5432/refiner
+      - SESSION_SECRET_KEY=super-secret-key
+      - AUTH_PROVIDER=keycloak
+      - AUTH_CLIENT_ID=refinerclient
+      - AUTH_CLIENT_SECRET=5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
+      - AUTH_ISSUER=http://localhost:8082/realms/refiner
     logging:
       driver: "json-file"
+    depends_on:
+      - db
+      - auth
+  auth:
+    image: quay.io/keycloak/keycloak:26.3.1
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "--http-port=8082"
+      - "--hostname-strict=false"
+    ports:
+      - "8082:8082"
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_HTTP_ENABLED=true
+    volumes:
+      - ./keycloak/exports:/opt/keycloak/data/import
   db:
     image: postgres:alpine
     restart: on-failure
@@ -39,7 +65,8 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/seed-data.sql
+      - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/01-seed-data.sql
+      - ./refiner/app/db/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
       - pgdata:/var/lib/postgresql/data
 volumes:
   pgdata:
