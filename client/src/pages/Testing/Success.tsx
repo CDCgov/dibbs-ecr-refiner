@@ -68,15 +68,15 @@ export function Success({
             CONDITION:
           </Label>
           <Select
-              id="condition-select"
-              name="condition-select"
-              defaultValue={selectedCondition.code}
-              onChange={onChange}
+            id="condition-select"
+            name="condition-select"
+            defaultValue={selectedCondition.code}
+            onChange={onChange}
           >
             {conditions.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.display_name}
-                </option>
+              <option key={c.code} value={c.code}>
+                {c.display_name}
+              </option>
             ))}
           </Select>
         </div>

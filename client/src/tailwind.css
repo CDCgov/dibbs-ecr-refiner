@@ -114,7 +114,7 @@
 /* Main header container */
 .diff-header {
   @apply mb-3 flex items-center justify-between rounded-md p-3;
-  background-color: #E7F2F5;
+  background-color: #e7f2f5;
   margin-bottom: 38px;
 }
 
@@ -143,7 +143,7 @@
 
 /* Layout button group */
 .diff-layout-group {
-  @apply flex items-center gap-2 h-[38px];
+  @apply flex h-[38px] items-center gap-2;
 }
 
 .diff-layout-btn {
@@ -152,7 +152,7 @@
 
 .diff-layout-btn.active {
   @apply bg-blue-500 text-white;
-  background-color: #3A7D95;
+  background-color: #3a7d95;
 }
 
 /* Content toggle pill group */
@@ -161,7 +161,7 @@
 }
 
 .diff-pill-group {
-  @apply flex overflow-hidden rounded-full border border-blue-500 bg-white border-[4px] h-[38px];
+  @apply flex h-[38px] overflow-hidden rounded-full border border-[4px] border-blue-500 bg-white;
 }
 
 .diff-pill {
@@ -170,9 +170,9 @@
 
 .diff-pill.active {
   @apply bg-blue-500 text-white;
-  background-color: #3A7D95;
+  background-color: #3a7d95;
 }
 
 .condition-dropdown {
-  @apply flex flex-col gap-4 md:flex-row md:items-center flex items-center gap-2 ml-[24px];
+  @apply ml-[24px] flex flex-col items-center gap-2 gap-4 md:flex-row md:items-center;
 }
