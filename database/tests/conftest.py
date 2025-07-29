@@ -3,70 +3,68 @@ from pathlib import Path
 
 import psycopg
 import pytest
-from dotenv import load_dotenv
+from testcontainers.postgres import PostgresContainer
 
 
 @pytest.fixture(scope="session")
-def db_url() -> str:
+def db_connection():
     """
-    Loads the database connection URL from the .env file.
-    This is a session-scoped fixture, so it only runs once.
+    Manages the database lifecycle for the entire test session using testcontainers.
     """
 
-    env_path = Path(__file__).parent.parent / ".env"
+    database_root = Path(__file__).resolve().parent.parent
+    sql_files = [
+        *sorted(database_root.glob("schema/*.sql")),
+        *sorted(database_root.glob("functions/*.sql")),
+        *sorted(database_root.glob("triggers/*.sql")),
+    ]
 
-    # use override=True to ensure the database/.env file takes precedence
-    # over any variables that might be loaded from the root .env file
-    load_dotenv(dotenv_path=env_path, override=True)
+    print("🚀 Starting PostgreSQL container for tests...")
+    with PostgresContainer(
+        "postgres:16-alpine",
+        username=os.getenv("POSTGRES_USER", "postgres"),
+        password=os.getenv("POSTGRES_PASSWORD", "password"),
+        dbname=os.getenv("POSTGRES_DB", "test_db"),
+    ) as postgres:
+        connection_url = postgres.get_connection_url().replace("+psycopg2", "")
+        with psycopg.connect(connection_url) as connection:
+            with connection.cursor() as cursor:
+                print("🏗️  Applying database schema, functions, and triggers...")
+                for sql_file in sql_files:
+                    print(f"  -> Executing {sql_file.name}")
+                    cursor.execute(sql_file.read_text())
+                connection.commit()
+                print("✅ Database setup complete.")
 
-    db_connection_url = "postgresql://{user}:{password}@{host}:{port}/{dbname}".format(
-        user=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host="localhost",
-        port=os.getenv("POSTGRES_PORT"),
-        dbname=os.getenv("POSTGRES_DB"),
-    )
+                def get_clean_cursor():
+                    with connection.cursor() as cursor:
+                        cursor.execute("""
+                            SELECT table_name
+                            FROM information_schema.tables
+                            WHERE table_schema = 'public'
+                        """)
+                        tables = [row[0] for row in cursor.fetchall()]
 
-    return db_connection_url
+                        # only run TRUNCATE if there are tables to truncate
+                        if tables:
+                            table_list = ", ".join([f"public.{t}" for t in tables])
+                            cursor.execute(
+                                f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE;"
+                            )
+
+                        connection.commit()
+                        yield cursor
+                        connection.commit()
+
+                yield get_clean_cursor
+
+    print("\n🧹 PostgreSQL container stopped.")
 
 
 @pytest.fixture(scope="function")
-def db_cursor(db_url: str) -> psycopg.Cursor:
+def db_cursor(db_connection):
     """
-    Creates a database connection and a cursor for a single test function.
-    It also cleans up the tables after the test is done.
+    Provides a clean cursor for a single test function by calling the session-scoped generator.
     """
 
-    # tables to clear before each test run
-    tables_to_truncate = [
-        "tes_condition_grouper_references",
-        "tes_reporting_spec_groupers",
-        "tes_condition_groupers",
-        "configurations",
-        "users",
-        "jurisdictions",
-    ]
-
-    try:
-        with psycopg.connect(db_url) as conn:
-            with conn.cursor() as cur:
-                # truncate tables to ensure a clean state for the test
-                cur.execute(
-                    f"TRUNCATE {', '.join(tables_to_truncate)} RESTART IDENTITY CASCADE;"
-                )
-                conn.commit()
-
-                # yield the cursor to the test function
-                yield cur
-
-                # teardown: truncate tables again after the test
-                cur.execute(
-                    f"TRUNCATE {', '.join(tables_to_truncate)} RESTART IDENTITY CASCADE;"
-                )
-                conn.commit()
-    except psycopg.OperationalError as e:
-        pytest.fail(
-            f"Failed to connect to the database at {db_url}. "
-            f"Please ensure the Docker container is running and the .env file is correct. "
-            f"Original error: {e}"
-        )
+    yield from db_connection()
