@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
-import { Button } from '../../components/Button';
 import XMLViewer from 'react-xml-viewer';
 import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
@@ -17,35 +16,36 @@ export function Success({
   downloadToken,
   unrefinedEicr,
 }: SuccessProps) {
-  const [downloadError, setDownloadError] = useState<string>('');
+  // const [downloadError, setDownloadError] = useState<string>('');
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
   );
 
-  async function downloadFile(token: string) {
-    try {
-      const resp = await fetch(`/api/v1/demo/download/${token}`);
-      if (!resp.ok) {
-        const errorMsg = `Failed to download refined eCR with token: ${token}`;
-        setDownloadError(errorMsg);
-        throw Error(errorMsg);
-      }
 
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
+  // async function downloadFile(token: string) {
+  //   try {
+  //     const resp = await fetch(token);
+  //     if (!resp.ok) {
+  //       const errorMsg = `Failed to download refined eCR with token: ${token}`;
+  //       setDownloadError(errorMsg);
+  //       throw Error(errorMsg);
+  //     }
 
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'ecr_download.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  //     const blob = await resp.blob();
+  //     const blobUrl = URL.createObjectURL(blob);
+
+  //     const link = document.createElement('a');
+  //     link.href = blobUrl;
+  //     link.download = 'ecr_download.zip';
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //     URL.revokeObjectURL(blobUrl);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.currentTarget.value;
@@ -86,10 +86,9 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button onClick={async () => await downloadFile(downloadToken)}>
+              <a href={downloadToken} download>
                 Download results
-              </Button>
-              {downloadError ? <span>File download has expired.</span> : null}
+              </a>
             </div>
           </div>
         </div>

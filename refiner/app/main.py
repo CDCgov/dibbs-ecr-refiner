@@ -14,7 +14,6 @@ from .api.auth.handlers import auth_router
 from .api.auth.middleware import get_logged_in_user
 from .api.auth.session import run_expired_session_cleanup_task
 from .api.middleware.spa import SPAFallbackMiddleware
-from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
@@ -63,7 +62,6 @@ async def _lifespan(_: FastAPI):
     # Start the DB connection
     await db.connect()
     # Start the cleanup tasks in the background
-    asyncio.create_task(run_expired_file_cleanup_task())
     asyncio.create_task(run_expired_session_cleanup_task())
     yield
     # Release the DB connection

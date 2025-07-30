@@ -12,7 +12,7 @@ from fastapi.datastructures import Headers
 from app.api.v1.demo import (
     MAX_ALLOWED_UPLOAD_FILE_SIZE,
     _cleanup_expired_files,
-    _create_refined_ecr_zip,
+    _create_refined_ecr_zip_in_memory,
     _create_zipfile_output_directory,
     _get_file_size_difference_percentage,
     _update_file_store,
@@ -59,7 +59,7 @@ class DemoTests:
 
         refined_files.append(("CDA_eICR.xml", eicr))
 
-        file_name, file_path, token = _create_refined_ecr_zip(
+        file_name, file_path, token = _create_refined_ecr_zip_in_memory(
             files=refined_files, output_dir=tmp_path
         )
 

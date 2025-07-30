@@ -93,7 +93,7 @@ export default function Demo() {
           <Success
             conditions={uploadResponse.conditions}
             unrefinedEicr={uploadResponse.unrefined_eicr}
-            downloadToken={uploadResponse.refined_download_token}
+            downloadToken={uploadResponse.refined_download_url}
           />
         )}
         {view === 'error' && <Error message={serverError} onClick={reset} />}
