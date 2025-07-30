@@ -18,7 +18,7 @@ from ...core.exceptions import (
     ZipValidationError,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...services import file_io
+from ...services import file_io, format
 from ...services.refiner.refine import refine_async
 
 # Keep track of files available for download / what needs to be cleaned up
@@ -265,7 +265,7 @@ async def demo_upload(
                 {
                     "code": condition_code,
                     "display_name": condition_name,
-                    "refined_eicr": condition_refined_eicr,
+                    "refined_eicr": format.normalize_xml(condition_refined_eicr),
                     "stats": [
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
@@ -297,13 +297,15 @@ async def demo_upload(
         # Store the combined zip
         _update_file_store(output_file_name, output_file_path, token)
 
+        normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
+
         return JSONResponse(
             content=jsonable_encoder(
                 {
                     "message": "Successfully processed eICR with condition-specific refinement",
                     "conditions_found": len(conditions),
                     "conditions": conditions,
-                    "unrefined_eicr": original_xml_files.eicr,
+                    "unrefined_eicr": normalized_unrefined_eicr,
                     "processing_notes": [
                         "Each condition gets its own refined eICR",
                         "Sections contain only data relevant to that specific condition",
