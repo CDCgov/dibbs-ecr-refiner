@@ -4,48 +4,39 @@ import XMLViewer from 'react-xml-viewer';
 import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
+import { Button } from '../../components/Button';
 
 interface SuccessProps {
   conditions: Condition[];
   unrefinedEicr: string;
-  downloadToken: string;
+  presignedDownloadUrl: string;
 }
 
 export function Success({
   conditions,
-  downloadToken,
+  presignedDownloadUrl,
   unrefinedEicr,
 }: SuccessProps) {
-  // const [downloadError, setDownloadError] = useState<string>('');
+  const [downloadError, setDownloadError] = useState<boolean>(false);
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
   );
 
-
-  // async function downloadFile(token: string) {
-  //   try {
-  //     const resp = await fetch(token);
-  //     if (!resp.ok) {
-  //       const errorMsg = `Failed to download refined eCR with token: ${token}`;
-  //       setDownloadError(errorMsg);
-  //       throw Error(errorMsg);
-  //     }
-
-  //     const blob = await resp.blob();
-  //     const blobUrl = URL.createObjectURL(blob);
-
-  //     const link = document.createElement('a');
-  //     link.href = blobUrl;
-  //     link.download = 'ecr_download.zip';
-  //     document.body.appendChild(link);
-  //     link.click();
-  //     document.body.removeChild(link);
-  //     URL.revokeObjectURL(blobUrl);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // }
+  async function downloadFile(presignedUrl: string) {
+    try {
+      const link = document.createElement('a');
+      link.href = presignedUrl;
+      link.download = '';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setDownloadError(false);
+    } catch (error) {
+      console.error(error);
+      setDownloadError(true);
+    }
+  }
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.currentTarget.value;
@@ -86,9 +77,14 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <a href={downloadToken} download>
+              <Button
+                onClick={async () => await downloadFile(presignedDownloadUrl)}
+              >
                 Download results
-              </a>
+              </Button>
+              {downloadError ? (
+                <span>File download URL is incorrect or has expired.</span>
+              ) : null}
             </div>
           </div>
         </div>
