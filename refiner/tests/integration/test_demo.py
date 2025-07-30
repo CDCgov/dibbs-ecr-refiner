@@ -1,7 +1,5 @@
-import asyncio
 import io
 import pathlib
-import time
 import zipfile
 from typing import Any
 
@@ -11,37 +9,13 @@ from fastapi.datastructures import Headers
 
 from app.api.v1.demo import (
     MAX_ALLOWED_UPLOAD_FILE_SIZE,
-    _cleanup_expired_files,
     _create_refined_ecr_zip_in_memory,
-    _create_zipfile_output_directory,
     _get_file_size_difference_percentage,
-    _update_file_store,
     _validate_zip_file,
-    file_store,
 )
 from app.main import app
 
 api_route_base = "/api/v1/demo"
-
-
-@pytest.mark.asyncio
-async def test_cleanup_expired_files(tmp_path):
-    async def _run_cleanup_once():
-        await asyncio.to_thread(_cleanup_expired_files)
-
-    old_file = tmp_path / "should_be_deleted.txt"
-    old_file.write_text("outdated")
-    file_store.clear()
-
-    file_store["delete"] = {
-        "path": str(old_file),
-        "timestamp": time.time() - 180,  # expired
-    }
-
-    await _run_cleanup_once()
-
-    assert "delete" not in file_store
-    assert not old_file.exists()
 
 
 @pytest.mark.asyncio
@@ -59,45 +33,15 @@ class DemoTests:
 
         refined_files.append(("CDA_eICR.xml", eicr))
 
-        file_name, file_path, token = _create_refined_ecr_zip_in_memory(
-            files=refined_files, output_dir=tmp_path
-        )
+        file_name, file_buffer = _create_refined_ecr_zip_in_memory(files=refined_files)
 
-        assert file_name == f"{token}_refined_ecr.zip"
-        assert pathlib.Path(file_path).exists()
+        assert "_refined_ecr.zip" in file_name
 
-        with zipfile.ZipFile(file_path, "r") as zipf:
+        with zipfile.ZipFile(file_buffer, "r") as zipf:
             namelist = zipf.namelist()
             assert "covid_condition.xml" in namelist
             assert "flu_condition.xml" in namelist
             assert "CDA_eICR.xml" in namelist
-
-    def test_get_processed_ecr_directory(tmp_path):
-        result = _create_zipfile_output_directory(tmp_path / "refined-ecr")
-
-        assert result.exists()
-        assert result.name == "refined-ecr"
-        assert result.parent == tmp_path
-
-    def test_update_file_store():
-        # Setup for testing
-        file_store.clear()
-        filename = "report.zip"
-        path = pathlib.Path("tmp") / filename
-        token = "example-token"
-
-        before = time.time()
-        _update_file_store(filename, path, token)
-        after = time.time()
-
-        entry = file_store[token]
-
-        # Check expected attributes in the dict
-        assert entry["filename"] == filename
-        assert entry["path"] == path
-
-        # Ensure timestamp is in the middle
-        assert before <= entry["timestamp"] <= after
 
     @pytest.mark.parametrize(
         "unrefined, refined, expected",
