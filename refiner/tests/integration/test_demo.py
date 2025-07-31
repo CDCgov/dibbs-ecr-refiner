@@ -171,7 +171,7 @@ def test_file_size_difference_percentage(
     assert result == expected
 
 
-def test_create_refined_ecr_zip(self, tmp_path):
+def test_create_refined_ecr_zip():
     # Simulated refined files
     refined_files = [
         ("covid_condition.xml", "<eICR>Covid Data</eICR>"),
