@@ -141,17 +141,16 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     return file
 
 
-def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str, int | None], str]:
+def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str], str]:
     """
     Provides a dependency-injectable reference to the `upload_refined_ecr` function.
 
     Returns:
-        Callable[[str, io.BytesIO, str, int | None], str]: A callable that uploads a
+        Callable[[str, io.BytesIO, str], str]: A callable that uploads a
         file to S3 and returns a pre-signed download URL. The arguments are:
             - user_id (str): The ID of the uploading user.
             - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
             - filename (str): Filename for the uploaded file.
-            - expires (int | None): Optional expiration time in seconds for the pre-signed URL.
     """
     return upload_refined_ecr
 
@@ -164,9 +163,9 @@ async def demo_upload(
         _get_zip_creator
     ),
     user: dict[str, Any] = Depends(get_logged_in_user),
-    upload_refined_files_to_s3: Callable[
-        [str, io.BytesIO, str, int | None], str
-    ] = Depends(_get_upload_refined_ecr),
+    upload_refined_files_to_s3: Callable[[str, io.BytesIO, str], str] = Depends(
+        _get_upload_refined_ecr
+    ),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
