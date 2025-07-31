@@ -61,7 +61,7 @@ def _create_refined_ecr_zip_in_memory(
         files (list): List of tuples [(filename, content)], content must be string.
 
     Returns:
-        (filename, filepath, token)
+        (filename, buffer)
     """
     token = str(uuid4())
     zip_filename = f"{token}_refined_ecr.zip"
