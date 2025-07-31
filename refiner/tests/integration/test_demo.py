@@ -53,12 +53,39 @@ class TestDemo:
             "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
         )
 
+    def test_upload_route_s3_failure(self):
+        from app.api.v1.demo import _get_upload_refined_ecr
+
+        # Create a fake version of upload_refined_ecr that simulates an S3 failure
+        def fake_upload_refined_ecr(user_id, file_buffer, filename, expires=3600):
+            return ""
+
+        def mock_get_logged_in_user():
+            return {"id": "test-user", "username": "test-user"}
+
+        # Override the dependency
+        app.dependency_overrides[_get_upload_refined_ecr] = (
+            lambda: fake_upload_refined_ecr
+        )
+        app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
+
+        client = TestClient(app)
+
+        response = client.post(f"{api_route_base}/upload")
+
+        # S3 upload failure results in an empty string being returned to the client
+        assert response.status_code == 200
+        assert "refined_download_url" in response.json()
+        assert response.json()["refined_download_url"] == ""
+
+        app.dependency_overrides.clear()
+
     def test_demo_file_not_found(self) -> None:
         """
         Test error handling when demo file is missing
         """
 
-        from app.api.v1.demo import _get_demo_zip_path  # Import the actual function
+        from app.api.v1.demo import _get_demo_zip_path
 
         def mock_missing_path() -> pathlib.Path:
             return pathlib.Path("/nonexistent/demo.zip")
