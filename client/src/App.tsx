@@ -5,7 +5,7 @@ import NotFound from './pages/NotFound';
 import { Layout } from './components/Layout';
 import { useLogin } from './hooks/Login';
 import { Home } from './pages/Home';
-import {ToastContainer} from 'react-toastify'
+import { ToastContainer } from 'react-toastify';
 
 function App() {
   const [user, isLoading] = useLogin();
@@ -22,7 +22,7 @@ function App() {
     );
   return (
     <Layout>
-      <ToastContainer/>
+      <ToastContainer />
       <Routes>
         <Route index element={<Configurations />} />
         <Route path="testing" element={<Testing />} />
