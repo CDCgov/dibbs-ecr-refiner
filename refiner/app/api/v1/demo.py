@@ -141,6 +141,21 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     return file
 
 
+def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str, int | None], str]:
+    """
+    Provides a dependency-injectable reference to the `upload_refined_ecr` function.
+
+    Returns:
+        Callable[[str, io.BytesIO, str, int | None], str]: A callable that uploads a
+        file to S3 and returns a pre-signed download URL. The arguments are:
+            - user_id (str): The ID of the uploading user.
+            - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
+            - filename (str): Filename for the uploaded file.
+            - expires (int | None): Optional expiration time in seconds for the pre-signed URL.
+    """
+    return upload_refined_ecr
+
+
 @router.post("/upload")
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
@@ -149,6 +164,9 @@ async def demo_upload(
         _get_zip_creator
     ),
     user: dict[str, Any] = Depends(get_logged_in_user),
+    upload_refined_files_to_s3: Callable[
+        [str, io.BytesIO, str, int | None], str
+    ] = Depends(_get_upload_refined_ecr),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
@@ -255,7 +273,7 @@ async def demo_upload(
         )
 
         presigned_s3_url = await run_in_threadpool(
-            upload_refined_ecr, user["id"], output_zip_buffer, output_file_name
+            upload_refined_files_to_s3, user["id"], output_zip_buffer, output_file_name
         )
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
