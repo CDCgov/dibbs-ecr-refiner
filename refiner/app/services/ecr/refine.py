@@ -1,23 +1,25 @@
 import logging
-from typing import Any, Literal, cast
+from dataclasses import dataclass
+from typing import Literal, TypedDict, cast
 
 from lxml import etree
 from lxml.etree import _Element
 
-from ..core.exceptions import (
-    ConditionCodeError,
-    DatabaseConnectionError,
-    DatabaseQueryError,
-    ResourceNotFoundError,
+from ...core.exceptions import (
     SectionValidationError,
     StructureValidationError,
     XMLParsingError,
     XMLValidationError,
 )
-from ..core.models.types import XMLFiles
-from ..db.operations import GrouperOperations
-from .file_io import read_json_asset
-from .terminology import ProcessedGrouper
+from ...core.models.types import XMLFiles
+from ...db.connection import DatabaseConnection
+from ...db.pool import AsyncDatabaseConnection
+from ..file_io import read_json_asset
+from .grouper_utils import (
+    get_condition_codes_xpath,
+    get_processed_groupers_from_condition_codes,
+    get_processed_groupers_from_condition_codes_async,
+)
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -43,6 +45,35 @@ CLINICAL_DATA_TABLE_HEADERS = [
     "Is Trigger Code",
     "Matching Condition Code",
 ]
+
+
+@dataclass
+class ReportableCondition:
+    """
+    Object to hold the properties of a reportable condition.
+    """
+
+    code: str
+    display_name: str
+
+
+class ProcessedRR(TypedDict):
+    """
+    The returned result of processing an RR.
+    """
+
+    reportable_conditions: list[ReportableCondition]
+
+
+@dataclass
+class RefinedDocument:
+    """
+    Object to hold a reportable condition and its refined eICR XML string.
+    """
+
+    reportable_condition: ReportableCondition
+    refined_eicr: str
+
 
 # NOTE:
 # =============================================================================
@@ -97,7 +128,7 @@ def validate_sections_to_include(
     return sections
 
 
-def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
+def get_reportable_conditions(root: _Element) -> list[ReportableCondition]:
     """
     Get reportable conditions from the Report Summary section.
 
@@ -113,8 +144,7 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
         root: The root element of the XML document to parse.
 
     Returns:
-        list[dict[str, str]] | None: List of reportable conditions or None if none found.
-        Each condition is a dict with 'code' and 'displayName' keys.
+        list[ReportableCondition]
 
     Raises:
         StructureValidationError: If RR11 Coded Information Organizer is missing (invalid RR)
@@ -202,7 +232,7 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
             # required SNOMED CT code and display name and build the
             # condition object and ensure uniqueness--duplicate conditions
             # should not be reported multiple times
-            condition = {"code": code, "displayName": display_name}
+            condition = ReportableCondition(code=code, display_name=display_name)
             if condition not in conditions:
                 conditions.append(condition)
 
@@ -212,10 +242,10 @@ def get_reportable_conditions(root: _Element) -> list[dict[str, str]] | None:
             details={"xpath_error": str(e)},
         )
 
-    return conditions if conditions else None
+    return conditions
 
 
-def process_rr(xml_files: XMLFiles) -> dict:
+def process_rr(xml_files: XMLFiles) -> ProcessedRR:
     """
     Process the RR XML document to extract relevant information.
 
@@ -239,16 +269,15 @@ def process_rr(xml_files: XMLFiles) -> dict:
         )
 
 
-def refine_eicr(
+def _refine_eicr(
     xml_files: XMLFiles,
+    condition_codes_xpath: str,
     sections_to_include: list[str] | None = None,
-    condition_codes: str | None = None,
 ) -> str:
     """
     Refine an eICR XML document by processing its sections.
 
     Processing behavior:
-        - condition_codes **must** be provided; if missing or empty, the function raises ConditionCodeError.
         - If sections_to_include is provided, those sections are preserved unmodified.
         - For all other sections, only entries matching the clinical codes related to the given condition_codes are kept.
         - If no matching entries are found in a section, it is replaced with a minimal section and marked with nullFlavor="NI".
@@ -256,25 +285,16 @@ def refine_eicr(
     Args:
         xml_files: The XMLFiles container with the eICR document to refine.
         sections_to_include: Optional list of section LOINC codes to preserve.
-        condition_codes: Comma-separated string of SNOMED condition codes
-            to use for filtering sections in an eICR. Each code will be looked up in the
-            groupers table in the terminology database to find related clinical codes.
-            **This parameter is required. If not provided, a ConditionCodeError is raised.**
+        condition_codes_xpath: The xpath of the condition codes
 
     Returns:
         str: The refined eICR XML document as a string.
 
     Raises:
-        ConditionCodeError: If no condition_codes are provided.
         SectionValidationError: If any section code is invalid.
         XMLValidationError: If the XML is invalid.
         StructureValidationError: If the document structure is invalid.
     """
-
-    if not condition_codes:
-        raise ConditionCodeError(
-            "No condition codes provided to refine_eicr; at least one is required."
-        )
 
     try:
         # parse the eicr document
@@ -289,10 +309,6 @@ def refine_eicr(
                 message="No structured body found in eICR",
                 details={"document_type": "eICR"},
             )
-
-        # always require condition_codes
-        # generate code-based xpath for relevant clinical codes
-        code_xpath = _get_xpath_from_condition_codes(condition_codes) or ""
 
         # TODO:
         # detect version from document. in future we'll have a function here to check
@@ -310,7 +326,9 @@ def refine_eicr(
             if section is None:
                 continue
 
-            _process_section(section, code_xpath, namespaces, section_config, version)
+            _process_section(
+                section, condition_codes_xpath, namespaces, section_config, version
+            )
 
         # format and return the result
         return etree.tostring(validated_message, encoding="unicode")
@@ -328,8 +346,8 @@ def refine_eicr(
 
 def build_condition_eicr_pairs(
     original_xml_files: XMLFiles,
-    reportable_conditions: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
+    reportable_conditions: list[ReportableCondition],
+) -> list[tuple[ReportableCondition, XMLFiles]]:
     """
     Generate pairs of reportable conditions and fresh XMLFiles copies.
 
@@ -341,8 +359,8 @@ def build_condition_eicr_pairs(
         reportable_conditions: List of reportable condition objects with 'code' keys.
 
     Returns:
-        list[dict[str, Any]]: A list of dictionaries, each containing a
-                             `reportable_condition` and `xml_files`.
+        list[tuple[ReportableCondition, XMLFiles]]: A list of tuples containing a ReportableCondition
+        and XMLFiles pair.
     """
 
     condition_eicr_pairs = []
@@ -351,10 +369,10 @@ def build_condition_eicr_pairs(
         # create fresh XMLFiles for each condition to ensure complete isolation
         condition_xml_files = XMLFiles(original_xml_files.eicr, original_xml_files.rr)
         condition_eicr_pairs.append(
-            {
-                "reportable_condition": condition,
-                "xml_files": condition_xml_files,
-            }
+            (
+                condition,
+                condition_xml_files,
+            )
         )
 
     return condition_eicr_pairs
@@ -574,65 +592,6 @@ def _preserve_relevant_entries_and_generate_summary(
     }
 
     _update_text_element(section, contextual_matches, trigger_code_elements)
-
-
-def _get_xpath_from_condition_codes(condition_codes: str | None) -> str:
-    """
-    Generate XPath from condition codes using ProcessedGrouper only.
-
-    Takes a comma-separated string of condition codes, queries each one
-    in the groupers database, and builds XPath expressions to find any
-    matching codes in HL7 XML documents.
-
-    Args:
-        condition_codes: Comma-separated SNOMED condition codes, or None
-
-    Returns:
-        str: Combined XPath expression to find relevant elements, or empty string
-
-    Raises:
-        DatabaseConnectionError
-        DatabaseQueryError
-        ResourceNotFoundError
-        ConditionCodeError
-    """
-
-    if not condition_codes:
-        return ""
-
-    grouper_ops = GrouperOperations()
-    xpath_conditions = []
-
-    try:
-        # process each condition code
-        for code in condition_codes.split(","):
-            code = code.strip()
-            try:
-                grouper_row = grouper_ops.get_grouper_by_condition(code)
-                if grouper_row:
-                    processed = ProcessedGrouper.from_grouper_row(grouper_row)
-                    # use comprehensive search across all element types
-                    xpath = processed.build_xpath()
-                    if xpath:
-                        xpath_conditions.append(xpath)
-            except (DatabaseConnectionError, DatabaseQueryError) as e:
-                # log but continue with other codes
-                log(f"Database error processing condition code {code}: {str(e)}")
-            except ResourceNotFoundError:
-                # log that the code wasn't found but continue
-                log(f"Condition code not found: {code}")
-
-    except Exception as e:
-        raise ConditionCodeError(
-            message="Error processing condition codes",
-            details={"error": str(e), "condition_codes": condition_codes},
-        )
-
-    # combine XPath conditions with union operator
-    if not xpath_conditions:
-        return ""
-
-    return " | ".join(xpath_conditions)
 
 
 def _get_section_by_code(
@@ -1165,3 +1124,114 @@ def _remove_all_comments(section: _Element) -> None:
 # it might be beneficial to add a function that will add comments back to the <entry>s that we're
 # persisting in our refined output (even the minimal sections too). we can discuss this at some
 # point in the future
+
+
+def refine_sync(
+    original_xml: XMLFiles,
+    db: DatabaseConnection,
+    additional_condition_codes: str | None = None,
+    sections_to_include: list[str] | None = None,
+) -> list[RefinedDocument]:
+    """
+    (Primarily for use in AWS Lambda) Takes an eICR/RR pair as `XMLFiles` and produces a list of refined eICR documents by condition code.
+
+    Args:
+        original_xml: an eICR/RR pair
+        db: Established sync DB connection to use
+        additional_condition_codes: Codes to include regardless of whether
+            they're discovered in the RR or not
+        sections_to_include: list of section codes to include, or None
+
+    Returns:
+        list[RefinedDocument]: A list of `RefinedDocument`s
+    """
+
+    # Process RR and find conditions
+    rr_results = process_rr(original_xml)
+    reportable_conditions = rr_results["reportable_conditions"]
+
+    # create condition-eICR pairs with XMLFiles objects
+    condition_eicr_pairs = build_condition_eicr_pairs(
+        original_xml, reportable_conditions
+    )
+
+    refined_eicrs = []
+    for pair in condition_eicr_pairs:
+        condition, condition_specific_xml_pair = pair
+
+        # Combine codes found in the RR + additional codes
+        condition_codes = (
+            f"{condition.code}," + additional_condition_codes
+            if additional_condition_codes is not None
+            else condition.code
+        )
+
+        # Generate xpaths based on condition codes
+        # DATA: Needs sync db connection
+        processed_groupers = get_processed_groupers_from_condition_codes(
+            condition_codes, db
+        )
+        condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
+
+        # refine the eICR for this specific condition code.
+        refined_eicr = _refine_eicr(
+            xml_files=condition_specific_xml_pair,
+            condition_codes_xpath=condition_codes_xpath,
+            sections_to_include=sections_to_include,
+        )
+
+        refined_eicrs.append(
+            RefinedDocument(reportable_condition=condition, refined_eicr=refined_eicr)
+        )
+
+    return refined_eicrs
+
+
+async def refine_async(
+    original_xml: XMLFiles,
+    db: AsyncDatabaseConnection,
+    additional_condition_codes: str | None = None,
+    sections_to_include: list[str] | None = None,
+) -> list[RefinedDocument]:
+    """
+    Async version of `refine_sync`. This should be called when refining documents in FastAPI handlers.
+    """
+    # Process RR and find conditions
+    rr_results = process_rr(original_xml)
+    reportable_conditions = rr_results["reportable_conditions"]
+
+    # create condition-eICR pairs with XMLFiles objects
+    condition_eicr_pairs = build_condition_eicr_pairs(
+        original_xml, reportable_conditions
+    )
+
+    refined_eicrs = []
+    for pair in condition_eicr_pairs:
+        condition, condition_specific_xml_pair = pair
+
+        # Combine codes found in the RR + additional codes
+        condition_codes = (
+            f"{condition.code}," + additional_condition_codes
+            if additional_condition_codes is not None
+            else condition.code
+        )
+
+        # Generate xpaths based on condition codes
+        # DATA: Needs an ASYNC db connection
+        processed_groupers = await get_processed_groupers_from_condition_codes_async(
+            condition_codes, db
+        )
+        condition_codes_xpath = get_condition_codes_xpath(processed_groupers)
+
+        # refine the eICR for this specific condition code.
+        refined_eicr = _refine_eicr(
+            xml_files=condition_specific_xml_pair,
+            condition_codes_xpath=condition_codes_xpath,
+            sections_to_include=sections_to_include,
+        )
+
+        refined_eicrs.append(
+            RefinedDocument(reportable_condition=condition, refined_eicr=refined_eicr)
+        )
+
+    return refined_eicrs
