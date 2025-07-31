@@ -2,6 +2,7 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { toast } from 'react-toastify';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -42,6 +43,19 @@ export function Configurations() {
 
   return (
     <section className="mx-auto p-3">
+      <Button
+        onClick={() =>
+          toast(<p>Hi</p>, {
+            autoClose: 3000,
+            position: 'bottom-left',
+            closeOnClick: true,
+            closeButton: false,
+            pauseOnFocusLoss: false,
+          })
+        }
+      >
+        Show toast
+      </Button>
       <div className="flex flex-col gap-4 py-10">
         <Title>Your reportable condition configurations</Title>
         <p>
