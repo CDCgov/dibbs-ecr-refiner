@@ -46,6 +46,8 @@ class TestDemo:
         assert "conditions" in data
         assert "unrefined_eicr" in data
         assert "refined_download_url" in data
+        assert "test-user" in data["refined_download_url"]
+        assert "/refiner-app/refiner-test-suite/" in data["refined_download_url"]
         assert "stats" in data["conditions"][0]
         assert any(
             "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
