@@ -13,7 +13,6 @@ s3_client = boto3.client(
     aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
     endpoint_url=ENVIRONMENT["S3_ENDPOINT_URL"],
 )
-bucket_name = "refiner-app"
 
 
 def upload_refined_ecr(
@@ -23,14 +22,15 @@ def upload_refined_ecr(
     Uploads a refined ZIP file to AWS S3 and provides the uploader with a pre-signed link.
 
     Args:
-        user_id (str): _description_
-        file_buffer (BytesIO): _description_
-        filename (str): _description_
-        expires (int, optional): _description_. Defaults to 3600.
+        user_id (str): Logged-in user ID
+        file_buffer (BytesIO): ZIP file in memory
+        filename (str): The filename that will be written to S3
+        expires (int, optional): Seconds until the link expires. Defaults to 3600.
 
     Returns:
-        str: _description_
+        str: The pre-signed S3 URL to download the uploaded file
     """
+    bucket_name = "refiner-app"
     try:
         today = date.today().isoformat()  # YYYY-MM-DD
         key = f"refiner-test-suite/{today}/{user_id}/{filename}"
@@ -46,5 +46,7 @@ def upload_refined_ecr(
         return presigned_url
 
     except ClientError:
-        print("Upload to S3 failed.")
+        print(
+            f"Attempted refined file upload to S3 by user {user_id} failed. S3 Key: ${key}"
+        )
         return ""
