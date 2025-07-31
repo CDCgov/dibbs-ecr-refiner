@@ -57,6 +57,24 @@ class ReportableCondition:
     display_name: str
 
 
+class ProcessedRR(TypedDict):
+    """
+    The returned result of processing an RR.
+    """
+
+    reportable_conditions: list[ReportableCondition]
+
+
+@dataclass
+class RefinedDocument:
+    """
+    Object to hold a reportable condition and its refined eICR XML string.
+    """
+
+    reportable_condition: ReportableCondition
+    refined_eicr: str
+
+
 # NOTE:
 # =============================================================================
 # In lxml, use _Element for type hints and etree.Element in code.
@@ -225,14 +243,6 @@ def get_reportable_conditions(root: _Element) -> list[ReportableCondition]:
         )
 
     return conditions
-
-
-class ProcessedRR(TypedDict):
-    """
-    The returned result of processing an RR.
-    """
-
-    reportable_conditions: list[ReportableCondition]
 
 
 def process_rr(xml_files: XMLFiles) -> ProcessedRR:
@@ -1114,16 +1124,6 @@ def _remove_all_comments(section: _Element) -> None:
 # it might be beneficial to add a function that will add comments back to the <entry>s that we're
 # persisting in our refined output (even the minimal sections too). we can discuss this at some
 # point in the future
-
-
-@dataclass
-class RefinedDocument:
-    """
-    Object to hold a reportable condition and its refined eICR XML string.
-    """
-
-    reportable_condition: ReportableCondition
-    refined_eicr: str
 
 
 def refine_sync(
