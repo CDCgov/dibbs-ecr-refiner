@@ -6,6 +6,7 @@ from uuid import uuid4
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
@@ -253,8 +254,8 @@ async def demo_upload(
             files=refined_files_to_zip,
         )
 
-        presigned_s3_url = upload_refined_ecr(
-            file_buffer=output_zip_buffer, filename=output_file_name, user_id=user["id"]
+        presigned_s3_url = await run_in_threadpool(
+            upload_refined_ecr, user["id"], output_zip_buffer, output_file_name
         )
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
