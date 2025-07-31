@@ -2,7 +2,7 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
-import { toast } from 'react-toastify';
+import { useToast } from '../../components/Toast';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -10,6 +10,11 @@ enum ConfigurationStatus {
 }
 
 export function Configurations() {
+  const showToast = useToast({
+    heading: 'New configuration added',
+    body: 'Config name',
+  });
+
   const tableData = {
     columns: { name: 'Reportable condition', status: 'Status' },
     data: [
@@ -43,19 +48,7 @@ export function Configurations() {
 
   return (
     <section className="mx-auto p-3">
-      <Button
-        onClick={() =>
-          toast(<p>Hi</p>, {
-            autoClose: 3000,
-            position: 'bottom-left',
-            closeOnClick: true,
-            closeButton: false,
-            pauseOnFocusLoss: false,
-          })
-        }
-      >
-        Show toast
-      </Button>
+      <Button onClick={showToast}>Show toast</Button>
       <div className="flex flex-col gap-4 py-10">
         <Title>Your reportable condition configurations</Title>
         <p>

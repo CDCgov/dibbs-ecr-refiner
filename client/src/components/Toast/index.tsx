@@ -1,6 +1,6 @@
-import { Alert, HeadingLevel } from '@trussworks/react-uswds';
-import { toast, ToastOptions } from 'react-toastify';
+import { HeadingLevel, Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
+import { toast, ToastOptions } from 'react-toastify';
 
 export type AlertType = 'info' | 'success' | 'warning' | 'error';
 
@@ -12,41 +12,33 @@ type ToastProps = {
   hideProgressBar?: boolean;
 };
 
-const Toast: React.FC<ToastProps> = ({
-  toastVariant,
-  heading,
-  body,
-  headingLevel = 'h4',
-}) => {
+const Toast: React.FC<ToastProps> = ({ heading, body }) => {
   return (
-    <Alert
-      type={toastVariant}
-      heading={
-        heading ? (
-          <span className={`usa-alert__heading ${headingLevel}`}>
-            {heading}
-          </span>
-        ) : undefined
-      }
-      headingLevel={heading ? headingLevel : 'h4'}
-    >
-      {body}
-    </Alert>
+    <div className="usa-alert usa-alert--success w-full">
+      <div className="flex flex-row items-start gap-4 p-2">
+        <Icon.CheckCircle aria-hidden size={4} />
+        <div className="flex flex-col gap-2">
+          <h4 className="font-public-sans text-xl font-bold">{heading}</h4>
+          <p className="font-public-sans">{body}</p>
+        </div>
+      </div>
+    </div>
   );
 };
 
-const options: ToastOptions = {
+const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
   // progress: 0.2,
   hideProgressBar: false,
   position: 'bottom-left',
   closeOnClick: true,
   closeButton: false,
-  className: classNames('!p-0', '!mt-0'),
+  className: classNames('!p-0', '!m-0'),
   pauseOnFocusLoss: false,
+  pauseOnHover: true,
 };
 
-export function showToastConfirmation(content: {
+export function useToast(options: {
   body: string;
   heading?: string;
   variant?: AlertType;
@@ -54,19 +46,21 @@ export function showToastConfirmation(content: {
   duration?: number;
   hideProgressBar?: boolean;
 }) {
-  const toastVariant = content.variant ?? 'success';
-  const toastDuration = content.duration ?? 5000; // Default to 5000ms
-  const hideProgressBar = content.hideProgressBar ?? false;
+  const { body, variant, heading, duration, hideProgressBar, headingLevel } =
+    options;
 
-  toast[toastVariant](
-    <Toast
-      toastVariant={toastVariant}
-      heading={content.heading}
-      headingLevel={content.headingLevel}
-      body={content.body ?? ''}
-    />,
-    { ...options, autoClose: toastDuration, hideProgressBar: hideProgressBar }
-  );
+  return () =>
+    toast(
+      <Toast
+        body={body ?? ''}
+        toastVariant={variant ?? 'success'}
+        heading={heading}
+        headingLevel={headingLevel}
+      />,
+      {
+        ...globalOptions,
+        autoClose: duration ?? 5000,
+        hideProgressBar: hideProgressBar ?? false,
+      }
+    );
 }
-
-export default Toast;
