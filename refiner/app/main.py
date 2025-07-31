@@ -18,7 +18,7 @@ from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
 from .core.config import ENVIRONMENT
-from .db.pool import db
+from .db.pool import AsyncDatabaseConnection, db, get_db
 
 # create router
 router = APIRouter(prefix="/api")
@@ -32,7 +32,9 @@ router.include_router(v1_router, dependencies=[Depends(get_logged_in_user)])
 
 # define health check endpoint at the service level
 @router.get("/healthcheck")
-async def health_check() -> JSONResponse:
+async def health_check(
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> JSONResponse:
     """
     Check service health status.
 

@@ -17,8 +17,10 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...services import file_io, format, refine
+from ...db.pool import AsyncDatabaseConnection, get_db
+from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
+from ...services.ecr.refine import refine_async
 
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 
@@ -166,6 +168,7 @@ async def demo_upload(
     upload_refined_files_to_s3: Callable[[str, io.BytesIO, str], str] = Depends(
         _get_upload_refined_ecr
     ),
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
@@ -185,57 +188,21 @@ async def demo_upload(
         file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
-        # Read in and process XML data from demo file
-        original_xml_files = await file_io.read_xml_zip(file)
-        rr_results = refine.process_rr(original_xml_files)
-        reportable_conditions = rr_results["reportable_conditions"]
-
-        # create condition-eICR pairs with XMLFiles objects
-        condition_eicr_pairs = refine.build_condition_eicr_pairs(
-            original_xml_files, reportable_conditions
-        )
-
         # Refine each pair and collect results
-        refined_results = []
+        original_xml_files = await file_io.read_xml_zip(file)
+        refined_results = await refine_async(original_xml=original_xml_files, db=db)
 
-        # for each reportable condition, create a separate XMLFiles copy and refine independently.
-        # this ensures output isolation: each condition produces its own eICR, with only the data relevant to that condition.
-        # using a fresh XMLFiles object per condition also makes it straightforward to support future workflows,
-        # such as processing and returning RR (Reportability Response) documents alongside or in relation to each eICR.
-        for pair in condition_eicr_pairs:
-            condition = pair["reportable_condition"]
-            xml_files = pair[
-                "xml_files"
-            ]  # Each pair contains a distinct XMLFiles instance.
-
-            # refine the eICR for this specific condition code.
-            refined_eicr = refine.refine_eicr(
-                xml_files=xml_files,
-                condition_codes=condition["code"],
-            )
-
-            # collect the refined result for this condition.
-            refined_results.append(
-                {
-                    "reportable_condition": condition,
-                    "refined_eicr": refined_eicr,
-                }
-            )
-
-        # build the response so each output is clearly associated with its source condition.
-        # this structure makes it easy for clients to consume and extends naturally if we later return RR artifacts.
         conditions = []
         refined_files_to_zip = []
 
         # Track condition metadata and gather refined XMLs to zip
-        for idx, result in enumerate(refined_results):
-            condition_info = result["reportable_condition"]
-            condition_refined_eicr = result["refined_eicr"]
+        for result in refined_results:
+            condition_code = result.reportable_condition.code
+            condition_name = result.reportable_condition.display_name
+            condition_refined_eicr = result.refined_eicr
 
             # Construct a filename for each XML (e.g. "covid_840539006.xml")
-            condition_code = condition_info.get("code", f"cond_{idx}")
-            display_name = condition_info.get("displayName", f"Condition_{idx}")
-            safe_name = display_name.replace(" ", "_").replace("/", "_")
+            safe_name = condition_name.replace(" ", "_").replace("/", "_")
             filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
 
             # Add to the list of files to include in the ZIP
@@ -244,8 +211,8 @@ async def demo_upload(
             # Build per-condition metadata (zip token added later)
             conditions.append(
                 {
-                    "code": condition_info["code"],
-                    "display_name": condition_info["displayName"],
+                    "code": condition_code,
+                    "display_name": condition_name,
                     "refined_eicr": format.normalize_xml(condition_refined_eicr),
                     "stats": [
                         f"eICR file size reduced by {
@@ -263,8 +230,8 @@ async def demo_upload(
             )
 
         # Add eICR + RR file as well
-        refined_files_to_zip.append(("CDA_eICR.xml", xml_files.eicr))
-        refined_files_to_zip.append(("CDA_RR.xml", xml_files.rr))
+        refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
+        refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
 
         # Now create the combined zip
         output_file_name, output_zip_buffer = create_output_zip(
