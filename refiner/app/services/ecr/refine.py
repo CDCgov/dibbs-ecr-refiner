@@ -15,7 +15,7 @@ from ...core.models.types import XMLFiles
 from ...db.connection import DatabaseConnection
 from ...db.pool import AsyncDatabaseConnection
 from ..file_io import read_json_asset
-from .helpers import (
+from .grouper_utils import (
     get_condition_codes_xpath,
     get_processed_groupers_from_condition_codes,
     get_processed_groupers_from_condition_codes_async,

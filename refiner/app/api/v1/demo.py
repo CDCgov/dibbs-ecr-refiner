@@ -19,7 +19,7 @@ from ...core.exceptions import (
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io, format
-from ...services.refiner.refine import refine_async
+from ...services.ecr.refine import refine_async
 
 # Keep track of files available for download / what needs to be cleaned up
 REFINED_ECR_DIR = "refined-ecr"

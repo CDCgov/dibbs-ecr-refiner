@@ -11,7 +11,7 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.db.connection import DatabaseConnection
-from app.services.refiner.refine import (
+from app.services.ecr.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
     REFINER_OUTPUT_TITLE,
