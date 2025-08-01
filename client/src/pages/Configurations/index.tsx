@@ -10,10 +10,7 @@ enum ConfigurationStatus {
 }
 
 export function Configurations() {
-  const showToast = useToast({
-    heading: 'New configuration created',
-    body: 'Human immunodeficiency virus infection (HIV)',
-  });
+  const showToast = useToast();
 
   const tableData = {
     columns: { name: 'Reportable condition', status: 'Status' },
@@ -48,7 +45,6 @@ export function Configurations() {
 
   return (
     <section className="mx-auto p-3">
-      <Button onClick={showToast}>Show toast</Button>
       <div className="flex flex-col gap-4 py-10">
         <Title>Your reportable condition configurations</Title>
         <p>
@@ -63,7 +59,17 @@ export function Configurations() {
           name={'search'}
           type={'text'}
         />
-        <Button className="m-0!">Set up new condition</Button>
+        <Button
+          className="m-0!"
+          onClick={() =>
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+            })
+          }
+        >
+          Set up new condition
+        </Button>
       </div>
       <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
     </section>

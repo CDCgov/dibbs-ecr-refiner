@@ -9,7 +9,7 @@ type ToastProps = {
   hideProgressBar?: boolean;
 };
 
-const Toast: React.FC<ToastProps> = ({ heading, body }) => {
+function Toast({ heading, body }: ToastProps) {
   return (
     <div className="usa-alert usa-alert--success flex h-full w-full items-center">
       <div className="flex w-full flex-row items-start gap-4 p-2">
@@ -27,7 +27,7 @@ const Toast: React.FC<ToastProps> = ({ heading, body }) => {
       </div>
     </div>
   );
-};
+}
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
@@ -48,22 +48,24 @@ const globalOptions: ToastOptions = {
   pauseOnHover: true,
 };
 
-export function useToast(options: {
-  body?: string;
-  heading?: string;
-  headingLevel?: HeadingLevel;
-  duration?: number;
-  hideProgressBar?: boolean;
-}) {
-  const { body, heading, duration, hideProgressBar, headingLevel } = options;
-
-  return () =>
+export function useToast() {
+  return (options: {
+    body?: string;
+    heading?: string;
+    headingLevel?: HeadingLevel;
+    duration?: number;
+    hideProgressBar?: boolean;
+  }) =>
     toast(
-      <Toast body={body ?? ''} heading={heading} headingLevel={headingLevel} />,
+      <Toast
+        body={options.body ?? ''}
+        heading={options.heading}
+        headingLevel={options.headingLevel}
+      />,
       {
         ...globalOptions,
-        autoClose: duration ?? 5000,
-        hideProgressBar: hideProgressBar ?? false,
+        autoClose: options.duration ?? 5000,
+        hideProgressBar: options.hideProgressBar ?? false,
       }
     );
 }
