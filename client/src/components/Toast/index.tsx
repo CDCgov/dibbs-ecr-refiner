@@ -1,10 +1,8 @@
-import { HeadingLevel, Icon } from '@trussworks/react-uswds';
+import { Icon } from '@trussworks/react-uswds';
 
 type ToastProps = {
   heading?: string;
   body?: string;
-  headingLevel?: HeadingLevel;
-  hideProgressBar?: boolean;
 };
 
 /**
