@@ -5,7 +5,6 @@ import {
   fireEvent,
   waitFor,
   getByText,
-  getByTestId,
 } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
@@ -58,8 +57,8 @@ describe('Configurations Page', () => {
     expect(screen.queryByRole('dialog')).toBeInTheDocument();
 
     expect(screen.getByTestId('combo-box-input')).toBeVisible();
-    user.type(screen.getByTestId('combo-box-input'), 'Roger{Enter}')
-    console.log('Roger')
+    user.type(screen.getByTestId('combo-box-input'), 'Roger{Enter}');
+    console.log('Roger');
     screen.debug(screen.getByTestId('combo-box-input'));
 
     // const conditionInput = screen.getByLabelText('Condition');
