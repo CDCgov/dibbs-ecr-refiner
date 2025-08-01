@@ -27,7 +27,10 @@ EXPECTED_CONDITIONS = {
 
 
 @pytest.mark.integration
-def test_health_check(setup):  # 'setup' fixture is expected to start the service
+@pytest.mark.asyncio
+async def test_health_check(
+    setup, authed_client
+):  # 'setup' fixture is expected to start the service
     """
     Tests the /api/healthcheck endpoint to ensure the service is responsive.
 
@@ -44,7 +47,7 @@ def test_health_check(setup):  # 'setup' fixture is expected to start the servic
 
     try:
         # make a get request to the health check endpoint
-        response = httpx.get(service_url, timeout=10.0)
+        response = await authed_client.get(service_url, timeout=10.0)
         # raise an exception for http error codes (4xx or 5xx)
         response.raise_for_status()
     except httpx.RequestError as exc:
@@ -79,7 +82,10 @@ def test_health_check(setup):  # 'setup' fixture is expected to start the servic
 
 
 @pytest.mark.integration
-def test_zip_upload_mon_mothma_two_conditions(setup):  # 'setup' fixture
+@pytest.mark.asyncio
+async def test_zip_upload_mon_mothma_two_conditions(
+    setup, authed_client
+):  # 'setup' fixture
     """
     Tests the eICR refinement process via ZIP upload using 'mon-mothma-two-conditions.zip'.
 
@@ -104,17 +110,17 @@ def test_zip_upload_mon_mothma_two_conditions(setup):  # 'setup' fixture
     # open the zip file in binary read mode ("rb")
     with open(MON_MOTHMA_ZIP_PATH, "rb") as f_zip:
         # prepare the file for multipart/form-data upload
-        files = {"file": (MON_MOTHMA_ZIP_PATH.name, f_zip, "application/zip")}
+        files = {"uploaded_file": (MON_MOTHMA_ZIP_PATH.name, f_zip, "application/zip")}
 
         # define the service endpoint for zip upload
-        service_url = "http://0.0.0.0:8080/api/v1/ecr/zip-upload"
+        service_url = "http://0.0.0.0:8080/api/v1/demo/upload"
         print(
             f"\n[{current_test_name}] Posting to: {service_url} with file: {MON_MOTHMA_ZIP_PATH.name}"
         )
 
         # make the post request to the service
         # -> * increased timeout for potentially long processing
-        response = httpx.post(service_url, files=files, timeout=30.0)
+        response = await authed_client.post(service_url, files=files, timeout=30.0)
 
     # initial response assertions
     assert response.status_code == 200, (
@@ -127,37 +133,33 @@ def test_zip_upload_mon_mothma_two_conditions(setup):  # 'setup' fixture
     # parse the json response from the service
     response_json = response.json()
 
+    conditions = response_json["conditions"]
     # assertions on the structure and content of the json response ---
-    assert isinstance(response_json, list), (
-        f"[{current_test_name}] Response should be a JSON list, got {type(response_json)}"
+    assert isinstance(conditions, list), (
+        f"[{current_test_name}] Response should be a JSON list, got {type(conditions)}"
     )
     # verify that the number of returned eICR items matches the number of expected conditions
-    assert len(response_json) == len(EXPECTED_CONDITIONS), (
-        f"[{current_test_name}] Expected {len(EXPECTED_CONDITIONS)} refined eICRs, but got {len(response_json)}. Response: {response_json}"
+    assert len(conditions) == len(EXPECTED_CONDITIONS), (
+        f"[{current_test_name}] Expected {len(EXPECTED_CONDITIONS)} refined eICRs, but got {len(conditions)}. Response: {conditions}"
     )
 
     # keep track of the condition codes found in the response to ensure all expected ones are present
     found_condition_codes = set()
 
     # iterate through each eICR item returned in the json array
-    for i, eicr_item in enumerate(response_json):
+    for i, eicr_item in enumerate(conditions):
         item_label = f"eICR item #{i + 1}"
         print(f"\n[{current_test_name}] Processing {item_label} from response...")
 
-        # 1. verify the 'reportable_condition' part of the item
-        assert "reportable_condition" in eicr_item, (
-            f"[{current_test_name}] {item_label} missing 'reportable_condition' key. Item: {eicr_item}"
+        assert "code" in eicr_item, (
+            f"[{current_test_name}] {item_label} 'reportable_condition' missing 'code'. Data: {eicr_item}"
         )
-        condition_data = eicr_item["reportable_condition"]
-        assert "code" in condition_data, (
-            f"[{current_test_name}] {item_label} 'reportable_condition' missing 'code'. Data: {condition_data}"
-        )
-        assert "displayName" in condition_data, (
-            f"[{current_test_name}] {item_label} 'reportable_condition' missing 'displayName'. Data: {condition_data}"
+        assert "display_name" in eicr_item, (
+            f"[{current_test_name}] {item_label} 'reportable_condition' missing 'display_name'. Data: {eicr_item}"
         )
 
-        condition_code = condition_data["code"]
-        condition_display_name = condition_data["displayName"]
+        condition_code = eicr_item["code"]
+        condition_display_name = eicr_item["display_name"]
         found_condition_codes.add(condition_code)
 
         # 2. assert that the identified condition is one of the expected conditions

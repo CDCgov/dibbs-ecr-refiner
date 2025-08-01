@@ -1,5 +1,4 @@
 import IllustrationImg from '../../assets/home/illustration.svg';
-import { Button } from '../../components/Button';
 
 export function Home() {
   return (
@@ -19,9 +18,12 @@ export function Home() {
               </p>
             </div>
             <div>
-              <Button className="usa-button usa-button--big" to="/demo">
-                Try it out
-              </Button>
+              <a
+                className="usa-button usa-button--big !bg-violet-warm-60 hover:!bg-violet-warm-70"
+                href="/api/login"
+              >
+                Log in
+              </a>
             </div>
           </div>
           <img className="lg:w-1/3" src={IllustrationImg} alt="" />

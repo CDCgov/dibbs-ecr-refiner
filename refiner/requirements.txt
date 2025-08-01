@@ -1,11 +1,14 @@
+Authlib==1.6.1
 chardet
 fastapi>=0.109.1
 httpx
 lxml
 psycopg[binary]
+psycopg[pool]
 pydantic-settings
 pydantic>=2.0.0
 python-multipart
 requests
 rich
 uvicorn
+itsdangerous
