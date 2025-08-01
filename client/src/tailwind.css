@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+:root {
+  /* Overriding react-toastify progress bar color.
+  See here: https://fkhadra.github.io/react-toastify/how-to-style/#override-css-variables
+  */
+  --toastify-color-progress-light: #00A91C;
+}
+
 @layer base {
   html,
   select {
@@ -60,6 +67,9 @@
 
   --color-red-300: #e41d3d;
 
+
+  --color-state-success-lighter: #ecf3ec;
+  --color-state-success: #00A91C;
   --color-state-success-dark: #216e1f;
   --color-state-error-dark: #b50909;
 
