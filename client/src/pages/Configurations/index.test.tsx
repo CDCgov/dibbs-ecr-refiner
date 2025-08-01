@@ -2,10 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
+import userEvent from '@testing-library/user-event';
+import { ToastContainer } from 'react-toastify';
 
 const renderPageView = () =>
   render(
     <BrowserRouter>
+      <ToastContainer />
       <Configurations />
     </BrowserRouter>
   );
@@ -28,6 +31,15 @@ describe('Configurations', () => {
     renderPageView();
     expect(
       screen.getByPlaceholderText('Search configurations')
+    ).toBeInTheDocument();
+  });
+
+  it('should render a toast when the "Set up new configuration" button is clicked', async () => {
+    const user = userEvent.setup();
+    renderPageView();
+    await user.click(screen.getByText('Set up new condition'));
+    expect(
+      await screen.findByText('New configuration created')
     ).toBeInTheDocument();
   });
 });
