@@ -11,8 +11,8 @@ enum ConfigurationStatus {
 
 export function Configurations() {
   const showToast = useToast({
-    heading: 'New configuration added',
-    body: 'Config name',
+    heading: 'New configuration created',
+    body: 'Human immunodeficiency virus infection (HIV)',
   });
 
   const tableData = {
