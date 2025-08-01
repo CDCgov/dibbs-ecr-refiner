@@ -1,88 +1,102 @@
--- PART 1: user identity and jurisdiction management
-CREATE TABLE IF NOT EXISTS jurisdictions (
-    id VARCHAR(4) PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    state_code VARCHAR(2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- drop old tables if they exist, using IF EXISTS to prevent errors on first run.
+-- the order is important to respect foreign key constraints.
+DROP TABLE IF EXISTS configuration_labels;
+DROP TABLE IF EXISTS labels;
+DROP TABLE IF EXISTS configuration_versions;
+DROP TABLE IF EXISTS configurations;
+DROP TABLE IF EXISTS conditions;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS jurisdictions;
+
+-- this table stores a list of known jurisdictions
+-- we may want to prepopulate this with a list from APHL that would
+-- match the codes we'd see in the RR
+CREATE TABLE jurisdictions (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    state_code TEXT
 );
 
-CREATE TABLE IF NOT EXISTS users (
+-- this table stores user information and links them to a jurisdiction
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
-    jurisdiction_id VARCHAR(4) NOT NULL REFERENCES jurisdictions(id),
     full_name TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP WITH TIME ZONE
+    jurisdiction_id TEXT REFERENCES jurisdictions(id)
 );
 
--- PART 2: the "source of truth"--normalized relational model
-CREATE TABLE IF NOT EXISTS tes_condition_groupers (
-    canonical_url TEXT NOT NULL,
-    version TEXT NOT NULL,
-    display_name TEXT NOT NULL,
-    loinc_codes JSONB,
-    snomed_codes JSONB,
-    icd10_codes JSONB,
-    rxnorm_codes JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (canonical_url, version)
-);
-
-CREATE TABLE IF NOT EXISTS tes_reporting_spec_groupers (
+-- this is the core table containing the aggregated, denormalized data
+-- for each condition grouper and version we'll assocaite the individual
+-- rs-grouper SNOMED codes as an array and handle the aggregation _before_
+-- the seeding
+CREATE TABLE conditions (
     canonical_url TEXT NOT NULL,
     version TEXT NOT NULL,
     display_name TEXT,
-    snomed_code TEXT NOT NULL,
+    child_rsg_snomed_codes TEXT[],
     loinc_codes JSONB,
     snomed_codes JSONB,
     icd10_codes JSONB,
     rxnorm_codes JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (canonical_url, version),
-    UNIQUE (snomed_code, version)
+    -- a condition is uniquely identified by its URL and version
+    -- we can also use _just_ the uuid part of the url too
+    PRIMARY KEY (canonical_url, version)
 );
 
-CREATE TABLE IF NOT EXISTS tes_condition_grouper_references (
-    id SERIAL PRIMARY KEY,
-    parent_grouper_url TEXT NOT NULL,
-    parent_grouper_version TEXT NOT NULL,
-    child_grouper_url TEXT NOT NULL,
-    child_grouper_version TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parent_grouper_url, parent_grouper_version) REFERENCES tes_condition_groupers(canonical_url, version) ON DELETE CASCADE,
-    FOREIGN KEY (child_grouper_url, child_grouper_version) REFERENCES tes_reporting_spec_groupers(canonical_url, version) ON DELETE CASCADE
+CREATE INDEX idx_conditions_child_snomed_codes ON conditions USING GIN (child_rsg_snomed_codes);
+
+-- this table represents a conceptual configuration "idea"
+-- for example, "influenza + RSV" can have many versions/iterations
+-- and the versions
+CREATE TABLE configurations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    -- a jurisdiction can't have two configurations with the same name.
+    UNIQUE (jurisdiction_id, name)
 );
 
-CREATE TABLE IF NOT EXISTS configurations (
+-- this table stores each specific, immutable version of a configuration
+-- every time a user saves a change, a new row is created here
+CREATE TABLE configuration_versions (
     id SERIAL PRIMARY KEY,
-    jurisdiction_id VARCHAR(4) NOT NULL REFERENCES jurisdictions(id),
-    child_grouper_url TEXT NOT NULL,
-    child_grouper_version TEXT NOT NULL,
-    display_name_override TEXT,
-    version TEXT,
-    loinc_codes JSONB,
-    snomed_codes JSONB,
-    icd10_codes JSONB,
-    rxnorm_codes JSONB,
+    configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
+    version INTEGER NOT NULL,
+    -- the "ready for production" flag
     is_active BOOLEAN DEFAULT FALSE,
-    created_by INTEGER REFERENCES users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (child_grouper_url, child_grouper_version) REFERENCES tes_reporting_spec_groupers(canonical_url, version) ON DELETE CASCADE
+    -- user notes about what changed in this version
+    notes TEXT,
+
+    -- the actual configuration data:
+    included_conditions JSONB,
+    loinc_codes_additions JSONB,
+    snomed_codes_additions JSONB,
+    icd10_codes_additions JSONB,
+    rxnorm_codes_additions JSONB,
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+
+    -- a configuration group can't have two versions with the same number
+    UNIQUE (configuration_id, version)
 );
 
--- PART 3: the "serving layer"--denormalized runtime cache
-CREATE TABLE IF NOT EXISTS refinement_cache (
-    snomed_code TEXT NOT NULL,
-    jurisdiction_id VARCHAR(4) NOT NULL,
-    aggregated_codes TEXT[] NOT NULL,
-    source_details JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (snomed_code, jurisdiction_id)
+-- this partial index ensures that for any given configuration group,
+-- only ONE version can be marked as active (ready for production)
+CREATE UNIQUE INDEX one_active_version_per_configuration ON configuration_versions (configuration_id) WHERE is_active;
+
+-- this table stores the available labels (tags)
+CREATE TABLE labels (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    color TEXT, -- e.g., a hex code like '#4287f5'
+    description TEXT
+);
+
+-- this is the join table to apply multiple labels to a configuration "idea"
+CREATE TABLE configuration_labels (
+    configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
+    label_id INTEGER NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
+    PRIMARY KEY (configuration_id, label_id)
 );

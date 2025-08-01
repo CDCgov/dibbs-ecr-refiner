@@ -8,12 +8,8 @@ WORKDIR /app
 RUN apk add --no-cache python3 py3-pip
 
 # setup and seeding
-# * copy each .sql file in the following directories
-# * the classification schema used in the naming convention will ensure
-#   the files are executed in the correct order
+# * copy the single schema file. the entrypoint will run this first.
 COPY ./schema/*.sql /docker-entrypoint-initdb.d/
-COPY ./functions/*.sql /docker-entrypoint-initdb.d/
-COPY ./triggers/*.sql /docker-entrypoint-initdb.d/
 
 # python script and its dependencies
 COPY ./requirements.txt ./scripts/requirements.txt
