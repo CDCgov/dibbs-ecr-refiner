@@ -2,7 +2,7 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 
 enum ConfigurationStatus {
   on = 'on',
