@@ -13,7 +13,6 @@ const globalOptions: ToastOptions = {
     '!m-0',
     '!w-[26.25rem]',
     '!h-[4.5rem]',
-    '!bg-state-success-lighter',
     '!items-center'
   ),
   pauseOnFocusLoss: false,
@@ -24,12 +23,30 @@ export function useToast() {
   return (options: {
     body?: string;
     heading?: string;
+    variant?: 'success' | 'error';
     duration?: number;
     hideProgressBar?: boolean;
-  }) =>
-    toast(<Toast body={options.body ?? ''} heading={options.heading ?? ''} />, {
-      ...globalOptions,
-      autoClose: options.duration ?? 5000,
-      hideProgressBar: options.hideProgressBar ?? false,
-    });
+  }) => {
+    const { body, heading, variant, duration, hideProgressBar } = options;
+
+    const defaultedVariant = variant ?? 'success';
+
+    toast(
+      <Toast
+        body={body ?? ''}
+        heading={heading ?? ''}
+        variant={defaultedVariant}
+      />,
+      {
+        ...globalOptions,
+        theme: defaultedVariant === 'success' ? 'light' : 'dark',
+        autoClose: duration ?? 5000,
+        hideProgressBar: hideProgressBar ?? false,
+        className: classNames(globalOptions.className, {
+          '!bg-state-success-lighter': defaultedVariant === 'success',
+          '!bg-state-error': defaultedVariant === 'error',
+        }),
+      }
+    );
+  };
 }

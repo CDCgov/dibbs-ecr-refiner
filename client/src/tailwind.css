@@ -4,7 +4,8 @@
   /* Overriding react-toastify progress bar color.
   See here: https://fkhadra.github.io/react-toastify/how-to-style/#override-css-variables
   */
-  --toastify-color-progress-light: #00a91c;
+  --toastify-color-progress-light: #00a91c; /* success */
+  --toastify-color-progress-dark: #d54309; /* error */
 }
 
 @layer base {
@@ -70,6 +71,8 @@
   --color-state-success-lighter: #ecf3ec;
   --color-state-success: #00a91c;
   --color-state-success-dark: #216e1f;
+  --color-state-error-lighter: #f4e3db;
+  --color-state-error: #d54309;
   --color-state-error-dark: #b50909;
 
   --color-violet-warm-60: #864381;

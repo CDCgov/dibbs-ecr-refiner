@@ -61,12 +61,17 @@ export function Configurations() {
         />
         <Button
           className="m-0!"
-          onClick={() =>
+          onClick={() => {
             showToast({
               heading: 'New configuration created',
               body: 'Human immunodeficiency virus infection',
-            })
-          }
+            });
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+              variant: 'error',
+            });
+          }}
         >
           Set up new condition
         </Button>

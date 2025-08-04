@@ -34,12 +34,12 @@ describe('Configurations', () => {
     ).toBeInTheDocument();
   });
 
-  it('should render a toast when the "Set up new configuration" button is clicked', async () => {
+  it('should render an error and success toast when the "Set up new configuration" button is clicked', async () => {
     const user = userEvent.setup();
     renderPageView();
     await user.click(screen.getByText('Set up new condition'));
     expect(
-      await screen.findByText('New configuration created')
-    ).toBeInTheDocument();
+      await screen.findAllByText('New configuration created')
+    ).toHaveLength(2);
   });
 });
