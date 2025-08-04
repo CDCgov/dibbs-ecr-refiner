@@ -129,7 +129,6 @@ export function Configurations() {
           ref={modalRef}
           id="add-configuration-modal"
           aria-labelledby="add-configuration-modal-heading"
-          aria-describedby="add-configuration-modal-description"
           className="pb-5 !align-top"
         >
           <ModalHeading
