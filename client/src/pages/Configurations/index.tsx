@@ -155,7 +155,7 @@ export function Configurations() {
             <ModalFooter className="flex justify-self-end">
               <Button
                 type="submit"
-                className={`!m-0 ${formValid ? 'button-enabled' : 'button-disabled'}`}
+                variant={`${formValid ? 'primary' : 'disabled'}`}
                 disabled={!formValid}
               >
                 Add condition

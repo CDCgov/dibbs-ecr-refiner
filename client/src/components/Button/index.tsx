@@ -7,7 +7,7 @@ import classNames from 'classnames';
 
 interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   type?: UswdsButtonProps['type'];
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'disabled';
   to?: string;
 }
 
@@ -24,6 +24,8 @@ export function Button({
     '!bg-violet-warm-60 hover:!bg-violet-warm-70': variant === 'primary',
     '!bg-white !text-violet-warm-60 !border-violet-warm-60 !border-[2px] !rounded-sm hover:!border-violet-warm-70 hover:!text-violet-warm-70':
       variant === 'secondary',
+    '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed':
+      variant === 'disabled',
   });
 
   if (to) {
