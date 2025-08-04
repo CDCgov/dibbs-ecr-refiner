@@ -98,11 +98,36 @@ jobs:
             message += `**Status**: ${conclusion === 'success' ? 'Completed' : 'Failed'}\n\n`;
             message += `**View detailed results**: Navigate to Security tab → Code scanning alerts\n`;
             message += `**Filter by**: \`pr-scan-refiner-app\` or \`pr-scan-refiner-lambda\``;
+            message += `*Last updated: ${new Date().toLocaleString()}*`;
             
-            // Add comment to PR
-            await github.rest.issues.createComment({
+            // Look for existing security scan comment
+            const comments = await github.rest.issues.listComments({
               issue_number: prNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: message
             });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('Security Scan Summary')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+              console.log('Updated existing security scan comment');
+            } else {
+              // Create new comment if none exists
+              await github.rest.issues.createComment({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+              console.log('Created new security scan comment');
+            }
