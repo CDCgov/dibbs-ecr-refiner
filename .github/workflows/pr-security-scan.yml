@@ -57,6 +57,25 @@ jobs:
           ignore-unfixed: true
           timeout: '10m'
 
+      - name: Run Trivy for table output (for PR comment)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
+          format: 'table'
+          output: 'trivy-${{ matrix.image.name }}-table.txt'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+          timeout: '10m'
+
+      - name: Upload scan results as artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-results-${{ matrix.image.name }}
+          path: |
+            trivy-${{ matrix.image.name }}-results.sarif
+            trivy-${{ matrix.image.name }}-table.txt
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
@@ -83,10 +102,17 @@ jobs:
     if: always()
     
     steps:
-      - name: PR Security Summary
+      - name: Download all scan results
+        uses: actions/download-artifact@v4
+        with:
+          path: scan-results
+
+      - name: Create detailed PR comment with scan results
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const path = require('path');
             const conclusion = '${{ needs.build-and-scan.result }}';
             const prNumber = context.payload.pull_request?.number;
             
@@ -96,8 +122,55 @@ jobs:
             message += `**Scanned Images**: refiner-app, refiner-lambda\n`;
             message += `**Scan Time**: ${new Date().toISOString()}\n`;
             message += `**Status**: ${conclusion === 'success' ? 'Completed' : 'Failed'}\n\n`;
-            message += `**View detailed results**: Navigate to Security tab → Code scanning alerts\n`;
-            message += `**Filter by**: \`pr-scan-refiner-app\` or \`pr-scan-refiner-lambda\``;
+            
+            // Add vulnerability details for each image
+            const images = ['refiner-app', 'refiner-lambda'];
+            for (const image of images) {
+              const tablePath = `scan-results/trivy-results-${image}/trivy-${image}-table.txt`;
+              
+              message += `### ${image} Image Scan Results\n`;
+              
+              if (fs.existsSync(tablePath)) {
+                const tableContent = fs.readFileSync(tablePath, 'utf8');
+                
+                // Check if vulnerabilities were found
+                if (tableContent.includes('Total: 0') || tableContent.trim() === '') {
+                  message += `**No vulnerabilities found**\n\n`;
+                } else {
+                  // Extract and format the vulnerability table
+                  const lines = tableContent.split('\n');
+                  let vulnerabilitySection = false;
+                  let vulnCount = 0;
+                  
+                  message += `<details>\n<summary> **Click to view vulnerability details**</summary>\n\n`;
+                  message += '```\n';
+                  
+                  for (const line of lines) {
+                    if (line.includes('Total:') && line.match(/\d+/)) {
+                      const match = line.match(/Total: (\d+)/);
+                      if (match) vulnCount = parseInt(match[1]);
+                    }
+                    if (line.includes('Library') && line.includes('Vulnerability') && line.includes('Severity')) {
+                      vulnerabilitySection = true;
+                    }
+                    if (vulnerabilitySection || line.includes('Total:')) {
+                      message += line + '\n';
+                    }
+                  }
+                  
+                  message += '```\n</details>\n\n';
+                  
+                  if (vulnCount > 0) {
+                    message += `**${vulnCount} vulnerabilities found**\n\n`;
+                  }
+                }
+              } else {
+                message += `**Scan failed or results not available**\n\n`;
+              }
+            }
+            
+            message += `**View in Security Tab**: Navigate to Security → Code scanning alerts\n`;
+            message += `**Filter by**: \`pr-scan-refiner-app\` or \`pr-scan-refiner-lambda\`\n\n`;
             message += `*Last updated: ${new Date().toLocaleString()}*`;
             
             // Look for existing security scan comment
@@ -131,3 +204,5 @@ jobs:
               });
               console.log('Created new security scan comment');
             }
+
+            console.log('Security scan comment updated successfully');
