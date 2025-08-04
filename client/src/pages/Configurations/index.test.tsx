@@ -5,10 +5,37 @@ import {
   fireEvent,
   waitFor,
   getByText,
+  findByText,
 } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import userEvent from '@testing-library/user-event';
+
+async function mock(mockedUri: string, stub: unknown) {
+  const { Module } = (await import('module')) as unknown as {
+    Module: Record<string, (uri: string, parent: unknown) => void>;
+  };
+  Module._load_original = Module._load;
+  Module._load = (uri, parent) => {
+    if (uri === mockedUri) return stub;
+    return Module._load_original(uri, parent);
+  };
+}
+
+vi.hoisted(async () => {
+  const tabbable: typeof Tabbable = await vi.importActual('tabbable');
+  return mock('tabbable', {
+    ...tabbable,
+    tabbable: (node: Element, options: TabbableOptions) =>
+      tabbable.tabbable(node, { ...options, displayCheck: 'none' }),
+    focusable: (node: Element, options: TabbableOptions) =>
+      tabbable.focusable(node, { ...options, displayCheck: 'none' }),
+    isTabbable: (node: Element, options: TabbableOptions) =>
+      tabbable.isTabbable(node, { ...options, displayCheck: 'none' }),
+    isFocusable: (node: Element, options: TabbableOptions) =>
+      tabbable.isFocusable(node, { ...options, displayCheck: 'none' }),
+  });
+});
 
 const renderPageView = () =>
   render(
@@ -43,37 +70,7 @@ describe('Configurations Page', () => {
     expect(getByText(modal, 'Set up new condition')).toBeInTheDocument();
   });
 
-  test('selects a condition from the ComboBox and enables the Add condition button', () => {
-    const user = userEvent.setup();
-    renderPageView();
-    const setUpButton = screen.getByRole('button', {
-      name: 'Set up new condition',
-    });
-    user.click(setUpButton);
-
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
-
-    // expect(screen.getByTestId('combo-box-input')).toBeVisible();
-
-    // const conditionInput = screen.getByLabelText('Condition');
-    // expect(conditionInput).toBeInTheDocument();
-    //
-    // user.click(conditionInput);
-    // user.keyboard('Anaplasmosis{Enter}');
-    //
-    // const anaplasmosisOption = await screen.findByText('Anaplasmosis');
-    // expect(anaplasmosisOption).toBeInTheDocument();
-    // userEvent.click(anaplasmosisOption);
-    //
-    // expect(conditionInput).toHaveValue('Anaplasmosis');
-    //
-    // const addConditionButton = screen.getByRole('button', {
-    //    name: 'Add condition',
-    // });
-    // expect(addConditionButton).toBeEnabled();
-  });
-
-  test.skip('submits the form and adds a new configuration to the table', async () => {
+  test('selects a condition from the ComboBox and enables the Add condition button', async () => {
     const user = userEvent.setup();
     renderPageView();
     const setUpButton = screen.getByRole('button', {
@@ -81,24 +78,55 @@ describe('Configurations Page', () => {
     });
     await user.click(setUpButton);
 
-    // Expect the modal to open
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
     const conditionInput = screen.getByLabelText('Condition');
-    fireEvent.change(conditionInput, { target: { value: 'Anaplasmosis' } });
+    expect(conditionInput).toBeInTheDocument();
 
-    const anaplasmosisOption = await screen.findByText('Anaplasmosis');
-    fireEvent.click(anaplasmosisOption);
+    await user.type(conditionInput, 'Anaplasmosis');
+
+    const anaplasmosisOption = await findByText(await screen.findByRole('option'), 'Anaplasmosis');
+    expect(anaplasmosisOption).toBeInTheDocument();
+
+    await userEvent.click(anaplasmosisOption);
+
+    expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Add condition',
+       name: 'Add condition',
     });
-    fireEvent.click(addConditionButton);
+    expect(addConditionButton).toBeEnabled();
+  });
 
-    // Expect the modal to close
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  test('submits the form and adds a new configuration to the table', async () => {
+    const user = userEvent.setup();
+    renderPageView();
+    const setUpButton = screen.getByRole('button', {
+      name: 'Set up new condition',
     });
+    await user.click(setUpButton);
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    const conditionInput = screen.getByLabelText('Condition');
+    expect(conditionInput).toBeInTheDocument();
+
+    await user.type(conditionInput, 'Anaplasmosis');
+
+    const anaplasmosisOption = await findByText(await screen.findByRole('option'), 'Anaplasmosis');
+    expect(anaplasmosisOption).toBeInTheDocument();
+
+    await userEvent.click(anaplasmosisOption);
+
+    expect(conditionInput).toHaveValue('Anaplasmosis');
+
+    const addConditionButton = screen.getByRole('button', {
+       name: 'Add condition',
+    });
+    expect(addConditionButton).toBeEnabled();
+    await user.click(addConditionButton);
+
+    expect(await screen.findByRole('dialog')).not.toBeInTheDocument();
 
     // Expect the new configuration to be in the table
     expect(screen.getByText('Anaplasmosis')).toBeInTheDocument();
