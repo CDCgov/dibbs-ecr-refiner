@@ -40,7 +40,7 @@ describe('Configurations Page', () => {
     const setUpButton = screen.getByRole('button', {
       name: 'Set up new condition',
     });
-    user.click(setUpButton);
+    await user.click(setUpButton);
     const modal = screen.getByRole('dialog');
     expect(modal).toBeInTheDocument();
     expect(getByText(modal, 'Set up new condition')).toBeInTheDocument();
@@ -84,12 +84,10 @@ describe('Configurations Page', () => {
     const setUpButton = screen.getByRole('button', {
       name: 'Set up new condition',
     });
-    fireEvent.click(setUpButton);
+    await user.click(setUpButton);
 
     // Expect the modal to open
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
     const conditionInput = screen.getByLabelText('Condition');
     fireEvent.change(conditionInput, { target: { value: 'Anaplasmosis' } });
