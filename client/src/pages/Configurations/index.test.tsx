@@ -11,12 +11,12 @@ const renderPageView = () =>
   );
 
 describe('Configurations', () => {
-  it('should contain a table with certain columns', async () => {
+  it('should contain a table with certain columns', () => {
     renderPageView();
 
     expect(screen.getByTestId('table')).toBeInTheDocument();
   });
-  it('should contain a call-to-action button', async () => {
+  it('should contain a call-to-action button', () => {
     renderPageView();
     expect(
       screen.getByText('Set up new condition', {
@@ -24,7 +24,7 @@ describe('Configurations', () => {
       })
     ).toBeInTheDocument();
   });
-  it('should have a search component with correct placeholder', async () => {
+  it('should have a search component with correct placeholder', () => {
     renderPageView();
     expect(
       screen.getByPlaceholderText('Search configurations')
