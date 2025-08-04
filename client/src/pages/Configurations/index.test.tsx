@@ -2,19 +2,37 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
+import { TestQueryClientProvider } from '../../test-utils';
+
+// Mock configurations request
+vi.mock('../../api/configurations/configurations', async () => {
+  const actual = await vi.importActual(
+    '../../api/configurations/configurations'
+  );
+  return {
+    ...actual,
+    useGetConfigurations: vi.fn(() => ({
+      data: { data: [{ id: '1', display_name: 'test' }] },
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
 
 const renderPageView = () =>
   render(
-    <BrowserRouter>
-      <Configurations />
-    </BrowserRouter>
+    <TestQueryClientProvider>
+      <BrowserRouter>
+        <Configurations />
+      </BrowserRouter>
+    </TestQueryClientProvider>
   );
 
 describe('Configurations', () => {
   it('should contain a table with certain columns', async () => {
     renderPageView();
 
-    expect(screen.getByTestId('table')).toBeInTheDocument();
+    expect(await screen.findByRole('table')).toBeInTheDocument();
   });
   it('should contain a call-to-action button', async () => {
     renderPageView();
@@ -27,7 +45,7 @@ describe('Configurations', () => {
   it('should have a search component with correct placeholder', async () => {
     renderPageView();
     expect(
-      screen.getByPlaceholderText('Search configurations')
+      await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
   });
 });

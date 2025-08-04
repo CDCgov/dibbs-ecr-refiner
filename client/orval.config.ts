@@ -1,5 +1,3 @@
-// orval.config.ts
-
 import { defineConfig } from 'orval';
 
 export default defineConfig({
