@@ -35,7 +35,7 @@ services:
       - db
       - auth
   auth:
-    image: quay.io/keycloak/keycloak:26.3.1
+    image: quay.io/keycloak/keycloak:26.3.2
     command:
       - "start-dev"
       - "--import-realm"
