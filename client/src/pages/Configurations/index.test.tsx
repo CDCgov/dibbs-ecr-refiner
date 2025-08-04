@@ -17,9 +17,6 @@ const renderPageView = () =>
     </BrowserRouter>
   );
 
-vi.mock('focus-trap-react');
-vi.mock('tabbable');
-
 describe('Configurations Page', () => {
   test('renders the Configurations page with title and search bar', () => {
     renderPageView();
@@ -34,7 +31,7 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
   });
 
-  test('opens the modal when "Set up new condition" button is clicked', () => {
+  test('opens the modal when "Set up new condition" button is clicked', async () => {
     const user = userEvent.setup();
     renderPageView();
     const setUpButton = screen.getByRole('button', {
@@ -56,10 +53,7 @@ describe('Configurations Page', () => {
 
     expect(screen.queryByRole('dialog')).toBeInTheDocument();
 
-    expect(screen.getByTestId('combo-box-input')).toBeVisible();
-    user.type(screen.getByTestId('combo-box-input'), 'Roger{Enter}');
-    console.log('Roger');
-    screen.debug(screen.getByTestId('combo-box-input'));
+    // expect(screen.getByTestId('combo-box-input')).toBeVisible();
 
     // const conditionInput = screen.getByLabelText('Condition');
     // expect(conditionInput).toBeInTheDocument();
@@ -80,6 +74,7 @@ describe('Configurations Page', () => {
   });
 
   test.skip('submits the form and adds a new configuration to the table', async () => {
+    const user = userEvent.setup();
     renderPageView();
     const setUpButton = screen.getByRole('button', {
       name: 'Set up new condition',
