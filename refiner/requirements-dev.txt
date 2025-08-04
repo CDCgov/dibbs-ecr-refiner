@@ -9,7 +9,7 @@ ruff==0.12.5
 saxonche
 testcontainers[compose]>=3.7.1
 tqdm
-mypy==1.17.0
+mypy==1.17.1
 lxml-stubs
 types-Authlib
 boto3-stubs
