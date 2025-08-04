@@ -16,7 +16,7 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...db.demo.model import RefinedTestingDocument
+from ...db.demo.model import Condition, ConditionProcessingInfo, RefinedTestingDocument
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io, format
 from ...services.ecr.refine import refine_async
@@ -267,23 +267,23 @@ async def demo_upload(
 
             # Build per-condition metadata (zip token added later)
             conditions.append(
-                {
-                    "code": condition_code,
-                    "display_name": condition_name,
-                    "refined_eicr": format.normalize_xml(condition_refined_eicr),
-                    "stats": [
+                Condition(
+                    code=condition_code,
+                    display_name=condition_name,
+                    refined_eicr=format.normalize_xml(condition_refined_eicr),
+                    stats=[
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
                                 original_xml_files.eicr, condition_refined_eicr
                             )
                         }%",
                     ],
-                    "processing_info": {
-                        "condition_specific": True,
-                        "sections_processed": "All sections scoped to condition codes",
-                        "method": "ProcessedGrouper-based filtering",
-                    },
-                }
+                    processing_info=ConditionProcessingInfo(
+                        condition_specific=True,
+                        sections_processed="All sections scoped to condition codes",
+                        method="ProcessedGrouper-based filtering",
+                    ),
+                )
             )
 
         # ✅ Zip all condition files + eICR file into one archive
