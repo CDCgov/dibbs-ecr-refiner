@@ -7,6 +7,7 @@ from datetime import datetime as dt
 
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
+from ...db.user.model import User
 
 SESSION_TTL = timedelta(hours=1)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
@@ -84,7 +85,7 @@ async def create_session(user_id: str) -> str:
     return token
 
 
-async def get_user_from_session(token: str) -> dict[str, str] | None:
+async def get_user_from_session(token: str) -> User | None:
     """
     Given a session token, find the user associated with the session.
 
@@ -106,7 +107,7 @@ async def get_user_from_session(token: str) -> dict[str, str] | None:
 
         print("User from session:", user)
         if user:
-            return {"id": user["id"], "username": user["username"]}
+            return User(id=user["id"], username=user["username"])
     return None
 
 

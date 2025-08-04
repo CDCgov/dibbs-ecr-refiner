@@ -2,43 +2,12 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
-
-enum ConfigurationStatus {
-  on = 'on',
-  off = 'off',
-}
+import { useGetConfigurations } from '../../api/configurations/configurations';
 
 export function Configurations() {
-  const tableData = {
-    columns: { name: 'Reportable condition', status: 'Status' },
-    data: [
-      {
-        name: 'Chlamydia trachomatis infection',
-        status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Disease caused by Enterovirus',
-        status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Human immunodeficiency virus infection (HIV)',
-        status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Syphilis',
-        status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-      {
-        name: 'Viral hepatitis, type A',
-        status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
-      },
-    ],
-  };
+  const { data, isLoading } = useGetConfigurations();
+
+  if (isLoading || !data?.data) return 'Loading...';
 
   return (
     <section className="mx-auto p-3">
@@ -58,7 +27,14 @@ export function Configurations() {
         />
         <Button className="m-0!">Set up new condition</Button>
       </div>
-      <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
+      <ConfigurationsTable
+        columns={{ name: 'Reportable condition', status: 'Status' }}
+        data={data.data.map(({ id, name, is_active }) => ({
+          id,
+          name,
+          status: is_active ? 'on' : 'off',
+        }))}
+      />
     </section>
   );
 }

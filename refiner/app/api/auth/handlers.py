@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 
+from ...db.user.model import User
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import create_session, delete_session, get_user_from_session, upsert_user
 
 auth_router = APIRouter()
 
 
-@auth_router.get("/login")
+@auth_router.get("/login", tags=["auth", "internal"], include_in_schema=False)
 async def login(request: Request) -> RedirectResponse:
     """
     Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.
@@ -28,7 +29,12 @@ async def login(request: Request) -> RedirectResponse:
     return await get_oauth_provider().authorize_redirect(request, redirect_uri)
 
 
-@auth_router.get("/auth/callback", name="auth_callback")
+@auth_router.get(
+    "/auth/callback",
+    name="auth_callback",
+    tags=["auth", "internal"],
+    include_in_schema=False,
+)
 async def auth_callback(request: Request) -> RedirectResponse:
     """
     Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
@@ -74,8 +80,10 @@ async def auth_callback(request: Request) -> RedirectResponse:
         raise e
 
 
-@auth_router.get("/user")
-async def get_user(request: Request) -> JSONResponse:
+@auth_router.get(
+    "/user", response_model=User | None, tags=["user"], operation_id="getUser"
+)
+async def get_user(request: Request) -> User | None:
     """
     Returns the current logged-in user's information.
 
@@ -90,17 +98,17 @@ async def get_user(request: Request) -> JSONResponse:
     session_token = request.cookies.get("refiner-session")
 
     if not session_token:
-        return JSONResponse(content=None)
+        return None
 
     user = await get_user_from_session(session_token)
 
     if not user:
-        return JSONResponse(content=None)
+        return None
 
-    return JSONResponse(content=user)
+    return user
 
 
-@auth_router.get("/logout")
+@auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
 async def logout(request: Request) -> RedirectResponse:
     """
     Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.
