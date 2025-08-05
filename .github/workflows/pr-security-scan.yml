@@ -100,7 +100,7 @@ jobs:
             message += `**Status**: ${conclusion === 'success' ? 'Completed' : 'Failed'}\n\n`;
             message += `**View detailed results**: Navigate to Security tab → Code scanning alerts\n`;
             message += `**Filter by**: \`pr-scan-refiner-app\` or \`pr-scan-refiner-lambda\`\n\n`;
-            message += `*Last updated: ${new Date().toUTCString()}*`;
+            message += `*Last updated: ${new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}*`;
             
             // Look for existing security scan comment
             const comments = await github.rest.issues.listComments({
