@@ -52,3 +52,40 @@ export default tseslint.config({
   },
 });
 ```
+
+## Generated Data Fetching Hooks
+
+This project uses a variety of tools in order to automatically generate [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/overview) hooks that can be used from the React client to interact with the FastAPI server. Automatically generating hooks to interact with the server means that developers will not need to create (or modify) these hooks each time a route is added (or updated) in the FastAPI. Another benefit of code generation is that types will always remain consistent across the client and server. Without code generation, developers would need to manually ensure these types don't drift from one another.
+
+### How it works
+
+1. During local development FastAPI writes a [refiner/openapi.json file](/refiner/openapi.json) any time the server is modified
+2. The [docker-compose.yml file](/docker-compose.yaml) used for local development starts the `client` container with `npm run dev`
+3. `npm run dev` uses [concurrently](https://www.npmjs.com/package/concurrently) to run two scripts at once: `watch:openapi`, which uses [nodemon](https://www.npmjs.com/package/nodemon) to monitor changes to the `refiner/openapi.json` file, and `vite`, which starts the dev server
+4. When `refiner/openapi.json` is modified, nodemon will run `npm run codegen` (defined in [nodemon's config file](/client/nodemon.json))
+5. The codegen script runs `orval` (using its [config file](/client/orval.config.ts)) to generate the TanStack Query hooks
+
+### Requirements
+
+There are a few things that must be done when creating a new API route in order to get the best results from code generation.
+
+When creating a new handler on the server we want to ensure we add the following:
+
+- `response_model`: This tells the client how to generate TypeScript types
+- `tag`: This will allow us to exclude handlers from codegen, such as handlers tagged `internal`. This may make sense for "internal" tasks like a `/healthcheck` where there is no need for the client to interact with this route
+- `operation_id`: This is a friendly name that will be used for the hook. For example, if I give my `/configurations` route an `operation_id` of `getConfigurations` then my React hook to query this endpoint will be called `useGetConfigurations`
+
+### Usage
+
+Continuing from the example above, the `useGetConfigurations` hook will be generated (or updated) and placed in the `client/src/api/configurations/configurations.ts` file. It can be used within a React component like this:
+
+```tsx
+function MyPage() {
+  const { data, isError, isLoading } = useGetConfigurations();
+
+  if (isLoading || !data?.data) return 'Loading...';
+  if (isError) return 'Error occurred!';
+
+  return <div>{data.data.length === 0 ? 'No data' : data.data[0].name}</div>;
+}
+```
