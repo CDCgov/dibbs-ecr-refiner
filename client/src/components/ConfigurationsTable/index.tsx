@@ -1,5 +1,6 @@
 import { Table as UswdsTable } from '@trussworks/react-uswds';
 import { StatusPill } from '../StatusPill';
+import { useNavigate } from 'react-router';
 
 interface TableColumns {
   [key: string]: string;
@@ -20,6 +21,8 @@ export function ConfigurationsTable({
   columns,
   data,
 }: ConfigurationsTableProps) {
+  const navigate = useNavigate();
+
   if (!data.length) {
     return (
       <UswdsTable stackedStyle="default">
@@ -57,9 +60,19 @@ export function ConfigurationsTable({
         </tr>
       </thead>
       <tbody>
-        {data.map(({ name, status }, idx) => {
+        {data.map(({ name, id, status }, idx) => {
           return (
-            <tr key={idx}>
+            <tr
+              key={idx}
+              onClick={() => navigate(`/configurations/${id}/build`)}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  navigate(`/configurations/${id}/build`);
+                }
+              }}
+              aria-label={`View configuration for ${name}`}
+            >
               <th data-label={columns['name']} scope="row">
                 {name}
               </th>
