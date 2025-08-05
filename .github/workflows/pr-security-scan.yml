@@ -57,7 +57,7 @@ jobs:
           ignore-unfixed: true
           timeout: '10m'
 
-          
+
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
@@ -100,7 +100,7 @@ jobs:
             message += `**Status**: ${conclusion === 'success' ? 'Completed' : 'Failed'}\n\n`;
             message += `**View detailed results**: Navigate to Security tab → Code scanning alerts\n`;
             message += `**Filter by**: \`pr-scan-refiner-app\` or \`pr-scan-refiner-lambda\`\n\n`;
-            message += `*Last updated: ${new Date().toLocaleString()}*`;
+            message += `*Last updated: ${new Date().toUTCString()}*`;
             
             // Look for existing security scan comment
             const comments = await github.rest.issues.listComments({
