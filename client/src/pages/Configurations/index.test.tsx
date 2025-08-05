@@ -2,15 +2,12 @@ import { describe, expect } from 'vitest';
 import {
   render,
   screen,
-  fireEvent,
-  waitFor,
   getByText,
   findByText,
 } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import userEvent from '@testing-library/user-event';
-import { wait } from '@testing-library/user-event/dist/cjs/utils/index.js';
 
 const renderPageView = () =>
   render(
