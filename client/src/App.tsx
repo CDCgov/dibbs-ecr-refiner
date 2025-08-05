@@ -5,6 +5,7 @@ import NotFound from './pages/NotFound';
 import { Layout } from './components/Layout';
 import { useLogin } from './hooks/Login';
 import { Home } from './pages/Home';
+import { ToastContainer } from 'react-toastify';
 import ConfigBuild from './pages/Configurations/ConfigBuild';
 import ConfigTest from './pages/Configurations/ConfigTest';
 import ConfigActivate from './pages/Configurations/ConfigActivate';
@@ -26,6 +27,7 @@ function App() {
 
   return (
     <Layout>
+      <ToastContainer />
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
