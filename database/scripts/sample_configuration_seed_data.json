@@ -1,0 +1,92 @@
+{
+  "jurisdictions": [
+    {
+      "id": "SDDH",
+      "name": "Senate District Health Department",
+      "state_code": "GC"
+    }
+  ],
+  "users": [
+    {
+      "email": "rispi.lacendad@cocotown.clinic.gr.example.com",
+      "jurisdiction_id": "SDDH",
+      "full_name": "Dr. Rispi Lacendad"
+    }
+  ],
+  "labels": [
+    {
+      "name": "single condition",
+      "color": "#3498DB",
+      "description": "Configuration containing a single condition."
+    },
+    {
+      "name": "in production",
+      "color": "#2ECC71",
+      "description": "Configuration that is active and in production use."
+    }
+  ],
+  "configurations": [
+    {
+      "name": "COVID19",
+      "jurisdiction_id": "SDDH",
+      "description": "Configuration for monitoring COVID-19."
+    },
+    {
+      "name": "Influenza",
+      "jurisdiction_id": "SDDH",
+      "description": "Configuration for monitoring Influenza."
+    }
+  ],
+  "configuration_versions": [
+    {
+      "configuration_name": "COVID19",
+      "version": 1,
+      "status": "active",
+      "notes": "Initial production version for COVID-19.",
+      "included_conditions": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+          "version": "2.0.0"
+        }
+      ],
+      "loinc_codes_additions": [],
+      "snomed_codes_additions": [],
+      "icd10_codes_additions": [],
+      "rxnorm_codes_additions": []
+    },
+    {
+      "configuration_name": "Influenza",
+      "version": 1,
+      "status": "active",
+      "notes": "Initial production version for Influenza.",
+      "included_conditions": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+          "version": "2.0.0"
+        }
+      ],
+      "loinc_codes_additions": [],
+      "snomed_codes_additions": [],
+      "icd10_codes_additions": [],
+      "rxnorm_codes_additions": []
+    }
+  ],
+  "configuration_labels": [
+    { "configuration_name": "COVID19", "label_name": "single condition" },
+    { "configuration_name": "COVID19", "label_name": "in production" },
+    { "configuration_name": "Influenza", "label_name": "single condition" },
+    { "configuration_name": "Influenza", "label_name": "in production" }
+  ],
+  "activations": [
+    {
+      "snomed_code": "840539006",
+      "configuration_name": "COVID19",
+      "configuration_version": 1
+    },
+    {
+      "snomed_code": "772828001",
+      "configuration_name": "Influenza",
+      "configuration_version": 1
+    }
+  ]
+}

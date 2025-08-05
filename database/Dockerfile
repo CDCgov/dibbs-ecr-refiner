@@ -14,6 +14,7 @@ COPY ./schema/*.sql /docker-entrypoint-initdb.d/
 # python script and its dependencies
 COPY ./requirements.txt ./scripts/requirements.txt
 COPY ./scripts/database_seeding.py ./scripts/database_seeding.py
+COPY ./scripts/sample_configuration_seed_data.json ./scripts/sample_configuration_seed_data.json
 RUN pip install --no-cache-dir --break-system-packages -r ./scripts/requirements.txt
 
 # data for the seeder
