@@ -10,6 +10,7 @@ import {
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import userEvent from '@testing-library/user-event';
+import { wait } from '@testing-library/user-event/dist/cjs/utils/index.js';
 
 const renderPageView = () =>
   render(
@@ -75,7 +76,7 @@ describe('Configurations Page', () => {
     expect(addConditionButton).toBeEnabled();
   });
 
-  test.skip('submits the form and adds a new configuration to the table', async () => {
+  test('submits the form and adds a new configuration to the table', async () => {
     const user = userEvent.setup();
     renderPageView();
     const setUpButton = screen.getByRole('button', {
@@ -83,7 +84,9 @@ describe('Configurations Page', () => {
     });
     await user.click(setUpButton);
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    const dialog = await screen.getByRole('dialog');
+
+    expect(dialog?.classList.contains('is-visible')).toEqual(true);
 
     const conditionInput = screen.getByLabelText('Condition');
     expect(conditionInput).toBeInTheDocument();
@@ -100,30 +103,33 @@ describe('Configurations Page', () => {
 
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
-    const addConditionButton = await screen.getByRole('button', {
+    const addConditionButton = screen.getByRole('button', {
       name: 'Add condition',
     });
     expect(addConditionButton).toBeEnabled();
     await user.click(addConditionButton);
 
-    expect(await screen.findByRole('dialog')).not.toBeInTheDocument();
+    expect(dialog?.classList.contains('is-hidden')).toEqual(true);
 
     // Expect the new configuration to be in the table
-    expect(screen.getByText('Anaplasmosis')).toBeInTheDocument();
-    expect(screen.getByText('off')).toBeInTheDocument(); // Default status is 'off'
+    expect(
+      getByText(screen.getByTestId('table'), 'Anaplasmosis')
+    ).toBeInTheDocument();
+    expect(
+      getByText(screen.getByTestId('table'), 'Refiner off')
+    ).toBeInTheDocument(); // Default status is 'off'
   });
 
-  test.skip('disables the "Add condition" button when no condition is selected', async () => {
+  test('disables the "Add condition" button when no condition is selected', async () => {
+    const user = userEvent.setup();
     renderPageView();
     const setUpButton = screen.getByRole('button', {
       name: 'Set up new condition',
     });
-    fireEvent.click(setUpButton);
+    await user.click(setUpButton);
 
     // Expect the modal to open
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog')).toBeInTheDocument();
-    });
+    expect(screen.queryByRole('dialog')).toBeInTheDocument();
 
     const addConditionButton = screen.getByRole('button', {
       name: 'Add condition',
