@@ -1,36 +1,61 @@
-from psycopg import Cursor
+import os
+
+import psycopg
+import pytest
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../.env"))
+
+DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
+DB_PORT = os.getenv("POSTGRES_PORT", "5432")
+DB_USER = os.getenv("POSTGRES_USER", "postgres")
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
+DB_NAME = os.getenv("POSTGRES_DB", "refiner")
+
+DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
-def test_database_connection(db_cursor: Cursor) -> None:
-    """
-    Tests that a connection to the database can be successfully established.
-    """
-
-    assert db_cursor is not None
-    assert not db_cursor.closed
+@pytest.fixture(scope="module")
+def db_conn():
+    conn = psycopg.connect(DB_URL)
+    yield conn
+    conn.close()
 
 
-def test_tables_exist(db_cursor: Cursor) -> None:
-    """
-    Tests that the core tables have been created by the schema scripts.
-    """
+def test_conditions_table_populated(db_conn):
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM conditions;")
+        count = cur.fetchone()[0]
+        assert count > 0, (
+            "Conditions table should have at least one entry after seeding."
+        )
 
-    db_cursor.execute("""
-        SELECT table_name
-        FROM information_schema.tables
-        WHERE table_schema = 'public'
-        ORDER BY table_name;
-    """)
-    tables = [row[0] for row in db_cursor.fetchall()]
 
-    expected_tables = [
-        "configurations",
-        "jurisdictions",
-        "refinement_cache",
-        "tes_condition_grouper_references",
-        "tes_condition_groupers",
-        "tes_reporting_spec_groupers",
-        "users",
-    ]
+def test_configurations_table_populated(db_conn):
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM configurations;")
+        count = cur.fetchone()[0]
+        assert count > 0, (
+            "Configurations table should have at least one entry after seeding."
+        )
 
-    assert tables == expected_tables
+
+def test_sample_configuration_exists(db_conn):
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT name FROM configurations WHERE name = 'COVID19';")
+        row = cur.fetchone()
+        assert row is not None, "'COVID19' configuration should exist in seed data."
+
+
+def test_configuration_versions_populated(db_conn):
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM configuration_versions;")
+        count = cur.fetchone()[0]
+        assert count > 0, "configuration_versions table should have at least one entry."
+
+
+def test_activations_populated(db_conn):
+    with db_conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM activations;")
+        count = cur.fetchone()[0]
+        assert count > 0, "activations table should have at least one entry."
