@@ -2,20 +2,21 @@ import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
 import { Button } from '../../components/Button';
 import XMLViewer from 'react-xml-viewer';
-import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
+import { RefinedTestingDocument } from '../../api/schemas';
 
-interface SuccessProps {
-  conditions: Condition[];
-  unrefinedEicr: string;
-  downloadToken: string;
-}
+type SuccessProps = Pick<
+  RefinedTestingDocument,
+  'conditions' | 'refined_download_token' | 'unrefined_eicr'
+>;
+
+type Condition = SuccessProps['conditions'][0];
 
 export function Success({
   conditions,
-  downloadToken,
-  unrefinedEicr,
+  unrefined_eicr,
+  refined_download_token,
 }: SuccessProps) {
   const [downloadError, setDownloadError] = useState<string>('');
   // defaults to first condition found
@@ -86,7 +87,9 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button onClick={async () => await downloadFile(downloadToken)}>
+              <Button
+                onClick={async () => await downloadFile(refined_download_token)}
+              >
                 Download results
               </Button>
               {downloadError ? <span>File download has expired.</span> : null}
@@ -95,7 +98,7 @@ export function Success({
         </div>
       </div>
       <EicrComparison
-        unrefinedEicr={unrefinedEicr}
+        unrefinedEicr={unrefined_eicr}
         refinedEicr={selectedCondition.refined_eicr}
         stats={selectedCondition.stats}
       />

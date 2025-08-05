@@ -71,8 +71,8 @@ export default function Demo() {
         {view === 'success' && data?.data && (
           <Success
             conditions={data?.data.conditions}
-            unrefinedEicr={data?.data.unrefined_eicr}
-            downloadToken={data?.data.refined_download_token}
+            unrefined_eicr={data?.data.unrefined_eicr}
+            refined_download_token={data?.data.refined_download_token}
           />
         )}
         {view === 'error' && (
