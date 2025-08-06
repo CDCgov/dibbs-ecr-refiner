@@ -1,10 +1,5 @@
 import { describe, expect } from 'vitest';
-import {
-  render,
-  screen,
-  getByText,
-  findByText,
-} from '@testing-library/react';
+import { render, screen, getByText, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import userEvent from '@testing-library/user-event';
@@ -39,7 +34,7 @@ describe('Configurations Page', () => {
     await user.click(setUpButton);
     const modal = screen.getByRole('dialog');
     expect(modal).toBeInTheDocument();
-    expect(getByText(modal, 'Set up new condition')).toBeInTheDocument();
+    expect(within(modal).getByText('Set up new condition')).toBeInTheDocument();
   });
 
   test('selects a condition from the ComboBox and enables the Add condition button', async () => {
@@ -57,13 +52,12 @@ describe('Configurations Page', () => {
 
     await user.type(conditionInput, 'Anaplasmosis');
 
-    const anaplasmosisOption = await findByText(
-      await screen.findByRole('option'),
-      'Anaplasmosis'
-    );
+    const anaplasmosisOption = await screen.findByText('Anaplasmosis', {
+      selector: 'li',
+    });
     expect(anaplasmosisOption).toBeInTheDocument();
 
-    await userEvent.click(anaplasmosisOption);
+    await user.click(anaplasmosisOption);
 
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
@@ -81,8 +75,9 @@ describe('Configurations Page', () => {
     });
     await user.click(setUpButton);
 
-    const dialog = await screen.getByRole('dialog');
+    const dialog = screen.getByRole('dialog');
 
+    // Check to see if the modal has a class of `is-visible`.
     expect(dialog?.classList.contains('is-visible')).toEqual(true);
 
     const conditionInput = screen.getByLabelText('Condition');
@@ -90,10 +85,9 @@ describe('Configurations Page', () => {
 
     await user.type(conditionInput, 'Anaplasmosis');
 
-    const anaplasmosisOption = await findByText(
-      await screen.findByRole('option'),
-      'Anaplasmosis'
-    );
+    const anaplasmosisOption = await screen.findByText('Anaplasmosis', {
+      selector: 'li',
+    });
     expect(anaplasmosisOption).toBeInTheDocument();
 
     await userEvent.click(anaplasmosisOption);
@@ -106,6 +100,7 @@ describe('Configurations Page', () => {
     expect(addConditionButton).toBeEnabled();
     await user.click(addConditionButton);
 
+    // Check to see if the modal has a class of `is-hidden`.
     expect(dialog?.classList.contains('is-hidden')).toEqual(true);
 
     // Expect the new configuration to be in the table
