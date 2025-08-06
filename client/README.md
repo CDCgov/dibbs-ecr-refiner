@@ -64,6 +64,10 @@ This project uses a variety of tools in order to automatically generate [TanStac
 3. `npm run dev` uses [concurrently](https://www.npmjs.com/package/concurrently) to run two scripts at once: `watch:openapi`, which uses [nodemon](https://www.npmjs.com/package/nodemon) to monitor changes to the `refiner/openapi.json` file, and `vite`, which starts the dev server
 4. When `refiner/openapi.json` is modified, nodemon will run `npm run codegen` (defined in [nodemon's config file](/client/nodemon.json))
 5. The codegen script runs `orval` (using its [config file](/client/orval.config.ts)) to generate the TanStack Query hooks
+6. All of the generated files with the hooks will get dropped into the `client/src/api` directory.
+
+> [!NOTE]
+> Files located in `client/src/api` should never be modified manually. Orval will continuously be updating these files as the Python codebase changes over time.
 
 ### Requirements
 
