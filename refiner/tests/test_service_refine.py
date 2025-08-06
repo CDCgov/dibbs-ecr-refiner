@@ -4,16 +4,18 @@ import pytest
 from lxml import etree
 from lxml.etree import _Element
 
+from app.core.config import ENVIRONMENT
 from app.core.exceptions import (
-    ConditionCodeError,
     StructureValidationError,
     XMLParsingError,
 )
 from app.core.models.types import XMLFiles
-from app.services.refine import (
+from app.db.connection import DatabaseConnection
+from app.services.ecr.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
     REFINER_OUTPUT_TITLE,
+    ReportableCondition,
     _analyze_trigger_codes_in_context,
     _create_or_update_text_element,
     _extract_clinical_data,
@@ -25,7 +27,7 @@ from app.services.refine import (
     _prune_unwanted_siblings,
     build_condition_eicr_pairs,
     get_reportable_conditions,
-    refine_eicr,
+    refine_sync,
 )
 
 from .conftest import NAMESPACES
@@ -195,15 +197,15 @@ def test_get_reportable_conditions_uniqueness() -> None:
         </ClinicalDocument>
     """)
 
-    result: list[dict[str, str]] | None = get_reportable_conditions(root)
+    result = get_reportable_conditions(root)
 
     # verify we get exactly 2 unique conditions
     assert len(result) == 2
 
     # verify the specific conditions are present
     expected_conditions: list[dict[str, str]] = [
-        {"code": "840539006", "displayName": "COVID-19"},
-        {"code": "27836007", "displayName": "Pertussis"},
+        ReportableCondition(code="840539006", display_name="COVID-19"),
+        ReportableCondition(code="27836007", display_name="Pertussis"),
     ]
     assert result == expected_conditions
 
@@ -229,8 +231,8 @@ def test_get_reportable_conditions_empty_rr11() -> None:
         </ClinicalDocument>
     """)
 
-    result: list[dict[str, str]] | None = get_reportable_conditions(root)
-    assert result is None
+    result = get_reportable_conditions(root)
+    assert result == []
 
 
 @pytest.mark.parametrize(
@@ -252,13 +254,16 @@ def test_refine_eicr(
     Test eICR refinement with required condition_codes.
     """
 
-    refined_output: str = refine_eicr(
-        xml_files=sample_xml_files,
+    refined_output = refine_sync(
+        original_xml=sample_xml_files,
+        db=DatabaseConnection(db_url=ENVIRONMENT["DB_URL"]),
         sections_to_include=sections_to_include,
-        condition_codes=condition_codes,
+        additional_condition_codes=condition_codes,
     )
 
-    refined_doc: _Element = etree.fromstring(refined_output)
+    assert len(refined_output) == 1
+
+    refined_doc: _Element = etree.fromstring(refined_output[0].refined_eicr)
     refined_structured_body: _Element | None = refined_doc.find(
         path=".//{urn:hl7-org:v3}structuredBody", namespaces={"hl7": "urn:hl7-org:v3"}
     )
@@ -273,45 +278,17 @@ def test_refine_eicr(
     assert result == expected_in_results
 
 
-def test_refine_eicr_requires_condition_codes(sample_xml_files: XMLFiles):
-    """
-    Test that refine_eicr raises ConditionCodeError if condition_codes is not provided.
-    """
-
-    with pytest.raises(ConditionCodeError) as excinfo:
-        refine_eicr(
-            xml_files=sample_xml_files,
-            sections_to_include=None,
-            condition_codes=None,
-        )
-    assert "No condition codes provided" in str(excinfo.value)
-
-
-def test_refine_eicr_empty_condition_codes(sample_xml_files: XMLFiles) -> None:
-    """
-    Test that refine_eicr raises ConditionCodeError if condition_codes is empty string.
-    """
-
-    with pytest.raises(ConditionCodeError) as excinfo:
-        refine_eicr(
-            xml_files=sample_xml_files,
-            sections_to_include=None,
-            condition_codes="",
-        )
-    assert "No condition codes provided" in str(excinfo.value)
-
-
 def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
     """
     Test building condition-eICR pairs with XMLFiles objects.
     """
 
-    reportable_conditions: list[dict[str, str]] = [
-        {"code": "840539006", "displayName": "COVID-19"},
-        {"code": "27836007", "displayName": "Pertussis"},
+    reportable_conditions = [
+        ReportableCondition(code="840539006", display_name="COVID-19"),
+        ReportableCondition(code="27836007", display_name="Pertussis"),
     ]
 
-    pairs: list[dict[str, Any]] = build_condition_eicr_pairs(
+    pairs = build_condition_eicr_pairs(
         original_xml_files=sample_xml_files, reportable_conditions=reportable_conditions
     )
 
@@ -320,14 +297,15 @@ def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
 
     # verify each pair has the expected structure
     for i, pair in enumerate(pairs):
-        assert "reportable_condition" in pair
-        assert "xml_files" in pair
-        assert pair["reportable_condition"] == reportable_conditions[i]
+        reportable_condition, xml_files = pair
+        assert reportable_condition is not None
+        assert reportable_condition == reportable_conditions[i]
+        assert xml_files is not None
 
         # verify the xml_files is a proper XMLFiles object
-        assert isinstance(pair["xml_files"], XMLFiles)
-        assert pair["xml_files"].eicr == sample_xml_files.eicr
-        assert pair["xml_files"].rr == sample_xml_files.rr
+        assert isinstance(xml_files, XMLFiles)
+        assert xml_files.eicr == sample_xml_files.eicr
+        assert xml_files.rr == sample_xml_files.rr
 
 
 # NOTE:

@@ -2,7 +2,36 @@ import os
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
+from httpx import AsyncClient
 from testcontainers.compose import DockerCompose
+
+# Ensure session secret is set before this file gets imported
+os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
+from app.api.auth.session import get_hashed_token
+
+TEST_SESSION_TOKEN = "test-token"
+TEST_SESSION_TOKEN_HASH = get_hashed_token(TEST_SESSION_TOKEN)
+
+
+@pytest.fixture
+def auth_cookie():
+    return {"refiner-session": TEST_SESSION_TOKEN}
+
+
+@pytest_asyncio.fixture
+async def authed_client(auth_cookie, base_url):
+    async with AsyncClient(base_url=base_url) as client:
+        client.cookies.update(auth_cookie)
+        yield client
+
+
+@pytest.fixture(scope="session")
+def test_assets_path() -> Path:
+    """
+    Return the path to the test assets directory.
+    """
+    return Path(__file__).parent.parent / "assets"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -54,7 +83,7 @@ def setup(request):
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
 
-    print("🧠 Seeding database...")
+    print("🧠 Seeding database with TES data...")
     refiner_service.exec_in_container(
         [
             "psql",
@@ -62,7 +91,49 @@ def setup(request):
             "postgres",
             "refiner",
             "-f",
-            "/docker-entrypoint-initdb.d/seed-data.sql",
+            "/docker-entrypoint-initdb.d/01-seed-data.sql",
+        ],
+        "db",
+    )
+
+    # Set up database schema
+    print("Applying database schema...")
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-f",
+            "/docker-entrypoint-initdb.d/02-schema.sql",
+        ],
+        "db",
+    )
+    print("✅ Schema applied")
+
+    print("🧠 Seeding database with test user...")
+    seed_user = f"""
+    DO $$
+    BEGIN
+        INSERT INTO users (id, username, email)
+        VALUES ('test-user', 'test-user', 'test@example.com')
+        ON CONFLICT DO NOTHING;
+
+        INSERT INTO sessions (token_hash, user_id, expires_at)
+        VALUES ('{TEST_SESSION_TOKEN_HASH}', 'test-user', NOW() + INTERVAL '1 hour')
+        ON CONFLICT DO NOTHING;
+    END $$;
+    """
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-c",
+            seed_user,
         ],
         "db",
     )

@@ -1,0 +1,29 @@
+{
+    "version": "0",
+    "id": "f4dd727b-fe9e-e0e0-04d2-eccd8b2258de",
+    "detail-type": "Object Created",
+    "source": "aws.s3",
+    "account": "123456789012",
+    "time": "2025-07-16T18:40:59Z",
+    "region": "us-east-1",
+    "resources": [
+        "arn:aws:s3:::dibbs-bucket"
+    ],
+    "detail": {
+        "version": "0",
+        "bucket": {
+            "name": "dibbs-bucket"
+        },
+        "object": {
+            "key": "RefinerInput/testfile",
+            "size": 21,
+            "etag": "8a8d17865cd458051575b649685b532b",
+            "version-id": "4djoSzLSxw_.CK50V0ohdVh59k9BhDVc",
+            "sequencer": "006877F23B094C58C1"
+        },
+        "request-id": "FVX12ADNRS9M1B01",
+        "requester": "123456789012",
+        "source-ip-address": "100.100.100.100",
+        "reason": "PutObject"
+    }
+}
