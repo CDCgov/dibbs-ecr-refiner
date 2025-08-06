@@ -79,6 +79,16 @@ When creating a new handler on the server we want to ensure we add the following
 - `tag`: This will allow us to exclude handlers from codegen, such as handlers tagged `internal`. This may make sense for "internal" tasks like a `/healthcheck` where there is no need for the client to interact with this route
 - `operation_id`: This is a friendly name that will be used for the hook. For example, if I give my `/configurations` route an `operation_id` of `getConfigurations` then my React hook to query this endpoint will be called `useGetConfigurations`
 
+### Excluding FastAPI Routes from Hook Generation
+
+If you are working on a route that may not need to be queried directly by the client, you can mark the route as "internal" by tagging it as such.
+
+```python
+@router.get("/healthcheck", tags=["internal"])
+```
+
+With the `internal` tag included, hook generation will be skipped.
+
 ### Usage
 
 Continuing from the example above, the `useGetConfigurations` hook will be generated (or updated) and placed in the `client/src/api/configurations/configurations.ts` file. It can be used within a React component like this:
