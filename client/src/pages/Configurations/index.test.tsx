@@ -52,7 +52,8 @@ describe('Configurations Page', () => {
     const conditionInput = screen.getByLabelText('Condition');
     expect(conditionInput).toBeInTheDocument();
 
-    await user.type(conditionInput, 'Anaplasmosis');
+    await user.type(conditionInput, 'Anaplasmosis{enter}');
+    expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const anaplasmosisOption = await screen.findByText('Anaplasmosis', {
       selector: 'li',
@@ -85,7 +86,8 @@ describe('Configurations Page', () => {
     const conditionInput = screen.getByLabelText('Condition');
     expect(conditionInput).toBeInTheDocument();
 
-    await user.type(conditionInput, 'Anaplasmosis');
+    await user.type(conditionInput, 'Anaplasmosis{enter}');
+    expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const anaplasmosisOption = await screen.findByText('Anaplasmosis', {
       selector: 'li',

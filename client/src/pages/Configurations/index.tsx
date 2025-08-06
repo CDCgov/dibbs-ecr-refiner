@@ -132,6 +132,7 @@ export function Configurations() {
           ref={modalRef}
           id="add-configuration-modal"
           aria-labelledby="add-configuration-modal-heading"
+          aria-describedby="add-configuration-modal-description"
           className="pb-5 !align-top"
         >
           <ModalHeading
@@ -140,6 +141,9 @@ export function Configurations() {
           >
             Set up new condition
           </ModalHeading>
+          <p id="add-configuration-modal-description" className="sr-only">
+            Select a reportable condition you'd like to configure.
+          </p>
           <Form onSubmit={handleSubmit}>
             <Label
               htmlFor="new-condition"
