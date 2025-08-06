@@ -64,15 +64,15 @@ export default function Demo() {
         )}
         {view === 'reportable-conditions' && data?.data && (
           <ReportableConditions
-            conditionNames={data?.data.conditions.map((c) => c.display_name)}
+            conditionNames={data.data.conditions.map((c) => c.display_name)}
             onClick={() => setView('success')}
           />
         )}
         {view === 'success' && data?.data && (
           <Success
-            conditions={data?.data.conditions}
-            unrefined_eicr={data?.data.unrefined_eicr}
-            refined_download_token={data?.data.refined_download_token}
+            conditions={data.data.conditions}
+            unrefined_eicr={data.data.unrefined_eicr}
+            refined_download_token={data.data.refined_download_token}
           />
         )}
         {view === 'error' && (
