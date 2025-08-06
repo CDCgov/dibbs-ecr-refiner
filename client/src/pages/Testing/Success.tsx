@@ -98,9 +98,8 @@ export function Success({
         </div>
       </div>
       <EicrComparison
-        unrefinedEicr={unrefined_eicr}
-        refinedEicr={selectedCondition.refined_eicr}
-        stats={selectedCondition.stats}
+        unrefined_eicr={unrefined_eicr}
+        refined_eicr={selectedCondition.refined_eicr}
       />
     </div>
   );
@@ -123,20 +122,17 @@ function GreenCheck() {
   return <img className="h-6 w-6" src={SuccessSvg} alt="" />;
 }
 
-interface EicrComparisonProps {
-  unrefinedEicr: string;
-  refinedEicr: string;
-  stats: string[];
-}
+type EicrComparisonProps = Pick<RefinedTestingDocument, 'unrefined_eicr'> &
+  Pick<Condition, 'refined_eicr'>;
 
 export function EicrComparison({
-  unrefinedEicr,
-  refinedEicr,
+  unrefined_eicr,
+  refined_eicr,
 }: EicrComparisonProps) {
   return (
     <div className="flex flex-col justify-between gap-10 xl:flex-row">
-      <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
-      <EicrText title="Refined eICR" xml={refinedEicr} />
+      <EicrText title="Unrefined eICR" xml={unrefined_eicr} />
+      <EicrText title="Refined eICR" xml={refined_eicr} />
     </div>
   );
 }
