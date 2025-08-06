@@ -2,20 +2,21 @@ import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
 import { Button } from '../../components/Button';
 import XMLViewer from 'react-xml-viewer';
-import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
+import { RefinedTestingDocument } from '../../api/schemas';
 
-interface SuccessProps {
-  conditions: Condition[];
-  unrefinedEicr: string;
-  downloadToken: string;
-}
+type SuccessProps = Pick<
+  RefinedTestingDocument,
+  'conditions' | 'refined_download_token' | 'unrefined_eicr'
+>;
+
+type Condition = SuccessProps['conditions'][0];
 
 export function Success({
   conditions,
-  downloadToken,
-  unrefinedEicr,
+  unrefined_eicr,
+  refined_download_token,
 }: SuccessProps) {
   const [downloadError, setDownloadError] = useState<string>('');
   // defaults to first condition found
@@ -86,7 +87,9 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button onClick={async () => await downloadFile(downloadToken)}>
+              <Button
+                onClick={async () => await downloadFile(refined_download_token)}
+              >
                 Download results
               </Button>
               {downloadError ? <span>File download has expired.</span> : null}
@@ -95,9 +98,8 @@ export function Success({
         </div>
       </div>
       <EicrComparison
-        unrefinedEicr={unrefinedEicr}
-        refinedEicr={selectedCondition.refined_eicr}
-        stats={selectedCondition.stats}
+        unrefined_eicr={unrefined_eicr}
+        refined_eicr={selectedCondition.refined_eicr}
       />
     </div>
   );
@@ -120,20 +122,17 @@ function GreenCheck() {
   return <img className="h-6 w-6" src={SuccessSvg} alt="" />;
 }
 
-interface EicrComparisonProps {
-  unrefinedEicr: string;
-  refinedEicr: string;
-  stats: string[];
-}
+type EicrComparisonProps = Pick<RefinedTestingDocument, 'unrefined_eicr'> &
+  Pick<Condition, 'refined_eicr'>;
 
 export function EicrComparison({
-  unrefinedEicr,
-  refinedEicr,
+  unrefined_eicr,
+  refined_eicr,
 }: EicrComparisonProps) {
   return (
     <div className="flex flex-col justify-between gap-10 xl:flex-row">
-      <EicrText title="Unrefined eICR" xml={unrefinedEicr} />
-      <EicrText title="Refined eICR" xml={refinedEicr} />
+      <EicrText title="Unrefined eICR" xml={unrefined_eicr} />
+      <EicrText title="Refined eICR" xml={refined_eicr} />
     </div>
   );
 }

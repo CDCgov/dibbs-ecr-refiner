@@ -4,6 +4,7 @@ services:
     working_dir: /app
     volumes:
       - ./client:/app
+      - ./refiner/openapi.json:/app/shared/openapi.json
     command: sh -c "npm i && npm run dev"
     ports:
     - "8081:8081"

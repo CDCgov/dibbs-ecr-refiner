@@ -9,14 +9,14 @@ from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.datastructures import Headers
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 
 from ...core.exceptions import (
     FileProcessingError,
     XMLValidationError,
     ZipValidationError,
 )
+from ...db.demo.model import Condition, ConditionProcessingInfo, RefinedTestingDocument
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io, format
 from ...services.ecr.refine import refine_async
@@ -214,14 +214,19 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     return file
 
 
-@router.post("/upload")
+@router.post(
+    "/upload",
+    response_model=RefinedTestingDocument,
+    tags=["demo"],
+    operation_id="uploadEcr",
+)
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(_get_demo_zip_path),
     create_output_zip: Callable[..., tuple[str, Path, str]] = Depends(_get_zip_creator),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> JSONResponse:
+) -> RefinedTestingDocument:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
@@ -262,23 +267,23 @@ async def demo_upload(
 
             # Build per-condition metadata (zip token added later)
             conditions.append(
-                {
-                    "code": condition_code,
-                    "display_name": condition_name,
-                    "refined_eicr": format.normalize_xml(condition_refined_eicr),
-                    "stats": [
+                Condition(
+                    code=condition_code,
+                    display_name=condition_name,
+                    refined_eicr=format.normalize_xml(condition_refined_eicr),
+                    stats=[
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
                                 original_xml_files.eicr, condition_refined_eicr
                             )
                         }%",
                     ],
-                    "processing_info": {
-                        "condition_specific": True,
-                        "sections_processed": "All sections scoped to condition codes",
-                        "method": "ProcessedGrouper-based filtering",
-                    },
-                }
+                    processing_info=ConditionProcessingInfo(
+                        condition_specific=True,
+                        sections_processed="All sections scoped to condition codes",
+                        method="ProcessedGrouper-based filtering",
+                    ),
+                )
             )
 
         # ✅ Zip all condition files + eICR file into one archive
@@ -299,21 +304,17 @@ async def demo_upload(
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
 
-        return JSONResponse(
-            content=jsonable_encoder(
-                {
-                    "message": "Successfully processed eICR with condition-specific refinement",
-                    "conditions_found": len(conditions),
-                    "conditions": conditions,
-                    "unrefined_eicr": normalized_unrefined_eicr,
-                    "processing_notes": [
-                        "Each condition gets its own refined eICR",
-                        "Sections contain only data relevant to that specific condition",
-                        "Clinical codes matched using ProcessedGrouper database",
-                    ],
-                    "refined_download_token": token,
-                }
-            )
+        return RefinedTestingDocument(
+            message="Successfully processed eICR with condition-specific refinement",
+            conditions_found=len(conditions),
+            conditions=conditions,
+            unrefined_eicr=normalized_unrefined_eicr,
+            processing_notes=[
+                "Each condition gets its own refined eICR",
+                "Sections contain only data relevant to that specific condition",
+                "Clinical codes matched using ProcessedGrouper database",
+            ],
+            refined_download_token=token,
         )
     except XMLValidationError:
         raise HTTPException(
@@ -339,7 +340,7 @@ async def demo_upload(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.details)
 
 
-@router.get("/download/{token}")
+@router.get("/download/{token}", tags=["demo"], operation_id="downloadRefinedEcr")
 async def download_refined_ecr(token: str) -> FileResponse:
     """
     Download a refined eCR zip file given a unique token.
@@ -359,7 +360,7 @@ async def download_refined_ecr(token: str) -> FileResponse:
     )
 
 
-@router.get("/download")
+@router.get("/download", tags=["demo"], operation_id="downloadSampleEcr")
 async def demo_download(file_path: Path = Depends(_get_demo_zip_path)) -> FileResponse:
     """
     Download the unrefined sample eCR zip file.

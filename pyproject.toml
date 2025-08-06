@@ -1,7 +1,7 @@
 [tool.ruff]
 # core configuration
 # - skip checking these directories/files
-exclude = [".git", ".pytest_cache", "__pycache__", "docs", "examples/"]
+exclude = [".git", ".pytest_cache", "__pycache__", "docs", "examples/", "refiner/openapi.json"]
 # - match black's default line length
 line-length = 88
 indent-width = 4

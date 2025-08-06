@@ -2,46 +2,14 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { useGetConfigurations } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-
-enum ConfigurationStatus {
-  on = 'on',
-  off = 'off',
-}
 
 export function Configurations() {
   const showToast = useToast();
+  const { data, isLoading } = useGetConfigurations();
 
-  const tableData = {
-    columns: { name: 'Reportable condition', status: 'Status' },
-    data: [
-      {
-        name: 'Chlamydia trachomatis infection',
-        status: ConfigurationStatus.on,
-        id: 'chlamydia-config-id',
-      },
-      {
-        name: 'Disease caused by Enterovirus',
-        status: ConfigurationStatus.off,
-        id: 'enterovirus-config-id',
-      },
-      {
-        name: 'Human immunodeficiency virus infection (HIV)',
-        status: ConfigurationStatus.off,
-        id: 'hiv-config-id',
-      },
-      {
-        name: 'Syphilis',
-        status: ConfigurationStatus.on,
-        id: 'syphilis-config-id',
-      },
-      {
-        name: 'Viral hepatitis, type A',
-        status: ConfigurationStatus.on,
-        id: 'viral-hep-config-id',
-      },
-    ],
-  };
+  if (isLoading || !data?.data) return 'Loading...';
 
   return (
     <section className="mx-auto p-3">
@@ -76,7 +44,14 @@ export function Configurations() {
           Set up new condition
         </Button>
       </div>
-      <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
+      <ConfigurationsTable
+        columns={{ name: 'Reportable condition', status: 'Status' }}
+        data={data.data.map(({ id, name, is_active }) => ({
+          id,
+          name,
+          status: is_active ? 'on' : 'off',
+        }))}
+      />
     </section>
   );
 }
