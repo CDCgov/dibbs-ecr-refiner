@@ -127,7 +127,9 @@
 .diff-header {
   @apply mb-3 flex items-center justify-between rounded-md p-3;
   background-color: #e7f2f5;
-  margin-bottom: 38px;
+  margin-top: 24px;
+  margin-bottom: 32px;
+  height: 64px;
 }
 
 /* Left section (stats + download) */
