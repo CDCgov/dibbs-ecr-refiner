@@ -63,6 +63,9 @@ export function Footer() {
             className="inline-block"
           >
             <img src={CdcLogo} alt="" />
+            <span className="sr-only">
+              CDC - U.S. Centers for Disease Control and Prevention
+            </span>
           </a>
         </div>
         <div>
