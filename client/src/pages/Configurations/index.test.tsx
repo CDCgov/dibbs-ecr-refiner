@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest';
-import { render, screen, getByText, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import userEvent from '@testing-library/user-event';
@@ -90,12 +90,9 @@ describe('Configurations Page', () => {
     expect(dialog).toHaveClass('is-hidden');
 
     // Expect the new configuration to be in the table
-    expect(
-      getByText(screen.getByTestId('table'), 'Anaplasmosis')
-    ).toBeInTheDocument();
-    expect(
-      getByText(screen.getByTestId('table'), 'Refiner off')
-    ).toBeInTheDocument(); // Default status is 'off'
+    const table = screen.getByTestId('table');
+    expect(within(table).getByText('Anaplasmosis')).toBeInTheDocument();
+    expect(within(table).getByText('Refiner off')).toBeInTheDocument(); // Default status is 'off'
   });
 
   test('disables the "Add condition" button when no condition is selected', async () => {
