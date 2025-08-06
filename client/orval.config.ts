@@ -2,7 +2,13 @@ import { defineConfig } from 'orval';
 
 export default defineConfig({
   fastapi: {
-    input: '/app/shared/openapi.json',
+    input: {
+      target: '/app/shared/openapi.json',
+      filters: {
+        mode: 'exclude',
+        tags: ['internal'],
+      },
+    },
     output: {
       mode: 'tags-split',
       target: './src/api', // react hook output
