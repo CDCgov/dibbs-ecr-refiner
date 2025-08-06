@@ -134,7 +134,7 @@ describe('Configurations Page', () => {
   it('should render an error and success toast when the "Set up new configuration" button is clicked', async () => {
     const user = userEvent.setup();
     renderPageView();
-    await user.click(screen.getByText('Set up new condition'));
+    await user.click(screen.getByText('Test Toast', { selector: 'button' }));
     expect(
       await screen.findAllByText('New configuration created')
     ).toHaveLength(2);
