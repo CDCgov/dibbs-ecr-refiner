@@ -52,7 +52,7 @@ These queries demonstrate how to interact with the data model to retrieve useful
 
 ### 1. Find a Condition by a Child SNOMED Code
 
-This query is useful for debugging the `conditions` table. It allows you to find the base condition definition(s) that contain a specific reportable SNOMED code.
+Since conditions in the `conditions` table have an array of `child_rsg_snomed_codes` we can very easily start with our input, which will be SNOMED condition codes from the RR's coded information organizer (either one or many as a list) and we can retrieve the parent condition grouper's complete list of ValueSets as `jsonb` with both the code and display name by code system:
 
 ```sql
 -- Find a specific version of a condition by a child SNOMED code.
@@ -79,9 +79,9 @@ WHERE
   AND version = '2.0.0';
 ```
 
-### 2. Get All Codes for a Batch of Trigger Codes
+### 2. Get All Codes for a Configuration
 
-This is the primary query the Refiner application will use. Given a list of input SNOMED codes, it returns the complete, aggregated set of final codes for each corresponding active configuration.
+This is the primary query the Refiner application will use. Given a list of input SNOMED codes, it returns the complete, aggregated set of final codes for each corresponding active configuration. This is a combination of **any** condition included in the configuration as well as user defined ValueSets by code system.
 
 ```sql
 -- This query is broken into three parts (Common Table Expressions or CTEs) for clarity and performance.
