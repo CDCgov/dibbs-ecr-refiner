@@ -93,10 +93,17 @@ CREATE TABLE configuration_versions (
 CREATE TABLE activations (
   id SERIAL PRIMARY KEY,
   snomed_code TEXT NOT NULL,
+  jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
   configuration_version_id INTEGER NOT NULL REFERENCES configuration_versions(id) ON DELETE CASCADE,
-  -- a version can't be activated for the same code twice.
-  UNIQUE (snomed_code, configuration_version_id)
+  UNIQUE (jurisdiction_id, snomed_code),  -- Business rule enforcement
+  UNIQUE (configuration_version_id, snomed_code, jurisdiction_id)
 );
+
+-- optimal indexes for exact-match use case
+-- * fast code lookup
+CREATE INDEX idx_activations_snomed_code ON activations(snomed_code);
+-- * composite queries
+CREATE INDEX idx_activations_jurisdiction_snomed ON activations(jurisdiction_id, snomed_code);
 
 -- this table stores the available labels (tags) for organizing configurations
 CREATE TABLE labels (

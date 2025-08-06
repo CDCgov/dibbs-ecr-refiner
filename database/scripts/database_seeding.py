@@ -122,7 +122,8 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
 
     # configuration versions
     versions_to_insert = test_data.get("configuration_versions", [])
-    version_id_map = {}  # To link activations to the correct version ID
+    # to link activations to the correct version id
+    version_id_map = {}
     if versions_to_insert:
         logging.info(
             f"  - Inserting {len(versions_to_insert)} configuration version(s)..."
@@ -171,8 +172,14 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
             version_id = version_id_map.get(version_key)
             if version_id:
                 cursor.execute(
-                    "INSERT INTO activations (snomed_code, configuration_version_id) VALUES (%s, %s)",
-                    (activation["snomed_code"], version_id),
+                    """INSERT INTO activations
+                    (snomed_code, jurisdiction_id, configuration_version_id)
+                    VALUES (%s, %s, %s)""",
+                    (
+                        activation["snomed_code"],
+                        activation["jurisdiction_id"],  # New field
+                        version_id,
+                    ),
                 )
             else:
                 logging.warning(

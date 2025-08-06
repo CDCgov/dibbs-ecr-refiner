@@ -79,11 +79,13 @@
   ],
   "activations": [
     {
+      "jurisdiction_id": "SDDH",
       "snomed_code": "840539006",
       "configuration_name": "COVID19",
       "configuration_version": 1
     },
     {
+      "jurisdiction_id": "SDDH",
       "snomed_code": "772828001",
       "configuration_name": "Influenza",
       "configuration_version": 1

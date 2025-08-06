@@ -84,93 +84,157 @@ WHERE
 This is the primary query the Refiner application will use. Given a list of input SNOMED codes, it returns the complete, aggregated set of final codes for each corresponding active configuration. This is a combination of **any** condition included in the configuration as well as user defined ValueSets by code system.
 
 ```sql
--- This query is broken into three parts (Common Table Expressions or CTEs) for clarity and performance.
+-- Complete query to get all codes for activated configurations
+-- This breaks down the complex logic into clear, debuggable steps using CTEs
 
--- CTE 1: Define the list of input SNOMED codes we want to process.
--- In a real application, this list would be dynamically generated from incoming eCR data.
-WITH InputCodes (snomed_code) AS (
-  VALUES
-    ('840539006'), -- COVID-19
-    ('772828001')  -- Influenza A
+WITH
+-- Step 1: Define our input - the (jurisdiction, SNOMED code) pairs we want to look up
+input_codes AS (
+    SELECT * FROM (VALUES
+        ('SDDH', '840539006'), -- COVID-19
+        ('SDDH', '772828001')  -- Influenza
+    ) AS t(jurisdiction_id, snomed_code)
 ),
 
--- CTE 2: Find the active configuration for EACH input code and gather its base conditions.
--- This CTE joins the input codes with the activation table to find the live configuration.
-ActiveConfigsAndConditions AS (
-  SELECT
-    i.snomed_code AS triggering_snomed_code, -- Carry the input code through for final grouping.
-    conf.name AS configuration_name,
-    cv.version AS configuration_version,
-    -- This aggregates all the JSON data from the base `conditions` into a single JSON array.
-    -- This is efficient because we are not yet looking inside the code arrays.
-    jsonb_agg(
-      jsonb_build_object(
-        'loinc_codes', c.loinc_codes, 'snomed_codes', c.snomed_codes,
-        'icd10_codes', c.icd10_codes, 'rxnorm_codes', c.rxnorm_codes
-      )
-    ) AS base_conditions_data,
-    -- Pass along the version-specific additions to be combined later.
-    cv.loinc_codes_additions, cv.snomed_codes_additions,
-    cv.icd10_codes_additions, cv.rxnorm_codes_additions
-  FROM InputCodes i
-  JOIN activations a ON i.snomed_code = a.snomed_code
-  JOIN configuration_versions cv ON a.configuration_version_id = cv.id
-  JOIN configurations conf ON cv.configuration_id = conf.id
-  -- A LATERAL join is like a for-each loop in SQL. It expands the `included_conditions`
-  -- JSON array so we can join each entry against the `conditions` table.
-  CROSS JOIN LATERAL jsonb_to_recordset(cv.included_conditions) AS ic(canonical_url TEXT, version TEXT)
-  JOIN conditions c ON c.canonical_url = ic.canonical_url AND c.version = ic.version
-  -- Ensure we only use configurations that are explicitly marked as 'active'.
-  WHERE cv.status = 'active'
-  GROUP BY i.snomed_code, cv.id, conf.name, cv.version
+-- Step 2: Find active configurations for our input codes
+-- This joins through the activation system to get the config details
+active_configs AS (
+    SELECT
+        i.snomed_code,
+        i.jurisdiction_id,
+        c.name as configuration_name,
+        cv.version as config_version,
+        cv.included_conditions,        -- JSON array of {canonical_url, version} references
+        cv.loinc_codes_additions,      -- JSON array of jurisdiction-specific LOINC codes
+        cv.snomed_codes_additions,     -- JSON array of jurisdiction-specific SNOMED codes
+        cv.icd10_codes_additions,      -- JSON array of jurisdiction-specific ICD10 codes
+        cv.rxnorm_codes_additions      -- JSON array of jurisdiction-specific RxNorm codes
+    FROM input_codes i
+    JOIN activations a ON a.snomed_code = i.snomed_code AND a.jurisdiction_id = i.jurisdiction_id
+    JOIN configuration_versions cv ON a.configuration_version_id = cv.id AND cv.status = 'active'
+    JOIN configurations c ON cv.configuration_id = c.id
 ),
 
--- CTE 3: Create a flat, "long-formatted" list of all unique codes.
--- This CTE unnests all the code arrays (base + additions) into a simple list.
--- Using UNION automatically handles de-duplication of codes.
-AllCodesFlat AS (
-  -- Get all LOINC codes from both additions and base conditions
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'LOINC' AS code_system, elem->>'code' AS code, elem->>'display' AS display
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(loinc_codes_additions) elem
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'LOINC' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(base_conditions_data) AS d, jsonb_array_elements(d->'loinc_codes') elem
-  -- ... this pattern repeats for SNOMED, ICD-10, and RxNorm ...
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'SNOMED' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(snomed_codes_additions) elem
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'SNOMED' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(base_conditions_data) AS d, jsonb_array_elements(d->'snomed_codes') elem
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'ICD-10' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(icd10_codes_additions) elem
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'ICD-10' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(base_conditions_data) AS d, jsonb_array_elements(d->'icd10_codes') elem
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'RxNorm' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(rxnorm_codes_additions) elem
-  UNION
-  SELECT triggering_snomed_code, configuration_name, configuration_version, 'RxNorm' AS code_system, elem->>'code', elem->>'display'
-  FROM ActiveConfigsAndConditions, jsonb_array_elements(base_conditions_data) AS d, jsonb_array_elements(d->'rxnorm_codes') elem
+-- Step 3a: Get base LOINC codes from referenced conditions
+-- This unpacks the included_conditions JSON and joins to the conditions table
+base_loinc AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        -- Aggregate all LOINC codes from all referenced conditions into one JSON array
+        jsonb_agg(elem) as base_codes
+    FROM active_configs ac
+    -- Unpack the included_conditions JSON array into rows with canonical_url and version
+    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
+    -- Join to conditions table to get the actual code data
+    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
+    -- Unpack the loinc_codes JSON array from conditions into individual code elements
+    CROSS JOIN LATERAL jsonb_array_elements(cond.loinc_codes) elem
+    GROUP BY ac.snomed_code, ac.jurisdiction_id
+),
+
+-- Step 3b: Get base SNOMED codes from referenced conditions
+base_snomed AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        jsonb_agg(elem) as base_codes
+    FROM active_configs ac
+    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
+    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
+    CROSS JOIN LATERAL jsonb_array_elements(cond.snomed_codes) elem
+    GROUP BY ac.snomed_code, ac.jurisdiction_id
+),
+
+-- Step 3c: Get base ICD10 codes from referenced conditions
+base_icd10 AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        jsonb_agg(elem) as base_codes
+    FROM active_configs ac
+    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
+    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
+    CROSS JOIN LATERAL jsonb_array_elements(cond.icd10_codes) elem
+    GROUP BY ac.snomed_code, ac.jurisdiction_id
+),
+
+-- Step 3d: Get base RxNorm codes from referenced conditions
+base_rxnorm AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        jsonb_agg(elem) as base_codes
+    FROM active_configs ac
+    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
+    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
+    CROSS JOIN LATERAL jsonb_array_elements(cond.rxnorm_codes) elem
+    GROUP BY ac.snomed_code, ac.jurisdiction_id
+),
+
+-- Step 4a: Merge base LOINC codes with jurisdiction-specific additions
+final_loinc AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        -- Combine base codes (from conditions) with additions (from config)
+        -- Use COALESCE to handle cases where either might be null/empty
+        -- The || operator concatenates JSON arrays
+        COALESCE(bl.base_codes, '[]'::jsonb) || COALESCE(ac.loinc_codes_additions, '[]'::jsonb) as final_codes
+    FROM active_configs ac
+    LEFT JOIN base_loinc bl ON ac.snomed_code = bl.snomed_code AND ac.jurisdiction_id = bl.jurisdiction_id
+),
+
+-- Step 4b: Merge base SNOMED codes with jurisdiction-specific additions
+final_snomed AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        COALESCE(bs.base_codes, '[]'::jsonb) || COALESCE(ac.snomed_codes_additions, '[]'::jsonb) as final_codes
+    FROM active_configs ac
+    LEFT JOIN base_snomed bs ON ac.snomed_code = bs.snomed_code AND ac.jurisdiction_id = bs.jurisdiction_id
+),
+
+-- Step 4c: Merge base ICD10 codes with jurisdiction-specific additions
+final_icd10 AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        COALESCE(bi.base_codes, '[]'::jsonb) || COALESCE(ac.icd10_codes_additions, '[]'::jsonb) as final_codes
+    FROM active_configs ac
+    LEFT JOIN base_icd10 bi ON ac.snomed_code = bi.snomed_code AND ac.jurisdiction_id = bi.jurisdiction_id
+),
+
+-- Step 4d: Merge base RxNorm codes with jurisdiction-specific additions
+final_rxnorm AS (
+    SELECT
+        ac.snomed_code,
+        ac.jurisdiction_id,
+        COALESCE(br.base_codes, '[]'::jsonb) || COALESCE(ac.rxnorm_codes_additions, '[]'::jsonb) as final_codes
+    FROM active_configs ac
+    LEFT JOIN base_rxnorm br ON ac.snomed_code = br.snomed_code AND ac.jurisdiction_id = br.jurisdiction_id
 )
 
--- Final Step: Pivot the flat data back into the "wide" format the application expects.
--- This creates one row for each `triggering_snomed_code`.
+-- Step 5: Final assembly - bring together all the merged code systems
 SELECT
-  triggering_snomed_code,
-  configuration_name,
-  configuration_version,
-  -- This is a conditional aggregation. It builds a JSON array of all rows
-  -- from the CTE above, but only if they match the FILTER condition.
-  jsonb_agg(jsonb_build_object('code', code, 'display', display)) FILTER (WHERE code_system = 'LOINC') AS loinc_codes,
-  jsonb_agg(jsonb_build_object('code', code, 'display', display)) FILTER (WHERE code_system = 'SNOMED') AS snomed_codes,
-  jsonb_agg(jsonb_build_object('code', code, 'display', display)) FILTER (WHERE code_system = 'ICD-10') AS icd10_codes,
-  jsonb_agg(jsonb_build_object('code', code, 'display', display)) FILTER (WHERE code_system = 'RxNorm') AS rxnorm_codes
-FROM AllCodesFlat
--- The final GROUP BY creates one output row for each unique combination of trigger code and configuration.
-GROUP BY triggering_snomed_code, configuration_name, configuration_version;
+    ac.snomed_code as triggering_snomed_code,
+    ac.jurisdiction_id,
+    ac.configuration_name,
+    ac.config_version,
+    -- Build a single JSON object containing all code systems
+    jsonb_build_object(
+        'loinc_codes', COALESCE(fl.final_codes, '[]'::jsonb),
+        'snomed_codes', COALESCE(fs.final_codes, '[]'::jsonb),
+        'icd10_codes', COALESCE(fi.final_codes, '[]'::jsonb),
+        'rxnorm_codes', COALESCE(fr.final_codes, '[]'::jsonb)
+    ) as complete_valuesets
+FROM active_configs ac
+-- Left joins ensure we get results even if some code systems have no codes
+LEFT JOIN final_loinc fl ON ac.snomed_code = fl.snomed_code AND ac.jurisdiction_id = fl.jurisdiction_id
+LEFT JOIN final_snomed fs ON ac.snomed_code = fs.snomed_code AND ac.jurisdiction_id = fs.jurisdiction_id
+LEFT JOIN final_icd10 fi ON ac.snomed_code = fi.snomed_code AND ac.jurisdiction_id = fi.jurisdiction_id
+LEFT JOIN final_rxnorm fr ON ac.snomed_code = fr.snomed_code AND ac.jurisdiction_id = fr.jurisdiction_id
+ORDER BY ac.jurisdiction_id, ac.configuration_name, ac.snomed_code;
 ```
 
 You can see how the data returned is in the `GrouperRow` shape, which we might consider renaming to `ConditionRow`.
