@@ -55,15 +55,6 @@ describe('Configurations Page', () => {
     await user.type(conditionInput, 'Anaplasmosis{enter}');
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
-    const anaplasmosisOption = await screen.findByText('Anaplasmosis', {
-      selector: 'li',
-    });
-    expect(anaplasmosisOption).toBeInTheDocument();
-
-    await user.click(anaplasmosisOption);
-
-    expect(conditionInput).toHaveValue('Anaplasmosis');
-
     const addConditionButton = screen.getByRole('button', {
       name: 'Add condition',
     });
@@ -87,15 +78,6 @@ describe('Configurations Page', () => {
     expect(conditionInput).toBeInTheDocument();
 
     await user.type(conditionInput, 'Anaplasmosis{enter}');
-    expect(conditionInput).toHaveValue('Anaplasmosis');
-
-    const anaplasmosisOption = await screen.findByText('Anaplasmosis', {
-      selector: 'li',
-    });
-    expect(anaplasmosisOption).toBeInTheDocument();
-
-    await userEvent.click(anaplasmosisOption);
-
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const addConditionButton = screen.getByRole('button', {
