@@ -3,10 +3,12 @@ import { render, screen, getByText, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import userEvent from '@testing-library/user-event';
+import { ToastContainer } from 'react-toastify';
 
 const renderPageView = () =>
   render(
     <BrowserRouter>
+      <ToastContainer />
       <Configurations />
     </BrowserRouter>
   );
@@ -127,5 +129,14 @@ describe('Configurations Page', () => {
       name: 'Add condition',
     });
     expect(addConditionButton).toBeDisabled();
+  });
+
+  it('should render an error and success toast when the "Set up new configuration" button is clicked', async () => {
+    const user = userEvent.setup();
+    renderPageView();
+    await user.click(screen.getByText('Set up new condition'));
+    expect(
+      await screen.findAllByText('New configuration created')
+    ).toHaveLength(2);
   });
 });

@@ -2,6 +2,7 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { useToast } from '../../hooks/useToast';
 
 import {
   ModalToggleButton,
@@ -56,6 +57,8 @@ export function Configurations() {
     'f0365ece-3ec7-486a-ba73-7f5d1de64ca8': 'HIV',
     '985fc9f8-86dc-4e12-95f1-b7457b3497ca': 'Syphilis',
   };
+
+  const showToast = useToast();
 
   const conditionList = Object.entries(conditionData).map(([id, name]) => ({
     value: id,
@@ -114,9 +117,9 @@ export function Configurations() {
       <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
         <Search
           placeholder="Search configurations"
-          id={'search-configurations'}
-          name={'search'}
-          type={'text'}
+          id="search-configurations"
+          name="search"
+          type="text"
         />
         <ModalToggleButton
           modalRef={modalRef}
@@ -163,6 +166,22 @@ export function Configurations() {
             </ModalFooter>
           </Form>
         </Modal>
+        <Button
+          className="m-0!"
+          onClick={() => {
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+            });
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+              variant: 'error',
+            });
+          }}
+        >
+          Test Toast
+        </Button>
       </div>
       <ConfigurationsTable columns={table.columns} data={table.data} />
     </section>
