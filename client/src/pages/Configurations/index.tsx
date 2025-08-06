@@ -2,6 +2,7 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { useToast } from '../../hooks/useToast';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -9,33 +10,35 @@ enum ConfigurationStatus {
 }
 
 export function Configurations() {
+  const showToast = useToast();
+
   const tableData = {
     columns: { name: 'Reportable condition', status: 'Status' },
     data: [
       {
         name: 'Chlamydia trachomatis infection',
         status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'chlamydia-config-id',
       },
       {
         name: 'Disease caused by Enterovirus',
         status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'enterovirus-config-id',
       },
       {
         name: 'Human immunodeficiency virus infection (HIV)',
         status: ConfigurationStatus.off,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'hiv-config-id',
       },
       {
         name: 'Syphilis',
         status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'syphilis-config-id',
       },
       {
         name: 'Viral hepatitis, type A',
         status: ConfigurationStatus.on,
-        id: 'asdf-zxcv-qwer-hjkl',
+        id: 'viral-hep-config-id',
       },
     ],
   };
@@ -52,11 +55,26 @@ export function Configurations() {
       <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
         <Search
           placeholder="Search configurations"
-          id={'search-configurations'}
-          name={'search'}
-          type={'text'}
+          id="search-configurations"
+          name="search"
+          type="text"
         />
-        <Button className="m-0!">Set up new condition</Button>
+        <Button
+          className="m-0!"
+          onClick={() => {
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+            });
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+              variant: 'error',
+            });
+          }}
+        >
+          Set up new condition
+        </Button>
       </div>
       <ConfigurationsTable columns={tableData.columns} data={tableData.data} />
     </section>

@@ -31,7 +31,11 @@ export function Button({
       | React.MouseEventHandler<HTMLAnchorElement>
       | undefined;
     return (
-      <Link onClick={sideEffect} to={to} className={styles}>
+      <Link
+        onClick={sideEffect}
+        to={to}
+        className={classNames('usa-button', styles)}
+      >
         {children}
       </Link>
     );
