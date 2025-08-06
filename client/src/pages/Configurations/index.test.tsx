@@ -72,7 +72,7 @@ describe('Configurations Page', () => {
     const dialog = screen.getByRole('dialog');
 
     // Check to see if the modal has a class of `is-visible`.
-    expect(dialog?.classList.contains('is-visible')).toEqual(true);
+    expect(dialog).toHaveClass('is-visible');
 
     const conditionInput = screen.getByLabelText('Condition');
     expect(conditionInput).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('Configurations Page', () => {
     await user.click(addConditionButton);
 
     // Check to see if the modal has a class of `is-hidden`.
-    expect(dialog?.classList.contains('is-hidden')).toEqual(true);
+    expect(dialog).toHaveClass('is-hidden');
 
     // Expect the new configuration to be in the table
     expect(
@@ -107,7 +107,7 @@ describe('Configurations Page', () => {
     await user.click(setUpButton);
 
     // Expect the modal to open
-    expect(screen.queryByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
     const addConditionButton = screen.getByRole('button', {
       name: 'Add condition',
