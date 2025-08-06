@@ -3,8 +3,10 @@ import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
 import { useGetConfigurations } from '../../api/configurations/configurations';
+import { useToast } from '../../hooks/useToast';
 
 export function Configurations() {
+  const showToast = useToast();
   const { data, isLoading } = useGetConfigurations();
 
   if (isLoading || !data?.data) return 'Loading...';
@@ -21,11 +23,26 @@ export function Configurations() {
       <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
         <Search
           placeholder="Search configurations"
-          id={'search-configurations'}
-          name={'search'}
-          type={'text'}
+          id="search-configurations"
+          name="search"
+          type="text"
         />
-        <Button className="m-0!">Set up new condition</Button>
+        <Button
+          className="m-0!"
+          onClick={() => {
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+            });
+            showToast({
+              heading: 'New configuration created',
+              body: 'Human immunodeficiency virus infection',
+              variant: 'error',
+            });
+          }}
+        >
+          Set up new condition
+        </Button>
       </div>
       <ConfigurationsTable
         columns={{ name: 'Reportable condition', status: 'Status' }}

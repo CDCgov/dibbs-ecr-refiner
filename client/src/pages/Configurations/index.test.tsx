@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
 import { TestQueryClientProvider } from '../../test-utils';
+import userEvent from '@testing-library/user-event';
+import { ToastContainer } from 'react-toastify';
 
 // Mock configurations request
 vi.mock('../../api/configurations/configurations', async () => {
@@ -22,6 +24,7 @@ vi.mock('../../api/configurations/configurations', async () => {
 const renderPageView = () =>
   render(
     <TestQueryClientProvider>
+      <ToastContainer />
       <BrowserRouter>
         <Configurations />
       </BrowserRouter>
@@ -47,5 +50,14 @@ describe('Configurations', () => {
     expect(
       await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
+  });
+
+  it('should render an error and success toast when the "Set up new configuration" button is clicked', async () => {
+    const user = userEvent.setup();
+    renderPageView();
+    await user.click(screen.getByText('Set up new condition'));
+    expect(
+      await screen.findAllByText('New configuration created')
+    ).toHaveLength(2);
   });
 });
