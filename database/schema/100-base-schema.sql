@@ -3,12 +3,10 @@
 DROP TABLE IF EXISTS activations;
 DROP TABLE IF EXISTS configuration_labels;
 DROP TABLE IF EXISTS labels;
-DROP TABLE IF EXISTS configuration_versions;
 DROP TABLE IF EXISTS configurations;
 DROP TABLE IF EXISTS conditions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS jurisdictions;
-DROP TYPE IF EXISTS configuration_status;
 
 
 -- this table stores a list of known jurisdictions
