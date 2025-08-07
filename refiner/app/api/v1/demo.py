@@ -3,6 +3,7 @@ import io
 import os
 import time
 from collections.abc import Callable
+from logging import Logger
 from pathlib import Path
 from uuid import uuid4
 from zipfile import ZipFile
@@ -20,6 +21,7 @@ from ...core.exceptions import (
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io, format
 from ...services.ecr.refine import refine_async
+from ...services.logger import get_logger
 
 # Keep track of files available for download / what needs to be cleaned up
 REFINED_ECR_DIR = "refined-ecr"
@@ -221,6 +223,7 @@ async def demo_upload(
     create_output_zip: Callable[..., tuple[str, Path, str]] = Depends(_get_zip_creator),
     refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
@@ -298,6 +301,8 @@ async def demo_upload(
         _update_file_store(output_file_name, output_file_path, token)
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
+
+        logger.info("Processing demo file.")
 
         return JSONResponse(
             content=jsonable_encoder(

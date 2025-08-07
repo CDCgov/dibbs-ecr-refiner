@@ -1,8 +1,11 @@
 import asyncio
+import time
+import uuid
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -20,6 +23,7 @@ from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
 from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, db, get_db
+from .services.logger import get_logger, setup_logger
 
 # create router
 router = APIRouter(prefix="/api")
@@ -62,6 +66,8 @@ async def health_check(
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
+    # Setup logging
+    setup_logger()
     # Start the DB connection
     await db.connect()
     # Start the cleanup tasks in the background
@@ -105,3 +111,42 @@ if ENVIRONMENT["ENV"] == "local":
     )
 app.add_middleware(SPAFallbackMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
+
+
+@app.middleware("http")
+async def log_request_time(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """
+    Middleware to log details about a request.
+
+    Args:
+        request (Request): The incoming request
+        call_next (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    request_id = uuid.uuid4()
+    logger = get_logger()
+    start = time.time()
+
+    logger.info(
+        "Request start", extra={"path": request.url.path, "method": request.method}
+    )
+
+    response = await call_next(request)
+
+    duration_ms = (time.time() - start) * 1000
+
+    logger.info(
+        "Request end",
+        extra={
+            "request_id": request_id,
+            "status_code": response.status_code,
+            "path": request.url.path,
+            "method": request.method,
+            "duration_ms": round(duration_ms, 2),
+        },
+    )
+    return response
