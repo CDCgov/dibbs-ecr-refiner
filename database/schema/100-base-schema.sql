@@ -46,66 +46,89 @@ CREATE TABLE conditions (
 -- a GIN index is highly effective for searching within arrays
 CREATE INDEX idx_conditions_child_snomed_codes ON conditions USING GIN (child_rsg_snomed_codes);
 
--- this table represents a conceptual configuration "idea"
--- for example, "Influenza Surveillance" can have many versions/iterations compared to "Respiratory Surveillance"
+-- simplified configurations table - version-centric approach
+-- * each row represents a specific, immutable configuration version (like github issues/PRs)
+-- * configuration ID becomes the user-facing version number (e.g., "configuration #47")
+-- * benefits:
+--   - eliminates complex joins
+--   - simpler activation lookups
+--   - more intuitive user experience ("work with config #47")
+--   - matches github's issue numbering paradigm
 CREATE TABLE configurations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,                    -- This IS the user-facing version number
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
-    name TEXT NOT NULL,
+    name TEXT NOT NULL,                       -- Can be renamed anytime without versioning
     description TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    -- a jurisdiction can't have two configurations with the same name
-    UNIQUE (jurisdiction_id, name)
-);
 
--- a type to represent the lifecycle of a configuration version
--- 'draft': in progress, not ready for use
--- 'active': vetted, approved, and will be used by the activation logic
--- 'archived': no longer in use, kept for historical purposes
-CREATE TYPE configuration_status AS ENUM ('draft', 'active', 'archived');
+    -- configuration data: references to base conditions by composite key
+    -- must reference at least one condition to ensure configurations have meaningful clinical context
+    included_conditions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    -- structure: [{"canonical_url": "...", "version": "..."}, ...]
 
--- this table stores each specific, immutable version of a configuration
--- every time a user saves a change, a new row is created here
-CREATE TABLE configuration_versions (
-    id SERIAL PRIMARY KEY,
-    configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
-    version INTEGER NOT NULL,
-    -- the status of the version in its lifecycle
-    status configuration_status NOT NULL DEFAULT 'draft',
-    -- user notes about what changed in this version
-    notes TEXT,
+    -- jurisdiction-specific code additions (beyond what's in the base conditions)
+    loinc_codes_additions JSONB DEFAULT '[]'::jsonb,
+    snomed_codes_additions JSONB DEFAULT '[]'::jsonb,
+    icd10_codes_additions JSONB DEFAULT '[]'::jsonb,
+    rxnorm_codes_additions JSONB DEFAULT '[]'::jsonb,
 
-    -- the actual configuration data:
-    included_conditions JSONB,
-    loinc_codes_additions JSONB,
-    snomed_codes_additions JSONB,
-    icd10_codes_additions JSONB,
-    rxnorm_codes_additions JSONB,
+    -- optional: track relationships between configurations for audit/history
+    -- e.g., "configuration #48 was cloned from #47"
+    derived_from_id INTEGER REFERENCES configurations(id),
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
 
-    -- a configuration can't have two versions with the same number
-    UNIQUE (configuration_id, version)
+    -- business rule: configurations must reference at least one condition
+    -- this ensures every configuration has a meaningful clinical foundation
+    CONSTRAINT configurations_must_have_conditions
+    CHECK (jsonb_array_length(included_conditions) > 0)
 );
 
--- this new table explicitly links an "active" configuration version to a
--- specific SNOMED code that triggers it. This is the heart of the activation logic
+-- time-based activations with pre-computed payloads
+-- * this table stores the "activation state" of configurations for specific SNOMED codes
+-- * key optimization: computed_codes contains pre-aggregated data matching ProcessedGrouper structure
+-- * benefits:
+--   - runtime queries become simple lookups instead of complex aggregations
+--   - predictable performance regardless of configuration complexity
+--   - easy to sync with S3 for horizontal scaling via Lambda
+--   - full audit trail of activation history
 CREATE TABLE activations (
-  id SERIAL PRIMARY KEY,
-  snomed_code TEXT NOT NULL,
-  jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
-  configuration_version_id INTEGER NOT NULL REFERENCES configuration_versions(id) ON DELETE CASCADE,
-  UNIQUE (jurisdiction_id, snomed_code),  -- Business rule enforcement
-  UNIQUE (configuration_version_id, snomed_code, jurisdiction_id)
+    jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
+    snomed_code TEXT NOT NULL,                -- From conditions.child_rsg_snomed_codes
+    configuration_id INTEGER NOT NULL REFERENCES configurations(id),
+
+    -- lifecycle tracking: when was this activated/deactivated
+    activated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- NULL = currently active
+    deactivated_at TIMESTAMPTZ NULL,
+
+    -- pre-computed aggregated codes (replaces complex runtime query)
+    -- structure matches ProcessedGrouper for easy consumption by terminology service
+    computed_codes JSONB NOT NULL,
+    -- example: {"loinc_codes": [...], "snomed_codes": [...], "icd10_codes": [...], "rxnorm_codes": [...]}
+
+    -- S3 synchronization tracking for Lambda-based horizontal scaling
+    s3_synced_at TIMESTAMPTZ NULL,
+    s3_object_key TEXT NULL,
+
+    -- composite primary key allows for full activation history
+    PRIMARY KEY (jurisdiction_id, snomed_code, activated_at)
 );
 
--- optimal indexes for exact-match use case
--- * fast code lookup
-CREATE INDEX idx_activations_snomed_code ON activations(snomed_code);
--- * composite queries
-CREATE INDEX idx_activations_jurisdiction_snomed ON activations(jurisdiction_id, snomed_code);
+-- business rule: only one active configuration per jurisdiction+snomed combination
+-- * this prevents conflicts where multiple configurations could apply to the same condition
+CREATE UNIQUE INDEX idx_one_active_per_snomed
+ON activations (jurisdiction_id, snomed_code)
+WHERE deactivated_at IS NULL;
+
+-- performance optimization for the most common query pattern
+-- fast lookup for "what configuration is currently active for this condition?"
+CREATE INDEX idx_activations_active_lookup
+ON activations (jurisdiction_id, snomed_code)
+WHERE deactivated_at IS NULL;
 
 -- this table stores the available labels (tags) for organizing configurations
+-- labels can be added/removed from configurations without creating new versions
+-- (similar to github issue/PR labels)
 CREATE TABLE labels (
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
@@ -113,9 +136,10 @@ CREATE TABLE labels (
     description TEXT
 );
 
--- this is the join table to apply multiple labels to a configuration "idea".
+-- join table for applying multiple labels to configurations
+-- works with the simplified configurations table - labels apply to specific configuration versions
 CREATE TABLE configuration_labels (
-    configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
+    configuration_id INTEGER NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
     label_id INTEGER NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
     PRIMARY KEY (configuration_id, label_id)
 );

@@ -28,23 +28,19 @@ To ensure that we have an extensible structure in place for naming as the databa
 
 ## Core Concepts
 
-Here are the four essential tables and how they work together:
+Here are the three essential tables and how they work together:
 
-1.  **`conditions` Table**: This is the foundational data.
-    *   **What it is**: It contains the pre-aggregated, "base" sets of codes (LOINC, SNOMED, etc.) for a given condition as defined by APHL's Terminology Exchange Service (TES). Each row represents a specific version of a ValueSet.
-    *   **Why it's needed**: It provides the official, trusted starting point for any configuration. This data is populated by the seeding script from the JSON files in the `/data` directory.
+1. **`conditions` Table**: This is the foundational data.
+   - **What it is**: It contains the pre-aggregated, "base" sets of codes (LOINC, SNOMED, etc.) for a given condition as defined by APHL's Terminology Exchange Service (TES). Each row represents a specific version of a ValueSet.
+   - **Why it's needed**: It provides the official, trusted starting point for any configuration. This data is populated by the seeding script from the JSON files in the `/data` directory.
 
-2.  **`configurations` Table**: This represents a high-level "idea" or workspace.
-    *   **What it is**: A conceptual container for a jurisdiction's work on a specific condition (e.g., "Example County Influenza Surveillance").
-    *   **Why it's needed**: It groups multiple versions of a configuration under a single name and description, owned by a specific jurisdiction.
+2. **`configurations` Table**: This represents a complete, immutable configuration version.
+   - **What it is**: Each row is a specific, versioned configuration that references one or more base conditions and can include additional jurisdiction-specific codes. The `id` field serves as the user-facing version number (e.g., "Configuration #47").
+   - **Why it's needed**: It provides a complete audit history of changes and allows jurisdictions to create new versions without affecting existing activations.
 
-3.  **`configuration_versions` Table**: This is an immutable, versioned snapshot of a configuration.
-    *   **What it is**: Every time a user saves changes, a new row is created here. It references one or more "base" `conditions` and can include additional codes (`loinc_codes_additions`, etc.) that are layered on top. Each version has a `status` (`draft`, `active`, `archived`).
-    *   **Why it's needed**: It provides a full audit history of changes and allows jurisdictions to work on drafts without affecting the "live" version.
-
-4.  **`activations` Table**: This is the "on switch".
-    *   **What it is**: The most critical table for the Refiner application. It's a simple mapping that explicitly links a trigger SNOMED code to a specific `configuration_version_id`.
-    *   **Why it's needed**: This record makes a configuration "live". When the Refiner encounters a SNOMED code in an eCR, it queries this table to find exactly which configuration version to use. **No activation record, no refined codes.**
+3. **`activations` Table**: This is the "on switch" with full lifecycle tracking.
+   - **What it is**: The most critical table for the Refiner application. It explicitly links a trigger SNOMED code to a specific configuration, with time-based activation/deactivation tracking and pre-computed code payloads.
+   - **Why it's needed**: This record makes a configuration "live" for a specific condition. When the Refiner encounters a SNOMED code in an eCR, it queries this table to find exactly which configuration to use. **No activation record, no refined codes.**
 
 ## Example Queries
 
@@ -79,165 +75,122 @@ WHERE
   AND version = '2.0.0';
 ```
 
-### 2. Get All Codes for a Configuration
+### 2. View All Configurations with Their Details
 
-This is the primary query the Refiner application will use. Given a list of input SNOMED codes, it returns the complete, aggregated set of final codes for each corresponding active configuration. This is a combination of **any** condition included in the configuration as well as user defined ValueSets by code system.
+This query shows all configurations with their included conditions and any jurisdiction-specific additions:
 
 ```sql
--- Complete query to get all codes for activated configurations
--- This breaks down the complex logic into clear, debuggable steps using CTEs
+-- Get an overview of all configurations
+-- Shows which conditions each configuration includes and any custom additions
 
-WITH
--- Step 1: Define our input - the (jurisdiction, SNOMED code) pairs we want to look up
-input_codes AS (
-    SELECT * FROM (VALUES
-        ('SDDH', '840539006'), -- COVID-19
-        ('SDDH', '772828001')  -- Influenza
-    ) AS t(jurisdiction_id, snomed_code)
-),
-
--- Step 2: Find active configurations for our input codes
--- This joins through the activation system to get the config details
-active_configs AS (
-    SELECT
-        i.snomed_code,
-        i.jurisdiction_id,
-        c.name as configuration_name,
-        cv.version as config_version,
-        cv.included_conditions,        -- JSON array of {canonical_url, version} references
-        cv.loinc_codes_additions,      -- JSON array of jurisdiction-specific LOINC codes
-        cv.snomed_codes_additions,     -- JSON array of jurisdiction-specific SNOMED codes
-        cv.icd10_codes_additions,      -- JSON array of jurisdiction-specific ICD10 codes
-        cv.rxnorm_codes_additions      -- JSON array of jurisdiction-specific RxNorm codes
-    FROM input_codes i
-    JOIN activations a ON a.snomed_code = i.snomed_code AND a.jurisdiction_id = i.jurisdiction_id
-    JOIN configuration_versions cv ON a.configuration_version_id = cv.id AND cv.status = 'active'
-    JOIN configurations c ON cv.configuration_id = c.id
-),
-
--- Step 3a: Get base LOINC codes from referenced conditions
--- This unpacks the included_conditions JSON and joins to the conditions table
-base_loinc AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        -- Aggregate all LOINC codes from all referenced conditions into one JSON array
-        jsonb_agg(elem) as base_codes
-    FROM active_configs ac
-    -- Unpack the included_conditions JSON array into rows with canonical_url and version
-    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
-    -- Join to conditions table to get the actual code data
-    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
-    -- Unpack the loinc_codes JSON array from conditions into individual code elements
-    CROSS JOIN LATERAL jsonb_array_elements(cond.loinc_codes) elem
-    GROUP BY ac.snomed_code, ac.jurisdiction_id
-),
-
--- Step 3b: Get base SNOMED codes from referenced conditions
-base_snomed AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        jsonb_agg(elem) as base_codes
-    FROM active_configs ac
-    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
-    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
-    CROSS JOIN LATERAL jsonb_array_elements(cond.snomed_codes) elem
-    GROUP BY ac.snomed_code, ac.jurisdiction_id
-),
-
--- Step 3c: Get base ICD10 codes from referenced conditions
-base_icd10 AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        jsonb_agg(elem) as base_codes
-    FROM active_configs ac
-    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
-    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
-    CROSS JOIN LATERAL jsonb_array_elements(cond.icd10_codes) elem
-    GROUP BY ac.snomed_code, ac.jurisdiction_id
-),
-
--- Step 3d: Get base RxNorm codes from referenced conditions
-base_rxnorm AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        jsonb_agg(elem) as base_codes
-    FROM active_configs ac
-    CROSS JOIN LATERAL jsonb_to_recordset(ac.included_conditions) AS ic(canonical_url TEXT, version TEXT)
-    JOIN conditions cond ON cond.canonical_url = ic.canonical_url AND cond.version = ic.version
-    CROSS JOIN LATERAL jsonb_array_elements(cond.rxnorm_codes) elem
-    GROUP BY ac.snomed_code, ac.jurisdiction_id
-),
-
--- Step 4a: Merge base LOINC codes with jurisdiction-specific additions
-final_loinc AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        -- Combine base codes (from conditions) with additions (from config)
-        -- Use COALESCE to handle cases where either might be null/empty
-        -- The || operator concatenates JSON arrays
-        COALESCE(bl.base_codes, '[]'::jsonb) || COALESCE(ac.loinc_codes_additions, '[]'::jsonb) as final_codes
-    FROM active_configs ac
-    LEFT JOIN base_loinc bl ON ac.snomed_code = bl.snomed_code AND ac.jurisdiction_id = bl.jurisdiction_id
-),
-
--- Step 4b: Merge base SNOMED codes with jurisdiction-specific additions
-final_snomed AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        COALESCE(bs.base_codes, '[]'::jsonb) || COALESCE(ac.snomed_codes_additions, '[]'::jsonb) as final_codes
-    FROM active_configs ac
-    LEFT JOIN base_snomed bs ON ac.snomed_code = bs.snomed_code AND ac.jurisdiction_id = bs.jurisdiction_id
-),
-
--- Step 4c: Merge base ICD10 codes with jurisdiction-specific additions
-final_icd10 AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        COALESCE(bi.base_codes, '[]'::jsonb) || COALESCE(ac.icd10_codes_additions, '[]'::jsonb) as final_codes
-    FROM active_configs ac
-    LEFT JOIN base_icd10 bi ON ac.snomed_code = bi.snomed_code AND ac.jurisdiction_id = bi.jurisdiction_id
-),
-
--- Step 4d: Merge base RxNorm codes with jurisdiction-specific additions
-final_rxnorm AS (
-    SELECT
-        ac.snomed_code,
-        ac.jurisdiction_id,
-        COALESCE(br.base_codes, '[]'::jsonb) || COALESCE(ac.rxnorm_codes_additions, '[]'::jsonb) as final_codes
-    FROM active_configs ac
-    LEFT JOIN base_rxnorm br ON ac.snomed_code = br.snomed_code AND ac.jurisdiction_id = br.jurisdiction_id
-)
-
--- Step 5: Final assembly - bring together all the merged code systems
 SELECT
-    ac.snomed_code as triggering_snomed_code,
-    ac.jurisdiction_id,
-    ac.configuration_name,
-    ac.config_version,
-    -- Build a single JSON object containing all code systems
-    jsonb_build_object(
-        'loinc_codes', COALESCE(fl.final_codes, '[]'::jsonb),
-        'snomed_codes', COALESCE(fs.final_codes, '[]'::jsonb),
-        'icd10_codes', COALESCE(fi.final_codes, '[]'::jsonb),
-        'rxnorm_codes', COALESCE(fr.final_codes, '[]'::jsonb)
-    ) as complete_valuesets
-FROM active_configs ac
--- Left joins ensure we get results even if some code systems have no codes
-LEFT JOIN final_loinc fl ON ac.snomed_code = fl.snomed_code AND ac.jurisdiction_id = fl.jurisdiction_id
-LEFT JOIN final_snomed fs ON ac.snomed_code = fs.snomed_code AND ac.jurisdiction_id = fs.jurisdiction_id
-LEFT JOIN final_icd10 fi ON ac.snomed_code = fi.snomed_code AND ac.jurisdiction_id = fi.jurisdiction_id
-LEFT JOIN final_rxnorm fr ON ac.snomed_code = fr.snomed_code AND ac.jurisdiction_id = fr.jurisdiction_id
-ORDER BY ac.jurisdiction_id, ac.configuration_name, ac.snomed_code;
+    c.id as configuration_id,
+    c.name,
+    c.description,
+    c.jurisdiction_id,
+    c.created_at,
+
+    -- Show which conditions are included
+    jsonb_pretty(c.included_conditions) as included_conditions,
+
+    -- Show jurisdiction-specific additions (only if they exist)
+    CASE
+        WHEN jsonb_array_length(c.loinc_codes_additions) > 0
+        THEN jsonb_pretty(c.loinc_codes_additions)
+        ELSE NULL
+    END as loinc_additions,
+
+    CASE
+        WHEN jsonb_array_length(c.snomed_codes_additions) > 0
+        THEN jsonb_pretty(c.snomed_codes_additions)
+        ELSE NULL
+    END as snomed_additions,
+
+    CASE
+        WHEN jsonb_array_length(c.icd10_codes_additions) > 0
+        THEN jsonb_pretty(c.icd10_codes_additions)
+        ELSE NULL
+    END as icd10_additions,
+
+    CASE
+        WHEN jsonb_array_length(c.rxnorm_codes_additions) > 0
+        THEN jsonb_pretty(c.rxnorm_codes_additions)
+        ELSE NULL
+    END as rxnorm_additions
+
+FROM configurations c
+ORDER BY c.jurisdiction_id, c.created_at DESC;
 ```
 
-You can see how the data returned is in the `GrouperRow` shape, which we might consider renaming to `ConditionRow`.
+### 3. View Active and Historical Activations
+
+This query shows the activation status for each jurisdiction and SNOMED code combination, including historical activations:
+
+```sql
+-- Get activation status overview
+-- Shows current and historical activations with their lifecycle
+
+SELECT
+    a.jurisdiction_id,
+    a.snomed_code,
+    a.configuration_id,
+    c.name as configuration_name,
+    a.activated_at,
+    a.deactivated_at,
+
+    -- Show activation status
+    CASE
+        WHEN a.deactivated_at IS NULL THEN 'ACTIVE'
+        ELSE 'DEACTIVATED'
+    END as status,
+
+    -- Show how long the activation was/has been active
+    CASE
+        WHEN a.deactivated_at IS NULL
+        THEN EXTRACT(EPOCH FROM (NOW() - a.activated_at)) / 86400 || ' days (ongoing)'
+        ELSE EXTRACT(EPOCH FROM (a.deactivated_at - a.activated_at)) / 86400 || ' days'
+    END as duration,
+
+    -- Show a preview of the computed codes structure
+    jsonb_pretty(
+        jsonb_build_object(
+            'loinc_count', jsonb_array_length(a.computed_codes->'loinc_codes'),
+            'snomed_count', jsonb_array_length(a.computed_codes->'snomed_codes'),
+            'icd10_count', jsonb_array_length(a.computed_codes->'icd10_codes'),
+            'rxnorm_count', jsonb_array_length(a.computed_codes->'rxnorm_codes')
+        )
+    ) as code_counts
+
+FROM activations a
+JOIN configurations c ON a.configuration_id = c.id
+ORDER BY
+    a.jurisdiction_id,
+    a.snomed_code,
+    a.activated_at DESC;
+```
+
+### 4. Primary Runtime Query - Get Active Configuration for SNOMED Code
+
+This is the primary query the Refiner application will use at runtime. It's optimized for fast lookups of currently active configurations:
+
+```sql
+-- Fast runtime lookup for active configurations
+-- This is the primary query pattern for the Refiner application
+
+SELECT
+    a.jurisdiction_id,
+    a.snomed_code,
+    c.name as configuration_name,
+    c.id as configuration_id,
+    a.computed_codes
+FROM activations a
+JOIN configurations c ON a.configuration_id = c.id
+WHERE
+    a.jurisdiction_id = 'SDDH'
+    AND a.snomed_code = '840539006'
+    AND a.deactivated_at IS NULL  -- Only get currently active
+LIMIT 1;
+```
 
 ## Local Development Workflow
 

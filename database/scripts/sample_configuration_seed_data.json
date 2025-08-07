@@ -29,20 +29,7 @@
     {
       "name": "COVID19",
       "jurisdiction_id": "SDDH",
-      "description": "Configuration for monitoring COVID-19."
-    },
-    {
-      "name": "Influenza",
-      "jurisdiction_id": "SDDH",
-      "description": "Configuration for monitoring Influenza."
-    }
-  ],
-  "configuration_versions": [
-    {
-      "configuration_name": "COVID19",
-      "version": 1,
-      "status": "active",
-      "notes": "Initial production version for COVID-19.",
+      "description": "Configuration for monitoring COVID-19. Initial production version.",
       "included_conditions": [
         {
           "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
@@ -55,10 +42,9 @@
       "rxnorm_codes_additions": []
     },
     {
-      "configuration_name": "Influenza",
-      "version": 1,
-      "status": "active",
-      "notes": "Initial production version for Influenza.",
+      "name": "Influenza",
+      "jurisdiction_id": "SDDH",
+      "description": "Configuration for monitoring Influenza. Initial production version.",
       "included_conditions": [
         {
           "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
@@ -72,23 +58,33 @@
     }
   ],
   "configuration_labels": [
-    { "configuration_name": "COVID19", "label_name": "single condition" },
-    { "configuration_name": "COVID19", "label_name": "in production" },
-    { "configuration_name": "Influenza", "label_name": "single condition" },
-    { "configuration_name": "Influenza", "label_name": "in production" }
+    { "configuration_id": 1, "label_name": "single condition" },
+    { "configuration_id": 1, "label_name": "in production" },
+    { "configuration_id": 2, "label_name": "single condition" },
+    { "configuration_id": 2, "label_name": "in production" }
   ],
   "activations": [
     {
       "jurisdiction_id": "SDDH",
       "snomed_code": "840539006",
-      "configuration_name": "COVID19",
-      "configuration_version": 1
+      "configuration_id": 1,
+      "computed_codes": {
+        "loinc_codes": [],
+        "snomed_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": []
+      }
     },
     {
       "jurisdiction_id": "SDDH",
       "snomed_code": "772828001",
-      "configuration_name": "Influenza",
-      "configuration_version": 1
+      "configuration_id": 2,
+      "computed_codes": {
+        "loinc_codes": [],
+        "snomed_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": []
+      }
     }
   ]
 }

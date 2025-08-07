@@ -114,49 +114,26 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
         logging.info(f"  - Inserting {len(configs_to_insert)} configuration(s)...")
         for config in configs_to_insert:
             cursor.execute(
-                "INSERT INTO configurations (jurisdiction_id, name, description) VALUES (%s, %s, %s) RETURNING id, name",
-                (config["jurisdiction_id"], config["name"], config["description"]),
+                """
+                INSERT INTO configurations (
+                    jurisdiction_id, name, description, included_conditions,
+                    loinc_codes_additions, snomed_codes_additions,
+                    icd10_codes_additions, rxnorm_codes_additions
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id, name
+                """,
+                (
+                    config["jurisdiction_id"],
+                    config["name"],
+                    config["description"],
+                    json.dumps(config.get("included_conditions", [])),
+                    json.dumps(config.get("loinc_codes_additions", [])),
+                    json.dumps(config.get("snomed_codes_additions", [])),
+                    json.dumps(config.get("icd10_codes_additions", [])),
+                    json.dumps(config.get("rxnorm_codes_additions", [])),
+                ),
             )
             config_id, config_name = cursor.fetchone()
             config_id_map[config_name] = config_id
-
-    # configuration versions
-    versions_to_insert = test_data.get("configuration_versions", [])
-    # to link activations to the correct version id
-    version_id_map = {}
-    if versions_to_insert:
-        logging.info(
-            f"  - Inserting {len(versions_to_insert)} configuration version(s)..."
-        )
-        for version in versions_to_insert:
-            config_id = config_id_map.get(version["configuration_name"])
-            if not config_id:
-                logging.warning(
-                    f"⚠️ Skipping version for unknown configuration '{version['configuration_name']}'"
-                )
-                continue
-            cursor.execute(
-                """
-                INSERT INTO configuration_versions (
-                    configuration_id, version, status, notes, included_conditions,
-                    loinc_codes_additions, snomed_codes_additions, icd10_codes_additions, rxnorm_codes_additions
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
-                """,
-                (
-                    config_id,
-                    version["version"],
-                    version["status"],
-                    version.get("notes"),
-                    json.dumps(version.get("included_conditions")),
-                    json.dumps(version.get("loinc_codes_additions")),
-                    json.dumps(version.get("snomed_codes_additions")),
-                    json.dumps(version.get("icd10_codes_additions")),
-                    json.dumps(version.get("rxnorm_codes_additions")),
-                ),
-            )
-            version_id = cursor.fetchone()[0]
-            version_key = (version["configuration_name"], version["version"])
-            version_id_map[version_key] = version_id
 
     # activations
     activations_to_insert = test_data.get("activations", [])
@@ -165,36 +142,37 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
             f"  - Inserting {len(activations_to_insert)} activation record(s)..."
         )
         for activation in activations_to_insert:
-            version_key = (
-                activation["configuration_name"],
-                activation["configuration_version"],
-            )
-            version_id = version_id_map.get(version_key)
-            if version_id:
+            # look up configuration ID directly (no more version lookup)
+            config_id = activation.get("configuration_id")
+
+            if config_id:
                 cursor.execute(
                     """INSERT INTO activations
-                    (snomed_code, jurisdiction_id, configuration_version_id)
-                    VALUES (%s, %s, %s)""",
+                    (jurisdiction_id, snomed_code, configuration_id, computed_codes)
+                    VALUES (%s, %s, %s, %s)""",
                     (
+                        activation["jurisdiction_id"],
                         activation["snomed_code"],
-                        activation["jurisdiction_id"],  # New field
-                        version_id,
+                        config_id,
+                        json.dumps(activation["computed_codes"]),  # New required field
                     ),
                 )
             else:
                 logging.warning(
-                    f"⚠️ Skipping activation for unknown version: {version_key}"
+                    f"⚠️ Skipping activation with missing configuration_id: {activation}"
                 )
 
-    # configuration labels (join table)
+    # configuration labels
     config_labels_to_insert = test_data.get("configuration_labels", [])
     if config_labels_to_insert:
         logging.info(
             f"  - Applying {len(config_labels_to_insert)} label(s) to configurations..."
         )
         for config_label in config_labels_to_insert:
-            config_id = config_id_map.get(config_label["configuration_name"])
+            # use configuration_id directly from JSON instead of looking up by name
+            config_id = config_label.get("configuration_id")
             label_id = label_id_map.get(config_label["label_name"])
+
             if config_id and label_id:
                 cursor.execute(
                     "INSERT INTO configuration_labels (configuration_id, label_id) VALUES (%s, %s)",
@@ -202,7 +180,7 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
                 )
             else:
                 logging.warning(
-                    f"⚠️ Skipping label join for missing config ('{config_label['configuration_name']}') or label ('{config_label['label_name']}')"
+                    f"⚠️ Skipping label join for missing config ID ({config_id}) or label ('{config_label['label_name']}')"
                 )
 
     logging.info("  ✅ Test data seeding complete.")
@@ -290,7 +268,6 @@ def seed_database() -> None:
                     "activations",
                     "configuration_labels",
                     "labels",
-                    "configuration_versions",
                     "configurations",
                     "conditions",
                     "users",
@@ -315,7 +292,7 @@ def seed_database() -> None:
                         "⚠️ No conditions were processed from ValueSet files."
                     )
 
-                # Load and seed test data from the sample configuration file
+                # load and seed test data from the sample configuration file
                 if TEST_DATA_FILE.exists():
                     with open(TEST_DATA_FILE) as f:
                         test_data = json.load(f)
