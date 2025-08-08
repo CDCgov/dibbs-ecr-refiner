@@ -243,6 +243,8 @@ async def demo_upload(
         file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
+        logger.info("Processing demo file", extra={"upload_file": file.filename})
+
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
         refined_results = await refine_async(original_xml=original_xml_files, db=db)
@@ -302,8 +304,6 @@ async def demo_upload(
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
 
-        logger.info("Processing demo file.")
-
         return JSONResponse(
             content=jsonable_encoder(
                 {
@@ -320,28 +320,30 @@ async def demo_upload(
                 }
             )
         )
-    except XMLValidationError:
+    except XMLValidationError as e:
+        logger.error("XMLValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="XML file(s) could not be processed.",
         )
-    except ZipValidationError:
+    except ZipValidationError as e:
+        logger.error("ZipValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
         )
-    except FileProcessingError:
+    except FileProcessingError as e:
+        logger.error("FileProcessingError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
-    except Exception:
+    except Exception as e:
+        logger.error("Exception", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server error occurred. Please check your file and try again.",
         )
-    except ZipValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.details)
 
 
 @router.get("/download/{token}")
