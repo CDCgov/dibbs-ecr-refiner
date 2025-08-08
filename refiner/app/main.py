@@ -3,6 +3,8 @@ import time
 import uuid
 from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from datetime import UTC
+from datetime import datetime as dt
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
@@ -72,7 +74,7 @@ async def _lifespan(_: FastAPI):
     await db.connect()
     # Start the cleanup tasks in the background
     asyncio.create_task(run_expired_file_cleanup_task())
-    asyncio.create_task(run_expired_session_cleanup_task())
+    asyncio.create_task(run_expired_session_cleanup_task(get_logger()))
     yield
     # Release the DB connection
     await db.close()
@@ -138,6 +140,7 @@ async def log_request(
             "request_id": request_id,
             "path": request.url.path,
             "method": request.method,
+            "timestamp": dt.now(UTC).isoformat(),
         },
     )
 
@@ -152,6 +155,7 @@ async def log_request(
             "path": request.url.path,
             "status_code": response.status_code,
             "method": request.method,
+            "timestamp": dt.now(UTC).isoformat(),
             "duration_ms": round(duration_ms, 2),
         },
     )
