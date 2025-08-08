@@ -131,7 +131,7 @@ CREATE TABLE activations (
     -- S3 synchronization tracking for lambda based application
     -- both fields are required once activation is complete
     -- the proposed process:
-    --   - ggnerate ProcessedGrouper json
+    --   - generate ProcessedGrouper json
     --   - write to activations table
     --   - write to S3
     --   - verify sync
