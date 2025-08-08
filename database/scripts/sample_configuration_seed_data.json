@@ -1,0 +1,184 @@
+{
+  "jurisdictions": [
+    {
+      "id": "SDDH",
+      "name": "Senate District Health Department",
+      "state_code": "GC"
+    }
+  ],
+  "users": [
+    {
+      "email": "rispi.lacendad@cocotown.clinic.gr.example.com",
+      "jurisdiction_id": "SDDH",
+      "full_name": "Dr. Rispi Lacendad"
+    }
+  ],
+  "labels": [
+    {
+      "name": "single condition",
+      "color": "#3498DB",
+      "description": "Configuration containing a single condition."
+    },
+    {
+      "name": "in production",
+      "color": "#2ECC71",
+      "description": "Configuration that is active and in production use."
+    }
+  ],
+  "configurations": [
+    {
+      "family_id": 1001,
+      "version": 1,
+      "name": "COVID-19 Surveillance",
+      "jurisdiction_id": "SDDH",
+      "description": "Configuration for monitoring COVID-19. Initial production version.",
+      "included_conditions": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+          "version": "2.0.0"
+        }
+      ],
+      "loinc_codes_additions": [],
+      "snomed_codes_additions": [],
+      "icd10_codes_additions": [],
+      "rxnorm_codes_additions": [],
+      "custom_codes": [],
+      "sections_to_include": [],
+      "cloned_from_configuration_id": null
+    },
+    {
+      "family_id": 1002,
+      "version": 1,
+      "name": "Influenza Surveillance",
+      "jurisdiction_id": "SDDH",
+      "description": "Configuration for monitoring Influenza. Initial production version.",
+      "included_conditions": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/38475891-387a-4fa2-bbe9-1dc97ce415d1",
+          "version": "2.0.0"
+        }
+      ],
+      "loinc_codes_additions": [],
+      "snomed_codes_additions": [],
+      "icd10_codes_additions": [],
+      "rxnorm_codes_additions": [],
+      "custom_codes": [],
+      "sections_to_include": [],
+      "cloned_from_configuration_id": null
+    },
+    {
+      "family_id": 1001,
+      "version": 2,
+      "name": "COVID-19 Surveillance",
+      "jurisdiction_id": "SDDH",
+      "description": "Enhanced version with pregnancy tracking, travel history, and extended social determinants.",
+      "included_conditions": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+          "version": "2.0.0"
+        }
+      ],
+      "loinc_codes_additions": [
+        {
+          "code": "72166-2",
+          "display": "Tobacco smoking status"
+        },
+        {
+          "code": "8302-2",
+          "display": "Body height"
+        },
+        {
+          "code": "29463-7",
+          "display": "Body weight"
+        }
+      ],
+      "snomed_codes_additions": [
+        {
+          "code": "77386006",
+          "display": "Pregnancy"
+        },
+        {
+          "code": "420008001",
+          "display": "Travel"
+        },
+        {
+          "code": "224130005",
+          "display": "Household composition"
+        }
+      ],
+      "icd10_codes_additions": [
+        {
+          "code": "Z87.891",
+          "display": "Personal history of nicotine dependence"
+        }
+      ],
+      "rxnorm_codes_additions": [],
+      "custom_codes": [
+        {
+          "code": "SDDH-COV-001",
+          "display": "Senate District COVID Contact Trace",
+          "description": "Local code for contact tracing workflow"
+        },
+        {
+          "code": "SDDH-TRAVEL-001",
+          "display": "International travel within 14 days",
+          "description": "Local tracking code for recent international travel"
+        }
+      ],
+      "sections_to_include": ["11450-4", "11369-6", "29762-2", "47420-5"],
+      "cloned_from_configuration_id": "PLACEHOLDER_UUID_1001_V1"
+    }
+  ],
+  "configuration_labels": [
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1001_V1",
+      "label_name": "single condition"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1001_V1",
+      "label_name": "in production"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1002_V1",
+      "label_name": "single condition"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1002_V1",
+      "label_name": "in production"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1001_V2",
+      "label_name": "single condition"
+    }
+  ],
+  "activations": [
+    {
+      "jurisdiction_id": "SDDH",
+      "snomed_code": "840539006",
+      "configuration_family_id": 1001,
+      "configuration_version": 2,
+      "computed_codes": {
+        "loinc_codes": [],
+        "snomed_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": []
+      },
+      "s3_synced_at": "2025-08-08T03:45:00Z",
+      "s3_object_key": "refiner/activations/SDDH/840539006/1001-v2-840539006-20250808034500.json"
+    },
+    {
+      "jurisdiction_id": "SDDH",
+      "snomed_code": "772828001",
+      "configuration_family_id": 1002,
+      "configuration_version": 1,
+      "computed_codes": {
+        "loinc_codes": [],
+        "snomed_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": []
+      },
+      "s3_synced_at": "2025-08-08T03:30:00Z",
+      "s3_object_key": "refiner/activations/SDDH/772828001/1002-v1-772828001-20250808033000.json"
+    }
+  ]
+}
