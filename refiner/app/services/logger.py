@@ -52,7 +52,9 @@ def setup_logger() -> None:
     logger.setLevel(logging.INFO)
 
     handler = logging.StreamHandler()
-    handler.setFormatter(JsonFormatter(defaults={"env": ENVIRONMENT["ENV"]}))
+    handler.setFormatter(
+        JsonFormatter(defaults={"service": "refiner", "env": ENVIRONMENT["ENV"]})
+    )
 
     handler.addFilter(RequestIdFilter())
 
