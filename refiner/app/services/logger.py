@@ -1,3 +1,4 @@
+import contextvars
 import logging
 
 from pythonjsonlogger.json import JsonFormatter
@@ -5,6 +6,42 @@ from pythonjsonlogger.json import JsonFormatter
 from ..core.config import ENVIRONMENT
 
 logger = logging.getLogger("refiner")
+
+# https://docs.python.org/3/library/contextvars.html#asyncio-support
+request_id_ctx_var = contextvars.ContextVar("request_id", default=None)
+
+
+def set_request_id(request_id: str) -> None:
+    """
+    Sets the current request ID.
+
+    Args:
+        request_id (str): The generated request ID
+    """
+    request_id_ctx_var.set(request_id)
+
+
+def get_request_id() -> str | None:
+    """
+    Gets the current request ID.
+
+    Returns:
+        str | None: The current request ID, or None
+    """
+    return request_id_ctx_var.get()
+
+
+class RequestIdFilter(logging.Filter):
+    """
+    Adds additional info to the standard logger.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """
+        Adds the request ID to the logger if one exists, else adds "unknown".
+        """
+        record.request_id = get_request_id() or "unknown"
+        return True
 
 
 def setup_logger() -> None:
@@ -15,6 +52,8 @@ def setup_logger() -> None:
 
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter(defaults={"env": ENVIRONMENT["ENV"]}))
+
+    handler.addFilter(RequestIdFilter())
 
     logger.addHandler(handler)
 

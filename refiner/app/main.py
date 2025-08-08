@@ -23,7 +23,7 @@ from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
 from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, db, get_db
-from .services.logger import get_logger, setup_logger
+from .services.logger import get_logger, set_request_id, setup_logger
 
 # create router
 router = APIRouter(prefix="/api")
@@ -114,7 +114,7 @@ app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
 
 
 @app.middleware("http")
-async def log_request_time(
+async def log_request(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
     """
@@ -122,17 +122,23 @@ async def log_request_time(
 
     Args:
         request (Request): The incoming request
-        call_next (_type_): _description_
+        call_next (Callable[[Request], Awaitable[Response]): Continue the path of the original request
 
     Returns:
-        _type_: _description_
+        Response: The response of the original request
     """
     request_id = uuid.uuid4()
+    set_request_id(request_id)
     logger = get_logger()
     start = time.time()
 
     logger.info(
-        "Request start", extra={"path": request.url.path, "method": request.method}
+        "Request start",
+        extra={
+            "request_id": request_id,
+            "path": request.url.path,
+            "method": request.method,
+        },
     )
 
     response = await call_next(request)
@@ -143,8 +149,8 @@ async def log_request_time(
         "Request end",
         extra={
             "request_id": request_id,
-            "status_code": response.status_code,
             "path": request.url.path,
+            "status_code": response.status_code,
             "method": request.method,
             "duration_ms": round(duration_ms, 2),
         },
