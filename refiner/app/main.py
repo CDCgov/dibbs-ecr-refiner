@@ -70,14 +70,17 @@ async def health_check(
 async def _lifespan(_: FastAPI):
     # Setup logging
     setup_logger()
+    logger = get_logger()
     # Start the DB connection
     await db.connect()
+    logger.info("Database pool opened", extra={"db_pool_stats": db.get_stats()})
     # Start the cleanup tasks in the background
     asyncio.create_task(run_expired_file_cleanup_task())
-    asyncio.create_task(run_expired_session_cleanup_task(get_logger()))
+    asyncio.create_task(run_expired_session_cleanup_task(logger))
     yield
     # Release the DB connection
     await db.close()
+    logger.info("Database pool closed")
 
 
 # Instantiate FastAPI via DIBBs' BaseService class
