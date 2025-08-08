@@ -64,11 +64,11 @@ export function ConfigurationsTable({
           return (
             <tr
               key={idx}
-              onClick={() => navigate(`/configurations/${id}/build`)}
+              onClick={() => void navigate(`/configurations/${id}/build`)}
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
-                  navigate(`/configurations/${id}/build`);
+                  void navigate(`/configurations/${id}/build`);
                 }
               }}
               aria-label={`View configuration for ${name}`}

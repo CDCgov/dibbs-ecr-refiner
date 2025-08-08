@@ -21,7 +21,7 @@ export function useLogin(): [User | null, boolean] {
           return;
         }
 
-        const data: User | null = await resp.json();
+        const data = (await resp.json()) as User | null;
         if (data) {
           setUser(data);
           setIsLoading(false);
@@ -34,7 +34,7 @@ export function useLogin(): [User | null, boolean] {
         setIsLoading(false);
       }
     }
-    fetchUserInfo();
+    void fetchUserInfo();
   }, []);
 
   return [user, isLoading];

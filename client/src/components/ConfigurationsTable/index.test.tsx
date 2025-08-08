@@ -39,11 +39,11 @@ const testCfg = {
 };
 
 describe('Configurations Table component', () => {
-  beforeEach(() => {
+  afterEach(() => {
     mockNavigate.mockClear();
   });
 
-  it('should render a table when supplied with data', async () => {
+  it('should render a table when supplied with data', () => {
     render(
       <BrowserRouter>
         <ConfigurationsTable columns={testCfg.columns} data={testCfg.data} />
@@ -56,7 +56,7 @@ describe('Configurations Table component', () => {
       expect(row).toHaveTextContent(`Refiner ${status}`);
     });
   });
-  it('should render an error message if no data is supplied', async () => {
+  it('should render an error message if no data is supplied', () => {
     render(
       <BrowserRouter>
         <ConfigurationsTable columns={testCfg.columns} data={[]} />
