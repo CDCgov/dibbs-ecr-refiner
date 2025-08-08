@@ -27,7 +27,9 @@
   ],
   "configurations": [
     {
-      "name": "COVID19",
+      "family_id": 1001,
+      "version": 1,
+      "name": "COVID-19 Surveillance",
       "jurisdiction_id": "SDDH",
       "description": "Configuration for monitoring COVID-19. Initial production version.",
       "included_conditions": [
@@ -39,10 +41,15 @@
       "loinc_codes_additions": [],
       "snomed_codes_additions": [],
       "icd10_codes_additions": [],
-      "rxnorm_codes_additions": []
+      "rxnorm_codes_additions": [],
+      "custom_codes": [],
+      "sections_to_include": [],
+      "cloned_from_configuration_id": null
     },
     {
-      "name": "Influenza",
+      "family_id": 1002,
+      "version": 1,
+      "name": "Influenza Surveillance",
       "jurisdiction_id": "SDDH",
       "description": "Configuration for monitoring Influenza. Initial production version.",
       "included_conditions": [
@@ -54,20 +61,102 @@
       "loinc_codes_additions": [],
       "snomed_codes_additions": [],
       "icd10_codes_additions": [],
-      "rxnorm_codes_additions": []
+      "rxnorm_codes_additions": [],
+      "custom_codes": [],
+      "sections_to_include": [],
+      "cloned_from_configuration_id": null
+    },
+    {
+      "family_id": 1001,
+      "version": 2,
+      "name": "COVID-19 Surveillance",
+      "jurisdiction_id": "SDDH",
+      "description": "Enhanced version with pregnancy tracking, travel history, and extended social determinants.",
+      "included_conditions": [
+        {
+          "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+          "version": "2.0.0"
+        }
+      ],
+      "loinc_codes_additions": [
+        {
+          "code": "72166-2",
+          "display": "Tobacco smoking status"
+        },
+        {
+          "code": "8302-2",
+          "display": "Body height"
+        },
+        {
+          "code": "29463-7",
+          "display": "Body weight"
+        }
+      ],
+      "snomed_codes_additions": [
+        {
+          "code": "77386006",
+          "display": "Pregnancy"
+        },
+        {
+          "code": "420008001",
+          "display": "Travel"
+        },
+        {
+          "code": "224130005",
+          "display": "Household composition"
+        }
+      ],
+      "icd10_codes_additions": [
+        {
+          "code": "Z87.891",
+          "display": "Personal history of nicotine dependence"
+        }
+      ],
+      "rxnorm_codes_additions": [],
+      "custom_codes": [
+        {
+          "code": "SDDH-COV-001",
+          "display": "Senate District COVID Contact Trace",
+          "description": "Local code for contact tracing workflow"
+        },
+        {
+          "code": "SDDH-TRAVEL-001",
+          "display": "International travel within 14 days",
+          "description": "Local tracking code for recent international travel"
+        }
+      ],
+      "sections_to_include": ["11450-4", "11369-6", "29762-2", "47420-5"],
+      "cloned_from_configuration_id": "PLACEHOLDER_UUID_1001_V1"
     }
   ],
   "configuration_labels": [
-    { "configuration_id": 1, "label_name": "single condition" },
-    { "configuration_id": 1, "label_name": "in production" },
-    { "configuration_id": 2, "label_name": "single condition" },
-    { "configuration_id": 2, "label_name": "in production" }
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1001_V1",
+      "label_name": "single condition"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1001_V1",
+      "label_name": "in production"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1002_V1",
+      "label_name": "single condition"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1002_V1",
+      "label_name": "in production"
+    },
+    {
+      "configuration_id": "PLACEHOLDER_UUID_1001_V2",
+      "label_name": "single condition"
+    }
   ],
   "activations": [
     {
       "jurisdiction_id": "SDDH",
       "snomed_code": "840539006",
-      "configuration_id": 1,
+      "configuration_family_id": 1001,
+      "configuration_version": 2,
       "computed_codes": {
         "loinc_codes": [],
         "snomed_codes": [],
@@ -78,7 +167,8 @@
     {
       "jurisdiction_id": "SDDH",
       "snomed_code": "772828001",
-      "configuration_id": 2,
+      "configuration_family_id": 1002,
+      "configuration_version": 1,
       "computed_codes": {
         "loinc_codes": [],
         "snomed_codes": [],

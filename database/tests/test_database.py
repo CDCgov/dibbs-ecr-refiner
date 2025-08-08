@@ -42,16 +42,20 @@ def test_configurations_table_populated(db_conn):
 
 def test_sample_configuration_exists(db_conn):
     with db_conn.cursor() as cur:
-        cur.execute("SELECT name FROM configurations WHERE name = 'COVID19';")
+        cur.execute(
+            "SELECT name FROM configurations WHERE name = 'COVID-19 Surveillance';"
+        )
         row = cur.fetchone()
-        assert row is not None, "'COVID19' configuration should exist in seed data."
+        assert row is not None, (
+            "'COVID-19 Surveillance' configuration should exist in seed data."
+        )
 
 
-def test_configuration_versions_populated(db_conn):
+def test_configuration_families_populated(db_conn):
     with db_conn.cursor() as cur:
-        cur.execute("SELECT COUNT(*) FROM configuration_versions;")
+        cur.execute("SELECT COUNT(DISTINCT family_id) FROM configurations;")
         count = cur.fetchone()[0]
-        assert count > 0, "configuration_versions table should have at least one entry."
+        assert count > 0, "configurations table should have at least one family."
 
 
 def test_activations_populated(db_conn):

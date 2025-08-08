@@ -107,21 +107,32 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
             label_id, label_name = cursor.fetchone()
             label_id_map[label_name] = label_id
 
-    # configurations
+    # configurations - updated for new schema
     configs_to_insert = test_data.get("configurations", [])
-    config_id_map = {}
+    config_uuid_map = {}  # Maps "1001_V1" -> actual UUID
     if configs_to_insert:
         logging.info(f"  - Inserting {len(configs_to_insert)} configuration(s)...")
         for config in configs_to_insert:
+            # Handle cloned_from_configuration_id placeholder resolution
+            cloned_from_id = config.get("cloned_from_configuration_id")
+            if cloned_from_id and cloned_from_id.startswith("PLACEHOLDER_UUID_"):
+                placeholder_key = cloned_from_id.replace("PLACEHOLDER_UUID_", "")
+                cloned_from_id = config_uuid_map.get(placeholder_key)
+            elif cloned_from_id == "null":
+                cloned_from_id = None
+
             cursor.execute(
                 """
                 INSERT INTO configurations (
-                    jurisdiction_id, name, description, included_conditions,
-                    loinc_codes_additions, snomed_codes_additions,
-                    icd10_codes_additions, rxnorm_codes_additions
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id, name
+                    family_id, version, jurisdiction_id, name, description,
+                    included_conditions, loinc_codes_additions, snomed_codes_additions,
+                    icd10_codes_additions, rxnorm_codes_additions, custom_codes,
+                    sections_to_include, cloned_from_configuration_id
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
                 """,
                 (
+                    config["family_id"],
+                    config["version"],
                     config["jurisdiction_id"],
                     config["name"],
                     config["description"],
@@ -130,57 +141,77 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
                     json.dumps(config.get("snomed_codes_additions", [])),
                     json.dumps(config.get("icd10_codes_additions", [])),
                     json.dumps(config.get("rxnorm_codes_additions", [])),
+                    json.dumps(config.get("custom_codes", [])),
+                    config.get("sections_to_include", []),
+                    cloned_from_id,
                 ),
             )
-            config_id, config_name = cursor.fetchone()
-            config_id_map[config_name] = config_id
+            config_uuid = cursor.fetchone()[0]
+            # Store mapping for placeholder resolution
+            config_key = f"{config['family_id']}_V{config['version']}"
+            config_uuid_map[config_key] = config_uuid
 
-    # activations
+    # activations - updated to use family_id + version lookup
     activations_to_insert = test_data.get("activations", [])
     if activations_to_insert:
         logging.info(
             f"  - Inserting {len(activations_to_insert)} activation record(s)..."
         )
         for activation in activations_to_insert:
-            # look up configuration ID directly (no more version lookup)
-            config_id = activation.get("configuration_id")
+            # Look up configuration UUID by family_id + version
+            family_id = activation.get("configuration_family_id")
+            version = activation.get("configuration_version")
 
-            if config_id:
-                cursor.execute(
-                    """INSERT INTO activations
-                    (jurisdiction_id, snomed_code, configuration_id, computed_codes)
-                    VALUES (%s, %s, %s, %s)""",
-                    (
-                        activation["jurisdiction_id"],
-                        activation["snomed_code"],
-                        config_id,
-                        json.dumps(activation["computed_codes"]),  # New required field
-                    ),
-                )
+            if family_id and version:
+                config_key = f"{family_id}_V{version}"
+                config_uuid = config_uuid_map.get(config_key)
+
+                if config_uuid:
+                    cursor.execute(
+                        """INSERT INTO activations
+                        (jurisdiction_id, snomed_code, configuration_id, computed_codes)
+                        VALUES (%s, %s, %s, %s)""",
+                        (
+                            activation["jurisdiction_id"],
+                            activation["snomed_code"],
+                            config_uuid,
+                            json.dumps(activation["computed_codes"]),
+                        ),
+                    )
+                else:
+                    logging.warning(
+                        f"⚠️ Could not find configuration UUID for family {family_id} v{version}"
+                    )
             else:
                 logging.warning(
-                    f"⚠️ Skipping activation with missing configuration_id: {activation}"
+                    f"⚠️ Skipping activation with missing family_id/version: {activation}"
                 )
 
-    # configuration labels
+    # configuration labels - updated to use placeholder resolution
     config_labels_to_insert = test_data.get("configuration_labels", [])
     if config_labels_to_insert:
         logging.info(
             f"  - Applying {len(config_labels_to_insert)} label(s) to configurations..."
         )
         for config_label in config_labels_to_insert:
-            # use configuration_id directly from JSON instead of looking up by name
-            config_id = config_label.get("configuration_id")
+            # Resolve placeholder UUID to actual UUID
+            config_id_placeholder = config_label.get("configuration_id", "")
+            if config_id_placeholder.startswith("PLACEHOLDER_UUID_"):
+                config_key = config_id_placeholder.replace("PLACEHOLDER_UUID_", "")
+                config_uuid = config_uuid_map.get(config_key)
+            else:
+                config_uuid = config_id_placeholder
+
             label_id = label_id_map.get(config_label["label_name"])
 
-            if config_id and label_id:
+            if config_uuid and label_id:
                 cursor.execute(
                     "INSERT INTO configuration_labels (configuration_id, label_id) VALUES (%s, %s)",
-                    (config_id, label_id),
+                    (config_uuid, label_id),
                 )
             else:
                 logging.warning(
-                    f"⚠️ Skipping label join for missing config ID ({config_id}) or label ('{config_label['label_name']}')"
+                    f"⚠️ Skipping label join for missing config UUID ({config_uuid}) or label ('{config_label['label_name']}')"
                 )
 
     logging.info("  ✅ Test data seeding complete.")

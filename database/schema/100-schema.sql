@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS configurations;
 DROP TABLE IF EXISTS conditions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS jurisdictions;
+DROP SEQUENCE IF EXISTS configuration_family_id_seq;
 
 
 -- this table stores a list of known jurisdictions
@@ -20,15 +21,18 @@ CREATE TABLE jurisdictions (
 
 -- This table stores user information and links them to a jurisdiction
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
-    jurisdiction_id TEXT REFERENCES jurisdictions(id)
+    jurisdiction_id TEXT REFERENCES jurisdictions(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- this is the core table containing the aggregated, denormalized data for each condition grouper
 -- we handle the aggregation of codes from child ValueSets _before_ the seeding
 CREATE TABLE conditions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     canonical_url TEXT NOT NULL,
     version TEXT NOT NULL,
     display_name TEXT,
@@ -37,25 +41,33 @@ CREATE TABLE conditions (
     snomed_codes JSONB,
     icd10_codes JSONB,
     rxnorm_codes JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     -- a condition is uniquely identified by its URL and version
-    PRIMARY KEY (canonical_url, version)
+    UNIQUE (canonical_url, version)
 );
 
 -- a GIN index is highly effective for searching within arrays
 CREATE INDEX idx_conditions_child_snomed_codes ON conditions USING GIN (child_rsg_snomed_codes);
 
--- simplified configurations table - version-centric approach
--- * each row represents a specific, immutable configuration version (like github issues/PRs)
--- * configuration ID becomes the user-facing version number (e.g., "configuration #47")
+-- sequence for generating human-readable family IDs (starts at 1000 for professional appearance)
+CREATE SEQUENCE configuration_family_id_seq START 1000 INCREMENT 1;
+
+-- simplified configurations table with family/version approach
+-- * family_id groups related configuration versions (human-readable: 1001, 1002, etc.)
+-- * version tracks iterations within a family (1, 2, 3, etc.)
+-- * supports A/B testing: multiple families can target the same condition
 -- * benefits:
---   - eliminates complex joins
---   - simpler activation lookups
---   - more intuitive user experience ("work with config #47")
---   - matches github's issue numbering paradigm
+--   - user-friendly identifiers ("Configuration 1001 v2")
+--   - clear version progression within families
+--   - ability to test different approaches for same condition
+--   - simple activation lookups via UUID primary key
 CREATE TABLE configurations (
-    id SERIAL PRIMARY KEY,                    -- This IS the user-facing version number
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),           -- Technical PK for foreign keys
+    family_id INTEGER NOT NULL,                              -- User-facing family identifier (1001, 1002, etc.)
+    version INTEGER NOT NULL,                                -- Version within family (1, 2, 3, etc.)
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
-    name TEXT NOT NULL,                       -- Can be renamed anytime without versioning
+    name TEXT NOT NULL,                                      -- Can be updated without versioning
     description TEXT,
 
     -- configuration data: references to base conditions by composite key
@@ -69,16 +81,28 @@ CREATE TABLE configurations (
     icd10_codes_additions JSONB DEFAULT '[]'::jsonb,
     rxnorm_codes_additions JSONB DEFAULT '[]'::jsonb,
 
-    -- optional: track relationships between configurations for audit/history
-    -- e.g., "configuration #48 was cloned from #47"
-    derived_from_id INTEGER REFERENCES configurations(id),
+    -- local codes that don't fit standard terminology systems
+    -- structure: [{"code": "...", "display": "...", "description": "..."}, ...]
+    custom_codes JSONB DEFAULT '[]'::jsonb,
+
+    -- eICR sections to include in processing (array of LOINC codes)
+    -- used by server to determine which parts of eICR to include without processing
+    sections_to_include TEXT[] DEFAULT ARRAY[]::TEXT[],
+
+    -- if the configuration was "cloned" from another configuration, point to the configuration uuid
+    -- * we get history from family_id for free; this will solidify the chain of provenance
+    cloned_from_configuration_id UUID REFERENCES configurations(id),
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- business rule: configurations must reference at least one condition
     -- this ensures every configuration has a meaningful clinical foundation
     CONSTRAINT configurations_must_have_conditions
-    CHECK (jsonb_array_length(included_conditions) > 0)
+    CHECK (jsonb_array_length(included_conditions) > 0),
+
+    -- unique version per family
+    UNIQUE(family_id, version)
 );
 
 -- time-based activations with pre-computed payloads
@@ -90,30 +114,27 @@ CREATE TABLE configurations (
 --   - easy to sync with S3 for horizontal scaling via Lambda
 --   - full audit trail of activation history
 CREATE TABLE activations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
-    snomed_code TEXT NOT NULL,                -- From conditions.child_rsg_snomed_codes
-    configuration_id INTEGER NOT NULL REFERENCES configurations(id),
+    snomed_code TEXT NOT NULL,                               -- From conditions.child_rsg_snomed_codes
+    configuration_id UUID NOT NULL REFERENCES configurations(id),
 
     -- lifecycle tracking: when was this activated/deactivated
     activated_at TIMESTAMPTZ DEFAULT NOW(),
-    -- NULL = currently active
-    deactivated_at TIMESTAMPTZ NULL,
+    deactivated_at TIMESTAMPTZ NULL,                         -- NULL = currently active
 
     -- pre-computed aggregated codes (replaces complex runtime query)
     -- structure matches ProcessedGrouper for easy consumption by terminology service
+    -- * example: {"loinc_codes": [...], "snomed_codes": [...], "icd10_codes": [...], "rxnorm_codes": [...]}
     computed_codes JSONB NOT NULL,
-    -- example: {"loinc_codes": [...], "snomed_codes": [...], "icd10_codes": [...], "rxnorm_codes": [...]}
 
     -- S3 synchronization tracking for Lambda-based horizontal scaling
     s3_synced_at TIMESTAMPTZ NULL,
-    s3_object_key TEXT NULL,
-
-    -- composite primary key allows for full activation history
-    PRIMARY KEY (jurisdiction_id, snomed_code, activated_at)
+    s3_object_key TEXT NULL
 );
 
 -- business rule: only one active configuration per jurisdiction+snomed combination
--- * this prevents conflicts where multiple configurations could apply to the same condition
+-- this prevents conflicts where multiple configurations could apply to the same condition
 CREATE UNIQUE INDEX idx_one_active_per_snomed
 ON activations (jurisdiction_id, snomed_code)
 WHERE deactivated_at IS NULL;
@@ -128,16 +149,19 @@ WHERE deactivated_at IS NULL;
 -- labels can be added/removed from configurations without creating new versions
 -- (similar to github issue/PR labels)
 CREATE TABLE labels (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT UNIQUE NOT NULL,
-    color TEXT, -- e.g., a hex code like '#4287f5'
-    description TEXT
+    color TEXT,                                              -- e.g., a hex code like '#4287f5'
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- join table for applying multiple labels to configurations
--- works with the simplified configurations table - labels apply to specific configuration versions
+-- join table for applying multiple labels to individual configurations
+-- works with the UUID-based configurations table - labels apply to specific configuration versions
 CREATE TABLE configuration_labels (
-    configuration_id INTEGER NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
-    label_id INTEGER NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
+    configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
+    label_id UUID NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (configuration_id, label_id)
 );
