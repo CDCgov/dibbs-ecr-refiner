@@ -4,6 +4,7 @@ import hmac
 import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
+from logging import Logger
 
 from pydantic import BaseModel
 
@@ -112,7 +113,6 @@ async def get_user_from_session(token: str) -> dict[str, str] | None:
         await cur.execute(query, params)
         user = await cur.fetchone()
 
-        print("User from session:", user)
         if user:
             return {"id": user["id"], "username": user["username"]}
     return None
@@ -131,7 +131,7 @@ async def _delete_expired_sessions() -> None:
         await cur.execute(query, params)
 
 
-async def run_expired_session_cleanup_task() -> None:
+async def run_expired_session_cleanup_task(logger: Logger) -> None:
     """
     Task that can be scheduled to run session cleanup once per hour.
     """
@@ -139,8 +139,11 @@ async def run_expired_session_cleanup_task() -> None:
     while True:
         try:
             await _delete_expired_sessions()
+            logger.info("Expired sessions cleaned up.")
         except Exception as e:
-            print(f"[Session Cleanup] Error: {e}")
+            logger.error(
+                "Expired sessions could not be cleaned up", extra={"error": str(e)}
+            )
         await asyncio.sleep(cleanup_interval_seconds)
 
 
