@@ -169,7 +169,10 @@ async def logout(
 
     if session_token:
         user = await get_user_from_session(session_token)
-        logger.info("Logging out user", extra={"user_id": user["id"]})
+
+        if user:
+            logger.info("Logging out user", extra={"user_id": user.get("id", None)})
+
         await delete_session(session_token)
 
     response = RedirectResponse(url=post_logout_redirect_uri)

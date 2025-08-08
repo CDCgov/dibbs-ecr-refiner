@@ -1,5 +1,6 @@
-import contextvars
 import logging
+from contextvars import ContextVar
+from uuid import UUID
 
 from pythonjsonlogger.json import JsonFormatter
 
@@ -8,17 +9,17 @@ from ..core.config import ENVIRONMENT
 logger = logging.getLogger("refiner")
 
 # https://docs.python.org/3/library/contextvars.html#asyncio-support
-request_id_ctx_var = contextvars.ContextVar("request_id", default=None)
+request_id_ctx_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
-def set_request_id(request_id: str) -> None:
+def set_request_id(request_id: UUID) -> None:
     """
     Sets the current request ID.
 
     Args:
         request_id (str): The generated request ID
     """
-    request_id_ctx_var.set(request_id)
+    request_id_ctx_var.set(str(request_id))
 
 
 def get_request_id() -> str | None:
