@@ -128,9 +128,16 @@ CREATE TABLE activations (
     -- * example: {"loinc_codes": [...], "snomed_codes": [...], "icd10_codes": [...], "rxnorm_codes": [...]}
     computed_codes JSONB NOT NULL,
 
-    -- S3 synchronization tracking for Lambda-based horizontal scaling
-    s3_synced_at TIMESTAMPTZ NULL,
-    s3_object_key TEXT NULL
+    -- S3 synchronization tracking for lambda based application
+    -- both fields are required once activation is complete
+    -- the proposed process:
+    --   - ggnerate ProcessedGrouper json
+    --   - write to activations table
+    --   - write to S3
+    --   - verify sync
+    --   - only then tell user "success"
+    s3_synced_at TIMESTAMPTZ NOT NULL,
+    s3_object_key TEXT NOT NULL
 );
 
 -- business rule: only one active configuration per jurisdiction+snomed combination

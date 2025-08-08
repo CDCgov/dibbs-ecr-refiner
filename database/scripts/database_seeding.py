@@ -107,7 +107,7 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
             label_id, label_name = cursor.fetchone()
             label_id_map[label_name] = label_id
 
-    # configurations - updated for new schema
+    # configurations
     configs_to_insert = test_data.get("configurations", [])
     config_uuid_map = {}  # Maps "1001_V1" -> actual UUID
     if configs_to_insert:
@@ -147,18 +147,18 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
                 ),
             )
             config_uuid = cursor.fetchone()[0]
-            # Store mapping for placeholder resolution
+            # store mapping for placeholder resolution
             config_key = f"{config['family_id']}_V{config['version']}"
             config_uuid_map[config_key] = config_uuid
 
-    # activations - updated to use family_id + version lookup
+    # activations
     activations_to_insert = test_data.get("activations", [])
     if activations_to_insert:
         logging.info(
             f"  - Inserting {len(activations_to_insert)} activation record(s)..."
         )
         for activation in activations_to_insert:
-            # Look up configuration UUID by family_id + version
+            # look up configuration UUID by family_id + version
             family_id = activation.get("configuration_family_id")
             version = activation.get("configuration_version")
 
@@ -169,13 +169,15 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
                 if config_uuid:
                     cursor.execute(
                         """INSERT INTO activations
-                        (jurisdiction_id, snomed_code, configuration_id, computed_codes)
-                        VALUES (%s, %s, %s, %s)""",
+                        (jurisdiction_id, snomed_code, configuration_id, computed_codes, s3_synced_at, s3_object_key)
+                        VALUES (%s, %s, %s, %s, %s, %s)""",
                         (
                             activation["jurisdiction_id"],
                             activation["snomed_code"],
                             config_uuid,
                             json.dumps(activation["computed_codes"]),
+                            activation["s3_synced_at"],
+                            activation["s3_object_key"],
                         ),
                     )
                 else:
@@ -187,14 +189,14 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
                     f"⚠️ Skipping activation with missing family_id/version: {activation}"
                 )
 
-    # configuration labels - updated to use placeholder resolution
+    # configuration labels
     config_labels_to_insert = test_data.get("configuration_labels", [])
     if config_labels_to_insert:
         logging.info(
             f"  - Applying {len(config_labels_to_insert)} label(s) to configurations..."
         )
         for config_label in config_labels_to_insert:
-            # Resolve placeholder UUID to actual UUID
+            # resolve placeholder UUID to actual UUID
             config_id_placeholder = config_label.get("configuration_id", "")
             if config_id_placeholder.startswith("PLACEHOLDER_UUID_"):
                 config_key = config_id_placeholder.replace("PLACEHOLDER_UUID_", "")

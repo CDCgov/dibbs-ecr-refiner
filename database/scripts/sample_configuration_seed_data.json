@@ -162,7 +162,9 @@
         "snomed_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": []
-      }
+      },
+      "s3_synced_at": "2025-08-08T03:45:00Z",
+      "s3_object_key": "refiner/activations/SDDH/840539006/1001-v2-840539006-20250808034500.json"
     },
     {
       "jurisdiction_id": "SDDH",
@@ -174,7 +176,9 @@
         "snomed_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": []
-      }
+      },
+      "s3_synced_at": "2025-08-08T03:30:00Z",
+      "s3_object_key": "refiner/activations/SDDH/772828001/1002-v1-772828001-20250808033000.json"
     }
   ]
 }
