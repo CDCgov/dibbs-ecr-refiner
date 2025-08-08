@@ -60,7 +60,7 @@ class AsyncDatabaseConnection:
         """
         await self.pool.close()
 
-    def get_stats(self) -> dict[str, str]:
+    def get_stats(self) -> dict[str, int]:
         """
         Returns database pool stats (min connections, max connections, pool size, etc.).
         """
