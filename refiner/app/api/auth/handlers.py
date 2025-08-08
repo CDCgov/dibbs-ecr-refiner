@@ -1,8 +1,17 @@
-from fastapi import APIRouter, Request
+from logging import Logger
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 
+from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
-from .session import create_session, delete_session, get_user_from_session, upsert_user
+from .session import (
+    IdpUserResponse,
+    create_session,
+    delete_session,
+    get_user_from_session,
+    upsert_user,
+)
 
 auth_router = APIRouter()
 
@@ -29,12 +38,15 @@ async def login(request: Request) -> RedirectResponse:
 
 
 @auth_router.get("/auth/callback", name="auth_callback")
-async def auth_callback(request: Request) -> RedirectResponse:
+async def auth_callback(
+    request: Request, logger: Logger = Depends(get_logger)
+) -> RedirectResponse:
     """
     Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
 
     Args:
         request (Request): The incoming HTTP request containing the authorization code.
+        logger (Logger): The standard logger.
 
     Returns:
         dict[str, str]: A dictionary of user claims extracted from the ID token.
@@ -48,8 +60,42 @@ async def auth_callback(request: Request) -> RedirectResponse:
         nonce = request.session.get("nonce")
         oidc_user = await get_oauth_provider().parse_id_token(token, nonce)
 
+        idp_user_id = oidc_user.get("sub", None)
+        idp_username = oidc_user.get("preferred_username", None)
+        idp_email = oidc_user.get("email", None)
+
+        if not idp_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="IdP response missing required field: 'user_id'",
+            )
+
+        if not idp_username:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="IdP response missing required field: 'preferred_username'",
+            )
+
+        if not idp_email:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="IdP response missing required field: 'email'",
+            )
+
+        logger.info(
+            "User logging in",
+            extra={
+                "user_id": idp_user_id,
+                "username": idp_username,
+                "email": idp_email,
+            },
+        )
+
         # Add or update user in the Refiner DB
-        user_id = await upsert_user(oidc_user)
+        user = IdpUserResponse(
+            user_id=idp_user_id, username=idp_username, email=idp_email
+        )
+        user_id = await upsert_user(user)
 
         # Create a session for the user
         session_token = await create_session(user_id)
@@ -58,7 +104,7 @@ async def auth_callback(request: Request) -> RedirectResponse:
         redirect_uri = "/" if env != "local" else "http://localhost:8081"
         response = RedirectResponse(url=redirect_uri)
 
-        print("Setting browser cookie for user:", user_id)
+        logger.info("Set cookie for user", extra={"username": user.username})
         response.set_cookie(
             key="refiner-session",
             value=session_token,
@@ -70,7 +116,7 @@ async def auth_callback(request: Request) -> RedirectResponse:
         return response
 
     except Exception as e:
-        print("Idp callback error:", e)
+        logger.error("IdP callback error", extra={"error": str(e)})
         raise e
 
 
@@ -101,12 +147,15 @@ async def get_user(request: Request) -> JSONResponse:
 
 
 @auth_router.get("/logout")
-async def logout(request: Request) -> RedirectResponse:
+async def logout(
+    request: Request, logger: Logger = Depends(get_logger)
+) -> RedirectResponse:
     """
     Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.
 
     Args:
         request (Request): The incoming HTTP request.
+        logger (Logger): The standard logger.
 
     Returns:
         RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.
@@ -119,6 +168,11 @@ async def logout(request: Request) -> RedirectResponse:
     session_token = request.cookies.get("refiner-session")
 
     if session_token:
+        user = await get_user_from_session(session_token)
+
+        if user:
+            logger.info("Logging out user", extra={"user_id": user.get("id", None)})
+
         await delete_session(session_token)
 
     response = RedirectResponse(url=post_logout_redirect_uri)

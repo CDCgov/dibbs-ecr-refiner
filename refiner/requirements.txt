@@ -12,3 +12,4 @@ requests
 rich
 uvicorn
 itsdangerous
+python-json-logger==3.3.0
