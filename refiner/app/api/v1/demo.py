@@ -367,18 +367,22 @@ async def download_refined_ecr(token: str) -> FileResponse:
 
 
 @router.get("/download")
-async def demo_download(file_path: Path = Depends(_get_demo_zip_path)) -> FileResponse:
+async def demo_download(
+    file_path: Path = Depends(_get_demo_zip_path), logger: Logger = Depends(get_logger)
+) -> FileResponse:
     """
     Download the unrefined sample eCR zip file.
     """
 
     # Grab demo zip and send it along to the client
     if not Path(file_path).exists():
+        logger.error("Demo file couldn't be downloaded.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",
         )
     filename = file_path.name
+    logger.info("Demo file downloaded successfully.")
     return FileResponse(
         file_path, media_type="application/octet-stream", filename=filename
     )
