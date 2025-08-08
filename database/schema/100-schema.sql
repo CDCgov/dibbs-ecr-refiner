@@ -12,7 +12,9 @@ DROP SEQUENCE IF EXISTS configuration_family_id_seq;
 
 -- this table stores a list of known jurisdictions
 -- * we may want to prepopulate this with a list from APHL that would
--- match the codes we'd see in the RR.
+--   match the codes we'd see in the RR
+-- * we are not using a uuid for the pk for this table because the
+--   jurisdiction_id is intended to match the same field in the RR
 CREATE TABLE jurisdictions (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -63,11 +65,11 @@ CREATE SEQUENCE configuration_family_id_seq START 1000 INCREMENT 1;
 --   - ability to test different approaches for same condition
 --   - simple activation lookups via UUID primary key
 CREATE TABLE configurations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),           -- Technical PK for foreign keys
-    family_id INTEGER NOT NULL,                              -- User-facing family identifier (1001, 1002, etc.)
-    version INTEGER NOT NULL,                                -- Version within family (1, 2, 3, etc.)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    family_id INTEGER NOT NULL,
+    version INTEGER NOT NULL,
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
-    name TEXT NOT NULL,                                      -- Can be updated without versioning
+    name TEXT NOT NULL,
     description TEXT,
 
     -- configuration data: references to base conditions by composite key
@@ -116,7 +118,8 @@ CREATE TABLE configurations (
 CREATE TABLE activations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
-    snomed_code TEXT NOT NULL,                               -- From conditions.child_rsg_snomed_codes
+    -- from conditions.child_rsg_snomed_codes
+    snomed_code TEXT NOT NULL,
     configuration_id UUID NOT NULL REFERENCES configurations(id),
 
     -- lifecycle tracking: when was this activated/deactivated
@@ -158,7 +161,8 @@ WHERE deactivated_at IS NULL;
 CREATE TABLE labels (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT UNIQUE NOT NULL,
-    color TEXT,                                              -- e.g., a hex code like '#4287f5'
+    -- e.g., a hex code like '#4287f5'
+    color TEXT,
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
