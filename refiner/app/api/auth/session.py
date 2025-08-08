@@ -5,6 +5,8 @@ import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
 
+from pydantic import BaseModel
+
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
 
@@ -12,20 +14,26 @@ SESSION_TTL = timedelta(hours=1)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
 
 
-async def upsert_user(oidc_user_info: dict) -> str:
+class IdpUserResponse(BaseModel):
+    """
+    Expected user information coming from the IdP response.
+    """
+
+    user_id: str
+    username: str
+    email: str
+
+
+async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
     """
     Upserts a user to the refiner's database upon successful login.
 
     Args:
-        oidc_user_info (dict): User information from the OIDC.
+        oidc_user_info (IdpUserResponse): User information from the IdP.
 
     Returns:
         str: User ID of the created or modified user.
     """
-    user_id = oidc_user_info["sub"]
-    username = oidc_user_info.get("preferred_username", "")
-    email = oidc_user_info.get("email", "")
-
     query = """
         INSERT INTO users (id, username, email)
         VALUES (%s, %s, %s)
@@ -34,12 +42,12 @@ async def upsert_user(oidc_user_info: dict) -> str:
             username = EXCLUDED.username,
             email = EXCLUDED.email
         """
-    params = (user_id, username, email)
+    params = (oidc_user_info.user_id, oidc_user_info.username, oidc_user_info.email)
 
     async with db.get_cursor() as cur:
         await cur.execute(query, params)
 
-    return user_id
+    return oidc_user_info.user_id
 
 
 def get_hashed_token(token: str) -> str:
