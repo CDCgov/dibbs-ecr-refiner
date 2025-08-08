@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from typing import Literal, TypedDict, cast
 
@@ -24,8 +23,6 @@ from .grouper_utils import (
 # NOTE:
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
-
-log = logging.getLogger(__name__).error
 
 # read json that contains details for refining and is the base of what drives `refine`
 REFINER_DETAILS = read_json_asset("refiner_details.json")
