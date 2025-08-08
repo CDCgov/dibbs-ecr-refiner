@@ -25,13 +25,16 @@ This will start up the FastAPI server and the Vite client development server. Th
 
 The eCR Refiner requires the following environment variables to be specified in order to run the application:
 
-- `ENV`: The environment name (`dev`, `test`, `prod`, etc.)
+- `ENV`: The environment name (`local`, `dev`, `test`, `prod`, etc.)
 - `DB_URL`: The PostgreSQL connection string
 - `SESSION_SECRET_KEY`: A string used to compute user session hashes that are stored in the `sessions` table
 - `AUTH_PROVIDER`: Name of the OIDC authentication provider (`keycloak`, `google`, etc.)
 - `AUTH_CLIENT_ID`: OIDC client ID
 - `AUTH_CLIENT_SECRET`: OIDC client secret string
 - `AUTH_ISSUER`: OIDC auth issuer string
+- `AWS_ACCESS_KEY_ID`: The access key for your AWS account
+- `AWS_SECRET_ACCESS_KEY`: The secret key for your AWS account
+- `AWS_REGION`: The AWS region to use
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 

@@ -22,6 +22,11 @@ os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
 os.environ["AUTH_ISSUER"] = "http://mock.com"
 os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
 
+os.environ["AWS_ACCESS_KEY_ID"] = "mock-aws-access-key-id"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "mock-aws-secret-access-key"
+os.environ["AWS_REGION"] = "us-mock-1"
+os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
+
 
 @pytest.fixture(scope="session")
 def test_assets_path() -> Path:
