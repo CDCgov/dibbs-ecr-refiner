@@ -61,23 +61,27 @@ async def auth_callback(
         oidc_user = await get_oauth_provider().parse_id_token(token, nonce)
 
         idp_user_id = oidc_user.get("sub", None)
+        idp_username = oidc_user.get("preferred_username", None)
+        idp_email = oidc_user.get("email", None)
+
         if not idp_user_id:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'user_id'",
             )
-        idp_username = oidc_user.get("preferred_username", None)
+
         if not idp_username:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'preferred_username'",
             )
-        idp_email = oidc_user.get("email", None)
+
         if not idp_email:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'email'",
             )
+
         logger.info(
             "User logging in",
             extra={
@@ -143,12 +147,15 @@ async def get_user(request: Request) -> JSONResponse:
 
 
 @auth_router.get("/logout")
-async def logout(request: Request) -> RedirectResponse:
+async def logout(
+    request: Request, logger: Logger = Depends(get_logger)
+) -> RedirectResponse:
     """
     Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.
 
     Args:
         request (Request): The incoming HTTP request.
+        logger (Logger): The standard logger.
 
     Returns:
         RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.
@@ -161,6 +168,8 @@ async def logout(request: Request) -> RedirectResponse:
     session_token = request.cookies.get("refiner-session")
 
     if session_token:
+        user = await get_user_from_session(session_token)
+        logger.info("Logging out user", extra={"user_id": user["id"]})
         await delete_session(session_token)
 
     response = RedirectResponse(url=post_logout_redirect_uri)
