@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
-import { Button } from '../Button';
 import { Condition } from '../../services/demo';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { FaColumns, FaAlignLeft } from 'react-icons/fa'; // Icons for split and inline
@@ -46,50 +45,76 @@ export function Diff({
 
   return (
     <div>
-      <div className="diff-header">
-        <div className="diff-header-left">
-          <div className="diff-stats">
+      {/* Main header container */}
+      <div className="mt-6 mb-8 flex h-[64px] items-center justify-between rounded-md bg-sky-100 p-3">
+        {/* Left section */}
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-4 lg:flex-row">
             {condition.stats.map((stat) => (
               <SuccessItem key={stat}>{stat}</SuccessItem>
             ))}
           </div>
           <div>
-            <div className="diff-download">
-              <Button onClick={async () => await downloadFile(downloadToken)}>
+            <div className="flex flex-col items-start gap-3">
+              <a
+                href="#"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  await downloadFile(downloadToken);
+                }}
+                className="text-blue-500 underline hover:text-blue-700"
+              >
                 Download results
-              </Button>
-              {downloadError ? <span>File download has expired.</span> : null}
+              </a>
+              {downloadError && <span>File download has expired.</span>}
             </div>
           </div>
         </div>
-        <div className="diff-header-right">
-          <div className="diff-layout-group">
-            <span className="diff-label">Layout</span>
+
+        {/* Right section */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+          {/* Layout group */}
+          <div className="flex h-[38px] items-center gap-2">
+            <span className="font-medium">Layout</span>
             <button
               onClick={() => setSplitView(true)}
-              className={`diff-layout-btn ${splitView ? 'active' : ''}`}
+              className={`rounded-md border border-blue-500 px-3 py-1 hover:bg-blue-100 ${
+                splitView ? 'bg-blue-500 text-white' : 'bg-white text-black'
+              }`}
             >
               <FaColumns />
             </button>
             <button
               onClick={() => setSplitView(false)}
-              className={`diff-layout-btn ${!splitView ? 'active' : ''}`}
+              className={`rounded-md border border-blue-500 px-3 py-1 hover:bg-blue-100 ${
+                !splitView ? 'bg-blue-500 text-white' : 'bg-white text-black'
+              }`}
             >
               <FaAlignLeft />
             </button>
           </div>
-          <div className="diff-toggle-group">
-            <span className="diff-label">Content</span>
-            <div className="diff-pill-group">
+
+          {/* Content toggle */}
+          <div className="flex items-center gap-2">
+            <span className="font-medium">Content</span>
+            <div className="flex h-[38px] overflow-hidden rounded-full border-[4px] border-blue-500 bg-white">
               <button
                 onClick={() => setShowDiffOnly(false)}
-                className={`diff-pill ${!showDiffOnly ? 'active' : ''}`}
+                className={`px-4 py-1 text-sm font-medium transition-colors hover:bg-blue-100 ${
+                  !showDiffOnly
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-blue-500'
+                }`}
               >
                 Show all
               </button>
               <button
                 onClick={() => setShowDiffOnly(true)}
-                className={`diff-pill ${showDiffOnly ? 'active' : ''}`}
+                className={`px-4 py-1 text-sm font-medium transition-colors hover:bg-blue-100 ${
+                  showDiffOnly
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-blue-500'
+                }`}
               >
                 Diff only
               </button>

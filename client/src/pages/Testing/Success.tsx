@@ -30,6 +30,7 @@ export function Success({
   }
 
   return (
+<<<<<<< Updated upstream
       <div>
         <div className="flex items-center">
           <Title>eCR refinement results</Title>
@@ -50,6 +51,27 @@ export function Success({
               ))}
             </Select>
           </div>
+=======
+    <div>
+      <div className="flex items-center">
+        <Title>eCR refinement results</Title>
+        <div className="ml-6 flex flex-col items-center gap-4 md:flex-row">
+          <Label htmlFor="condition-select" className="text-bold">
+            CONDITION:
+          </Label>
+          <Select
+            id="condition-select"
+            name="condition-select"
+            defaultValue={selectedCondition.code}
+            onChange={onChange}
+          >
+            {conditions.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.display_name}
+              </option>
+            ))}
+          </Select>
+>>>>>>> Stashed changes
         </div>
         <Diff
             condition={selectedCondition}
