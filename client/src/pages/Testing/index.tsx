@@ -11,8 +11,13 @@ export default function Demo() {
   const [view, setView] = useState<View>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const { uploadZip, data, errorMessage, isPending, resetState } =
-    useZipUpload();
+  const {
+    uploadZip,
+    data: response,
+    errorMessage,
+    isPending,
+    resetState,
+  } = useZipUpload();
 
   function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
@@ -62,17 +67,17 @@ export default function Demo() {
             onSelectedFileChange={onSelectedFileChange}
           />
         )}
-        {view === 'reportable-conditions' && data?.data && (
+        {view === 'reportable-conditions' && response?.data && (
           <ReportableConditions
-            conditionNames={data.data.conditions.map((c) => c.display_name)}
+            conditionNames={response.data.conditions.map((c) => c.display_name)}
             onClick={() => setView('success')}
           />
         )}
-        {view === 'success' && data?.data && (
+        {view === 'success' && response?.data && (
           <Success
-            conditions={data.data.conditions}
-            unrefined_eicr={data.data.unrefined_eicr}
-            refined_download_token={data.data.refined_download_token}
+            conditions={response.data.conditions}
+            unrefined_eicr={response.data.unrefined_eicr}
+            refined_download_token={response.data.refined_download_url}
           />
         )}
         {view === 'error' && (

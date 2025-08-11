@@ -26,7 +26,7 @@ const mockUploadResponse: RefinedTestingDocument = {
   processing_notes: ['Testing notes'],
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_token: 'test-token',
+  refined_download_url: 'http://s3-standard.com',
 };
 
 const mockCustomUploadResponse: RefinedTestingDocument = {
@@ -47,7 +47,7 @@ const mockCustomUploadResponse: RefinedTestingDocument = {
   processing_notes: ['Testing notes'],
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_token: 'custom-test-token',
+  refined_download_url: 'http://s3-custom.com',
 };
 
 const renderDemoView = () =>

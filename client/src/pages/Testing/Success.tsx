@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
-import { Button } from '../../components/Button';
 import XMLViewer from 'react-xml-viewer';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
 import { RefinedTestingDocument } from '../../api/schemas';
+import { Button } from '../../components/Button';
 
 type SuccessProps = Pick<
   RefinedTestingDocument,
@@ -18,33 +18,24 @@ export function Success({
   unrefined_eicr,
   refined_download_token,
 }: SuccessProps) {
-  const [downloadError, setDownloadError] = useState<string>('');
+  const [downloadError, setDownloadError] = useState<boolean>(false);
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     conditions[0]
   );
 
-  async function downloadFile(token: string) {
+  function downloadFile(presignedUrl: string) {
     try {
-      const resp = await fetch(`/api/v1/demo/download/${token}`);
-      if (!resp.ok) {
-        const errorMsg = `Failed to download refined eCR with token: ${token}`;
-        setDownloadError(errorMsg);
-        throw Error(errorMsg);
-      }
-
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
       const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'ecr_download.zip';
+      link.href = presignedUrl;
+      link.download = '';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
+      setDownloadError(false);
     } catch (error) {
       console.error(error);
+      setDownloadError(true);
     }
   }
 
@@ -90,7 +81,9 @@ export function Success({
               <Button onClick={() => void downloadFile(refined_download_token)}>
                 Download results
               </Button>
-              {downloadError ? <span>File download has expired.</span> : null}
+              {downloadError ? (
+                <span>File download URL is incorrect or has expired.</span>
+              ) : null}
             </div>
           </div>
         </div>
