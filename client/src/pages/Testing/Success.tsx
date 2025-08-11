@@ -11,13 +11,13 @@ interface SuccessProps {
 }
 
 export function Success({
-  conditions,
-  downloadToken,
-  unrefinedEicr,
-}: SuccessProps) {
+                          conditions,
+                          downloadToken,
+                          unrefinedEicr,
+                        }: SuccessProps) {
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
-    conditions[0]
+      conditions[0]
   );
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -30,32 +30,32 @@ export function Success({
   }
 
   return (
-    <div>
-      <div className="flex items-center">
-        <Title>eCR refinement results</Title>
-        <div className="condition-dropdown">
-          <Label htmlFor="condition-select" className="text-bold">
-            CONDITION:
-          </Label>
-          <Select
-            id="condition-select"
-            name="condition-select"
-            defaultValue={selectedCondition.code}
-            onChange={onChange}
-          >
-            {conditions.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.display_name}
-              </option>
-            ))}
-          </Select>
+      <div>
+        <div className="flex items-center">
+          <Title>eCR refinement results</Title>
+          <div className="ml-6 flex flex-col items-center gap-4 md:flex-row">
+            <Label htmlFor="condition-select" className="text-bold">
+              CONDITION:
+            </Label>
+            <Select
+                id="condition-select"
+                name="condition-select"
+                defaultValue={selectedCondition.code}
+                onChange={onChange}
+            >
+              {conditions.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.display_name}
+                  </option>
+              ))}
+            </Select>
+          </div>
         </div>
+        <Diff
+            condition={selectedCondition}
+            unrefinedEicr={unrefinedEicr}
+            downloadToken={downloadToken}
+        />
       </div>
-      <Diff
-        condition={selectedCondition}
-        unrefinedEicr={unrefinedEicr}
-        downloadToken={downloadToken}
-      />
-    </div>
   );
 }

@@ -3,33 +3,40 @@ set working-directory := '../../refiner'
 alias h := _default
 alias help := _default
 
+alias t := test
+alias l := lint
+alias c := check
+alias i := install
+alias id := install-dev
+
 @_default:
     just --list server
 
 set dotenv-load
 
-# Convinience paths to scripts
-seed_db := absolute_path('scripts/seed_terminology_db.py')
-check_db := absolute_path('scripts/check_terminology_db.py')
-query_db := absolute_path('scripts/query_terminology_db.py')
+_venv:
+    [ -d .venv ] || python3 -m venv .venv
 
-# WARN: Required environment variables that we want to break execution on when
-# using Just
-DB_URL := env('DB_URL')
-TES_API_URL := env('TES_API_URL')
-TES_API_KEY := env('TES_API_KEY')
+[group('test')]
+[doc('Run pytest suite')]
+test: _venv
+    .venv/bin/pytest tests
 
-[group('db')]
-[doc('Seed the database with the terminology from TES')]
-seed-db:
-    python {{ seed_db }}
+[doc('Run Ruff checker and formatter')]
+lint: _venv
+    .venv/bin/ruff check
+    .venv/bin/ruff format
 
-[group('db')]
-[doc('Check the terminology in the database')]
-check-db:
-    python {{ check_db }}
+[doc('Run mypy type checks')]
+check: _venv
+    .venv/bin/mypy
 
-[group('db')]
-[doc('Query the terminology in the database')]
-query-db:
-    python {{ query_db }}
+[group('dependencies')]
+[doc('Install dependencies locally')]
+install: _venv
+      .venv/bin/pip install -r requirements.txt
+
+[group('dependencies')]
+[doc('Install all dependencies locally')]
+install-dev: _venv
+      .venv/bin/pip install -r requirements-dev.txt -r requirements.txt

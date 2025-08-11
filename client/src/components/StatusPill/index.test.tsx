@@ -11,12 +11,12 @@ const renderComponentView = (status: 'on' | 'off') =>
   );
 
 describe('Status pill component', () => {
-  it('should render with status on', async () => {
+  it('should render with status on', () => {
     renderComponentView('on');
 
     expect(screen.getByText('Refiner on')).toBeInTheDocument();
   });
-  it('should render with status off', async () => {
+  it('should render with status off', () => {
     renderComponentView('off');
 
     expect(screen.getByText('Refiner off')).toBeInTheDocument();
