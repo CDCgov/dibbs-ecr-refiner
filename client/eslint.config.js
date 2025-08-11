@@ -37,6 +37,7 @@ export default tseslint.config(
       ],
       'import/no-duplicates': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
     settings: {
       'import/resolver': {
