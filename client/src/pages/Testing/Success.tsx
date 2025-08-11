@@ -8,7 +8,7 @@ import { Button } from '../../components/Button';
 
 type SuccessProps = Pick<
   RefinedTestingDocument,
-  'conditions' | 'refined_download_token' | 'unrefined_eicr'
+  'conditions' | 'refined_download_url' | 'unrefined_eicr'
 >;
 
 type Condition = SuccessProps['conditions'][0];
@@ -16,7 +16,7 @@ type Condition = SuccessProps['conditions'][0];
 export function Success({
   conditions,
   unrefined_eicr,
-  refined_download_token,
+  refined_download_url,
 }: SuccessProps) {
   const [downloadError, setDownloadError] = useState<boolean>(false);
   // defaults to first condition found
@@ -78,7 +78,7 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button onClick={() => void downloadFile(refined_download_token)}>
+              <Button onClick={() => void downloadFile(refined_download_url)}>
                 Download results
               </Button>
               {downloadError ? (

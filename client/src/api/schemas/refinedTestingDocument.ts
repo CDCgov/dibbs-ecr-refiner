@@ -107,5 +107,5 @@ export interface RefinedTestingDocument {
   conditions: Condition[];
   unrefined_eicr: string;
   processing_notes: string[];
-  refined_download_token: string;
+  refined_download_url: string;
 }

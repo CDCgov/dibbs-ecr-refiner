@@ -33,4 +33,4 @@ class RefinedTestingDocument(BaseModel):
     conditions: list[Condition]
     unrefined_eicr: str
     processing_notes: list[str]
-    refined_download_token: str
+    refined_download_url: str
