@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '../Button';
 import SuccessSvg from '../../assets/green-check.svg';
 import { Condition } from '../../services/demo';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
@@ -48,9 +47,17 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button onClick={() => downloadFile(presignedDownloadUrl)}>
+              <a
+                href="#"
+                onClick={() => downloadFile(presignedDownloadUrl)}
+                style={{
+                  color: 'blue',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                }}
+              >
                 Download results
-              </Button>
+              </a>
               {downloadError && <span>File download has expired.</span>}
             </div>
           </div>
