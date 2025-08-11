@@ -48,11 +48,11 @@ export async function uploadCustomZipFile(
   const resp = await fetch(uploadRoute, options);
 
   if (!resp.ok) {
-    const errorResp: DemoUploadError = await resp.json();
+    const errorResp = (await resp.json()) as DemoUploadError;
     throw new ApiUploadError(errorResp.detail);
   }
 
-  return resp.json();
+  return (await resp.json()) as DemoUploadResponse;
 }
 
 /**
@@ -71,5 +71,5 @@ export async function uploadDemoFile(): Promise<DemoUploadResponse> {
     throw new ApiUploadError('Unable to perform demo upload.');
   }
 
-  return resp.json();
+  return (await resp.json()) as DemoUploadResponse;
 }

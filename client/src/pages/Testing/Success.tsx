@@ -77,9 +77,7 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button
-                onClick={async () => await downloadFile(presignedDownloadUrl)}
-              >
+              <Button onClick={() => void downloadFile(presignedDownloadUrl)}>
                 Download results
               </Button>
               {downloadError ? (
