@@ -145,7 +145,7 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     return file
 
 
-def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str], str]:
+def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str, Logger], str]:
     """
     Provides a dependency-injectable reference to the `upload_refined_ecr` function.
 
@@ -155,6 +155,7 @@ def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str], str]:
             - user_id (str): The ID of the uploading user.
             - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
             - filename (str): Filename for the uploaded file.
+            - logger (Logger): The standard logger
     """
     return upload_refined_ecr
 
@@ -167,7 +168,7 @@ async def demo_upload(
         _get_zip_creator
     ),
     user: dict[str, Any] = Depends(get_logged_in_user),
-    upload_refined_files_to_s3: Callable[[str, io.BytesIO, str], str] = Depends(
+    upload_refined_files_to_s3: Callable[[str, io.BytesIO, str, Logger], str] = Depends(
         _get_upload_refined_ecr
     ),
     db: AsyncDatabaseConnection = Depends(get_db),
@@ -244,7 +245,11 @@ async def demo_upload(
         )
 
         presigned_s3_url = await run_in_threadpool(
-            upload_refined_files_to_s3, user["id"], output_zip_buffer, output_file_name
+            upload_refined_files_to_s3,
+            user["id"],
+            output_zip_buffer,
+            output_file_name,
+            logger,
         )
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
