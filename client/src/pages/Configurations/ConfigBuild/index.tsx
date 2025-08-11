@@ -12,6 +12,7 @@ import { useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Label, Select } from '@trussworks/react-uswds';
+import { useSearch } from '../../../hooks/useSearch';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
@@ -40,107 +41,141 @@ export default function ConfigBuild() {
   );
 }
 
+const builderRequest = {
+  allCodeSystems: [
+    {
+      id: 'loinc-id',
+      name: 'LOINC',
+    },
+    {
+      id: 'snomed-id',
+      name: 'SNOMED',
+    },
+  ],
+  codeSets: [
+    {
+      id: 'covid-19-id',
+      display_name: 'COVID-19',
+      code_count: 9,
+      codes: [
+        {
+          code: '45068-1',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-2',
+          codeSystem: 'SNOMED',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-3',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-4',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-5',
+          codeSystem: 'SNOMED',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-6',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-7',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-8',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-9',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+      ],
+    },
+    {
+      id: 'chlamydia-id',
+      display_name: 'Chlamydia',
+      code_count: 2,
+      codes: [
+        {
+          code: '45076-7',
+          codeSystem: 'SNOMED',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
+        },
+        {
+          code: '45076-8',
+          codeSystem: 'SNOMED',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
+        },
+      ],
+    },
+    {
+      id: 'gonorrhea-id',
+      display_name: 'Gonorrhea',
+      code_count: 3,
+      codes: [
+        {
+          code: '5028-6',
+          codeSystem: 'LOINC',
+          text: 'Neisseria gonorrhoeae rRNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '10001-7',
+          codeSystem: 'SNOMED',
+          text: 'Neisseria gonorrhoeae rRNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '2101-0',
+          codeSystem: 'LOINC',
+          text: 'Neisseria gonorrhoeae rRNA [Presence] in Specimen by Probe',
+        },
+      ],
+    },
+  ],
+};
+
 function Builder() {
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
 
-  const builderRequest = {
-    allCodeSystems: [
-      {
-        id: 'loinc-id',
-        name: 'LOINC',
-      },
-      {
-        id: 'snomed-id',
-        name: 'SNOMED',
-      },
-    ],
-    codeSets: [
-      {
-        id: 'covid-19-id',
-        display_name: 'COVID-19',
-        code_count: 9,
-        codes: [
-          {
-            code: '45068-1',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-2',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-3',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-4',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-5',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-6',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-7',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-8',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-          {
-            code: '45068-9',
-            codeSystem: 'LOINC',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-          },
-        ],
-      },
-      {
-        id: 'chlamydia-id',
-        display_name: 'Chlamydia',
-        code_count: 2,
-        codes: [
-          {
-            code: '45076-7',
-            codeSystem: 'SNOMED',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
-          },
-          {
-            code: '45076-8',
-            codeSystem: 'SNOMED',
-            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
-          },
-        ],
-      },
-      {
-        id: 'gonorrhea-id',
-        display_name: 'Gonorrhea',
-        code_count: 1,
-        codes: [
-          {
-            code: '5028-6',
-            codeSystem: 'LOINC',
-            text: 'Neisseria gonorrhoeae rRNA [Presence] in Specimen by Probe',
-          },
-        ],
-      },
-    ],
-  };
+  const allCodes = builderRequest.codeSets.flatMap((codeSet) =>
+    codeSet.codes.map((code) => ({
+      ...code,
+      codeSetId: codeSet.id,
+      codeSetName: codeSet.display_name,
+    }))
+  );
+
+  const filteredCodes = allCodes.filter((code) => {
+    const matchesCodeset =
+      !selectedCodesetId || code.codeSetId === selectedCodesetId;
+    const matchesCodeSystem =
+      selectedCodeSystem === 'all' || code.codeSystem === selectedCodeSystem;
+    return matchesCodeset && matchesCodeSystem;
+  });
+
+  const { searchText, setSearchText, results } = useSearch(filteredCodes, {
+    keys: ['code', 'text'],
+    threshold: 0.4,
+    includeScore: true,
+  });
+
+  console.log(results);
 
   function onClick(id: string) {
     setSelectedCodesetId(id);
@@ -149,6 +184,9 @@ function Builder() {
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);
   }
+
+  // Decide which data to display
+  const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
@@ -186,7 +224,12 @@ function Builder() {
         </div>
         <div className="flex max-h-[34.5rem] w-2/3 flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-6">
           <div className="border-bottom-[1px] mb-4 flex w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
-            <Search id="code-search" name="code-search" type="search" />
+            <Search
+              onChange={(e) => setSearchText(e.target.value)}
+              id="code-search"
+              name="code-search"
+              type="search"
+            />
             <div>
               <Label htmlFor="code-system-select">Code system</Label>
               <Select
@@ -199,7 +242,7 @@ function Builder() {
                   All code systems
                 </option>
                 {builderRequest.allCodeSystems.map((cs) => (
-                  <option key={`${cs.id}-${cs.name}`} value={cs.id}>
+                  <option key={`${cs.id}-${cs.name}`} value={cs.name}>
                     {cs.name}
                   </option>
                 ))}
@@ -228,19 +271,14 @@ function Builder() {
                 </tr>
               </thead>
               <tbody>
-                {builderRequest.codeSets
-                  .filter((cc) => cc.id === selectedCodesetId)
-                  .map((cc) => {
-                    const { id } = cc;
-                    return cc.codes.map((code) => (
-                      <ConditionCodeRow
-                        key={`${id}-${code.code}`}
-                        codeSystem={code.codeSystem}
-                        code={code.code}
-                        text={code.text}
-                      />
-                    ));
-                  })}
+                {visibleCodes.flatMap((code) => (
+                  <ConditionCodeRow
+                    key={`${code.codeSetId}-${code.code}`}
+                    codeSystem={code.codeSystem}
+                    code={code.code}
+                    text={code.text}
+                  />
+                ))}
               </tbody>
             </table>
           ) : null}
