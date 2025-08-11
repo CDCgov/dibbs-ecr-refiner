@@ -33,27 +33,27 @@ export function Success({
     <div>
       <div className="flex items-center gap-4">
         <Title>eCR refinement results</Title>
-          <Label htmlFor="condition-select" className="text-bold">
-            CONDITION:
-          </Label>
-          <Select
-            id="condition-select"
-            name="condition-select"
-            defaultValue={selectedCondition.code}
-            onChange={onChange}
-          >
-            {conditions.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.display_name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <Diff
-          condition={selectedCondition}
-          unrefinedEicr={unrefinedEicr}
-          presignedDownloadUrl={presignedDownloadUrl}
-        />
+        <Label htmlFor="condition-select" className="text-bold">
+          CONDITION:
+        </Label>
+        <Select
+          id="condition-select"
+          name="condition-select"
+          defaultValue={selectedCondition.code}
+          onChange={onChange}
+        >
+          {conditions.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.display_name}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <Diff
+        condition={selectedCondition}
+        unrefinedEicr={unrefinedEicr}
+        presignedDownloadUrl={presignedDownloadUrl}
+      />
     </div>
   );
 }
