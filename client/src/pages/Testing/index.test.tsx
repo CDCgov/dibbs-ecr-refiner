@@ -166,30 +166,36 @@ describe('Demo', () => {
   });
 
   it('should navigate to the error view when the upload request fails', async () => {
+    type MutationParam = {
+      onError?: (error: Error) => void;
+    };
+
     const user = userEvent.setup();
 
     // throw an error when called
-    (useUploadEcr as unknown as Mock).mockImplementation(({ mutation }) => {
-      return {
-        mutateAsync: vi.fn().mockImplementation(async () => {
-          const error = new Error('API call failed') as Error & {
-            response: { data: { detail: string } };
-          };
+    (useUploadEcr as unknown as Mock).mockImplementation(
+      ({ mutation }: { mutation?: MutationParam }) => {
+        return {
+          mutateAsync: vi.fn().mockImplementation(() => {
+            const error = new Error('API call failed') as Error & {
+              response: { data: { detail: string } };
+            };
 
-          error.response = { data: { detail: 'Server is down' } };
+            error.response = { data: { detail: 'Server is down' } };
 
-          if (mutation?.onError) {
-            mutation.onError(error);
-          }
+            if (mutation?.onError) {
+              mutation.onError(error);
+            }
 
-          throw error;
-        }),
-        data: null,
-        isPending: false,
-        isError: false,
-        reset: vi.fn(),
-      };
-    });
+            throw error;
+          }),
+          data: null,
+          isPending: false,
+          isError: false,
+          reset: vi.fn(),
+        };
+      }
+    );
 
     renderDemoView();
 

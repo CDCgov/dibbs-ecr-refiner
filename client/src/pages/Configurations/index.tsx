@@ -50,7 +50,7 @@ export function Configurations() {
   });
 
   const showToast = useToast();
-  const { data, isLoading } = useGetConfigurations();
+  const { data: response, isLoading } = useGetConfigurations();
   const modalRef = useRef<ModalRef>(null);
   const listRef = useRef<ComboBoxRef>(null);
   const [formValid, setFormValid] = useState<boolean>(false);
@@ -106,11 +106,11 @@ export function Configurations() {
     }
   }
 
-  if (isLoading || !data?.data) return 'Loading...';
+  if (isLoading || !response?.data) return 'Loading...';
 
   const combinedData = [
     // Map fetched data into your ConfigurationsData format
-    ...data.data.map(({ id, name, is_active }) => ({
+    ...response.data.map(({ id, name, is_active }) => ({
       id,
       name,
       status: is_active ? ConfigurationStatus.on : ConfigurationStatus.off,

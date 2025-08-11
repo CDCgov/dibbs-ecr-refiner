@@ -179,7 +179,7 @@ async def logout(
         user = await get_user_from_session(session_token)
 
         if user:
-            logger.info("Logging out user", extra={"user_id": user.get("id", None)})
+            logger.info("Logging out user", extra={"user_id": user.id})
 
         await delete_session(session_token)
 
