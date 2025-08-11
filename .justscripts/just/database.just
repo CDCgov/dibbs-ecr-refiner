@@ -1,6 +1,6 @@
-set dotenv-load
+set working-directory := '../../refiner/scripts'
 
-set working-directory := '../../refiner'
+set dotenv-load
 
 alias h := _default
 alias help := _default
@@ -13,9 +13,9 @@ alias q := query
     just --list database
 
 # Convinience paths to scripts
-seed_db := absolute_path('scripts/seed_terminology_db.py')
-check_db := absolute_path('scripts/check_terminology_db.py')
-query_db := absolute_path('scripts/query_terminology_db.py')
+seed_db := absolute_path('seed_terminology_db.py')
+check_db := absolute_path('check_terminology_db.py')
+query_db := absolute_path('query_terminology_db.py')
 
 # WARN: Required environment variables that we want to break execution on when
 # using Just
