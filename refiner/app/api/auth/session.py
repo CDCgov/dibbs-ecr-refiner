@@ -4,6 +4,9 @@ import hmac
 import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
+from logging import Logger
+
+from pydantic import BaseModel
 
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
@@ -13,20 +16,26 @@ SESSION_TTL = timedelta(hours=1)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
 
 
-async def upsert_user(oidc_user_info: dict) -> str:
+class IdpUserResponse(BaseModel):
+    """
+    Expected user information coming from the IdP response.
+    """
+
+    user_id: str
+    username: str
+    email: str
+
+
+async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
     """
     Upserts a user to the refiner's database upon successful login.
 
     Args:
-        oidc_user_info (dict): User information from the OIDC.
+        oidc_user_info (IdpUserResponse): User information from the IdP.
 
     Returns:
         str: User ID of the created or modified user.
     """
-    user_id = oidc_user_info["sub"]
-    username = oidc_user_info.get("preferred_username", "")
-    email = oidc_user_info.get("email", "")
-
     query = """
         INSERT INTO users (id, username, email)
         VALUES (%s, %s, %s)
@@ -35,12 +44,12 @@ async def upsert_user(oidc_user_info: dict) -> str:
             username = EXCLUDED.username,
             email = EXCLUDED.email
         """
-    params = (user_id, username, email)
+    params = (oidc_user_info.user_id, oidc_user_info.username, oidc_user_info.email)
 
     async with db.get_cursor() as cur:
         await cur.execute(query, params)
 
-    return user_id
+    return oidc_user_info.user_id
 
 
 def get_hashed_token(token: str) -> str:
@@ -105,7 +114,6 @@ async def get_user_from_session(token: str) -> User | None:
         await cur.execute(query, params)
         user = await cur.fetchone()
 
-        print("User from session:", user)
         if user:
             return User(id=user["id"], username=user["username"])
     return None
@@ -124,7 +132,7 @@ async def _delete_expired_sessions() -> None:
         await cur.execute(query, params)
 
 
-async def run_expired_session_cleanup_task() -> None:
+async def run_expired_session_cleanup_task(logger: Logger) -> None:
     """
     Task that can be scheduled to run session cleanup once per hour.
     """
@@ -132,8 +140,11 @@ async def run_expired_session_cleanup_task() -> None:
     while True:
         try:
             await _delete_expired_sessions()
+            logger.info("Expired sessions cleaned up.")
         except Exception as e:
-            print(f"[Session Cleanup] Error: {e}")
+            logger.error(
+                "Expired sessions could not be cleaned up", extra={"error": str(e)}
+            )
         await asyncio.sleep(cleanup_interval_seconds)
 
 

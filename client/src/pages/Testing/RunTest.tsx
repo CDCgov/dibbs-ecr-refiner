@@ -51,7 +51,10 @@ export function RunTest({
                 <span>You can try out eCR Refiner with our test file.</span>
               </p>
               <div className="flex flex-col items-center gap-4 md:flex-row">
-                <Button variant="secondary" onClick={onClickSampleFile}>
+                <Button
+                  variant="secondary"
+                  onClick={() => void onClickSampleFile()}
+                >
                   Use test file
                 </Button>
                 <a
@@ -100,7 +103,7 @@ function UploadZipFile({
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
           {selectedFile ? (
-            <Button onClick={onClick}>Upload .zip file</Button>
+            <Button onClick={() => void onClick()}>Upload .zip file</Button>
           ) : null}
           <label className={labelStyling} htmlFor="zip-upload">
             {selectedFile ? (

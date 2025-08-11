@@ -87,9 +87,7 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button
-                onClick={async () => await downloadFile(refined_download_token)}
-              >
+              <Button onClick={() => void downloadFile(refined_download_token)}>
                 Download results
               </Button>
               {downloadError ? <span>File download has expired.</span> : null}
