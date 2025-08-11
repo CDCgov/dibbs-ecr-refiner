@@ -31,9 +31,8 @@ export function Success({
 
   return (
     <div>
-      <div className="flex items-center">
+      <div className="flex items-center gap-4">
         <Title>eCR refinement results</Title>
-        <div className="ml-6 flex flex-col items-center gap-4 md:flex-row">
           <Label htmlFor="condition-select" className="text-bold">
             CONDITION:
           </Label>
@@ -55,7 +54,6 @@ export function Success({
           unrefinedEicr={unrefinedEicr}
           presignedDownloadUrl={presignedDownloadUrl}
         />
-      </div>
     </div>
   );
 }
