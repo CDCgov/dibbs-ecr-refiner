@@ -48,7 +48,6 @@ class AsyncDatabaseConnection:
 
         try:
             await self.pool.open()
-            print("DB pool open:", self.pool.get_stats())
         except Exception as e:
             raise DatabaseConnectionError(
                 message="Could not open connection pool",
@@ -60,6 +59,12 @@ class AsyncDatabaseConnection:
         Closes all connections in the pool and shuts it down cleanly. Should be called once upon app shutdown.
         """
         await self.pool.close()
+
+    def get_stats(self) -> dict[str, int]:
+        """
+        Returns database pool stats (min connections, max connections, pool size, etc.).
+        """
+        return self.pool.get_stats()
 
     @asynccontextmanager
     async def get_connection(self) -> AsyncGenerator[psycopg.AsyncConnection]:

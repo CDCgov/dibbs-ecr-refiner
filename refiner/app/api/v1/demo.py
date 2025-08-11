@@ -1,5 +1,6 @@
 import io
 from collections.abc import Callable
+from logging import Logger
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -21,6 +22,7 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import refine_async
+from ...services.logger import get_logger
 
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 
@@ -169,6 +171,7 @@ async def demo_upload(
         _get_upload_refined_ecr
     ),
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
 ) -> JSONResponse:
     """
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
@@ -188,6 +191,8 @@ async def demo_upload(
         file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
+        logger.info("Processing demo file", extra={"upload_file": file.filename})
+
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
         refined_results = await refine_async(original_xml=original_xml_files, db=db)
@@ -260,43 +265,49 @@ async def demo_upload(
                 }
             )
         )
-    except XMLValidationError:
+    except XMLValidationError as e:
+        logger.error("XMLValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="XML file(s) could not be processed.",
         )
-    except ZipValidationError:
+    except ZipValidationError as e:
+        logger.error("ZipValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
         )
-    except FileProcessingError:
+    except FileProcessingError as e:
+        logger.error("FileProcessingError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
-    except Exception:
+    except Exception as e:
+        logger.error("Exception", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server error occurred. Please check your file and try again.",
         )
-    except ZipValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.details)
 
 
 @router.get("/download")
-async def demo_download(file_path: Path = Depends(_get_demo_zip_path)) -> FileResponse:
+async def demo_download(
+    file_path: Path = Depends(_get_demo_zip_path), logger: Logger = Depends(get_logger)
+) -> FileResponse:
     """
     Download the unrefined sample eCR zip file.
     """
 
     # Grab demo zip and send it along to the client
     if not Path(file_path).exists():
+        logger.error("Demo file couldn't be downloaded.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",
         )
     filename = file_path.name
+    logger.info("Demo file downloaded successfully.")
     return FileResponse(
         file_path, media_type="application/octet-stream", filename=filename
     )
