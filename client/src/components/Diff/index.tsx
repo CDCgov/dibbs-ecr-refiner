@@ -7,39 +7,30 @@ import { FaColumns, FaAlignLeft } from 'react-icons/fa'; // Icons for split and 
 interface SuccessProps {
   condition: Condition;
   unrefinedEicr: string;
-  downloadToken: string;
+  presignedDownloadUrl: string;
 }
 
 export function Diff({
   condition,
-  downloadToken,
+  presignedDownloadUrl,
   unrefinedEicr,
 }: SuccessProps) {
-  const [downloadError, setDownloadError] = useState<string>('');
+  const [downloadError, setDownloadError] = useState<boolean>(false);
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
 
-  async function downloadFile(token: string) {
+  function downloadFile(presignedUrl: string) {
     try {
-      const resp = await fetch(`/api/v1/demo/download/${token}`);
-      if (!resp.ok) {
-        const errorMsg = `Failed to download refined eCR with token: ${token}`;
-        setDownloadError(errorMsg);
-        throw Error(errorMsg);
-      }
-
-      const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
       const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = 'ecr_download.zip';
+      link.href = presignedUrl;
+      link.download = '';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(blobUrl);
+      setDownloadError(false);
     } catch (error) {
       console.error(error);
+      setDownloadError(true);
     }
   }
 
@@ -60,7 +51,7 @@ export function Diff({
                 href="#"
                 onClick={async (e) => {
                   e.preventDefault();
-                  await downloadFile(downloadToken);
+                  await downloadFile(presignedDownloadUrl);
                 }}
                 className="text-blue-500 underline hover:text-blue-700"
               >
