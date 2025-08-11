@@ -23,7 +23,7 @@ const mockUploadResponse: DemoUploadResponse = {
     },
   ],
   unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_token: 'test-token',
+  refined_download_url: 'http://s3-standard.com',
 };
 
 const mockCustomUploadResponse: DemoUploadResponse = {
@@ -36,7 +36,7 @@ const mockCustomUploadResponse: DemoUploadResponse = {
     },
   ],
   unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_token: 'custom-test-token',
+  refined_download_url: 'http://s3-custom.com',
 };
 
 vi.mock(import('../../services/demo.ts'), async (importOriginal) => {

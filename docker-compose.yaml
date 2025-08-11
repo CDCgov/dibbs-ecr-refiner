@@ -29,11 +29,16 @@ services:
       - AUTH_CLIENT_ID=refinerclient
       - AUTH_CLIENT_SECRET=5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
       - AUTH_ISSUER=http://localhost:8082/realms/refiner
+      - AWS_ACCESS_KEY_ID=refiner
+      - AWS_SECRET_ACCESS_KEY=refiner
+      - AWS_REGION=us-east-1
+      - S3_ENDPOINT_URL=http://localhost:4566
     logging:
       driver: "json-file"
     depends_on:
       - db
       - auth
+      - localstack
   auth:
     image: quay.io/keycloak/keycloak:26.3.2
     command:
@@ -68,5 +73,22 @@ services:
       - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/01-seed-data.sql
       - ./refiner/app/db/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
       - pgdata:/var/lib/postgresql/data
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3
+      - DEBUG=1
+      - AWS_ACCESS_KEY_ID=refiner
+      - AWS_SECRET_ACCESS_KEY=refiner
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
+
+
 volumes:
   pgdata:
+  localstack-data:
