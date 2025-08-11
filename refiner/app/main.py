@@ -1,8 +1,13 @@
 import asyncio
+import time
+import uuid
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from datetime import UTC
+from datetime import datetime as dt
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -14,12 +19,12 @@ from .api.auth.handlers import auth_router
 from .api.auth.middleware import get_logged_in_user
 from .api.auth.session import run_expired_session_cleanup_task
 from .api.middleware.spa import SPAFallbackMiddleware
-from .api.v1.demo import run_expired_file_cleanup_task
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
 from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, db, get_db
+from .services.logger import get_logger, set_request_id, setup_logger
 
 # create router
 router = APIRouter(prefix="/api")
@@ -62,14 +67,18 @@ async def health_check(
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
+    # Setup logging
+    setup_logger()
+    logger = get_logger()
     # Start the DB connection
     await db.connect()
+    logger.info("Database pool opened", extra={"db_pool_stats": db.get_stats()})
     # Start the cleanup tasks in the background
-    asyncio.create_task(run_expired_file_cleanup_task())
-    asyncio.create_task(run_expired_session_cleanup_task())
+    asyncio.create_task(run_expired_session_cleanup_task(logger))
     yield
     # Release the DB connection
     await db.close()
+    logger.info("Database pool closed")
 
 
 # Instantiate FastAPI via DIBBs' BaseService class
@@ -105,3 +114,50 @@ if ENVIRONMENT["ENV"] == "local":
     )
 app.add_middleware(SPAFallbackMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
+
+
+@app.middleware("http")
+async def log_request(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """
+    Middleware to log details about a request.
+
+    Args:
+        request (Request): The incoming request
+        call_next (Callable[[Request], Awaitable[Response]): Continue the path of the original request
+
+    Returns:
+        Response: The response of the original request
+    """
+    request_id = uuid.uuid4()
+    set_request_id(request_id)
+    logger = get_logger()
+    start = time.time()
+
+    logger.info(
+        "Request start",
+        extra={
+            "request_id": request_id,
+            "path": request.url.path,
+            "method": request.method,
+            "timestamp": dt.now(UTC).isoformat(),
+        },
+    )
+
+    response = await call_next(request)
+
+    duration_ms = (time.time() - start) * 1000
+
+    logger.info(
+        "Request end",
+        extra={
+            "request_id": request_id,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "method": request.method,
+            "timestamp": dt.now(UTC).isoformat(),
+            "duration_ms": round(duration_ms, 2),
+        },
+    )
+    return response

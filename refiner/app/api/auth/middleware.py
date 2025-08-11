@@ -1,23 +1,28 @@
 from datetime import UTC, timedelta
 from datetime import datetime as dt
+from logging import Logger
 from typing import Any
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from ...core.exceptions import DatabaseConnectionError, DatabaseQueryError
 from ...db.pool import db
+from ...services.logger import get_logger
 from .session import SESSION_TTL, get_hashed_token
 
 RENEW_THRESHOLD = timedelta(minutes=15)
 
 
 # This function can be used as an auth check for handlers or routers
-async def get_logged_in_user(request: Request) -> dict[str, Any]:
+async def get_logged_in_user(
+    request: Request, logger: Logger = Depends(get_logger)
+) -> dict[str, Any]:
     """
     Gets the current user from the session. Throws an error if the user is unauthenticated.
 
     Args:
         request (Request): Request to check for user info
+        logger (Logger): The standard logger
 
     Raises:
         HTTPException: 401 Unauthorized is thrown if no user info exists
@@ -70,12 +75,19 @@ async def get_logged_in_user(request: Request) -> dict[str, Any]:
 
         return user
     except (DatabaseConnectionError, DatabaseQueryError) as db_err:
-        print("Database error occurred while getting user information:", db_err.details)
+        logger.error(
+            "Database error occurred while getting user information",
+            extra={"error": str(db_err), "error_details": db_err.details},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal database error.",
         )
-    except Exception:
+    except Exception as e:
+        logger.error(
+            "Error occurred when fetching logged-in user",
+            extra={"error": str(e)},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unexpected server error.",
