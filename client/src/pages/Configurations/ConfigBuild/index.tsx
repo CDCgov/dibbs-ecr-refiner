@@ -10,6 +10,8 @@ import {
 } from '../layout';
 import { useState } from 'react';
 import classNames from 'classnames';
+import { Search } from '../../../components/Search';
+import { Label, Select } from '@trussworks/react-uswds';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
@@ -41,86 +43,101 @@ export default function ConfigBuild() {
 function Builder() {
   const [selected, setSelected] = useState<string | null>(null);
 
-  const codeSets = [
-    {
-      id: 'covid-19-id',
-      display_name: 'COVID-19',
-      codes: [
-        {
-          code: '45068-1',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-2',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-3',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-4',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-5',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-6',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-7',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-8',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
-          code: '45068-9',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-      ],
-    },
-    {
-      id: 'chlamydia-id',
-      display_name: 'Chlamydia',
-      codes: [
-        {
-          code: '45076-7',
-          codeSystem: 'SNOMED',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
-        },
-        {
-          code: '45076-8',
-          codeSystem: 'SNOMED',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
-        },
-      ],
-    },
-    {
-      id: 'gonorrhea-id',
-      display_name: 'Gonorrhea',
-      codes: [
-        {
-          code: '5028-6',
-          codeSystem: 'LOINC',
-          text: 'Neisseria gonorrhoeae rRNA [Presence] in Specimen by Probe',
-        },
-      ],
-    },
-  ];
+  const builderRequest = {
+    allCodeSystems: [
+      {
+        id: 'loinc-id',
+        name: 'LOINC',
+      },
+      {
+        id: 'snomed-id',
+        name: 'SNOMED',
+      },
+    ],
+    codeSets: [
+      {
+        id: 'covid-19-id',
+        display_name: 'COVID-19',
+        code_count: 9,
+        codes: [
+          {
+            code: '45068-1',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-2',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-3',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-4',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-5',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-6',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-7',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-8',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+          {
+            code: '45068-9',
+            codeSystem: 'LOINC',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+          },
+        ],
+      },
+      {
+        id: 'chlamydia-id',
+        display_name: 'Chlamydia',
+        code_count: 2,
+        codes: [
+          {
+            code: '45076-7',
+            codeSystem: 'SNOMED',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
+          },
+          {
+            code: '45076-8',
+            codeSystem: 'SNOMED',
+            text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
+          },
+        ],
+      },
+      {
+        id: 'gonorrhea-id',
+        display_name: 'Gonorrhea',
+        code_count: 1,
+        codes: [
+          {
+            code: '5028-6',
+            codeSystem: 'LOINC',
+            text: 'Neisseria gonorrhoeae rRNA [Presence] in Specimen by Probe',
+          },
+        ],
+      },
+    ],
+  };
 
   function onClick(id: string) {
     if (id) {
@@ -144,24 +161,42 @@ function Builder() {
             </button>
           </div>
           <ul className="flex flex-col gap-2">
-            {codeSets.map((codeSet) => (
+            {builderRequest.codeSets.map((codeSet) => (
               <li key={codeSet.id}>
                 <button
                   className={classNames(
-                    'h-full w-full rounded p-4 text-left hover:cursor-pointer hover:bg-stone-50',
+                    'flex h-full w-full flex-row justify-between rounded p-4 text-left hover:cursor-pointer hover:bg-stone-50',
                     {
                       'bg-white': selected === codeSet.id,
                     }
                   )}
                   onClick={() => onClick(codeSet.id)}
                 >
-                  {codeSet.display_name}
+                  <span>{codeSet.display_name}</span>
+                  <span>{codeSet.code_count}</span>
                 </button>
               </li>
             ))}
           </ul>
         </div>
         <div className="flex max-h-[34.5rem] w-2/3 flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-6">
+          <div className="border-bottom-[1px] mb-4 flex w-full items-end gap-6">
+            <Search id="code-search" name="code-search" type="search" />
+            <div>
+              <Label htmlFor="code-system-select">Code system</Label>
+              <Select id="code-system-select" name="code-system-select">
+                <option key="all-code-systems" value="all">
+                  All code systems
+                </option>
+                {builderRequest.allCodeSystems.map((cs) => (
+                  <option key={`${cs.id}-${cs.name}`} value={cs.id}>
+                    {cs.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+          <hr className="border-blue-cool-5 w-full border-[1px]" />
           <p>
             These condition code sets come from the default groupings in the{' '}
             <a
@@ -183,7 +218,7 @@ function Builder() {
                 </tr>
               </thead>
               <tbody>
-                {codeSets
+                {builderRequest.codeSets
                   .filter((cc) => cc.id === selected)
                   .map((cc) => {
                     const { id, display_name } = cc;
