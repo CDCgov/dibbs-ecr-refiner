@@ -1,5 +1,6 @@
 from datetime import date
 from io import BytesIO
+from logging import Logger
 
 import boto3
 from botocore.exceptions import ClientError
@@ -15,7 +16,9 @@ s3_client = boto3.client(
 )
 
 
-def upload_refined_ecr(user_id: str, file_buffer: BytesIO, filename: str) -> str:
+def upload_refined_ecr(
+    user_id: str, file_buffer: BytesIO, filename: str, logger: Logger
+) -> str:
     """
     Uploads a refined ZIP file to AWS S3 and provides the uploader with a pre-signed link.
 
@@ -23,6 +26,7 @@ def upload_refined_ecr(user_id: str, file_buffer: BytesIO, filename: str) -> str
         user_id (str): Logged-in user ID
         file_buffer (BytesIO): ZIP file in memory
         filename (str): The filename that will be written to S3
+        logger (Logger): The standard logger
 
     Returns:
         str: The pre-signed S3 URL to download the uploaded file
@@ -45,8 +49,14 @@ def upload_refined_ecr(user_id: str, file_buffer: BytesIO, filename: str) -> str
 
         return presigned_url
 
-    except ClientError:
-        print(
-            f"Attempted refined file upload to S3 by user {user_id} failed. S3 Key: ${key}"
+    except ClientError as e:
+        logger.error(
+            "Attempted refined file upload to S3 failed",
+            extra={
+                "error": str(e),
+                "bucket": bucket_name,
+                "key": key,
+                "user_id": user_id,
+            },
         )
         return ""
