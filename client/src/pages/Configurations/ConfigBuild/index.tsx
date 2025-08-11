@@ -40,11 +40,24 @@ export default function ConfigBuild() {
 
 function Builder() {
   const [selected, setSelected] = useState<string | null>(null);
+
   const codeSets = ['COVID-19', 'Chlamydia', 'Gonorrhea'];
   const conditionCodes = [
     {
       codeSet: 'COVID-19',
-      code: '45068-4',
+      code: '45068-1',
+      codeSystem: 'LOINC',
+      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+    },
+    {
+      codeSet: 'COVID-19',
+      code: '45068-2',
+      codeSystem: 'LOINC',
+      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+    },
+    {
+      codeSet: 'COVID-19',
+      code: '45068-3',
       codeSystem: 'LOINC',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
     },
@@ -56,97 +69,31 @@ function Builder() {
     },
     {
       codeSet: 'COVID-19',
-      code: '45068-4',
+      code: '45068-5',
       codeSystem: 'LOINC',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
     },
     {
       codeSet: 'COVID-19',
-      code: '45068-4',
+      code: '45068-6',
       codeSystem: 'LOINC',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
     },
     {
       codeSet: 'COVID-19',
-      code: '45068-4',
+      code: '45068-7',
       codeSystem: 'LOINC',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
     },
     {
       codeSet: 'COVID-19',
-      code: '45068-4',
+      code: '45068-8',
       codeSystem: 'LOINC',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
     },
     {
       codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
-      codeSystem: 'LOINC',
-      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-    },
-    {
-      codeSet: 'COVID-19',
-      code: '45068-4',
+      code: '45068-9',
       codeSystem: 'LOINC',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
     },
@@ -162,6 +109,12 @@ function Builder() {
       codeSystem: 'SNOMED',
       text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
     },
+    {
+      codeSet: 'Chlamydia',
+      code: '45076-8',
+      codeSystem: 'SNOMED',
+      text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Genital specimen by NAA with probe detection',
+    },
   ];
 
   function onClick(id: string) {
@@ -174,7 +127,7 @@ function Builder() {
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-row gap-4">
         <div className="flex w-1/3 flex-col gap-4 px-2 py-4">
-          <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
             <label className="font-bold text-[#919191]" htmlFor="open-codesets">
               CONDITION CODE SETS
             </label>
@@ -190,7 +143,7 @@ function Builder() {
               <li key={codeSet}>
                 <button
                   className={classNames(
-                    'hover:bg- h-full w-full rounded p-4 text-left hover:cursor-pointer',
+                    'h-full w-full rounded p-4 text-left hover:cursor-pointer hover:bg-stone-50',
                     {
                       'bg-white': selected === codeSet,
                     }
