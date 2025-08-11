@@ -96,110 +96,96 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
 
  * OpenAPI spec version: 1.0.0
  */
-import { useMutation } from '@tanstack/react-query';
+import {
+  useMutation
+} from '@tanstack/react-query';
 import type {
   MutationFunction,
   QueryClient,
   UseMutationOptions,
-  UseMutationResult,
+  UseMutationResult
 } from '@tanstack/react-query';
 
 import * as axios from 'axios';
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type {
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosResponse
+} from 'axios';
 
 import type {
   BodyUploadEcr,
   HTTPValidationError,
-  RefinedTestingDocument,
+  RefinedTestingDocument
 } from '.././schemas';
+
+
+
+
 
 /**
  * Grabs an eCR zip file from the file system and runs it through the upload/refine process.
  * @summary Demo Upload
  */
 export const uploadEcr = (
-  bodyUploadEcr: BodyUploadEcr,
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<RefinedTestingDocument>> => {
-  const formData = new FormData();
-  if (
-    bodyUploadEcr.uploaded_file !== undefined &&
-    bodyUploadEcr.uploaded_file !== null
-  ) {
-    formData.append(`uploaded_file`, bodyUploadEcr.uploaded_file);
+    bodyUploadEcr: BodyUploadEcr, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<RefinedTestingDocument>> => {
+
+    const formData = new FormData();
+if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== null) {
+ formData.append(`uploaded_file`, bodyUploadEcr.uploaded_file)
+ }
+
+    return axios.default.post(
+      `/api/v1/demo/upload`,
+      formData,options
+    );
   }
 
-  return axios.default.post(`/api/v1/demo/upload`, formData, options);
-};
 
-export const getUploadEcrMutationOptions = <
-  TError = AxiosError<HTTPValidationError>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof uploadEcr>>,
-    TError,
-    { data: BodyUploadEcr },
-    TContext
-  >;
-  axios?: AxiosRequestConfig;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof uploadEcr>>,
-  TError,
-  { data: BodyUploadEcr },
-  TContext
-> => {
-  const mutationKey = ['uploadEcr'];
-  const { mutation: mutationOptions, axios: axiosOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, axios: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof uploadEcr>>,
-    { data: BodyUploadEcr }
-  > = (props) => {
-    const { data } = props ?? {};
+export const getUploadEcrMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext> => {
 
-    return uploadEcr(data, axiosOptions);
-  };
+const mutationKey = ['uploadEcr'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type UploadEcrMutationResult = NonNullable<
-  Awaited<ReturnType<typeof uploadEcr>>
->;
-export type UploadEcrMutationBody = BodyUploadEcr;
-export type UploadEcrMutationError = AxiosError<HTTPValidationError>;
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEcr>>, {data: BodyUploadEcr}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadEcr(data,axiosOptions)
+        }
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadEcrMutationResult = NonNullable<Awaited<ReturnType<typeof uploadEcr>>>
+    export type UploadEcrMutationBody = BodyUploadEcr
+    export type UploadEcrMutationError = AxiosError<HTTPValidationError>
+
+    /**
  * @summary Demo Upload
  */
-export const useUploadEcr = <
-  TError = AxiosError<HTTPValidationError>,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof uploadEcr>>,
-      TError,
-      { data: BodyUploadEcr },
-      TContext
-    >;
-    axios?: AxiosRequestConfig;
-  },
-  queryClient?: QueryClient
-): UseMutationResult<
-  Awaited<ReturnType<typeof uploadEcr>>,
-  TError,
-  { data: BodyUploadEcr },
-  TContext
-> => {
-  const mutationOptions = getUploadEcrMutationOptions(options);
+export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof uploadEcr>>,
+        TError,
+        {data: BodyUploadEcr},
+        TContext
+      > => {
 
-  return useMutation(mutationOptions, queryClient);
-};
+      const mutationOptions = getUploadEcrMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }

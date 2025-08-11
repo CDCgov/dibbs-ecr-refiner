@@ -96,7 +96,9 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
 
  * OpenAPI spec version: 1.0.0
  */
-import { useQuery } from '@tanstack/react-query';
+import {
+  useQuery
+} from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -106,161 +108,100 @@ import type {
   QueryKey,
   UndefinedInitialDataOptions,
   UseQueryOptions,
-  UseQueryResult,
+  UseQueryResult
 } from '@tanstack/react-query';
 
 import * as axios from 'axios';
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type {
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosResponse
+} from 'axios';
+
+
+
+
 
 /**
  * Download the unrefined sample eCR zip file.
  * @summary Demo Download
  */
 export const demoDownloadApiV1DemoDownloadGet = (
-  options?: AxiosRequestConfig
-): Promise<AxiosResponse<unknown>> => {
-  return axios.default.get(`/api/v1/demo/download`, options);
-};
+     options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<unknown>> => {
+
+
+    return axios.default.get(
+      `/api/v1/demo/download`,options
+    );
+  }
+
 
 export const getDemoDownloadApiV1DemoDownloadGetQueryKey = () => {
-  return [`/api/v1/demo/download`] as const;
-};
+    return [`/api/v1/demo/download`] as const;
+    }
 
-export const getDemoDownloadApiV1DemoDownloadGetQueryOptions = <
-  TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-  TError = AxiosError<unknown>,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-      TError,
-      TData
-    >
-  >;
-  axios?: AxiosRequestConfig;
-}) => {
-  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getDemoDownloadApiV1DemoDownloadGetQueryKey();
+export const getDemoDownloadApiV1DemoDownloadGetQueryOptions = <TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>
-  > = ({ signal }) =>
-    demoDownloadApiV1DemoDownloadGet({ signal, ...axiosOptions });
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
+  const queryKey =  queryOptions?.queryKey ?? getDemoDownloadApiV1DemoDownloadGetQueryKey();
 
-export type DemoDownloadApiV1DemoDownloadGetQueryResult = NonNullable<
-  Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>
->;
-export type DemoDownloadApiV1DemoDownloadGetQueryError = AxiosError<unknown>;
 
-export function useDemoDownloadApiV1DemoDownloadGet<
-  TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-  TError = AxiosError<unknown>,
->(
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>> = ({ signal }) => demoDownloadApiV1DemoDownloadGet({ signal, ...axiosOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DemoDownloadApiV1DemoDownloadGetQueryResult = NonNullable<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>>
+export type DemoDownloadApiV1DemoDownloadGetQueryError = AxiosError<unknown>
+
+
+export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
           TError,
           Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>
-        >,
-        'initialData'
-      >;
-    axios?: AxiosRequestConfig;
-  },
-  queryClient?: QueryClient
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDemoDownloadApiV1DemoDownloadGet<
-  TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-  TError = AxiosError<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
           TError,
           Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>
-        >,
-        'initialData'
-      >;
-    axios?: AxiosRequestConfig;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useDemoDownloadApiV1DemoDownloadGet<
-  TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-  TError = AxiosError<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-        TError,
-        TData
-      >
-    >;
-    axios?: AxiosRequestConfig;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Demo Download
  */
 
-export function useDemoDownloadApiV1DemoDownloadGet<
-  TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-  TError = AxiosError<unknown>,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>,
-        TError,
-        TData
-      >
-    >;
-    axios?: AxiosRequestConfig;
-  },
-  queryClient?: QueryClient
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDemoDownloadApiV1DemoDownloadGetQueryOptions(options);
+export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getDemoDownloadApiV1DemoDownloadGetQueryOptions(options)
 
-  query.queryKey = queryOptions.queryKey;
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
 
   return query;
 }
