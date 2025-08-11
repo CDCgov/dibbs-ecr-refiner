@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "test": "vitest",
-    "coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage",
     "build": "tsc -b && vite build --base=/dist",
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
