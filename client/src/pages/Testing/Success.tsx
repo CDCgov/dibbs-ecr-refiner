@@ -23,7 +23,7 @@ export function Success({
     conditions[0]
   );
 
-  async function downloadFile(presignedUrl: string) {
+  function downloadFile(presignedUrl: string) {
     try {
       const link = document.createElement('a');
       link.href = presignedUrl;
@@ -77,7 +77,7 @@ export function Success({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <Button onClick={() => void downloadFile(presignedDownloadUrl)}>
+              <Button onClick={() => downloadFile(presignedDownloadUrl)}>
                 Download results
               </Button>
               {downloadError ? (
