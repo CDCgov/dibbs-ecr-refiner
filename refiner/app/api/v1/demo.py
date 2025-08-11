@@ -1,18 +1,18 @@
-import asyncio
 import io
-import os
-import time
 from collections.abc import Callable
 from logging import Logger
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.datastructures import Headers
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, JSONResponse
 
+from ...api.auth.middleware import get_logged_in_user
 from ...core.exceptions import (
     FileProcessingError,
     XMLValidationError,
@@ -20,13 +20,11 @@ from ...core.exceptions import (
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services import file_io, format
+from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import refine_async
 from ...services.logger import get_logger
 
-# Keep track of files available for download / what needs to be cleaned up
-REFINED_ECR_DIR = "refined-ecr"
 FILE_NAME_SUFFIX = "refined_ecr.zip"
-file_store: dict[str, dict] = {}
 
 # File uploads
 MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -36,55 +34,12 @@ MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
 router = APIRouter(prefix="/demo")
 
 
-async def run_expired_file_cleanup_task() -> None:
-    """
-    Runs a task to delete files in the `refined-ecr` directory.
-
-    This function will run periodically within its own thread upon application startup, configured in `main.py`
-    """
-    seconds = 120  # 2 minutes
-    while True:
-        await asyncio.to_thread(_cleanup_expired_files)
-        await asyncio.sleep(seconds)
-
-
-def _cleanup_expired_files() -> None:
-    """
-    Attempts to clean up files that exist beyond their time-to-live value (2 minutes) according to their `timestamp`.
-    """
-    file_ttl_seconds = 120  # 2 minutes
-    now = time.time()
-
-    to_delete = [
-        key
-        for key, meta in file_store.items()
-        if now - meta["timestamp"] > file_ttl_seconds
-    ]
-    for key in to_delete:
-        try:
-            os.remove(file_store[key]["path"])
-        except FileNotFoundError:
-            pass
-        del file_store[key]
-
-
 def _get_demo_zip_path() -> Path:
     """
     Get the path to the demo ZIP file.
     """
 
     return file_io.get_asset_path("demo", "mon-mothma-two-conditions.zip")
-
-
-def _create_zipfile_output_directory(base_path: Path) -> Path:
-    """
-    Creates (if needed) and returns the path to the directory where refined eCRs live.
-    """
-
-    if not os.path.exists(base_path):
-        os.mkdir(base_path)
-
-    return base_path
 
 
 def _get_file_size_difference_percentage(
@@ -100,51 +55,32 @@ def _get_file_size_difference_percentage(
     return round(percent_diff)
 
 
-def _create_refined_ecr_zip(
+def _create_refined_ecr_zip_in_memory(
     *,
     files: list[tuple[str, str]],
-    output_dir: Path,
-) -> tuple[str, Path, str]:
+) -> tuple[str, io.BytesIO]:
     """
     Create a zip archive containing all provided (filename, content) pairs.
 
     Args:
         files (list): List of tuples [(filename, content)], content must be string.
-        output_dir (Path): Directory to save the zip file.
 
     Returns:
-        (filename, filepath, token)
+        (filename, buffer)
     """
     token = str(uuid4())
     zip_filename = f"{token}_refined_ecr.zip"
-    zip_filepath = output_dir / zip_filename
+    zip_buffer = io.BytesIO()
 
-    with ZipFile(zip_filepath, "w") as zf:
+    with ZipFile(zip_buffer, "w") as zf:
         for filename, content in files:
             zf.writestr(filename, content)
 
-    return zip_filename, zip_filepath, token
+    zip_buffer.seek(0)
+    return zip_filename, zip_buffer
 
 
-def _update_file_store(filename: str, path: Path, token: str) -> None:
-    """
-    Updates the in-memory dictionary with required metadata for the refined eCR available to download.
-
-    This information is used by `_cleanup_expired_files()` in order to delete expired eCR zip files.
-
-    Args:
-        filename: name of the file to keep track of
-        path: full path of the file to keep track of
-        token: a unique token to identify the file
-    """
-    file_store[token] = {
-        "path": path,
-        "timestamp": time.time(),
-        "filename": filename,
-    }
-
-
-def _get_zip_creator() -> Callable[..., tuple[str, Path, str]]:
+def _get_zip_creator() -> Callable[..., tuple[str, io.BytesIO]]:
     """
     Dependency-injected function responsible for passing the function that will write the output zip file to the handler.
 
@@ -152,14 +88,7 @@ def _get_zip_creator() -> Callable[..., tuple[str, Path, str]]:
         A callable that takes a list of (filename, content) tuples and an output directory,
         and returns a tuple (zip_filename, zip_filepath, token).
     """
-    return _create_refined_ecr_zip
-
-
-def _get_refined_ecr_output_dir() -> Path:
-    """
-    Dependency injected function responsible for getting the processed eCR output directory path.
-    """
-    return Path(REFINED_ECR_DIR)
+    return _create_refined_ecr_zip_in_memory
 
 
 def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
@@ -216,12 +145,32 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     return file
 
 
+def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str, Logger], str]:
+    """
+    Provides a dependency-injectable reference to the `upload_refined_ecr` function.
+
+    Returns:
+        Callable[[str, io.BytesIO, str], str]: A callable that uploads a
+        file to S3 and returns a pre-signed download URL. The arguments are:
+            - user_id (str): The ID of the uploading user.
+            - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
+            - filename (str): Filename for the uploaded file.
+            - logger (Logger): The standard logger
+    """
+    return upload_refined_ecr
+
+
 @router.post("/upload")
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(_get_demo_zip_path),
-    create_output_zip: Callable[..., tuple[str, Path, str]] = Depends(_get_zip_creator),
-    refined_zip_output_dir: Path = Depends(_get_refined_ecr_output_dir),
+    create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
+        _get_zip_creator
+    ),
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    upload_refined_files_to_s3: Callable[[str, io.BytesIO, str, Logger], str] = Depends(
+        _get_upload_refined_ecr
+    ),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> JSONResponse:
@@ -286,21 +235,22 @@ async def demo_upload(
                 }
             )
 
-        # ✅ Zip all condition files + eICR file into one archive
-        full_zip_output_path = _create_zipfile_output_directory(refined_zip_output_dir)
-
         # Add eICR + RR file as well
         refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
         refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
 
         # Now create the combined zip
-        output_file_name, output_file_path, token = create_output_zip(
+        output_file_name, output_zip_buffer = create_output_zip(
             files=refined_files_to_zip,
-            output_dir=full_zip_output_path,
         )
 
-        # Store the combined zip
-        _update_file_store(output_file_name, output_file_path, token)
+        presigned_s3_url = await run_in_threadpool(
+            upload_refined_files_to_s3,
+            user["id"],
+            output_zip_buffer,
+            output_file_name,
+            logger,
+        )
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
 
@@ -316,7 +266,7 @@ async def demo_upload(
                         "Sections contain only data relevant to that specific condition",
                         "Clinical codes matched using ProcessedGrouper database",
                     ],
-                    "refined_download_token": token,
+                    "refined_download_url": presigned_s3_url,
                 }
             )
         )
@@ -344,26 +294,6 @@ async def demo_upload(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server error occurred. Please check your file and try again.",
         )
-
-
-@router.get("/download/{token}")
-async def download_refined_ecr(token: str) -> FileResponse:
-    """
-    Download a refined eCR zip file given a unique token.
-    """
-
-    if token not in file_store:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found or has expired.",
-        )
-
-    file_path = file_store[token]["path"]
-    filename = file_store[token]["filename"]
-
-    return FileResponse(
-        file_path, media_type="application/octet-stream", filename=filename
-    )
 
 
 @router.get("/download")
