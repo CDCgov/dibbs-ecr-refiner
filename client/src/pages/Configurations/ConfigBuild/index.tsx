@@ -41,7 +41,10 @@ export default function ConfigBuild() {
 }
 
 function Builder() {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
+    null
+  );
+  const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
 
   const builderRequest = {
     allCodeSystems: [
@@ -140,9 +143,11 @@ function Builder() {
   };
 
   function onClick(id: string) {
-    if (id) {
-      setSelected(id);
-    }
+    setSelectedCodesetId(id);
+  }
+
+  function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
+    setSelectedCodeSystem(event.target.value);
   }
 
   return (
@@ -165,9 +170,9 @@ function Builder() {
               <li key={codeSet.id}>
                 <button
                   className={classNames(
-                    'flex h-full w-full flex-row justify-between rounded p-4 text-left hover:cursor-pointer hover:bg-stone-50',
+                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                     {
-                      'bg-white': selected === codeSet.id,
+                      'bg-white': selectedCodesetId === codeSet.id,
                     }
                   )}
                   onClick={() => onClick(codeSet.id)}
@@ -180,11 +185,16 @@ function Builder() {
           </ul>
         </div>
         <div className="flex max-h-[34.5rem] w-2/3 flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-6">
-          <div className="border-bottom-[1px] mb-4 flex w-full items-end gap-6">
+          <div className="border-bottom-[1px] mb-4 flex w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
             <Search id="code-search" name="code-search" type="search" />
             <div>
               <Label htmlFor="code-system-select">Code system</Label>
-              <Select id="code-system-select" name="code-system-select">
+              <Select
+                id="code-system-select"
+                name="code-system-select"
+                value={selectedCodeSystem}
+                onChange={handleCodeSystemSelect}
+              >
                 <option key="all-code-systems" value="all">
                   All code systems
                 </option>
@@ -208,7 +218,7 @@ function Builder() {
               TES (Terminology Exchange Service).
             </a>
           </p>
-          {selected ? (
+          {selectedCodesetId ? (
             <table className="w-full border-separate border-spacing-y-4">
               <thead className="sr-only">
                 <tr>
@@ -219,13 +229,13 @@ function Builder() {
               </thead>
               <tbody>
                 {builderRequest.codeSets
-                  .filter((cc) => cc.id === selected)
+                  .filter((cc) => cc.id === selectedCodesetId)
                   .map((cc) => {
-                    const { id, display_name } = cc;
+                    const { id } = cc;
                     return cc.codes.map((code) => (
                       <ConditionCodeRow
                         key={`${id}-${code.code}`}
-                        codeSystem={display_name}
+                        codeSystem={code.codeSystem}
                         code={code.code}
                         text={code.text}
                       />
