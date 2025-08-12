@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import SuccessSvg from '../../assets/green-check.svg';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
 import { RefinedTestingDocument } from '../../api/schemas';
-import { Button } from '../../components/Button';
 import { Diff } from '../../components/Diff';
 
 type SuccessProps = Pick<
@@ -54,8 +52,8 @@ export function Success({
       </div>
       <Diff
         condition={selectedCondition}
-        unrefinedEicr={unrefined_eicr}
-        presignedDownloadUrl={refined_download_url}
+        unrefined_eicr={unrefined_eicr}
+        refined_download_url={refined_download_url}
       />
     </div>
   );

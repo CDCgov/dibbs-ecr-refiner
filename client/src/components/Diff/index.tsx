@@ -1,20 +1,21 @@
 import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
-import { Condition } from '../../services/demo';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
-import { FaColumns, FaAlignLeft } from 'react-icons/fa'; // Icons for split and inline
+import { FaColumns, FaAlignLeft } from 'react-icons/fa';
+import { RefinedTestingDocument } from '../../api/schemas';
 
-interface SuccessProps {
-  condition: Condition;
-  unrefinedEicr: string;
-  presignedDownloadUrl: string;
-}
+type DiffProps = Pick<
+  RefinedTestingDocument,
+  'refined_download_url' | 'unrefined_eicr'
+> & {
+  condition: RefinedTestingDocument['conditions'][0];
+};
 
 export function Diff({
+  refined_download_url,
+  unrefined_eicr,
   condition,
-  presignedDownloadUrl,
-  unrefinedEicr,
-}: SuccessProps) {
+}: DiffProps) {
   const [downloadError, setDownloadError] = useState<boolean>(false);
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
@@ -49,7 +50,7 @@ export function Diff({
             <div className="flex flex-col items-start gap-3">
               <a
                 href="#"
-                onClick={() => downloadFile(presignedDownloadUrl)}
+                onClick={() => downloadFile(refined_download_url)}
                 style={{
                   color: 'blue',
                   textDecoration: 'underline',
@@ -70,7 +71,7 @@ export function Diff({
             <span className="font-medium">Layout</span>
             <button
               onClick={() => setSplitView(true)}
-              className={`rounded-md border border-blue-500 px-3 py-1 hover:bg-blue-100 ${
+              className={`rounded-md border border-blue-500 px-3 py-1 hover:cursor-pointer hover:bg-blue-100 ${
                 splitView ? 'bg-blue-500 text-white' : 'bg-white text-black'
               }`}
             >
@@ -78,7 +79,7 @@ export function Diff({
             </button>
             <button
               onClick={() => setSplitView(false)}
-              className={`rounded-md border border-blue-500 px-3 py-1 hover:bg-blue-100 ${
+              className={`rounded-md border border-blue-500 px-3 py-1 hover:cursor-pointer hover:bg-blue-100 ${
                 !splitView ? 'bg-blue-500 text-white' : 'bg-white text-black'
               }`}
             >
@@ -92,7 +93,7 @@ export function Diff({
             <div className="flex h-[38px] overflow-hidden rounded-full border-[4px] border-blue-500 bg-white">
               <button
                 onClick={() => setShowDiffOnly(false)}
-                className={`px-4 py-1 text-sm font-medium transition-colors hover:bg-blue-100 ${
+                className={`px-4 py-1 text-sm font-medium transition-colors hover:cursor-pointer hover:bg-blue-100 ${
                   !showDiffOnly
                     ? 'bg-blue-500 text-white'
                     : 'bg-white text-blue-500'
@@ -102,7 +103,7 @@ export function Diff({
               </button>
               <button
                 onClick={() => setShowDiffOnly(true)}
-                className={`px-4 py-1 text-sm font-medium transition-colors hover:bg-blue-100 ${
+                className={`px-4 py-1 text-sm font-medium transition-colors hover:cursor-pointer hover:bg-blue-100 ${
                   showDiffOnly
                     ? 'bg-blue-500 text-white'
                     : 'bg-white text-blue-500'
@@ -115,7 +116,7 @@ export function Diff({
         </div>
       </div>
       <ReactDiffViewer
-        oldValue={unrefinedEicr}
+        oldValue={unrefined_eicr}
         newValue={condition.refined_eicr}
         splitView={splitView}
         showDiffOnly={showDiffOnly}
