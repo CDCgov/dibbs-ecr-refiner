@@ -1,7 +1,7 @@
 from logging import Logger
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
@@ -134,7 +134,7 @@ async def auth_callback(
 
 
 @auth_router.get("/user", response_model=UserResponse | None)
-async def get_user(request: Request) -> JSONResponse:
+async def get_user(request: Request) -> UserResponse | None:
     """
     Returns the current logged-in user's information.
 

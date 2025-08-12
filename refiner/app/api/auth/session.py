@@ -92,6 +92,9 @@ async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
         await cur.execute(query, params)
         row = await cur.fetchone()
 
+    if row is None:
+        raise Exception("Failed to upsert user and retrieve id.")
+
     return str(row["id"])
 
 
