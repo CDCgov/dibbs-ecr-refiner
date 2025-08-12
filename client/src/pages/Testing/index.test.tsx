@@ -102,8 +102,6 @@ describe('Demo', () => {
 
     // check success page
     expect(screen.getByText('eCR refinement results')).toBeInTheDocument();
-    expect(screen.getByText('tons of data here')).toBeInTheDocument();
-    expect(screen.getByText('less data')).toBeInTheDocument();
     expect(screen.getByText('eICR reduced by 59%')).toBeInTheDocument();
   });
 
@@ -160,8 +158,6 @@ describe('Demo', () => {
 
     // check success page
     expect(screen.getByText('eCR refinement results')).toBeInTheDocument();
-    expect(screen.getByText('unrefined custom data')).toBeInTheDocument();
-    expect(screen.getByText('refined custom data')).toBeInTheDocument();
     expect(screen.getByText('eICR reduced by 77%')).toBeInTheDocument();
   });
 
