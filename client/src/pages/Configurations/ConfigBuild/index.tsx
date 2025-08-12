@@ -153,6 +153,8 @@ function Builder() {
   );
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
 
+  // NOTE: this won't work in prod since there are so many codes.
+  // We'll need to load only the codes from the condition codeset being observed.
   const allCodes = builderRequest.codeSets.flatMap((codeSet) =>
     codeSet.codes.map((code) => ({
       ...code,
@@ -188,8 +190,8 @@ function Builder() {
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
-      <div className="flex h-full flex-row gap-4">
-        <div className="flex w-1/3 flex-col gap-4 px-2 py-4">
+      <div className="flex h-full flex-col sm:flex-row gap-4">
+        <div className="flex sm:w-1/3 flex-col gap-4 px-2 py-4">
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
             <label className="font-bold text-[#919191]" htmlFor="open-codesets">
               CONDITION CODE SETS
@@ -220,7 +222,7 @@ function Builder() {
             ))}
           </ul>
         </div>
-        <div className="flex max-h-[34.5rem] w-2/3 flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-6">
+        <div className="flex max-h-[34.5rem] sm:w-2/3 flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-6">
           <div className="border-bottom-[1px] mb-4 flex w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
             <Search
               onChange={(e) => setSearchText(e.target.value)}
