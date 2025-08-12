@@ -59,11 +59,6 @@ const builderRequest = {
       code_count: 9,
       codes: [
         {
-          code: '45068-1',
-          codeSystem: 'LOINC',
-          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
-        },
-        {
           code: '45068-2',
           codeSystem: 'SNOMED',
           text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
@@ -75,6 +70,11 @@ const builderRequest = {
         },
         {
           code: '45068-4',
+          codeSystem: 'LOINC',
+          text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
+        },
+        {
+          code: '45068-1',
           codeSystem: 'LOINC',
           text: 'Chlamydia trachomatis+Neisseria gonorrhoeae DNA [Presence] in Cervix by NAA with probe detection',
         },
@@ -172,8 +172,10 @@ function Builder() {
   });
 
   const { searchText, setSearchText, results } = useSearch(filteredCodes, {
-    keys: ['code', 'text'],
-    threshold: 0.4,
+    keys: [
+      { name: 'code', weight: 0.7 },
+      { name: 'text', weight: 0.3 },
+    ],
     includeScore: true,
   });
 
