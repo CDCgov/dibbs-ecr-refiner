@@ -175,8 +175,6 @@ function Builder() {
     includeScore: true,
   });
 
-  console.log(results);
-
   function onClick(id: string) {
     setSelectedCodesetId(id);
   }
