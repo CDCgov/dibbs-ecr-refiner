@@ -7,9 +7,12 @@ from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
     IdpUserResponse,
+    Jurisdiction,
+    UserResponse,
     create_session,
     delete_session,
     get_user_from_session,
+    upsert_jurisdiction,
     upsert_user,
 )
 
@@ -83,7 +86,7 @@ async def auth_callback(
             )
 
         logger.info(
-            "User logging in",
+            "User logging in from IdP",
             extra={
                 "user_id": idp_user_id,
                 "username": idp_username,
@@ -91,10 +94,20 @@ async def auth_callback(
             },
         )
 
-        # Add or update user in the Refiner DB
-        user = IdpUserResponse(
-            user_id=idp_user_id, username=idp_username, email=idp_email
+        # Upsert the user's jurisdiction if needed
+        jurisdiction_id = await upsert_jurisdiction(
+            Jurisdiction(
+                id="SDDH", name="Senate District Health Department", state_code="GC"
+            )
         )
+
+        user = IdpUserResponse(
+            user_id=idp_user_id,
+            username=idp_username,
+            email=idp_email,
+            jurisdiction_id=jurisdiction_id,
+        )
+
         user_id = await upsert_user(user)
 
         # Create a session for the user
@@ -120,7 +133,7 @@ async def auth_callback(
         raise e
 
 
-@auth_router.get("/user")
+@auth_router.get("/user", response_model=UserResponse | None)
 async def get_user(request: Request) -> JSONResponse:
     """
     Returns the current logged-in user's information.
@@ -136,14 +149,14 @@ async def get_user(request: Request) -> JSONResponse:
     session_token = request.cookies.get("refiner-session")
 
     if not session_token:
-        return JSONResponse(content=None)
+        return None
 
     user = await get_user_from_session(session_token)
 
     if not user:
-        return JSONResponse(content=None)
+        return None
 
-    return JSONResponse(content=user)
+    return user
 
 
 @auth_router.get("/logout")
@@ -171,7 +184,7 @@ async def logout(
         user = await get_user_from_session(session_token)
 
         if user:
-            logger.info("Logging out user", extra={"user_id": user.get("id", None)})
+            logger.info("Logging out user", extra={"user_id": user.id})
 
         await delete_session(session_token)
 

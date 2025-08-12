@@ -5,6 +5,7 @@ import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
 from logging import Logger
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -23,6 +24,43 @@ class IdpUserResponse(BaseModel):
     user_id: str
     username: str
     email: str
+    jurisdiction_id: str
+
+
+class Jurisdiction(BaseModel):
+    """
+    Jurisdiction info.
+    """
+
+    id: str
+    name: str
+    state_code: str
+
+
+async def upsert_jurisdiction(jurisdiction: Jurisdiction) -> str:
+    """
+    Upserts a jurisdiction sent from the IdP.
+
+    Args:
+        jurisdiction (Jurisdiction): Jurisdiction information from the IdP.
+
+    Returns:
+        str: Jurisdiction ID of the created or modified jurisdiction.
+    """
+    query = """
+        INSERT INTO jurisdictions (id, name, state_code)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (id)
+        DO UPDATE SET
+            name = EXCLUDED.name,
+            state_code = EXCLUDED.state_code
+        """
+    params = (jurisdiction.id, jurisdiction.name, jurisdiction.state_code)
+
+    async with db.get_cursor() as cur:
+        await cur.execute(query, params)
+
+    return jurisdiction.id
 
 
 async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
@@ -36,19 +74,25 @@ async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
         str: User ID of the created or modified user.
     """
     query = """
-        INSERT INTO users (id, username, email)
+        INSERT INTO users (username, email, jurisdiction_id)
         VALUES (%s, %s, %s)
-        ON CONFLICT (id)
+        ON CONFLICT (username)
         DO UPDATE SET
-            username = EXCLUDED.username,
-            email = EXCLUDED.email
+            email = EXCLUDED.email,
+            jurisdiction_id = EXCLUDED.jurisdiction_id
+        RETURNING id;
         """
-    params = (oidc_user_info.user_id, oidc_user_info.username, oidc_user_info.email)
+    params = (
+        oidc_user_info.username,
+        oidc_user_info.email,
+        oidc_user_info.jurisdiction_id,
+    )
 
     async with db.get_cursor() as cur:
         await cur.execute(query, params)
+        row = await cur.fetchone()
 
-    return oidc_user_info.user_id
+    return str(row["id"])
 
 
 def get_hashed_token(token: str) -> str:
@@ -93,7 +137,16 @@ async def create_session(user_id: str) -> str:
     return token
 
 
-async def get_user_from_session(token: str) -> dict[str, str] | None:
+class UserResponse(BaseModel):
+    """
+    User response model.
+    """
+
+    id: UUID
+    username: str
+
+
+async def get_user_from_session(token: str) -> UserResponse | None:
     """
     Given a session token, find the user associated with the session.
 
@@ -114,7 +167,7 @@ async def get_user_from_session(token: str) -> dict[str, str] | None:
         user = await cur.fetchone()
 
         if user:
-            return {"id": user["id"], "username": user["username"]}
+            return UserResponse(id=user["id"], username=user["username"])
     return None
 
 
