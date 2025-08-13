@@ -274,30 +274,31 @@ function Builder() {
             </a>
           </p>
           {selectedCodesetId ? (
-            <table
-              id="codeset-table"
-              className="w-full border-separate border-spacing-y-4"
-              role="region"
-              aria-label={`Codes in set with ID ${selectedCodesetId}`}
-            >
-              <thead className="sr-only">
-                <tr>
-                  <th>Code</th>
-                  <th>Code system</th>
-                  <th>Condition</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleCodes.flatMap((code) => (
-                  <ConditionCodeRow
-                    key={`${code.codeSetId}-${code.code}`}
-                    codeSystem={code.codeSystem}
-                    code={code.code}
-                    text={code.text}
-                  />
-                ))}
-              </tbody>
-            </table>
+            <div role="region">
+              <table
+                id="codeset-table"
+                className="w-full border-separate border-spacing-y-4"
+                aria-label={`Codes in set with ID ${selectedCodesetId}`}
+              >
+                <thead className="sr-only">
+                  <tr>
+                    <th>Code</th>
+                    <th>Code system</th>
+                    <th>Condition</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleCodes.flatMap((code) => (
+                    <ConditionCodeRow
+                      key={`${code.codeSetId}-${code.code}`}
+                      codeSystem={code.codeSystem}
+                      code={code.code}
+                      text={code.text}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
         </div>
       </div>
