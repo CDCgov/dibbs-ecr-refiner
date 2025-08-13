@@ -1,0 +1,5 @@
+{
+  "watch": ["./shared/openapi.json"],
+  "ext": "json",
+  "exec": "npm run codegen"
+}

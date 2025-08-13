@@ -19,7 +19,7 @@ from .session import (
 auth_router = APIRouter()
 
 
-@auth_router.get("/login")
+@auth_router.get("/login", tags=["auth", "internal"], include_in_schema=False)
 async def login(request: Request) -> RedirectResponse:
     """
     Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.
@@ -40,7 +40,12 @@ async def login(request: Request) -> RedirectResponse:
     return await get_oauth_provider().authorize_redirect(request, redirect_uri)
 
 
-@auth_router.get("/auth/callback", name="auth_callback")
+@auth_router.get(
+    "/auth/callback",
+    name="auth_callback",
+    tags=["auth", "internal"],
+    include_in_schema=False,
+)
 async def auth_callback(
     request: Request, logger: Logger = Depends(get_logger)
 ) -> RedirectResponse:
@@ -133,7 +138,9 @@ async def auth_callback(
         raise e
 
 
-@auth_router.get("/user", response_model=UserResponse | None)
+@auth_router.get(
+    "/user", response_model=(UserResponse | None), tags=["user"], operation_id="getUser"
+)
 async def get_user(request: Request) -> UserResponse | None:
     """
     Returns the current logged-in user's information.
@@ -159,7 +166,7 @@ async def get_user(request: Request) -> UserResponse | None:
     return user
 
 
-@auth_router.get("/logout")
+@auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
 async def logout(
     request: Request, logger: Logger = Depends(get_logger)
 ) -> RedirectResponse:

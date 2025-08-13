@@ -20,8 +20,10 @@ repos:
         -   --unsafe
     # - ensure files end with newline
     -   id: end-of-file-fixer
+        exclude: ^refiner/openapi\.json$
     # - remove trailing whitespace
     -   id: trailing-whitespace
+        exclude: ^refiner/openapi\.json$
 
 # ruff linting and formatting
 -   repo: https://github.com/astral-sh/ruff-pre-commit

@@ -2,6 +2,7 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { useGetConfigurations } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
 
 import {
@@ -9,11 +10,11 @@ import {
   Modal,
   ModalHeading,
   ModalFooter,
-  ModalRef,
   Form,
   Label,
   ComboBox,
   ComboBoxRef,
+  ModalRef,
 } from '@trussworks/react-uswds';
 import { SyntheticEvent, useRef, useState } from 'react';
 
@@ -48,6 +49,15 @@ export function Configurations() {
     data: [],
   });
 
+  const showToast = useToast();
+  const { data: response, isLoading } = useGetConfigurations();
+  const modalRef = useRef<ModalRef>(null);
+  const listRef = useRef<ComboBoxRef>(null);
+  const [formValid, setFormValid] = useState<boolean>(false);
+  const [condition, setCondition] = useState<SelectedCondition | undefined>(
+    undefined
+  );
+
   const conditionData = {
     // TODO: Figure out what this data should look like and require using real
     // UUIDs since keys need to be unique.
@@ -58,20 +68,10 @@ export function Configurations() {
     '985fc9f8-86dc-4e12-95f1-b7457b3497ca': 'Syphilis',
   };
 
-  const showToast = useToast();
-
   const conditionList = Object.entries(conditionData).map(([id, name]) => ({
     value: id,
     label: name,
   }));
-
-  const modalRef = useRef<ModalRef>(null);
-  const listRef = useRef<ComboBoxRef>(null);
-
-  const [formValid, setFormValid] = useState<boolean>(false);
-  const [condition, setCondition] = useState<SelectedCondition | undefined>(
-    undefined
-  );
 
   function handleSubmit(e: SyntheticEvent) {
     e.preventDefault();
@@ -92,6 +92,7 @@ export function Configurations() {
     modalRef.current?.toggleModal();
     listRef.current?.clearSelection();
   }
+
   function handleChange(selectedValue: string | undefined) {
     if (selectedValue) {
       const selectedOption = conditionList.find(
@@ -104,6 +105,19 @@ export function Configurations() {
       setFormValid(false);
     }
   }
+
+  if (isLoading || !response?.data) return 'Loading...';
+
+  const combinedData = [
+    // Map fetched data into your ConfigurationsData format
+    ...response.data.map(({ id, name, is_active }) => ({
+      id,
+      name,
+      status: is_active ? ConfigurationStatus.on : ConfigurationStatus.off,
+    })),
+    // Append your local added configurations
+    ...table.data,
+  ];
 
   return (
     <section className="mx-auto p-3">
@@ -187,7 +201,10 @@ export function Configurations() {
           Test Toast
         </Button>
       </div>
-      <ConfigurationsTable columns={table.columns} data={table.data} />
+      <ConfigurationsTable
+        columns={{ name: 'Reportable condition', status: 'Status' }}
+        data={combinedData}
+      />
     </section>
   );
 }

@@ -1,19 +1,20 @@
 import { useState } from 'react';
-import { Condition } from '../../services/demo';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
+import { RefinedTestingDocument } from '../../api/schemas';
 import { Diff } from '../../components/Diff';
 
-interface SuccessProps {
-  conditions: Condition[];
-  unrefinedEicr: string;
-  presignedDownloadUrl: string;
-}
+type SuccessProps = Pick<
+  RefinedTestingDocument,
+  'conditions' | 'refined_download_url' | 'unrefined_eicr'
+>;
+
+type Condition = SuccessProps['conditions'][0];
 
 export function Success({
   conditions,
-  presignedDownloadUrl,
-  unrefinedEicr,
+  unrefined_eicr,
+  refined_download_url,
 }: SuccessProps) {
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
@@ -51,8 +52,8 @@ export function Success({
       </div>
       <Diff
         condition={selectedCondition}
-        unrefinedEicr={unrefinedEicr}
-        presignedDownloadUrl={presignedDownloadUrl}
+        unrefined_eicr={unrefined_eicr}
+        refined_download_url={refined_download_url}
       />
     </div>
   );
