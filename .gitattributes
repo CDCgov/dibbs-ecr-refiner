@@ -10,3 +10,9 @@
 *.json text eol=lf
 *.yml text eol=lf
 *.csv text eol=lf
+
+# Ignore Orval generated file diffs
+client/src/api/** -diff
+
+# Ignore server generated OpenAPI file diff
+client/shared/** -diff

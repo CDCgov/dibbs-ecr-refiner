@@ -2,25 +2,43 @@ import { describe, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Configurations } from '.';
+import { TestQueryClientProvider } from '../../test-utils';
 import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 
+// Mock configurations request
+vi.mock('../../api/configurations/configurations', async () => {
+  const actual = await vi.importActual(
+    '../../api/configurations/configurations'
+  );
+  return {
+    ...actual,
+    useGetConfigurations: vi.fn(() => ({
+      data: { data: [{ id: '1', name: 'test', is_active: true }] },
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
+
 const renderPageView = () =>
   render(
-    <BrowserRouter>
+    <TestQueryClientProvider>
       <ToastContainer />
-      <Configurations />
-    </BrowserRouter>
+      <BrowserRouter>
+        <Configurations />
+      </BrowserRouter>
+    </TestQueryClientProvider>
   );
 
 describe('Configurations Page', () => {
-  test('renders the Configurations page with title and search bar', () => {
+  test('renders the Configurations page with title and search bar', async () => {
     renderPageView();
     expect(
       screen.getByText('Your reportable condition configurations')
     ).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText('Search configurations')
+      await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Set up new condition' })

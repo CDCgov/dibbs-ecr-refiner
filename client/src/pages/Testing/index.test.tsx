@@ -1,52 +1,54 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-  ApiUploadError,
-  DemoUploadResponse,
-  uploadDemoFile,
-  uploadCustomZipFile,
-} from '../../services/demo';
 import Demo from '.';
 import { BrowserRouter } from 'react-router';
+import { useUploadEcr } from '../../api/demo/demo.ts';
+import { RefinedTestingDocument } from '../../api/schemas/refinedTestingDocument.ts';
+import { Mock } from 'vitest';
 
-// TEST: This test was originally written to test the Demo Page. This has
-// been changed to `/testing` as of 2025-06-27. These tests have not been
-// modified although the page has changed.
+vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
-const mockUploadResponse: DemoUploadResponse = {
+const mockUploadResponse: RefinedTestingDocument = {
   conditions: [
     {
       code: 'mock-code',
       display_name: 'mock condition name',
       refined_eicr: '<data>less data</data>',
       stats: ['eICR reduced by 59%'],
+      processing_info: {
+        condition_specific: true,
+        method: 'testing',
+        sections_processed: 'testing',
+      },
     },
   ],
+  conditions_found: 1,
+  processing_notes: ['Testing notes'],
+  message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
   refined_download_url: 'http://s3-standard.com',
 };
 
-const mockCustomUploadResponse: DemoUploadResponse = {
+const mockCustomUploadResponse: RefinedTestingDocument = {
   conditions: [
     {
       code: 'mock-custom-file',
       display_name: 'custom condition',
       refined_eicr: '<data>refined custom data</data>',
       stats: ['eICR reduced by 77%'],
+      processing_info: {
+        condition_specific: true,
+        method: 'testing',
+        sections_processed: 'testing',
+      },
     },
   ],
+  conditions_found: 1,
+  processing_notes: ['Testing notes'],
+  message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
   refined_download_url: 'http://s3-custom.com',
 };
-
-vi.mock(import('../../services/demo.ts'), async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    uploadDemoFile: vi.fn(),
-    uploadCustomZipFile: vi.fn(),
-  };
-});
 
 const renderDemoView = () =>
   render(
@@ -56,8 +58,27 @@ const renderDemoView = () =>
   );
 
 describe('Demo', () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
   it('should navigate the demo flow using the sample file', async () => {
     const user = userEvent.setup();
+
+    const mockMutateAsync = vi.fn().mockResolvedValue({
+      status: 200,
+      data: mockUploadResponse,
+    });
+
+    // navigate to reportable conditions
+    (useUploadEcr as unknown as Mock).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      data: { data: mockUploadResponse },
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    });
+
     renderDemoView();
 
     // check that we start on the "run test" page
@@ -65,10 +86,10 @@ describe('Demo', () => {
       screen.getByText('You can try out eCR Refiner with our test file.')
     ).toBeInTheDocument();
 
-    // navigate to reportable conditions
-    vi.mocked(uploadDemoFile).mockResolvedValue(mockUploadResponse);
     await user.click(screen.getByText('Use test file'));
-    expect(uploadDemoFile).toHaveBeenCalledOnce();
+
+    expect(useUploadEcr).toHaveBeenCalled();
+    expect(mockMutateAsync).toHaveBeenCalledOnce();
 
     // check reportable conditions view
     expect(
@@ -86,6 +107,21 @@ describe('Demo', () => {
 
   it('should navigate the demo flow using an uploaded zip file', async () => {
     const user = userEvent.setup();
+
+    const mockMutateAsync = vi.fn().mockResolvedValue({
+      status: 200,
+      data: mockCustomUploadResponse,
+    });
+
+    // navigate to reportable conditions
+    (useUploadEcr as unknown as Mock).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      data: { data: mockCustomUploadResponse },
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    });
+
     renderDemoView();
 
     // check that we start on the "run test" page
@@ -95,7 +131,6 @@ describe('Demo', () => {
     const input: HTMLInputElement = screen.getByLabelText('Select .zip file');
 
     // upload the file
-    vi.mocked(uploadCustomZipFile).mockResolvedValue(mockCustomUploadResponse);
     await user.upload(input, file);
 
     // check that the input's file list looks correct
@@ -110,6 +145,7 @@ describe('Demo', () => {
 
     // run the refine process on the custom file
     await user.click(screen.getByText('Upload .zip file'));
+    expect(mockMutateAsync).toHaveBeenCalledOnce();
 
     // check reportable conditions view
     expect(
@@ -126,29 +162,57 @@ describe('Demo', () => {
   });
 
   it('should navigate to the error view when the upload request fails', async () => {
+    type MutationParam = {
+      onError?: (error: Error) => void;
+    };
+
     const user = userEvent.setup();
+
+    // throw an error when called
+    (useUploadEcr as unknown as Mock).mockImplementation(
+      ({ mutation }: { mutation?: MutationParam }) => {
+        return {
+          mutateAsync: vi.fn().mockImplementation(() => {
+            const error = new Error('API call failed') as Error & {
+              response: { data: { detail: string } };
+            };
+
+            error.response = { data: { detail: 'Server is down' } };
+
+            if (mutation?.onError) {
+              mutation.onError(error);
+            }
+
+            throw error;
+          }),
+          data: null,
+          isPending: false,
+          isError: false,
+          reset: vi.fn(),
+        };
+      }
+    );
+
     renderDemoView();
 
-    // throw an api error when attempting to run the test
-    vi.mocked(uploadDemoFile).mockRejectedValue(
-      new ApiUploadError('API call failed')
-    );
     await user.click(screen.getByText('Use test file'));
 
     // check that we made it to the error view
     expect(
-      screen.getByText(
+      await screen.findByText(
         'Please double check the format and size. It must be less than 10MB in size.'
       )
     ).toBeInTheDocument();
 
     // Server error should be shown to the user
-    expect(screen.getByText('Error: API call failed')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Error: Server is down')
+    ).toBeInTheDocument();
 
     // return to the start to try again
-    await user.click(screen.getByText('Try again'));
+    await user.click(await screen.findByText('Try again'));
     expect(
-      screen.getByText('Use test file', { selector: 'button' })
+      await screen.findByText('Use test file', { selector: 'button' })
     ).toBeInTheDocument();
   });
 });

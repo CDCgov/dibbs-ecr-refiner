@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
 import { BrowserRouter } from 'react-router';
+import { TestQueryClientProvider } from './test-utils';
 
 // Set up a mock user
 vi.mock('./hooks/Login', async () => {
@@ -14,19 +15,34 @@ vi.mock('./hooks/Login', async () => {
   };
 });
 
+// Mock configurations request
+vi.mock('./api/configurations/configurations', async () => {
+  const actual = await vi.importActual('./api/configurations/configurations');
+  return {
+    ...actual,
+    useGetConfigurations: vi.fn(() => ({
+      data: { data: [{ id: '1', display_name: 'test' }] },
+      isLoading: false,
+      error: null,
+    })),
+  };
+});
+
 const renderApp = () => {
   return render(
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <TestQueryClientProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </TestQueryClientProvider>
   );
 };
 
 describe('App', () => {
-  it('App renders expected text', () => {
+  it('App renders expected text', async () => {
     renderApp();
     expect(
-      screen.getByText('Your reportable condition configurations')
+      await screen.findByText('Your reportable condition configurations')
     ).toBeInTheDocument();
   });
 });

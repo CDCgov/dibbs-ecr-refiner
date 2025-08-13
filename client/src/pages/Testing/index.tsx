@@ -1,23 +1,23 @@
 import { Success } from './Success';
 import { ReportableConditions } from './ReportableConditions';
-import { Error } from './Error';
+import { Error as ErrorScreen } from './Error';
 import { RunTest } from './RunTest';
 import { ChangeEvent, useState } from 'react';
-import {
-  ApiUploadError,
-  DemoUploadResponse,
-  uploadCustomZipFile,
-  uploadDemoFile,
-} from '../../services/demo';
+import { useUploadEcr } from '../../api/demo/demo';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
 export default function Demo() {
   const [view, setView] = useState<View>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [uploadResponse, setUploadResponse] =
-    useState<DemoUploadResponse | null>(null);
+
+  const {
+    uploadZip,
+    data: response,
+    errorMessage,
+    isPending,
+    resetState,
+  } = useZipUpload();
 
   function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
@@ -33,42 +33,28 @@ export default function Demo() {
 
   async function runTestWithCustomFile() {
     try {
-      const resp = await uploadCustomZipFile(selectedFile);
-      setUploadResponse(resp);
-      setServerError(null);
+      await uploadZip(selectedFile);
       setView('reportable-conditions');
-    } catch (e: unknown) {
-      setUploadResponse(null);
-      handleError(e);
+    } catch {
       setView('error');
     }
   }
 
   async function runTestWithSampleFile() {
     try {
-      const resp = await uploadDemoFile();
-      setUploadResponse(resp);
-      setServerError(null);
+      await uploadZip(null);
       setView('reportable-conditions');
-    } catch (e: unknown) {
-      setUploadResponse(null);
-      handleError(e);
+    } catch {
       setView('error');
-    }
-  }
-
-  function handleError(error: unknown) {
-    if (error instanceof ApiUploadError) {
-      setServerError(error.message);
-    } else {
-      setServerError('Unknown error occurred. Please try again.');
     }
   }
 
   function reset() {
     setView('run-test');
-    setUploadResponse(null);
+    resetState();
   }
+
+  if (isPending) return 'Loading...';
 
   return (
     <div className="flex justify-center px-10 md:px-20">
@@ -81,23 +67,62 @@ export default function Demo() {
             onSelectedFileChange={onSelectedFileChange}
           />
         )}
-        {view === 'reportable-conditions' && uploadResponse && (
+        {view === 'reportable-conditions' && response?.data && (
           <ReportableConditions
-            conditionNames={uploadResponse.conditions.map(
-              (c) => c.display_name
-            )}
+            conditionNames={response.data.conditions.map((c) => c.display_name)}
             onClick={() => setView('success')}
           />
         )}
-        {view === 'success' && uploadResponse && (
+        {view === 'success' && response?.data && (
           <Success
-            conditions={uploadResponse.conditions}
-            unrefinedEicr={uploadResponse.unrefined_eicr}
-            presignedDownloadUrl={uploadResponse.refined_download_url}
+            conditions={response.data.conditions}
+            unrefined_eicr={response.data.unrefined_eicr}
+            refined_download_url={response.data.refined_download_url}
           />
         )}
-        {view === 'error' && <Error message={serverError} onClick={reset} />}
+        {view === 'error' && (
+          <ErrorScreen message={errorMessage} onClick={reset} />
+        )}
       </div>
     </div>
   );
+}
+
+function useZipUpload() {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {
+    mutateAsync,
+    data,
+    isError,
+    isPending,
+    reset: resetState,
+  } = useUploadEcr({
+    mutation: {
+      onError: (error) => {
+        const rawError = error.response?.data;
+
+        const message = Array.isArray(rawError?.detail)
+          ? rawError.detail.map((d) => d.msg).join(' ')
+          : rawError?.detail || 'Upload failed. Please try again.';
+        setErrorMessage(message);
+      },
+    },
+  });
+
+  async function uploadZip(selectedFile: File | null) {
+    setErrorMessage(null);
+
+    const resp = await mutateAsync({ data: { uploaded_file: selectedFile } });
+
+    return resp;
+  }
+
+  return {
+    uploadZip,
+    data,
+    errorMessage,
+    isError,
+    isPending,
+    resetState,
+  };
 }

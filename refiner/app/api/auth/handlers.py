@@ -1,8 +1,9 @@
 from logging import Logger
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 
+from ...db.user.model import User
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
@@ -16,7 +17,7 @@ from .session import (
 auth_router = APIRouter()
 
 
-@auth_router.get("/login")
+@auth_router.get("/login", tags=["auth", "internal"], include_in_schema=False)
 async def login(request: Request) -> RedirectResponse:
     """
     Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.
@@ -37,7 +38,12 @@ async def login(request: Request) -> RedirectResponse:
     return await get_oauth_provider().authorize_redirect(request, redirect_uri)
 
 
-@auth_router.get("/auth/callback", name="auth_callback")
+@auth_router.get(
+    "/auth/callback",
+    name="auth_callback",
+    tags=["auth", "internal"],
+    include_in_schema=False,
+)
 async def auth_callback(
     request: Request, logger: Logger = Depends(get_logger)
 ) -> RedirectResponse:
@@ -120,8 +126,10 @@ async def auth_callback(
         raise e
 
 
-@auth_router.get("/user")
-async def get_user(request: Request) -> JSONResponse:
+@auth_router.get(
+    "/user", response_model=User | None, tags=["user"], operation_id="getUser"
+)
+async def get_user(request: Request) -> User | None:
     """
     Returns the current logged-in user's information.
 
@@ -136,17 +144,17 @@ async def get_user(request: Request) -> JSONResponse:
     session_token = request.cookies.get("refiner-session")
 
     if not session_token:
-        return JSONResponse(content=None)
+        return None
 
     user = await get_user_from_session(session_token)
 
     if not user:
-        return JSONResponse(content=None)
+        return None
 
-    return JSONResponse(content=user)
+    return user
 
 
-@auth_router.get("/logout")
+@auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
 async def logout(
     request: Request, logger: Logger = Depends(get_logger)
 ) -> RedirectResponse:
@@ -171,7 +179,7 @@ async def logout(
         user = await get_user_from_session(session_token)
 
         if user:
-            logger.info("Logging out user", extra={"user_id": user.get("id", None)})
+            logger.info("Logging out user", extra={"user_id": user.id})
 
         await delete_session(session_token)
 

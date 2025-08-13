@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -37,7 +38,7 @@ router.include_router(v1_router, dependencies=[Depends(get_logged_in_user)])
 
 
 # define health check endpoint at the service level
-@router.get("/healthcheck")
+@router.get("/healthcheck", tags=["internal"], include_in_schema=False)
 async def health_check(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> JSONResponse:
@@ -66,7 +67,12 @@ async def health_check(
 
 
 @asynccontextmanager
-async def _lifespan(_: FastAPI):
+async def _lifespan(app: FastAPI):
+    # Write OpenAPI doc
+    if ENVIRONMENT["ENV"] == "local":
+        schema = create_custom_openapi(app)
+        with open("openapi.json", "w") as f:
+            json.dump(schema, f)
     # Setup logging
     setup_logger()
     logger = get_logger()
