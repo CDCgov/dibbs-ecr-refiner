@@ -195,7 +195,10 @@ function Builder() {
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col gap-4 py-4 sm:w-1/3 md:px-2">
           <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-            <label className="font-bold text-[#919191]" htmlFor="open-codesets">
+            <label
+              className="text-gray-cool-60 font-bold"
+              htmlFor="open-codesets"
+            >
               CONDITION CODE SETS
             </label>
             <button
@@ -218,6 +221,8 @@ function Builder() {
                     }
                   )}
                   onClick={() => onClick(codeSet.id)}
+                  aria-expanded={selectedCodesetId === codeSet.id}
+                  aria-label={`View codes in ${codeSet.display_name} code set`}
                 >
                   <span>{codeSet.display_name}</span>
                   <span>{codeSet.code_count}</span>
@@ -233,6 +238,7 @@ function Builder() {
               id="code-search"
               name="code-search"
               type="search"
+              placeholder="Search code set"
             />
             <div>
               <Label htmlFor="code-system-select">Code system</Label>
@@ -257,7 +263,7 @@ function Builder() {
           <p>
             These condition code sets come from the default groupings in the{' '}
             <a
-              className="text-blue-cool-60 hover:underline"
+              className="text-blue-cool-60 hover:text-blue-cool-50 underline"
               href="https://tes.tools.aimsplatform.org/auth/signin"
               target="_blank"
               rel="noopener"
@@ -266,7 +272,13 @@ function Builder() {
             </a>
           </p>
           {selectedCodesetId ? (
-            <table className="w-full border-separate border-spacing-y-4">
+            <table
+              id="codeset-table"
+              className="w-full border-separate border-spacing-y-4"
+              role="region"
+              aria-live="polite"
+              aria-label={`Codes in set with ID ${selectedCodesetId}`}
+            >
               <thead className="sr-only">
                 <tr>
                   <th>Code</th>
