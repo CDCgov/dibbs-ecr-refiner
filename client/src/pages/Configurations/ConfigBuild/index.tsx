@@ -221,8 +221,10 @@ function Builder() {
                     }
                   )}
                   onClick={() => onClick(codeSet.id)}
-                  aria-expanded={selectedCodesetId === codeSet.id}
-                  aria-label={`View codes in ${codeSet.display_name} code set`}
+                  aria-controls={
+                    selectedCodesetId ? 'codeset-table' : undefined
+                  }
+                  aria-pressed={selectedCodesetId === codeSet.id}
                 >
                   <span>{codeSet.display_name}</span>
                   <span>{codeSet.code_count}</span>
@@ -276,7 +278,6 @@ function Builder() {
               id="codeset-table"
               className="w-full border-separate border-spacing-y-4"
               role="region"
-              aria-live="polite"
               aria-label={`Codes in set with ID ${selectedCodesetId}`}
             >
               <thead className="sr-only">
