@@ -11,7 +11,7 @@ import {
 import { useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import { Label, Select } from '@trussworks/react-uswds';
+import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 
 export default function ConfigBuild() {
@@ -199,10 +199,12 @@ function Builder() {
               CONDITION CODE SETS
             </label>
             <button
-              className="text-blue-cool-60 font-bold hover:cursor-pointer"
+              className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
+              aria-label="Add new code set to configuration"
             >
-              + ADD
+              <Icon.Add size={3} aria-hidden />
+              <span>ADD</span>
             </button>
           </div>
           <ul className="flex flex-col gap-2">
