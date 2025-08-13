@@ -210,28 +210,30 @@ function Builder() {
               <span>ADD</span>
             </button>
           </div>
-          <ul className="flex flex-col gap-2">
-            {builderResponse.codeSets.map((codeSet) => (
-              <li key={codeSet.id}>
-                <button
-                  className={classNames(
-                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    {
-                      'bg-white': selectedCodesetId === codeSet.id,
+          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+            <ul className="flex flex-col gap-2">
+              {builderResponse.codeSets.map((codeSet) => (
+                <li key={codeSet.id}>
+                  <button
+                    className={classNames(
+                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                      {
+                        'bg-white': selectedCodesetId === codeSet.id,
+                      }
+                    )}
+                    onClick={() => onClick(codeSet.id)}
+                    aria-controls={
+                      selectedCodesetId ? 'codeset-table' : undefined
                     }
-                  )}
-                  onClick={() => onClick(codeSet.id)}
-                  aria-controls={
-                    selectedCodesetId ? 'codeset-table' : undefined
-                  }
-                  aria-pressed={selectedCodesetId === codeSet.id}
-                >
-                  <span>{codeSet.display_name}</span>
-                  <span>{codeSet.code_count}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                    aria-pressed={selectedCodesetId === codeSet.id}
+                  >
+                    <span>{codeSet.display_name}</span>
+                    <span>{codeSet.code_count}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           <div className="border-bottom-[1px] mb-4 flex w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
