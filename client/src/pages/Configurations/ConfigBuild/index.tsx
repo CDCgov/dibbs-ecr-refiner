@@ -41,7 +41,7 @@ export default function ConfigBuild() {
   );
 }
 
-const builderRequest = {
+const builderResponse = {
   allCodeSystems: [
     {
       id: 'loinc-id',
@@ -155,7 +155,7 @@ function Builder() {
 
   // NOTE: this won't work in prod since there are so many codes.
   // We'll need to load only the codes from the condition codeset being observed.
-  const allCodes = builderRequest.codeSets.flatMap((codeSet) =>
+  const allCodes = builderResponse.codeSets.flatMap((codeSet) =>
     codeSet.codes.map((code) => ({
       ...code,
       codeSetId: codeSet.id,
@@ -211,7 +211,7 @@ function Builder() {
             </button>
           </div>
           <ul className="flex flex-col gap-2">
-            {builderRequest.codeSets.map((codeSet) => (
+            {builderResponse.codeSets.map((codeSet) => (
               <li key={codeSet.id}>
                 <button
                   className={classNames(
@@ -253,7 +253,7 @@ function Builder() {
                 <option key="all-code-systems" value="all">
                   All code systems
                 </option>
-                {builderRequest.allCodeSystems.map((cs) => (
+                {builderResponse.allCodeSystems.map((cs) => (
                   <option key={`${cs.id}-${cs.name}`} value={cs.name}>
                     {cs.name}
                   </option>
