@@ -119,7 +119,7 @@ import type {
 } from 'axios';
 
 import type {
-  DbCondition
+  GetConditionsResponse
 } from '.././schemas';
 
 
@@ -138,7 +138,7 @@ Returns:
  */
 export const getConditions = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<DbCondition[]>> => {
+ ): Promise<AxiosResponse<GetConditionsResponse[]>> => {
     
     
     return axios.default.get(

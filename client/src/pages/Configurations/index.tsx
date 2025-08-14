@@ -2,7 +2,10 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
-import { useGetConfigurations } from '../../api/configurations/configurations';
+import {
+  useCreateConfiguration,
+  useGetConfigurations,
+} from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
 
 import {
@@ -17,7 +20,11 @@ import {
 } from '@trussworks/react-uswds';
 import { useRef, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
-import { DbCondition } from '../../api/schemas';
+import {
+  Condition,
+  DbCondition,
+  GetConditionsResponse,
+} from '../../api/schemas';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -103,7 +110,9 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
   const comboBoxRef = useRef<ComboBoxRef>(null);
   const { data: response, isLoading } = useGetConditions();
   const [selectedCondition, setSelectedCondition] =
-    useState<DbCondition | null>(null);
+    useState<GetConditionsResponse | null>(null);
+
+  const { mutateAsync } = useCreateConfiguration();
 
   return (
     <Modal
@@ -147,12 +156,22 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         <Button
           variant={`${selectedCondition ? 'primary' : 'disabled'}`}
           disabled={!selectedCondition}
-          onClick={() => {
-            comboBoxRef.current?.clearSelection();
-            modalRef.current?.toggleModal();
+          onClick={async () => {
+            try {
+              await mutateAsync({
+                data: { condition_id: selectedCondition.id },
+              });
+              comboBoxRef.current?.clearSelection();
+              modalRef.current?.toggleModal();
+              showToast({
+                heading: 'New configuration created',
+                body: selectedCondition?.display_name ?? '',
+              });
+            } catch (e: unknown) {}
+
             showToast({
-              heading: 'New configuration created',
-              body: selectedCondition?.display_name ?? '',
+              heading: 'Configuration could not be created',
+              variant: 'error',
             });
             setSelectedCondition(null);
           }}

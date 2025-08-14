@@ -4,7 +4,7 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbCondition
 
 
-async def get_all_conditions(db: AsyncDatabaseConnection) -> list[DbCondition]:
+async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     """
     Queries the database and retrieves a list of conditions with version 2.0.0.
 

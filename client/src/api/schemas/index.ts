@@ -103,7 +103,7 @@ export * from './condition';
 export * from './conditionProcessingInfo';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
-export * from './dbCondition';
+export * from './getConditionsResponse';
 export * from './getConfigurationsResponse';
 export * from './getUser200';
 export * from './hTTPValidationError';
