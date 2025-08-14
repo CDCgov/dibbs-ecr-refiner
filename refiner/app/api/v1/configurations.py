@@ -12,7 +12,7 @@ from ...db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.user.db import get_user_by_id
+from ...db.user.db import get_user_by_id_db
 
 router = APIRouter(prefix="/configurations")
 
@@ -45,7 +45,7 @@ async def get_configurations(
     """
 
     # get user jurisdiction
-    db_user = await get_user_by_id(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
     jd = db_user.jurisdiction_id
 
     configs = await get_configurations_db(jurisdiction_id=jd, db=db)
@@ -96,7 +96,7 @@ async def create_configuration(
     condition = await get_condition_by_id(id=body.condition_id, db=db)
 
     # get user jurisdiction
-    db_user = await get_user_by_id(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
     jd = db_user.jurisdiction_id
 
     # check that there isn't already a config for the condition + JD

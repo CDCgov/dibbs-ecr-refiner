@@ -4,7 +4,7 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbUser
 
 
-async def get_user_by_id(id: str, db: AsyncDatabaseConnection) -> DbUser:
+async def get_user_by_id_db(id: str, db: AsyncDatabaseConnection) -> DbUser:
     """
     Gets a user from the database with the provided ID.
     """
