@@ -3,11 +3,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg.rows import class_row
-from psycopg.types.json import Jsonb
 from pydantic import BaseModel
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.model import DbCondition
+from ...db.configurations.db import insert_configuration
 from ...db.configurations.model import Configuration
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.user.model import DbUser
@@ -48,7 +48,7 @@ class CreateConfigInput(BaseModel):
     condition_id: str
 
 
-class ConfigurationResponse(BaseModel):
+class CreateConfigurationResponse(BaseModel):
     """
     Configuration creation response model.
     """
@@ -59,7 +59,7 @@ class ConfigurationResponse(BaseModel):
 
 @router.post(
     "/",
-    response_model=ConfigurationResponse,
+    response_model=CreateConfigurationResponse,
     tags=["configurations"],
     operation_id="createConfiguration",
 )
@@ -67,7 +67,7 @@ async def create_configuration(
     body: CreateConfigInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> ConfigurationResponse:
+) -> CreateConfigurationResponse:
     """
     Create a new configuration for a jurisdiction.
     """
@@ -87,69 +87,12 @@ async def create_configuration(
             status_code=500, detail="Configuration for condition already exists."
         )
 
-    query = """
-    INSERT INTO configurations (
-        family_id,
-        version,
-        jurisdiction_id,
-        name,
-        description,
-        included_conditions,
-        loinc_codes_additions,
-        snomed_codes_additions,
-        icd10_codes_additions,
-        rxnorm_codes_additions,
-        custom_codes,
-        sections_to_include
-    )
-    VALUES (
-        %s,
-        %s,
-        %s,
-        %s,
-        %s,
-        %s::jsonb,
-        %s::jsonb,
-        %s::jsonb,
-        %s::jsonb,
-        %s::jsonb,
-        %s::jsonb,
-        %s::text[]
-    )
-    RETURNING id, name
-    """
+    config = await insert_configuration(condition=condition, jurisdiction_id=jd, db=db)
 
-    params = (
-        1000,
-        1,
-        jd,
-        condition.display_name,
-        condition.display_name,
-        Jsonb(
-            [
-                {
-                    "canonical_url": condition.canonical_url,
-                    "version": condition.version,
-                }
-            ]
-        ),
-        Jsonb([]),
-        Jsonb([]),
-        Jsonb([]),
-        Jsonb([]),
-        Jsonb([]),
-        [""],
-    )
-
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConfigurationResponse)) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-
-    if row is None:
+    if config is None:
         raise HTTPException(status_code=500, detail="Unable to create configuration")
 
-    return row
+    return CreateConfigurationResponse(id=config.id, name=config.name)
 
 
 async def get_user_by_id(id: str, db: AsyncDatabaseConnection) -> DbUser:
