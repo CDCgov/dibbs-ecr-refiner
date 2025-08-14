@@ -6,7 +6,7 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbConfiguration
 
 
-async def insert_configuration(
+async def insert_configuration_db(
     condition: DbCondition, jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> DbConfiguration | None:
     """
@@ -89,7 +89,39 @@ async def insert_configuration(
             return await cur.fetchone()
 
 
-async def is_config_valid_to_insert(
+async def get_configurations_db(
+    jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbConfiguration]:
+    """
+    Fetch all configurations from the DB for a given jurisdiction.
+    """
+    query = """
+        SELECT
+            id,
+            family_id,
+            jurisdiction_id,
+            REPLACE(name, '_', ' ') AS name,
+            description,
+            included_conditions,
+            loinc_codes_additions,
+            snomed_codes_additions,
+            icd10_codes_additions,
+            rxnorm_codes_additions,
+            custom_codes,
+            sections_to_include,
+            cloned_from_configuration_id
+        FROM configurations
+        WHERE jurisdiction_id = %s
+        ORDER BY name asc;
+        """
+    params = (jurisdiction_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            return await cur.fetchall()
+
+
+async def is_config_valid_to_insert_db(
     condition_name: str, jurisidiction_id: str, db: AsyncDatabaseConnection
 ) -> bool:
     """

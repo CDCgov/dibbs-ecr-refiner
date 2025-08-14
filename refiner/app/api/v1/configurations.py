@@ -6,7 +6,11 @@ from pydantic import BaseModel
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import get_condition_by_id
-from ...db.configurations.db import insert_configuration, is_config_valid_to_insert
+from ...db.configurations.db import (
+    get_configurations_db,
+    insert_configuration_db,
+    is_config_valid_to_insert_db,
+)
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.user.db import get_user_by_id
 
@@ -18,7 +22,7 @@ class GetConfigurationsResponse(BaseModel):
     Model for a user-defined configuration.
     """
 
-    id: str
+    id: UUID
     name: str
     is_active: bool
 
@@ -29,29 +33,31 @@ class GetConfigurationsResponse(BaseModel):
     tags=["configurations"],
     operation_id="getConfigurations",
 )
-def get_configurations() -> list[GetConfigurationsResponse]:
+async def get_configurations(
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[GetConfigurationsResponse]:
     """
     Returns a list of configurations based on the logged-in user.
 
     Returns:
         List of configuration objects.
     """
-    sample_configs = [
+
+    # get user jurisdiction
+    db_user = await get_user_by_id(id=str(user["id"]), db=db)
+    jd = db_user.jurisdiction_id
+
+    configs = await get_configurations_db(jurisdiction_id=jd, db=db)
+
+    return [
         GetConfigurationsResponse(
-            id="1", name="Chlamydia trachomatis infection", is_active=True
-        ),
-        GetConfigurationsResponse(
-            id="2", name="Disease caused by Enterovirus", is_active=False
-        ),
-        GetConfigurationsResponse(
-            id="3", name="Human immunodeficiency virus infection (HIV)", is_active=False
-        ),
-        GetConfigurationsResponse(id="4", name="Syphilis", is_active=True),
-        GetConfigurationsResponse(
-            id="5", name="Viral hepatitis, type A", is_active=True
-        ),
+            id=cfg.id,
+            name=cfg.name,
+            is_active=False,
+        )
+        for cfg in configs
     ]
-    return sample_configs
 
 
 class CreateConfigInput(BaseModel):
@@ -94,7 +100,7 @@ async def create_configuration(
     jd = db_user.jurisdiction_id
 
     # check that there isn't already a config for the condition + JD
-    if not await is_config_valid_to_insert(
+    if not await is_config_valid_to_insert_db(
         condition_name=condition.display_name, jurisidiction_id=jd, db=db
     ):
         raise HTTPException(
@@ -102,7 +108,9 @@ async def create_configuration(
             detail="Can't create configuration because configuration for condition already exists.",
         )
 
-    config = await insert_configuration(condition=condition, jurisdiction_id=jd, db=db)
+    config = await insert_configuration_db(
+        condition=condition, jurisdiction_id=jd, db=db
+    )
 
     if config is None:
         raise HTTPException(status_code=500, detail="Unable to create configuration")
