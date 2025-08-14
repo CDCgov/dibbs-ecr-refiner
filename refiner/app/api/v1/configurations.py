@@ -2,7 +2,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from psycopg.rows import class_row, dict_row
+from psycopg.rows import class_row
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel
 
@@ -59,7 +59,7 @@ class ConfigurationResponse(BaseModel):
 
 @router.post(
     "/",
-    # response_model=ConfigurationResponse,
+    response_model=ConfigurationResponse,
     tags=["configurations"],
     operation_id="createConfiguration",
 )
@@ -67,20 +67,19 @@ async def create_configuration(
     body: CreateConfigInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> dict:
+) -> ConfigurationResponse:
     """
     Create a new configuration for a jurisdiction.
     """
 
     # get condition by ID
     condition = await get_condition_by_id(id=body.condition_id, db=db)
+
     # get user jurisdiction
     db_user = await get_user_by_id(id=str(user["id"]), db=db)
-
     jd = db_user.jurisdiction_id
-    # check that there isn't already a config for the condition + JD
-    # SKIP
 
+    # check that there isn't already a config for the condition + JD
     if not await is_valid_to_create(
         condition_name=condition.display_name, jurisidiction_id=jd, db=db
     ):
@@ -123,9 +122,9 @@ async def create_configuration(
     params = (
         1000,
         1,
-        str(jd),
-        str(condition.display_name),
-        str(condition.display_name),
+        jd,
+        condition.display_name,
+        condition.display_name,
         Jsonb(
             [
                 {
@@ -141,16 +140,11 @@ async def create_configuration(
         Jsonb([]),
         [""],
     )
-    print("RUN config insert")
 
     async with db.get_connection() as conn:
-        print("Connected to DB")
-        async with conn.cursor(row_factory=dict_row) as cur:
-            print("Cursor obtained")
+        async with conn.cursor(row_factory=class_row(ConfigurationResponse)) as cur:
             await cur.execute(query, params)
-            print("Query executed")
             row = await cur.fetchone()
-            print("ROW:", row)
 
     if row is None:
         raise HTTPException(status_code=500, detail="Unable to create configuration")
@@ -168,14 +162,11 @@ async def get_user_by_id(id: str, db: AsyncDatabaseConnection) -> DbUser:
             WHERE id = %s
             """
     params = (id,)
-    print("USERID", id)
+
     async with db.get_connection() as conn:
-        print("CONNECTION OPENED")
         async with conn.cursor(row_factory=class_row(DbUser)) as cur:
-            print("RUNNING QUERY")
             await cur.execute(query, params)
             row = await cur.fetchone()
-        print("CONNECTION CLOSED")
 
     if not row:
         raise Exception(f"User with ID {id} not found.")

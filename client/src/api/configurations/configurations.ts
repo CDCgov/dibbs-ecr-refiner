@@ -124,8 +124,8 @@ import type {
 
 import type {
   Configuration,
+  ConfigurationResponse,
   CreateConfigInput,
-  CreateConfiguration200,
   HTTPValidationError
 } from '.././schemas';
 
@@ -228,7 +228,7 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
  */
 export const createConfiguration = (
     createConfigInput: CreateConfigInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CreateConfiguration200>> => {
+ ): Promise<AxiosResponse<ConfigurationResponse>> => {
 
 
     return axios.default.post(
