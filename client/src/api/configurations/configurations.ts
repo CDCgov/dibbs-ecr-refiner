@@ -143,8 +143,8 @@ Returns:
 export const getConfigurations = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<Configuration[]>> => {
-
-
+    
+    
     return axios.default.get(
       `/api/v1/configurations/`,options
     );
@@ -155,7 +155,7 @@ export const getGetConfigurationsQueryKey = () => {
     return [`/api/v1/configurations/`] as const;
     }
 
-
+    
 export const getGetConfigurationsQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
@@ -163,13 +163,13 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetConfigurationsQueryKey();
 
-
+  
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurations>>> = ({ signal }) => getConfigurations({ signal, ...axiosOptions });
 
+      
 
-
-
+      
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -208,7 +208,7 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
 
 export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
+ , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetConfigurationsQueryOptions(options)
@@ -229,8 +229,8 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
 export const createConfiguration = (
     createConfigInput: CreateConfigInput, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<ConfigurationResponse>> => {
-
-
+    
+    
     return axios.default.post(
       `/api/v1/configurations/`,
       createConfigInput,options
@@ -250,7 +250,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }, axios: undefined};
 
-
+      
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createConfiguration>>, {data: CreateConfigInput}> = (props) => {
@@ -259,7 +259,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
           return  createConfiguration(data,axiosOptions)
         }
 
-
+        
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -284,3 +284,4 @@ export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
 
       return useMutation(mutationOptions , queryClient);
     }
+    

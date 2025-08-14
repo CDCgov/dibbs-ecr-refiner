@@ -17,7 +17,7 @@ import {
 } from '@trussworks/react-uswds';
 import { useRef, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
-import { AppDbConditionsModelCondition } from '../../api/schemas';
+import { DbCondition } from '../../api/schemas';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -103,7 +103,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
   const comboBoxRef = useRef<ComboBoxRef>(null);
   const { data: response, isLoading } = useGetConditions();
   const [selectedCondition, setSelectedCondition] =
-    useState<AppDbConditionsModelCondition | null>(null);
+    useState<DbCondition | null>(null);
 
   return (
     <Modal

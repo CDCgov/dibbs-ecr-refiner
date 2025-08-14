@@ -139,8 +139,8 @@ Returns:
 export const getConditions = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<DbCondition[]>> => {
-
-
+    
+    
     return axios.default.get(
       `/api/v1/conditions/`,options
     );
@@ -151,7 +151,7 @@ export const getGetConditionsQueryKey = () => {
     return [`/api/v1/conditions/`] as const;
     }
 
-
+    
 export const getGetConditionsQueryOptions = <TData = Awaited<ReturnType<typeof getConditions>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
@@ -159,13 +159,13 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetConditionsQueryKey();
 
-
+  
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getConditions>>> = ({ signal }) => getConditions({ signal, ...axiosOptions });
 
+      
 
-
-
+      
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -204,7 +204,7 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
 
 export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
+ , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetConditionsQueryOptions(options)
@@ -215,3 +215,6 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
 
   return query;
 }
+
+
+
