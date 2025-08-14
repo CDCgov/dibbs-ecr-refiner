@@ -123,9 +123,9 @@ import type {
 } from 'axios';
 
 import type {
-  Configuration,
   CreateConfigInput,
   CreateConfigurationResponse,
+  GetConfigurationsResponse,
   HTTPValidationError
 } from '.././schemas';
 
@@ -142,7 +142,7 @@ Returns:
  */
 export const getConfigurations = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Configuration[]>> => {
+ ): Promise<AxiosResponse<GetConfigurationsResponse[]>> => {
     
     
     return axios.default.get(

@@ -87,3 +87,30 @@ async def insert_configuration(
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
             await cur.execute(query, params)
             return await cur.fetchone()
+
+
+async def is_config_valid_to_insert(
+    condition_name: str, jurisidiction_id: str, db: AsyncDatabaseConnection
+) -> bool:
+    """
+    Query the database to check if a configuration can be created. If a config for a condition already exists, returns False.
+    """
+    query = """
+        SELECT id
+        from configurations
+        WHERE name = %s
+        AND jurisdiction_id = %s
+        """
+    params = (
+        condition_name,
+        jurisidiction_id,
+    )
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchall()
+
+    if not row:
+        return True
+
+    return False

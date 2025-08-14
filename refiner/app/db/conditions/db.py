@@ -33,3 +33,30 @@ async def get_all_conditions(db: AsyncDatabaseConnection) -> list[DbCondition]:
         raise Exception("No conditions found for version 2.0.0.")
 
     return rows
+
+
+async def get_condition_by_id(id: str, db: AsyncDatabaseConnection) -> DbCondition:
+    """
+    Gets a condition from the database with the provided ID.
+    """
+
+    query = """
+        SELECT id,
+        canonical_url,
+        display_name,
+        version
+        FROM conditions
+        WHERE version = '2.0.0'
+        AND id = %s
+        """
+    params = (id,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+    if not row:
+        raise Exception(f"Condition with ID {id} not found.")
+
+    return row
