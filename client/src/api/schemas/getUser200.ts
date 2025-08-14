@@ -96,6 +96,6 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
 
  * OpenAPI spec version: 1.0.0
  */
-import type { User } from './user';
+import type { UserResponse } from './userResponse';
 
-export type GetUser200 = User | null;
+export type GetUser200 = UserResponse | null;

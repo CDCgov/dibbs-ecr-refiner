@@ -7,7 +7,12 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 router = APIRouter(prefix="/conditions")
 
 
-@router.get("/", response_model=list[Condition])
+@router.get(
+    "/",
+    response_model=list[Condition],
+    tags=["conditions"],
+    operation_id="getConditions",
+)
 async def get_conditions(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[Condition]:

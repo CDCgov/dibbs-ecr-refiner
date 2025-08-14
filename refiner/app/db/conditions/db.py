@@ -15,11 +15,14 @@ async def get_all_conditions(db: AsyncDatabaseConnection) -> list[Condition]:
         list[Condition]: List of conditions.
     """
     query = """
-        SELECT id, display_name, canonical_url
-        FROM conditions
-        WHERE version = '2.0.0'
-        ORDER BY display_name ASC
-        """
+            SELECT
+                id,
+                REPLACE(display_name, '_', ' ') AS display_name,
+                canonical_url
+            FROM conditions
+            WHERE version = '2.0.0'
+            ORDER BY REPLACE(display_name, '_', ' ') ASC;
+            """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(Condition)) as cur:
             await cur.execute(query)
