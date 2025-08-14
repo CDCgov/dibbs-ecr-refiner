@@ -71,88 +71,91 @@ async def create_configuration(
     """
     Create a new configuration for a jurisdiction.
     """
-    try:
-        # get condition by ID
-        condition = await get_condition_by_id(id=body.condition_id, db=db)
-        # get user jurisdiction
-        db_user = await get_user_by_id(id=str(user["id"]), db=db)
 
-        jd = db_user.jurisdiction_id
-        # check that there isn't already a config for the condition + JD
-        # SKIP
+    # get condition by ID
+    condition = await get_condition_by_id(id=body.condition_id, db=db)
+    # get user jurisdiction
+    db_user = await get_user_by_id(id=str(user["id"]), db=db)
 
-        query = """
-        INSERT INTO configurations (
-            family_id,
-            version,
-            jurisdiction_id,
-            name,
-            description,
-            included_conditions,
-            loinc_codes_additions,
-            snomed_codes_additions,
-            icd10_codes_additions,
-            rxnorm_codes_additions,
-            custom_codes,
-            sections_to_include
+    jd = db_user.jurisdiction_id
+    # check that there isn't already a config for the condition + JD
+    # SKIP
+
+    if not await is_valid_to_create(
+        condition_name=condition.display_name, jurisidiction_id=jd, db=db
+    ):
+        raise HTTPException(
+            status_code=500, detail="Configuration for condition already exists."
         )
-        VALUES (
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s::jsonb,
-            %s::jsonb,
-            %s::jsonb,
-            %s::jsonb,
-            %s::jsonb,
-            %s::jsonb,
-            %s::text[]
-        )
-        RETURNING id, name
-        """
 
-        params = (
-            1000,
-            1,
-            str(jd),
-            str(condition.display_name),
-            str(condition.display_name),
-            Jsonb(
-                [
-                    {
-                        "canonical_url": condition.canonical_url,
-                        "version": condition.version,
-                    }
-                ]
-            ),
-            Jsonb([]),
-            Jsonb([]),
-            Jsonb([]),
-            Jsonb([]),
-            Jsonb([]),
-            [""],
-        )
-        print("RUN config insert")
+    query = """
+    INSERT INTO configurations (
+        family_id,
+        version,
+        jurisdiction_id,
+        name,
+        description,
+        included_conditions,
+        loinc_codes_additions,
+        snomed_codes_additions,
+        icd10_codes_additions,
+        rxnorm_codes_additions,
+        custom_codes,
+        sections_to_include
+    )
+    VALUES (
+        %s,
+        %s,
+        %s,
+        %s,
+        %s,
+        %s::jsonb,
+        %s::jsonb,
+        %s::jsonb,
+        %s::jsonb,
+        %s::jsonb,
+        %s::jsonb,
+        %s::text[]
+    )
+    RETURNING id, name
+    """
 
-        async with db.get_connection() as conn:
-            print("Connected to DB")
-            async with conn.cursor(row_factory=dict_row) as cur:
-                print("Cursor obtained")
-                await cur.execute(query, params)
-                print("Query executed")
-                row = await cur.fetchone()
-                print("ROW:", row)
+    params = (
+        1000,
+        1,
+        str(jd),
+        str(condition.display_name),
+        str(condition.display_name),
+        Jsonb(
+            [
+                {
+                    "canonical_url": condition.canonical_url,
+                    "version": condition.version,
+                }
+            ]
+        ),
+        Jsonb([]),
+        Jsonb([]),
+        Jsonb([]),
+        Jsonb([]),
+        Jsonb([]),
+        [""],
+    )
+    print("RUN config insert")
 
-        if row is None:
-            raise HTTPException(
-                status_code=500, detail="Unable to create configuration"
-            )
+    async with db.get_connection() as conn:
+        print("Connected to DB")
+        async with conn.cursor(row_factory=dict_row) as cur:
+            print("Cursor obtained")
+            await cur.execute(query, params)
+            print("Query executed")
+            row = await cur.fetchone()
+            print("ROW:", row)
 
-        return row
-    except Exception as e:
-        print(str(e))
+    if row is None:
+        raise HTTPException(status_code=500, detail="Unable to create configuration")
+
+    return row
 
 
 async def get_user_by_id(id: str, db: AsyncDatabaseConnection) -> DbUser:
@@ -205,3 +208,30 @@ async def get_condition_by_id(id: str, db: AsyncDatabaseConnection) -> DbConditi
         raise Exception(f"Condition with ID {id} not found.")
 
     return row
+
+
+async def is_valid_to_create(
+    condition_name: str, jurisidiction_id: str, db: AsyncDatabaseConnection
+) -> bool:
+    """
+    Query the database to check if a configuration can be created. If a config for a condition already exists, returns False.
+    """
+    query = """
+        SELECT id
+        from configurations
+        WHERE name = %s
+        AND jurisdiction_id = %s
+        """
+    params = (
+        condition_name,
+        jurisidiction_id,
+    )
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchall()
+
+    if not row:
+        return True
+
+    return False
