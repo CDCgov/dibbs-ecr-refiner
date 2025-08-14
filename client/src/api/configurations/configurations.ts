@@ -97,16 +97,20 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -119,7 +123,10 @@ import type {
 } from 'axios';
 
 import type {
-  Configuration
+  Configuration,
+  CreateConfigInput,
+  CreateConfiguration200,
+  HTTPValidationError
 } from '.././schemas';
 
 
@@ -212,3 +219,68 @@ export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfig
 
   return query;
 }
+
+
+
+/**
+ * Create a new configuration for a jurisdiction.
+ * @summary Create Configuration
+ */
+export const createConfiguration = (
+    createConfigInput: CreateConfigInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CreateConfiguration200>> => {
+
+
+    return axios.default.post(
+      `/api/v1/configurations/`,
+      createConfigInput,options
+    );
+  }
+
+
+
+export const getCreateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConfiguration>>, TError,{data: CreateConfigInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof createConfiguration>>, TError,{data: CreateConfigInput}, TContext> => {
+
+const mutationKey = ['createConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createConfiguration>>, {data: CreateConfigInput}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createConfiguration(data,axiosOptions)
+        }
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof createConfiguration>>>
+    export type CreateConfigurationMutationBody = CreateConfigInput
+    export type CreateConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Create Configuration
+ */
+export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConfiguration>>, TError,{data: CreateConfigInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createConfiguration>>,
+        TError,
+        {data: CreateConfigInput},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }

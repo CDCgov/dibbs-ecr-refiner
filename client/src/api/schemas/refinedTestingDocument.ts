@@ -96,7 +96,7 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
 
  * OpenAPI spec version: 1.0.0
  */
-import type { AppDbDemoModelCondition } from './appDbDemoModelCondition';
+import type { Condition } from './condition';
 
 /**
  * Model for the response when uploading a document in the testing suite.
@@ -104,7 +104,7 @@ import type { AppDbDemoModelCondition } from './appDbDemoModelCondition';
 export interface RefinedTestingDocument {
   message: string;
   conditions_found: number;
-  conditions: AppDbDemoModelCondition[];
+  conditions: Condition[];
   unrefined_eicr: string;
   processing_notes: string[];
   refined_download_url: string;

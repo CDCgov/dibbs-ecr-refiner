@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from ...db.conditions.db import get_all_conditions
-from ...db.conditions.model import Condition
+from ...db.conditions.model import DbCondition
 from ...db.pool import AsyncDatabaseConnection, get_db
 
 router = APIRouter(prefix="/conditions")
@@ -9,13 +9,13 @@ router = APIRouter(prefix="/conditions")
 
 @router.get(
     "/",
-    response_model=list[Condition],
+    response_model=list[DbCondition],
     tags=["conditions"],
     operation_id="getConditions",
 )
 async def get_conditions(
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[Condition]:
+) -> list[DbCondition]:
     """
     Fetches all available conditions from the database.
 

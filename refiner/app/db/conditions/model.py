@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class Condition(BaseModel):
+class DbCondition(BaseModel):
     """
     Model to represent a condition in the database.
     """
@@ -11,3 +11,4 @@ class Condition(BaseModel):
     id: UUID
     display_name: str
     canonical_url: str
+    version: str

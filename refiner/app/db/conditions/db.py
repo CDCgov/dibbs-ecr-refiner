@@ -1,10 +1,10 @@
 from psycopg.rows import class_row
 
 from ..pool import AsyncDatabaseConnection
-from .model import Condition
+from .model import DbCondition
 
 
-async def get_all_conditions(db: AsyncDatabaseConnection) -> list[Condition]:
+async def get_all_conditions(db: AsyncDatabaseConnection) -> list[DbCondition]:
     """
     Queries the database and retrieves a list of conditions with version 2.0.0.
 
@@ -18,13 +18,14 @@ async def get_all_conditions(db: AsyncDatabaseConnection) -> list[Condition]:
             SELECT
                 id,
                 REPLACE(display_name, '_', ' ') AS display_name,
-                canonical_url
+                canonical_url,
+                version
             FROM conditions
             WHERE version = '2.0.0'
             ORDER BY REPLACE(display_name, '_', ' ') ASC;
             """
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(Condition)) as cur:
+        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
             await cur.execute(query)
             rows = await cur.fetchall()
 
