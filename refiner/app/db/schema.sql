@@ -102,7 +102,7 @@ CREATE SEQUENCE IF NOT EXISTS configuration_family_id_seq START 1000 INCREMENT 1
 --   - simple activation lookups via UUID primary key
 CREATE TABLE IF NOT EXISTS configurations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    family_id INTEGER NOT NULL,
+    family_id INTEGER NOT NULL DEFAULT nextval('configuration_family_id_seq'),
     version INTEGER NOT NULL,
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
     name TEXT NOT NULL,

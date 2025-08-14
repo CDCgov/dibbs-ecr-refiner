@@ -15,7 +15,6 @@ async def insert_configuration_db(
 
     query = """
     INSERT INTO configurations (
-        family_id,
         version,
         jurisdiction_id,
         name,
@@ -30,7 +29,6 @@ async def insert_configuration_db(
         cloned_from_configuration_id
     )
     VALUES (
-        %s,
         %s,
         %s,
         %s,
@@ -61,7 +59,6 @@ async def insert_configuration_db(
     """
 
     params = (
-        1000,  # family_id
         1,  # version
         jurisdiction_id,
         condition.display_name,
