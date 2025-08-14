@@ -20,11 +20,8 @@ import {
 } from '@trussworks/react-uswds';
 import { useRef, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
-import {
-  Condition,
-  DbCondition,
-  GetConditionsResponse,
-} from '../../api/schemas';
+import { GetConditionsResponse } from '../../api/schemas';
+import { useNavigate } from 'react-router';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -47,26 +44,10 @@ interface ConfigurationsTable {
 }
 
 export function Configurations() {
-  const [table] = useState<ConfigurationsTable>({
-    columns: { name: 'Reportable condition', status: 'Status' },
-    data: [],
-  });
-
   const { data: response, isLoading } = useGetConfigurations();
   const modalRef = useRef<ModalRef>(null);
 
   if (isLoading || !response?.data) return 'Loading...';
-
-  const combinedData = [
-    // Map fetched data into your ConfigurationsData format
-    ...response.data.map(({ id, name, is_active }) => ({
-      id,
-      name,
-      status: is_active ? ConfigurationStatus.on : ConfigurationStatus.off,
-    })),
-    // Append your local added configurations
-    ...table.data,
-  ];
 
   return (
     <section className="mx-auto p-3">
@@ -95,7 +76,11 @@ export function Configurations() {
       </div>
       <ConfigurationsTable
         columns={{ name: 'Reportable condition', status: 'Status' }}
-        data={combinedData}
+        data={response.data.map((config) => ({
+          id: config.id,
+          name: config.name,
+          status: config.is_active ? 'on' : 'off',
+        }))}
       />
     </section>
   );
@@ -113,6 +98,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
     useState<GetConditionsResponse | null>(null);
 
   const { mutateAsync } = useCreateConfiguration();
+  const navigate = useNavigate();
 
   return (
     <Modal
@@ -157,21 +143,30 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
           variant={`${selectedCondition ? 'primary' : 'disabled'}`}
           disabled={!selectedCondition}
           onClick={async () => {
-            try {
-              await mutateAsync({
-                data: { condition_id: selectedCondition.id },
-              });
-              comboBoxRef.current?.clearSelection();
-              modalRef.current?.toggleModal();
-              showToast({
-                heading: 'New configuration created',
-                body: selectedCondition?.display_name ?? '',
-              });
-            } catch (e: unknown) {}
+            if (!selectedCondition) return;
+            await mutateAsync(
+              { data: { condition_id: selectedCondition.id } },
+              {
+                onSuccess: (resp) =>
+                  navigate(`/configurations/${resp.data.id}/build`),
+                onError: (e) => {
+                  showToast({
+                    heading: 'Configuration could not be created',
+                    variant: 'error',
+                    body: e.response?.data.detail?.toString() ?? '',
+                  });
+                  comboBoxRef.current?.clearSelection();
+                  modalRef.current?.toggleModal();
+                  setSelectedCondition(null);
+                },
+              }
+            );
 
+            comboBoxRef.current?.clearSelection();
+            modalRef.current?.toggleModal();
             showToast({
-              heading: 'Configuration could not be created',
-              variant: 'error',
+              heading: 'New configuration created',
+              body: selectedCondition?.display_name ?? '',
             });
             setSelectedCondition(null);
           }}
