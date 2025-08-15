@@ -196,7 +196,6 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         </div>
       </div>
       <hr className="border-blue-cool-5 w-full border-[1px]" />
-      <DefaultGroupingParagraph />
       <div role="region">
         <table
           id="codeset-table"
