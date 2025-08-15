@@ -19,12 +19,12 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     query = """
             SELECT
                 id,
-                REPLACE(display_name, '_', ' ') AS display_name,
+                display_name,
                 canonical_url,
                 version
             FROM conditions
             WHERE version = '2.0.0'
-            ORDER BY REPLACE(display_name, '_', ' ') ASC;
+            ORDER BY display_name ASC;
             """
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCondition)) as cur:

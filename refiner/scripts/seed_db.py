@@ -264,7 +264,9 @@ def seed_database(db_url) -> None:
                 {
                     "canonical_url": parent.get("url"),
                     "version": parent.get("version"),
-                    "display_name": parent.get("name") or parent.get("title"),
+                    "display_name": (
+                        parent.get("name") or parent.get("title") or ""
+                    ).replace("_", " "),
                     "child_rsg_snomed_codes": list(child_snomed_codes),
                     "loinc_codes": json.dumps(aggregated_codes["loinc_codes"]),
                     "snomed_codes": json.dumps(aggregated_codes["snomed_codes"]),

@@ -100,7 +100,7 @@ async def get_configurations_db(
             id,
             family_id,
             jurisdiction_id,
-            REPLACE(name, '_', ' ') AS name,
+            name,
             description,
             included_conditions,
             loinc_codes_additions,
@@ -132,7 +132,7 @@ async def get_configuration_by_id_db(
             id,
             family_id,
             jurisdiction_id,
-            REPLACE(name, '_', ' ') AS name,
+            name,
             description,
             included_conditions,
             loinc_codes_additions,
@@ -259,7 +259,7 @@ async def get_total_condition_code_counts_by_configuration_db(
             )
             SELECT
                 c.id AS condition_id,
-                REPLACE(display_name, '_', ' ') AS display_name,
+                display_name,
                 COALESCE(jsonb_array_length(c.loinc_codes), 0) +
                 COALESCE(jsonb_array_length(c.snomed_codes), 0) +
                 COALESCE(jsonb_array_length(c.icd10_codes), 0) +
