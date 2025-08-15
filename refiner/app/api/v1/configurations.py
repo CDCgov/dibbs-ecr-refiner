@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from ...api.auth.middleware import get_logged_in_user
-from ...db.conditions.db import get_condition_by_id
+from ...db.conditions.db import get_condition_by_id_db
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     associate_condition_codeset_with_configuration_db,
@@ -97,7 +97,7 @@ async def create_configuration(
     """
 
     # get condition by ID
-    condition = await get_condition_by_id(id=body.condition_id, db=db)
+    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
     if not condition:
         raise HTTPException(
@@ -244,7 +244,7 @@ async def associate_condition_codeset_with_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    condition = await get_condition_by_id(id=body.condition_id, db=db)
+    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
     if not condition:
         raise HTTPException(

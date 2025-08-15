@@ -16,6 +16,8 @@ export * from './conditionProcessingInfo';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
 export * from './dbTotalConditionCodeCount';
+export * from './getConditionCode';
+export * from './getConditionResponse';
 export * from './getConditionsResponse';
 export * from './getConfigurationResponse';
 export * from './getConfigurationsResponse';
