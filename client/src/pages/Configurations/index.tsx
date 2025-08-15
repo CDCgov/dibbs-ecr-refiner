@@ -22,6 +22,7 @@ import { useRef, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
+import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -99,6 +100,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
 
   const { mutateAsync } = useCreateConfiguration();
   const navigate = useNavigate();
+  const formatError = useApiErrorFormatter();
 
   return (
     <Modal
@@ -144,31 +146,35 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
           disabled={!selectedCondition}
           onClick={async () => {
             if (!selectedCondition) return;
-            await mutateAsync(
-              { data: { condition_id: selectedCondition.id } },
-              {
-                onSuccess: (resp) =>
-                  navigate(`/configurations/${resp.data.id}/build`),
-                onError: (e) => {
-                  showToast({
-                    heading: 'Configuration could not be created',
-                    variant: 'error',
-                    body: e.response?.data.detail?.toString() ?? '',
-                  });
-                  comboBoxRef.current?.clearSelection();
-                  modalRef.current?.toggleModal();
-                  setSelectedCondition(null);
-                },
-              }
-            );
-
-            comboBoxRef.current?.clearSelection();
-            modalRef.current?.toggleModal();
-            showToast({
-              heading: 'New configuration created',
-              body: selectedCondition?.display_name ?? '',
-            });
-            setSelectedCondition(null);
+            try {
+              await mutateAsync(
+                { data: { condition_id: selectedCondition.id } },
+                {
+                  onSuccess: async (resp) => {
+                    await navigate(`/configurations/${resp.data.id}/build`);
+                    comboBoxRef.current?.clearSelection();
+                    modalRef.current?.toggleModal();
+                    showToast({
+                      heading: 'New configuration created',
+                      body: selectedCondition?.display_name ?? '',
+                    });
+                    setSelectedCondition(null);
+                  },
+                  onError: (e) => {
+                    showToast({
+                      heading: 'Configuration could not be created',
+                      variant: 'error',
+                      body: formatError(e),
+                    });
+                    comboBoxRef.current?.clearSelection();
+                    modalRef.current?.toggleModal();
+                    setSelectedCondition(null);
+                  },
+                }
+              );
+            } catch {
+              // no-op: handled in onError
+            }
           }}
         >
           Add condition
