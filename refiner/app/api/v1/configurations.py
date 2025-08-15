@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import get_condition_by_id
 from ...db.configurations.db import (
+    get_configuration_by_id_db,
     get_configurations_db,
     insert_configuration_db,
     is_config_valid_to_insert_db,
@@ -116,3 +117,41 @@ async def create_configuration(
         raise HTTPException(status_code=500, detail="Unable to create configuration")
 
     return CreateConfigurationResponse(id=config.id, name=config.name)
+
+
+@router.get(
+    "/{configuration_id}",
+    response_model=GetConfigurationsResponse,
+    tags=["configurations"],
+    operation_id="getConfiguration",
+)
+async def get_configuration(
+    configuration_id: str,
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> GetConfigurationsResponse:
+    """
+    Get a single configuration by its ID.
+
+    Args:
+        configuration_id (str): ID of the configuration record
+        user (dict[str, Any], optional): _description_. Defaults to Depends(get_logged_in_user).
+        db (AsyncDatabaseConnection, optional): _description_. Defaults to Depends(get_db).
+
+    Returns:
+        GetConfigurationsResponse: Response from the API
+    """
+
+    # get user jurisdiction
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    jd = db_user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    return GetConfigurationsResponse(id=config.id, name=config.name, is_active=False)

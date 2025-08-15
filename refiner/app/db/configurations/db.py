@@ -118,6 +118,42 @@ async def get_configurations_db(
             return await cur.fetchall()
 
 
+async def get_configuration_by_id_db(
+    id: str, jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Fetch a configuration by the given ID.
+    """
+    query = """
+        SELECT
+            id,
+            family_id,
+            jurisdiction_id,
+            REPLACE(name, '_', ' ') AS name,
+            description,
+            included_conditions,
+            loinc_codes_additions,
+            snomed_codes_additions,
+            icd10_codes_additions,
+            rxnorm_codes_additions,
+            custom_codes,
+            sections_to_include,
+            cloned_from_configuration_id
+        FROM configurations
+        WHERE id = %s
+        AND jurisdiction_id = %s
+        ORDER BY name asc;
+        """
+    params = (
+        id,
+        jurisdiction_id,
+    )
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            return await cur.fetchone()
+
+
 async def is_config_valid_to_insert_db(
     condition_name: str, jurisidiction_id: str, db: AsyncDatabaseConnection
 ) -> bool:
