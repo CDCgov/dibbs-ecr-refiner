@@ -141,8 +141,8 @@ Raises:
 export const getUser = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<GetUser200>> => {
-
-
+    
+    
     return axios.default.get(
       `/api/user`,options
     );
@@ -153,7 +153,7 @@ export const getGetUserQueryKey = () => {
     return [`/api/user`] as const;
     }
 
-
+    
 export const getGetUserQueryOptions = <TData = Awaited<ReturnType<typeof getUser>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
@@ -161,13 +161,13 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetUserQueryKey();
 
-
+  
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getUser>>> = ({ signal }) => getUser({ signal, ...axiosOptions });
 
+      
 
-
-
+      
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -206,7 +206,7 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
 
 export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
+ , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetUserQueryOptions(options)
@@ -217,3 +217,6 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
 
   return query;
 }
+
+
+

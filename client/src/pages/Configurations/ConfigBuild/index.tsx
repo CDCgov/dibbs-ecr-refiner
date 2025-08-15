@@ -8,10 +8,22 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import { Icon, Label, Select } from '@trussworks/react-uswds';
+import {
+  ComboBox,
+  ComboBoxRef,
+  Form,
+  Icon,
+  Label,
+  Modal,
+  ModalFooter,
+  ModalHeading,
+  ModalRef,
+  ModalToggleButton,
+  Select,
+} from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 
 export default function ConfigBuild() {
@@ -123,6 +135,48 @@ const builderResponse = {
       ],
     },
     {
+      id: 'hiv-id',
+      display_name: 'Human immunodeficiency virus infection (HIV)',
+      code_count: 7,
+      codes: [
+        {
+          code: '45568-4',
+          codeSystem: 'LOINC',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '45569-1',
+          codeSystem: 'LOINC',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '45570-5',
+          codeSystem: 'SNOMED',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '45571-6',
+          codeSystem: 'LOINC',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '45572-7',
+          codeSystem: 'LOINC',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '45573-8',
+          codeSystem: 'LOINC',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+        {
+          code: '45574-9',
+          codeSystem: 'LOINC',
+          text: 'Human immunodeficiency virus infection (HIV) DNA [Presence] in Specimen by Probe',
+        },
+      ],
+    },
+    {
       id: 'gonorrhea-id',
       display_name: 'Gonorrhea',
       code_count: 3,
@@ -189,6 +243,36 @@ function Builder() {
 
   // Decide which data to display
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
+
+  // const modalRef = useRef<ModalRef>(null);
+  // const listRef = useRef<ComboBoxRef>(null);
+  const conditionData = {
+    // TODO: Figure out what this data should look like and require using real
+    // UUIDs since keys need to be unique.
+    '3d7fb83d-d664-4b82-a0fb-3f8decd307cc': 'Anaplasmosis',
+    '1be0a722-ead6-4a54-ad90-e83c139ceb3c': 'Chlamydia trachomatis infection',
+    '0c157c35-b9a2-431f-badc-9ee0ea12003f': 'Gonorrhea',
+    'f0365ece-3ec7-486a-ba73-7f5d1de64ca8': 'HIV',
+    '985fc9f8-86dc-4e12-95f1-b7457b3497ca': 'Syphilis',
+    '6d541ced-f53b-4690-9eca-9186b5aa654c':
+      'Human immunodeficiency virus (HIV)',
+    'f68575c8-7a42-4dda-9505-94a7436f8461': 'Anthrax',
+    '890c3126-59a1-48f6-8151-0787f8d8d280': 'Arboviral disease',
+    'c2e983af-7ce2-4416-9576-d5b90d9f34de': 'Brucellosis',
+    '44fd0471-5e1c-46f9-87f6-b5a797206e3f': 'Campylobacteriosis',
+    '27aeaf8e-1d5e-4468-80c6-a73d154ab0c5': 'Cholera',
+    '87835fb2-ebac-4052-b627-0150603f55e3': 'Cocciodioidomycosis',
+    'a2b62d15-3edc-4be6-8fd7-6fb0384f8903': 'COVID-19',
+    '583f3870-babe-4253-a3b3-d2e6064588bd': 'Cryptosporidiosis',
+    '5f2c8e40-1b17-4540-bc8a-5d1fd5d092fa': 'Candida auris',
+  };
+
+  const conditionList = Object.entries(conditionData).map(([id, name]) => ({
+    value: id,
+    label: name,
+  }));
+
+  // const [formValid, setFormValid] = useState<boolean>(false);
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
