@@ -3,14 +3,16 @@ from logging import Logger
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
-from ...db.user.model import User
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
     IdpUserResponse,
+    Jurisdiction,
+    UserResponse,
     create_session,
     delete_session,
     get_user_from_session,
+    upsert_jurisdiction,
     upsert_user,
 )
 
@@ -89,7 +91,7 @@ async def auth_callback(
             )
 
         logger.info(
-            "User logging in",
+            "User logging in from IdP",
             extra={
                 "user_id": idp_user_id,
                 "username": idp_username,
@@ -97,10 +99,20 @@ async def auth_callback(
             },
         )
 
-        # Add or update user in the Refiner DB
-        user = IdpUserResponse(
-            user_id=idp_user_id, username=idp_username, email=idp_email
+        # Upsert the user's jurisdiction if needed
+        jurisdiction_id = await upsert_jurisdiction(
+            Jurisdiction(
+                id="SDDH", name="Senate District Health Department", state_code="GC"
+            )
         )
+
+        user = IdpUserResponse(
+            user_id=idp_user_id,
+            username=idp_username,
+            email=idp_email,
+            jurisdiction_id=jurisdiction_id,
+        )
+
         user_id = await upsert_user(user)
 
         # Create a session for the user
@@ -127,9 +139,9 @@ async def auth_callback(
 
 
 @auth_router.get(
-    "/user", response_model=User | None, tags=["user"], operation_id="getUser"
+    "/user", response_model=(UserResponse | None), tags=["user"], operation_id="getUser"
 )
-async def get_user(request: Request) -> User | None:
+async def get_user(request: Request) -> UserResponse | None:
     """
     Returns the current logged-in user's information.
 

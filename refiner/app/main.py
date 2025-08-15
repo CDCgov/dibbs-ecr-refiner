@@ -6,7 +6,6 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC
 from datetime import datetime as dt
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.encoders import jsonable_encoder
@@ -89,9 +88,9 @@ async def _lifespan(app: FastAPI):
 
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
-    service_name="Message Refiner",
+    service_name="DIBBs eCR Refiner",
     service_path="/refiner",
-    description_path=Path(__file__).parent.parent / "README.md",
+    description="Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner",
     include_health_check_endpoint=False,
     openapi_url="/api/openapi.json",
     lifespan=_lifespan,

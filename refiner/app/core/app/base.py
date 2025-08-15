@@ -1,6 +1,5 @@
 import os
 from collections.abc import Callable
-from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Request, Response
@@ -30,7 +29,7 @@ class BaseService:
         self,
         service_name: str,
         service_path: str,
-        description_path: Path,
+        description: str,
         lifespan: Lifespan[FastAPI],
         include_health_check_endpoint: bool = True,
         license_info: Literal["CreativeCommonsZero", "MIT"] = "CreativeCommonsZero",
@@ -42,7 +41,7 @@ class BaseService:
         Args:
             service_name: Name of the service.
             service_path: Path used to access the service from a gateway.
-            description_path: Path to markdown file containing service description.
+            description: Service description.
             lifespan: A Starlette `Lifespan` object
             include_health_check_endpoint: Whether to add standard DIBBs health
                 check endpoint. Defaults to True.
@@ -54,7 +53,7 @@ class BaseService:
                 Defaults to "/openapi.json".
         """
 
-        description = description_path.read_text(encoding="utf-8")
+        description = description
         self.service_path = service_path
         self.include_health_check_endpoint = include_health_check_endpoint
         self.app = FastAPI(

@@ -1,5 +1,4 @@
 import { useParams } from 'react-router';
-import NotFound from '../../NotFound';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { Steps, StepsContainer } from '../Steps';
@@ -13,29 +12,39 @@ import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
+import { useGetConfiguration } from '../../../api/configurations/configurations';
+import { GetConfigurationResponse } from '../../../api/schemas';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
   // build -> test -> activate
   const { id } = useParams<{ id: string }>();
+  const {
+    data: response,
+    isLoading,
+    isError,
+  } = useGetConfiguration(id ?? '', {
+    query: { enabled: !!id },
+  });
 
-  if (!id) return <NotFound />;
+  if (isLoading || !response?.data) return 'Loading...';
+  if (isError) return 'Error!';
 
   return (
     <div>
       <TitleContainer>
-        <Title>Condition name</Title>
+        <Title>{response.data.display_name}</Title>
       </TitleContainer>
       <NavigationContainer>
         <StepsContainer>
-          <Steps configurationId={id} />
+          <Steps configurationId={response?.data.id} />
           <Button to={`/configurations/${id}/test`}>
             Next: Test configuration
           </Button>
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Builder />
+        <Builder code_sets={response.data.code_sets} />
       </SectionContainer>
     </div>
   );
@@ -147,7 +156,9 @@ const builderResponse = {
   ],
 };
 
-function Builder() {
+type BuilderProps = Pick<GetConfigurationResponse, 'code_sets'>;
+
+function Builder({ code_sets }: BuilderProps) {
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
@@ -212,23 +223,23 @@ function Builder() {
           </div>
           <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
             <ul className="flex flex-col gap-2">
-              {builderResponse.codeSets.map((codeSet) => (
-                <li key={codeSet.id}>
+              {code_sets.map((codeSet) => (
+                <li key={codeSet.display_name}>
                   <button
                     className={classNames(
                       'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                       {
-                        'bg-white': selectedCodesetId === codeSet.id,
+                        'bg-white': selectedCodesetId === codeSet.condition_id,
                       }
                     )}
-                    onClick={() => onClick(codeSet.id)}
+                    onClick={() => onClick(codeSet.condition_id)}
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
-                    aria-pressed={selectedCodesetId === codeSet.id}
+                    aria-pressed={selectedCodesetId === codeSet.condition_id}
                   >
                     <span>{codeSet.display_name}</span>
-                    <span>{codeSet.code_count}</span>
+                    <span>{codeSet.total_codes}</span>
                   </button>
                 </li>
               ))}

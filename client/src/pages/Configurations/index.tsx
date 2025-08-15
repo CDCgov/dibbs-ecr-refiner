@@ -2,7 +2,10 @@ import { Title } from '../../components/Title';
 import { Button } from '../../components/Button';
 import { Search } from '../../components/Search';
 import { ConfigurationsTable } from '../../components/ConfigurationsTable';
-import { useGetConfigurations } from '../../api/configurations/configurations';
+import {
+  useCreateConfiguration,
+  useGetConfigurations,
+} from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
 
 import {
@@ -10,22 +13,20 @@ import {
   Modal,
   ModalHeading,
   ModalFooter,
-  Form,
   Label,
   ComboBox,
-  ComboBoxRef,
   ModalRef,
+  ComboBoxRef,
 } from '@trussworks/react-uswds';
-import { SyntheticEvent, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useGetConditions } from '../../api/conditions/conditions';
+import { GetConditionsResponse } from '../../api/schemas';
+import { useNavigate } from 'react-router';
+import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 enum ConfigurationStatus {
   on = 'on',
   off = 'off',
-}
-
-interface SelectedCondition {
-  value: string;
-  label: string;
 }
 
 interface ConfigurationsData {
@@ -44,80 +45,10 @@ interface ConfigurationsTable {
 }
 
 export function Configurations() {
-  const [table, setTable] = useState<ConfigurationsTable>({
-    columns: { name: 'Reportable condition', status: 'Status' },
-    data: [],
-  });
-
-  const showToast = useToast();
   const { data: response, isLoading } = useGetConfigurations();
   const modalRef = useRef<ModalRef>(null);
-  const listRef = useRef<ComboBoxRef>(null);
-  const [formValid, setFormValid] = useState<boolean>(false);
-  const [condition, setCondition] = useState<SelectedCondition | undefined>(
-    undefined
-  );
-
-  const conditionData = {
-    // TODO: Figure out what this data should look like and require using real
-    // UUIDs since keys need to be unique.
-    '3d7fb83d-d664-4b82-a0fb-3f8decd307cc': 'Anaplasmosis',
-    '1be0a722-ead6-4a54-ad90-e83c139ceb3c': 'Chlamydia trachomatis infection',
-    '0c157c35-b9a2-431f-badc-9ee0ea12003f': 'Gonorrhea',
-    'f0365ece-3ec7-486a-ba73-7f5d1de64ca8': 'HIV',
-    '985fc9f8-86dc-4e12-95f1-b7457b3497ca': 'Syphilis',
-  };
-
-  const conditionList = Object.entries(conditionData).map(([id, name]) => ({
-    value: id,
-    label: name,
-  }));
-
-  function handleSubmit(e: SyntheticEvent) {
-    e.preventDefault();
-    if (!condition) {
-      return;
-    }
-
-    const newData: ConfigurationsData = {
-      name: condition.label,
-      id: condition.value,
-      status: ConfigurationStatus.off,
-    };
-    setTable((prevTable) => ({
-      ...prevTable,
-      data: [...prevTable.data, newData],
-    }));
-
-    modalRef.current?.toggleModal();
-    listRef.current?.clearSelection();
-  }
-
-  function handleChange(selectedValue: string | undefined) {
-    if (selectedValue) {
-      const selectedOption = conditionList.find(
-        (option) => option.value === selectedValue
-      );
-      setCondition(selectedOption);
-      setFormValid(true);
-    } else {
-      setCondition(undefined);
-      setFormValid(false);
-    }
-  }
 
   if (isLoading || !response?.data) return 'Loading...';
-
-  const combinedData = [
-    // Map fetched data into your ConfigurationsData format
-    ...response.data.map(({ id, name, is_active }) => ({
-      id,
-      name,
-      status: is_active ? ConfigurationStatus.on : ConfigurationStatus.off,
-    })),
-    // Append your local added configurations
-    ...table.data,
-  ];
 
   return (
     <section className="mx-auto p-3">
@@ -142,69 +73,113 @@ export function Configurations() {
         >
           Set up new condition
         </ModalToggleButton>
-        <Modal
-          ref={modalRef}
-          id="add-configuration-modal"
-          aria-labelledby="add-configuration-modal-heading"
-          aria-describedby="add-configuration-modal-description"
-          className="pb-5 !align-top"
-        >
-          <ModalHeading
-            id="add-configuration-modal-heading"
-            className="font-merriweather !text-3xl !leading-18 font-bold text-black"
-          >
-            Set up new condition
-          </ModalHeading>
-          <p id="add-configuration-modal-description" className="sr-only">
-            Select a reportable condition you'd like to configure.
-          </p>
-          <Form onSubmit={handleSubmit}>
-            <Label
-              htmlFor="new-condition"
-              className="!leading-6"
-              data-focus="true"
-            >
-              Condition
-            </Label>
-            <ComboBox
-              ref={listRef}
-              id="new-condition"
-              name="new-condition"
-              options={conditionList}
-              onChange={handleChange}
-            />
-            <ModalFooter className="flex justify-self-end">
-              <Button
-                type="submit"
-                variant={`${formValid ? 'primary' : 'disabled'}`}
-                disabled={!formValid}
-              >
-                Add condition
-              </Button>
-            </ModalFooter>
-          </Form>
-        </Modal>
-        <Button
-          className="m-0!"
-          onClick={() => {
-            showToast({
-              heading: 'New configuration created',
-              body: 'Human immunodeficiency virus infection',
-            });
-            showToast({
-              heading: 'New configuration created',
-              body: 'Human immunodeficiency virus infection',
-              variant: 'error',
-            });
-          }}
-        >
-          Test Toast
-        </Button>
+        <NewConfigModal modalRef={modalRef} />
       </div>
       <ConfigurationsTable
         columns={{ name: 'Reportable condition', status: 'Status' }}
-        data={combinedData}
+        data={response.data.map((config) => ({
+          id: config.id,
+          name: config.name,
+          status: config.is_active ? 'on' : 'off',
+        }))}
       />
     </section>
+  );
+}
+
+interface NewConfigModalProps {
+  modalRef: React.RefObject<ModalRef | null>;
+}
+
+function NewConfigModal({ modalRef }: NewConfigModalProps) {
+  const showToast = useToast();
+  const comboBoxRef = useRef<ComboBoxRef>(null);
+  const { data: response, isLoading } = useGetConditions();
+  const [selectedCondition, setSelectedCondition] =
+    useState<GetConditionsResponse | null>(null);
+
+  const { mutateAsync } = useCreateConfiguration();
+  const navigate = useNavigate();
+  const formatError = useApiErrorFormatter();
+
+  return (
+    <Modal
+      ref={modalRef}
+      id="add-configuration-modal"
+      aria-labelledby="add-configuration-modal-heading"
+      aria-describedby="add-configuration-modal-description"
+      className="pb-5 !align-top"
+    >
+      <ModalHeading
+        id="add-configuration-modal-heading"
+        className="font-merriweather !text-3xl !leading-18 font-bold text-black"
+      >
+        Set up new condition
+      </ModalHeading>
+      <p id="add-configuration-modal-description" className="sr-only">
+        Select a reportable condition you'd like to configure.
+      </p>
+      <Label htmlFor="new-condition" className="!leading-6" data-focus="true">
+        Condition
+      </Label>
+      {isLoading || !response?.data ? (
+        'Loading...'
+      ) : (
+        <ComboBox
+          id="new-condition"
+          ref={comboBoxRef}
+          name="new-condition"
+          options={response?.data.map((condition) => ({
+            value: condition.id,
+            label: condition.display_name,
+          }))}
+          onChange={(conditionId) => {
+            const found =
+              response.data.find((c) => c.id === conditionId) ?? null;
+            setSelectedCondition(found);
+          }}
+        />
+      )}
+      <ModalFooter className="flex justify-self-end">
+        <Button
+          variant={`${selectedCondition ? 'primary' : 'disabled'}`}
+          disabled={!selectedCondition}
+          onClick={async () => {
+            if (!selectedCondition) return;
+            try {
+              await mutateAsync(
+                { data: { condition_id: selectedCondition.id } },
+                {
+                  onSuccess: async (resp) => {
+                    await navigate(`/configurations/${resp.data.id}/build`);
+                    comboBoxRef.current?.clearSelection();
+                    modalRef.current?.toggleModal();
+                    showToast({
+                      heading: 'New configuration created',
+                      body: selectedCondition?.display_name ?? '',
+                    });
+                    setSelectedCondition(null);
+                  },
+                  onError: (e) => {
+                    showToast({
+                      heading: 'Configuration could not be created',
+                      variant: 'error',
+                      body: formatError(e),
+                    });
+                    comboBoxRef.current?.clearSelection();
+                    modalRef.current?.toggleModal();
+                    setSelectedCondition(null);
+                  },
+                }
+              );
+            } catch {
+              // no-op: handled in onError
+            }
+          }}
+        >
+          Add condition
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
