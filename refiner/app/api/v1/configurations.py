@@ -7,9 +7,11 @@ from pydantic import BaseModel
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import get_condition_by_id
 from ...db.configurations.db import (
+    DbTotalConditionCodeCount,
     associate_condition_codeset_with_configuration_db,
     get_configuration_by_id_db,
     get_configurations_db,
+    get_total_condition_code_counts_by_configuration_db,
     insert_configuration_db,
     is_config_valid_to_insert_db,
 )
@@ -120,9 +122,19 @@ async def create_configuration(
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
 
+class GetConfigurationResponse(BaseModel):
+    """
+    Information about a specific condition to return to the client.
+    """
+
+    id: UUID
+    display_name: str
+    code_sets: list[DbTotalConditionCodeCount]
+
+
 @router.get(
     "/{configuration_id}",
-    response_model=GetConfigurationsResponse,
+    response_model=GetConfigurationResponse,
     tags=["configurations"],
     operation_id="getConfiguration",
 )
@@ -130,7 +142,7 @@ async def get_configuration(
     configuration_id: str,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> GetConfigurationsResponse:
+) -> GetConfigurationResponse:
     """
     Get a single configuration by its ID.
 
@@ -140,7 +152,7 @@ async def get_configuration(
         db (AsyncDatabaseConnection, optional): _description_. Defaults to Depends(get_db).
 
     Returns:
-        GetConfigurationsResponse: Response from the API
+        GetConfigurationResponse: Response from the API
     """
 
     # get user jurisdiction
@@ -155,7 +167,14 @@ async def get_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    return GetConfigurationsResponse(id=config.id, name=config.name, is_active=False)
+    # Get all associated conditions and their # of codes
+    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
+        config_id=config.id, db=db
+    )
+
+    return GetConfigurationResponse(
+        id=config.id, display_name=config.name, code_sets=config_condition_info
+    )
 
 
 class AssociateCodesetInput(BaseModel):
@@ -203,6 +222,7 @@ async def associate_condition_codeset_with_configuration(
     Raises:
         HTTPException: 404 if configuration is not found in JD
         HTTPException: 404 if condition is not found
+        HTTPException: 500 if configuration is cannot be updated
 
     Returns:
         AssociateCodesetResponse: ID of updated configuration and the full list of included conditions

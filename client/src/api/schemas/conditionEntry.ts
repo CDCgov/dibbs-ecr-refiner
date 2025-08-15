@@ -98,7 +98,7 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
  */
 
 /**
- * Condition ob
+ * Condition model.
  */
 export interface ConditionEntry {
   canonical_url: string;

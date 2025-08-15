@@ -144,6 +144,7 @@ Args:
 Raises:
     HTTPException: 404 if configuration is not found in JD
     HTTPException: 404 if condition is not found
+    HTTPException: 500 if configuration is cannot be updated
 
 Returns:
     AssociateCodesetResponse: ID of updated configuration and the full list of included conditions

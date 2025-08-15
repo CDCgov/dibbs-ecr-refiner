@@ -125,6 +125,7 @@ import type {
 import type {
   CreateConfigInput,
   CreateConfigurationResponse,
+  GetConfigurationResponse,
   GetConfigurationsResponse,
   HTTPValidationError
 } from '.././schemas';
@@ -293,12 +294,12 @@ Args:
     db (AsyncDatabaseConnection, optional): _description_. Defaults to Depends(get_db).
 
 Returns:
-    GetConfigurationsResponse: Response from the API
+    GetConfigurationResponse: Response from the API
  * @summary Get Configuration
  */
 export const getConfiguration = (
     configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConfigurationsResponse>> => {
+ ): Promise<AxiosResponse<GetConfigurationResponse>> => {
     
     
     return axios.default.get(
