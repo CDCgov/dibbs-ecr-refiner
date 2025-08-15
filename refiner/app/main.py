@@ -88,7 +88,7 @@ async def _lifespan(app: FastAPI):
 
 # Instantiate FastAPI via DIBBs' BaseService class
 app = BaseService(
-    service_name="eCR",
+    service_name="DIBBs eCR Refiner",
     service_path="/refiner",
     description="Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner",
     include_health_check_endpoint=False,
