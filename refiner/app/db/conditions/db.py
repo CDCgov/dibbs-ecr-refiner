@@ -35,7 +35,9 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     return rows
 
 
-async def get_condition_by_id(id: str, db: AsyncDatabaseConnection) -> DbCondition:
+async def get_condition_by_id(
+    id: str, db: AsyncDatabaseConnection
+) -> DbCondition | None:
     """
     Gets a condition from the database with the provided ID.
     """
@@ -55,8 +57,5 @@ async def get_condition_by_id(id: str, db: AsyncDatabaseConnection) -> DbConditi
         async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-
-    if not row:
-        raise Exception(f"Condition with ID {id} not found.")
 
     return row

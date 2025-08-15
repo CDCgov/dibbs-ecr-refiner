@@ -97,9 +97,12 @@ For further details on `<section>`, `<entry>`, and `<templateId>` elements, plea
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './associateCodesetInput';
+export * from './associateCodesetResponse';
 export * from './bodyUploadEcr';
 export * from './bodyUploadEcrUploadedFile';
 export * from './condition';
+export * from './conditionEntry';
 export * from './conditionProcessingInfo';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';

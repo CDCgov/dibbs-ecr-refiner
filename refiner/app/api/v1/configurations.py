@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import get_condition_by_id
 from ...db.configurations.db import (
+    associate_condition_codeset_with_configuration_db,
     get_configuration_by_id_db,
     get_configurations_db,
     insert_configuration_db,
@@ -150,8 +151,95 @@ async def get_configuration(
     )
 
     if not config:
-        HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
     return GetConfigurationsResponse(id=config.id, name=config.name, is_active=False)
+
+
+class AssociateCodesetInput(BaseModel):
+    """
+    Condition association input model.
+    """
+
+    condition_id: UUID
+
+
+class ConditionEntry(BaseModel):
+    """
+    Condition model.
+    """
+
+    canonical_url: str
+    version: str
+
+
+class AssociateCodesetResponse(BaseModel):
+    """
+    Response from adding a code set to a config.
+    """
+
+    id: UUID
+    included_conditions: list[ConditionEntry]
+
+
+@router.put("/{configuration_id}/code-set", response_model=AssociateCodesetResponse)
+async def associate_condition_codeset_with_configuration(
+    configuration_id: UUID,
+    body: AssociateCodesetInput,
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> AssociateCodesetResponse:
+    """
+    Associate a specified code set with the given configuration.
+
+    Args:
+        configuration_id (UUID): ID of the configuration
+        body (AssociateCodesetInput): payload containing a condition_id
+        user (dict[str, Any], optional): User making the request
+        db (AsyncDatabaseConnection, optional): Database connection
+
+    Raises:
+        HTTPException: 404 if configuration is not found in JD
+        HTTPException: 404 if condition is not found
+
+    Returns:
+        AssociateCodesetResponse: ID of updated configuration and the full list of included conditions
+    """
+    # get user jurisdiction
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    jd = db_user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    condition = await get_condition_by_id(id=body.condition_id, db=db)
+
+    if not condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+        )
+
+    updated_config = await associate_condition_codeset_with_configuration_db(
+        config=config, condition=condition, db=db
+    )
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+    return AssociateCodesetResponse(
+        id=updated_config.id,
+        included_conditions=[
+            ConditionEntry(canonical_url=c.canonical_url, version=c.version)
+            for c in updated_config.included_conditions
+        ],
+    )

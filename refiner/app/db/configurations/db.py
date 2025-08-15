@@ -179,3 +179,54 @@ async def is_config_valid_to_insert_db(
         return True
 
     return False
+
+
+async def associate_condition_codeset_with_configuration_db(
+    config: DbConfiguration, condition: DbCondition, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Given a condition, associate its set of codes with the specified configuration. Prevents the addition of duplicate conditions.
+
+    Args:
+        config (DbConfiguration): The configuration
+        condition (DbCondition): The condition
+        db (AsyncDatabaseConnection): Database connection
+
+    Returns:
+        DbConfiguration: The updated configuration
+    """
+    query = """
+            WITH new_condition AS (
+                SELECT %s::jsonb AS val
+            )
+            UPDATE configurations
+            SET included_conditions = (
+            SELECT jsonb_agg(elem)
+            FROM (
+                SELECT elem
+                FROM jsonb_array_elements(included_conditions) elem
+                UNION ALL
+                SELECT elem
+                FROM jsonb_array_elements(nc.val) elem
+                WHERE NOT EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(included_conditions) existing
+                WHERE existing->>'canonical_url' = elem->>'canonical_url'
+                    AND existing->>'version' = elem->>'version'
+                )
+            ) s
+            )
+            FROM new_condition nc
+            WHERE id = %s
+            RETURNING *;
+            """
+    new_condition = Jsonb(
+        [{"canonical_url": condition.canonical_url, "version": condition.version}]
+    )
+    params = (new_condition, config.id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
