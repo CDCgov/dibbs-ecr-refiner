@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from psycopg.rows import class_row
 
 from ..pool import AsyncDatabaseConnection
@@ -36,7 +38,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
 
 
 async def get_condition_by_id(
-    id: str, db: AsyncDatabaseConnection
+    id: UUID, db: AsyncDatabaseConnection
 ) -> DbCondition | None:
     """
     Gets a condition from the database with the provided ID.

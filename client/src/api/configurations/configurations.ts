@@ -198,7 +198,7 @@ export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
  * Get a single configuration by its ID.
 
 Args:
-    configuration_id (str): ID of the configuration record
+    configuration_id (UUID): ID of the configuration record
     user (dict[str, Any], optional): _description_. Defaults to Depends(get_logged_in_user).
     db (AsyncDatabaseConnection, optional): _description_. Defaults to Depends(get_db).
 

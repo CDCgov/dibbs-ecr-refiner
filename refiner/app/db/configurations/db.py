@@ -122,7 +122,7 @@ async def get_configurations_db(
 
 
 async def get_configuration_by_id_db(
-    id: str, jurisdiction_id: str, db: AsyncDatabaseConnection
+    id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> DbConfiguration | None:
     """
     Fetch a configuration by the given ID.
@@ -246,7 +246,7 @@ class DbTotalConditionCodeCount(BaseModel):
 
 
 async def get_total_condition_code_counts_by_configuration_db(
-    config_id: str, db: AsyncDatabaseConnection
+    config_id: UUID, db: AsyncDatabaseConnection
 ) -> list[DbTotalConditionCodeCount]:
     """
     Given a config ID, returns the total associated code count by condition.

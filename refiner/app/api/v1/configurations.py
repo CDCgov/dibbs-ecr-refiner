@@ -69,7 +69,7 @@ class CreateConfigInput(BaseModel):
     Body required to create a new configuration.
     """
 
-    condition_id: str
+    condition_id: UUID
 
 
 class CreateConfigurationResponse(BaseModel):
@@ -98,6 +98,11 @@ async def create_configuration(
 
     # get condition by ID
     condition = await get_condition_by_id(id=body.condition_id, db=db)
+
+    if not condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+        )
 
     # get user jurisdiction
     db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
@@ -139,7 +144,7 @@ class GetConfigurationResponse(BaseModel):
     operation_id="getConfiguration",
 )
 async def get_configuration(
-    configuration_id: str,
+    configuration_id: UUID,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
@@ -147,7 +152,7 @@ async def get_configuration(
     Get a single configuration by its ID.
 
     Args:
-        configuration_id (str): ID of the configuration record
+        configuration_id (UUID): ID of the configuration record
         user (dict[str, Any], optional): _description_. Defaults to Depends(get_logged_in_user).
         db (AsyncDatabaseConnection, optional): _description_. Defaults to Depends(get_db).
 
