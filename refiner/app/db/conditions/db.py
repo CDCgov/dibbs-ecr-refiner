@@ -81,49 +81,49 @@ async def get_condition_codes_by_condition_id_db(
     Queries the database to collect code info about a given condition.
     """
     query = """
-        WITH c AS (
-            SELECT *
-            FROM conditions
-            WHERE id = %s
-        )
-        SELECT code, system, description
-        FROM (
-            SELECT
-                code_elem->>'code' AS code,
-                'LOINC' AS system,
-                code_elem->>'display' AS description
-            FROM c
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
+            WITH c AS (
+                SELECT *
+                FROM conditions
+                WHERE id = %s
+            )
+            SELECT DISTINCT code, system, description
+            FROM (
+                SELECT
+                    code_elem->>'code' AS code,
+                    'LOINC' AS system,
+                    code_elem->>'display' AS description
+                FROM c
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
 
-            UNION ALL
+                UNION ALL
 
-            SELECT
-                code_elem->>'code' AS code,
-                'SNOMED' AS system,
-                code_elem->>'display' AS description
-            FROM c
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
+                SELECT
+                    code_elem->>'code' AS code,
+                    'SNOMED' AS system,
+                    code_elem->>'display' AS description
+                FROM c
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
 
-            UNION ALL
+                UNION ALL
 
-            SELECT
-                code_elem->>'code' AS code,
-                'ICD-10' AS system,
-                code_elem->>'display' AS description
-            FROM c
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
+                SELECT
+                    code_elem->>'code' AS code,
+                    'ICD-10' AS system,
+                    code_elem->>'display' AS description
+                FROM c
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
 
-            UNION ALL
+                UNION ALL
 
-            SELECT
-                code_elem->>'code' AS code,
-                'RxNorm' AS system,
-                code_elem->>'display' AS description
-            FROM c
-            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
-        ) t
-        WHERE code IS NOT NULL
-        ORDER BY system, code;
+                SELECT
+                    code_elem->>'code' AS code,
+                    'RxNorm' AS system,
+                    code_elem->>'display' AS description
+                FROM c
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+            ) t
+            WHERE code IS NOT NULL
+            ORDER BY system, code;
     """
     params = (id,)
     async with db.get_connection() as conn:
