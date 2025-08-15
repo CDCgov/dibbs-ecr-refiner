@@ -129,8 +129,8 @@ import type {
 export const demoDownloadApiV1DemoDownloadGet = (
      options?: AxiosRequestConfig
  ): Promise<AxiosResponse<unknown>> => {
-
-
+    
+    
     return axios.default.get(
       `/api/v1/demo/download`,options
     );
@@ -141,7 +141,7 @@ export const getDemoDownloadApiV1DemoDownloadGetQueryKey = () => {
     return [`/api/v1/demo/download`] as const;
     }
 
-
+    
 export const getDemoDownloadApiV1DemoDownloadGetQueryOptions = <TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
@@ -149,13 +149,13 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getDemoDownloadApiV1DemoDownloadGetQueryKey();
 
-
+  
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>> = ({ signal }) => demoDownloadApiV1DemoDownloadGet({ signal, ...axiosOptions });
 
+      
 
-
-
+      
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -194,7 +194,7 @@ export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<t
 
 export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError = AxiosError<unknown>>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoDownloadApiV1DemoDownloadGet>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
+ , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDemoDownloadApiV1DemoDownloadGetQueryOptions(options)
@@ -205,3 +205,6 @@ export function useDemoDownloadApiV1DemoDownloadGet<TData = Awaited<ReturnType<t
 
   return query;
 }
+
+
+
