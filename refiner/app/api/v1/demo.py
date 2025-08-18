@@ -210,7 +210,7 @@ async def demo_upload(
         for result in refined_results:
             condition_code = result.reportable_condition.code
             condition_name = result.reportable_condition.display_name
-            condition_refined_eicr = result.refined_eicr
+            condition_refined_eicr = format.normalize_xml(result.refined_eicr)
 
             # Construct a filename for each XML (e.g. "covid_840539006.xml")
             safe_name = condition_name.replace(" ", "_").replace("/", "_")
@@ -221,11 +221,11 @@ async def demo_upload(
 
             # Build per-condition metadata (zip token added later)
             conditions.append(
-                Condition(
-                    code=condition_code,
-                    display_name=condition_name,
-                    refined_eicr=format.normalize_xml(condition_refined_eicr),
-                    stats=[
+                {
+                    "code": condition_code,
+                    "display_name": condition_name,
+                    "refined_eicr": condition_refined_eicr,
+                    "stats": [
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
                                 original_xml_files.eicr, condition_refined_eicr
