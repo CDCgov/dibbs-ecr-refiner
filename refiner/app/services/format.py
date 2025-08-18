@@ -8,7 +8,8 @@ SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
 def normalize_xml(xml: str) -> str:
     """
-    Normalize XML for comparison/reading:
+    Normalize XML for comparison/reading.
+
     - heal a common '<tagattr=' -> '<tag attr=' mistake
     - strip comments
     - collapse whitespace in text/tails

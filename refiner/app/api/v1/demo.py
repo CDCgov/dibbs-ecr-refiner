@@ -221,11 +221,11 @@ async def demo_upload(
 
             # Build per-condition metadata (zip token added later)
             conditions.append(
-                {
-                    "code": condition_code,
-                    "display_name": condition_name,
-                    "refined_eicr": condition_refined_eicr,
-                    "stats": [
+                Condition(
+                    code=condition_code,
+                    display_name=condition_name,
+                    refined_eicr=condition_refined_eicr,
+                    stats=[
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
                                 original_xml_files.eicr, condition_refined_eicr
