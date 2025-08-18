@@ -256,19 +256,52 @@ async def get_total_condition_code_counts_by_configuration_db(
                 SELECT jsonb_array_elements(included_conditions) AS cond
                 FROM configurations
                 WHERE id = %s
+            ),
+            codes AS (
+                SELECT
+                    c.id AS condition_id,
+                    code_elem->>'code' AS code
+                FROM conds
+                JOIN conditions c
+                    ON c.canonical_url = cond->>'canonical_url'
+                    AND c.version = cond->>'version'
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
+                UNION
+                SELECT
+                    c.id AS condition_id,
+                    code_elem->>'code' AS code
+                FROM conds
+                JOIN conditions c
+                    ON c.canonical_url = cond->>'canonical_url'
+                    AND c.version = cond->>'version'
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
+                UNION
+                SELECT
+                    c.id AS condition_id,
+                    code_elem->>'code' AS code
+                FROM conds
+                JOIN conditions c
+                    ON c.canonical_url = cond->>'canonical_url'
+                    AND c.version = cond->>'version'
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
+                UNION
+                SELECT
+                    c.id AS condition_id,
+                    code_elem->>'code' AS code
+                FROM conds
+                JOIN conditions c
+                    ON c.canonical_url = cond->>'canonical_url'
+                    AND c.version = cond->>'version'
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
             )
             SELECT
                 c.id AS condition_id,
-                display_name,
-                COALESCE(jsonb_array_length(c.loinc_codes), 0) +
-                COALESCE(jsonb_array_length(c.snomed_codes), 0) +
-                COALESCE(jsonb_array_length(c.icd10_codes), 0) +
-                COALESCE(jsonb_array_length(c.rxnorm_codes), 0) AS total_codes
-            FROM conds
-            JOIN conditions c
-            ON c.canonical_url = cond->>'canonical_url'
-            AND c.version      = cond->>'version'
-            ORDER BY display_name;
+                c.display_name,
+                COUNT(DISTINCT code) AS total_codes
+            FROM conditions c
+            JOIN codes cd ON c.id = cd.condition_id
+            GROUP BY c.id, c.display_name
+            ORDER BY c.display_name;
             """
     params = (config_id,)
     async with db.get_connection() as conn:
