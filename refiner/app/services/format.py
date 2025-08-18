@@ -6,6 +6,7 @@ from lxml.etree import _Element
 
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
+
 def normalize_xml(xml: str) -> str:
     """
     Normalize XML for comparison/reading.
