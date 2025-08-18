@@ -100,6 +100,7 @@ async def auth_callback(
         )
 
         # Upsert the user's jurisdiction if needed
+        # TODO: This should come from the IdP eventually
         jurisdiction_id = await upsert_jurisdiction(
             Jurisdiction(
                 id="SDDH", name="Senate District Health Department", state_code="GC"
