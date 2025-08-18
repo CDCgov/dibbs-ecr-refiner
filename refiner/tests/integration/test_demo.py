@@ -26,7 +26,7 @@ client = TestClient(app=app)
 class TestDemo:
     @pytest.mark.asyncio
     async def test_demo_upload_success(
-        self, test_assets_path: pathlib.Path, authed_client
+        self, test_assets_path: pathlib.Path, authed_client, test_user_id
     ) -> None:
         """
         Test successful demo file upload and processing
@@ -46,14 +46,14 @@ class TestDemo:
         assert "conditions" in data
         assert "unrefined_eicr" in data
         assert "refined_download_url" in data
-        assert "test-user" in data["refined_download_url"]
+        assert test_user_id in data["refined_download_url"]
         assert "/refiner-app/refiner-test-suite/" in data["refined_download_url"]
         assert "stats" in data["conditions"][0]
         assert any(
             "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
         )
 
-    def test_upload_route_s3_failure(self):
+    def test_upload_route_s3_failure(self, test_user_id, test_username):
         from app.api.v1.demo import _get_upload_refined_ecr
 
         # Create a fake version of upload_refined_ecr that simulates an S3 failure
@@ -61,7 +61,7 @@ class TestDemo:
             return ""
 
         def mock_get_logged_in_user():
-            return {"id": "test-user", "username": "test-user"}
+            return {"id": test_user_id, "username": test_username}
 
         # Override the dependency
         app.dependency_overrides[_get_upload_refined_ecr] = (
@@ -80,7 +80,7 @@ class TestDemo:
 
         app.dependency_overrides.clear()
 
-    def test_demo_file_not_found(self) -> None:
+    def test_demo_file_not_found(self, test_user_id, test_username) -> None:
         """
         Test error handling when demo file is missing
         """
@@ -91,7 +91,7 @@ class TestDemo:
             return pathlib.Path("/nonexistent/demo.zip")
 
         def mock_get_logged_in_user():
-            return {"id": "test-user", "username": "test-user"}
+            return {"id": test_user_id, "username": test_username}
 
         # use the actual function reference, not a string
         app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
