@@ -167,8 +167,8 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   }
 
   return (
-    <div>
-      <div className="border-bottom-[1px] mb-4 flex w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
+    <div className="min-w-full">
+      <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
           onChange={(e) => setSearchText(e.target.value)}
           id="code-search"
