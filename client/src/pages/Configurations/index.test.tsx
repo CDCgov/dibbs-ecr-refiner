@@ -17,7 +17,12 @@ vi.mock('../../api/configurations/configurations', async () => {
   return {
     ...actual,
     useGetConfigurations: vi.fn(() => ({
-      data: { data: [{ id: '1', name: 'test', is_active: true }] },
+      data: {
+        data: [
+          { id: '1', name: 'test', is_active: true },
+          { id: 'exists-id', name: 'already-created', is_active: true },
+        ],
+      },
       isLoading: false,
       error: null,
     })),
@@ -41,7 +46,12 @@ vi.mock('../../api/conditions/conditions', async () => {
   return {
     ...actual,
     useGetConditions: vi.fn(() => ({
-      data: { data: [{ id: '1', display_name: 'Anaplasmosis' }] },
+      data: {
+        data: [
+          { id: '1', display_name: 'Anaplasmosis' },
+          { id: 'exists-id', display_name: 'already-created' },
+        ],
+      },
       isLoading: false,
       error: null,
     })),
@@ -85,7 +95,56 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
   });
 
-  test('Creates a new config and takes the user to the build page', async () => {
+  test('should show an error toast when user attempts to create duplicate config', async () => {
+    const user = userEvent.setup();
+
+    // Mock the mutation to trigger onError
+    const mockMutateAsync = vi.fn().mockImplementation(
+      (
+        _: { data: { condition_id: string } },
+        options: {
+          onSuccess?: (resp: unknown) => void;
+          onError?: (e: unknown) => void;
+        } = {}
+      ) => {
+        if (options.onError) {
+          options.onError({
+            message: 'Configuration could not be created',
+          });
+        }
+      }
+    );
+
+    (useCreateConfiguration as unknown as Mock).mockReturnValue({
+      mutateAsync: mockMutateAsync,
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    });
+
+    renderPageView();
+
+    const setUpButton = screen.getByRole('button', {
+      name: 'Set up new condition',
+    });
+    await user.click(setUpButton);
+
+    const conditionInput = screen.getByLabelText('Condition');
+    await user.type(conditionInput, 'already-created{enter}');
+    expect(conditionInput).toHaveValue('already-created');
+
+    const addConditionButton = screen.getByRole('button', {
+      name: 'Add condition',
+    });
+    await user.click(addConditionButton);
+
+    // Assert that the error toast appears
+    expect(
+      await screen.findByText('Configuration could not be created')
+    ).toBeInTheDocument();
+  });
+
+  test('should create a new config and takes the user to the build page', async () => {
     const user = userEvent.setup();
 
     const response: CreateConfigurationResponse = {
