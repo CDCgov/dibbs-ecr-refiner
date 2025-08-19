@@ -8,22 +8,10 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import {
-  ComboBox,
-  ComboBoxRef,
-  Form,
-  Icon,
-  Label,
-  Modal,
-  ModalFooter,
-  ModalHeading,
-  ModalRef,
-  ModalToggleButton,
-  Select,
-} from '@trussworks/react-uswds';
+import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import Drawer from '../../../components/Drawer';
 
