@@ -1,8 +1,5 @@
 import os
 
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-
 # These variables need to go before `app` imports
 os.environ["ENV"] = "mock-env"
 os.environ["DB_URL"] = "postgresql://mock:mock@fakedb:5432/refiner"
@@ -23,9 +20,7 @@ from zipfile import ZipFile
 import pytest
 from lxml import etree
 
-from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
-from app.main import app
 
 NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 
@@ -33,39 +28,6 @@ NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 # file names that read_xml_zip looks for
 EICR_FILENAME = "CDA_eICR.xml"
 RR_FILENAME = "CDA_RR.xml"
-
-# User info
-TEST_SESSION_TOKEN = "test-token"
-
-
-@pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user, mock_db_functions):
-    """
-    Mock an authenticated client.
-    """
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
-        yield client
-
-
-@pytest.fixture(autouse=True)
-def mock_logged_in_user():
-    """
-    Mock the logged-in user dependency
-    """
-
-    def mock_user():
-        return {
-            "id": "5deb43c2-6a82-4052-9918-616e01d255c7",
-            "username": "tester",
-            "email": "tester@test.com",
-            "jurisdiction_id": "JD-1",
-        }
-
-    app.dependency_overrides[get_logged_in_user] = mock_user
-    yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest.fixture(scope="session")
