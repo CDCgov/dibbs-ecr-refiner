@@ -7,6 +7,29 @@ from lxml.etree import _Element
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
 
+def strip_comments(xml: str) -> str:
+    """
+    Remove all XML comments in-place from the tree and return the root.
+    """
+    parser = etree.XMLParser(remove_blank_text=True)
+    root: _Element = etree.fromstring(xml, parser=parser)
+
+    # Remove comments
+    for comment in cast(list[_Element], root.xpath("//comment()")):
+        parent = comment.getparent()
+        if parent is not None:
+            parent.remove(comment)
+
+    return etree.tostring(
+        root,
+        pretty_print=True,
+        encoding="unicode",
+        xml_declaration=False,
+        with_tail=False,
+        method="xml",
+    )
+
+
 def normalize_xml(xml: str) -> str:
     """
     Normalize XML for comparison/reading.
@@ -24,12 +47,6 @@ def normalize_xml(xml: str) -> str:
 
     parser = etree.XMLParser(remove_blank_text=True)
     root: _Element = etree.fromstring(xml, parser=parser)
-
-    # Remove comments
-    for comment in cast(list[_Element], root.xpath("//comment()")):
-        parent = comment.getparent()
-        if parent is not None:
-            parent.remove(comment)
 
     # Normalize whitespace inside text/tails so pretty_print can indent cleanly
     for el in root.iter():

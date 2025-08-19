@@ -219,12 +219,15 @@ async def demo_upload(
             # Add to the list of files to include in the ZIP
             refined_files_to_zip.append((filename, condition_refined_eicr))
 
+            # Strip comments afer adding to zip download for diff view
+            stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
+
             # Build per-condition metadata (zip token added later)
             conditions.append(
                 Condition(
                     code=condition_code,
                     display_name=condition_name,
-                    refined_eicr=condition_refined_eicr,
+                    refined_eicr=stripped_refined_eicr,
                     stats=[
                         f"eICR file size reduced by {
                             _get_file_size_difference_percentage(
@@ -258,12 +261,13 @@ async def demo_upload(
         )
 
         normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
+        stripped_unrefined_eicr = format.strip_comments(normalized_unrefined_eicr)
 
         return RefinedTestingDocument(
             message="Successfully processed eICR with condition-specific refinement",
             conditions_found=len(conditions),
             conditions=conditions,
-            unrefined_eicr=normalized_unrefined_eicr,
+            unrefined_eicr=stripped_unrefined_eicr,
             processing_notes=[
                 "Each condition gets its own refined eICR",
                 "Sections contain only data relevant to that specific condition",
