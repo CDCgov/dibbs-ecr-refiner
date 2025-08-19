@@ -943,7 +943,8 @@ def _create_or_update_text_element(
     table_element = etree.SubElement(text_element, "table", border="1")
 
     # table header - add back the "Is Trigger Code" column
-    header_row = etree.SubElement(table_element, "tr")
+    thead_row = etree.SubElement(table_element, "thead")
+    header_row = etree.SubElement(thead_row, "tr")
     headers = CLINICAL_DATA_TABLE_HEADERS
 
     for header in headers:
@@ -982,7 +983,8 @@ def _add_clinical_data_row(
     """
 
     data = _extract_clinical_data(clinical_element)
-    row = etree.SubElement(table_element, "tr")
+    tbody = etree.SubElement(table_element, "tbody")
+    row = etree.SubElement(tbody, "tr")
 
     # display text - handle potential non-string values
     td = etree.SubElement(row, "td")
@@ -1078,7 +1080,8 @@ def _create_minimal_section(section: _Element) -> None:
     title_element.text = REFINER_OUTPUT_TITLE
 
     table_element = etree.SubElement(text_element, "table", border="1")
-    tr_element = etree.SubElement(table_element, "tr")
+    thead_element = etree.SubElement(table_element, "thead")
+    tr_element = etree.SubElement(thead_element, "tr")
     td_element = etree.SubElement(tr_element, "td")
     td_element.text = MINIMAL_SECTION_MESSAGE
 
