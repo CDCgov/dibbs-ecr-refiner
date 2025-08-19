@@ -16,7 +16,7 @@ from ...db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.user.db import get_user_by_id_db
+from ...db.users.db import get_user_by_id_db
 
 router = APIRouter(prefix="/configurations")
 

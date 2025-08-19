@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 from ...db.jurisdictions.db import upsert_jurisdiction
 from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.user.db import IdpUserResponse, upsert_user_db
+from ...db.users.db import IdpUserResponse, upsert_user_db
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (

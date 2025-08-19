@@ -9,7 +9,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations import GetConfigurationsResponse
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import DbTotalConditionCodeCount
-from app.db.user.model import DbUser
+from app.db.users.model import DbUser
 from app.main import app
 
 # User info
