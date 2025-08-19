@@ -226,6 +226,10 @@ function Builder() {
     setSelectedCodesetId(id);
   }
 
+  function toggleDrawer() {
+    setDrawerActive(!drawerActive);
+  }
+
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);
   }
@@ -261,7 +265,13 @@ function Builder() {
     label: name,
   }));
 
-  // const [formValid, setFormValid] = useState<boolean>(false);
+  function onSearch(filter: string) {}
+  function onSave() {}
+  function onClose() {
+    setDrawerActive(false);
+  }
+
+  const [drawerActive, setDrawerActive] = useState(false);
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
@@ -278,6 +288,7 @@ function Builder() {
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
+              onClick={toggleDrawer}
             >
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
@@ -380,11 +391,11 @@ function Builder() {
       <Drawer
         title="Add condition code sets"
         subtitle="Codes relevant to each condition are grouped together. These code sets are derived from the TES (Terminology Exchange Service)."
-        isOpen={true}
+        isOpen={drawerActive}
         placeHolder="Search by condition name"
-        onSearch={() => {}}
-        onSave={() => {}}
-        onClose={() => {}}
+        onSearch={onSearch}
+        onSave={onSave}
+        onClose={onClose}
         toRender={undefined}
         drawerWidth="35%"
       />

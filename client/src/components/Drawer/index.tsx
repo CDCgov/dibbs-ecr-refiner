@@ -77,7 +77,7 @@ const Drawer = ({
         <div
           className={classNames(
             'bg-gray-3 fixed top-0 z-[1050] flex h-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 transition duration-300 ease-in-out',
-            isOpen ? 'right-0 flex' : 'right-[-1 * 60%]',
+            isOpen ? 'right-0 flex' : 'right-[-60%]',
             drawerWidth === '60%' ? 'w-[60%]' : 'w-[35%]'
           )}
           role="dialog"
