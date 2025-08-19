@@ -27,42 +27,6 @@ class IdpUserResponse(BaseModel):
     jurisdiction_id: str
 
 
-class Jurisdiction(BaseModel):
-    """
-    Jurisdiction info.
-    """
-
-    id: str
-    name: str
-    state_code: str
-
-
-async def upsert_jurisdiction(jurisdiction: Jurisdiction) -> str:
-    """
-    Upserts a jurisdiction sent from the IdP.
-
-    Args:
-        jurisdiction (Jurisdiction): Jurisdiction information from the IdP.
-
-    Returns:
-        str: Jurisdiction ID of the created or modified jurisdiction.
-    """
-    query = """
-        INSERT INTO jurisdictions (id, name, state_code)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (id)
-        DO UPDATE SET
-            name = EXCLUDED.name,
-            state_code = EXCLUDED.state_code
-        """
-    params = (jurisdiction.id, jurisdiction.name, jurisdiction.state_code)
-
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
-
-    return jurisdiction.id
-
-
 async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
     """
     Upserts a user to the refiner's database upon successful login.

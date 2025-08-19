@@ -3,16 +3,17 @@ from logging import Logger
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
+from ...db.jurisdictions.db import upsert_jurisdiction
+from ...db.jurisdictions.model import DbJurisdiction
+from ...db.pool import AsyncDatabaseConnection, get_db
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
     IdpUserResponse,
-    Jurisdiction,
     UserResponse,
     create_session,
     delete_session,
     get_user_from_session,
-    upsert_jurisdiction,
     upsert_user,
 )
 
@@ -47,7 +48,9 @@ async def login(request: Request) -> RedirectResponse:
     include_in_schema=False,
 )
 async def auth_callback(
-    request: Request, logger: Logger = Depends(get_logger)
+    request: Request,
+    logger: Logger = Depends(get_logger),
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> RedirectResponse:
     """
     Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
@@ -55,6 +58,7 @@ async def auth_callback(
     Args:
         request (Request): The incoming HTTP request containing the authorization code.
         logger (Logger): The standard logger.
+        db (AsyncDatabaseConnection): The DB connection pool.
 
     Returns:
         dict[str, str]: A dictionary of user claims extracted from the ID token.
@@ -102,9 +106,10 @@ async def auth_callback(
         # Upsert the user's jurisdiction if needed
         # TODO: This should come from the IdP eventually
         jurisdiction_id = await upsert_jurisdiction(
-            Jurisdiction(
+            DbJurisdiction(
                 id="SDDH", name="Senate District Health Department", state_code="GC"
-            )
+            ),
+            db=db,
         )
 
         user = IdpUserResponse(
