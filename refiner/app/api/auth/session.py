@@ -16,52 +16,6 @@ SESSION_TTL = timedelta(hours=1)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
 
 
-class IdpUserResponse(BaseModel):
-    """
-    Expected user information coming from the IdP response.
-    """
-
-    user_id: str
-    username: str
-    email: str
-    jurisdiction_id: str
-
-
-async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
-    """
-    Upserts a user to the refiner's database upon successful login.
-
-    Args:
-        oidc_user_info (IdpUserResponse): User information from the IdP.
-
-    Returns:
-        str: User ID of the created or modified user.
-    """
-    query = """
-        INSERT INTO users (username, email, jurisdiction_id)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (username)
-        DO UPDATE SET
-            email = EXCLUDED.email,
-            jurisdiction_id = EXCLUDED.jurisdiction_id
-        RETURNING id;
-        """
-    params = (
-        oidc_user_info.username,
-        oidc_user_info.email,
-        oidc_user_info.jurisdiction_id,
-    )
-
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
-        row = await cur.fetchone()
-
-    if row is None:
-        raise Exception("Failed to upsert user and retrieve id.")
-
-    return str(row["id"])
-
-
 def get_hashed_token(token: str) -> str:
     """
     Given a session token, calculates a hash using the session secret key.

@@ -6,15 +6,14 @@ from fastapi.responses import RedirectResponse
 from ...db.jurisdictions.db import upsert_jurisdiction
 from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
+from ...db.user.db import IdpUserResponse, upsert_user_db
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
-    IdpUserResponse,
     UserResponse,
     create_session,
     delete_session,
     get_user_from_session,
-    upsert_user,
 )
 
 auth_router = APIRouter()
@@ -119,7 +118,7 @@ async def auth_callback(
             jurisdiction_id=jurisdiction_id,
         )
 
-        user_id = await upsert_user(user)
+        user_id = await upsert_user_db(oidc_user_info=user, db=db)
 
         # Create a session for the user
         session_token = await create_session(user_id)
