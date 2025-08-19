@@ -1,4 +1,18 @@
 import os
+
+os.environ["ENV"] = "mock-env"
+os.environ["DB_URL"] = "postgresql://mock:mock@fakedb:5432/refiner"
+os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
+os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
+os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
+os.environ["AUTH_ISSUER"] = "http://mock.com"
+os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
+
+os.environ["AWS_ACCESS_KEY_ID"] = "mock-aws-access-key-id"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "mock-aws-secret-access-key"
+os.environ["AWS_REGION"] = "us-mock-1"
+os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
+
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -13,19 +27,6 @@ NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 # file names that read_xml_zip looks for
 EICR_FILENAME = "CDA_eICR.xml"
 RR_FILENAME = "CDA_RR.xml"
-
-os.environ["ENV"] = "mock-env"
-os.environ["DB_URL"] = "postgresql://mock:mock@fakedb:5432/refiner"
-os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
-os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
-os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
-os.environ["AUTH_ISSUER"] = "http://mock.com"
-os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
-
-os.environ["AWS_ACCESS_KEY_ID"] = "mock-aws-access-key-id"
-os.environ["AWS_SECRET_ACCESS_KEY"] = "mock-aws-secret-access-key"
-os.environ["AWS_REGION"] = "us-mock-1"
-os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 
 
 @pytest.fixture(scope="session")
