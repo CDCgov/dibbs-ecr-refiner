@@ -117,7 +117,7 @@ def setup(request):
     )
 
     # Set up database schema
-    print("Applying database schema...")
+    print("🔨 Applying database schema...")
     refiner_service.exec_in_container(
         [
             "psql",
@@ -131,6 +131,26 @@ def setup(request):
         "db",
     )
     print("✅ Schema applied")
+
+    print("🩺 Seeding conditions...")
+    refiner_service.exec_in_container(
+        ["python", "/app/scripts/seed_db.py"],
+        "refiner-service",
+    )
+
+    print("⏳ Waiting for conditions seeding...")
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-c",
+            "SELECT 1 FROM conditions LIMIT 1;",
+        ],
+        "db",
+    )
 
     print("🧠 Seeding database with test user...")
     seed_user = f"""
@@ -161,7 +181,8 @@ def setup(request):
         ],
         "db",
     )
-    print("Database is ready!")
+
+    print("🏃‍♀️ Database is ready!")
 
     def teardown():
         """
