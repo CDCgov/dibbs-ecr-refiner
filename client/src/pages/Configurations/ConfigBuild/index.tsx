@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import NotFound from '../../NotFound';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
@@ -11,7 +11,12 @@ import {
 import { useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import { Icon, Label, Select } from '@trussworks/react-uswds';
+import {
+  Icon,
+  Label,
+  Select,
+  CustomBreadcrumbLinkProps,
+} from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import Drawer from '../../../components/Drawer';
 
@@ -389,14 +394,69 @@ function Builder() {
         </div>
       </div>
       <Drawer
-        title="Add condition code sets"
-        subtitle="Codes relevant to each condition are grouped together. These code sets are derived from the TES (Terminology Exchange Service)."
+        title={
+          <>
+            <Title>Add condition code sets</Title>
+          </>
+        }
+        subtitle={
+          <p className="!pt-2">
+            Codes relevant to each condition are grouped together. These code
+            sets are derived from the{' '}
+            <Link
+              to={'https://tes.tools.aimsplatform.org'}
+              className="text-blue-cool-60 font-bold"
+            >
+              TES (Terminology Exchange Service)
+            </Link>
+            .
+          </p>
+        }
         isOpen={drawerActive}
         placeHolder="Search by condition name"
         onSearch={onSearch}
         onSave={onSave}
         onClose={onClose}
-        toRender={undefined}
+        toRender={
+          <>
+            <button className="py-4 text-left">
+              <span>Chlamydia trachomatis infection</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Gonorrhea</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>HIV</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Syphilis</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Anapalsmosis</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Brucellosis</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Campylobacteriosis</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Cholera</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Cocciodioidomycosis</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>COVID-19</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Cryptosporidiosis</span>
+            </button>
+            <button className="py-4 text-left">
+              <span>Candida auris</span>
+            </button>
+          </>
+        }
         drawerWidth="35%"
       />
     </div>

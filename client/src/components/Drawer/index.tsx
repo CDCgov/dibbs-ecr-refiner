@@ -6,23 +6,14 @@ import { Search } from '../Search';
 
 type DrawerProps = {
   title: string | React.ReactNode;
-  subtitle?: string;
+  subtitle?: string | React.ReactNode;
   placeHolder: string;
   toRender: React.ReactNode;
   isOpen: boolean;
-  onSave: () => void;
+  // onSave: () => void;
   onClose: () => void;
   onSearch?: (filter: string) => void;
   drawerWidth?: '35%' | '60%';
-};
-
-const ConditionItem = () => {
-  return (
-    <div className="">
-      <span>Condition code set</span>
-      <span>State</span>
-    </div>
-  );
 };
 
 const Drawer = ({
@@ -31,7 +22,7 @@ const Drawer = ({
   placeHolder,
   toRender,
   isOpen,
-  onSave,
+  // onSave,
   onClose,
   onSearch,
   drawerWidth,
@@ -42,7 +33,7 @@ const Drawer = ({
     if (onSearch) {
       onSearch(searchFilter);
     }
-  }, [searchFilter]);
+  }, [onSearch, searchFilter]);
 
   /**
    * @description Closes the drawer
@@ -63,7 +54,7 @@ const Drawer = ({
         window.removeEventListener('keyup', handleEscape);
       };
     };
-  }, []);
+  }, [handleClose, isOpen]);
 
   return (
     <FocusTrap
@@ -76,8 +67,8 @@ const Drawer = ({
       <div>
         <div
           className={classNames(
-            'bg-gray-3 fixed top-0 z-[1050] flex h-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 transition duration-300 ease-in-out',
-            isOpen ? 'right-0 flex' : 'right-[-60%]',
+            'bg-gray-3 fixed top-0 z-[1050] flex h-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 transition-all duration-300 ease-in-out',
+            isOpen ? 'right-0 flex opacity-100' : 'right-[-60%] opacity-0',
             drawerWidth === '60%' ? 'w-[60%]' : 'w-[35%]'
           )}
           role="dialog"
@@ -98,12 +89,12 @@ const Drawer = ({
                 <h2
                   id="drawer-title"
                   data-testid={`drawer-title`}
-                  className={classNames('m-0', subtitle ? 'pb-0' : 'pb-2')}
+                  className={classNames('m-0', subtitle ? '!pb-0' : '!pb-2')}
                 >
                   {title}
                 </h2>
                 {subtitle ? (
-                  <h3 className="m-0 flex py-4 text-gray-600">{subtitle}</h3>
+                  <div className="m-0 !py-4 text-gray-600">{subtitle}</div>
                 ) : (
                   <></>
                 )}
@@ -125,7 +116,7 @@ const Drawer = ({
                 )}
               </div>
 
-              <div className="">{toRender}</div>
+              <div className="flex flex-col pt-4">{toRender}</div>
             </div>
           ) : (
             <div className="hidden"></div>
