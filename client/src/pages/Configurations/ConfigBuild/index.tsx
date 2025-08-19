@@ -25,6 +25,7 @@ import {
   Select,
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
+import Drawer from '../../../components/Drawer';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
@@ -388,6 +389,17 @@ function Builder() {
           ) : null}
         </div>
       </div>
+      <Drawer
+        title="Add condition code sets"
+        subtitle="Codes relevant to each condition are grouped together. These code sets are derived from the TES (Terminology Exchange Service)."
+        isOpen={true}
+        placeHolder="Search by condition name"
+        onSearch={() => {}}
+        onSave={() => {}}
+        onClose={() => {}}
+        toRender={undefined}
+        drawerWidth="35%"
+      />
     </div>
   );
 }

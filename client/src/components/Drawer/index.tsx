@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Icon } from '@trussworks/react-uswds';
+import classNames from 'classnames';
+import { Search } from '../Search';
 
 type DrawerProps = {
   title: string | React.ReactNode;
@@ -42,6 +44,9 @@ const Drawer = ({
     }
   }, [searchFilter]);
 
+  /**
+   * @description Closes the drawer
+   */
   function handleClose() {
     setSearchFilter('');
     onClose();
@@ -68,16 +73,72 @@ const Drawer = ({
         escapeDeactivates: true,
       }}
     >
-      <section>
-        <button
-          className=""
-          onClick={handleClose}
-          aria-label="Close drawer"
-          data-testid={'close-drawer'}
+      <div>
+        <div
+          className={classNames(
+            'bg-gray-3 fixed top-0 z-[1050] flex h-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 transition duration-300 ease-in-out',
+            isOpen ? 'right-0 flex' : 'right-[-1 * 60%]',
+            drawerWidth === '60%' ? 'w-[60%]' : 'w-[35%]'
+          )}
+          role="dialog"
+          id="drawer-container"
+          aria-label="drawer-container"
         >
-          <Icon.Close size={3} aria-label="X icon indicating closure" />
-        </button>
-      </section>
+          {isOpen ? (
+            <div className="w-full p-8">
+              <div className="max-w-[95%]">
+                <button
+                  className="absolute top-6 right-4 flex shrink-0 cursor-pointer items-center justify-center border-none bg-none p-0"
+                  onClick={handleClose}
+                  aria-label="Close drawer"
+                  data-testid={'close-drawer'}
+                >
+                  <Icon.Close size={3} aria-label="X icon indicating closure" />
+                </button>
+                <h2
+                  id="drawer-title"
+                  data-testid={`drawer-title`}
+                  className={classNames('m-0', subtitle ? 'pb-0' : 'pb-2')}
+                >
+                  {title}
+                </h2>
+                {subtitle ? (
+                  <h3 className="m-0 flex py-4 text-gray-600">{subtitle}</h3>
+                ) : (
+                  <></>
+                )}
+
+                {onSearch && (
+                  <div>
+                    <Search
+                      onChange={(e) => {
+                        e.preventDefault();
+                        setSearchFilter(e.target.value);
+                      }}
+                      id="code-search"
+                      name="code-search"
+                      type="search"
+                      value={searchFilter}
+                      placeholder={placeHolder}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="">{toRender}</div>
+            </div>
+          ) : (
+            <div className="hidden"></div>
+          )}
+        </div>
+
+        {isOpen && (
+          <div
+            className="fixed top-0 left-0 z-[1040] h-full w-full"
+            onClick={handleClose}
+          ></div>
+        )}
+      </div>
     </FocusTrap>
   );
 };
