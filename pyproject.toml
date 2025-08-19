@@ -91,6 +91,7 @@ keep-runtime-typing = true
 [tool.mypy]
 files = [
   "app/**/*.py",
+  "refiner/app/**/*.py",
   # turn these on after we've moved the database out of refiner/
   # "database/pipeline/**/*.py",
   # "database/scripts/**/*.py"
