@@ -17,7 +17,7 @@ const ConditionItem: React.FC<ConditionItemProps> = ({ conditionName }) => {
         if (!isButtonToggled) setShowAddButton(false);
       }}
     >
-      <span className="py-10">{conditionName}</span>
+      <em className="py-10">{conditionName}</em>
       {showAddButton && (
         <Button
           variant={isButtonToggled ? 'selected' : 'primary'}

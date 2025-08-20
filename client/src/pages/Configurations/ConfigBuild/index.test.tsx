@@ -32,16 +32,20 @@ describe('Config builder page', () => {
 
   it('should render code set buttons', () => {
     renderPage();
-    expect(screen.getByText('COVID-19')).toBeInTheDocument();
+    expect(
+      screen.getByText('COVID-19', { selector: 'span' })
+    ).toBeInTheDocument();
     expect(screen.getByText('Chlamydia')).toBeInTheDocument();
-    expect(screen.getByText('Gonorrhea')).toBeInTheDocument();
+    expect(
+      screen.getByText('Gonorrhea', { selector: 'span' })
+    ).toBeInTheDocument();
   });
 
   it('should show table rows after selecting a code set', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByText('COVID-19'));
+    await user.click(screen.getByText('COVID-19', { selector: 'span' }));
 
     // Table displays upon code set button click
     expect(screen.getByRole('table')).toBeInTheDocument();
@@ -54,7 +58,7 @@ describe('Config builder page', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByText('COVID-19'));
+    await user.click(screen.getByText('COVID-19', { selector: 'span' }));
 
     const select = screen.getByLabelText(/code system/i);
     await user.selectOptions(select, 'SNOMED');
@@ -72,9 +76,9 @@ describe('Config builder page', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByText('COVID-19'));
+    await user.click(screen.getByText('COVID-19', { selector: 'span' }));
 
-    const searchBox = screen.getByPlaceholderText(/search/i);
+    const searchBox = screen.getByPlaceholderText(/search code set/i);
     await user.type(searchBox, '45068-1');
     expect(searchBox).toHaveValue('45068-1');
 
