@@ -7,6 +7,7 @@ vi.mock('@trussworks/react-uswds', () => ({
   Icon: { Close: () => <div>X</div> },
 }));
 vi.mock('focus-trap-react', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default: ({ children }: any) => <div>{children}</div>,
 }));
 
