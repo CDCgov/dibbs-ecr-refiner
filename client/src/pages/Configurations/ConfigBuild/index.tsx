@@ -7,7 +7,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
@@ -17,8 +17,6 @@ import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 
 export default function ConfigBuild() {
-  // Fetch config by ID on page load for each of these steps
-  // build -> test -> activate
   const { id } = useParams<{ id: string }>();
   const {
     data: response,
@@ -142,19 +140,28 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   const { data: response, isLoading, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
 
-  const codes = response?.data.codes ?? [];
+  const codes = useMemo(
+    () => response?.data.codes ?? [],
+    [response?.data.codes]
+  );
 
-  const filteredCodes = codes.filter((code) => {
-    return selectedCodeSystem === 'all' || code.system === selectedCodeSystem;
-  });
+  const filteredCodes = useMemo(() => {
+    return selectedCodeSystem === 'all'
+      ? codes
+      : codes.filter((code) => code.system === selectedCodeSystem);
+  }, [codes, selectedCodeSystem]);
 
-  const { searchText, setSearchText, results } = useSearch(filteredCodes, {
-    keys: [
-      { name: 'code', weight: 0.7 },
-      { name: 'description', weight: 0.3 },
-    ],
-    includeScore: true,
-  });
+  const { searchText, setSearchText, results } = useSearch(
+    filteredCodes,
+    {
+      keys: [
+        { name: 'code', weight: 0.7 },
+        { name: 'description', weight: 0.3 },
+      ],
+      minMatchCharLength: 3,
+    },
+    300
+  );
 
   // Decide which data to display
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
@@ -167,7 +174,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   }
 
   return (
-    <div className="min-w-full">
+    <div className="min-h-full min-w-full">
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
           onChange={(e) => setSearchText(e.target.value)}
@@ -196,31 +203,37 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         </div>
       </div>
       <hr className="border-blue-cool-5 w-full border-[1px]" />
-      <div role="region">
-        <table
-          id="codeset-table"
-          className="w-full border-separate border-spacing-y-4"
-          aria-label={`Codes in set with ID ${conditionId}`}
-        >
-          <thead className="sr-only">
-            <tr>
-              <th>Code</th>
-              <th>Code system</th>
-              <th>Condition</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleCodes.map((code) => (
-              <ConditionCodeRow
-                key={`${code.system}-${code.code}`}
-                codeSystem={code.system}
-                code={code.code}
-                text={code.description}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {visibleCodes.length ? (
+        <div role="region">
+          <table
+            id="codeset-table"
+            className="w-full border-separate border-spacing-y-4"
+            aria-label={`Codes in set with ID ${conditionId}`}
+          >
+            <thead className="sr-only">
+              <tr>
+                <th>Code</th>
+                <th>Code system</th>
+                <th>Condition</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleCodes.map((code) => (
+                <ConditionCodeRow
+                  key={`${code.system}-${code.code}`}
+                  codeSystem={code.system}
+                  code={code.code}
+                  text={code.description}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="pt-10">
+          <p>No codes match the search criteria.</p>
+        </div>
+      )}
     </div>
   );
 }
