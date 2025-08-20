@@ -11,10 +11,10 @@ import { useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
-import { useSearch } from '../../../hooks/useSearch';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
+import { useWorkerSearch } from '../../../hooks/useWorkerSearch';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -139,6 +139,7 @@ interface ConditionCodeTableProps {
 function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   const { data: response, isLoading, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
+  const [searchText, setSearchText] = useState('');
 
   const codes = useMemo(
     () => response?.data.codes ?? [],
@@ -151,20 +152,18 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       : codes.filter((code) => code.system === selectedCodeSystem);
   }, [codes, selectedCodeSystem]);
 
-  const { searchText, setSearchText, results } = useSearch(
+  const visibleCodes = useWorkerSearch(
     filteredCodes,
     {
       keys: [
         { name: 'code', weight: 0.7 },
         { name: 'description', weight: 0.3 },
       ],
-      minMatchCharLength: 3,
+      includeScore: false,
+      threshold: 0.3,
     },
-    300
+    searchText
   );
-
-  // Decide which data to display
-  const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
   if (isLoading || !response?.data) return 'Loading...';
   if (isError) return 'Error!';
