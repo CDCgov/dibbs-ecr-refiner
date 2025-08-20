@@ -11,14 +11,10 @@ import {
 import { useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import {
-  Icon,
-  Label,
-  Select,
-  CustomBreadcrumbLinkProps,
-} from '@trussworks/react-uswds';
+import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import Drawer from '../../../components/Drawer';
+import ConditionItem from '../../../components/ConfigurationCodeSet';
 
 export default function ConfigBuild() {
   // Fetch config by ID on page load for each of these steps
@@ -419,42 +415,24 @@ function Builder() {
         onClose={onClose}
         toRender={
           <>
-            <button className="py-4 text-left">
-              <span>Chlamydia trachomatis infection</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Gonorrhea</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>HIV</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Syphilis</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Anapalsmosis</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Brucellosis</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Campylobacteriosis</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Cholera</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Cocciodioidomycosis</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>COVID-19</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Cryptosporidiosis</span>
-            </button>
-            <button className="py-4 text-left">
-              <span>Candida auris</span>
-            </button>
+            <ConditionItem
+              conditionName={'Chlamydia trachomatis infection'}
+            ></ConditionItem>
+            <ConditionItem conditionName={'Gonorrhea'}></ConditionItem>
+            <ConditionItem conditionName={'HIV'}></ConditionItem>
+            <ConditionItem conditionName={'Syphilis'}></ConditionItem>
+            <ConditionItem conditionName={'Anaplasmosis'}></ConditionItem>
+            <ConditionItem conditionName={'Anthrax'}></ConditionItem>
+            <ConditionItem conditionName={'Arboviral disease'}></ConditionItem>
+            <ConditionItem conditionName={'Brucellosis'}></ConditionItem>
+            <ConditionItem conditionName={'Campylobacteriosis'}></ConditionItem>
+            <ConditionItem conditionName={'Cholera'}></ConditionItem>
+            <ConditionItem
+              conditionName={'Cocciodioidomycosis'}
+            ></ConditionItem>
+            <ConditionItem conditionName={'COVID-19'}></ConditionItem>
+            <ConditionItem conditionName={'Cryptosporidiosis'}></ConditionItem>
+            <ConditionItem conditionName={'Candida auris'}></ConditionItem>
           </>
         }
         drawerWidth="35%"
