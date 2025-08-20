@@ -22,7 +22,7 @@ export function useWorkerSearch(
   const [results, setResults] = useState<GetConditionCode[]>([]);
 
   useEffect(() => {
-    const worker = new Worker(new URL('../fuseWorker.ts', import.meta.url), {
+    const worker = new Worker(new URL('./fuseWorker.ts', import.meta.url), {
       type: 'module',
     });
     workerRef.current = worker;
