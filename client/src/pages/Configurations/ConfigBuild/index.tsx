@@ -139,7 +139,7 @@ interface ConditionCodeTableProps {
 function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   const { data: response, isLoading, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState<string>('');
 
   const codes = useMemo(
     () => response?.data.codes ?? [],
@@ -152,7 +152,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       : codes.filter((code) => code.system === selectedCodeSystem);
   }, [codes, selectedCodeSystem]);
 
-  const visibleCodes = useWorkerSearch(
+  const { results, search } = useWorkerSearch(
     filteredCodes,
     {
       keys: [
@@ -161,8 +161,10 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       ],
       includeScore: false,
     },
-    searchText
+    500
   );
+
+  const visibleCodes = searchText ? results : filteredCodes;
 
   if (isLoading || !response?.data) return 'Loading...';
   if (isError) return 'Error!';
@@ -175,7 +177,10 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
     <div className="min-h-full min-w-full">
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            search(e.target.value);
+          }}
           id="code-search"
           name="code-search"
           type="search"

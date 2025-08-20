@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import Fuse, { IFuseOptions } from 'fuse.js';
-import { GetConditionCode } from './api/schemas';
+import { GetConditionCode } from '../api/schemas';
 
 declare const self: DedicatedWorkerGlobalScope;
 
