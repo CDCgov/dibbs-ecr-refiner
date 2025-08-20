@@ -2,7 +2,7 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbJurisdiction
 
 
-async def upsert_jurisdiction(
+async def upsert_jurisdiction_db(
     jurisdiction: DbJurisdiction, db: AsyncDatabaseConnection
 ) -> str:
     """

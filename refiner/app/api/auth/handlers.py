@@ -3,7 +3,7 @@ from logging import Logger
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
-from ...db.jurisdictions.db import upsert_jurisdiction
+from ...db.jurisdictions.db import upsert_jurisdiction_db
 from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import IdpUserResponse, upsert_user_db
@@ -104,7 +104,7 @@ async def auth_callback(
 
         # Upsert the user's jurisdiction if needed
         # TODO: This should come from the IdP eventually
-        jurisdiction_id = await upsert_jurisdiction(
+        jurisdiction_id = await upsert_jurisdiction_db(
             DbJurisdiction(
                 id="SDDH", name="Senate District Health Department", state_code="GC"
             ),
