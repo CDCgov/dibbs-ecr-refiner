@@ -15,6 +15,7 @@ import { useGetConfiguration } from '../../../api/configurations/configurations'
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useWorkerSearch } from '../../../hooks/useWorkerSearch';
+import { useDebouncedCallback } from 'use-debounce';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -137,9 +138,13 @@ interface ConditionCodeTableProps {
 }
 
 function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
+  const DEBOUNCE_TIME_MS = 500;
+
   const { data: response, isLoading, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
   const [searchText, setSearchText] = useState<string>('');
+  const [isLoadingDebouncedResults, setIsLoadingDebouncedResults] =
+    useState<boolean>(false);
 
   const codes = useMemo(
     () => response?.data.codes ?? [],
@@ -152,7 +157,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       : codes.filter((code) => code.system === selectedCodeSystem);
   }, [codes, selectedCodeSystem]);
 
-  const { results, search } = useWorkerSearch(
+  const results = useWorkerSearch(
     filteredCodes,
     {
       keys: [
@@ -161,10 +166,14 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       ],
       includeScore: false,
     },
-    500
+    searchText
   );
 
   const visibleCodes = searchText ? results : filteredCodes;
+
+  const handleDebouncedChange = useDebouncedCallback((value: string) => {
+    setSearchText(value);
+  }, DEBOUNCE_TIME_MS);
 
   if (isLoading || !response?.data) return 'Loading...';
   if (isError) return 'Error!';
@@ -178,8 +187,9 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
           onChange={(e) => {
-            setSearchText(e.target.value);
-            search(e.target.value);
+            setIsLoadingDebouncedResults(true);
+            handleDebouncedChange(e.target.value);
+            setIsLoadingDebouncedResults(false);
           }}
           id="code-search"
           name="code-search"
@@ -206,7 +216,11 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         </div>
       </div>
       <hr className="border-blue-cool-5 w-full border-[1px]" />
-      {visibleCodes.length ? (
+      {!isLoadingDebouncedResults && visibleCodes.length === 0 ? (
+        <div className="pt-10">
+          <p>No codes match the search criteria.</p>
+        </div>
+      ) : (
         <div role="region">
           <table
             id="codeset-table"
@@ -231,10 +245,6 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
               ))}
             </tbody>
           </table>
-        </div>
-      ) : (
-        <div className="pt-10">
-          <p>No codes match the search criteria.</p>
         </div>
       )}
     </div>
