@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
@@ -11,7 +11,7 @@ type DrawerProps = {
   placeHolder: string;
   toRender: React.ReactNode;
   isOpen: boolean;
-  onSave: () => void;
+  // onSave: () => void;
   onClose: () => void;
   onSearch?: (filter: string) => void;
   drawerWidth?: '35%' | '60%';
@@ -23,7 +23,7 @@ const Drawer = ({
   placeHolder,
   toRender,
   isOpen,
-  onSave,
+  // onSave,
   onClose,
   onSearch,
   drawerWidth,
@@ -39,12 +39,13 @@ const Drawer = ({
   /**
    * @description Closes the drawer
    */
-  function handleClose(): void {
+  const handleClose = useCallback(() => {
     setSearchFilter('');
     onClose();
-  }
+  }, [onClose]);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleEscape = (e: KeyboardEvent) => {
       e = e || window.event;
       if (isOpen && (e.key === 'Escape' || e.key === 'Esc')) {
