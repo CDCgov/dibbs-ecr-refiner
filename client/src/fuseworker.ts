@@ -1,13 +1,15 @@
 /// <reference lib="webworker" />
 import Fuse, { IFuseOptions } from 'fuse.js';
+import { GetConditionCode } from './api/schemas';
 
 declare const self: DedicatedWorkerGlobalScope;
 
-export type Item = { code: string; description: string; system: string };
-
 type InitMessage = {
   type: 'init';
-  payload: { data: Item[]; options: IFuseOptions<Item> };
+  payload: {
+    data: GetConditionCode[];
+    options: IFuseOptions<GetConditionCode>;
+  };
 };
 
 type SearchMessage = {
@@ -17,7 +19,7 @@ type SearchMessage = {
 
 type WorkerMessage = InitMessage | SearchMessage;
 
-let fuse: Fuse<Item> | null = null;
+let fuse: Fuse<GetConditionCode> | null = null;
 
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
   const { type, payload } = e.data;

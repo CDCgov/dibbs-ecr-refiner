@@ -160,7 +160,6 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         { name: 'description', weight: 0.3 },
       ],
       includeScore: false,
-      threshold: 0.3,
     },
     searchText
   );
