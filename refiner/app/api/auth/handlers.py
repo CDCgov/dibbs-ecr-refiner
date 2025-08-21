@@ -3,15 +3,17 @@ from logging import Logger
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
-from ...db.user.model import User
+from ...db.jurisdictions.db import upsert_jurisdiction_db
+from ...db.jurisdictions.model import DbJurisdiction
+from ...db.pool import AsyncDatabaseConnection, get_db
+from ...db.users.db import IdpUserResponse, upsert_user_db
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
-    IdpUserResponse,
+    UserResponse,
     create_session,
     delete_session,
     get_user_from_session,
-    upsert_user,
 )
 
 auth_router = APIRouter()
@@ -45,7 +47,9 @@ async def login(request: Request) -> RedirectResponse:
     include_in_schema=False,
 )
 async def auth_callback(
-    request: Request, logger: Logger = Depends(get_logger)
+    request: Request,
+    logger: Logger = Depends(get_logger),
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> RedirectResponse:
     """
     Handles the OAuth2 callback by exchanging the authorization code for tokens, parsing the ID token, and returning the user information.
@@ -53,6 +57,7 @@ async def auth_callback(
     Args:
         request (Request): The incoming HTTP request containing the authorization code.
         logger (Logger): The standard logger.
+        db (AsyncDatabaseConnection): The DB connection pool.
 
     Returns:
         dict[str, str]: A dictionary of user claims extracted from the ID token.
@@ -89,7 +94,7 @@ async def auth_callback(
             )
 
         logger.info(
-            "User logging in",
+            "User logging in from IdP",
             extra={
                 "user_id": idp_user_id,
                 "username": idp_username,
@@ -97,11 +102,23 @@ async def auth_callback(
             },
         )
 
-        # Add or update user in the Refiner DB
-        user = IdpUserResponse(
-            user_id=idp_user_id, username=idp_username, email=idp_email
+        # Upsert the user's jurisdiction if needed
+        # TODO: This should come from the IdP eventually
+        jurisdiction_id = await upsert_jurisdiction_db(
+            DbJurisdiction(
+                id="SDDH", name="Senate District Health Department", state_code="GC"
+            ),
+            db=db,
         )
-        user_id = await upsert_user(user)
+
+        user = IdpUserResponse(
+            user_id=idp_user_id,
+            username=idp_username,
+            email=idp_email,
+            jurisdiction_id=jurisdiction_id,
+        )
+
+        user_id = await upsert_user_db(oidc_user_info=user, db=db)
 
         # Create a session for the user
         session_token = await create_session(user_id)
@@ -127,9 +144,9 @@ async def auth_callback(
 
 
 @auth_router.get(
-    "/user", response_model=User | None, tags=["user"], operation_id="getUser"
+    "/user", response_model=(UserResponse | None), tags=["user"], operation_id="getUser"
 )
-async def get_user(request: Request) -> User | None:
+async def get_user(request: Request) -> UserResponse | None:
     """
     Returns the current logged-in user's information.
 

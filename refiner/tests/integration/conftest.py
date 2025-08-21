@@ -10,8 +10,28 @@ from testcontainers.compose import DockerCompose
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 from app.api.auth.session import get_hashed_token
 
+# Session info
 TEST_SESSION_TOKEN = "test-token"
 TEST_SESSION_TOKEN_HASH = get_hashed_token(TEST_SESSION_TOKEN)
+
+# User info
+TEST_USERNAME = "test-user"
+TEST_USER_ID = "112569a2-315a-47b7-be57-f7f3b87734f8"
+
+# Jurisdiction info
+TEST_JD_ID = "TEST"
+TEST_JD_NAME = "Test Jurisdiction"
+TEST_JD_STATE_CODE = "TT"
+
+
+@pytest.fixture
+def test_user_id():
+    return TEST_USER_ID
+
+
+@pytest.fixture
+def test_username():
+    return TEST_USERNAME
 
 
 @pytest.fixture
@@ -97,7 +117,7 @@ def setup(request):
     )
 
     # Set up database schema
-    print("Applying database schema...")
+    print("🔨 Applying database schema...")
     refiner_service.exec_in_container(
         [
             "psql",
@@ -112,16 +132,40 @@ def setup(request):
     )
     print("✅ Schema applied")
 
+    print("🩺 Seeding conditions...")
+    refiner_service.exec_in_container(
+        ["python", "/app/scripts/seed_db.py"],
+        "refiner-service",
+    )
+
+    print("⏳ Waiting for conditions seeding...")
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-c",
+            "SELECT 1 FROM conditions LIMIT 1;",
+        ],
+        "db",
+    )
+
     print("🧠 Seeding database with test user...")
     seed_user = f"""
     DO $$
     BEGIN
-        INSERT INTO users (id, username, email)
-        VALUES ('test-user', 'test-user', 'test@example.com')
+        INSERT INTO jurisdictions (id, name, state_code)
+        VALUES ('{TEST_JD_ID}', '{TEST_JD_NAME}', '{TEST_JD_STATE_CODE}')
+        ON CONFLICT DO NOTHING;
+
+        INSERT INTO users (id, username, email, jurisdiction_id)
+        VALUES ('{TEST_USER_ID}', '{TEST_USER_ID}', 'test@example.com', '{TEST_JD_ID}')
         ON CONFLICT DO NOTHING;
 
         INSERT INTO sessions (token_hash, user_id, expires_at)
-        VALUES ('{TEST_SESSION_TOKEN_HASH}', 'test-user', NOW() + INTERVAL '1 hour')
+        VALUES ('{TEST_SESSION_TOKEN_HASH}', '{TEST_USER_ID}', NOW() + INTERVAL '1 hour')
         ON CONFLICT DO NOTHING;
     END $$;
     """
@@ -137,7 +181,8 @@ def setup(request):
         ],
         "db",
     )
-    print("Database is ready!")
+
+    print("🏃‍♀️ Database is ready!")
 
     def teardown():
         """

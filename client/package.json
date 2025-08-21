@@ -7,6 +7,7 @@
     "dev": "concurrently \"npm run watch:openapi\" \"vite\"",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "check": "tsc --noEmit",
     "build": "tsc -b && vite build --base=/dist",
     "watch:openapi": "nodemon",
     "codegen": "rimraf src/api/* && orval --config orval.config.ts",
