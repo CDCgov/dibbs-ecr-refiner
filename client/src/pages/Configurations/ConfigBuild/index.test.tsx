@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import ConfigBuild from '.';
 import userEvent from '@testing-library/user-event';
@@ -134,11 +134,13 @@ describe('Config builder page', () => {
     await user.type(searchBox, covidCode);
     expect(searchBox).toHaveValue(covidCode);
 
-    const rows = (await screen.findAllByRole('row')).slice(1);
-    expect(rows).toHaveLength(1);
+    // wait for debounced search results to appear before checking
+    await waitFor(async () => {
+      const rows = (await screen.findAllByRole('row')).slice(1);
+      expect(rows).toHaveLength(1);
+    });
 
-    const row = await within(rows[0]).findByText(covidCode);
-
+    const row = await screen.findByText(covidCode);
     expect(row).toBeInTheDocument();
   });
 });

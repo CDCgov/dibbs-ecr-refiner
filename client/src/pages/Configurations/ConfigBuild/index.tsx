@@ -174,9 +174,9 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
     if (isLoadingResults) {
       setIsLoadingResults(false);
     }
-  }, [results]);
+  }, [results, isLoadingResults]);
 
-  // Decide which data to display
+  // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
   if (isLoading || !response?.data) return 'Loading...';
