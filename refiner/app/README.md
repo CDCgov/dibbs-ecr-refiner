@@ -73,7 +73,7 @@ The application uses JSON assets for configuration:
 
 **Why?**
 
-- `etree.Element` is *not* a class, but a function. Using it as a type hint is incorrect and may confuse type checkers.
+- `etree.Element` is _not_ a class, but a function. Using it as a type hint is incorrect and may confuse type checkers.
 - `_Element` is the correct type for variables that hold XML elements.
 
 See also: [lxml _Element API docs](https://lxml.de/api/lxml.etree._Element-class.html)

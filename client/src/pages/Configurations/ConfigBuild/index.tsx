@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { Steps, StepsContainer } from '../Steps';
@@ -12,6 +12,8 @@ import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
+import Drawer from '../../../components/Drawer';
+import ConditionItem from '../../../components/ConfigurationCodeSet';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
@@ -62,6 +64,18 @@ function Builder({ code_sets }: BuilderProps) {
     setSelectedCodesetId(id);
   }
 
+  function toggleDrawer() {
+    setDrawerActive(!drawerActive);
+  }
+
+  function onSearch(/* filter: string */) {}
+  // function onSave() {}
+  function onClose() {
+    setDrawerActive(false);
+  }
+
+  const [drawerActive, setDrawerActive] = useState(false);
+
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -77,6 +91,7 @@ function Builder({ code_sets }: BuilderProps) {
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
+              onClick={toggleDrawer}
             >
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
@@ -114,6 +129,50 @@ function Builder({ code_sets }: BuilderProps) {
           ) : null}
         </div>
       </div>
+      <Drawer
+        title="Add condition code sets"
+        subtitle={
+          <p className="!pt-2">
+            Codes relevant to each condition are grouped together. These code
+            sets are derived from the{' '}
+            <Link
+              to={'https://tes.tools.aimsplatform.org'}
+              className="text-blue-cool-60 font-bold"
+            >
+              TES (Terminology Exchange Service)
+            </Link>
+            .
+          </p>
+        }
+        isOpen={drawerActive}
+        placeHolder="Search by condition name"
+        onSearch={onSearch}
+        // onSave={onSave}
+        onClose={onClose}
+        toRender={
+          <>
+            <ConditionItem
+              conditionName={'Chlamydia trachomatis infection'}
+            ></ConditionItem>
+            <ConditionItem conditionName={'Gonorrhea'}></ConditionItem>
+            <ConditionItem conditionName={'HIV'}></ConditionItem>
+            <ConditionItem conditionName={'Syphilis'}></ConditionItem>
+            <ConditionItem conditionName={'Anaplasmosis'}></ConditionItem>
+            <ConditionItem conditionName={'Anthrax'}></ConditionItem>
+            <ConditionItem conditionName={'Arboviral disease'}></ConditionItem>
+            <ConditionItem conditionName={'Brucellosis'}></ConditionItem>
+            <ConditionItem conditionName={'Campylobacteriosis'}></ConditionItem>
+            <ConditionItem conditionName={'Cholera'}></ConditionItem>
+            <ConditionItem
+              conditionName={'Cocciodioidomycosis'}
+            ></ConditionItem>
+            <ConditionItem conditionName={'COVID-19'}></ConditionItem>
+            <ConditionItem conditionName={'Cryptosporidiosis'}></ConditionItem>
+            <ConditionItem conditionName={'Candida auris'}></ConditionItem>
+          </>
+        }
+        drawerWidth="35%"
+      />
     </div>
   );
 }
