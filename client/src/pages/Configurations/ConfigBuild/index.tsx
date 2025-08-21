@@ -16,6 +16,7 @@ import { useGetConfiguration } from '../../../api/configurations/configurations'
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
+import { FuseResultMatch } from 'fuse.js';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -161,6 +162,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       { name: 'code', weight: 0.7 },
       { name: 'description', weight: 0.3 },
     ],
+    includeMatches: true,
     minMatchCharLength: 3,
   });
 
@@ -220,7 +222,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         <div className="pt-10">
           <p>Loading...</p>
         </div>
-      ) : hasSearched && searchText && results.length === 0 ? (
+      ) : hasSearched && searchText && (!results || results.length === 0) ? (
         <div className="pt-10">
           <p>No codes match the search criteria.</p>
         </div>
@@ -239,14 +241,24 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
               </tr>
             </thead>
             <tbody>
-              {visibleCodes.map((code) => (
-                <ConditionCodeRow
-                  key={`${code.system}-${code.code}`}
-                  codeSystem={code.system}
-                  code={code.code}
-                  text={code.description}
-                />
-              ))}
+              {searchText
+                ? results.map((r) => (
+                    <ConditionCodeRow
+                      key={`${r.item.system}-${r.item.code}`}
+                      codeSystem={r.item.system}
+                      code={r.item.code}
+                      text={r.item.description}
+                      matches={r.matches}
+                    />
+                  ))
+                : visibleCodes.map((code) => (
+                    <ConditionCodeRow
+                      key={`${code.system}-${code.code}`}
+                      codeSystem={code.system}
+                      code={code.code}
+                      text={code.description}
+                    />
+                  ))}
             </tbody>
           </table>
         </div>
@@ -259,14 +271,51 @@ interface ConditionCodeRowProps {
   code: string;
   codeSystem: string;
   text: string;
+  matches?: readonly FuseResultMatch[];
 }
 
-function ConditionCodeRow({ code, codeSystem, text }: ConditionCodeRowProps) {
+function ConditionCodeRow({
+  code,
+  codeSystem,
+  text,
+  matches,
+}: ConditionCodeRowProps) {
   return (
     <tr>
-      <td className="w-1/6">{code}</td>
-      <td className="w-1/6"> {codeSystem}</td>
-      <td className="w-4/6">{text}</td>
+      <td className="w-1/6">{highlightMatches(code, matches, 'code')}</td>
+      <td className="w-1/6">{codeSystem}</td>
+      <td className="w-4/6">
+        {highlightMatches(text, matches, 'description')}
+      </td>
     </tr>
   );
+}
+
+function highlightMatches(
+  text: string,
+  matches?: readonly FuseResultMatch[],
+  key?: string
+) {
+  if (!matches || !key) return text;
+
+  const match = matches.find((m) => m.key === key);
+  if (!match || !match.indices.length) return text;
+
+  const indices = match.indices;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  indices.forEach(([start, end], i) => {
+    if (lastIndex < start) {
+      parts.push(text.slice(lastIndex, start));
+    }
+    parts.push(<mark key={i}>{text.slice(start, end + 1)}</mark>);
+    lastIndex = end + 1;
+  });
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
 }
