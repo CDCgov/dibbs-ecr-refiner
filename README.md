@@ -40,7 +40,7 @@ Examples of the required environment variables can be seen in the project's [doc
 
 ## Creating a production build
 
-The DIBBs eCR Refiner runs enitrely within a single container in a production environment. All build versions, including the very latest, can be downloaded from the [Refiner's GitHub Container Registry](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner).
+The DIBBs eCR Refiner runs entirely within a single container in a production environment. All build versions, including the very latest, can be downloaded from the [Refiner's GitHub Container Registry](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner).
 
 ### Automatic builds
 
@@ -70,4 +70,4 @@ The `pre-commit` hook will automatically fix any linter issues and will also for
 
 ## Type checking
 
-The Refiner's Python server code is type checked using `mypy`. Activate your virtual envrionment and install all dependencies (using the directions above) and run `mypy` in your terminal within the `refiner` directory.
+The Refiner's Python server code is type checked using `mypy`. Activate your virtual environment and install all dependencies (using the directions above) and run `mypy` in your terminal within the `refiner` directory.
