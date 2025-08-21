@@ -1,37 +1,19 @@
 import { useMemo, useState } from 'react';
 import Fuse, { FuseResult, IFuseOptions } from 'fuse.js';
-import { useDebounce } from 'use-debounce';
 
-export function useSearch<T>(
-  data: T[],
-  options?: IFuseOptions<T>,
-  debounceMs: number = 0
-) {
+export function useSearch<T>(data: T[], options?: IFuseOptions<T>) {
   const [searchText, setSearchText] = useState('');
-  const [debouncedSearch] = useDebounce(searchText, debounceMs);
 
-  const fuseOptions = useMemo(
-    () => ({
-      includeScore: false,
-      threshold: 0.3,
-      ...options,
-    }),
-    [options]
-  );
-
-  const fuseIndex = useMemo(() => {
-    return Fuse.createIndex(fuseOptions.keys || [], data);
-  }, [data, fuseOptions]);
-
+  // Create Fuse instance only when data/options change
   const fuse = useMemo(() => {
-    return new Fuse(data, fuseOptions, fuseIndex);
-  }, [data, fuseOptions, fuseIndex]);
+    return new Fuse(data, options);
+  }, [data, options]);
 
   // Search results
   const results: FuseResult<T>[] = useMemo(() => {
-    if (!debouncedSearch) return [];
-    return fuse.search(debouncedSearch);
-  }, [fuse, debouncedSearch]);
+    if (!searchText) return [];
+    return fuse.search(searchText);
+  }, [fuse, searchText]);
 
   return {
     searchText,

@@ -156,17 +156,13 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       : codes.filter((code) => code.system === selectedCodeSystem);
   }, [codes, selectedCodeSystem]);
 
-  const { searchText, setSearchText, results } = useSearch(
-    filteredCodes,
-    {
-      keys: [
-        { name: 'code', weight: 0.7 },
-        { name: 'description', weight: 0.3 },
-      ],
-      minMatchCharLength: 3,
-    },
-    0
-  );
+  const { searchText, setSearchText, results } = useSearch(filteredCodes, {
+    keys: [
+      { name: 'code', weight: 0.7 },
+      { name: 'description', weight: 0.3 },
+    ],
+    minMatchCharLength: 3,
+  });
 
   const debouncedSearchUpdate = useDebouncedCallback((input: string) => {
     setIsLoadingResults(true);
