@@ -71,8 +71,8 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/01-seed-data.sql
-      - ./refiner/app/db/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      # - ./refiner/tests/integration/seeding/seed-data.sql:/docker-entrypoint-initdb.d/01-seed-data.sql
+      # - ./refiner/app/db/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
       - pgdata:/var/lib/postgresql/data
 
   localstack:
@@ -89,6 +89,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
 
+  migrate:
+    image: migrate/migrate:v4.18.3
+    working_dir: /app
+    profiles: ["migrate"]
+    depends_on:
+      - db
+    volumes:
+        - .:/app
 
 volumes:
   pgdata:
