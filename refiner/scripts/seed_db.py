@@ -294,9 +294,13 @@ def seed_database(db_url) -> None:
                     "users",
                     "jurisdictions",
                 ]
-                cursor.execute(
-                    f"TRUNCATE {', '.join(tables)} RESTART IDENTITY CASCADE;"
-                )
+                for table in tables:
+                    try:
+                        cursor.execute(
+                            f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;"
+                        )
+                    except Exception:
+                        logging.warning(f"Table {table} does not exist, skipping.")
 
                 if conditions_to_insert:
                     logging.info(
