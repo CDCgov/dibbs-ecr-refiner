@@ -7,14 +7,14 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
+import { useSearch } from '../../../hooks/useSearch';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
-import { useWorkerSearch } from '../../../hooks/useWorkerSearch';
 import { useDebouncedCallback } from 'use-debounce';
 
 export default function ConfigBuild() {
@@ -138,13 +138,12 @@ interface ConditionCodeTableProps {
 }
 
 function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
-  const DEBOUNCE_TIME_MS = 500;
+  const DEBOUNCE_TIME_MS = 300;
 
   const { data: response, isLoading, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
-  const [searchText, setSearchText] = useState<string>('');
-  const [isLoadingDebouncedResults, setIsLoadingDebouncedResults] =
-    useState<boolean>(false);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const codes = useMemo(
     () => response?.data.codes ?? [],
@@ -157,23 +156,32 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
       : codes.filter((code) => code.system === selectedCodeSystem);
   }, [codes, selectedCodeSystem]);
 
-  const results = useWorkerSearch(
+  const { searchText, setSearchText, results } = useSearch(
     filteredCodes,
     {
       keys: [
         { name: 'code', weight: 0.7 },
         { name: 'description', weight: 0.3 },
       ],
-      includeScore: false,
+      minMatchCharLength: 3,
     },
-    searchText
+    0
   );
 
-  const visibleCodes = searchText ? results : filteredCodes;
-
-  const handleDebouncedChange = useDebouncedCallback((value: string) => {
-    setSearchText(value);
+  const debouncedSearchUpdate = useDebouncedCallback((input: string) => {
+    setIsLoadingResults(true);
+    setSearchText(input);
+    setHasSearched(true);
   }, DEBOUNCE_TIME_MS);
+
+  useEffect(() => {
+    if (isLoadingResults) {
+      setIsLoadingResults(false);
+    }
+  }, [results]);
+
+  // Decide which data to display
+  const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
   if (isLoading || !response?.data) return 'Loading...';
   if (isError) return 'Error!';
@@ -186,11 +194,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
     <div className="min-h-full min-w-full">
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
-          onChange={(e) => {
-            setIsLoadingDebouncedResults(true);
-            handleDebouncedChange(e.target.value);
-            setIsLoadingDebouncedResults(false);
-          }}
+          onChange={(e) => debouncedSearchUpdate(e.target.value)}
           id="code-search"
           name="code-search"
           type="search"
@@ -216,7 +220,11 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         </div>
       </div>
       <hr className="border-blue-cool-5 w-full border-[1px]" />
-      {!isLoadingDebouncedResults && visibleCodes.length === 0 ? (
+      {isLoadingResults ? (
+        <div className="pt-10">
+          <p>Loading...</p>
+        </div>
+      ) : hasSearched && searchText && results.length === 0 ? (
         <div className="pt-10">
           <p>No codes match the search criteria.</p>
         </div>
