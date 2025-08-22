@@ -11,23 +11,23 @@ alias help := _default
 [group('migrate')]
 [doc('Run migrations with migrate for a given environment (local, dev, prod)')]
 run ENV +ARGS='up':
-    docker compose run --rm migrate -path /app/refiner/migrations -database {{ shell('../../get_db_url.sh local') }} {{ ARGS }}
+    sh -c '../../get_db_url.sh {{ENV}} | xargs -I {} docker compose run -T --rm migrate -path /app/refiner/migrations -database {} {{ARGS}}'
 
 
 [group('migrate')]
 [doc('Shortcut: migrate local')]
 local +ARGS='up':
-    just -f migrate.just migrate local {{ARGS}}
+    just -f migrate.just run local {{ARGS}}
 
 [group('migrate')]
 [doc('Shortcut: migrate dev')]
 dev +ARGS='up':
-    just -f migrate.just migrate dev {{ARGS}}
+    just -f migrate.just run dev {{ARGS}}
 
 [group('migrate')]
 [doc('Shortcut: migrate prod')]
 prod +ARGS='up':
-    just -f migrate.just migrate prod {{ARGS}}
+    just -f migrate.just run prod {{ARGS}}
 
 [group('migrate')]
 [doc('Create a new migration script')]
