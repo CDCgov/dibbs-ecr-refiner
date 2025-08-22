@@ -20,22 +20,30 @@ auth_router = APIRouter()
 
 
 @auth_router.get("/login", tags=["auth", "internal"], include_in_schema=False)
-async def login(request: Request) -> RedirectResponse:
+async def login(
+    request: Request, logger: Logger = Depends(get_logger)
+) -> RedirectResponse:
     """
     Initiates the OAuth2 login flow by redirecting the user to the authorization endpoint.
 
     Args:
-        request (Request): The incoming HTTP request.
+        request (Request): The incoming HTTP/S request.
+        logger (Logger): The standard logger.
 
     Returns:
         RedirectResponse: A redirect response that sends the user to the OAuth provider's login page.
     """
     env = ENVIRONMENT["ENV"]
+
+    scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+
     redirect_uri = (
-        request.url_for("auth_callback")
+        f"{scheme}://{request.url.hostname}/api/auth/callback"
         if env != "local"
         else "http://localhost:8080/api/auth/callback"
     )
+
+    logger.info(f"Login redirect URI: {redirect_uri}")
 
     return await get_oauth_provider().authorize_redirect(request, redirect_uri)
 
@@ -128,6 +136,7 @@ async def auth_callback(
         response = RedirectResponse(url=redirect_uri)
 
         logger.info("Set cookie for user", extra={"username": user.username})
+        logger.info(f"Request scheme: {request.url.scheme}")
         response.set_cookie(
             key="refiner-session",
             value=session_token,

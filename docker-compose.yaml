@@ -13,7 +13,7 @@ services:
   refiner-service:
     image: python:3.13-slim
     platform: linux/amd64
-    command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
+    command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload --proxy-headers"
     working_dir: /app
     volumes:
       - ./refiner:/app
