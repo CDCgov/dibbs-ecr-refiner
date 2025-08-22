@@ -35,10 +35,8 @@ async def login(
     """
     env = ENVIRONMENT["ENV"]
 
-    scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
-
     redirect_uri = (
-        f"{scheme}://{request.url.hostname}/api/auth/callback"
+        "https://refiner.dibbs.tools/api/auth/callback"
         if env != "local"
         else "http://localhost:8080/api/auth/callback"
     )
@@ -136,7 +134,7 @@ async def auth_callback(
         response = RedirectResponse(url=redirect_uri)
 
         logger.info("Set cookie for user", extra={"username": user.username})
-        logger.info(f"Request scheme: {request.url.scheme}")
+
         response.set_cookie(
             key="refiner-session",
             value=session_token,
