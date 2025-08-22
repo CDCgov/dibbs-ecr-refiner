@@ -77,7 +77,7 @@ const Drawer = ({
           id="drawer-container"
           aria-label="drawer-container"
         >
-          <div className="w-full p-8">
+          <div className="w-full overflow-y-scroll p-8">
             <div className="max-w-[95%]">
               <button
                 className="absolute top-6 right-4 flex shrink-0 cursor-pointer items-center justify-center border-none bg-none p-0"
@@ -87,28 +87,29 @@ const Drawer = ({
               >
                 <Icon.Close size={3} aria-label="X icon indicating closure" />
               </button>
-              <Title>{title}</Title>
-              {subtitle ? (
-                <div className="m-0 !py-4 text-gray-600">{subtitle}</div>
-              ) : (
-                <></>
-              )}
-
-              {onSearch && (
-                <div>
-                  <Search
-                    onChange={(e) => {
-                      e.preventDefault();
-                      setSearchFilter(e.target.value);
-                    }}
-                    id="code-search"
-                    name="code-search"
-                    type="search"
-                    value={searchFilter}
-                    placeholder={placeHolder}
-                  />
-                </div>
-              )}
+              <section className="p-4">
+                <Title>{title}</Title>
+                {subtitle ? (
+                  <div className="m-0 !py-4 text-gray-600">{subtitle}</div>
+                ) : (
+                  <></>
+                )}
+                {onSearch && (
+                  <div>
+                    <Search
+                      onChange={(e) => {
+                        e.preventDefault();
+                        setSearchFilter(e.target.value);
+                      }}
+                      id="code-search"
+                      name="code-search"
+                      type="search"
+                      value={searchFilter}
+                      placeholder={placeHolder}
+                    />
+                  </div>
+                )}
+              </section>
             </div>
 
             <div className="flex flex-col pt-4">{toRender}</div>

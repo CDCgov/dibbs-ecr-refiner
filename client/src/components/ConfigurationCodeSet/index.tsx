@@ -11,13 +11,13 @@ const ConditionItem: React.FC<ConditionItemProps> = ({ conditionName }) => {
 
   return (
     <div
-      className="flex h-10 flex-row items-center justify-between py-4 text-left"
+      className="flex h-16 items-center justify-between rounded-md p-4 transition-colors hover:bg-white"
       onMouseEnter={() => setShowAddButton(true)}
       onMouseLeave={() => {
         if (!isButtonToggled) setShowAddButton(false);
       }}
     >
-      <em className="py-10">{conditionName}</em>
+      <p>{conditionName}</p>
       {showAddButton && (
         <Button
           variant={isButtonToggled ? 'selected' : 'primary'}
