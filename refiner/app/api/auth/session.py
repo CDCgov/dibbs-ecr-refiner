@@ -5,51 +5,15 @@ import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
 from logging import Logger
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
-from ...db.user.model import User
 
 SESSION_TTL = timedelta(hours=1)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
-
-
-class IdpUserResponse(BaseModel):
-    """
-    Expected user information coming from the IdP response.
-    """
-
-    user_id: str
-    username: str
-    email: str
-
-
-async def upsert_user(oidc_user_info: IdpUserResponse) -> str:
-    """
-    Upserts a user to the refiner's database upon successful login.
-
-    Args:
-        oidc_user_info (IdpUserResponse): User information from the IdP.
-
-    Returns:
-        str: User ID of the created or modified user.
-    """
-    query = """
-        INSERT INTO users (id, username, email)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (id)
-        DO UPDATE SET
-            username = EXCLUDED.username,
-            email = EXCLUDED.email
-        """
-    params = (oidc_user_info.user_id, oidc_user_info.username, oidc_user_info.email)
-
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
-
-    return oidc_user_info.user_id
 
 
 def get_hashed_token(token: str) -> str:
@@ -94,7 +58,16 @@ async def create_session(user_id: str) -> str:
     return token
 
 
-async def get_user_from_session(token: str) -> User | None:
+class UserResponse(BaseModel):
+    """
+    User response model.
+    """
+
+    id: UUID
+    username: str
+
+
+async def get_user_from_session(token: str) -> UserResponse | None:
     """
     Given a session token, find the user associated with the session.
 
@@ -115,7 +88,7 @@ async def get_user_from_session(token: str) -> User | None:
         user = await cur.fetchone()
 
         if user:
-            return User(id=user["id"], username=user["username"])
+            return UserResponse(id=user["id"], username=user["username"])
     return None
 
 

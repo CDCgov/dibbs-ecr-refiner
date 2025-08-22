@@ -40,4 +40,3 @@ check: _venv
 [doc('Query the terminology in the database')]
 query: _venv
     .venv/bin/python3 {{ query_db }}
-
