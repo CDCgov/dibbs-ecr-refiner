@@ -1,6 +1,7 @@
 import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
+import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
   NavigationContainer,
@@ -408,10 +409,13 @@ export function AddCustomCodeModal({
     }
   }, [open, initialData]);
 
+  const showToast = useToast();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({ code, system, name });
     onClose();
+    showToast({ heading: 'Custom code added', body: code });
   };
 
   if (!open) return null;
