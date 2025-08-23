@@ -145,22 +145,24 @@ function Builder({ code_sets }: BuilderProps) {
               </label>
             </div>
           </div>
-          <ul className="mt-2 flex flex-col gap-2">
-            <li>
-              <button
-                className={classNames(
-                  'flex w-full justify-between rounded p-2 text-left hover:cursor-pointer hover:bg-stone-50',
-                  { 'bg-white': isCustomCodes }
-                )}
-                onClick={() => {
-                  onClick('custom');
-                }}
-              >
-                <span>Custom codes</span>
-                <span>{customCodes.length}</span>
-              </button>
-            </li>
-          </ul>
+          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+            <ul className="mt-2 flex flex-col gap-2">
+              <li>
+                <button
+                  className={classNames(
+                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                    { 'bg-white': isCustomCodes }
+                  )}
+                  onClick={() => {
+                    onClick('custom');
+                  }}
+                >
+                  <span>Custom codes</span>
+                  <span>{customCodes.length}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && selectedCodesetId != 'custom' ? (
