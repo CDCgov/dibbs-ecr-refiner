@@ -469,6 +469,8 @@ export function AddCustomCodeModal({
                   <option value="ICD-10">ICD-10</option>
                   <option value="SNOMED">SNOMED</option>
                   <option value="LOINC">LOINC</option>
+                  <option value="RXNORM">RxNorm</option>
+                  <option value="LOCAL">Local</option>
                 </select>
               </div>
 
