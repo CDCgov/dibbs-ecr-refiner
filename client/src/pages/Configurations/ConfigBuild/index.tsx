@@ -198,7 +198,7 @@ function Builder({ code_sets }: BuilderProps) {
                         <td>{c.code}</td>
                         <td>{c.system}</td>
                         <td>{c.name}</td>
-                        <td className="flex gap-2">
+                        <td>
                           <button
                             className="usa-button usa-button--unstyled text-blue-60"
                             onClick={() => {
@@ -209,7 +209,7 @@ function Builder({ code_sets }: BuilderProps) {
                           >
                             Edit
                           </button>
-                          <span>|</span>
+                          <span> | </span>
                           <button
                             className="usa-button usa-button--unstyled text-red-60"
                             onClick={() =>
