@@ -207,9 +207,7 @@ function Builder({ code_sets }: BuilderProps) {
                           >
                             Edit
                           </button>
-                          <span>
-                            |
-                          </span>
+                          <span>|</span>
                           <button
                             className="usa-button usa-button--unstyled text-red-60"
                             onClick={() =>
