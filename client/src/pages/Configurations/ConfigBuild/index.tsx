@@ -173,15 +173,14 @@ function Builder({ code_sets }: BuilderProps) {
           ) : selectedCodesetId === 'custom' ? (
             <div>
               <CustomCodeGroupingParagraph />
-              <button
+              <Button
                 className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
                 id="open-codesets"
-                aria-label="Add new code set to configuration"
+                aria-label="Add new custom code to configuration"
                 onClick={() => setIsModalOpen(true)}
               >
-                <Icon.Add size={3} aria-hidden />
-                <span>Add Code</span>
-              </button>
+                <span>Add code</span>
+              </Button>
               {customCodes.length > 0 && (
                 <table className="usa-table usa-table--borderless mt-4 w-full">
                   <thead>
