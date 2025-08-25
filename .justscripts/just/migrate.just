@@ -9,9 +9,9 @@ alias help := _default
 # ---------------------
 
 [group('migrate')]
-[doc('Run migrations with migrate for a given environment (local, dev, prod)')]
+[doc('Run migrations with migrate for a given environment (local, demo, prod)')]
 run ENV +ARGS='up':
-    sh -c '../../get_db_url.sh {{ENV}} | xargs -I {} docker compose run -T --rm migrate -path /app/refiner/migrations -database {} {{ARGS}}'
+    sh -c '../../get_db_url.sh {{ENV}} | xargs -I {} docker compose exec -T migrate migrate -path /app/refiner/migrations -database {} {{ARGS}}'
 
 
 [group('migrate')]
@@ -20,9 +20,9 @@ local +ARGS='up':
     just -f migrate.just run local {{ARGS}}
 
 [group('migrate')]
-[doc('Shortcut: migrate dev')]
-dev +ARGS='up':
-    just -f migrate.just run dev {{ARGS}}
+[doc('Shortcut: migrate demo')]
+demo +ARGS='up':
+    just -f migrate.just run demo {{ARGS}}
 
 [group('migrate')]
 [doc('Shortcut: migrate prod')]
@@ -32,4 +32,4 @@ prod +ARGS='up':
 [group('migrate')]
 [doc('Create a new migration script')]
 create NAME:
-    docker compose run --rm migrate create -ext sql -dir /app/refiner/migrations -seq {{NAME}}
+    docker compose exec migrate migrate create -ext sql -dir /app/refiner/migrations -seq {{NAME}}
