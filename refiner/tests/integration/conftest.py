@@ -103,7 +103,7 @@ def setup(request):
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
 
-    print("🧠 Seeding database with TES data...")
+    print("☄️ Clearing data...")
     refiner_service.exec_in_container(
         [
             "psql",
@@ -111,26 +111,20 @@ def setup(request):
             "postgres",
             "refiner",
             "-f",
-            "/docker-entrypoint-initdb.d/01-seed-data.sql",
+            "/drop-all.sql",
         ],
         "db",
     )
 
-    # Set up database schema
-    print("🔨 Applying database schema...")
+    print("🧠 Running database migrations...")
     refiner_service.exec_in_container(
         [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-f",
-            "/docker-entrypoint-initdb.d/02-schema.sql",
+            "sh",
+            "-c",
+            "migrate -path /app/refiner/migrations -database $(./get_db_url.sh local) up",
         ],
-        "db",
+        "migrate",
     )
-    print("✅ Schema applied")
 
     print("🩺 Seeding conditions...")
     refiner_service.exec_in_container(
