@@ -1,4 +1,4 @@
--- WARNING - running this script completely wipe the database!
+-- WARNING - running this script completely wipes the database!
 
 -- Drop the public schema and everything in it
 DROP SCHEMA public CASCADE;
