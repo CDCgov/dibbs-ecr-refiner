@@ -1,4 +1,4 @@
-Authlib==1.6.1
+Authlib==1.6.2
 boto3==1.40.15
 chardet
 fastapi>=0.109.1
