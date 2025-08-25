@@ -333,7 +333,10 @@ def seed_database(db_url) -> None:
                         cursor.execute(
                             f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;"
                         )
-                    except psycopg.errors.UndefinedTable:
+                    except (
+                        psycopg.errors.UndefinedTable,
+                        psycopg.errors.InFailedSqlTransaction,
+                    ):
                         logging.warning(f"Table {table} does not exist, skipping.")
 
                 # seed filters and groupers from .sql files
@@ -373,6 +376,7 @@ def seed_database(db_url) -> None:
             "❌ A critical error occurred during the seeding process. The transaction has been rolled back."
         )
         logging.error(f"  Error details: {error}")
+        logging.error("🧠 Make sure migrations have been run prior to seeding!")
         raise
 
 
