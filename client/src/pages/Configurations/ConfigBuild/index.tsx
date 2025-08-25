@@ -12,8 +12,7 @@ import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
-import Drawer from '../../../components/Drawer';
-import ConditionItem from '../../../components/ConfigurationCodeSet';
+import AddConditionCodeSetsDrawer from '../../../components/Drawer/AddConditionCodeSets';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
@@ -129,49 +128,11 @@ function Builder({ code_sets }: BuilderProps) {
           ) : null}
         </div>
       </div>
-      <Drawer
-        title="Add condition code sets"
-        subtitle={
-          <p className="!pt-2">
-            Codes relevant to each condition are grouped together. These code
-            sets are derived from the{' '}
-            <Link
-              to={'https://tes.tools.aimsplatform.org'}
-              className="text-blue-cool-60 font-bold"
-            >
-              TES (Terminology Exchange Service)
-            </Link>
-            .
-          </p>
-        }
+      <AddConditionCodeSetsDrawer
         isOpen={drawerActive}
-        placeHolder="Search by condition name"
-        onSearch={onSearch}
-        // onSave={onSave}
         onClose={onClose}
-        toRender={
-          <>
-            <ConditionItem
-              conditionName={'Chlamydia trachomatis infection'}
-            ></ConditionItem>
-            <ConditionItem conditionName={'Gonorrhea'}></ConditionItem>
-            <ConditionItem conditionName={'HIV'}></ConditionItem>
-            <ConditionItem conditionName={'Syphilis'}></ConditionItem>
-            <ConditionItem conditionName={'Anaplasmosis'}></ConditionItem>
-            <ConditionItem conditionName={'Anthrax'}></ConditionItem>
-            <ConditionItem conditionName={'Arboviral disease'}></ConditionItem>
-            <ConditionItem conditionName={'Brucellosis'}></ConditionItem>
-            <ConditionItem conditionName={'Campylobacteriosis'}></ConditionItem>
-            <ConditionItem conditionName={'Cholera'}></ConditionItem>
-            <ConditionItem
-              conditionName={'Cocciodioidomycosis'}
-            ></ConditionItem>
-            <ConditionItem conditionName={'COVID-19'}></ConditionItem>
-            <ConditionItem conditionName={'Cryptosporidiosis'}></ConditionItem>
-            <ConditionItem conditionName={'Candida auris'}></ConditionItem>
-          </>
-        }
-        drawerWidth="35%"
+        onSearch={onSearch}
+        conditions
       />
     </div>
   );

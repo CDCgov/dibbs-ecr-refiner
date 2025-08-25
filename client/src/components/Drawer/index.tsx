@@ -9,7 +9,7 @@ type DrawerProps = {
   title: string | React.ReactNode;
   subtitle?: string | React.ReactNode;
   placeHolder: string;
-  toRender: React.ReactNode;
+  children: React.ReactNode;
   isOpen: boolean;
   // onSave: () => void;
   onClose: () => void;
@@ -21,7 +21,7 @@ const Drawer = ({
   title,
   subtitle,
   placeHolder,
-  toRender,
+  children,
   isOpen,
   // onSave,
   onClose,
@@ -112,7 +112,7 @@ const Drawer = ({
               </section>
             </div>
 
-            <div className="flex flex-col pt-4">{toRender}</div>
+            <div className="flex flex-col pt-4">{children}</div>
           </div>
         </div>
 

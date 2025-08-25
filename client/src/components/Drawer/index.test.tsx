@@ -18,10 +18,11 @@ describe('Drawer Component', () => {
       <Drawer
         title="Test Drawer"
         placeHolder="Search here..."
-        toRender={<div>Drawer Content</div>}
         isOpen={true}
         onClose={vi.fn()}
-      />
+      >
+        <div>Drawer Content</div>
+      </Drawer>
     );
 
     expect(container).toBeInTheDocument();
@@ -35,10 +36,11 @@ describe('Drawer Component', () => {
       <Drawer
         title="Test Drawer"
         placeHolder="Search here..."
-        toRender={<div>Drawer Content</div>}
         isOpen={true}
         onClose={onCloseMock}
-      />
+      >
+        <div>Drawer Content</div>
+      </Drawer>
     );
 
     const closeButton = screen.getByTestId('close-drawer');
@@ -51,11 +53,12 @@ describe('Drawer Component', () => {
       <Drawer
         title="Test Drawer"
         placeHolder="Search here..."
-        toRender={<div>Drawer Content</div>}
         isOpen={true}
         onClose={vi.fn()}
         drawerWidth="35%"
-      />
+      >
+        <div>Drawer Content</div>
+      </Drawer>
     );
 
     const drawer = container.querySelector('#drawer-container');
@@ -68,11 +71,12 @@ describe('Drawer Component', () => {
       <Drawer
         title="Test Drawer"
         placeHolder="Search here..."
-        toRender={<div>Drawer Content</div>}
         isOpen={true}
         onClose={vi.fn()}
         onSearch={onSearchMock}
-      />
+      >
+        <div>Drawer Content</div>
+      </Drawer>
     );
 
     const searchInput = screen.getByPlaceholderText('Search here...');
@@ -86,11 +90,12 @@ describe('Drawer Component', () => {
       <Drawer
         title="Test Drawer"
         placeHolder="Search here..."
-        toRender={<div>Drawer Content</div>}
         isOpen={true}
         onClose={vi.fn()}
         onSearch={onSearchMock}
-      />
+      >
+        <div>Drawer Content</div>
+      </Drawer>
     );
 
     const searchInput = screen.getByPlaceholderText('Search here...');
