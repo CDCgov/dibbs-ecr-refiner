@@ -92,11 +92,8 @@ services:
     image: migrate/migrate:v4.18.3
     working_dir: /app
     entrypoint: ["tail", "-f", "/dev/null"]
-    # profiles: ["migrate"]
     depends_on:
       - db
-    environment:
-      - DB_URL=postgresql://postgres:refiner@db:5432/refiner?sslmode=disable
     volumes:
         - .:/app
 # Run with `docker compose run --rm seed`
