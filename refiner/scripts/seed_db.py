@@ -21,6 +21,9 @@ DATA_DIR = current_dir / "data"
 # correct path for the test configuration and jurisdiction data file inside the container
 TEST_DATA_FILE = current_dir / "sample_configuration_seed_data.json"
 
+filters_data_path = Path(DATA_DIR / "filters_data.sql")
+groupers_data_path = Path(DATA_DIR / "groupers_data.sql")
+
 
 def get_db_connection(db_url) -> Connection:
     """
@@ -205,6 +208,34 @@ def seed_test_data_from_json(cursor: Cursor, test_data: dict[str, Any]) -> None:
     # logging.info("  ✅ Test data seeding complete.")
 
 
+def seed_filters_data(cursor) -> None:
+    """
+    Seeds filters data used by the Refiner.
+    """
+    try:
+        cursor.execute(filters_data_path.read_text())
+    except (psycopg.Error, Exception) as error:
+        logging.error(
+            "❌ Unable to seed filters data. The transaction has been rolled back."
+        )
+        logging.error(f"  Error details: {error}")
+        raise
+
+
+def seed_groupers_data(cursor) -> None:
+    """
+    Seeds groupers data used by the Refiner.
+    """
+    try:
+        cursor.execute(groupers_data_path.read_text())
+    except (psycopg.Error, Exception) as error:
+        logging.error(
+            "❌ Unable to seed groupers data. The transaction has been rolled back."
+        )
+        logging.error(f"  Error details: {error}")
+        raise
+
+
 def seed_database(db_url) -> None:
     """
     Orchestrates the entire database seeding process.
@@ -287,27 +318,34 @@ def seed_database(db_url) -> None:
                 logging.info("🧹 Clearing all data tables...")
                 tables = [
                     "activations",
-                    "configuration_labels",
-                    "labels",
-                    "configurations",
                     "conditions",
-                    "users",
+                    "configuration_labels",
+                    "filters",
+                    "groupers",
                     "jurisdictions",
+                    "configurations",
+                    "labels",
+                    "sessions",
+                    "users",
                 ]
                 for table in tables:
                     try:
                         cursor.execute(
                             f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;"
                         )
-                    except Exception:
+                    except psycopg.errors.UndefinedTable:
                         logging.warning(f"Table {table} does not exist, skipping.")
+
+                # seed filters and groupers from .sql files
+                seed_filters_data(cursor)
+                seed_groupers_data(cursor)
 
                 if conditions_to_insert:
                     logging.info(
                         f"⏳ Inserting {len(conditions_to_insert)} condition records..."
                     )
                     insert_query = sql.SQL("""
-                        INSERT INTO conditions (canonical_url, version, display_name, child_rsg_snomed_codes, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes)
+                        INSERT INTO public.conditions (canonical_url, version, display_name, child_rsg_snomed_codes, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes)
                         VALUES (%(canonical_url)s, %(version)s, %(display_name)s, %(child_rsg_snomed_codes)s, %(loinc_codes)s, %(snomed_codes)s, %(icd10_codes)s, %(rxnorm_codes)s)
                     """)
                     cursor.executemany(insert_query, conditions_to_insert)

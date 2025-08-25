@@ -19,9 +19,9 @@ query_db := absolute_path('query_terminology_db.py')
 
 # WARN: Required environment variables that we want to break execution on when
 # using Just
-DB_URL := env('DB_URL')
-TES_API_URL := env('TES_API_URL')
-TES_API_KEY := env('TES_API_KEY')
+# DB_URL := env('DB_URL')
+# TES_API_URL := env('TES_API_URL')
+# TES_API_KEY := env('TES_API_KEY')
 
 _venv:
     [ -d .venv ] || python3 -m venv .venv
@@ -40,3 +40,8 @@ check: _venv
 [doc('Query the terminology in the database')]
 query: _venv
     .venv/bin/python3 {{ query_db }}
+
+[group('db')]
+[doc('Completely wipes the refiner local database')]
+clean:
+    docker compose exec db psql -U postgres -d refiner -f drop-all.sql
