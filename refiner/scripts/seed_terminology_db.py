@@ -1,11 +1,8 @@
 import json
 import logging
 import os
-import re
-import subprocess
 import time
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import psycopg
@@ -75,7 +72,6 @@ class TESDataLoader:
         2. Sets up API connection headers
         3. Initializes database connection
         4. Configures logging
-        5. Creates required database tables
 
         Args:
             db_url: PostgreSQL database URL
@@ -100,7 +96,6 @@ class TESDataLoader:
         self.db_url = db_url
         self.connection = psycopg.connect(self.db_url, autocommit=True)
         self.setup_logging()
-        self.create_tables()
 
     def setup_logging(self) -> None:
         """
@@ -112,21 +107,6 @@ class TESDataLoader:
             format="%(asctime)s - %(levelname)s - %(message)s",
         )
         self.logger: logging.Logger = logging.getLogger(__name__)
-
-    def create_tables(self) -> None:
-        """
-        Create the groupers and filters tables.
-        """
-
-        self.logger.info("Creating database tables if they don't exist")
-
-        script_dir = Path(__file__).parent
-        project_root = script_dir.parent
-        schema_path = project_root / "app" / "db" / "schema.sql"
-
-        with schema_path.open() as f:
-            with self.connection.cursor() as cursor:
-                cursor.execute(f.read())
 
     def store_grouper(
         self,
@@ -337,40 +317,9 @@ class TESDataLoader:
         self.logger.info("Finished populating groupers and filters tables")
 
 
-def dump_postgres_db_from_url(conn_str: str, output_file: str):
-    """
-    Dumps a PostgreSQL database using docker-compose and pg_dump.
-
-    Args:
-        conn_str: PostgreSQL connection string (e.g. postgresql://user:pass@host:port/dbname).
-        output_file: Path to save the dump file on the host.
-    """
-    # Grab user and database from connection string
-    match = re.match(r"postgresql://([^:]+):[^@]+@[^/]+/([^?]+)", conn_str)
-    if not match:
-        raise ValueError("Invalid connection string format.", conn_str)
-
-    user, dbname = match.groups()
-
-    # Compose the command
-    dump_cmd = f"docker compose exec db pg_dump -U {user} {dbname} > {output_file}"
-
-    try:
-        print(f"Dumping database to: {output_file}")
-        subprocess.run(dump_cmd, shell=True, check=True, executable="/bin/bash")
-        print("Database dump completed")
-    except subprocess.CalledProcessError as e:
-        print(f"Error during pg_dump: {e}")
-        raise
-
-
 if __name__ == "__main__":
     load_dotenv()
     db_url = os.getenv("DB_URL")
 
     loader = TESDataLoader(db_url)
     loader.populate_groupers_and_filters()
-
-    # DB dump is used to seed the database for integration tests
-    dump_path = Path(__file__).parent / "seed-data.sql"
-    dump_postgres_db_from_url(db_url, str(dump_path))
