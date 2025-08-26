@@ -17,7 +17,7 @@ interface ConditionCodeSetProps {
 
 const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
   display_name,
-  id,
+  // id,
 }) => {
   const [showAddButton, setShowAddButton] = useState(false);
   const [isButtonToggled, setButtonToggled] = useState(false);

@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { Steps, StepsContainer } from '../Steps';
