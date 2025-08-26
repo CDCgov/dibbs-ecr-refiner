@@ -36,7 +36,9 @@ async def login(
     env = ENVIRONMENT["ENV"]
 
     redirect_uri = (
-        "https://refiner.dibbs.tools/api/auth/callback"
+        request.url_for("auth_callback").replace(
+            scheme="https"
+        )  # Assumes https in non-local env
         if env != "local"
         else "http://localhost:8080/api/auth/callback"
     )
