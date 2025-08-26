@@ -7,7 +7,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
@@ -16,10 +16,10 @@ import AddConditionCodeSetsDrawer from '../../../components/Drawer/AddConditionC
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
+import { useDebouncedCallback } from 'use-debounce';
+import { FuseResultMatch } from 'fuse.js';
 
 export default function ConfigBuild() {
-  // Fetch config by ID on page load for each of these steps
-  // build -> test -> activate
   const { id } = useParams<{ id: string }>();
   const {
     data: response,
@@ -159,24 +159,46 @@ interface ConditionCodeTableProps {
 }
 
 function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
+  const DEBOUNCE_TIME_MS = 300;
+
   const { data: response, isLoading, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const codes = response?.data.codes ?? [];
+  const codes = useMemo(
+    () => response?.data.codes ?? [],
+    [response?.data.codes]
+  );
 
-  const filteredCodes = codes.filter((code) => {
-    return selectedCodeSystem === 'all' || code.system === selectedCodeSystem;
-  });
+  const filteredCodes = useMemo(() => {
+    return selectedCodeSystem === 'all'
+      ? codes
+      : codes.filter((code) => code.system === selectedCodeSystem);
+  }, [codes, selectedCodeSystem]);
 
   const { searchText, setSearchText, results } = useSearch(filteredCodes, {
     keys: [
       { name: 'code', weight: 0.7 },
       { name: 'description', weight: 0.3 },
     ],
-    includeScore: true,
+    includeMatches: true,
+    minMatchCharLength: 3,
   });
 
-  // Decide which data to display
+  const debouncedSearchUpdate = useDebouncedCallback((input: string) => {
+    setIsLoadingResults(true);
+    setSearchText(input);
+    setHasSearched(true);
+  }, DEBOUNCE_TIME_MS);
+
+  useEffect(() => {
+    if (isLoadingResults) {
+      setIsLoadingResults(false);
+    }
+  }, [results, isLoadingResults]);
+
+  // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
   if (isLoading || !response?.data) return 'Loading...';
@@ -187,10 +209,10 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   }
 
   return (
-    <div className="min-w-full">
+    <div className="min-h-full min-w-full">
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={(e) => debouncedSearchUpdate(e.target.value)}
           id="code-search"
           name="code-search"
           type="search"
@@ -216,31 +238,51 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
         </div>
       </div>
       <hr className="border-blue-cool-5 w-full border-[1px]" />
-      <div role="region">
-        <table
-          id="codeset-table"
-          className="w-full border-separate border-spacing-y-4"
-          aria-label={`Codes in set with ID ${conditionId}`}
-        >
-          <thead className="sr-only">
-            <tr>
-              <th>Code</th>
-              <th>Code system</th>
-              <th>Condition</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleCodes.map((code) => (
-              <ConditionCodeRow
-                key={`${code.system}-${code.code}`}
-                codeSystem={code.system}
-                code={code.code}
-                text={code.description}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {isLoadingResults ? (
+        <div className="pt-10">
+          <p>Loading...</p>
+        </div>
+      ) : hasSearched && searchText && (!results || results.length === 0) ? (
+        <div className="pt-10">
+          <p>No codes match the search criteria.</p>
+        </div>
+      ) : (
+        <div role="region">
+          <table
+            id="codeset-table"
+            className="w-full border-separate border-spacing-y-4"
+            aria-label={`Codes in set with ID ${conditionId}`}
+          >
+            <thead className="sr-only">
+              <tr>
+                <th>Code</th>
+                <th>Code system</th>
+                <th>Condition</th>
+              </tr>
+            </thead>
+            <tbody>
+              {searchText
+                ? results.map((r) => (
+                    <ConditionCodeRow
+                      key={`${r.item.system}-${r.item.code}`}
+                      codeSystem={r.item.system}
+                      code={r.item.code}
+                      text={r.item.description}
+                      matches={r.matches}
+                    />
+                  ))
+                : visibleCodes.map((code) => (
+                    <ConditionCodeRow
+                      key={`${code.system}-${code.code}`}
+                      codeSystem={code.system}
+                      code={code.code}
+                      text={code.description}
+                    />
+                  ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -249,14 +291,51 @@ interface ConditionCodeRowProps {
   code: string;
   codeSystem: string;
   text: string;
+  matches?: readonly FuseResultMatch[];
 }
 
-function ConditionCodeRow({ code, codeSystem, text }: ConditionCodeRowProps) {
+function ConditionCodeRow({
+  code,
+  codeSystem,
+  text,
+  matches,
+}: ConditionCodeRowProps) {
   return (
     <tr>
-      <td className="w-1/6">{code}</td>
-      <td className="w-1/6"> {codeSystem}</td>
-      <td className="w-4/6">{text}</td>
+      <td className="w-1/6">{highlightMatches(code, matches, 'code')}</td>
+      <td className="w-1/6">{codeSystem}</td>
+      <td className="w-4/6">
+        {highlightMatches(text, matches, 'description')}
+      </td>
     </tr>
   );
+}
+
+function highlightMatches(
+  text: string,
+  matches?: readonly FuseResultMatch[],
+  key?: string
+) {
+  if (!matches || !key) return text;
+
+  const match = matches.find((m) => m.key === key);
+  if (!match || !match.indices.length) return text;
+
+  const indices = match.indices;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  indices.forEach(([start, end], i) => {
+    if (lastIndex < start) {
+      parts.push(text.slice(lastIndex, start));
+    }
+    parts.push(<mark key={i}>{text.slice(start, end + 1)}</mark>);
+    lastIndex = end + 1;
+  });
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
 }
