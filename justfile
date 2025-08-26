@@ -46,4 +46,4 @@ lint:
 [doc('Run tests on all code')]
 test:
     just server::test
-    just client::run coverage
+    just client::run test:coverage
