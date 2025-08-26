@@ -175,7 +175,8 @@ function Builder({ code_sets }: BuilderProps) {
             <div>
               <CustomCodeGroupingParagraph />
               <Button
-                className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
+                className="margin-top-1em"
+                variant="secondary"
                 id="open-codesets"
                 aria-label="Add new custom code to configuration"
                 onClick={() => setIsModalOpen(true)}
@@ -183,15 +184,7 @@ function Builder({ code_sets }: BuilderProps) {
                 <span>Add code</span>
               </Button>
               {customCodes.length > 0 && (
-                <table className="usa-table usa-table--borderless mt-4 w-full">
-                  <thead>
-                    <tr>
-                      <th>Code</th>
-                      <th>Code system</th>
-                      <th>Name</th>
-                      <th className="w-32">Actions</th>
-                    </tr>
-                  </thead>
+                <table className="margin-top-2em w-full border-separate border-spacing-y-4">
                   <tbody>
                     {customCodes.map((c, i) => (
                       <tr key={i}>
@@ -229,17 +222,17 @@ function Builder({ code_sets }: BuilderProps) {
             </div>
           ) : null}
         </div>
-        <AddCustomCodeModal
-          open={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingIndex(null);
-            setModalInitialData(null);
-          }}
-          onSubmit={handleAddOrEditCustomCode}
-          initialData={modalInitialData}
-        />
       </div>
+      <AddCustomCodeModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingIndex(null);
+          setModalInitialData(null);
+        }}
+        onSubmit={handleAddOrEditCustomCode}
+        initialData={modalInitialData}
+      />
     </div>
   );
 }
@@ -421,25 +414,24 @@ export function AddCustomCodeModal({
   if (!open) return null;
 
   return (
-    <div className="usa-modal-overlay is-visible">
+    <div className="usa-modal-overlay is-visible flex items-center justify-center">
       <div
-        className="usa-modal usa-modal--lg"
+        className="usa-modal usa-modal--lg width-auto"
         role="dialog"
         aria-labelledby="add-custom-code-title"
       >
-        <button
-          type="button"
-          className="usa-button usa-modal__close"
-          aria-label="Close this window"
-          onClick={onClose}
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-
-        <div className="usa-modal__content">
+        <div className="usa-modal__content width-auto">
           <main className="usa-modal__main">
+            <button
+              type="button"
+              className="usa-button usa-modal__close"
+              aria-label="Close this window"
+              onClick={onClose}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
             <h2 id="add-custom-code-title" className="usa-modal__heading">
-              {initialData ? 'Edit custom code' : 'Add custom code'}
+              Add custom code
             </h2>
 
             <form className="usa-form usa-prose" onSubmit={handleSubmit}>
@@ -497,7 +489,7 @@ export function AddCustomCodeModal({
                   className="usa-button"
                   disabled={!code || !system || !name}
                 >
-                  {initialData ? 'Save changes' : 'Add custom code'}
+                  Add custom code
                 </button>
               </div>
             </form>
