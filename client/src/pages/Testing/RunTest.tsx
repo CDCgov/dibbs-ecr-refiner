@@ -6,6 +6,7 @@ import { Title } from '../../components/Title';
 import { ChangeEvent } from 'react';
 import classNames from 'classnames';
 import { Icon } from '@trussworks/react-uswds';
+import { useGetEnv } from './../../env';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -19,6 +20,8 @@ export function RunTest({
   onClickCustomFile,
   selectedFile,
 }: RunTestProps) {
+  const env = useGetEnv();
+
   return (
     <div className="flex flex-col gap-12">
       <Title>Test filter</Title>
@@ -33,7 +36,7 @@ export function RunTest({
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
               </p>
-              <UploadFileWarning />
+              {env === 'demo' || env === 'local' ? <UploadFileWarning /> : null}
               <div>
                 <UploadZipFile
                   onClick={onClickCustomFile}
