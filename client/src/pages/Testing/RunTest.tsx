@@ -5,6 +5,7 @@ import ForwardSvg from '../../assets/forward.svg';
 import { Title } from '../../components/Title';
 import { ChangeEvent } from 'react';
 import classNames from 'classnames';
+import { Icon } from '@trussworks/react-uswds';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -32,6 +33,7 @@ export function RunTest({
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
               </p>
+              <UploadFileWarning />
               <div>
                 <UploadZipFile
                   onClick={onClickCustomFile}
@@ -114,6 +116,22 @@ function UploadZipFile({
           </label>
         </div>
       </div>
+    </div>
+  );
+}
+
+function UploadFileWarning() {
+  return (
+    <div className="rounded bg-[#FFF3F2] p-4">
+      <p className="flex flex-col gap-3 text-[#B50909]">
+        <span className="flex items-center gap-2">
+          <Icon.Warning className="shrink-0 [&_path]:fill-[#FB5A47]" />
+          <span>This environment is not approved to handle PHI/PII.</span>
+        </span>
+        <span className="font-bold">
+          Do not upload files that contain PHI/PII.
+        </span>
+      </p>
     </div>
   );
 }
