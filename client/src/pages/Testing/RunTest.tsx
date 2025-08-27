@@ -6,7 +6,7 @@ import { Title } from '../../components/Title';
 import { ChangeEvent } from 'react';
 import classNames from 'classnames';
 import { Icon } from '@trussworks/react-uswds';
-import { useGetEnv } from './../../env';
+import { useGetEnv } from '../../hooks/useGetEnv';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
