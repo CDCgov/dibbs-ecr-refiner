@@ -14,8 +14,6 @@ export function useGetEnv(): 'local' | 'demo' | 'prod' {
     return 'local';
   }
 
-  console.log('SELECTEDENV', env);
-
   if (env === 'prod') {
     return 'prod';
   } else if (env === 'demo') {

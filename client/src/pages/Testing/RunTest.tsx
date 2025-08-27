@@ -128,7 +128,10 @@ function UploadFileWarning() {
     <div className="rounded bg-[#FFF3F2] p-4">
       <p className="flex flex-col gap-3 text-[#B50909]">
         <span className="flex items-center gap-2">
-          <Icon.Warning className="shrink-0 [&_path]:fill-[#FB5A47]" />
+          <Icon.Warning
+            className="shrink-0 [&_path]:fill-[#FB5A47]"
+            aria-label="Warning"
+          />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
         <span className="font-bold">
