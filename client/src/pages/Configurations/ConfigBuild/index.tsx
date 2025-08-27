@@ -184,16 +184,16 @@ function Builder({ code_sets }: BuilderProps) {
                 <span>Add code</span>
               </Button>
               {customCodes.length > 0 && (
-                <table className="margin-top-2em w-full border-separate border-spacing-y-4">
+                <table className="margin-top-2 width-full w-full border-separate">
                   <tbody>
                     {customCodes.map((c, i) => (
-                      <tr key={i}>
+                      <tr key={i} className="align-middle">
                         <td>{c.code}</td>
                         <td>{c.system}</td>
                         <td>{c.name}</td>
-                        <td>
+                        <td className="text-right whitespace-nowrap">
                           <button
-                            className="usa-button usa-button--unstyled text-blue-60"
+                            className="usa-button usa-button--unstyled text-blue-60 margin-right-2"
                             onClick={() => {
                               setEditingIndex(i);
                               setModalInitialData(c);
@@ -202,7 +202,6 @@ function Builder({ code_sets }: BuilderProps) {
                           >
                             Edit
                           </button>
-                          <span> | </span>
                           <button
                             className="usa-button usa-button--unstyled text-red-60"
                             onClick={() =>
@@ -414,21 +413,21 @@ export function AddCustomCodeModal({
   if (!open) return null;
 
   return (
-    <div className="usa-modal-overlay is-visible flex items-center justify-center">
+    <div className="usa-modal-overlay is-visible height-200 width-125 flex items-center">
       <div
-        className="usa-modal usa-modal--lg width-auto"
+        className="usa-modal flex-align-start"
         role="dialog"
         aria-labelledby="add-custom-code-title"
       >
-        <div className="usa-modal__content width-auto">
-          <main className="usa-modal__main">
+        <div className="usa-modal__content">
+          <main className="usa-modal__main width-full height-full">
             <button
               type="button"
               className="usa-button usa-modal__close"
               aria-label="Close this window"
               onClick={onClose}
             >
-              <span aria-hidden="true">×</span>
+              <Icon.Close size={3} aria-hidden />
             </button>
             <h2 id="add-custom-code-title" className="usa-modal__heading">
               Add custom code
