@@ -121,7 +121,7 @@ def setup(request):
         [
             "sh",
             "-c",
-            "migrate -path /app/refiner/migrations -database $(./get_db_url.sh local) up",
+            "migrate -path /app/refiner/migrations -database $(./.justscripts/sh/get_db_url.sh local) up",
         ],
         "migrate",
     )

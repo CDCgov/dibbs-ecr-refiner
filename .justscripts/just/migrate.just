@@ -11,7 +11,7 @@ alias help := _default
 [group('migrate')]
 [doc('Run migrations with migrate for a given environment (local, demo, prod)')]
 run ENV +ARGS='up':
-    sh -c '../../get_db_url.sh {{ENV}} | xargs -I {} docker compose exec -T migrate migrate -path /app/refiner/migrations -database {} {{ARGS}}'
+    sh -c '../sh/get_db_url.sh {{ENV}} | xargs -I {} docker compose exec -T migrate migrate -path /app/refiner/migrations -database {} {{ARGS}}'
 
 
 [group('migrate')]

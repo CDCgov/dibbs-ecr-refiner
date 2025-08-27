@@ -71,7 +71,7 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - ./drop-all.sql:/drop-all.sql
+      - ./.justscripts/sql/drop-all.sql:/drop-all.sql
       - pgdata:/var/lib/postgresql/data
 
   localstack:
