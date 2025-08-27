@@ -13,6 +13,10 @@ mod c './.justscripts/just/client.just'
 mod db './.justscripts/just/database.just'
 
 [group('alias')]
+[doc('Alias for `migrate`')]
+mod m './.justscripts/just/migrate.just'
+
+[group('alias')]
 [doc('Alias for `server`')]
 mod s './.justscripts/just/server.just'
 
@@ -23,6 +27,10 @@ mod client './.justscripts/just/client.just'
 [group('sub-command')]
 [doc('Run database commands against `refiner/` code')]
 mod database './.justscripts/just/database.just'
+
+[group('sub-command')]
+[doc('Run migration commands')]
+mod migrate './.justscripts/just/migrate.just'
 
 [group('sub-command')]
 [doc('Run server commands against `refiner/` code')]
