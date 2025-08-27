@@ -55,6 +55,7 @@ fi
 
 # ensure required tools are installed
 ensure_command "git" "brew install git"
+ensure_command "just" "brew install just"
 ensure_command "docker" "brew install --cask docker"
 ensure_command "docker-compose" "brew install docker-compose"
 
@@ -86,8 +87,20 @@ git checkout "$BRANCH_NAME" || error_exit "Failed to checkout branch: $BRANCH_NA
 git pull origin "$BRANCH_NAME" || error_exit "Failed to pull latest changes"
 
 # build and run containers
-echo -e "🏗️  Building and starting containers..."
+echo -e "🏗️ Building and starting containers..."
 docker-compose build --no-cache && docker-compose up -d || error_exit "Failed to start containers"
+
+# Wipe the local database
+echo -e "🧹 Cleaning up data..."
+just db clean
+
+# Run database migrations
+echo -e "💻 Running database migrations..."
+just migrate local
+
+# Run seed script
+echo -e "🩺 Seeding database with condition data..."
+just db seed
 
 # wait for application to be available
 wait_for_service "$APP_URL" "Waiting for application to start..."
