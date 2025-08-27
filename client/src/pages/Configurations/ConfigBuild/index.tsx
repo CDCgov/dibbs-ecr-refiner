@@ -12,6 +12,7 @@ import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
+import AddConditionCodeSetsDrawer from '../../../components/Drawer/AddConditionCodeSets';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
@@ -62,6 +63,18 @@ function Builder({ code_sets }: BuilderProps) {
     setSelectedCodesetId(id);
   }
 
+  function toggleDrawer() {
+    setDrawerActive(!drawerActive);
+  }
+
+  function onSearch(/* filter: string */) {}
+  // function onSave() {}
+  function onClose() {
+    setDrawerActive(false);
+  }
+
+  const [drawerActive, setDrawerActive] = useState(false);
+
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -77,6 +90,7 @@ function Builder({ code_sets }: BuilderProps) {
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
+              onClick={toggleDrawer}
             >
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
@@ -114,6 +128,12 @@ function Builder({ code_sets }: BuilderProps) {
           ) : null}
         </div>
       </div>
+      <AddConditionCodeSetsDrawer
+        isOpen={drawerActive}
+        onClose={onClose}
+        onSearch={onSearch}
+        conditions
+      />
     </div>
   );
 }

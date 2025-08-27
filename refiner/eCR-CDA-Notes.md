@@ -10,7 +10,7 @@ This documentation focuses on the Clinical Document Architecture (CDA) implement
 1. Electronic Initial Case Report (eICR) - [`CDA-phcaserpt-1.1.1`](https://github.com/HL7/CDA-phcaserpt-1.1.1)
 2. Reportability Response (RR) - [`CDA-phcr-rr-1.1.0`](https://github.com/HL7/CDA-phcr-rr-1.1.0)
 
->[!NOTE]
+> [!NOTE]
 > an analysis of the 3.1 eICR spec is forthcoming.
 
 ## Document Flow
@@ -62,7 +62,7 @@ In volume 2 of the CDA-phcaserpt-1.1.1 and volume 2 of the CDA-phcr-rr-1.1.1 spe
 > [!TIP]
 > The `root` value of a `templateId`, which is an Object ID (OID), is the _best_ way to find a specific named block of elements within a CDA document broadly and eICR and RR specifically. Every single named block of elements has a unique `templateId` that can be queried via XPath.
 
-Section-level templates are higher up the hierarchy while entry-level templates are children of section-level templates. Some sections are **required** in order for an eICR or RR document to be valid based on their associated schematrons (these can be found on the spcifications' GitHub repositories that are both linked in the [overview](#overview). As discussed, every single template has a unique id (`templateId`) that is used to track and test each row of a template; these rules are called conf numbers (`CONF#`). When validating an eICR or RR document against their associated schematrons the messages coming back are based on the `CONF#` and whether or not this is a fatal error, an error, or a warning. Our goal in this work is to not introduce additional errors or warnings given that both eICR and RR documents have likely already undergone validation on the AIMS platform.
+Section-level templates are higher up the hierarchy while entry-level templates are children of section-level templates. Some sections are **required** in order for an eICR or RR document to be valid based on their associated schematrons (these can be found on the specifications' GitHub repositories that are both linked in the [overview](#overview). As discussed, every single template has a unique id (`templateId`) that is used to track and test each row of a template; these rules are called conf numbers (`CONF#`). When validating an eICR or RR document against their associated schematrons the messages coming back are based on the `CONF#` and whether or not this is a fatal error, an error, or a warning. Our goal in this work is to not introduce additional errors or warnings given that both eICR and RR documents have likely already undergone validation on the AIMS platform.
 
 > [!NOTE]
 > We have validation tools for both eICR and RR based on schematron files that can be found in each of the repositories linked above in the [overview](#overview). Our process takes the schematron files and creates an `xslt` that we can use in Python validate both eICR and RR documents. These tools will be a part of the refiner workflow in the future.
@@ -487,7 +487,6 @@ This is the main container that holds all coded information about reportability.
         displayName="Reportability Response Coded Information"/>
 ```
 
-
 #### 2. Relevant Reportable Condition Observation
 
 This section contains the actual condition that was evaluated. The condition **MUST** be coded in SNOMED CT (OID: `2.16.840.1.113883.6.96`).
@@ -589,6 +588,7 @@ det --> reason
 Both documents rely on SNOMED CT for condition codes:
 
 1. eICR Trigger Codes:
+
    - Used in problem observations
    - Used in result observations
    - OID: `2.16.840.1.113883.6.96`
@@ -603,6 +603,7 @@ Both documents rely on SNOMED CT for condition codes:
 Using COVID-19 example:
 
 1. eICR Trigger:
+
 ```xml
 <observation classCode="OBS" moodCode="EVN">
     <templateId root="2.16.840.1.113883.10.20.15.2.3.3"/>
@@ -653,15 +654,16 @@ The refiner uses union XPath expressions to find clinical elements:
 
 Element Types Searched:
 
-* **Observations**: Lab results, vital signs, clinical findings
-* **Organizers**: Result batteries, procedure groups
-* **Acts**: Procedures, encounters, administrative acts
-* **Manufactured Products**: Medications, vaccines, medical devices
-* **Substance Administrations**: Medication administrations, immunizations
+- **Observations**: Lab results, vital signs, clinical findings
+- **Organizers**: Result batteries, procedure groups
+- **Acts**: Procedures, encounters, administrative acts
+- **Manufactured Products**: Medications, vaccines, medical devices
+- **Substance Administrations**: Medication administrations, immunizations
 
 How does it do this?
 
 **Search Patterns:**
+
 - **`hl7:*[hl7:code[...]]`**: Any HL7 element that has a `<code>` child with matching codes
   - Captures `<observation>`, `<act>`, `<organizer>`, `<procedure>`, `<substanceAdministration>`, etc.
 - **`hl7:code[...]`**: Direct `<code>` element matches
@@ -670,7 +672,8 @@ How does it do this?
   - Captures alternative code representations
 
 **Why This Works:**
-- **Flexible**: Automatically finds codes in any CDA element type without hardcoding
+
+- **Flexible**: Automatically finds codes in any CDA element type without hard-coding
 - **Comprehensive**: Catches direct codes, child codes, and translations
 - **Future-proof**: Will work with new CDA element types as they're added
 

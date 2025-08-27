@@ -9,6 +9,12 @@ export default function NavigationBar() {
     >
       <NavigationLink to="/configurations" title="Configurations" />
       <NavigationLink to="/testing" title="Testing" />
+      <a
+        className="hover:border-blue-cool-30 mx-6 inline-block py-1 text-white hover:cursor-pointer hover:border-b-4"
+        href="/api/logout"
+      >
+        Logout
+      </a>
     </nav>
   );
 }
@@ -23,9 +29,12 @@ function NavigationLink({ to, title }: NavigationLinkProps) {
     <NavLink to={to} className="text-blue-cool-5">
       {({ isActive }) => (
         <span
-          className={classNames('mx-6 inline-block py-1', {
-            'border-blue-cool-30 border-b-4': isActive,
-          })}
+          className={classNames(
+            'hover:border-blue-cool-30 mx-6 inline-block py-1 hover:border-b-4',
+            {
+              'border-blue-cool-30 border-b-4': isActive,
+            }
+          )}
         >
           {title}
         </span>

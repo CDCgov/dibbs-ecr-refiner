@@ -130,7 +130,7 @@ describe('Config builder page', () => {
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
-    const searchBox = await screen.findByPlaceholderText(/search/i);
+    const searchBox = await screen.findByPlaceholderText(/Search code set/);
     await user.type(searchBox, covidCode);
     expect(searchBox).toHaveValue(covidCode);
 
