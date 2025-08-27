@@ -17,9 +17,24 @@ The Refiner is a containerized application and can be easily run using [Docker](
 docker compose up -d
 ```
 
-With the containers running, you'll now want to seed the database with TES data and mock application data. Please follow the [seeding steps here](./refiner/scripts/README.md).
+Next run the database migrations:
 
-This will start up the FastAPI server and the Vite client development server. The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/).
+```sh
+just migrate local
+```
+
+Lastly, seed the database with the required condition data:
+
+```sh
+just db seed
+```
+
+The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/). The sample user login credentials are:
+
+- `username`: refiner
+- `password`: refiner
+
+You should be redirected to the configurations page upon successful login.
 
 ## Running the eCR Refiner application in production
 
