@@ -8,10 +8,21 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import { Icon, Label, Select } from '@trussworks/react-uswds';
+import {
+  Modal,
+  ModalRef,
+  ModalHeading,
+  ModalFooter,
+  Label,
+  TextInput,
+  Select,
+  Form,
+  FormGroup,
+  Icon,
+} from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
@@ -177,14 +188,14 @@ function Builder({ code_sets }: BuilderProps) {
               <Button
                 className="margin-top-1em"
                 variant="secondary"
-                id="open-codesets"
+                id="open-custom-code"
                 aria-label="Add new custom code to configuration"
                 onClick={() => setIsModalOpen(true)}
               >
                 <span>Add code</span>
               </Button>
               {customCodes.length > 0 && (
-                <table className="margin-top-2 width-full w-full border-separate">
+                <table className="width-full !mt-6 w-full border-separate">
                   <tbody>
                     {customCodes.map((c, i) => (
                       <tr key={i} className="align-middle">
@@ -193,7 +204,7 @@ function Builder({ code_sets }: BuilderProps) {
                         <td>{c.name}</td>
                         <td className="text-right whitespace-nowrap">
                           <button
-                            className="usa-button usa-button--unstyled text-blue-60 margin-right-2"
+                            className="usa-button usa-button--unstyled text-blue-60 !mr-2"
                             onClick={() => {
                               setEditingIndex(i);
                               setModalInitialData(c);
@@ -438,114 +449,131 @@ export function AddCustomCodeModal({
   onSubmit,
   initialData,
 }: AddCustomCodeModalProps) {
+  const modalRef = useRef<ModalRef>(null);
+  const showToast = useToast();
+
   const [code, setCode] = useState(initialData?.code ?? '');
   const [system, setSystem] = useState(initialData?.system ?? '');
   const [name, setName] = useState(initialData?.name ?? '');
 
-  // Reset when modal opens with new initial data
   useEffect(() => {
     if (open) {
       setCode(initialData?.code ?? '');
       setSystem(initialData?.system ?? '');
       setName(initialData?.name ?? '');
+      modalRef.current?.toggleModal(undefined, true);
+    } else {
+      modalRef.current?.toggleModal(undefined, false);
     }
   }, [open, initialData]);
-
-  const showToast = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({ code, system, name });
+
+    showToast({
+      heading: initialData ? 'Custom code updated' : 'Custom code added',
+      body: `${code}`,
+    });
+
     onClose();
-    showToast({ heading: 'Custom code added', body: code });
   };
 
-  if (!open) return null;
-
   return (
-    <div className="usa-modal-overlay is-visible height-200 width-125 flex items-center">
-      <div
-        className="usa-modal flex-align-start"
-        role="dialog"
-        aria-labelledby="add-custom-code-title"
+    <Modal
+      ref={modalRef}
+      id="add-custom-code-modal"
+      aria-labelledby="add-custom-code-title"
+      aria-describedby="Modal for adding custom code"
+      className="!h-[500px] !w-[35rem] rounded shadow"
+      forceAction
+    >
+      <ModalHeading
+        id="add-custom-code-title"
+        className="text-bold font-merriweather mb-6 text-xl"
       >
-        <div className="usa-modal__content">
-          <main className="usa-modal__main width-full height-full">
-            <button
-              type="button"
-              className="usa-button usa-modal__close"
-              aria-label="Close this window"
-              onClick={onClose}
-            >
-              <Icon.Close size={3} aria-hidden />
-            </button>
-            <h2 id="add-custom-code-title" className="usa-modal__heading">
-              Add custom code
-            </h2>
+        {initialData ? 'Edit custom code' : 'Add custom code'}
+      </ModalHeading>
 
-            <form className="usa-form usa-prose" onSubmit={handleSubmit}>
-              <div className="usa-form-group">
-                <label className="usa-label" htmlFor="code">
-                  Code #
-                </label>
-                <input
-                  className="usa-input"
-                  id="code"
-                  name="code"
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                />
-              </div>
+      <button
+        type="button"
+        aria-label="Close this window"
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
+      >
+        <Icon.Close className="h-5 w-5" aria-hidden />
+      </button>
 
-              <div className="usa-form-group">
-                <label className="usa-label" htmlFor="system">
-                  Code system
-                </label>
-                <select
-                  className="usa-select"
-                  id="system"
-                  name="system"
-                  value={system}
-                  onChange={(e) => setSystem(e.target.value)}
-                >
-                  <option value="">- Select -</option>
-                  <option value="ICD-10">ICD-10</option>
-                  <option value="SNOMED">SNOMED</option>
-                  <option value="LOINC">LOINC</option>
-                  <option value="RXNORM">RxNorm</option>
-                  <option value="LOCAL">Local</option>
-                </select>
-              </div>
+      <Form onSubmit={handleSubmit} className="space-y-6">
+        <FormGroup className="space-y-2">
+          <Label
+            htmlFor="code"
+            className="font-public-sans text-sm text-gray-700"
+          >
+            Code #
+          </Label>
+          <TextInput
+            id="code"
+            name="code"
+            type="text"
+            value={code}
+            className="w-full rounded-md border px-3 py-2"
+            onChange={(e) => setCode(e.target.value)}
+          />
+        </FormGroup>
 
-              <div className="usa-form-group">
-                <label className="usa-label" htmlFor="name">
-                  Code name
-                </label>
-                <input
-                  className="usa-input"
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
+        <FormGroup className="space-y-2">
+          <Label
+            htmlFor="system"
+            className="font-public-sans text-sm text-gray-700"
+          >
+            Code system
+          </Label>
+          <Select
+            id="system"
+            name="system"
+            value={system}
+            className="w-full rounded-md border px-3 py-2"
+            onChange={(e) => setSystem(e.target.value)}
+          >
+            <option value="">- Select -</option>
+            <option value="ICD-10">ICD-10</option>
+            <option value="SNOMED">SNOMED</option>
+            <option value="LOINC">LOINC</option>
+            <option value="RXNORM">RxNorm</option>
+            <option value="LOCAL">Local</option>
+          </Select>
+        </FormGroup>
 
-              <div className="usa-modal__footer">
-                <button
-                  type="submit"
-                  className="usa-button"
-                  disabled={!code || !system || !name}
-                >
-                  Add custom code
-                </button>
-              </div>
-            </form>
-          </main>
-        </div>
-      </div>
-    </div>
+        <FormGroup className="space-y-2">
+          <Label
+            htmlFor="name"
+            className="font-public-sans text-sm text-gray-700"
+          >
+            Code name
+          </Label>
+          <TextInput
+            id="name"
+            name="name"
+            type="text"
+            value={name}
+            className="w-full rounded-md border px-3 py-2"
+            onChange={(e) => setName(e.target.value)}
+          />
+        </FormGroup>
+
+        <ModalFooter className="flex justify-end space-x-4 pt-6">
+          <Button
+            type="submit"
+            variant={!code || !system || !name ? 'disabled' : 'primary'}
+            disabled={!code || !system || !name}
+            onClick={onClose}
+          >
+            {initialData ? 'Update' : 'Add custom code'}
+          </Button>
+        </ModalFooter>
+      </Form>
+    </Modal>
   );
 }
 
