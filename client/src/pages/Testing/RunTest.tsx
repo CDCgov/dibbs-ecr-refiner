@@ -125,11 +125,11 @@ function UploadZipFile({
 
 function UploadFileWarning() {
   return (
-    <div className="rounded bg-[#FFF3F2] p-4">
-      <p className="flex flex-col gap-3 text-[#B50909]">
+    <div className="bg-state-error-lighter rounded p-4">
+      <p className="text-state-error-dark flex flex-col gap-3">
         <span className="flex items-center gap-2">
           <Icon.Warning
-            className="shrink-0 [&_path]:fill-[#FB5A47]"
+            className="[&_path]:fill-state-error shrink-0"
             aria-label="Warning"
           />
           <span>This environment is not approved to handle PHI/PII.</span>
