@@ -134,7 +134,6 @@ async def serve_index(full_path: str) -> HTMLResponse:
     index_file = Path("dist/index.html").read_text()
     app_env = ENVIRONMENT["ENV"]
     html = index_file.replace("%APP_ENV%", app_env)
-    print(html)
     return HTMLResponse(content=html)
 
 
