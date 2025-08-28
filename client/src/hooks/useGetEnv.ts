@@ -1,5 +1,5 @@
 /**
- * Gets the `app-env` variable from `index.html` inserted dynamically inserted by the server
+ * Gets the `app-env` variable from `index.html` inserted dynamically by the server
  * during a request.
  * @returns the environment in which the app is running (`local`, `demo`, `prod`, etc.)
  */
