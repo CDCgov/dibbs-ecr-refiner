@@ -5,6 +5,8 @@ import ForwardSvg from '../../assets/forward.svg';
 import { Title } from '../../components/Title';
 import { ChangeEvent } from 'react';
 import classNames from 'classnames';
+import { Icon } from '@trussworks/react-uswds';
+import { useGetEnv } from '../../hooks/useGetEnv';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -18,6 +20,8 @@ export function RunTest({
   onClickCustomFile,
   selectedFile,
 }: RunTestProps) {
+  const env = useGetEnv();
+
   return (
     <div className="flex flex-col gap-12">
       <Title>Test filter</Title>
@@ -32,6 +36,7 @@ export function RunTest({
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
               </p>
+              {env === 'demo' || env === 'local' ? <UploadFileWarning /> : null}
               <div>
                 <UploadZipFile
                   onClick={onClickCustomFile}
@@ -114,6 +119,25 @@ function UploadZipFile({
           </label>
         </div>
       </div>
+    </div>
+  );
+}
+
+function UploadFileWarning() {
+  return (
+    <div className="bg-state-error-lighter rounded p-4">
+      <p className="text-state-error-dark flex flex-col gap-3">
+        <span className="flex items-center gap-2">
+          <Icon.Warning
+            className="[&_path]:fill-state-error shrink-0"
+            aria-label="Warning"
+          />
+          <span>This environment is not approved to handle PHI/PII.</span>
+        </span>
+        <span className="font-bold">
+          Do not upload files that contain PHI/PII.
+        </span>
+      </p>
     </div>
   );
 }
