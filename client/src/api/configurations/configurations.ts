@@ -32,6 +32,7 @@ import type {
 } from 'axios';
 
 import type {
+  AddCustomCodeInput,
   CreateConfigInput,
   CreateConfigurationResponse,
   GetConfigurationResponse,
@@ -288,3 +289,80 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 
 
 
+/**
+ * Add a user-defined custom code to a configuration.
+
+Args:
+    configuration_id (UUID): The ID of the configuration to update.
+    body (AddCustomCodeInput): The custom code information provided by the user.
+    user (dict[str, Any], optional): The logged-in user.
+    db (AsyncDatabaseConnection, optional): The database connection.
+
+Raises:
+    HTTPException: _description_
+    HTTPException: _description_
+
+Returns:
+    _type_: _description_
+ * @summary Add Custom Code
+ */
+export const addCustomCodeToConfiguration = (
+    configurationId: string,
+    addCustomCodeInput: AddCustomCodeInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<GetConfigurationResponse>> => {
+    
+    
+    return axios.default.put(
+      `/api/v1/configurations/${configurationId}/custom-codes`,
+      addCustomCodeInput,options
+    );
+  }
+
+
+
+export const getAddCustomCodeToConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, TError,{configurationId: string;data: AddCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, TError,{configurationId: string;data: AddCustomCodeInput}, TContext> => {
+
+const mutationKey = ['addCustomCodeToConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, {configurationId: string;data: AddCustomCodeInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  addCustomCodeToConfiguration(configurationId,data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCustomCodeToConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>>
+    export type AddCustomCodeToConfigurationMutationBody = AddCustomCodeInput
+    export type AddCustomCodeToConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Add Custom Code
+ */
+export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, TError,{configurationId: string;data: AddCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
+        TError,
+        {configurationId: string;data: AddCustomCodeInput},
+        TContext
+      > => {
+
+      const mutationOptions = getAddCustomCodeToConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    

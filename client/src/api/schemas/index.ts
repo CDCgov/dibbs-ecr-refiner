@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './addCustomCodeInput';
+export * from './addCustomCodeInputSystem';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './bodyUploadEcr';
@@ -15,6 +17,8 @@ export * from './conditionEntry';
 export * from './conditionProcessingInfo';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
+export * from './dbConfigurationCustomCode';
+export * from './dbConfigurationCustomCodeSystem';
 export * from './dbTotalConditionCodeCount';
 export * from './getConditionCode';
 export * from './getConditionResponse';

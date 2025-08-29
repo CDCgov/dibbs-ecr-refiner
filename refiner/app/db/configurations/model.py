@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -11,6 +11,16 @@ class DbConfigurationCondition(BaseModel):
 
     canonical_url: str
     version: str
+
+
+class DbConfigurationCustomCode(BaseModel):
+    """
+    Custom code associated with a Configuration.
+    """
+
+    code: str
+    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+    name: str
 
 
 class DbConfiguration(BaseModel):

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
+import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 
 /**
  * Information about a specific condition to return to the client.
@@ -14,4 +15,5 @@ export interface GetConfigurationResponse {
   id: string;
   display_name: string;
   code_sets: DbTotalConditionCodeCount[];
+  custom_codes: DbConfigurationCustomCode[];
 }

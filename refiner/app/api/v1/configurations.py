@@ -1,13 +1,14 @@
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import get_condition_by_id_db
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
+    add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
     get_configuration_by_id_db,
     get_configurations_db,
@@ -15,6 +16,7 @@ from ...db.configurations.db import (
     insert_configuration_db,
     is_config_valid_to_insert_db,
 )
+from ...db.configurations.model import DbConfigurationCustomCode
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import get_user_by_id_db
 
@@ -135,6 +137,7 @@ class GetConfigurationResponse(BaseModel):
     id: UUID
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
+    custom_codes: list[DbConfigurationCustomCode]
 
 
 @router.get(
@@ -178,7 +181,10 @@ async def get_configuration(
     )
 
     return GetConfigurationResponse(
-        id=config.id, display_name=config.name, code_sets=config_condition_info
+        id=config.id,
+        display_name=config.name,
+        code_sets=config_condition_info,
+        custom_codes=config.custom_codes,
     )
 
 
@@ -267,4 +273,130 @@ async def associate_condition_codeset_with_configuration(
             ConditionEntry(canonical_url=c.canonical_url, version=c.version)
             for c in updated_config.included_conditions
         ],
+    )
+
+
+class AddCustomCodeInput(BaseModel):
+    """
+    Input model for adding a custom code to a configuration.
+    """
+
+    code: str
+    system: Literal["loinc", "snomed", "icd10", "rxnorm"]
+    name: str
+
+    @field_validator("system", mode="before")
+    @classmethod
+    def normalize_system(cls, v: str) -> str:
+        """
+        Make the system lowercase before Pydantic checks it.
+        """
+        if not isinstance(v, str):
+            raise TypeError('"system" must be a string')
+        return v.lower()
+
+
+def _validate_add_custom_code_input(input: AddCustomCodeInput):
+    if not input.code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Required field "code" is missing.',
+        )
+    if not input.system:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Required field "system" is missing.',
+        )
+    if not input.code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Required field "name" is missing.',
+        )
+
+
+def _get_sanitized_system_name(system: str):
+    lower_system = system.lower()
+    if system in ["loinc", "snomed", "icd10"]:
+        return system.upper()
+    if lower_system == "rxnorm":
+        return "RxNorm"
+
+    raise Exception("System name provided is invalid.")
+
+
+@router.put(
+    "/{configuration_id}/custom-codes",
+    response_model=GetConfigurationResponse,
+    tags=["configurations"],
+    operation_id="addCustomCodeToConfiguration",
+)
+async def add_custom_code(
+    configuration_id: UUID,
+    body: AddCustomCodeInput,
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> GetConfigurationResponse:
+    """
+    Add a user-defined custom code to a configuration.
+
+    Args:
+        configuration_id (UUID): The ID of the configuration to update.
+        body (AddCustomCodeInput): The custom code information provided by the user.
+        user (dict[str, Any], optional): The logged-in user.
+        db (AsyncDatabaseConnection, optional): The database connection.
+
+    Raises:
+        HTTPException: _description_
+        HTTPException: _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    # validate input
+    _validate_add_custom_code_input(body)
+
+    sanitized_system_name = _get_sanitized_system_name(body.system)
+
+    # get user jurisdiction
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    jd = db_user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    # Create a custom code object
+    custom_code = DbConfigurationCustomCode(
+        code=body.code,
+        system=sanitized_system_name,
+        name=body.name,
+    )
+
+    updated_config = await add_custom_code_to_configuration_db(
+        config_id=config.id, custom_code=custom_code, db=db
+    )
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+        # Get all associated conditions and their # of codes
+    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
+        config_id=config.id, db=db
+    )
+
+    return GetConfigurationResponse(
+        id=updated_config.id,
+        display_name=updated_config.name,
+        code_sets=config_condition_info,
+        custom_codes=updated_config.custom_codes,
     )
