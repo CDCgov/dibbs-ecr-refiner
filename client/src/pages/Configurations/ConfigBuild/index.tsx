@@ -19,8 +19,6 @@ import {
   Label,
   TextInput,
   Select,
-  Form,
-  FormGroup,
   Icon,
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
@@ -343,7 +341,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
           type="search"
           placeholder="Search code set"
         />
-        <div>
+        <div data-testid="code-system-select-container">
           <Label htmlFor="code-system-select">Code system</Label>
           <Select
             id="code-system-select"
@@ -475,7 +473,6 @@ export function AddCustomCodeModal({
       heading: initialData ? 'Custom code updated' : 'Custom code added',
       body: `${code}`,
     });
-
     onClose();
   };
 
@@ -485,7 +482,8 @@ export function AddCustomCodeModal({
       id="add-custom-code-modal"
       aria-labelledby="add-custom-code-title"
       aria-describedby="Modal for adding custom code"
-      className="!h-[500px] !w-[35rem] rounded shadow"
+      isLarge
+      className="!h-[30.125rem] !w-[35rem] !rounded-none"
       forceAction
     >
       <ModalHeading
@@ -504,8 +502,8 @@ export function AddCustomCodeModal({
         <Icon.Close className="h-5 w-5" aria-hidden />
       </button>
 
-      <Form onSubmit={handleSubmit} className="space-y-6">
-        <FormGroup className="space-y-2">
+      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
+        <div className="max-w-3/4">
           <Label
             htmlFor="code"
             className="font-public-sans text-sm text-gray-700"
@@ -520,9 +518,9 @@ export function AddCustomCodeModal({
             className="w-full rounded-md border px-3 py-2"
             onChange={(e) => setCode(e.target.value)}
           />
-        </FormGroup>
+        </div>
 
-        <FormGroup className="space-y-2">
+        <div className="max-w-3/4">
           <Label
             htmlFor="system"
             className="font-public-sans text-sm text-gray-700"
@@ -543,9 +541,9 @@ export function AddCustomCodeModal({
             <option value="RXNORM">RxNorm</option>
             <option value="LOCAL">Local</option>
           </Select>
-        </FormGroup>
+        </div>
 
-        <FormGroup className="space-y-2">
+        <div className="max-w-3/4">
           <Label
             htmlFor="name"
             className="font-public-sans text-sm text-gray-700"
@@ -560,19 +558,19 @@ export function AddCustomCodeModal({
             className="w-full rounded-md border px-3 py-2"
             onChange={(e) => setName(e.target.value)}
           />
-        </FormGroup>
+        </div>
 
-        <ModalFooter className="flex justify-end space-x-4 pt-6">
+        <ModalFooter className="maxw-4/4 flex justify-end space-x-4 pt-6">
           <Button
             type="submit"
             variant={!code || !system || !name ? 'disabled' : 'primary'}
             disabled={!code || !system || !name}
-            onClick={onClose}
+            onClick={handleSubmit}
           >
             {initialData ? 'Update' : 'Add custom code'}
           </Button>
         </ModalFooter>
-      </Form>
+      </div>
     </Modal>
   );
 }
