@@ -198,6 +198,7 @@ async def associate_condition_codeset_with_configuration_db(
     Returns:
         DbConfiguration: The updated configuration
     """
+
     query = """
             WITH new_condition AS (
                 SELECT %s::jsonb AS val
@@ -235,6 +236,51 @@ async def associate_condition_codeset_with_configuration_db(
             return row
 
 
+async def disassociate_condition_codeset_with_configuration_db(
+    config: DbConfiguration, condition: DbCondition, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Given a condition, remove its codeset from the specified configuration.
+
+    This is the opposite of associate_condition_codeset_with_configuration_db.
+
+    Args:
+        config (DbConfiguration): The configuration
+        condition (DbCondition): The condition to remove
+        db (AsyncDatabaseConnection): Database connection
+
+    Returns:
+        DbConfiguration: The updated configuration
+    """
+
+    query = """
+        UPDATE configurations
+        SET included_conditions = (
+            SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+            FROM (
+                SELECT elem
+                FROM jsonb_array_elements(included_conditions) elem
+                WHERE NOT (
+                    elem->>'canonical_url' = %s AND elem->>'version' = %s
+                )
+            ) filtered
+        )
+        WHERE id = %s
+        RETURNING *;
+    """
+    params = (
+        condition.canonical_url,
+        condition.version,
+        config.id,
+    )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
+
+
 class DbTotalConditionCodeCount(BaseModel):
     """
     Total code count model.
@@ -251,6 +297,7 @@ async def get_total_condition_code_counts_by_configuration_db(
     """
     Given a config ID, returns the total associated code count by condition.
     """
+
     query = """
             WITH conds AS (
                 SELECT jsonb_array_elements(included_conditions) AS cond

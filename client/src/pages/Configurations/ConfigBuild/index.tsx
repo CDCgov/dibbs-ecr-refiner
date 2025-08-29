@@ -132,7 +132,6 @@ function Builder({ code_sets }: BuilderProps) {
         isOpen={drawerActive}
         onClose={onClose}
         onSearch={onSearch}
-        conditions
       />
     </div>
   );

@@ -127,6 +127,16 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=updated_config_mock),
     )
 
+    # Mock disassociate_condition_codeset_with_configuration_db
+    updated_config_mock_disassoc = AsyncMock()
+    updated_config_mock_disassoc.id = UUID("33333333-3333-3333-3333-333333333333")
+    updated_config_mock_disassoc.included_conditions = []
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.disassociate_condition_codeset_with_configuration_db",
+        AsyncMock(return_value=updated_config_mock_disassoc),
+    )
+
     # Total counts
     DbTotalConditionCodeCount(
         condition_id=UUID("22222222-2222-2222-2222-222222222222"),
@@ -179,3 +189,24 @@ async def test_associate_codeset_with_configuration(authed_client):
     data = response.json()
     assert len(data["included_conditions"]) == 1
     assert data["included_conditions"][0]["canonical_url"] == "url-1"
+
+
+@pytest.mark.asyncio
+async def test_disassociate_codeset_with_configuration(authed_client):
+    config_id = "33333333-3333-3333-3333-333333333333"
+    payload = {"condition_id": "22222222-2222-2222-2222-222222222222"}
+    response = await authed_client.request(
+        "DELETE",
+        f"/api/v1/configurations/{config_id}/code-set",
+        json=payload,
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    # After disassociation, included_conditions should be empty or not contain the removed condition
+    included_conditions = data.get("included_conditions", [])
+    assert isinstance(included_conditions, list)
+    assert all(
+        c.get("canonical_url") != "url-1" or c.get("version") != "2.0.0"
+        for c in included_conditions
+    )

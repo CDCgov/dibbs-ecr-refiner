@@ -9,6 +9,7 @@ from ...db.conditions.db import get_condition_by_id_db
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     associate_condition_codeset_with_configuration_db,
+    disassociate_condition_codeset_with_configuration_db,
     get_configuration_by_id_db,
     get_configurations_db,
     get_total_condition_code_counts_by_configuration_db,
@@ -208,7 +209,12 @@ class AssociateCodesetResponse(BaseModel):
     included_conditions: list[ConditionEntry]
 
 
-@router.put("/{configuration_id}/code-set", response_model=AssociateCodesetResponse)
+@router.put(
+    "/{configuration_id}/code-set",
+    response_model=AssociateCodesetResponse,
+    tags=["configurations"],
+    operation_id="associateConditionWithConfiguration",
+)
 async def associate_condition_codeset_with_configuration(
     configuration_id: UUID,
     body: AssociateCodesetInput,
@@ -230,8 +236,10 @@ async def associate_condition_codeset_with_configuration(
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
-        AssociateCodesetResponse: ID of updated configuration and the full list of included conditions
+        AssociateCodesetResponse: ID of updated configuration and the full list
+        of included conditions
     """
+
     # get user jurisdiction
     db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
     jd = db_user.jurisdiction_id
@@ -252,6 +260,74 @@ async def associate_condition_codeset_with_configuration(
         )
 
     updated_config = await associate_condition_codeset_with_configuration_db(
+        config=config, condition=condition, db=db
+    )
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+    return AssociateCodesetResponse(
+        id=updated_config.id,
+        included_conditions=[
+            ConditionEntry(canonical_url=c.canonical_url, version=c.version)
+            for c in updated_config.included_conditions
+        ],
+    )
+
+
+@router.delete(
+    "/{configuration_id}/code-set",
+    response_model=AssociateCodesetResponse,
+    tags=["configurations"],
+    operation_id="disassociateConditionWithConfiguration",
+)
+async def remove_condition_codeset_from_configuration(
+    configuration_id: UUID,
+    body: AssociateCodesetInput,
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> AssociateCodesetResponse:
+    """
+    Remove a specified code set from the given configuration.
+
+    Args:
+        configuration_id (UUID): ID of the configuration
+        body (AssociateCodesetInput): payload containing a condition_id
+        user (dict[str, Any], optional): User making the request
+        db (AsyncDatabaseConnection, optional): Database connection
+
+    Raises:
+        HTTPException: 404 if configuration is not found in JD
+        HTTPException: 404 if condition is not found
+        HTTPException: 500 if configuration is cannot be updated
+
+    Returns:
+        AssociateCodesetResponse: ID of updated configuration and the full list
+        of included conditions
+    """
+    # get user jurisdiction
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    jd = db_user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
+
+    if not condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+        )
+
+    updated_config = await disassociate_condition_codeset_with_configuration_db(
         config=config, condition=condition, db=db
     )
 
