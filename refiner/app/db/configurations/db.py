@@ -312,48 +312,35 @@ async def get_total_condition_code_counts_by_configuration_db(
 
 
 async def add_custom_code_to_configuration_db(
-    config_id: UUID, custom_code: DbConfigurationCustomCode, db: AsyncDatabaseConnection
+    config: DbConfiguration,
+    custom_code: DbConfigurationCustomCode,
+    db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
     Given a config ID, adds a user-defined custom code to the configuration.
     """
     query = """
-        WITH merged AS (
-            SELECT id,
-                   jsonb_agg(elem) AS new_custom_codes
-            FROM (
-                SELECT c.id,
-                       jsonb_build_object(
-                           'code', elem->>'code',
-                           'system', elem->>'system',
-                           'name', elem->>'name'
-                       ) AS elem
-                FROM configurations c
-                CROSS JOIN LATERAL jsonb_array_elements(c.custom_codes || %s::jsonb) AS elem
-                WHERE c.id = %s
-            ) t
-            GROUP BY id, elem->>'code', elem->>'system'
-        )
-        UPDATE configurations c
-        SET custom_codes = m.new_custom_codes
-        FROM merged m
-        WHERE c.id = m.id
-        RETURNING c.*;
-        """
-    new_custom_code = Jsonb(
-        [
-            {
-                "code": custom_code.code,
-                "system": custom_code.system,
-                "name": custom_code.name,
-            }
-        ]
+            UPDATE configurations
+            SET custom_codes = %s::jsonb
+            WHERE id = %s
+            RETURNING *;
+            """
+
+    custom_codes = config.custom_codes
+
+    exists = any(
+        (c.code == custom_code.code and c.system == custom_code.system)
+        for c in custom_codes
     )
 
-    params = (
-        new_custom_code,
-        config_id,
-    )
+    if not exists:
+        custom_codes.append(custom_code)
+
+    json = [
+        {"code": cc.code, "system": cc.system, "name": cc.name} for cc in custom_codes
+    ]
+
+    params = (Jsonb(json), config.id)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
             await cur.execute(query, params)

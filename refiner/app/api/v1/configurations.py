@@ -380,7 +380,7 @@ async def add_custom_code(
     )
 
     updated_config = await add_custom_code_to_configuration_db(
-        config_id=config.id, custom_code=custom_code, db=db
+        config=config, custom_code=custom_code, db=db
     )
 
     if not updated_config:

@@ -38,6 +38,6 @@ class DbConfiguration(BaseModel):
     snomed_codes_additions: list[Any]
     icd10_codes_additions: list[Any]
     rxnorm_codes_additions: list[Any]
-    custom_codes: list[Any]
+    custom_codes: list[DbConfigurationCustomCode]
     sections_to_include: list[str]
     cloned_from_configuration_id: UUID | None
