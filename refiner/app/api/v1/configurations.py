@@ -342,15 +342,15 @@ async def add_custom_code(
     Args:
         configuration_id (UUID): The ID of the configuration to update.
         body (AddCustomCodeInput): The custom code information provided by the user.
-        user (dict[str, Any], optional): The logged-in user.
-        db (AsyncDatabaseConnection, optional): The database connection.
+        user (dict[str, Any]): The logged-in user.
+        db (AsyncDatabaseConnection): The database connection.
 
     Raises:
-        HTTPException: _description_
-        HTTPException: _description_
+        HTTPException: 404 if configuration isn't found
+        HTTPException: 500 if custom code can't be added
 
     Returns:
-        _type_: _description_
+        GetConfigurationResponse: Updated configuration
     """
 
     # validate input
