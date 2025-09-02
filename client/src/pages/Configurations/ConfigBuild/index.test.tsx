@@ -111,7 +111,10 @@ describe('Config builder page', () => {
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
-    const select = await screen.findByLabelText(/code system/i);
+    const parentContainer = await screen.findByTestId(
+      'code-system-select-container'
+    ); // name of the `data-testid` added to the parent div
+    const select = within(parentContainer).getByLabelText(/code system/i);
     await user.selectOptions(select, 'SNOMED');
 
     // Should be only SNOMED codes

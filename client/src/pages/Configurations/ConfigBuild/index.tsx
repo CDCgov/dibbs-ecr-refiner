@@ -1,16 +1,26 @@
 import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
+import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
   NavigationContainer,
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
-import { Icon, Label, Select } from '@trussworks/react-uswds';
+import {
+  Modal,
+  ModalRef,
+  ModalHeading,
+  ModalFooter,
+  Label,
+  TextInput,
+  Select,
+  Icon,
+} from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
 import { GetConfigurationResponse } from '../../../api/schemas';
@@ -54,13 +64,42 @@ export default function ConfigBuild() {
 type BuilderProps = Pick<GetConfigurationResponse, 'code_sets'>;
 
 function Builder({ code_sets }: BuilderProps) {
-  const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
-    null
-  );
+  const [selectedCodesetId, setSelectedCodesetId] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customCodes, setCustomCodes] = useState<
+    { code: string; system: string; name: string }[]
+  >([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [modalInitialData, setModalInitialData] = useState<{
+    code: string;
+    system: string;
+    name: string;
+  } | null>(null);
+
+  const handleAddOrEditCustomCode = (data: {
+    code: string;
+    system: string;
+    name: string;
+  }) => {
+    if (editingIndex !== null) {
+      // update existing row
+      setCustomCodes((prev) =>
+        prev.map((item, idx) => (idx === editingIndex ? data : item))
+      );
+    } else {
+      // add new row
+      setCustomCodes((prev) => [...prev, data]);
+    }
+    setEditingIndex(null);
+    setModalInitialData(null);
+    setIsModalOpen(false);
+  };
 
   function onClick(id: string) {
     setSelectedCodesetId(id);
   }
+
+  const isCustomCodes = selectedCodesetId === 'custom';
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
@@ -106,22 +145,126 @@ function Builder({ code_sets }: BuilderProps) {
               ))}
             </ul>
           </div>
+          <div>
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+              <label
+                className="text-gray-cool-60 font-bold"
+                htmlFor="open-codesets"
+              >
+                MORE OPTIONS
+              </label>
+            </div>
+          </div>
+          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+            <ul className="mt-2 flex flex-col gap-2">
+              <li>
+                <button
+                  className={classNames(
+                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                    { 'bg-white': isCustomCodes }
+                  )}
+                  onClick={() => {
+                    onClick('custom');
+                  }}
+                >
+                  <span>Custom codes</span>
+                  <span>{customCodes.length}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
-          <DefaultGroupingParagraph />
-          {selectedCodesetId ? (
-            <ConditionCodeTable conditionId={selectedCodesetId} />
+          {selectedCodesetId && selectedCodesetId != 'custom' ? (
+            <div>
+              <ConditionCodeGroupingParagraph />
+              <ConditionCodeTable conditionId={selectedCodesetId} />
+            </div>
+          ) : selectedCodesetId === 'custom' ? (
+            <div>
+              <CustomCodeGroupingParagraph />
+              <Button
+                className="margin-top-1em"
+                variant="secondary"
+                id="open-custom-code"
+                aria-label="Add new custom code to configuration"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <span>Add code</span>
+              </Button>
+              {customCodes.length > 0 && (
+                <table className="width-full !mt-6 w-full border-separate">
+                  <tbody>
+                    {customCodes.map((c, i) => (
+                      <tr key={i} className="align-middle">
+                        <td>{c.code}</td>
+                        <td>{c.system}</td>
+                        <td>{c.name}</td>
+                        <td className="text-right whitespace-nowrap">
+                          <button
+                            className="usa-button usa-button--unstyled text-blue-60 !mr-2"
+                            onClick={() => {
+                              setEditingIndex(i);
+                              setModalInitialData(c);
+                              setIsModalOpen(true);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="usa-button usa-button--unstyled text-red-60"
+                            onClick={() =>
+                              setCustomCodes((prev) =>
+                                prev.filter((_, idx) => idx !== i)
+                              )
+                            }
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           ) : null}
         </div>
       </div>
+      <AddCustomCodeModal
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingIndex(null);
+          setModalInitialData(null);
+        }}
+        onSubmit={handleAddOrEditCustomCode}
+        initialData={modalInitialData}
+      />
     </div>
   );
 }
 
-function DefaultGroupingParagraph() {
+function ConditionCodeGroupingParagraph() {
   return (
     <p>
       These condition code sets come from the default groupings in the{' '}
+      <a
+        className="text-blue-cool-60 hover:text-blue-cool-50 underline"
+        href="https://tes.tools.aimsplatform.org/auth/signin"
+        target="_blank"
+        rel="noopener"
+      >
+        TES (Terminology Exchange Service).
+      </a>
+    </p>
+  );
+}
+
+function CustomCodeGroupingParagraph() {
+  return (
+    <p>
+      Add codes that are not included in the code sets from the{' '}
       <a
         className="text-blue-cool-60 hover:text-blue-cool-50 underline"
         href="https://tes.tools.aimsplatform.org/auth/signin"
@@ -198,7 +341,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
           type="search"
           placeholder="Search code set"
         />
-        <div>
+        <div data-testid="code-system-select-container">
           <Label htmlFor="code-system-select">Code system</Label>
           <Select
             id="code-system-select"
@@ -288,6 +431,147 @@ function ConditionCodeRow({
         {highlightMatches(text, matches, 'description')}
       </td>
     </tr>
+  );
+}
+
+interface AddCustomCodeModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: { code: string; system: string; name: string }) => void;
+  initialData?: { code: string; system: string; name: string } | null;
+}
+
+export function AddCustomCodeModal({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+}: AddCustomCodeModalProps) {
+  const modalRef = useRef<ModalRef>(null);
+  const showToast = useToast();
+
+  const [code, setCode] = useState(initialData?.code ?? '');
+  const [system, setSystem] = useState(initialData?.system ?? '');
+  const [name, setName] = useState(initialData?.name ?? '');
+
+  useEffect(() => {
+    if (open) {
+      setCode(initialData?.code ?? '');
+      setSystem(initialData?.system ?? '');
+      setName(initialData?.name ?? '');
+      modalRef.current?.toggleModal(undefined, true);
+    } else {
+      modalRef.current?.toggleModal(undefined, false);
+    }
+  }, [open, initialData]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({ code, system, name });
+
+    showToast({
+      heading: initialData ? 'Custom code updated' : 'Custom code added',
+      body: `${code}`,
+    });
+    onClose();
+  };
+
+  return (
+    <Modal
+      ref={modalRef}
+      id="add-custom-code-modal"
+      aria-labelledby="add-custom-code-title"
+      aria-describedby="Modal for adding custom code"
+      isLarge
+      className="!h-[30.125rem] !w-[35rem] !rounded-none"
+      forceAction
+    >
+      <ModalHeading
+        id="add-custom-code-title"
+        className="text-bold font-merriweather mb-6 text-xl"
+      >
+        {initialData ? 'Edit custom code' : 'Add custom code'}
+      </ModalHeading>
+
+      <button
+        type="button"
+        aria-label="Close this window"
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
+      >
+        <Icon.Close className="h-5 w-5" aria-hidden />
+      </button>
+
+      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
+        <div className="max-w-3/4">
+          <Label
+            htmlFor="code"
+            className="font-public-sans text-sm text-gray-700"
+          >
+            Code #
+          </Label>
+          <TextInput
+            id="code"
+            name="code"
+            type="text"
+            value={code}
+            className="w-full rounded-md border px-3 py-2"
+            onChange={(e) => setCode(e.target.value)}
+          />
+        </div>
+
+        <div className="max-w-3/4">
+          <Label
+            htmlFor="system"
+            className="font-public-sans text-sm text-gray-700"
+          >
+            Code system
+          </Label>
+          <Select
+            id="system"
+            name="system"
+            value={system}
+            className="w-full rounded-md border px-3 py-2"
+            onChange={(e) => setSystem(e.target.value)}
+          >
+            <option value="">- Select -</option>
+            <option value="ICD-10">ICD-10</option>
+            <option value="SNOMED">SNOMED</option>
+            <option value="LOINC">LOINC</option>
+            <option value="RXNORM">RxNorm</option>
+            <option value="LOCAL">Local</option>
+          </Select>
+        </div>
+
+        <div className="max-w-3/4">
+          <Label
+            htmlFor="name"
+            className="font-public-sans text-sm text-gray-700"
+          >
+            Code name
+          </Label>
+          <TextInput
+            id="name"
+            name="name"
+            type="text"
+            value={name}
+            className="w-full rounded-md border px-3 py-2"
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+
+        <ModalFooter className="maxw-4/4 flex justify-end space-x-4 pt-6">
+          <Button
+            type="submit"
+            variant={!code || !system || !name ? 'disabled' : 'primary'}
+            disabled={!code || !system || !name}
+            onClick={handleSubmit}
+          >
+            {initialData ? 'Update' : 'Add custom code'}
+          </Button>
+        </ModalFooter>
+      </div>
+    </Modal>
   );
 }
 

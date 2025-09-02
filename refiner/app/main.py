@@ -6,11 +6,12 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC
 from datetime import datetime as dt
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -18,7 +19,6 @@ from .api.auth.config import get_session_secret_key
 from .api.auth.handlers import auth_router
 from .api.auth.middleware import get_logged_in_user
 from .api.auth.session import run_expired_session_cleanup_task
-from .api.middleware.spa import SPAFallbackMiddleware
 from .api.v1.v1_router import router as v1_router
 from .core.app.base import BaseService
 from .core.app.openapi import create_custom_openapi
@@ -104,10 +104,38 @@ app.openapi = lambda: create_custom_openapi(app)  # type: ignore
 # include the router in the app
 app.include_router(router)
 app.mount(
-    "/dist",
-    StaticFiles(directory="dist", html=True, check_dir=ENVIRONMENT["ENV"] == "prod"),
-    name="dist",
+    "/dist/assets",
+    StaticFiles(
+        directory="dist/assets", html=True, check_dir=ENVIRONMENT["ENV"] == "prod"
+    ),
+    name="assets",
 )
+
+
+@app.get(
+    "/{full_path:path}",
+    response_class=HTMLResponse,
+    tags=["internal"],
+    include_in_schema=False,
+)
+async def serve_index(full_path: str) -> HTMLResponse:
+    """
+    Intercept incoming requests.
+
+    Modifies the `dist/index.html` file to include the enviroment, and return the file.
+
+    Args:
+        full_path (str): incoming URL
+
+    Returns:
+        HTMLResponse: Modified `dist/index.html` file
+    """
+
+    index_file = Path("dist/index.html").read_text()
+    app_env = ENVIRONMENT["ENV"]
+    html = index_file.replace("%APP_ENV%", app_env)
+    return HTMLResponse(content=html)
+
 
 if ENVIRONMENT["ENV"] == "local":
     app.add_middleware(
@@ -117,7 +145,7 @@ if ENVIRONMENT["ENV"] == "local":
         allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
         allow_headers=["*"],  # Allow all headers (Authorization, Content-Type, etc.)
     )
-app.add_middleware(SPAFallbackMiddleware)
+
 app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
 
 

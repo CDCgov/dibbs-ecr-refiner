@@ -5,8 +5,13 @@ import { BrowserRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
 import { RefinedTestingDocument } from '../../api/schemas/refinedTestingDocument.ts';
 import { Mock } from 'vitest';
+import { useGetEnv } from '../../hooks/useGetEnv.ts';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
+
+vi.mock('../../hooks/useGetEnv', () => ({
+  useGetEnv: vi.fn(() => 'local'),
+}));
 
 const mockUploadResponse: RefinedTestingDocument = {
   conditions: [
@@ -215,4 +220,58 @@ describe('Demo', () => {
       await screen.findByText('Use test file', { selector: 'button' })
     ).toBeInTheDocument();
   });
+});
+
+it('should show PHI/PII banner in the "local" environment', () => {
+  (useUploadEcr as unknown as Mock).mockImplementation(() => {
+    return {
+      mutateAsync: vi.fn().mockImplementation(() => {}),
+      data: null,
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    };
+  });
+
+  const bannerText = 'This environment is not approved to handle PHI/PII.';
+  (useGetEnv as unknown as Mock).mockReturnValue('local');
+
+  renderDemoView();
+  expect(screen.getByText(bannerText)).toBeInTheDocument();
+});
+
+it('should show PHI/PII banner in the "demo" environment', () => {
+  (useUploadEcr as unknown as Mock).mockImplementation(() => {
+    return {
+      mutateAsync: vi.fn().mockImplementation(() => {}),
+      data: null,
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    };
+  });
+
+  const bannerText = 'This environment is not approved to handle PHI/PII.';
+  (useGetEnv as unknown as Mock).mockReturnValue('demo');
+
+  renderDemoView();
+  expect(screen.getByText(bannerText)).toBeInTheDocument();
+});
+
+it('should NOT show PHI/PII banner in the "prod" environment', () => {
+  (useUploadEcr as unknown as Mock).mockImplementation(() => {
+    return {
+      mutateAsync: vi.fn().mockImplementation(() => {}),
+      data: null,
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    };
+  });
+
+  const bannerText = 'This environment is not approved to handle PHI/PII.';
+  (useGetEnv as unknown as Mock).mockReturnValue('prod');
+
+  renderDemoView();
+  expect(screen.queryByText(bannerText)).not.toBeInTheDocument();
 });
