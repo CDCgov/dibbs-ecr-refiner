@@ -316,9 +316,11 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
 
 def _get_sanitized_system_name(system: str):
     lower_system = system.lower()
-    if system in ["loinc", "snomed", "icd10"]:
+    if system in ["loinc", "snomed"]:
         return system.upper()
-    if lower_system == "rxnorm":
+    elif lower_system == "icd10":
+        return "ICD-10"
+    elif lower_system == "rxnorm":
         return "RxNorm"
 
     raise Exception("System name provided is invalid.")
