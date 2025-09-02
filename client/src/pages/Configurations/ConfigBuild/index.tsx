@@ -31,7 +31,6 @@ import {
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import {
-  AddCustomCodeInput,
   AddCustomCodeInputSystem,
   DbConfigurationCustomCode,
   DbConfigurationCustomCodeSystem,
@@ -492,21 +491,23 @@ export function CustomCodeModal({
 
   const [form, setForm] = useState({
     code: initialCode ?? '',
-    system: normalizeSystem(initialSystem ?? '') ?? 'icd-10',
+    system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
     name: initialName ?? '',
   });
-
-  const isButtonEnabled = form.code && form.system && form.name;
-
-  console.log(form);
 
   useEffect(() => {
     setForm({
       code: initialCode ?? '',
-      system: normalizeSystem(initialSystem ?? '') ?? 'icd-10',
+      system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
       name: initialName ?? '',
     });
   }, [initialCode, initialSystem, initialName]);
+
+  function resetForm() {
+    setForm({ code: '', system: 'icd-10', name: '' });
+  }
+
+  const isButtonEnabled = form.code && form.system && form.name;
 
   const handleChange =
     (field: keyof typeof form) =>
@@ -534,6 +535,7 @@ export function CustomCodeModal({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
             showToast({ heading: 'Custom code updated', body: form.code });
+            resetForm();
             onClose();
           },
         }
@@ -554,6 +556,7 @@ export function CustomCodeModal({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
             showToast({ heading: 'Custom code added', body: form.code });
+            resetForm();
             onClose();
           },
         }
@@ -581,44 +584,53 @@ export function CustomCodeModal({
       <button
         type="button"
         aria-label="Close this window"
-        onClick={onClose}
+        onClick={() => {
+          resetForm();
+          onClose();
+        }}
         className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
       >
         <Icon.Close className="h-5 w-5" aria-hidden />
       </button>
 
       <div className="mt-5 flex max-w-3/4 flex-col gap-5">
-        <Label htmlFor="code">Code #</Label>
-        <TextInput
-          id="code"
-          name="code"
-          type="text"
-          value={form.code}
-          onChange={handleChange('code')}
-        />
+        <div>
+          <Label htmlFor="code">Code #</Label>
+          <TextInput
+            id="code"
+            name="code"
+            type="text"
+            value={form.code}
+            onChange={handleChange('code')}
+          />
+        </div>
 
-        <Label htmlFor="system">Code system</Label>
-        <Select
-          id="system"
-          name="system"
-          value={form.system}
-          onChange={handleChange('system')}
-        >
-          {systemValues.map((sv) => (
-            <option key={sv.value} value={sv.value}>
-              {sv.name}
-            </option>
-          ))}
-        </Select>
+        <div>
+          <Label htmlFor="system">Code system</Label>
+          <Select
+            id="system"
+            name="system"
+            value={form.system}
+            onChange={handleChange('system')}
+          >
+            {systemValues.map((sv) => (
+              <option key={sv.value} value={sv.value}>
+                {sv.name}
+              </option>
+            ))}
+          </Select>
+        </div>
 
-        <Label htmlFor="name">Code name</Label>
-        <TextInput
-          id="name"
-          name="name"
-          type="text"
-          value={form.name}
-          onChange={handleChange('name')}
-        />
+        <div>
+          <Label htmlFor="name">Code name</Label>
+          <TextInput
+            id="name"
+            name="name"
+            type="text"
+            value={form.name}
+            onChange={handleChange('name')}
+          />
+        </div>
       </div>
 
       <ModalFooter className="flex justify-end space-x-4 pt-6">
