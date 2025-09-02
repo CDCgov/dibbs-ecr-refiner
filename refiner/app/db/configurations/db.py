@@ -353,7 +353,7 @@ async def delete_custom_code_from_configuration_db(
     system: str,
     code: str,
     db: AsyncDatabaseConnection,
-) -> DbConfiguration:
+) -> DbConfiguration | None:
     """
     Given a config, system, and custom code, deletes the custom code from the configuration.
     """
@@ -369,6 +369,35 @@ async def delete_custom_code_from_configuration_db(
         {"code": cc.code, "system": cc.system, "name": cc.name}
         for cc in config.custom_codes
         if not (cc.system == system and cc.code == code)
+    ]
+
+    params = (Jsonb(updated_custom_codes), config.id)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
+
+
+async def edit_custom_code_from_configuration_db(
+    config: DbConfiguration,
+    updated_custom_codes: list[DbConfigurationCustomCode],
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Given a config and a list of custom codes, updates the configuration's custom codes using the provided list.
+    """
+
+    query = """
+            UPDATE configurations
+            SET custom_codes = %s::jsonb
+            WHERE id = %s
+            RETURNING *;
+            """
+
+    updated_custom_codes = [
+        {"code": cc.code, "system": cc.system, "name": cc.name}
+        for cc in config.custom_codes
     ]
 
     params = (Jsonb(updated_custom_codes), config.id)

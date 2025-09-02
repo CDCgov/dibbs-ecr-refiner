@@ -13,6 +13,6 @@ export type AddCustomCodeInputSystem = typeof AddCustomCodeInputSystem[keyof typ
 export const AddCustomCodeInputSystem = {
   loinc: 'loinc',
   snomed: 'snomed',
-  icd10: 'icd10',
+  'icd-10': 'icd-10',
   rxnorm: 'rxnorm',
 } as const;

@@ -37,7 +37,8 @@ import type {
   CreateConfigurationResponse,
   GetConfigurationResponse,
   GetConfigurationsResponse,
-  HTTPValidationError
+  HTTPValidationError,
+  UpdateCustomCodeInput
 } from '.././schemas';
 
 
@@ -312,7 +313,7 @@ export const addCustomCodeToConfiguration = (
  ): Promise<AxiosResponse<GetConfigurationResponse>> => {
     
     
-    return axios.default.put(
+    return axios.default.post(
       `/api/v1/configurations/${configurationId}/custom-codes`,
       addCustomCodeInput,options
     );
@@ -362,6 +363,84 @@ export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidati
       > => {
 
       const mutationOptions = getAddCustomCodeToConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    /**
+ * Modify a configuration's custom code based on system/code pair.
+
+Args:
+    configuration_id (UUID): The ID of the configuration to modify.
+    body (UpdateCustomCodeInput): User-provided object containing custom code info.
+    user (dict[str, Any]): The logged-in user.
+    db (AsyncDatabaseConnection): The database connection.
+
+Raises:
+    HTTPException: 400 if a system is not provided
+    HTTPException: 400 if a code is not provided
+    HTTPException: 404 if the configuration can't be found
+    HTTPException: 500 if the configuration can't be updated
+
+Returns:
+    GetConfigurationResponse: The updated configuration.
+ * @summary Edit Custom Code
+ */
+export const editCustomCodeFromConfiguration = (
+    configurationId: string,
+    updateCustomCodeInput: UpdateCustomCodeInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<GetConfigurationResponse>> => {
+    
+    
+    return axios.default.put(
+      `/api/v1/configurations/${configurationId}/custom-codes`,
+      updateCustomCodeInput,options
+    );
+  }
+
+
+
+export const getEditCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext> => {
+
+const mutationKey = ['editCustomCodeFromConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, {configurationId: string;data: UpdateCustomCodeInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  editCustomCodeFromConfiguration(configurationId,data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>>
+    export type EditCustomCodeFromConfigurationMutationBody = UpdateCustomCodeInput
+    export type EditCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Edit Custom Code
+ */
+export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
+        TError,
+        {configurationId: string;data: UpdateCustomCodeInput},
+        TContext
+      > => {
+
+      const mutationOptions = getEditCustomCodeFromConfigurationMutationOptions(options);
 
       return useMutation(mutationOptions , queryClient);
     }

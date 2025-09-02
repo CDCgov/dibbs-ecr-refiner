@@ -24,13 +24,17 @@ import {
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import {
-  getGetConfigurationsQueryKey,
+  getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
   useDeleteCustomCodeFromConfiguration,
+  useEditCustomCodeFromConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import {
+  AddCustomCodeInput,
+  AddCustomCodeInputSystem,
   DbConfigurationCustomCode,
+  DbConfigurationCustomCodeSystem,
   GetConfigurationResponse,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
@@ -87,6 +91,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
+  const modalRef = useRef<ModalRef | null>(null);
 
   function onCodesetClick(id: string) {
     setSelectedCodesetId(id);
@@ -168,7 +173,6 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
             </ul>
           </div>
         </div>
-
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
@@ -177,8 +181,17 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
             </>
           ) : tableView === 'custom' ? (
             <>
+              <CustomCodeGroupingParagraph />
+              <ModalToggleButton
+                modalRef={modalRef}
+                opener
+                className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
+              >
+                Add code
+              </ModalToggleButton>
               <CustomCodesDetail
                 configurationId={id}
+                modalRef={modalRef}
                 customCodes={custom_codes}
               />
             </>
@@ -189,29 +202,30 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
   );
 }
 
-interface CustomCodesTableProps {
+interface CustomCodesDetailProps {
   configurationId: string;
+  modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
 }
 
 function CustomCodesDetail({
   configurationId,
+  modalRef,
   customCodes,
-}: CustomCodesTableProps) {
-  const { mutate } = useDeleteCustomCodeFromConfiguration();
-  const modalRef = useRef<ModalRef>(null);
-  if (customCodes.length === 0) return null;
+}: CustomCodesDetailProps) {
+  const { mutateAsync: deleteCode } = useDeleteCustomCodeFromConfiguration();
+  const [selectedCustomCode, setSelectedCustomCode] =
+    useState<DbConfigurationCustomCode | null>(null);
+  const queryClient = useQueryClient();
+  const showToast = useToast();
+
+  function toggleModal() {
+    modalRef.current?.toggleModal();
+    setSelectedCustomCode(null); // reset for next add
+  }
 
   return (
     <>
-      <CustomCodeGroupingParagraph />
-      <ModalToggleButton
-        modalRef={modalRef}
-        opener
-        className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
-      >
-        Add code
-      </ModalToggleButton>
       <table className="!mt-6 w-full border-separate">
         <tbody>
           {customCodes.map((customCode) => (
@@ -223,17 +237,36 @@ function CustomCodesDetail({
               <td>{customCode.system}</td>
               <td>{customCode.name}</td>
               <td className="text-right whitespace-nowrap">
-                <button className="usa-button usa-button--unstyled text-blue-60 !mr-2">
+                <ModalToggleButton
+                  modalRef={modalRef}
+                  opener
+                  className="usa-button usa-button--unstyled text-blue-60 !mr-2"
+                  onClick={() => setSelectedCustomCode(customCode)}
+                >
                   Edit
-                </button>
+                </ModalToggleButton>
                 <button
                   className="usa-button usa-button--unstyled text-red-60"
-                  onClick={() => {
-                    mutate({
-                      code: customCode.code,
-                      system: customCode.system,
-                      configurationId: configurationId,
-                    });
+                  onClick={async () => {
+                    await deleteCode(
+                      {
+                        code: customCode.code,
+                        system: customCode.system,
+                        configurationId: configurationId,
+                      },
+                      {
+                        onSuccess: async () => {
+                          await queryClient.invalidateQueries({
+                            queryKey:
+                              getGetConfigurationQueryKey(configurationId),
+                          });
+                          showToast({
+                            heading: 'Deleted code',
+                            body: customCode.code,
+                          });
+                        },
+                      }
+                    );
                   }}
                 >
                   Delete
@@ -243,9 +276,22 @@ function CustomCodesDetail({
           ))}
         </tbody>
       </table>
-      <CustomCodeModal configurationId={configurationId} modalRef={modalRef} />
+      <CustomCodeModal
+        configurationId={configurationId}
+        initialCode={selectedCustomCode?.code}
+        initialSystem={selectedCustomCode?.system}
+        initialName={selectedCustomCode?.name}
+        modalRef={modalRef}
+        onClose={toggleModal}
+      />
     </>
   );
+}
+
+function normalizeSystem(
+  system: DbConfigurationCustomCodeSystem | string
+): AddCustomCodeInputSystem {
+  return system.toLowerCase() as AddCustomCodeInputSystem; // simple lowercase approach
 }
 
 function ConditionCodeGroupingParagraph() {
@@ -413,6 +459,181 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   );
 }
 
+interface CustomCodeModalProps {
+  configurationId: string;
+  modalRef: React.RefObject<ModalRef | null>;
+  onClose: () => void;
+  initialCode?: string;
+  initialSystem?: string;
+  initialName?: string;
+}
+
+export function CustomCodeModal({
+  configurationId,
+  modalRef,
+  onClose,
+  initialCode,
+  initialSystem,
+  initialName,
+}: CustomCodeModalProps) {
+  const { mutate: addCode } = useAddCustomCodeToConfiguration();
+  const { mutate: editCode } = useEditCustomCodeFromConfiguration();
+  const queryClient = useQueryClient();
+  const showToast = useToast();
+
+  const systemValues = [
+    { name: 'ICD-10', value: 'icd-10' },
+    { name: 'SNOMED', value: 'snomed' },
+    { name: 'RxNorm', value: 'rxnorm' },
+    { name: 'LOINC', value: 'loinc' },
+  ];
+
+  const isEditing = initialCode && initialSystem && initialName;
+
+  const [form, setForm] = useState({
+    code: initialCode ?? '',
+    system: normalizeSystem(initialSystem ?? '') ?? 'icd-10',
+    name: initialName ?? '',
+  });
+
+  const isButtonEnabled = form.code && form.system && form.name;
+
+  console.log(form);
+
+  useEffect(() => {
+    setForm({
+      code: initialCode ?? '',
+      system: normalizeSystem(initialSystem ?? '') ?? 'icd-10',
+      name: initialName ?? '',
+    });
+  }, [initialCode, initialSystem, initialName]);
+
+  const handleChange =
+    (field: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isEditing) {
+      editCode(
+        {
+          configurationId,
+          data: {
+            code: initialCode!,
+            system: normalizeSystem(initialSystem!),
+            new_code: form.code,
+            new_system: normalizeSystem(form.system),
+            new_name: form.name,
+          },
+        },
+        {
+          onSuccess: async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetConfigurationQueryKey(configurationId),
+            });
+            showToast({ heading: 'Custom code updated', body: form.code });
+            onClose();
+          },
+        }
+      );
+    } else {
+      addCode(
+        {
+          configurationId,
+          data: {
+            code: form.code,
+            system: normalizeSystem(form.system),
+            name: form.name,
+          },
+        },
+        {
+          onSuccess: async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetConfigurationQueryKey(configurationId),
+            });
+            showToast({ heading: 'Custom code added', body: form.code });
+            onClose();
+          },
+        }
+      );
+    }
+  };
+
+  return (
+    <Modal
+      ref={modalRef}
+      id="custom-code-modal"
+      aria-describedby="modal-heading"
+      aria-labelledby="modal-heading"
+      isLarge
+      className="!w-[35rem] !rounded-none"
+      forceAction
+    >
+      <ModalHeading
+        id="modal-heading"
+        className="text-bold font-merriweather mb-6 text-xl"
+      >
+        {isEditing ? 'Edit custom code' : 'Add custom code'}
+      </ModalHeading>
+
+      <button
+        type="button"
+        aria-label="Close this window"
+        onClick={onClose}
+        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
+      >
+        <Icon.Close className="h-5 w-5" aria-hidden />
+      </button>
+
+      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
+        <Label htmlFor="code">Code #</Label>
+        <TextInput
+          id="code"
+          name="code"
+          type="text"
+          value={form.code}
+          onChange={handleChange('code')}
+        />
+
+        <Label htmlFor="system">Code system</Label>
+        <Select
+          id="system"
+          name="system"
+          value={form.system}
+          onChange={handleChange('system')}
+        >
+          {systemValues.map((sv) => (
+            <option key={sv.value} value={sv.value}>
+              {sv.name}
+            </option>
+          ))}
+        </Select>
+
+        <Label htmlFor="name">Code name</Label>
+        <TextInput
+          id="name"
+          name="name"
+          type="text"
+          value={form.name}
+          onChange={handleChange('name')}
+        />
+      </div>
+
+      <ModalFooter className="flex justify-end space-x-4 pt-6">
+        <Button
+          onClick={handleSubmit}
+          disabled={!isButtonEnabled}
+          variant={isButtonEnabled ? 'primary' : 'disabled'}
+        >
+          {isEditing ? 'Update' : 'Add custom code'}
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
+
 interface ConditionCodeRowProps {
   code: string;
   codeSystem: string;
@@ -434,149 +655,6 @@ function ConditionCodeRow({
         {highlightMatches(text, matches, 'description')}
       </td>
     </tr>
-  );
-}
-
-interface CustomCodeModalProps {
-  configurationId: string;
-  modalRef: React.RefObject<ModalRef | null>;
-  initialData?: { code: string; system: string; name: string } | null;
-}
-
-export function CustomCodeModal({
-  configurationId,
-  modalRef,
-  initialData,
-}: CustomCodeModalProps) {
-  const { mutate } = useAddCustomCodeToConfiguration();
-  const queryClient = useQueryClient();
-  const showToast = useToast();
-
-  const [code, setCode] = useState(initialData?.code ?? '');
-  const [system, setSystem] = useState(initialData?.system ?? '');
-  const [name, setName] = useState(initialData?.name ?? '');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    mutate(
-      {
-        configurationId: configurationId,
-        data: {
-          code: 'idkdk2q',
-          name: 'test',
-          system: 'snomed',
-        },
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationsQueryKey(),
-          });
-          showToast({
-            heading: 'Custom code added',
-            body: code,
-          });
-          modalRef.current?.toggleModal();
-        },
-      }
-    );
-  };
-
-  return (
-    <Modal
-      ref={modalRef}
-      id="add-custom-code-modal"
-      aria-labelledby="add-custom-code-title"
-      aria-describedby="Modal for adding custom code"
-      isLarge
-      className="!h-[30.125rem] !w-[35rem] !rounded-none"
-      forceAction
-    >
-      <ModalHeading
-        id="add-custom-code-title"
-        className="text-bold font-merriweather mb-6 text-xl"
-      >
-        {initialData ? 'Edit custom code' : 'Add custom code'}
-      </ModalHeading>
-
-      <button
-        type="button"
-        aria-label="Close this window"
-        onClick={() => modalRef.current?.toggleModal()}
-        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
-      >
-        <Icon.Close className="h-5 w-5" aria-hidden />
-      </button>
-
-      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
-        <div className="max-w-3/4">
-          <Label
-            htmlFor="code"
-            className="font-public-sans text-sm text-gray-700"
-          >
-            Code #
-          </Label>
-          <TextInput
-            id="code"
-            name="code"
-            type="text"
-            value={code}
-            className="w-full rounded-md border px-3 py-2"
-            onChange={(e) => setCode(e.target.value)}
-          />
-        </div>
-
-        <div className="max-w-3/4">
-          <Label
-            htmlFor="system"
-            className="font-public-sans text-sm text-gray-700"
-          >
-            Code system
-          </Label>
-          <Select
-            id="system"
-            name="system"
-            value={system}
-            className="w-full rounded-md border px-3 py-2"
-            onChange={(e) => setSystem(e.target.value)}
-          >
-            <option value="">- Select -</option>
-            <option value="icd10">ICD-10</option>
-            <option value="snomed">SNOMED</option>
-            <option value="loinc">LOINC</option>
-            <option value="rxnorm">RxNorm</option>
-          </Select>
-        </div>
-
-        <div className="max-w-3/4">
-          <Label
-            htmlFor="name"
-            className="font-public-sans text-sm text-gray-700"
-          >
-            Code name
-          </Label>
-          <TextInput
-            id="name"
-            name="name"
-            type="text"
-            value={name}
-            className="w-full rounded-md border px-3 py-2"
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <ModalFooter className="maxw-4/4 flex justify-end space-x-4 pt-6">
-          <Button
-            type="submit"
-            variant={!code || !system || !name ? 'disabled' : 'primary'}
-            disabled={!code || !system || !name}
-            onClick={handleSubmit}
-          >
-            {initialData ? 'Update' : 'Add custom code'}
-          </Button>
-        </ModalFooter>
-      </div>
-    </Modal>
   );
 }
 
