@@ -15,6 +15,7 @@ import {
   Modal,
   ModalRef,
   ModalHeading,
+  ModalToggleButton,
   ModalFooter,
   Label,
   TextInput,
@@ -22,11 +23,19 @@ import {
   Icon,
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
-import { useGetConfiguration } from '../../../api/configurations/configurations';
-import { GetConfigurationResponse } from '../../../api/schemas';
+import {
+  getGetConfigurationsQueryKey,
+  useAddCustomCodeToConfiguration,
+  useGetConfiguration,
+} from '../../../api/configurations/configurations';
+import {
+  DbConfigurationCustomCode,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -39,7 +48,7 @@ export default function ConfigBuild() {
   });
 
   if (isLoading || !response?.data) return 'Loading...';
-  if (isError) return 'Error!';
+  if (!id || isError) return 'Error!';
 
   return (
     <div>
@@ -55,51 +64,38 @@ export default function ConfigBuild() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Builder code_sets={response.data.code_sets} />
+        <Builder
+          id={id}
+          code_sets={response.data.code_sets}
+          custom_codes={response.data.custom_codes}
+        />
       </SectionContainer>
     </div>
   );
 }
 
-type BuilderProps = Pick<GetConfigurationResponse, 'code_sets'>;
+type BuilderProps = Pick<
+  GetConfigurationResponse,
+  'id' | 'code_sets' | 'custom_codes'
+>;
 
-function Builder({ code_sets }: BuilderProps) {
-  const [selectedCodesetId, setSelectedCodesetId] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customCodes, setCustomCodes] = useState<
-    { code: string; system: string; name: string }[]
-  >([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [modalInitialData, setModalInitialData] = useState<{
-    code: string;
-    system: string;
-    name: string;
-  } | null>(null);
+function Builder({ id, code_sets, custom_codes }: BuilderProps) {
+  const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
+    'none'
+  );
+  const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
+    null
+  );
 
-  const handleAddOrEditCustomCode = (data: {
-    code: string;
-    system: string;
-    name: string;
-  }) => {
-    if (editingIndex !== null) {
-      // update existing row
-      setCustomCodes((prev) =>
-        prev.map((item, idx) => (idx === editingIndex ? data : item))
-      );
-    } else {
-      // add new row
-      setCustomCodes((prev) => [...prev, data]);
-    }
-    setEditingIndex(null);
-    setModalInitialData(null);
-    setIsModalOpen(false);
-  };
-
-  function onClick(id: string) {
+  function onCodesetClick(id: string) {
     setSelectedCodesetId(id);
+    setTableView('codeset');
   }
 
-  const isCustomCodes = selectedCodesetId === 'custom';
+  function onCustomCodeClick() {
+    setSelectedCodesetId(null);
+    setTableView('custom');
+  }
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
@@ -132,7 +128,7 @@ function Builder({ code_sets }: BuilderProps) {
                         'bg-white': selectedCodesetId === codeSet.condition_id,
                       }
                     )}
-                    onClick={() => onClick(codeSet.condition_id)}
+                    onClick={() => onCodesetClick(codeSet.condition_id)}
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
@@ -145,103 +141,99 @@ function Builder({ code_sets }: BuilderProps) {
               ))}
             </ul>
           </div>
-          <div>
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-              <label
-                className="text-gray-cool-60 font-bold"
-                htmlFor="open-codesets"
-              >
-                MORE OPTIONS
-              </label>
-            </div>
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+            <label className="text-gray-cool-60 font-bold">MORE OPTIONS</label>
           </div>
           <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
-            <ul className="mt-2 flex flex-col gap-2">
-              <li>
+            <ul className="flex flex-col gap-2">
+              <li key="custom-codes">
                 <button
                   className={classNames(
                     'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    { 'bg-white': isCustomCodes }
+                    {
+                      'bg-white': tableView === 'custom',
+                    }
                   )}
-                  onClick={() => {
-                    onClick('custom');
-                  }}
+                  onClick={() => onCustomCodeClick()}
+                  aria-controls={
+                    tableView === 'custom' ? 'custom-table' : undefined
+                  }
+                  aria-pressed={tableView === 'custom'}
                 >
                   <span>Custom codes</span>
-                  <span>{customCodes.length}</span>
+                  <span>{custom_codes.length}</span>
                 </button>
               </li>
             </ul>
           </div>
         </div>
+
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
-          {selectedCodesetId && selectedCodesetId != 'custom' ? (
-            <div>
+          {selectedCodesetId && tableView === 'codeset' ? (
+            <>
               <ConditionCodeGroupingParagraph />
               <ConditionCodeTable conditionId={selectedCodesetId} />
-            </div>
-          ) : selectedCodesetId === 'custom' ? (
-            <div>
-              <CustomCodeGroupingParagraph />
-              <Button
-                className="margin-top-1em"
-                variant="secondary"
-                id="open-custom-code"
-                aria-label="Add new custom code to configuration"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <span>Add code</span>
-              </Button>
-              {customCodes.length > 0 && (
-                <table className="width-full !mt-6 w-full border-separate">
-                  <tbody>
-                    {customCodes.map((c, i) => (
-                      <tr key={i} className="align-middle">
-                        <td>{c.code}</td>
-                        <td>{c.system}</td>
-                        <td>{c.name}</td>
-                        <td className="text-right whitespace-nowrap">
-                          <button
-                            className="usa-button usa-button--unstyled text-blue-60 !mr-2"
-                            onClick={() => {
-                              setEditingIndex(i);
-                              setModalInitialData(c);
-                              setIsModalOpen(true);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="usa-button usa-button--unstyled text-red-60"
-                            onClick={() =>
-                              setCustomCodes((prev) =>
-                                prev.filter((_, idx) => idx !== i)
-                              )
-                            }
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            </>
+          ) : tableView === 'custom' ? (
+            <>
+              <CustomCodesDetail
+                configurationId={id}
+                customCodes={custom_codes}
+              />
+            </>
           ) : null}
         </div>
       </div>
-      <AddCustomCodeModal
-        open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingIndex(null);
-          setModalInitialData(null);
-        }}
-        onSubmit={handleAddOrEditCustomCode}
-        initialData={modalInitialData}
-      />
     </div>
+  );
+}
+
+interface CustomCodesTableProps {
+  configurationId: string;
+  customCodes: DbConfigurationCustomCode[];
+}
+
+function CustomCodesDetail({
+  configurationId,
+  customCodes,
+}: CustomCodesTableProps) {
+  const modalRef = useRef<ModalRef>(null);
+  if (customCodes.length === 0) return null;
+
+  return (
+    <>
+      <CustomCodeGroupingParagraph />
+      <ModalToggleButton
+        modalRef={modalRef}
+        opener
+        className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
+      >
+        Add code
+      </ModalToggleButton>
+      <table className="!mt-6 w-full border-separate">
+        <tbody>
+          {customCodes.map((customCode) => (
+            <tr
+              key={customCode.code + customCode.system}
+              className="align-middle"
+            >
+              <td>{customCode.code}</td>
+              <td>{customCode.system}</td>
+              <td>{customCode.name}</td>
+              <td className="text-right whitespace-nowrap">
+                <button className="usa-button usa-button--unstyled text-blue-60 !mr-2">
+                  Edit
+                </button>
+                <button className="usa-button usa-button--unstyled text-red-60">
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <CustomCodeModal configurationId={configurationId} modalRef={modalRef} />
+    </>
   );
 }
 
@@ -434,46 +426,50 @@ function ConditionCodeRow({
   );
 }
 
-interface AddCustomCodeModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: { code: string; system: string; name: string }) => void;
+interface CustomCodeModalProps {
+  configurationId: string;
+  modalRef: React.RefObject<ModalRef | null>;
   initialData?: { code: string; system: string; name: string } | null;
 }
 
-export function AddCustomCodeModal({
-  open,
-  onClose,
-  onSubmit,
+export function CustomCodeModal({
+  configurationId,
+  modalRef,
   initialData,
-}: AddCustomCodeModalProps) {
-  const modalRef = useRef<ModalRef>(null);
+}: CustomCodeModalProps) {
+  const { mutate } = useAddCustomCodeToConfiguration();
+  const queryClient = useQueryClient();
   const showToast = useToast();
 
   const [code, setCode] = useState(initialData?.code ?? '');
   const [system, setSystem] = useState(initialData?.system ?? '');
   const [name, setName] = useState(initialData?.name ?? '');
 
-  useEffect(() => {
-    if (open) {
-      setCode(initialData?.code ?? '');
-      setSystem(initialData?.system ?? '');
-      setName(initialData?.name ?? '');
-      modalRef.current?.toggleModal(undefined, true);
-    } else {
-      modalRef.current?.toggleModal(undefined, false);
-    }
-  }, [open, initialData]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ code, system, name });
 
-    showToast({
-      heading: initialData ? 'Custom code updated' : 'Custom code added',
-      body: `${code}`,
-    });
-    onClose();
+    mutate(
+      {
+        configurationId: configurationId,
+        data: {
+          code: 'idkdk2q',
+          name: 'test',
+          system: 'snomed',
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationsQueryKey(),
+          });
+          showToast({
+            heading: 'Custom code added',
+            body: code,
+          });
+          modalRef.current?.toggleModal();
+        },
+      }
+    );
   };
 
   return (
@@ -496,7 +492,7 @@ export function AddCustomCodeModal({
       <button
         type="button"
         aria-label="Close this window"
-        onClick={onClose}
+        onClick={() => modalRef.current?.toggleModal()}
         className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
       >
         <Icon.Close className="h-5 w-5" aria-hidden />
