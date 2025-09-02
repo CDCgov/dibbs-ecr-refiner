@@ -26,6 +26,7 @@ import { useSearch } from '../../../hooks/useSearch';
 import {
   getGetConfigurationsQueryKey,
   useAddCustomCodeToConfiguration,
+  useDeleteCustomCodeFromConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import {
@@ -197,6 +198,7 @@ function CustomCodesDetail({
   configurationId,
   customCodes,
 }: CustomCodesTableProps) {
+  const { mutate } = useDeleteCustomCodeFromConfiguration();
   const modalRef = useRef<ModalRef>(null);
   if (customCodes.length === 0) return null;
 
@@ -224,7 +226,16 @@ function CustomCodesDetail({
                 <button className="usa-button usa-button--unstyled text-blue-60 !mr-2">
                   Edit
                 </button>
-                <button className="usa-button usa-button--unstyled text-red-60">
+                <button
+                  className="usa-button usa-button--unstyled text-red-60"
+                  onClick={() => {
+                    mutate({
+                      code: customCode.code,
+                      system: customCode.system,
+                      configurationId: configurationId,
+                    });
+                  }}
+                >
                   Delete
                 </button>
               </td>
@@ -531,11 +542,10 @@ export function CustomCodeModal({
             onChange={(e) => setSystem(e.target.value)}
           >
             <option value="">- Select -</option>
-            <option value="ICD-10">ICD-10</option>
-            <option value="SNOMED">SNOMED</option>
-            <option value="LOINC">LOINC</option>
-            <option value="RXNORM">RxNorm</option>
-            <option value="LOCAL">Local</option>
+            <option value="icd10">ICD-10</option>
+            <option value="snomed">SNOMED</option>
+            <option value="loinc">LOINC</option>
+            <option value="rxnorm">RxNorm</option>
           </Select>
         </div>
 
@@ -555,7 +565,6 @@ export function CustomCodeModal({
             onChange={(e) => setName(e.target.value)}
           />
         </div>
-
         <ModalFooter className="maxw-4/4 flex justify-end space-x-4 pt-6">
           <Button
             type="submit"

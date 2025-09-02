@@ -10,6 +10,7 @@ from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
+    delete_custom_code_from_configuration_db,
     get_configuration_by_id_db,
     get_configurations_db,
     get_total_condition_code_counts_by_configuration_db,
@@ -391,7 +392,87 @@ async def add_custom_code(
             detail="Failed to update configuration.",
         )
 
-        # Get all associated conditions and their # of codes
+    # Get all associated conditions and their # of codes
+    config_condition_info = await get_total_condition_code_counts_by_configuration_db(
+        config_id=config.id, db=db
+    )
+
+    return GetConfigurationResponse(
+        id=updated_config.id,
+        display_name=updated_config.name,
+        code_sets=config_condition_info,
+        custom_codes=updated_config.custom_codes,
+    )
+
+
+@router.delete(
+    "/{configuration_id}/custom-codes/{system}/{code}",
+    response_model=GetConfigurationResponse,
+    tags=["configurations"],
+    operation_id="deleteCustomCodeFromConfiguration",
+)
+async def delete_custom_code(
+    configuration_id: UUID,
+    system: str,
+    code: str,
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> GetConfigurationResponse:
+    """
+    Delete a custom code from a configuration.
+
+    Args:
+        configuration_id (UUID): The ID of the configuration to modify.
+        system (str): System of the custom code.
+        code (str): Code of the custom code.
+        user (dict[str, Any]): The logged-in user.
+        db (AsyncDatabaseConnection): The database connection.
+
+    Raises:
+        HTTPException: 400 if system is not provided
+        HTTPException: 400 if code is not provided
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 500 if configuration can't be updated
+
+    Returns:
+        GetConfigurationResponse: The updated configuration
+    """
+
+    if not system:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="System must be provided."
+        )
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Code must be provided."
+        )
+
+    # get user jurisdiction
+    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    jd = db_user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    updated_config = await delete_custom_code_from_configuration_db(
+        config=config, system=system, code=code, db=db
+    )
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+    # Get all associated conditions and their # of codes
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )

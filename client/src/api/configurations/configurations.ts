@@ -295,15 +295,15 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 Args:
     configuration_id (UUID): The ID of the configuration to update.
     body (AddCustomCodeInput): The custom code information provided by the user.
-    user (dict[str, Any], optional): The logged-in user.
-    db (AsyncDatabaseConnection, optional): The database connection.
+    user (dict[str, Any]): The logged-in user.
+    db (AsyncDatabaseConnection): The database connection.
 
 Raises:
-    HTTPException: _description_
-    HTTPException: _description_
+    HTTPException: 404 if configuration isn't found
+    HTTPException: 500 if custom code can't be added
 
 Returns:
-    _type_: _description_
+    GetConfigurationResponse: Updated configuration
  * @summary Add Custom Code
  */
 export const addCustomCodeToConfiguration = (
@@ -362,6 +362,85 @@ export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidati
       > => {
 
       const mutationOptions = getAddCustomCodeToConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    /**
+ * Delete a custom code from a configuration.
+
+Args:
+    configuration_id (UUID): The ID of the configuration to modify.
+    system (str): System of the custom code.
+    code (str): Code of the custom code.
+    user (dict[str, Any]): The logged-in user.
+    db (AsyncDatabaseConnection): The database connection.
+
+Raises:
+    HTTPException: 400 if system is not provided
+    HTTPException: 400 if code is not provided
+    HTTPException: 404 if configuration can't be found
+    HTTPException: 500 if configuration can't be updated
+
+Returns:
+    GetConfigurationResponse: The updated configuration
+ * @summary Delete Custom Code
+ */
+export const deleteCustomCodeFromConfiguration = (
+    configurationId: string,
+    system: string,
+    code: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<GetConfigurationResponse>> => {
+    
+    
+    return axios.default.delete(
+      `/api/v1/configurations/${configurationId}/custom-codes/${system}/${code}`,options
+    );
+  }
+
+
+
+export const getDeleteCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext> => {
+
+const mutationKey = ['deleteCustomCodeFromConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, {configurationId: string;system: string;code: string}> = (props) => {
+          const {configurationId,system,code} = props ?? {};
+
+          return  deleteCustomCodeFromConfiguration(configurationId,system,code,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>>
+    
+    export type DeleteCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Delete Custom Code
+ */
+export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+        TError,
+        {configurationId: string;system: string;code: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteCustomCodeFromConfigurationMutationOptions(options);
 
       return useMutation(mutationOptions , queryClient);
     }

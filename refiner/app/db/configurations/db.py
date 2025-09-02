@@ -317,7 +317,7 @@ async def add_custom_code_to_configuration_db(
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
-    Given a config ID, adds a user-defined custom code to the configuration.
+    Given a config, adds a user-defined custom code to the configuration.
     """
     query = """
             UPDATE configurations
@@ -341,6 +341,37 @@ async def add_custom_code_to_configuration_db(
     ]
 
     params = (Jsonb(json), config.id)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
+
+
+async def delete_custom_code_from_configuration_db(
+    config: DbConfiguration,
+    system: str,
+    code: str,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration:
+    """
+    Given a config, system, and custom code, deletes the custom code from the configuration.
+    """
+
+    query = """
+            UPDATE configurations
+            SET custom_codes = %s::jsonb
+            WHERE id = %s
+            RETURNING *;
+            """
+
+    updated_custom_codes = [
+        {"code": cc.code, "system": cc.system, "name": cc.name}
+        for cc in config.custom_codes
+        if not (cc.system == system and cc.code == code)
+    ]
+
+    params = (Jsonb(updated_custom_codes), config.id)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
             await cur.execute(query, params)
