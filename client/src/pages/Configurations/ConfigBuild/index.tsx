@@ -14,50 +14,109 @@ import { Icon, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import AddConditionCodeSetsDrawer from '../../../components/Drawer/AddConditionCodeSets';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
-import { GetConfigurationResponse } from '../../../api/schemas';
-import { useGetCondition } from '../../../api/conditions/conditions';
+import {
+  GetConditionsResponse,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
+import {
+  useGetCondition,
+  useGetConditions,
+  useGetConditionsByConfiguration,
+} from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
+import { AxiosResponse } from 'axios';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const {
-    data: response,
-    isLoading,
-    isError,
-  } = useGetConfiguration(id ?? '', {
+  const { data, isLoading, isError } = useGetConfiguration(id ?? '', {
     query: { enabled: !!id },
   });
 
-  if (isLoading || !response?.data) return 'Loading...';
+  const [response, setResponse] = useState<
+    GetConfigurationResponse | undefined
+  >(data?.data);
+
+  useEffect(() => {
+    if (data?.data) {
+      setResponse(data.data);
+    }
+  }, [data?.data]);
+
+  if (isLoading || !response) return 'Loading...';
   if (isError) return 'Error!';
 
+  function updateResponse(newResponse: GetConfigurationResponse) {
+    setResponse(newResponse);
+  }
   return (
     <div>
       <TitleContainer>
-        <Title>{response.data.display_name}</Title>
+        <Title>{response.display_name}</Title>
       </TitleContainer>
       <NavigationContainer>
         <StepsContainer>
-          <Steps configurationId={response?.data.id} />
+          <Steps configurationId={response?.id} />
           <Button to={`/configurations/${id}/test`}>
             Next: Test configuration
           </Button>
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Builder code_sets={response.data.code_sets} />
+        <Builder
+          code_sets={response.code_sets}
+          configurationId={response?.id}
+        />
       </SectionContainer>
     </div>
   );
 }
 
-type BuilderProps = Pick<GetConfigurationResponse, 'code_sets'>;
+type BuilderProps = Pick<GetConfigurationResponse, 'code_sets'> & {
+  configurationId: string;
+};
 
-function Builder({ code_sets }: BuilderProps) {
+function Builder({
+  code_sets: initialCodeSets,
+  configurationId,
+}: BuilderProps) {
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
+  const [codeSets, setCodeSets] = useState(initialCodeSets);
+
+  const { data: conditions, isLoading, isError } = useGetConditions();
+  const { data: conditionWithConfig } =
+    useGetConditionsByConfiguration(configurationId);
+
+  function getMatchingConditionsByDisplayName(
+    _c: AxiosResponse<GetConditionsResponse[], any> | undefined,
+    _cwc: AxiosResponse<GetConditionsResponse[], any> | undefined
+  ) {
+    const displayNamesWithConfig = new Set(
+      _cwc?.data.map((c) => c.display_name)
+    );
+    return _c?.data.filter((c) => displayNamesWithConfig.has(c.display_name));
+  }
+
+  getMatchingConditionsByDisplayName(conditions, conditionWithConfig);
+
+  // This state variable stores info about conditions and whether they are associated with the configuration
+  const [associatedCodeSets, setAssociatedCodeSets] = useState<
+    { id: string; display_name: string; associated: boolean }[]
+  >([]);
+
+  useEffect(() => {
+    if (conditions?.data && conditionWithConfig?.data) {
+      const configIds = new Set(conditionWithConfig.data.map((c) => c.id));
+      const newAssociatedCodeSets = conditions.data.map((c) => ({
+        id: c.id,
+        display_name: c.display_name,
+        associated: configIds.has(c.id),
+      }));
+      setAssociatedCodeSets(newAssociatedCodeSets);
+    }
+  }, [conditions?.data, conditionWithConfig?.data]);
 
   function onClick(id: string) {
     setSelectedCodesetId(id);
@@ -68,7 +127,7 @@ function Builder({ code_sets }: BuilderProps) {
   }
 
   function onSearch(/* filter: string */) {}
-  // function onSave() {}
+  function onSave() {}
   function onClose() {
     setDrawerActive(false);
   }
@@ -98,7 +157,7 @@ function Builder({ code_sets }: BuilderProps) {
           </div>
           <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
             <ul className="flex flex-col gap-2">
-              {code_sets.map((codeSet) => (
+              {codeSets.map((codeSet) => (
                 <li key={codeSet.display_name}>
                   <button
                     className={classNames(
@@ -132,6 +191,8 @@ function Builder({ code_sets }: BuilderProps) {
         isOpen={drawerActive}
         onClose={onClose}
         onSearch={onSearch}
+        configurationId={configurationId}
+        codeSets={associatedCodeSets}
       />
     </div>
   );

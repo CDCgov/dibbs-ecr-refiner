@@ -7,6 +7,31 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbCondition
 
 
+async def get_conditions_by_configuration_id_db(
+    configuration_id: UUID, db: AsyncDatabaseConnection
+) -> list[DbCondition]:
+    """
+    Given a configuration ID, return all associated conditions.
+    """
+    query = """
+        WITH conds AS (
+            SELECT jsonb_array_elements(included_conditions) AS cond
+            FROM configurations
+            WHERE id = %s
+        )
+        SELECT c.id, c.display_name, c.canonical_url, c.version
+        FROM conds
+        JOIN conditions c ON c.canonical_url = cond->>'canonical_url' AND c.version = cond->>'version'
+        ORDER BY c.display_name ASC;
+    """
+    params = (configuration_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+    return list(rows)
+
+
 async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     """
     Queries the database and retrieves a list of conditions with version 2.0.0.

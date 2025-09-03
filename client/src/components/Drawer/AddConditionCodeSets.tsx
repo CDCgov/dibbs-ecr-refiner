@@ -2,25 +2,30 @@ import React, { useState } from 'react';
 import { Button } from '../Button';
 import Drawer from '.';
 import { Link } from 'react-router';
-import { useGetConditions } from '../../api/conditions/conditions';
 
 type ConditionCodeSetsProps = {
   isOpen: boolean;
   onClose: () => void;
   onSearch: (searchFilter: string) => void;
+  codeSets: ConditionCodeSetProps[];
+  configurationId: string;
 };
 
 interface ConditionCodeSetProps {
   display_name: string;
   id: string;
+  associated: boolean;
+  configurationId: string;
 }
 
 const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
   display_name,
-  // id,
+  id,
+  configurationId,
+  associated,
 }) => {
-  const [showAddButton, setShowAddButton] = useState(false);
-  const [isButtonToggled, setButtonToggled] = useState(false);
+  const [showAddButton, setShowAddButton] = useState(associated);
+  const [isButtonToggled, setButtonToggled] = useState(associated);
 
   return (
     <div
@@ -36,10 +41,12 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
       onClick={() => {
         setButtonToggled(!isButtonToggled);
         setShowAddButton(true);
+        console.log(configurationId);
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           setButtonToggled(!isButtonToggled);
+          console.log(configurationId);
         }
       }}
       tabIndex={0}
@@ -48,9 +55,11 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
       {showAddButton && (
         <Button
           variant={isButtonToggled ? 'selected' : 'primary'}
-          onClick={() => {
+          onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+            e.stopPropagation();
             setButtonToggled(!isButtonToggled);
             setShowAddButton(true);
+            console.log(configurationId);
           }}
           tabIndex={-1}
         >
@@ -65,9 +74,9 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
   isOpen,
   onClose,
   onSearch,
+  configurationId,
+  codeSets,
 }: ConditionCodeSetsProps) => {
-  const { data: response, isLoading, isError } = useGetConditions();
-
   return (
     <Drawer
       title="Add condition code sets"
@@ -87,21 +96,19 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
       isOpen={isOpen}
       placeHolder="Search by condition name"
       onSearch={onSearch}
-      // onSave={onSave}
       onClose={onClose}
       drawerWidth="35%"
     >
       <div className="flex h-full flex-col">
         <div className="flex-grow overflow-y-auto">
-          {isLoading && <p>Loading...</p>}
-          {isError && <p>Error loading conditions.</p>}
-          {response?.data.length === 0 && <p>No conditions found.</p>}
-          {response?.data.map((condition: ConditionCodeSetProps) => {
+          {codeSets.map((condition: ConditionCodeSetProps) => {
             return (
               <ConditionCodeSet
                 key={condition.id}
                 display_name={condition.display_name}
                 id={condition.id}
+                associated={condition.associated}
+                configurationId={configurationId}
               />
             );
           })}

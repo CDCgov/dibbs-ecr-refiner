@@ -38,6 +38,99 @@ import type {
 
 
 /**
+ * Fetch conditions associated with a given configuration ID.
+
+Args:
+    configuration_id (UUID): ID of the configuration.
+    db (AsyncDatabaseConnection): Database connection.
+
+Returns:
+    list[GetConditionsResponse]: List of associated conditions.
+ * @summary Get Conditions By Configuration Id
+ */
+export const getConditionsByConfiguration = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<GetConditionsResponse[]>> => {
+    
+    
+    return axios.default.get(
+      `/api/v1/conditions/by-configuration/${configurationId}`,options
+    );
+  }
+
+
+export const getGetConditionsByConfigurationQueryKey = (configurationId?: string,) => {
+    return [`/api/v1/conditions/by-configuration/${configurationId}`] as const;
+    }
+
+    
+export const getGetConditionsByConfigurationQueryOptions = <TData = Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConditionsByConfigurationQueryKey(configurationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConditionsByConfiguration>>> = ({ signal }) => getConditionsByConfiguration(configurationId, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetConditionsByConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof getConditionsByConfiguration>>>
+export type GetConditionsByConfigurationQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetConditionsByConfiguration<TData = Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConditionsByConfiguration>>,
+          TError,
+          Awaited<ReturnType<typeof getConditionsByConfiguration>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConditionsByConfiguration<TData = Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConditionsByConfiguration>>,
+          TError,
+          Awaited<ReturnType<typeof getConditionsByConfiguration>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConditionsByConfiguration<TData = Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Conditions By Configuration Id
+ */
+
+export function useGetConditionsByConfiguration<TData = Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConditionsByConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetConditionsByConfigurationQueryOptions(configurationId,options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
  * Fetches all available conditions from the database.
 
 Args:

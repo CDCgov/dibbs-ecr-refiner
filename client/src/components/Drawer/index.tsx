@@ -95,19 +95,19 @@ const Drawer = ({
                   <></>
                 )}
                 {onSearch && (
-                  <div>
+                  <>
                     <Search
                       onChange={(e) => {
                         e.preventDefault();
                         setSearchFilter(e.target.value);
                       }}
-                      id="code-search"
-                      name="code-search"
+                      id="code-set-search"
+                      name="code-set-search"
                       type="search"
                       value={searchFilter}
                       placeholder={placeHolder}
                     />
-                  </div>
+                  </>
                 )}
               </section>
             </div>

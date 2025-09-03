@@ -7,6 +7,7 @@ from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
+    get_conditions_by_configuration_id_db,
     get_conditions_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
@@ -21,6 +22,35 @@ class GetConditionsResponse(BaseModel):
 
     id: UUID
     display_name: str
+
+
+@router.get(
+    "/by-configuration/{configuration_id}",
+    response_model=list[GetConditionsResponse],
+    tags=["conditions"],
+    operation_id="getConditionsByConfiguration",
+)
+async def get_conditions_by_configuration_id(
+    configuration_id: UUID,
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[GetConditionsResponse]:
+    """
+    Fetch conditions associated with a given configuration ID.
+
+    Args:
+        configuration_id (UUID): ID of the configuration.
+        db (AsyncDatabaseConnection): Database connection.
+
+    Returns:
+        list[GetConditionsResponse]: List of associated conditions.
+    """
+    conditions = await get_conditions_by_configuration_id_db(
+        configuration_id=configuration_id, db=db
+    )
+    return [
+        GetConditionsResponse(id=condition.id, display_name=condition.display_name)
+        for condition in conditions
+    ]
 
 
 @router.get(

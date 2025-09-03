@@ -112,6 +112,62 @@ async def test_get_condition_found(monkeypatch, authed_client):
 
 
 @pytest.mark.asyncio
+async def test_get_conditions_by_configuration_id(monkeypatch, authed_client):
+    configuration_id = uuid4()
+    fake_conditions = [
+        DbCondition(
+            id=uuid4(),
+            display_name="Diabetes",
+            canonical_url="http://url1",
+            version="1.0.0",
+        ),
+        DbCondition(
+            id=uuid4(),
+            display_name="Asthma",
+            canonical_url="http://url2",
+            version="2.0.0",
+        ),
+    ]
+
+    async def fake_get_conditions_by_configuration_id_db(configuration_id, db):
+        return fake_conditions
+
+    monkeypatch.setattr(
+        "app.api.v1.conditions.get_conditions_by_configuration_id_db",
+        fake_get_conditions_by_configuration_id_db,
+    )
+    response = await authed_client.get(
+        f"/api/v1/conditions/by-configuration/{configuration_id}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 2
+    assert data[0]["display_name"] == "Diabetes"
+    assert data[1]["display_name"] == "Asthma"
+
+
+@pytest.mark.asyncio
+async def test_get_conditions_by_configuration_id_empty(monkeypatch, authed_client):
+    configuration_id = uuid4()
+
+    async def fake_get_conditions_by_configuration_id_db(configuration_id, db):
+        return []
+
+    monkeypatch.setattr(
+        "app.api.v1.conditions.get_conditions_by_configuration_id_db",
+        fake_get_conditions_by_configuration_id_db,
+    )
+    response = await authed_client.get(
+        f"/api/v1/conditions/by-configuration/{configuration_id}"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) == 0
+
+
+@pytest.mark.asyncio
 async def test_get_condition_not_found(monkeypatch, authed_client):
     async def fake_get_condition_by_id_db(id, db):
         return None
