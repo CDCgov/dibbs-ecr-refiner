@@ -165,6 +165,17 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=custom_code_config_mock),
     )
 
+    # Mock deleting a custom code from a config
+    custom_code_deletion_mock = custom_code_config_mock.model_copy(
+        update={
+            "custom_codes": [],
+        }
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.delete_custom_code_from_configuration_db",
+        AsyncMock(return_value=custom_code_deletion_mock),
+    )
+
     yield
 
 
@@ -224,7 +235,16 @@ async def test_add_custom_code_to_configuration(authed_client):
 
 @pytest.mark.asyncio
 async def test_delete_custom_code_from_configuration(authed_client):
-    pass
+    config_id = "11111111-1111-1111-1111-111111111111"
+    system = "LOINC"
+    code = "test-code"
+
+    response = await authed_client.delete(
+        f"/api/v1/configurations/{config_id}/custom-codes/{system}/{code}"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["custom_codes"]) == 0
 
 
 @pytest.mark.asyncio
