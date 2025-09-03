@@ -185,6 +185,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
                 modalRef={modalRef}
                 opener
                 className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
+                aria-label="Add new custom code"
               >
                 Add code
               </ModalToggleButton>
@@ -249,11 +250,13 @@ function CustomCodesDetail({
                   opener
                   className="usa-button usa-button--unstyled text-blue-60 !mr-2"
                   onClick={() => setSelectedCustomCode(customCode)}
+                  aria-label={`Edit custom code ${customCode.name}`}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
                   className="usa-button usa-button--unstyled text-red-60"
+                  aria-label={`Delete custom code ${customCode.name}`}
                   onClick={async () => {
                     await deleteCode(
                       {
