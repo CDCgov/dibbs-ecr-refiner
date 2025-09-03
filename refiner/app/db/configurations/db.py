@@ -395,12 +395,12 @@ async def edit_custom_code_from_configuration_db(
             RETURNING *;
             """
 
-    updated_custom_codes = [
+    json_codes = [
         {"code": cc.code, "system": cc.system, "name": cc.name}
-        for cc in config.custom_codes
+        for cc in updated_custom_codes
     ]
 
-    params = (Jsonb(updated_custom_codes), config.id)
+    params = (Jsonb(json_codes), config.id)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
             await cur.execute(query, params)
