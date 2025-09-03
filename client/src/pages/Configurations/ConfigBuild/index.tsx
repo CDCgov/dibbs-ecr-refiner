@@ -106,7 +106,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col gap-4 py-4 sm:w-1/3 md:px-2">
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+          <OptionsLabelContainer>
             <label
               className="text-gray-cool-60 font-bold"
               htmlFor="open-codesets"
@@ -121,8 +121,8 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
             </button>
-          </div>
-          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+          </OptionsLabelContainer>
+          <OptionsListContainer>
             <ul className="flex flex-col gap-2">
               {code_sets.map((codeSet) => (
                 <li key={codeSet.display_name}>
@@ -145,11 +145,11 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
                 </li>
               ))}
             </ul>
-          </div>
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+          </OptionsListContainer>
+          <OptionsLabelContainer>
             <label className="text-gray-cool-60 font-bold">MORE OPTIONS</label>
-          </div>
-          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+          </OptionsLabelContainer>
+          <OptionsListContainer>
             <ul className="flex flex-col gap-2">
               <li key="custom-codes">
                 <button
@@ -170,7 +170,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
                 </button>
               </li>
             </ul>
-          </div>
+          </OptionsListContainer>
         </div>
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
@@ -198,6 +198,22 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
           ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+      {children}
+    </div>
+  );
+}
+
+function OptionsListContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+      {children}
     </div>
   );
 }
