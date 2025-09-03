@@ -10,7 +10,6 @@ from app.api.v1.configurations import (
     GetConfigurationsResponse,
 )
 from app.db.conditions.model import DbCondition
-from app.db.configurations.db import DbTotalConditionCodeCount
 from app.db.configurations.model import DbConfiguration
 from app.db.users.model import DbUser
 from app.main import app
@@ -92,6 +91,14 @@ def mock_db_functions(monkeypatch):
         sections_to_include=[],
         cloned_from_configuration_id=None,
     )
+    # Mock adding custom code to a config
+    custom_code_config_mock = config_by_id_mock.model_copy(
+        update={
+            "custom_codes": [
+                {"code": "test-code", "name": "test-name", "system": "LOINC"}
+            ],
+        }
+    )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
         AsyncMock(return_value=config_by_id_mock),
@@ -140,15 +147,22 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=updated_config_mock),
     )
 
-    # Total counts
-    DbTotalConditionCodeCount(
-        condition_id=UUID("22222222-2222-2222-2222-222222222222"),
-        display_name="Condition A",
-        total_codes=3,
-    )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_total_condition_code_counts_by_configuration_db",
         AsyncMock(return_value=updated_config_mock),
+    )
+
+    # Mock adding custom code to a config
+    custom_code_config_mock = config_by_id_mock.model_copy(
+        update={
+            "custom_codes": [
+                {"code": "test-code", "name": "test-name", "system": "LOINC"}
+            ],
+        }
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.add_custom_code_to_configuration_db",
+        AsyncMock(return_value=custom_code_config_mock),
     )
 
     yield
@@ -192,3 +206,27 @@ async def test_associate_codeset_with_configuration(authed_client):
     data = response.json()
     assert len(data["included_conditions"]) == 1
     assert data["included_conditions"][0]["canonical_url"] == "url-1"
+
+
+@pytest.mark.asyncio
+async def test_add_custom_code_to_configuration(authed_client):
+    config_id = "11111111-1111-1111-1111-111111111111"
+    payload = {"code": "test-code", "name": "test-name", "system": "loinc"}
+    response = await authed_client.post(
+        f"/api/v1/configurations/{config_id}/custom-codes", json=payload
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["custom_codes"]) == 1
+    assert data["custom_codes"][0]["code"] == "test-code"
+    assert data["custom_codes"][0]["system"] == "LOINC"
+
+
+@pytest.mark.asyncio
+async def test_delete_custom_code_from_configuration(authed_client):
+    pass
+
+
+@pytest.mark.asyncio
+async def test_edit_custom_code_from_configuration(authed_client):
+    pass
