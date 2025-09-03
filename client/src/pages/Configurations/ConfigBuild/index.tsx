@@ -291,14 +291,7 @@ function ConditionCodeGroupingParagraph() {
   return (
     <p>
       These condition code sets come from the default groupings in the{' '}
-      <a
-        className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-        href="https://tes.tools.aimsplatform.org/auth/signin"
-        target="_blank"
-        rel="noopener"
-      >
-        TES (Terminology Exchange Service).
-      </a>
+      <TesLink />
     </p>
   );
 }
@@ -306,16 +299,21 @@ function ConditionCodeGroupingParagraph() {
 function CustomCodeGroupingParagraph() {
   return (
     <p>
-      Add codes that are not included in the code sets from the{' '}
-      <a
-        className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-        href="https://tes.tools.aimsplatform.org/auth/signin"
-        target="_blank"
-        rel="noopener"
-      >
-        TES (Terminology Exchange Service).
-      </a>
+      Add codes that are not included in the code sets from the <TesLink />
     </p>
+  );
+}
+
+function TesLink() {
+  return (
+    <a
+      className="text-blue-cool-60 hover:text-blue-cool-50 underline"
+      href="https://tes.tools.aimsplatform.org/auth/signin"
+      target="_blank"
+      rel="noopener"
+    >
+      TES (Terminology Exchange Service).
+    </a>
   );
 }
 
@@ -582,7 +580,7 @@ export function CustomCodeModal({
           resetForm();
           onClose();
         }}
-        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
+        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
       >
         <Icon.Close className="h-5 w-5" aria-hidden />
       </button>
