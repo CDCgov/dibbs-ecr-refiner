@@ -220,7 +220,7 @@ function CustomCodesDetail({
 
   function toggleModal() {
     modalRef.current?.toggleModal();
-    setSelectedCustomCode(null); // reset for next add
+    setSelectedCustomCode(null);
   }
 
   return (
@@ -285,12 +285,6 @@ function CustomCodesDetail({
       />
     </>
   );
-}
-
-function normalizeSystem(
-  system: DbConfigurationCustomCodeSystem | string
-): AddCustomCodeInputSystem {
-  return system.toLowerCase() as AddCustomCodeInputSystem; // simple lowercase approach
 }
 
 function ConditionCodeGroupingParagraph() {
@@ -522,8 +516,8 @@ export function CustomCodeModal({
         {
           configurationId,
           data: {
-            code: initialCode!,
-            system: normalizeSystem(initialSystem!),
+            code: initialCode,
+            system: normalizeSystem(initialSystem),
             new_code: form.code,
             new_system: normalizeSystem(form.system),
             new_name: form.name,
@@ -633,7 +627,7 @@ export function CustomCodeModal({
         </div>
       </div>
 
-      <ModalFooter className="flex justify-end space-x-4 pt-6">
+      <ModalFooter className="flex justify-end pt-6">
         <Button
           onClick={handleSubmit}
           disabled={!isButtonEnabled}
@@ -668,6 +662,12 @@ function ConditionCodeRow({
       </td>
     </tr>
   );
+}
+
+function normalizeSystem(
+  system: DbConfigurationCustomCodeSystem | string
+): AddCustomCodeInputSystem {
+  return system.toLowerCase() as AddCustomCodeInputSystem;
 }
 
 function highlightMatches(
