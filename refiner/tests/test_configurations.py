@@ -6,9 +6,12 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations import GetConfigurationsResponse
+from app.api.v1.configurations import (
+    GetConfigurationsResponse,
+)
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import DbTotalConditionCodeCount
+from app.db.configurations.model import DbConfiguration
 from app.db.users.model import DbUser
 from app.main import app
 
@@ -74,10 +77,20 @@ def mock_db_functions(monkeypatch):
     )
 
     # Mock get_configuration_by_id_db
-    config_by_id_mock = GetConfigurationsResponse(
+    config_by_id_mock = DbConfiguration(
         id=UUID("11111111-1111-1111-1111-111111111111"),
-        name="Config A",
-        is_active=False,
+        family_id=1,
+        jurisdiction_id="SDDH",
+        name="test config",
+        description="test config desc",
+        included_conditions=[],
+        loinc_codes_additions=[],
+        snomed_codes_additions=[],
+        icd10_codes_additions=[],
+        rxnorm_codes_additions=[],
+        custom_codes=[],
+        sections_to_include=[],
+        cloned_from_configuration_id=None,
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
@@ -165,7 +178,7 @@ async def test_get_configuration_by_id(authed_client):
     response = await authed_client.get(f"/api/v1/configurations/{config_id}")
     assert response.status_code == 200
     data = response.json()
-    assert data["display_name"] == "Config A"
+    assert data["display_name"] == "test config"
 
 
 @pytest.mark.asyncio
