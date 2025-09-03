@@ -226,6 +226,14 @@ function CustomCodesDetail({
   return (
     <>
       <table className="!mt-6 w-full border-separate">
+        <thead className="sr-only">
+          <tr>
+            <th>Custom code</th>
+            <th>Custom code system</th>
+            <th>Custom code name</th>
+            <th>Modify the custom code</th>
+          </tr>
+        </thead>
         <tbody>
           {customCodes.map((customCode) => (
             <tr
