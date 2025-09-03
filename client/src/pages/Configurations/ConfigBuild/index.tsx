@@ -563,7 +563,7 @@ export function CustomCodeModal({
       aria-describedby="modal-heading"
       aria-labelledby="modal-heading"
       isLarge
-      className="!w-[35rem] !rounded-none"
+      className="!max-w-[35rem] !rounded-none"
       forceAction
     >
       <ModalHeading
