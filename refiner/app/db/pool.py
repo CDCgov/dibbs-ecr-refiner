@@ -1,18 +1,12 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
 
 import psycopg
-from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 from app.core.config import ENVIRONMENT
 from app.core.exceptions import (
     DatabaseConnectionError,
-    DatabaseQueryError,
-    InputValidationError,
-    ProcessingError,
-    ResourceNotFoundError,
 )
 
 
@@ -85,52 +79,6 @@ class AsyncDatabaseConnection:
                 message="Failed to get connection from pool",
                 details={"error": str(e)},
             )
-
-    @asynccontextmanager
-    async def get_cursor(self) -> AsyncGenerator[psycopg.AsyncCursor[dict[str, Any]]]:
-        """
-        Provides a database cursor within an async context manager.
-
-        Yields:
-            psycopg.AsyncCursor[dict[str, Any]]: A PostgreSQL cursor that returns rows as dictionaries.
-
-        Raises:
-            DatabaseConnectionError: If the connection cannot be established.
-            DatabaseQueryError: If a psycopg-specific error occurs during query execution.
-            ResourceNotFoundError: If raised explicitly during query logic.
-            InputValidationError: If raised explicitly during query logic.
-            ProcessingError: For unexpected exceptions during query execution.
-        """
-
-        try:
-            async with self.get_connection() as conn:
-                async with conn.cursor(row_factory=dict_row) as cursor:
-                    try:
-                        yield cursor
-                        await conn.commit()
-                    except psycopg.Error as e:
-                        await conn.rollback()
-                        raise DatabaseQueryError(
-                            message="Database operation failed",
-                            details={
-                                "error_type": type(e).__name__,
-                                "error_message": str(e),
-                            },
-                        )
-                    except (ResourceNotFoundError, InputValidationError):
-                        await conn.rollback()
-                        raise
-                    except Exception as e:
-                        await conn.rollback()
-                        raise ProcessingError(
-                            message="Unexpected error during database operation",
-                            details={
-                                "error_type": type(e).__name__,
-                                "error_message": str(e),
-                            },
-                        )
-        except DatabaseConnectionError:
-            raise
 
 
 db = AsyncDatabaseConnection(db_url=ENVIRONMENT["DB_URL"])
