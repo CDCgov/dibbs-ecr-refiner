@@ -1,3 +1,8 @@
+/**
+ * Drawer: Sidebar overlay component used to display grouped content in a modal-like drawer with search and close functionality.
+ * Designed for accessibility, keyboard navigation, and seamless integration with dialog workflows.
+ * Handles focus trapping and supports variable width, subtitle, and search filtering for child content.
+ */
 import React, { useCallback, useEffect, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { Icon } from '@trussworks/react-uswds';
@@ -8,7 +13,7 @@ import { Title } from '../Title';
 type DrawerProps = {
   title: string | React.ReactNode;
   subtitle?: string | React.ReactNode;
-  placeHolder: string;
+  searchPlaceholder: string;
   children: React.ReactNode;
   isOpen: boolean;
   // onSave: () => void;
@@ -17,10 +22,23 @@ type DrawerProps = {
   drawerWidth?: '35%' | '60%';
 };
 
+/**
+ * Drawer component used as a sidebar overlay for displaying grouped content.
+ * Supports a title, subtitle, search filter, and custom children.
+ *
+ * @param {string | React.ReactNode} title - The drawer's title.
+ * @param {string | React.ReactNode} subtitle - Optional drawer subtitle.
+ * @param {string} placeHolder - The placeholder for the search field.
+ * @param {React.ReactNode} children - Contents of the drawer.
+ * @param {boolean} isOpen - If true, drawer is visible.
+ * @param {() => void} onClose - Callback to close the drawer.
+ * @param {(filter: string) => void} [onSearch] - Optional callback for search events.
+ * @param {'35%' | '60%'} [drawerWidth] - Drawer width.
+ */
 const Drawer = ({
   title,
   subtitle,
-  placeHolder,
+  searchPlaceholder,
   children,
   isOpen,
   // onSave,
@@ -105,7 +123,7 @@ const Drawer = ({
                       name="code-set-search"
                       type="search"
                       value={searchFilter}
-                      placeholder={placeHolder}
+                      placeholder={searchPlaceholder}
                     />
                   </>
                 )}

@@ -305,8 +305,8 @@ Raises:
     HTTPException: 500 if configuration is cannot be updated
 
 Returns:
-    AssociateCodesetResponse: ID of updated configuration and the full list
-    of included conditions
+    dict: ID of updated configuration, the full list of included conditions,
+          and the condition_name
  * @summary Associate Condition Codeset With Configuration
  */
 export const associateConditionWithConfiguration = (
@@ -383,8 +383,8 @@ Raises:
     HTTPException: 500 if configuration is cannot be updated
 
 Returns:
-    AssociateCodesetResponse: ID of updated configuration and the full list
-    of included conditions
+    dict: ID of updated configuration and the full list
+    of included conditions plus condition_name
  * @summary Remove Condition Codeset From Configuration
  */
 export const disassociateConditionWithConfiguration = (

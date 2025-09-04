@@ -207,6 +207,7 @@ class AssociateCodesetResponse(BaseModel):
 
     id: UUID
     included_conditions: list[ConditionEntry]
+    condition_name: str
 
 
 @router.put(
@@ -220,7 +221,7 @@ async def associate_condition_codeset_with_configuration(
     body: AssociateCodesetInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> AssociateCodesetResponse:
+) -> dict:
     """
     Associate a specified code set with the given configuration.
 
@@ -236,8 +237,8 @@ async def associate_condition_codeset_with_configuration(
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
-        AssociateCodesetResponse: ID of updated configuration and the full list
-        of included conditions
+        dict: ID of updated configuration, the full list of included conditions,
+              and the condition_name
     """
 
     # get user jurisdiction
@@ -269,13 +270,14 @@ async def associate_condition_codeset_with_configuration(
             detail="Failed to update configuration.",
         )
 
-    return AssociateCodesetResponse(
-        id=updated_config.id,
-        included_conditions=[
+    return {
+        "id": updated_config.id,
+        "included_conditions": [
             ConditionEntry(canonical_url=c.canonical_url, version=c.version)
             for c in updated_config.included_conditions
         ],
-    )
+        "condition_name": condition.display_name,
+    }
 
 
 @router.delete(
@@ -289,7 +291,7 @@ async def remove_condition_codeset_from_configuration(
     body: AssociateCodesetInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> AssociateCodesetResponse:
+) -> dict:
     """
     Remove a specified code set from the given configuration.
 
@@ -305,8 +307,8 @@ async def remove_condition_codeset_from_configuration(
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
-        AssociateCodesetResponse: ID of updated configuration and the full list
-        of included conditions
+        dict: ID of updated configuration and the full list
+        of included conditions plus condition_name
     """
     # get user jurisdiction
     db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
@@ -337,10 +339,11 @@ async def remove_condition_codeset_from_configuration(
             detail="Failed to update configuration.",
         )
 
-    return AssociateCodesetResponse(
-        id=updated_config.id,
-        included_conditions=[
+    return {
+        "id": updated_config.id,
+        "included_conditions": [
             ConditionEntry(canonical_url=c.canonical_url, version=c.version)
             for c in updated_config.included_conditions
         ],
-    )
+        "condition_name": condition.display_name,
+    }

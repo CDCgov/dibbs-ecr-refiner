@@ -23,10 +23,14 @@ import {
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
+import {
+  useGetConditionsByConfiguration,
+  useGetCondition,
+} from '../../../api/conditions/conditions';
 import { GetConfigurationResponse } from '../../../api/schemas';
-import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
+import AddConditionCodeSetsDrawer from '../../../components/Drawer/AddConditionCodeSets';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -55,17 +59,21 @@ export default function ConfigBuild() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Builder code_sets={response.data.code_sets} />
+        <Builder
+          id={response.data.id}
+          code_sets={response?.data.code_sets ?? []}
+        />
       </SectionContainer>
     </div>
   );
 }
 
-type BuilderProps = Pick<GetConfigurationResponse, 'code_sets'>;
+type BuilderProps = Pick<GetConfigurationResponse, 'id' | 'code_sets'>;
 
-function Builder({ code_sets }: BuilderProps) {
+function Builder({ id, code_sets }: BuilderProps) {
   const [selectedCodesetId, setSelectedCodesetId] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [customCodes, setCustomCodes] = useState<
     { code: string; system: string; name: string }[]
   >([]);
@@ -99,6 +107,10 @@ function Builder({ code_sets }: BuilderProps) {
     setSelectedCodesetId(id);
   }
 
+  const { data: conditionsResponse } = useGetConditionsByConfiguration(
+    id ?? ''
+  );
+
   const isCustomCodes = selectedCodesetId === 'custom';
 
   return (
@@ -116,6 +128,9 @@ function Builder({ code_sets }: BuilderProps) {
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
+              onClick={() => {
+                setIsDrawerOpen(!isDrawerOpen);
+              }}
             >
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
@@ -123,26 +138,28 @@ function Builder({ code_sets }: BuilderProps) {
           </div>
           <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
             <ul className="flex flex-col gap-2">
-              {code_sets.map((codeSet) => (
-                <li key={codeSet.display_name}>
-                  <button
-                    className={classNames(
-                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                      {
-                        'bg-white': selectedCodesetId === codeSet.condition_id,
+              {code_sets.map((codeSet) => {
+                return (
+                  <li key={codeSet.condition_id}>
+                    <button
+                      className={classNames(
+                        'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                        {
+                          'bg-white':
+                            selectedCodesetId === codeSet.condition_id,
+                        }
+                      )}
+                      onClick={() => onClick(codeSet.condition_id)}
+                      aria-controls={
+                        selectedCodesetId ? 'codeset-table' : undefined
                       }
-                    )}
-                    onClick={() => onClick(codeSet.condition_id)}
-                    aria-controls={
-                      selectedCodesetId ? 'codeset-table' : undefined
-                    }
-                    aria-pressed={selectedCodesetId === codeSet.condition_id}
-                  >
-                    <span>{codeSet.display_name}</span>
-                    <span>{codeSet.total_codes}</span>
-                  </button>
-                </li>
-              ))}
+                      aria-pressed={selectedCodesetId === codeSet.condition_id}
+                    >
+                      <span>{codeSet.display_name}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <div>
@@ -231,6 +248,14 @@ function Builder({ code_sets }: BuilderProps) {
           ) : null}
         </div>
       </div>
+      <AddConditionCodeSetsDrawer
+        isOpen={isDrawerOpen}
+        onClose={function (): void {
+          setIsDrawerOpen(false);
+        }}
+        conditions={conditionsResponse?.data || []}
+        configurationId={id}
+      />
       <AddCustomCodeModal
         open={isModalOpen}
         onClose={() => {
