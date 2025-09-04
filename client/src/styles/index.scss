@@ -16,6 +16,8 @@
   * @desc Removes the focus outline when mouse-based or touch-based
   * interactions interact with any anchors to avoid two visual indicators.
   */
+div:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
 [href]:focus:not(:focus-visible) {
   outline: none;
 }

@@ -40,12 +40,6 @@ export function Header() {
         </Link>
 
         <NavigationBar />
-        <a
-          className="text-white hover:cursor-pointer hover:underline"
-          href="/api/logout"
-        >
-          Logout
-        </a>
       </div>
     </header>
   );

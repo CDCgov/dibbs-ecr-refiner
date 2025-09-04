@@ -5,6 +5,7 @@
 The Terminology Exchange Service (TES) reduces the burden of terminology management for public health agencies (PHAs) by providing centralized, condition-associated codes through a searchable user interface and an application programming interface (API). These codes are curated from the Reportable Conditions Knowledge Management System (RCKMS) value sets and the Electronic Reporting and Surveillance Distribution (eRSD) system.
 
 There are several challenges that make it more difficult for PHAs to leverage electronic case reporting (eCR) terminology, including:
+
 - Identifying condition-indicating codes within Electronic Initial Case Reports (eICR)
 - Understanding codes that offer contextual information surrounding reported conditions
 - Addressing narrative descriptor gaps in coded data elements
@@ -67,6 +68,7 @@ Users can generate an API key from within the TES application. The API Key shoul
 ### API Key Authorization
 
 The TES currently defines the following roles:
+
 - **Viewer**: Read-only access
 - **Publisher**: Read access and ability to publish new content
 - **Admin**: Full read access and ability to publish new content
@@ -290,7 +292,7 @@ You can read about adding environment variables [here](https://marketplace.visua
 
 #### For `kulala.nvim`:
 
-create an `http-client.env.json` file with the following structure:
+Create an `http-client.env.json` file with the following structure:
 
 ```json
 {

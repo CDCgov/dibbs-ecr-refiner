@@ -32,6 +32,8 @@ import type {
 } from 'axios';
 
 import type {
+  AssociateCodesetInput,
+  AssociateCodesetResponse,
   CreateConfigInput,
   CreateConfigurationResponse,
   GetConfigurationResponse,
@@ -288,3 +290,160 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 
 
 
+/**
+ * Associate a specified code set with the given configuration.
+
+Args:
+    configuration_id (UUID): ID of the configuration
+    body (AssociateCodesetInput): payload containing a condition_id
+    user (dict[str, Any], optional): User making the request
+    db (AsyncDatabaseConnection, optional): Database connection
+
+Raises:
+    HTTPException: 404 if configuration is not found in JD
+    HTTPException: 404 if condition is not found
+    HTTPException: 500 if configuration is cannot be updated
+
+Returns:
+    AssociateCodesetResponse: ID of updated configuration and the full list
+    of included conditions
+ * @summary Associate Condition Codeset With Configuration
+ */
+export const associateConditionWithConfiguration = (
+    configurationId: string,
+    associateCodesetInput: AssociateCodesetInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<AssociateCodesetResponse>> => {
+    
+    
+    return axios.default.put(
+      `/api/v1/configurations/${configurationId}/code-set`,
+      associateCodesetInput,options
+    );
+  }
+
+
+
+export const getAssociateConditionWithConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext> => {
+
+const mutationKey = ['associateConditionWithConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, {configurationId: string;data: AssociateCodesetInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  associateConditionWithConfiguration(configurationId,data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AssociateConditionWithConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof associateConditionWithConfiguration>>>
+    export type AssociateConditionWithConfigurationMutationBody = AssociateCodesetInput
+    export type AssociateConditionWithConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Associate Condition Codeset With Configuration
+ */
+export const useAssociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
+        TError,
+        {configurationId: string;data: AssociateCodesetInput},
+        TContext
+      > => {
+
+      const mutationOptions = getAssociateConditionWithConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    /**
+ * Remove a specified code set from the given configuration.
+
+Args:
+    configuration_id (UUID): ID of the configuration
+    body (AssociateCodesetInput): payload containing a condition_id
+    user (dict[str, Any], optional): User making the request
+    db (AsyncDatabaseConnection, optional): Database connection
+
+Raises:
+    HTTPException: 404 if configuration is not found in JD
+    HTTPException: 404 if condition is not found
+    HTTPException: 500 if configuration is cannot be updated
+
+Returns:
+    AssociateCodesetResponse: ID of updated configuration and the full list
+    of included conditions
+ * @summary Remove Condition Codeset From Configuration
+ */
+export const disassociateConditionWithConfiguration = (
+    configurationId: string,
+    associateCodesetInput: AssociateCodesetInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<AssociateCodesetResponse>> => {
+    
+    
+    return axios.default.delete(
+      `/api/v1/configurations/${configurationId}/code-set`,{data:
+      associateCodesetInput, ...options}
+    );
+  }
+
+
+
+export const getDisassociateConditionWithConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext> => {
+
+const mutationKey = ['disassociateConditionWithConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, {configurationId: string;data: AssociateCodesetInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  disassociateConditionWithConfiguration(configurationId,data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DisassociateConditionWithConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>>
+    export type DisassociateConditionWithConfigurationMutationBody = AssociateCodesetInput
+    export type DisassociateConditionWithConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Remove Condition Codeset From Configuration
+ */
+export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
+        TError,
+        {configurationId: string;data: AssociateCodesetInput},
+        TContext
+      > => {
+
+      const mutationOptions = getDisassociateConditionWithConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    
