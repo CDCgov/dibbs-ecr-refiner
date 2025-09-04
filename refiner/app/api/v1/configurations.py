@@ -541,6 +541,18 @@ def _get_modified_custom_codes(
         name=updateInput.new_name or existing_code.name,
     )
 
+    # check for duplicates
+    if any(
+        cc.code == updated_code.code and cc.system == updated_code.system
+        for cc in custom_codes
+    ):
+        # put the original code back so the list is unchanged
+        custom_codes.append(existing_code)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A custom code with the same system/code already exists for this configuration.",
+        )
+
     # add the updated code
     custom_codes.append(updated_code)
 

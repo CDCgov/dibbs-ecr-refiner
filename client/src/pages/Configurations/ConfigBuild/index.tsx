@@ -557,6 +557,15 @@ export function CustomCodeModal({
             resetForm();
             onClose();
           },
+          onError: () => {
+            showToast({
+              variant: 'error',
+              heading: 'Custom code update failed',
+              body: 'The code/system pair already exists.',
+            });
+            resetForm();
+            onClose();
+          },
         }
       );
     } else {
