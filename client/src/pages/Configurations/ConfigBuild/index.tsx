@@ -107,12 +107,9 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col gap-4 py-4 sm:w-1/3 md:px-2">
           <OptionsLabelContainer>
-            <label
-              className="text-gray-cool-60 font-bold"
-              htmlFor="open-codesets"
-            >
+            <OptionsLabel htmlFor="open-codesets">
               CONDITION CODE SETS
-            </label>
+            </OptionsLabel>
             <button
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
@@ -123,7 +120,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
             </button>
           </OptionsLabelContainer>
           <OptionsListContainer>
-            <ul className="flex flex-col gap-2">
+            <OptionsList>
               {code_sets.map((codeSet) => (
                 <li key={codeSet.display_name}>
                   <button
@@ -144,13 +141,13 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
                   </button>
                 </li>
               ))}
-            </ul>
+            </OptionsList>
           </OptionsListContainer>
           <OptionsLabelContainer>
-            <label className="text-gray-cool-60 font-bold">MORE OPTIONS</label>
+            <OptionsLabel>MORE OPTIONS</OptionsLabel>
           </OptionsLabelContainer>
           <OptionsListContainer>
-            <ul className="flex flex-col gap-2">
+            <OptionsList>
               <li key="custom-codes">
                 <button
                   className={classNames(
@@ -169,7 +166,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
                   <span>{custom_codes.length}</span>
                 </button>
               </li>
-            </ul>
+            </OptionsList>
           </OptionsListContainer>
         </div>
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
@@ -202,6 +199,24 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
   );
 }
 
+function OptionsLabel({
+  children,
+  htmlFor,
+}: {
+  children: React.ReactNode;
+  htmlFor?: string;
+}) {
+  const styles = 'text-gray-cool-60 font-bold';
+
+  if (!htmlFor) return <span className={styles}>{children}</span>;
+
+  return (
+    <label className={styles} htmlFor={htmlFor}>
+      {children}
+    </label>
+  );
+}
+
 function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
@@ -216,6 +231,10 @@ function OptionsListContainer({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+}
+
+function OptionsList({ children }: { children: React.ReactNode }) {
+  return <ul className="flex flex-col gap-2">{children}</ul>;
 }
 
 interface CustomCodesDetailProps {
