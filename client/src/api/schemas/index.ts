@@ -19,6 +19,7 @@ export * from './dbTotalConditionCodeCount';
 export * from './getConditionCode';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';
+export * from './getConditionsWithAssociationResponse';
 export * from './getConfigurationResponse';
 export * from './getConfigurationsResponse';
 export * from './getUser200';

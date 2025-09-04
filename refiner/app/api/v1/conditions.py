@@ -15,6 +15,16 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 router = APIRouter(prefix="/conditions")
 
 
+class GetConditionsWithAssociationResponse(BaseModel):
+    """
+    Conditions response model with association flag.
+    """
+
+    id: UUID
+    display_name: str
+    associated: bool
+
+
 class GetConditionsResponse(BaseModel):
     """
     Conditions response model.
@@ -26,30 +36,36 @@ class GetConditionsResponse(BaseModel):
 
 @router.get(
     "/by-configuration/{configuration_id}",
-    response_model=list[GetConditionsResponse],
+    response_model=list[GetConditionsWithAssociationResponse],
     tags=["conditions"],
     operation_id="getConditionsByConfiguration",
 )
 async def get_conditions_by_configuration_id(
     configuration_id: UUID,
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[GetConditionsResponse]:
+) -> list[GetConditionsWithAssociationResponse]:
     """
-    Fetch conditions associated with a given configuration ID.
+    Fetch all conditions and indicate whether each is associated with the given configuration ID.
 
     Args:
         configuration_id (UUID): ID of the configuration.
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        list[GetConditionsResponse]: List of associated conditions.
+        list[GetConditionsWithAssociationResponse]: List of all conditions, each with an 'associated' boolean field set to True if the condition is associated with the given configuration.
     """
-    conditions = await get_conditions_by_configuration_id_db(
+    all_conditions = await get_conditions_db(db=db)
+    associated_conditions = await get_conditions_by_configuration_id_db(
         configuration_id=configuration_id, db=db
     )
+    associated_ids = {condition.id for condition in associated_conditions}
     return [
-        GetConditionsResponse(id=condition.id, display_name=condition.display_name)
-        for condition in conditions
+        GetConditionsWithAssociationResponse(
+            id=condition.id,
+            display_name=condition.display_name,
+            associated=condition.id in associated_ids,
+        )
+        for condition in all_conditions
     ]
 
 

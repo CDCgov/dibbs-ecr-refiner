@@ -30,6 +30,7 @@ import type {
 import type {
   GetConditionResponse,
   GetConditionsResponse,
+  GetConditionsWithAssociationResponse,
   HTTPValidationError
 } from '.././schemas';
 
@@ -38,19 +39,19 @@ import type {
 
 
 /**
- * Fetch conditions associated with a given configuration ID.
+ * Fetch all conditions and indicate whether each is associated with the given configuration ID.
 
 Args:
     configuration_id (UUID): ID of the configuration.
     db (AsyncDatabaseConnection): Database connection.
 
 Returns:
-    list[GetConditionsResponse]: List of associated conditions.
+    list[GetConditionsWithAssociationResponse]: List of all conditions, each with an 'associated' boolean field set to True if the condition is associated with the given configuration.
  * @summary Get Conditions By Configuration Id
  */
 export const getConditionsByConfiguration = (
     configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConditionsResponse[]>> => {
+ ): Promise<AxiosResponse<GetConditionsWithAssociationResponse[]>> => {
     
     
     return axios.default.get(
