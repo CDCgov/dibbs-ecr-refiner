@@ -69,11 +69,11 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
             associated ? `Remove ${display_name}` : `Add ${display_name}`
           }
           onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-                      e.stopPropagation();
-                      if (associated) {
-                            void onDisassociate();
-                      } else {
-                            void onAssociate();
+            e.stopPropagation();
+            if (associated) {
+              onDisassociate();
+            } else {
+              onAssociate();
             }
             setShowButton(true);
           }}

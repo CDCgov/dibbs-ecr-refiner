@@ -82,7 +82,7 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           await queryClient.invalidateQueries({
-            queryKey: getGetConditionsByConfigurationQueryKey(conditionId),
+            queryKey: getGetConditionsByConfigurationQueryKey(configurationId),
           });
         },
       }
@@ -105,7 +105,7 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           await queryClient.invalidateQueries({
-            queryKey: getGetConditionsByConfigurationQueryKey(conditionId),
+            queryKey: getGetConditionsByConfigurationQueryKey(configurationId),
           });
         },
       }
