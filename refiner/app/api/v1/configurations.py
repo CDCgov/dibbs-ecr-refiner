@@ -309,7 +309,7 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "system" is missing.',
         )
-    if not input.code:
+    if not input.name:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "name" is missing.',
@@ -560,6 +560,19 @@ def _get_modified_custom_codes(
     return custom_codes
 
 
+def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
+    if not input.code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Required field "code" is missing.',
+        )
+    if not input.system:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Required field "system" is missing.',
+        )
+
+
 @router.put(
     "/{configuration_id}/custom-codes",
     response_model=GetConfigurationResponse,
@@ -590,15 +603,8 @@ async def edit_custom_code(
     Returns:
         GetConfigurationResponse: The updated configuration.
     """
-    if not body.system:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="System must be provided."
-        )
 
-    if not body.code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Code must be provided."
-        )
+    _validate_edit_custom_code_input(body)
 
     # get user jurisdiction
     db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
