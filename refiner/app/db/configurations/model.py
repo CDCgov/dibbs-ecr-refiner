@@ -13,6 +13,9 @@ class DbConfigurationCondition(BaseModel):
     version: str
 
 
+# TODO: Revisit this to see if we can figure out how to reduce overlap with other types.
+# This is a "custom_code" on the configuration row in the configurations table.
+# This is one object in the `custom_codes` list.
 class DbConfigurationCustomCode(BaseModel):
     """
     Custom code associated with a Configuration.
