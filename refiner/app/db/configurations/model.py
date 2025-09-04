@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -11,6 +11,19 @@ class DbConfigurationCondition(BaseModel):
 
     canonical_url: str
     version: str
+
+
+# TODO: Revisit this to see if we can figure out how to reduce overlap with other types.
+# This is a "custom_code" on the configuration row in the configurations table.
+# This is one object in the `custom_codes` list.
+class DbConfigurationCustomCode(BaseModel):
+    """
+    Custom code associated with a Configuration.
+    """
+
+    code: str
+    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+    name: str
 
 
 class DbConfiguration(BaseModel):
@@ -28,6 +41,6 @@ class DbConfiguration(BaseModel):
     snomed_codes_additions: list[Any]
     icd10_codes_additions: list[Any]
     rxnorm_codes_additions: list[Any]
-    custom_codes: list[Any]
+    custom_codes: list[DbConfigurationCustomCode]
     sections_to_include: list[str]
     cloned_from_configuration_id: UUID | None
