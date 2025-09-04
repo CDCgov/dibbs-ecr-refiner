@@ -10,7 +10,7 @@ from app.api.v1.configurations import (
     GetConfigurationsResponse,
 )
 from app.db.conditions.model import DbCondition
-from app.db.configurations.model import DbConfiguration
+from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from app.db.users.model import DbUser
 from app.main import app
 
@@ -156,7 +156,9 @@ def mock_db_functions(monkeypatch):
     custom_code_config_mock = config_by_id_mock.model_copy(
         update={
             "custom_codes": [
-                {"code": "test-code", "name": "test-name", "system": "LOINC"}
+                DbConfigurationCustomCode(
+                    code="test-code", name="test-name", system="LOINC"
+                )
             ],
         }
     )
@@ -174,6 +176,25 @@ def mock_db_functions(monkeypatch):
     monkeypatch.setattr(
         "app.api.v1.configurations.delete_custom_code_from_configuration_db",
         AsyncMock(return_value=custom_code_deletion_mock),
+    )
+
+    # Mock editing a custom code from a config
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_by_id_db",
+        AsyncMock(return_value=custom_code_config_mock),
+    )
+    custom_code_edit_mock = custom_code_config_mock.model_copy(
+        update={
+            "custom_codes": [
+                DbConfigurationCustomCode(
+                    code="edited-code", name="test-name", system="SNOMED"
+                )
+            ],
+        }
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.edit_custom_code_from_configuration_db",
+        AsyncMock(return_value=custom_code_edit_mock),
     )
 
     yield
@@ -249,4 +270,21 @@ async def test_delete_custom_code_from_configuration(authed_client):
 
 @pytest.mark.asyncio
 async def test_edit_custom_code_from_configuration(authed_client):
-    pass
+    config_id = "11111111-1111-1111-1111-111111111111"
+
+    payload = {
+        "code": "test-code",
+        "system": "loinc",
+        "new_code": "edited-code",
+        "new_system": "snomed",
+        "new_name": "test-name",
+    }
+
+    response = await authed_client.put(
+        f"/api/v1/configurations/{config_id}/custom-codes", json=payload
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["custom_codes"]) == 1
+    assert data["custom_codes"][0]["code"] == "edited-code"
+    assert data["custom_codes"][0]["system"] == "SNOMED"
