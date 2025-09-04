@@ -264,14 +264,14 @@ function CustomCodesDetail({
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener
-                  className="usa-button usa-button--unstyled text-blue-60 !mr-2"
+                  className="usa-button--unstyled !text-blue-cool-50 !mr-2 !no-underline hover:!underline"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
-                  className="usa-button usa-button--unstyled text-red-60"
+                  className="!text-blue-cool-50 !no-underline hover:!cursor-pointer hover:!underline"
                   aria-label={`Delete custom code ${customCode.name}`}
                   onClick={async () => {
                     await deleteCode(
