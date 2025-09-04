@@ -518,6 +518,8 @@ export function CustomCodeModal({
   const queryClient = useQueryClient();
   const showToast = useToast();
 
+  // TODO: this should come from the server.
+  // Maybe get this info as part of the seed script?
   const systemValues = [
     { name: 'ICD-10', value: 'icd-10' },
     { name: 'SNOMED', value: 'snomed' },
