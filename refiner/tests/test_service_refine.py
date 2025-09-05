@@ -10,6 +10,7 @@ from app.core.exceptions import (
     XMLParsingError,
 )
 from app.core.models.types import XMLFiles
+from app.db.conditions.model import DbCoding, DbCondition
 from app.db.connection import DatabaseConnection
 from app.services.ecr.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
@@ -25,10 +26,12 @@ from app.services.ecr.refine import (
     _preserve_relevant_entries_and_generate_summary,
     _process_section,
     _prune_unwanted_siblings,
+    _refine_eicr,
     build_condition_eicr_pairs,
     get_reportable_conditions,
     refine_sync,
 )
+from app.services.terminology import ProcessedConfiguration
 
 from .conftest import NAMESPACES
 
@@ -104,6 +107,26 @@ def _get_entries_for_section(
 
     entries: Any = section.xpath(".//hl7:entry", namespaces=namespaces)
     return entries if entries is not None else []
+
+
+def make_dbcoding(code, display):
+    return DbCoding(code=code, display=display)
+
+
+def make_condition(**kwargs):
+    defaults = {
+        "id": "fake-id",
+        "display_name": "Test Condition",
+        "canonical_url": "http://example.com",
+        "version": "1.0.0",
+        "child_rsg_snomed_codes": [],
+        "snomed_codes": [],
+        "loinc_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": [],
+    }
+    defaults.update(kwargs)
+    return DbCondition(**defaults)
 
 
 # NOTE:
@@ -276,6 +299,49 @@ def test_refine_eicr(
         )
     )
     assert result == expected_in_results
+
+
+def test_refine_eicr_with_processed_configuration():
+    # minimal fake XML eICR with a section and an entry with code="A"
+    eicr_xml = """
+    <ClinicalDocument xmlns="urn:hl7-org:v3">
+      <component>
+        <structuredBody>
+          <component>
+            <section>
+              <code code="1234-5"/>
+              <entry>
+                <observation>
+                  <code code="A"/>
+                </observation>
+              </entry>
+            </section>
+          </component>
+        </structuredBody>
+      </component>
+    </ClinicalDocument>
+    """
+
+    # provide a minimal rr argument (required by XMLFiles)
+    rr_xml = "<ClinicalDocument/>"
+
+    # prepare XMLFiles object
+    xml_files = XMLFiles(eicr=eicr_xml, rr=rr_xml)
+
+    # prepare a ProcessedConfiguration with code "A"
+    processed_conf = ProcessedConfiguration(codes={"A"})
+
+    # call refine with processed_configuration explicitly
+    refined = _refine_eicr(
+        xml_files=xml_files,
+        # should be ignored
+        condition_codes_xpath="",
+        processed_configuration=processed_conf,
+        sections_to_include=None,
+    )
+
+    # the result should still contain the entry with code "A"
+    assert 'code="A"' in refined
 
 
 def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
