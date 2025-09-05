@@ -1,4 +1,12 @@
 import { describe, expect, Mock } from 'vitest';
+
+// Prevent AggregateError by globally mocking fetch and XMLHttpRequest
+beforeAll(() => {
+  global.fetch = vi.fn(() =>
+    Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+  );
+  global.XMLHttpRequest = vi.fn();
+});
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { Configurations } from '.';
@@ -9,7 +17,7 @@ import { useCreateConfiguration } from '../../api/configurations/configurations'
 import { CreateConfigurationResponse } from '../../api/schemas';
 import ConfigBuild from './ConfigBuild';
 
-// Mock configurations request
+// Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
     '../../api/configurations/configurations'
@@ -26,7 +34,12 @@ vi.mock('../../api/configurations/configurations', async () => {
       isLoading: false,
       error: null,
     })),
-    useCreateConfiguration: vi.fn(),
+    useCreateConfiguration: vi.fn(() => ({
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
+    })),
     useGetConfiguration: vi.fn(() => ({
       data: {
         data: {

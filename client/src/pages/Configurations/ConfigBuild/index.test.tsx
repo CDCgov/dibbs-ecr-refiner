@@ -1,17 +1,25 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
+
+// Prevent AggregateError by globally mocking fetch and XMLHttpRequest
+beforeAll(() => {
+  global.fetch = vi.fn(() =>
+    Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+  );
+  global.XMLHttpRequest = vi.fn();
+});
 import { MemoryRouter, Route, Routes } from 'react-router';
 import ConfigBuild from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import { DbTotalConditionCodeCount } from '../../../api/schemas';
 
+// Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
   { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
   { condition_id: 'chlamydia-1', display_name: 'Chlamydia', total_codes: 8 },
   { condition_id: 'gonorrhea-1', display_name: 'Gonorrhea', total_codes: 5 },
 ];
 
-// Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
     '../../../api/configurations/configurations'
