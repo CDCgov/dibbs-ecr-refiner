@@ -59,10 +59,7 @@ export default function ConfigBuild() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Builder
-          id={response.data.id}
-          code_sets={response?.data.code_sets ?? []}
-        />
+        <Builder id={response.data.id} code_sets={response?.data.code_sets} />
       </SectionContainer>
     </div>
   );
@@ -128,9 +125,7 @@ function Builder({ id, code_sets }: BuilderProps) {
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
-              onClick={() => {
-                setIsDrawerOpen(!isDrawerOpen);
-              }}
+              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             >
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
@@ -180,9 +175,7 @@ function Builder({ id, code_sets }: BuilderProps) {
                     'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                     { 'bg-white': isCustomCodes }
                   )}
-                  onClick={() => {
-                    onClick('custom');
-                  }}
+                  onClick={() => onClick('custom')}
                 >
                   <span>Custom codes</span>
                   <span>{customCodes.length}</span>
@@ -250,9 +243,7 @@ function Builder({ id, code_sets }: BuilderProps) {
       </div>
       <AddConditionCodeSetsDrawer
         isOpen={isDrawerOpen}
-        onClose={function (): void {
-          setIsDrawerOpen(false);
-        }}
+        onClose={() => setIsDrawerOpen(false)}
         conditions={conditionsResponse?.data || []}
         configurationId={id}
       />
