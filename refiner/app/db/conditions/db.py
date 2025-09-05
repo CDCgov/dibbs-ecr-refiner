@@ -22,7 +22,12 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
                 id,
                 display_name,
                 canonical_url,
-                version
+                version,
+                child_rsg_snomed_codes,
+                snomed_codes,
+                loinc_codes,
+                icd10_codes,
+                rxnorm_codes
             FROM conditions
             WHERE version = '2.0.0'
             ORDER BY display_name ASC;
@@ -49,7 +54,12 @@ async def get_condition_by_id_db(
         SELECT id,
         canonical_url,
         display_name,
-        version
+        version,
+        child_rsg_snomed_codes,
+        snomed_codes,
+        loinc_codes,
+        icd10_codes,
+        rxnorm_codes
         FROM conditions
         WHERE version = '2.0.0'
         AND id = %s

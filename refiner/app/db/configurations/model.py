@@ -46,11 +46,17 @@ class DbConfiguration(BaseModel):
 
     A Configuration is explicitly tied to a primary condition through condition_id,
     while included_conditions tracks both the primary and any secondary conditions
-    using their canonical URLs and versions.
+    using their canonical URLs and versions. At the time of creation, condition.name
+    will also be added to configuration.name for a more human readable way to see the
+    condition -> configuration connection.
+
+    NOTE: family_id is present in the database, but intentionally omitted here.
+    It may be used in the future to support configuration "families" or advanced versioning.
+    For now, each condition has at most one configuration, and versioning is handled per-configuration.
     """
 
     id: UUID
-    family_id: int
+    name: str
     jurisdiction_id: str
     condition_id: UUID
     included_conditions: list[DbConfigurationCondition]

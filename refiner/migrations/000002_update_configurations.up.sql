@@ -19,7 +19,6 @@ ALTER TABLE configurations
 -- since we're not using these to store user driven "custom codes" there's
 -- no reason to keep them around
 ALTER TABLE configurations
-    DROP COLUMN IF EXISTS name,
     DROP COLUMN IF EXISTS description,
     DROP COLUMN IF EXISTS loinc_codes_additions,
     DROP COLUMN IF EXISTS snomed_codes_additions,

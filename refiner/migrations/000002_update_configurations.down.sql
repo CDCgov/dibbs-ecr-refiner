@@ -2,7 +2,6 @@
 
 -- restore original columns
 ALTER TABLE configurations
-    ADD COLUMN name TEXT,
     ADD COLUMN description TEXT,
     ADD COLUMN loinc_codes_additions JSONB DEFAULT '[]'::jsonb,
     ADD COLUMN snomed_codes_additions JSONB DEFAULT '[]'::jsonb,
