@@ -318,14 +318,12 @@ def _refine_eicr(
         # _process_section
         version: Literal["1.1"] = "1.1"
 
-        # determine which xpath to use based on mode
-        xpath_to_use = ""
-        if processed_configuration is not None:
-            # use configuration-based approach
-            xpath_to_use = processed_configuration.build_xpath()
-        else:
-            # use legacy approach
-            xpath_to_use = condition_codes_xpath or ""
+        # use configuration-based xpath if available
+        xpath_to_use = (
+            processed_configuration.build_xpath()
+            if processed_configuration is not None
+            else condition_codes_xpath
+        )
 
         for section_code, section_config in REFINER_DETAILS["sections"].items():
             # skip if in sections_to_include (preserve unmodified)
