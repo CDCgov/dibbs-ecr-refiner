@@ -25,15 +25,6 @@ type DrawerProps = {
 /**
  * Drawer component used as a sidebar overlay for displaying grouped content.
  * Supports a title, subtitle, search filter, and custom children.
- *
- * @param {string | React.ReactNode} title - The drawer's title.
- * @param {string | React.ReactNode} subtitle - Optional drawer subtitle.
- * @param {string} placeHolder - The placeholder for the search field.
- * @param {React.ReactNode} children - Contents of the drawer.
- * @param {boolean} isOpen - If true, drawer is visible.
- * @param {() => void} onClose - Callback to close the drawer.
- * @param {(filter: string) => void} [onSearch] - Optional callback for search events.
- * @param {'35%' | '60%'} [drawerWidth] - Drawer width.
  */
 const Drawer = ({
   title,
