@@ -1,7 +1,10 @@
 /**
- * Drawer: Sidebar overlay component used to display grouped content in a modal-like drawer with search and close functionality.
- * Designed for accessibility, keyboard navigation, and seamless integration with dialog workflows.
- * Handles focus trapping and supports variable width, subtitle, and search filtering for child content.
+ * Drawer: Sidebar overlay component used to display grouped content in a
+ * modal-like drawer with search and close functionality.
+ * Designed for accessibility, keyboard navigation, and seamless integration
+ * with dialog workflows.
+ * Handles focus trapping and supports variable width, subtitle, and search
+ * filtering for child content.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
@@ -16,7 +19,6 @@ type DrawerProps = {
   searchPlaceholder: string;
   children: React.ReactNode;
   isOpen: boolean;
-  // onSave: () => void;
   onClose: () => void;
   onSearch?: (filter: string) => void;
   drawerWidth?: '35%' | '60%';
@@ -32,7 +34,6 @@ const Drawer = ({
   searchPlaceholder,
   children,
   isOpen,
-  // onSave,
   onClose,
   onSearch,
   drawerWidth,
@@ -52,20 +53,6 @@ const Drawer = ({
     setSearchFilter('');
     onClose();
   }, [onClose]);
-
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handleEscape = (e: KeyboardEvent) => {
-      e = e || window.event;
-      if (isOpen && (e.key === 'Escape' || e.key === 'Esc')) {
-        handleClose();
-      }
-      window.addEventListener('keyup', handleEscape);
-      return () => {
-        window.removeEventListener('keyup', handleEscape);
-      };
-    };
-  }, [handleClose, isOpen]);
 
   return (
     <FocusTrap
