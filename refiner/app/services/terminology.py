@@ -72,12 +72,16 @@ class ProcessedConfiguration(BaseModel):
         Returns:
             ProcessedConfiguration: Object containing combined codes for XML searching
         """
-        # Aggregate codes from conditions
+
+        # aggregate codes from conditions
         codes = aggregate_codes_from_conditions(configuration.conditions)
 
-        # Add custom codes from configuration if they exist
+        # add custom codes from configuration if they exist
         if configuration.configuration.custom_codes:
-            codes.update(configuration.configuration.custom_codes)
+            codes.update(
+                custome_code.code
+                for custome_code in configuration.configuration.custom_codes
+            )
 
         return cls(codes=codes)
 
@@ -97,6 +101,7 @@ class ProcessedConfiguration(BaseModel):
         Returns:
             str: XPath expression that finds elements containing matching codes
         """
+
         if not self.codes:
             return ""
 
