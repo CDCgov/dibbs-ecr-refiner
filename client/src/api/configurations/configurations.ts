@@ -316,7 +316,7 @@ export const associateConditionWithConfiguration = (
     
     
     return axios.default.put(
-      `/api/v1/configurations/${configurationId}/code-set`,
+      `/api/v1/configurations/${configurationId}/code-sets`,
       associateCodesetInput,options
     );
   }
@@ -373,7 +373,7 @@ export const useAssociateConditionWithConfiguration = <TError = AxiosError<HTTPV
 
 Args:
     configuration_id (UUID): ID of the configuration
-    body (AssociateCodesetInput): payload containing a condition_id
+    condition_id (UUID): ID of the condition to remove
     user (dict[str, Any], optional): User making the request
     db (AsyncDatabaseConnection, optional): Database connection
 
@@ -389,21 +389,20 @@ Returns:
  */
 export const disassociateConditionWithConfiguration = (
     configurationId: string,
-    associateCodesetInput: AssociateCodesetInput, options?: AxiosRequestConfig
+    conditionId: string, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<AssociateCodesetResponse>> => {
     
     
     return axios.default.delete(
-      `/api/v1/configurations/${configurationId}/code-set`,{data:
-      associateCodesetInput, ...options}
+      `/api/v1/configurations/${configurationId}/code-sets/${conditionId}`,options
     );
   }
 
 
 
 export const getDisassociateConditionWithConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext> => {
 
 const mutationKey = ['disassociateConditionWithConfiguration'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -415,10 +414,10 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, {configurationId: string;data: AssociateCodesetInput}> = (props) => {
-          const {configurationId,data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, {configurationId: string;conditionId: string}> = (props) => {
+          const {configurationId,conditionId} = props ?? {};
 
-          return  disassociateConditionWithConfiguration(configurationId,data,axiosOptions)
+          return  disassociateConditionWithConfiguration(configurationId,conditionId,axiosOptions)
         }
 
         
@@ -427,18 +426,18 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type DisassociateConditionWithConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>>
-    export type DisassociateConditionWithConfigurationMutationBody = AssociateCodesetInput
+    
     export type DisassociateConditionWithConfigurationMutationError = AxiosError<HTTPValidationError>
 
     /**
  * @summary Remove Condition Codeset From Configuration
  */
 export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
         TError,
-        {configurationId: string;data: AssociateCodesetInput},
+        {configurationId: string;conditionId: string},
         TContext
       > => {
 
