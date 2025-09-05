@@ -1,3 +1,5 @@
+from psycopg.rows import class_row
+
 from ..pool import AsyncDatabaseConnection
 from .model import DbJurisdiction
 
@@ -25,7 +27,8 @@ async def upsert_jurisdiction_db(
         """
     params = (jurisdiction.id, jurisdiction.name, jurisdiction.state_code)
 
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbJurisdiction)) as cur:
+            await cur.execute(query, params)
 
     return jurisdiction.id

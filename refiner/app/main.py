@@ -13,6 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from psycopg.rows import dict_row
 from starlette.middleware.sessions import SessionMiddleware
 
 from .api.auth.config import get_session_secret_key
@@ -52,12 +53,13 @@ async def health_check(
     """
 
     try:
-        async with db.get_cursor() as cursor:
-            await cursor.execute("SELECT 1")
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content=jsonable_encoder({"status": "OK", "db": "OK"}),
-            )
+        async with db.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cursor:
+                await cursor.execute("SELECT 1")
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK,
+                    content=jsonable_encoder({"status": "OK", "db": "OK"}),
+                )
     except Exception:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
