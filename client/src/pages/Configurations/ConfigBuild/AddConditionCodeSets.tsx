@@ -102,6 +102,13 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
             queryKey: getGetConditionsByConfigurationQueryKey(configurationId),
           });
         },
+        onError: (resp) => {
+          showToast({
+            variant: 'error',
+            heading: 'Error removing condition',
+            body: resp.message,
+          });
+        },
       }
     );
   }

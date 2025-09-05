@@ -304,6 +304,7 @@ async def remove_condition_codeset_from_configuration(
     Raises:
         HTTPException: 404 if configuration is not found in JD
         HTTPException: 404 if condition is not found
+        HTTPException: 409 if trying to remove the main condition
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
@@ -326,6 +327,12 @@ async def remove_condition_codeset_from_configuration(
     if not condition:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+        )
+
+    if condition.display_name == config.name:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot remove the main condition from a configuration.",
         )
 
     updated_config = await disassociate_condition_codeset_with_configuration_db(

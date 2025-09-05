@@ -380,6 +380,7 @@ Args:
 Raises:
     HTTPException: 404 if configuration is not found in JD
     HTTPException: 404 if condition is not found
+    HTTPException: 409 if trying to remove the main condition
     HTTPException: 500 if configuration is cannot be updated
 
 Returns:
