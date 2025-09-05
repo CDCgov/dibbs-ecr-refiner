@@ -44,19 +44,7 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
       }}
       tabIndex={-1}
     >
-      <p>
-        {highlight ? (
-          <>
-            {display_name.substring(0, highlight.start)}
-            <mark>
-              {display_name.substring(highlight.start, highlight.end)}
-            </mark>
-            {display_name.substring(highlight.end)}
-          </>
-        ) : (
-          display_name
-        )}
-      </p>
+      <p>{highlight ? <>{highlight}</> : display_name}</p>
       {showButton && (
         <Button
           variant={associated ? 'selected' : 'primary'}

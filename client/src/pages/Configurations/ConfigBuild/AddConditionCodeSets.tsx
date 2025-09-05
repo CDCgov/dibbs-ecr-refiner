@@ -16,6 +16,7 @@ import {
 import { useToast } from '../../../hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetConditionsByConfigurationQueryKey } from '../../../api/conditions/conditions';
+import { highlightMatches } from '../../../utils/highlight';
 
 type ConditionCodeSetsProps = {
   isOpen: boolean;
@@ -48,13 +49,6 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
     useAssociateConditionWithConfiguration();
   const { mutateAsync: disassociateMutation } =
     useDisassociateConditionWithConfiguration();
-
-  const getHighlightMatch = (name: string) => {
-    if (!searchTerm) return undefined;
-    const index = name.toLowerCase().indexOf(searchTerm.toLowerCase());
-    if (index === -1) return undefined;
-    return { start: index, end: index + searchTerm.length };
-  };
 
   const showToast = useToast();
   const queryClient = useQueryClient();
@@ -139,7 +133,30 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
         <div className="flex-grow overflow-y-auto">
           {filteredConditions.map(
             (condition: GetConditionsWithAssociationResponse, i: number) => {
-              const highlight = getHighlightMatch(condition.display_name);
+              const highlight = searchTerm
+                ? highlightMatches(
+                    condition.display_name,
+                    [
+                      {
+                        indices: [
+                          [
+                            condition.display_name
+                              .toLowerCase()
+                              .indexOf(searchTerm.toLowerCase()),
+                            condition.display_name
+                              .toLowerCase()
+                              .indexOf(searchTerm.toLowerCase()) +
+                              searchTerm.length -
+                              1,
+                          ],
+                        ],
+                        key: 'display_name',
+                        value: condition.display_name,
+                      },
+                    ],
+                    'display_name'
+                  )
+                : undefined;
               const key = condition.id
                 ? condition.id
                 : `${condition.display_name}-${i}`;
