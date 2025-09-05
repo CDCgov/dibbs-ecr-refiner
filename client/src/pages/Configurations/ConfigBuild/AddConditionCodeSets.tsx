@@ -4,18 +4,18 @@
  * Delegates individual code set row UI to the ConditionCodeSet component.
  */
 import React, { useState } from 'react';
-import Drawer from '.';
+import Drawer from '../../../components/Drawer';
 import ConditionCodeSet from './ConditionCodeSet';
 import { Link } from 'react-router';
-import { GetConditionsWithAssociationResponse } from '../../api/schemas';
+import { GetConditionsWithAssociationResponse } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
   useAssociateConditionWithConfiguration,
   useDisassociateConditionWithConfiguration,
-} from '../../api/configurations/configurations';
-import { useToast } from '../../hooks/useToast';
+} from '../../../api/configurations/configurations';
+import { useToast } from '../../../hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetConditionsByConfigurationQueryKey } from '../../api/conditions/conditions';
+import { getGetConditionsByConfigurationQueryKey } from '../../../api/conditions/conditions';
 
 type ConditionCodeSetsProps = {
   isOpen: boolean;

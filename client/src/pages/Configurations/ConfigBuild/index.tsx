@@ -30,7 +30,7 @@ import {
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
-import AddConditionCodeSetsDrawer from '../../../components/Drawer/AddConditionCodeSets';
+import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
