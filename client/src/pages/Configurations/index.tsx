@@ -155,6 +155,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
                     comboBoxRef.current?.clearSelection();
                     modalRef.current?.toggleModal();
                     showToast({
+                      heading: 'New configuration created',
                       body: selectedCondition?.display_name ?? '',
                     });
                     setSelectedCondition(null);
