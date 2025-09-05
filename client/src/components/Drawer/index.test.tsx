@@ -5,6 +5,9 @@ import Drawer from './index';
 // Mocking dependencies
 vi.mock('@trussworks/react-uswds', () => ({
   Icon: { Close: () => <div>X</div> },
+  InputGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  InputPrefix: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  TextInput: (props: any) => <input {...props} />,
 }));
 vi.mock('focus-trap-react', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,7 +20,7 @@ describe('Drawer Component', () => {
     const { container } = render(
       <Drawer
         title="Test Drawer"
-        placeHolder="Search here..."
+        searchPlaceholder="Search here..."
         isOpen={true}
         onClose={vi.fn()}
       >
@@ -35,7 +38,7 @@ describe('Drawer Component', () => {
     render(
       <Drawer
         title="Test Drawer"
-        placeHolder="Search here..."
+        searchPlaceholder="Search here..."
         isOpen={true}
         onClose={onCloseMock}
       >
@@ -52,7 +55,7 @@ describe('Drawer Component', () => {
     const { container } = render(
       <Drawer
         title="Test Drawer"
-        placeHolder="Search here..."
+        searchPlaceholder="Search here..."
         isOpen={true}
         onClose={vi.fn()}
         drawerWidth="35%"
@@ -65,12 +68,12 @@ describe('Drawer Component', () => {
     expect(drawer).toHaveClass('w-[35%]');
   });
 
-  it.skip('should filter content based on search input', () => {
+  it('should filter content based on search input', () => {
     const onSearchMock = vi.fn();
     render(
       <Drawer
         title="Test Drawer"
-        placeHolder="Search here..."
+        searchPlaceholder="Search here..."
         isOpen={true}
         onClose={vi.fn()}
         onSearch={onSearchMock}
@@ -84,12 +87,12 @@ describe('Drawer Component', () => {
     expect(onSearchMock).toHaveBeenCalledWith('test query');
   });
 
-  it.skip('should call onSearch callback correctly when invoked', () => {
+  it('should call onSearch callback correctly when invoked', () => {
     const onSearchMock = vi.fn();
     render(
       <Drawer
         title="Test Drawer"
-        placeHolder="Search here..."
+        searchPlaceholder="Search here..."
         isOpen={true}
         onClose={vi.fn()}
         onSearch={onSearchMock}
