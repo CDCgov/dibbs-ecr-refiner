@@ -90,7 +90,7 @@ const Drawer = ({
                 ) : (
                   <></>
                 )}
-                {onSearch && (
+                {onSearch ? (
                   <>
                     <Search
                       onChange={(e) => {
@@ -104,7 +104,7 @@ const Drawer = ({
                       placeholder={searchPlaceholder}
                     />
                   </>
-                )}
+                ) : null}
               </section>
             </div>
 
