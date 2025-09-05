@@ -4,15 +4,11 @@
  * Focused on keyboard and mouse accessibility, with a button control and ARIA labels.
  */
 import React, { useState } from 'react';
-import { Button } from '../Button';
+import { Button } from '../../../components/Button';
 
 /**
  * Component representing a single condition code set row within the drawer.
  * Displays the condition name and lets users add/remove association with the configuration.
- *
- * @param {string} display_name - The name of the condition.
- * @param {boolean} associated - Whether the code set is already associated.
- * @param {string} configurationId - ID of the configuration being edited.
  */
 interface ConditionCodeSetProps {
   display_name: string;

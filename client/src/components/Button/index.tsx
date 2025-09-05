@@ -15,17 +15,6 @@ interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
  * Button component supporting multiple variants and behaviors,
  * including primary, secondary, and disabled styles, with optional
  * routing functionality.
- *
- * @param {Object} props - The properties for the Button component.
- * @param {React.ReactNode} props.children - The content to be displayed inside the button.
- * @param {'primary' | 'secondary' | 'disabled' | 'selected'} [props.variant='primary'] - The variant style of the button.
- * @param {string} [props.type='button'] - The type of the button (e.g., 'button', 'submit').
- * @param {string} [props.to] - The route path for the button if it should act as a link.
- * @param {React.MouseEventHandler<HTMLButtonElement | HTMLAnchorElement>} [props.onClick] - The click event handler for the button or link.
- * @param {string} [props.className] - Additional class names to style the button.
- * @param {Object} [props.props] - Additional properties passed to the underlying button or link component.
- *
- * @returns {React.ReactElement<ButtonProps>} - The rendered Button component.
  */
 export function Button({
   children,

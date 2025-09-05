@@ -27,12 +27,6 @@ type ConditionCodeSetsProps = {
 
 /**
  * Drawer to add condition code sets to a configuration.
- *
- * @param {Object} Props - A list of properties for the component
- * @param {boolean} Props.isOpen - If true, drawer is visible.
- * @param {() => void} Props.onClose - Callback to close the drawer.
- * @param {GetConditionsWithAssociationResponse[]} Props.conditions - Array of condition code sets.
- * @param {string} Props.configurationId - ID of the configuration.
  */
 const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
   isOpen,
