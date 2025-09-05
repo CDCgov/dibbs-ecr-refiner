@@ -87,7 +87,7 @@ const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
     await disassociateMutation(
       {
         configurationId,
-        data: { condition_id: conditionId },
+        conditionId,
       },
       {
         onSuccess: async (resp) => {
