@@ -12,7 +12,7 @@
 -- in anticipation of needing the same functionality but for nonstandard code systems and local codes,
 -- we're adding `local_codes` and let it function in a similar way to `custom_codes`
 ALTER TABLE configurations
-    ADD COLUMN condition_id UUID REFERENCES conditions(id),
+    ADD COLUMN condition_id UUID NOT NULL REFERENCES conditions(id),
     ADD COLUMN local_codes JSONB DEFAULT '{}'::jsonb;
 
 -- drop unnecessary columns
@@ -30,8 +30,4 @@ ALTER TABLE configurations
 -- a condition. checking that the jsonb array is greater than one isn't as sound as
 -- the proposed constraint below
 ALTER TABLE configurations
-    DROP CONSTRAINT IF EXISTS check_included_conditions,
-    ADD CONSTRAINT fk_primary_condition
-        FOREIGN KEY (condition_id)
-        REFERENCES conditions(id)
-        NOT NULL;
+    DROP CONSTRAINT IF EXISTS check_included_conditions;

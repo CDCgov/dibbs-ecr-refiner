@@ -10,7 +10,6 @@ ALTER TABLE configurations
 
 -- remove new columns
 ALTER TABLE configurations
-    DROP CONSTRAINT IF EXISTS fk_primary_condition,
     DROP COLUMN IF EXISTS condition_id,
     DROP COLUMN IF EXISTS local_codes;
 
