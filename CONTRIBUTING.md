@@ -1,38 +1,27 @@
-# Welcome!
-Thank you for contributing to CDC's Open Source projects! If you have any
-questions or doubts, don't be afraid to send them our way. We appreciate all
-contributions, and we are looking forward to fostering an open, transparent, and
-collaborative environment.
+# Contributing to the DIBBs eCR Refiner
 
-Before contributing, we encourage you to also read our [LICENSE](LICENSE),
-[README](README.md), and
-[code-of-conduct](code-of-conduct.md)
-files, also found in this repository. If you have any inquiries or questions not
-answered by the content of this repository, feel free to [contact us](mailto:surveillanceplatform@cdc.gov).
+This document will outline how the DIBBs eCR Refiner application is structured and will provide details about how the team operates. Please feel free to open a PR with changes to this document if modifications or additions are needed!
 
-## Public Domain
-This project is in the public domain within the United States, and copyright and
-related rights in the work worldwide are waived through the [CC0 1.0 Universal public domain dedication](https://creativecommons.org/publicdomain/zero/1.0/).
-All contributions to this project will be released under the CC0 dedication. By
-submitting a pull request you are agreeing to comply with this waiver of
-copyright interest.
+## Architecture
 
-## Requesting Changes
-Our pull request/merging process is designed to give the CDC Surveillance Team
-and other in our space an opportunity to consider and discuss any suggested
-changes. This policy affects all CDC spaces, both on-line and off, and all users
-are expected to abide by it.
+The eCR Refiner consists of two primary components: a web application and an AWS Lambda function. This section will provide detail on each of these components.
 
-### Open an issue in the repository
-If you don't have specific language to submit but would like to suggest a change
-or have something addressed, you can open an issue in this repository. Team
-members will respond to the issue as soon as possible.
+### Web application
 
-### Submit a pull request
-If you would like to contribute, please submit a pull request. In order for us
-to merge a pull request, it must:
-   * Be at least seven days old. Pull requests may be held longer if necessary
-     to give people the opportunity to assess it.
-   * Receive a +1 from a majority of team members associated with the request.
-     If there is significant dissent between the team, a meeting will be held to
-     discuss a plan of action for the pull request.
+The web application component of the eCR Refiner allows users of the product to sign in and configure how the Refiner will process their eICR && RR files. The web app also allow users to do things like activate a configuration and test their in-progress configurations.
+
+The technology used to build the web application is a [Vite-based React client](./client/) and a [Python-based FastAPI](./refiner/). The application will run as a Docker image defined by [Docker.app](./Dockerfile.app) in a production environment. Additionally, when running in production, the FastAPI server will serve the static client files.
+
+### AWS Lambda
+
+Once a jurisdiction has defined one or more configurations, their eICR/RR data will run through a version of the Refiner that runs on AWS Lambda. Running the Refiner on AWS Lambda allows for user's files to be processed by the Refiner in an event-based way. If an RR file triggers the Lambda's execution and a configuration has been defined for a condition in that RR file, the Refiner will automatically process it and drop the resulting output into a location where the jurisdiction is able to make use of the data.
+
+The Lambda is also deployed as a Docker image in production. This image is defined by [Dockerfile.lambda](./Dockerfile.lambda).
+
+### Web App 🤝 Lambda
+
+While the web application can be used without the Lambda, the Lambda cannot be used without the web application. The Lambda allows the Refiner to run on every incoming eICR/RR pair, however, configurations must be created by users within the web application before processing can occur.
+
+Running the refining process on a pair of files can be done within the web application itself, but there is no way to run many files through it in an automated way. That's why the Lambda is a crucial component.
+
+The web application (`refiner`) and AWS Lambda (`lambda`) Docker image builds are stored in the [dibbs-ecr-refiner GHCR repository](https://github.com/orgs/CDCgov/packages?repo_name=dibbs-ecr-refiner). When a branch is merged into `main`, both of these images will be built, tagged as `latest` and `main`, and stored here.
