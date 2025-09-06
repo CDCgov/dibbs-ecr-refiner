@@ -1,5 +1,161 @@
+from uuid import uuid4
+
+from app.db.conditions.model import DbCoding, DbCondition
+from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from app.db.models import GrouperRow
-from app.services.terminology import ProcessedGrouper
+from app.services.terminology import (
+    Configuration,
+    ProcessedConfiguration,
+    ProcessedGrouper,
+    aggregate_codes_from_conditions,
+)
+
+
+def make_dbcoding(code, display):
+    return DbCoding(code=code, display=display)
+
+
+def make_condition(**kwargs):
+    """
+    Helper to create a DbCondition with all code fields present.
+    """
+
+    defaults = {
+        "id": uuid4(),
+        "display_name": "Condition",
+        "canonical_url": "http://cond.com",
+        "version": "1.0.0",
+        "child_rsg_snomed_codes": [],
+        "snomed_codes": [],
+        "loinc_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": [],
+    }
+    defaults.update(kwargs)
+    return DbCondition(**defaults)
+
+
+def make_dbconfiguration(**kwargs):
+    """
+    Helper to create a DbConfiguration with required fields.
+    """
+
+    defaults = {
+        "id": uuid4(),
+        "name": "Test Config",
+        "jurisdiction_id": "JD-1",
+        "condition_id": uuid4(),
+        "included_conditions": [],
+        "custom_codes": [],
+        "local_codes": [],
+        "sections_to_include": [],
+        "cloned_from_configuration_id": None,
+    }
+    defaults.update(kwargs)
+    return DbConfiguration(**defaults)
+
+
+def test_configuration_model_and_aggregate_codes():
+    """
+    Test Configuration model and code aggregation.
+    """
+
+    cond1 = make_condition(
+        snomed_codes=[make_dbcoding("1111", "SNOMED1")],
+        loinc_codes=[make_dbcoding("2222", "LOINC1")],
+        icd10_codes=[],
+        rxnorm_codes=[],
+    )
+    cond2 = make_condition(
+        snomed_codes=[make_dbcoding("3333", "SNOMED2")],
+        loinc_codes=[],
+        icd10_codes=[make_dbcoding("I10", "ICD10")],
+        rxnorm_codes=[make_dbcoding("4444", "RXNORM")],
+    )
+    config = make_dbconfiguration(
+        custom_codes=[
+            DbConfigurationCustomCode(code="5555", system="LOINC", name="Custom LOINC")
+        ]
+    )
+    conf_model = Configuration(conditions=[cond1, cond2], configuration=config)
+
+    # test aggregate_codes_from_conditions
+    code_set = aggregate_codes_from_conditions([cond1, cond2])
+    assert code_set == {"1111", "2222", "3333", "I10", "4444"}
+
+    # test Configuration model holds conditions/configuration as expected
+    assert conf_model.conditions == [cond1, cond2]
+    assert conf_model.configuration == config
+
+
+def test_processed_configuration_from_configuration_and_xpath():
+    """
+    Test that ProcessedConfiguration aggregates codes and builds correct xpath.
+    """
+
+    cond1 = make_condition(
+        snomed_codes=[make_dbcoding("A", "SNOMED")],
+        loinc_codes=[],
+        icd10_codes=[],
+        rxnorm_codes=[],
+    )
+    config = make_dbconfiguration(
+        custom_codes=[
+            DbConfigurationCustomCode(code="B", system="LOINC", name="Custom LOINC")
+        ]
+    )
+    conf_model = Configuration(conditions=[cond1], configuration=config)
+    processed = ProcessedConfiguration.from_configuration(conf_model)
+
+    # it should aggregate codes from condition and custom codes
+    assert processed.codes == {"A", "B"}
+
+    xpath = processed.build_xpath()
+    assert '@code="A"' in xpath
+    assert '@code="B"' in xpath
+    assert ".//hl7:code[" in xpath
+    assert " | " in xpath
+
+
+def test_processed_configuration_empty_codes():
+    """
+    ProcessedConfiguration with no codes returns empty xpath.
+    """
+
+    cond = make_condition(
+        snomed_codes=[], loinc_codes=[], icd10_codes=[], rxnorm_codes=[]
+    )
+    config = make_dbconfiguration(custom_codes=[])
+    conf_model = Configuration(conditions=[cond], configuration=config)
+    processed = ProcessedConfiguration.from_configuration(conf_model)
+    assert processed.codes == set()
+    assert processed.build_xpath() == ""
+
+
+def test_processed_configuration_duplicate_codes():
+    """
+    Ensure duplicate codes are deduplicated in ProcessedConfiguration.
+    """
+
+    cond1 = make_condition(snomed_codes=[make_dbcoding("X", "SNOMED")])
+    cond2 = make_condition(loinc_codes=[make_dbcoding("X", "LOINC")])
+    config = make_dbconfiguration(
+        custom_codes=[
+            DbConfigurationCustomCode(code="X", system="LOINC", name="Custom")
+        ]
+    )
+    conf_model = Configuration(conditions=[cond1, cond2], configuration=config)
+    processed = ProcessedConfiguration.from_configuration(conf_model)
+    # Only one "X" should be present
+    assert processed.codes == {"X"}
+
+
+def test_aggregate_codes_from_conditions_handles_empty():
+    """
+    aggregate_codes_from_conditions handles empty input.
+    """
+
+    assert aggregate_codes_from_conditions([]) == set()
 
 
 def test_processed_grouper_creation() -> None:
