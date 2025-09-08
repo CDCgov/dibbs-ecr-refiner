@@ -10,8 +10,8 @@ ALTER TABLE configurations
 
 -- remove new columns
 ALTER TABLE configurations
-    DROP COLUMN IF EXISTS condition_id,
-    DROP COLUMN IF EXISTS local_codes;
+    DROP COLUMN condition_id,
+    DROP COLUMN local_codes;
 
 -- restore original constraint
 ALTER TABLE configurations
