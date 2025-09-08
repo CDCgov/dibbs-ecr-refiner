@@ -7,6 +7,7 @@ from datetime import datetime as dt
 from logging import Logger
 from uuid import UUID
 
+from psycopg.rows import dict_row
 from pydantic import BaseModel
 
 from ...core.config import ENVIRONMENT
@@ -52,8 +53,9 @@ async def create_session(user_id: str) -> str:
         user_id,
         expires,
     )
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
 
     return token
 
@@ -83,9 +85,10 @@ async def get_user_from_session(token: str) -> UserResponse | None:
     """
     params = (token_hash, now)
 
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
-        user = await cur.fetchone()
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            user = await cur.fetchone()
 
         if user:
             return UserResponse(id=user["id"], username=user["username"])
@@ -101,8 +104,9 @@ async def _delete_expired_sessions() -> None:
     now = dt.now(UTC)
     query = "DELETE FROM sessions where expires_at < %s"
     params = (now,)
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
 
 
 async def run_expired_session_cleanup_task(logger: Logger) -> None:
@@ -131,5 +135,6 @@ async def delete_session(token: str) -> None:
     token_hash = get_hashed_token(token)
     query = "DELETE FROM sessions WHERE token_hash = %s"
     params = (token_hash,)
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
