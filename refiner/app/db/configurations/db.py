@@ -122,7 +122,7 @@ async def get_configurations_db(
             version
         FROM configurations
         WHERE jurisdiction_id = %s
-        ORDER BY id asc;
+        ORDER BY name asc;
         """
 
     params = (jurisdiction_id,)
