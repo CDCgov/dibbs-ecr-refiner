@@ -19,7 +19,7 @@ interface ConditionCodeSetProps {
   highlight?: React.ReactNode;
 }
 
-const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
+const ConditionCodeSetListItem: React.FC<ConditionCodeSetProps> = ({
   conditionName,
   associated,
   onAssociate,
@@ -84,4 +84,4 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
   );
 };
 
-export default ConditionCodeSet;
+export default ConditionCodeSetListItem;

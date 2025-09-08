@@ -5,7 +5,7 @@
  */
 import React, { useState } from 'react';
 import Drawer from '../../../components/Drawer';
-import ConditionCodeSet from './ConditionCodeSet';
+import ConditionCodeSetListItem from './ConditionCodeSet';
 import { Link } from 'react-router';
 import { GetConditionsWithAssociationResponse } from '../../../api/schemas';
 import {
@@ -164,9 +164,9 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
                 ? condition.id
                 : `${condition.display_name}-${i}`;
               return (
-                <ConditionCodeSet
+                <ConditionCodeSetListItem
                   key={key}
-                  display_name={condition.display_name}
+                  conditionName={condition.display_name}
                   associated={condition.associated}
                   configurationId={configurationId}
                   onAssociate={async () => {
