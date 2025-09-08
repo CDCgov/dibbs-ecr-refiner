@@ -1,4 +1,4 @@
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 from pydantic import BaseModel
 
 from ..pool import AsyncDatabaseConnection
@@ -44,9 +44,10 @@ async def upsert_user_db(
         oidc_user_info.jurisdiction_id,
     )
 
-    async with db.get_cursor() as cur:
-        await cur.execute(query, params)
-        row = await cur.fetchone()
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
 
     if row is None:
         raise Exception("Failed to upsert user and retrieve id.")

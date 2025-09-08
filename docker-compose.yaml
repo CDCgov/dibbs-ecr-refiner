@@ -89,7 +89,7 @@ services:
       - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
 
   migrate:
-    image: migrate/migrate:v4.18.3
+    image: migrate/migrate:v4.19.0
     working_dir: /app
     entrypoint: ["tail", "-f", "/dev/null"]
     depends_on:
