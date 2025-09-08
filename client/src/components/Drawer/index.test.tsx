@@ -1,12 +1,17 @@
 import { describe, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import Drawer from './index';
+import userEvent from '@testing-library/user-event';
 
 // Mocking dependencies
 vi.mock('@trussworks/react-uswds', () => ({
   Icon: { Close: () => <div>X</div> },
-  InputGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  InputPrefix: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  InputGroup: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  InputPrefix: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
   TextInput: (props: any) => <input {...props} />,
 }));
 vi.mock('focus-trap-react', () => ({
@@ -68,7 +73,8 @@ describe('Drawer Component', () => {
     expect(drawer).toHaveClass('w-[35%]');
   });
 
-  it('should filter content based on search input', () => {
+  it('should filter content based on search input', async () => {
+    const user = userEvent.setup();
     const onSearchMock = vi.fn();
     render(
       <Drawer
@@ -83,7 +89,7 @@ describe('Drawer Component', () => {
     );
 
     const searchInput = screen.getByPlaceholderText('Search here...');
-    fireEvent.change(searchInput, { target: { value: 'test query' } });
+    await user.type(searchInput, 'test query');
     expect(onSearchMock).toHaveBeenCalledWith('test query');
   });
 
