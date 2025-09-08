@@ -68,10 +68,10 @@ class DeleteConfigurationResponse(BaseModel):
 
 # The FastAPI route and its async handler function
 @router.delete(
-    "/{configuration_id}",
-    response_model=DeleteConfigurationResponse,
-    tags=["configurations"],
-    operation_id="deleteConfiguration",
+    "/{configuration_id}", # ID of the configuration to delete
+    response_model=DeleteConfigurationResponse, # JSON model to return to the client
+    tags=["configurations"], # Tag defining which file to store the generated client code
+    operation_id="deleteConfiguration", # How the hook will be named (`useDeleteConfiguration`)
 )
 async def delete_configuration(
     configuration_id: UUID,
@@ -79,8 +79,74 @@ async def delete_configuration(
     db: AsyncDatabaseConnection = Depends(get_db),
 ):
     # Write the implementation
+    # Get the user's jurisdiction, find the configuration by its ID, perform any validation, etc.
     ...
     ...
      # Return the response with the ID of the deleted record
     return DeleteConfigurationResponse(...)
 ```
+
+We've added the ability to allow a user to delete a configuration for their jurisdiction!
+
+To give a quick overview of what is happening above:
+
+1. We define `DeleteConfigurationResponse` which is the response model that gets returned to the client as JSON
+2. We define our route, some properties, and write up a `delete_configuration` handler that gets invoked when the client requests `DELETE api/v1/configurations/:id`
+3. Once invokved, the handler code runs and returns the `DeleteConfigurationResponse`, which holds the `id` of the deleted configuration
+
+You'll also notice that we've added a few properties to our route. We will want to include all of these properties each time we create a new route. Please refer to the [client package README `Requirements` section](./client/README.md#requirements) for more detail on each of these properties and why they are needed.
+
+#### Step 3: Call the new route from the client app
+
+While we worked on creating our backend functionality, Orval has been running in the background to generate our client code for us. You'll notice that `client/src/api` will contain updated files. A new hook to make use of the "delete configuration" route is now available for us to use.
+
+As a very basic example, let's say we are going to create a `DeleteConfigButton` component that takes a `configurationId`. We will add this button to the table that lists all of a jurisdiction's configurations. Here's what that component might look like.
+
+```tsx
+// This is the generated hook that will call
+// `DELETE /api/v1/configurations/:id`
+import {
+  useDeleteConfiguration,
+} from '../../api/configurations/configurations';
+
+// Define our button's props
+interface DeleteConfigButtonProps {
+  configurationId: string;
+}
+
+// Reusable button component that will delete a configuration
+function DeleteConfigButton({ configurationId }: DeleteConfigButtonProps) {
+
+  // Our TanStack Query mutation (which we've renamed to `deleteConfig` is ready for us to call)
+  const { mutate: deleteConfig } = useDeleteConfiguration();
+
+  return (
+    <button
+      onClick={() =>
+        // As we've defined on the backend, we must pass in a configuration ID
+        deleteConfig(
+          { data: { configuration_id: configurationId } },
+          {
+            onSuccess: () => {
+              console.log(`Config with ${configurationId} deleted!`);
+            },
+            onError: () => {
+              console.log(`Config with ${configurationId} could not be deleted!`);
+            },
+          }
+        )
+      }
+    >
+      Delete configuration
+    </button>
+  );
+}
+```
+
+When this button is clicked, we will call `deleteConfig` which will invoke our new route and attempt to delete the configuration based on the ID it was provided!
+
+#### Wrap-up
+
+This section has provided a demonstration of the main steps to follow when creating a new feature. It's important to keep in mind that building out the backend feature first allows Orval to generate the frontend client for free, greatly reducing the overhead it would take us to have to maintain that client ourselves.
+
+At this point, it would be worth checking out the [TanStack Query documentation](https://tanstack.com/query/latest/docs/framework/react/quick-start) to ensure you're familiar with how queries and mutations work. While we do not need to write out every query and mutation by hand, we do need to know how to make use of the TanStack Query hooks that are generated.
