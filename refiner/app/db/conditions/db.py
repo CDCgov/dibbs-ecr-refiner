@@ -51,7 +51,7 @@ async def get_condition_by_id_db(
     """
 
     query = """
-            SELECT 
+            SELECT
                 id,
                 canonical_url,
                 display_name,
