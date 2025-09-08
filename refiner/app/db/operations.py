@@ -1,6 +1,7 @@
 from typing import Any
 
 import psycopg
+from psycopg.rows import dict_row
 
 from app.core.exceptions import (
     DatabaseQueryError,
@@ -86,10 +87,11 @@ class GrouperOperations:
         query = self._get_query()
 
         try:
-            async with self.db.get_cursor() as cursor:
-                await cursor.execute(query, (condition,))
-                row = await cursor.fetchone()
-                return self._parse_row(row, condition)
+            async with self.db.get_connection() as conn:
+                async with conn.cursor(row_factory=dict_row) as cursor:
+                    await cursor.execute(query, (condition,))
+                    row = await cursor.fetchone()
+                    return self._parse_row(row, condition)
         except (ResourceNotFoundError, InputValidationError):
             raise
         except psycopg.Error as e:
