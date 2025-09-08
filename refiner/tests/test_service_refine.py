@@ -10,7 +10,7 @@ from app.core.exceptions import (
     XMLParsingError,
 )
 from app.core.models.types import XMLFiles
-from app.db.conditions.model import DbCoding, DbCondition
+from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.connection import DatabaseConnection
 from app.services.ecr.refine import (
     CLINICAL_DATA_TABLE_HEADERS,
@@ -109,8 +109,8 @@ def _get_entries_for_section(
     return entries if entries is not None else []
 
 
-def make_dbcoding(code, display):
-    return DbCoding(code=code, display=display)
+def make_db_condition_coding(code, display):
+    return DbConditionCoding(code=code, display=display)
 
 
 def make_condition(**kwargs):

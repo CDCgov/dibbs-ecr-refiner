@@ -3,7 +3,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class DbCoding(BaseModel):
+class DbConditionCoding(BaseModel):
     """
     Model for code/display pairs from conditions table JSONB columns.
 
@@ -32,7 +32,7 @@ class DbCondition(BaseModel):
     # jsonb columns storing code/display pairs
     # this data is extracted from flat files from the TES
     # and seeded from CG's RSG children
-    snomed_codes: list[DbCoding]
-    loinc_codes: list[DbCoding]
-    icd10_codes: list[DbCoding]
-    rxnorm_codes: list[DbCoding]
+    snomed_codes: list[DbConditionCoding]
+    loinc_codes: list[DbConditionCoding]
+    icd10_codes: list[DbConditionCoding]
+    rxnorm_codes: list[DbConditionCoding]

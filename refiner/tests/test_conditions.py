@@ -7,15 +7,15 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.conditions.db import GetConditionCode
-from app.db.conditions.model import DbCoding, DbCondition
+from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.main import app
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
 
 
-def make_dbcoding(code, display):
-    return DbCoding(code=code, display=display)
+def make_db_condition_coding(code, display):
+    return DbConditionCoding(code=code, display=display)
 
 
 @pytest_asyncio.fixture
@@ -56,10 +56,10 @@ async def test_get_conditions(monkeypatch, authed_client):
         canonical_url="http://url.com",
         version="2.0.0",
         child_rsg_snomed_codes=["11111"],
-        snomed_codes=[make_dbcoding("11111", "Hypertension SNOMED")],
-        loinc_codes=[make_dbcoding("22222", "Hypertension LOINC")],
-        icd10_codes=[make_dbcoding("I10", "Essential hypertension")],
-        rxnorm_codes=[make_dbcoding("33333", "Hypertension RXNORM")],
+        snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
+        loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
+        icd10_codes=[make_db_condition_coding("I10", "Essential hypertension")],
+        rxnorm_codes=[make_db_condition_coding("33333", "Hypertension RXNORM")],
     )
 
     async def fake_get_conditions_db(db):
@@ -88,10 +88,10 @@ async def test_get_condition_found(monkeypatch, authed_client):
         canonical_url="http://asthma.com",
         version="2.0.0",
         child_rsg_snomed_codes=["67890"],
-        snomed_codes=[make_dbcoding("67890", "Asthma SNOMED")],
-        loinc_codes=[make_dbcoding("1234-5", "Asthma LOINC")],
-        icd10_codes=[make_dbcoding("J45", "Asthma ICD10")],
-        rxnorm_codes=[make_dbcoding("55555", "Asthma RXNORM")],
+        snomed_codes=[make_db_condition_coding("67890", "Asthma SNOMED")],
+        loinc_codes=[make_db_condition_coding("1234-5", "Asthma LOINC")],
+        icd10_codes=[make_db_condition_coding("J45", "Asthma ICD10")],
+        rxnorm_codes=[make_db_condition_coding("55555", "Asthma RXNORM")],
     )
 
     fake_codes = [

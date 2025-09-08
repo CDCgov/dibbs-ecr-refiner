@@ -9,7 +9,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations import (
     GetConfigurationsResponse,
 )
-from app.db.conditions.model import DbCoding, DbCondition
+from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
@@ -22,8 +22,8 @@ from app.main import app
 TEST_SESSION_TOKEN = "test-token"
 
 
-def make_dbcoding(code, display):
-    return DbCoding(code=code, display=display)
+def make_db_condition_coding(code, display):
+    return DbConditionCoding(code=code, display=display)
 
 
 @pytest_asyncio.fixture
@@ -90,10 +90,10 @@ def mock_db_functions(monkeypatch):
         canonical_url="url-1",
         version="2.0.0",
         child_rsg_snomed_codes=["12345"],
-        snomed_codes=[make_dbcoding("12345", "SNOMED Description")],
-        loinc_codes=[make_dbcoding("54321", "LOINC Description")],
-        icd10_codes=[make_dbcoding("A00", "ICD10 Description")],
-        rxnorm_codes=[make_dbcoding("99999", "RXNORM Description")],
+        snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
+        loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
+        icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
+        rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_condition_by_id_db",

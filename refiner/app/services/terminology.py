@@ -140,7 +140,7 @@ def aggregate_codes_from_conditions(conditions: list[DbCondition]) -> set[str]:
             condition.icd10_codes,
             condition.rxnorm_codes,
         ]:
-            # each codes array contains DbCoding objects
+            # each codes array contains DbConditionCoding objects
             all_codes.update(code.code for code in codes)
 
     return all_codes

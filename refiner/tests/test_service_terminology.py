@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from app.db.conditions.model import DbCoding, DbCondition
+from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from app.db.models import GrouperRow
 from app.services.terminology import (
@@ -11,8 +11,8 @@ from app.services.terminology import (
 )
 
 
-def make_dbcoding(code, display):
-    return DbCoding(code=code, display=display)
+def make_db_condition_coding(code, display):
+    return DbConditionCoding(code=code, display=display)
 
 
 def make_condition(**kwargs):
@@ -61,16 +61,16 @@ def test_configuration_model_and_aggregate_codes():
     """
 
     cond1 = make_condition(
-        snomed_codes=[make_dbcoding("1111", "SNOMED1")],
-        loinc_codes=[make_dbcoding("2222", "LOINC1")],
+        snomed_codes=[make_db_condition_coding("1111", "SNOMED1")],
+        loinc_codes=[make_db_condition_coding("2222", "LOINC1")],
         icd10_codes=[],
         rxnorm_codes=[],
     )
     cond2 = make_condition(
-        snomed_codes=[make_dbcoding("3333", "SNOMED2")],
+        snomed_codes=[make_db_condition_coding("3333", "SNOMED2")],
         loinc_codes=[],
-        icd10_codes=[make_dbcoding("I10", "ICD10")],
-        rxnorm_codes=[make_dbcoding("4444", "RXNORM")],
+        icd10_codes=[make_db_condition_coding("I10", "ICD10")],
+        rxnorm_codes=[make_db_condition_coding("4444", "RXNORM")],
     )
     config = make_dbconfiguration(
         custom_codes=[
@@ -94,7 +94,7 @@ def test_processed_configuration_from_configuration_and_xpath():
     """
 
     cond1 = make_condition(
-        snomed_codes=[make_dbcoding("A", "SNOMED")],
+        snomed_codes=[make_db_condition_coding("A", "SNOMED")],
         loinc_codes=[],
         icd10_codes=[],
         rxnorm_codes=[],
@@ -137,8 +137,8 @@ def test_processed_configuration_duplicate_codes():
     Ensure duplicate codes are deduplicated in ProcessedConfiguration.
     """
 
-    cond1 = make_condition(snomed_codes=[make_dbcoding("X", "SNOMED")])
-    cond2 = make_condition(loinc_codes=[make_dbcoding("X", "LOINC")])
+    cond1 = make_condition(snomed_codes=[make_db_condition_coding("X", "SNOMED")])
+    cond2 = make_condition(loinc_codes=[make_db_condition_coding("X", "LOINC")])
     config = make_dbconfiguration(
         custom_codes=[
             DbConfigurationCustomCode(code="X", system="LOINC", name="Custom")
