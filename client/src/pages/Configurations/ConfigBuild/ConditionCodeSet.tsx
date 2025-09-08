@@ -14,7 +14,6 @@ interface ConditionCodeSetProps {
   display_name: string;
   associated: boolean;
   configurationId: string;
-  id: string;
   onAssociate: () => void;
   onDisassociate: () => void;
   highlight?: React.ReactNode;
@@ -27,10 +26,14 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
   onDisassociate,
   highlight,
 }) => {
-  const [showButton, setShowButton] = useState(associated);
+  const [showButton, setShowButton] = useState(true);
+
+  React.useEffect(() => {
+    setShowButton(associated);
+  }, [associated]);
 
   return (
-    <div
+    <li
       className="flex h-16 items-center justify-between rounded-md p-4 hover:bg-white"
       role="listitem"
       aria-label={display_name}
@@ -42,10 +45,21 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
       onBlur={() => {
         if (!associated) setShowButton(false);
       }}
-      tabIndex={-1}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (associated) {
+            onDisassociate();
+          } else {
+            onAssociate();
+          }
+          setShowButton(true);
+        }
+      }}
     >
       <p>{highlight ? <>{highlight}</> : display_name}</p>
-      {showButton && (
+      {showButton ? (
         <Button
           variant={associated ? 'selected' : 'primary'}
           aria-pressed={associated}
@@ -61,12 +75,12 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
             }
             setShowButton(true);
           }}
-          tabIndex={0}
+          tabIndex={-1}
         >
           {associated ? 'Added' : 'Add'}
         </Button>
-      )}
-    </div>
+      ) : null}
+    </li>
   );
 };
 

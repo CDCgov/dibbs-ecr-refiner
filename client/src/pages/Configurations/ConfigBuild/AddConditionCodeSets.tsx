@@ -17,11 +17,11 @@ import { useToast } from '../../../hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetConditionsByConfigurationQueryKey } from '../../../api/conditions/conditions';
 import { highlightMatches } from '../../../utils/highlight';
+import { stringify } from 'orval';
 
 type AddConditionCodeSetsDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
-  // onSearch: (searchFilter: string) => void; // Removed unused prop
   conditions: GetConditionsWithAssociationResponse[];
   configurationId: string;
 };
@@ -32,7 +32,6 @@ type AddConditionCodeSetsDrawerProps = {
 const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
   isOpen,
   onClose,
-  // onSearch,
   configurationId,
   conditions,
 }: AddConditionCodeSetsDrawerProps) => {
@@ -96,11 +95,15 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
             queryKey: getGetConditionsByConfigurationQueryKey(configurationId),
           });
         },
-        onError: (resp) => {
+        onError: (error) => {
+          const errorDetail =
+            stringify(error?.response?.data?.detail) ||
+            error.message ||
+            'Unknown error';
           showToast({
             variant: 'error',
             heading: 'Error removing condition',
-            body: resp.message,
+            body: errorDetail,
           });
         },
       }
@@ -130,7 +133,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
       drawerWidth="35%"
     >
       <div className="flex h-full flex-col">
-        <div className="flex-grow overflow-y-auto">
+        <ol className="flex-grow overflow-y-auto">
           {filteredConditions.map(
             (condition: GetConditionsWithAssociationResponse, i: number) => {
               const highlight = searchTerm
@@ -166,7 +169,6 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
                   display_name={condition.display_name}
                   associated={condition.associated}
                   configurationId={configurationId}
-                  id={condition.id}
                   onAssociate={async () => {
                     await handleAssociate(condition.id);
                   }}
@@ -178,7 +180,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
               );
             }
           )}
-        </div>
+        </ol>
       </div>
     </Drawer>
   );
