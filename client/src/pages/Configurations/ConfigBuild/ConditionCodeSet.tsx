@@ -17,7 +17,7 @@ interface ConditionCodeSetProps {
   id: string;
   onAssociate: () => void;
   onDisassociate: () => void;
-  highlight?: { start: number; end: number };
+  highlight?: React.ReactNode;
 }
 
 const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({

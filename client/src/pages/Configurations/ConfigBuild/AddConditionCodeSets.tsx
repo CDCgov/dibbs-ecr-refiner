@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getGetConditionsByConfigurationQueryKey } from '../../../api/conditions/conditions';
 import { highlightMatches } from '../../../utils/highlight';
 
-type ConditionCodeSetsProps = {
+type AddConditionCodeSetsDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
   // onSearch: (searchFilter: string) => void; // Removed unused prop
@@ -29,13 +29,13 @@ type ConditionCodeSetsProps = {
 /**
  * Drawer to add condition code sets to a configuration.
  */
-const AddConditionCodeSetsDrawer: React.FC<ConditionCodeSetsProps> = ({
+const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
   isOpen,
   onClose,
   // onSearch,
   configurationId,
   conditions,
-}: ConditionCodeSetsProps) => {
+}: AddConditionCodeSetsDrawerProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Search and highlight logic
