@@ -32,3 +32,55 @@ While the web application can be used without the Lambda, the Lambda cannot be u
 Running the refining process on a pair of files can be done within the web application itself, but there is no way to run many files through it in an automated way. That's why the Lambda is a crucial component.
 
 The web application (`refiner`) and AWS Lambda (`lambda`) Docker image builds are stored in the [dibbs-ecr-refiner GHCR repository](https://github.com/orgs/CDCgov/packages?repo_name=dibbs-ecr-refiner). When a branch is merged into `main`, both of these images will be built, tagged as `latest` and `main`, and stored here.
+
+## Feature building
+
+This section will outline how to create a new feature in the eCR Refiner web application. Since the application is composed of a FastAPI server and a React frontend, we need to ensure that making requests from the client application to the server is a quick and light-weight process for developers. In order to achieve this, we use [Orval](https://orval.dev/) to generate [TanStack Query](https://tanstack.com/query/latest) React hooks. This allows developers to create a backend feature at the API level and have their client code automatically generated for them, greatly reducing the effort needed to fetch that data from the client.
+
+More information on the code generation setup can be found in the [client package's README](./client/README.md).
+
+### Example process
+
+The process for building most features will follow the same process - this holds true whether you are adding, modifying, or deleting FastAPI routes.
+
+As an example, let's say we want to give Refiner users the ability to delete their configurations. Let's walk through what the process to do this would look like.
+
+#### Step 1: Find the appropriate file to hold the new API route
+
+Due to the way Orval code generation works, we always want to start with implementing the backend functionality first.
+
+Configuration management is already a part of the Refiner. We can find where `configuration` related API actions happen by navigating to [refiner/app/api/v1](/refiner/app/api/v1/) and locating [configurations.py](/refiner/app/api/v1/configurations.py). We can expect to find all of the API routing functionality within this directory. File names represent an entity and the routes within will impact that entity.
+
+Please note that if this was the very first `configuration` related piece of functionality we were creating, the `configuration.py` would also need to be created.
+
+#### Step 2: Add the new "delete" route
+
+Within [configurations.py](/refiner/app/api/v1/configurations.py) we can add our new route. Since we'll be removing a configuration from the database, our route will likely look like this:
+
+`DELETE /api/v1/configurations/:id`
+
+Let's add the route and handler for this:
+
+```python
+# Response model to return to the client
+class DeleteConfigurationResponse(BaseModel):
+    id: UUID
+
+# The FastAPI route and its async handler function
+@router.delete(
+    "/{configuration_id}",
+    response_model=DeleteConfigurationResponse,
+    tags=["configurations"],
+    operation_id="deleteConfiguration",
+)
+async def delete_configuration(
+    configuration_id: UUID,
+    user: dict[str, Any] = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+):
+    # Write the implementation
+    ...
+    ...
+     # Return the response with the ID of the deleted record
+    return DeleteConfigurationResponse(...)
+```
