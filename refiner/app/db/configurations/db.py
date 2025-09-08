@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import DbConfiguration
+from .model import DbConfiguration, DbConfigurationCustomCode
 
 
 async def insert_configuration_db(
@@ -355,4 +355,101 @@ async def get_total_condition_code_counts_by_configuration_db(
         async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
             await cur.execute(query, params)
             row = await cur.fetchall()
+            return row
+
+
+async def add_custom_code_to_configuration_db(
+    config: DbConfiguration,
+    custom_code: DbConfigurationCustomCode,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Given a config, adds a user-defined custom code to the configuration.
+    """
+    query = """
+            UPDATE configurations
+            SET custom_codes = %s::jsonb
+            WHERE id = %s
+            RETURNING *;
+            """
+
+    custom_codes = config.custom_codes
+
+    exists = any(
+        (c.code == custom_code.code and c.system == custom_code.system)
+        for c in custom_codes
+    )
+
+    if not exists:
+        custom_codes.append(custom_code)
+
+    json = [
+        {"code": cc.code, "system": cc.system, "name": cc.name} for cc in custom_codes
+    ]
+
+    params = (Jsonb(json), config.id)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
+
+
+async def delete_custom_code_from_configuration_db(
+    config: DbConfiguration,
+    system: str,
+    code: str,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Given a config, system, and custom code, deletes the custom code from the configuration.
+    """
+
+    query = """
+            UPDATE configurations
+            SET custom_codes = %s::jsonb
+            WHERE id = %s
+            RETURNING *;
+            """
+
+    updated_custom_codes = [
+        {"code": cc.code, "system": cc.system, "name": cc.name}
+        for cc in config.custom_codes
+        if not (cc.system == system and cc.code == code)
+    ]
+
+    params = (Jsonb(updated_custom_codes), config.id)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
+
+
+async def edit_custom_code_from_configuration_db(
+    config: DbConfiguration,
+    updated_custom_codes: list[DbConfigurationCustomCode],
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Given a config and a list of custom codes, updates the configuration's custom codes using the provided list.
+    """
+
+    query = """
+            UPDATE configurations
+            SET custom_codes = %s::jsonb
+            WHERE id = %s
+            RETURNING *;
+            """
+
+    json_codes = [
+        {"code": cc.code, "system": cc.system, "name": cc.name}
+        for cc in updated_custom_codes
+    ]
+
+    params = (Jsonb(json_codes), config.id)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
             return row

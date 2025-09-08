@@ -46,6 +46,7 @@ vi.mock('../../api/configurations/configurations', async () => {
           id: 'config-id',
           display_name: 'Anaplasmosis',
           code_sets: [], // not needed for these tests
+          custom_codes: [], // not needed for these tests
         },
       },
       isLoading: false,

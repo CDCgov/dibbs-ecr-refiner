@@ -15,6 +15,7 @@ import {
   Modal,
   ModalRef,
   ModalHeading,
+  ModalToggleButton,
   ModalFooter,
   Label,
   TextInput,
@@ -22,13 +23,25 @@ import {
   Icon,
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
-import { useGetConfiguration } from '../../../api/configurations/configurations';
+import {
+  getGetConfigurationQueryKey,
+  useAddCustomCodeToConfiguration,
+  useDeleteCustomCodeFromConfiguration,
+  useEditCustomCodeFromConfiguration,
+  useGetConfiguration,
+} from '../../../api/configurations/configurations';
+import {
+  AddCustomCodeInputSystem,
+  DbConfigurationCustomCode,
+  DbConfigurationCustomCodeSystem,
+  GetConfigurationResponse,
+} from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
-import { GetConfigurationResponse } from '../../../api/schemas';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
 import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils/highlight';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +54,7 @@ export default function ConfigBuild() {
   });
 
   if (isLoading || !response?.data) return 'Loading...';
-  if (isError) return 'Error!';
+  if (!id || isError) return 'Error!';
 
   return (
     <div>
@@ -57,49 +70,34 @@ export default function ConfigBuild() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Builder id={response.data.id} code_sets={response?.data.code_sets} />
+        <Builder
+          id={id}
+          code_sets={response.data.code_sets}
+          custom_codes={response.data.custom_codes}
+        />
       </SectionContainer>
     </div>
   );
 }
 
-type BuilderProps = Pick<GetConfigurationResponse, 'id' | 'code_sets'>;
+type BuilderProps = Pick<
+  GetConfigurationResponse,
+  'id' | 'code_sets' | 'custom_codes'
+>;
 
-function Builder({ id, code_sets }: BuilderProps) {
-  const [selectedCodesetId, setSelectedCodesetId] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+function Builder({ id, code_sets, custom_codes }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [customCodes, setCustomCodes] = useState<
-    { code: string; system: string; name: string }[]
-  >([]);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [modalInitialData, setModalInitialData] = useState<{
-    code: string;
-    system: string;
-    name: string;
-  } | null>(null);
+  const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
+    'none'
+  );
+  const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
+    null
+  );
+  const modalRef = useRef<ModalRef | null>(null);
 
-  const handleAddOrEditCustomCode = (data: {
-    code: string;
-    system: string;
-    name: string;
-  }) => {
-    if (editingIndex !== null) {
-      // update existing row
-      setCustomCodes((prev) =>
-        prev.map((item, idx) => (idx === editingIndex ? data : item))
-      );
-    } else {
-      // add new row
-      setCustomCodes((prev) => [...prev, data]);
-    }
-    setEditingIndex(null);
-    setModalInitialData(null);
-    setIsModalOpen(false);
-  };
-
-  function onClick(id: string) {
+  function onCodesetClick(id: string) {
     setSelectedCodesetId(id);
+    setTableView('codeset');
   }
 
   type ConditionWithAssociation = {
@@ -119,19 +117,19 @@ function Builder({ id, code_sets }: BuilderProps) {
     })
   );
 
-  const isCustomCodes = selectedCodesetId === 'custom';
+  function onCustomCodeClick() {
+    setSelectedCodesetId(null);
+    setTableView('custom');
+  }
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col gap-4 py-4 sm:w-1/3 md:px-2">
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-            <label
-              className="text-gray-cool-60 font-bold"
-              htmlFor="open-codesets"
-            >
+          <OptionsLabelContainer>
+            <OptionsLabel htmlFor="open-codesets">
               CONDITION CODE SETS
-            </label>
+            </OptionsLabel>
             <button
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
@@ -141,114 +139,80 @@ function Builder({ id, code_sets }: BuilderProps) {
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
             </button>
-          </div>
-          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
-            <ul className="flex flex-col gap-2">
-              {code_sets.map((codeSet) => {
-                return (
-                  <li key={codeSet.condition_id}>
-                    <button
-                      className={classNames(
-                        'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                        {
-                          'bg-white':
-                            selectedCodesetId === codeSet.condition_id,
-                        }
-                      )}
-                      onClick={() => onClick(codeSet.condition_id)}
-                      aria-controls={
-                        selectedCodesetId ? 'codeset-table' : undefined
+          </OptionsLabelContainer>
+          <OptionsListContainer>
+            <OptionsList>
+              {code_sets.map((codeSet) => (
+                <li key={codeSet.display_name}>
+                  <button
+                    className={classNames(
+                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                      {
+                        'bg-white': selectedCodesetId === codeSet.condition_id,
                       }
-                      aria-pressed={selectedCodesetId === codeSet.condition_id}
-                    >
-                      <span>{codeSet.display_name}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <div>
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-              <label
-                className="text-gray-cool-60 font-bold"
-                htmlFor="open-codesets"
-              >
-                MORE OPTIONS
-              </label>
-            </div>
-          </div>
-          <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
-            <ul className="mt-2 flex flex-col gap-2">
-              <li>
+                    )}
+                    onClick={() => onCodesetClick(codeSet.condition_id)}
+                    aria-controls={
+                      selectedCodesetId ? 'codeset-table' : undefined
+                    }
+                    aria-pressed={selectedCodesetId === codeSet.condition_id}
+                  >
+                    <span>{codeSet.display_name}</span>
+                    <span>{codeSet.total_codes}</span>
+                  </button>
+                </li>
+              ))}
+            </OptionsList>
+          </OptionsListContainer>
+          <OptionsLabelContainer>
+            <OptionsLabel>MORE OPTIONS</OptionsLabel>
+          </OptionsLabelContainer>
+          <OptionsListContainer>
+            <OptionsList>
+              <li key="custom-codes">
                 <button
                   className={classNames(
                     'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    { 'bg-white': isCustomCodes }
+                    {
+                      'bg-white': tableView === 'custom',
+                    }
                   )}
-                  onClick={() => onClick('custom')}
+                  onClick={() => onCustomCodeClick()}
+                  aria-controls={
+                    tableView === 'custom' ? 'custom-table' : undefined
+                  }
+                  aria-pressed={tableView === 'custom'}
                 >
                   <span>Custom codes</span>
-                  <span>{customCodes.length}</span>
+                  <span>{custom_codes.length}</span>
                 </button>
               </li>
-            </ul>
-          </div>
+            </OptionsList>
+          </OptionsListContainer>
         </div>
         <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
-          {selectedCodesetId && selectedCodesetId != 'custom' ? (
-            <div>
+          {selectedCodesetId && tableView === 'codeset' ? (
+            <>
               <ConditionCodeGroupingParagraph />
               <ConditionCodeTable conditionId={selectedCodesetId} />
-            </div>
-          ) : selectedCodesetId === 'custom' ? (
-            <div>
+            </>
+          ) : tableView === 'custom' ? (
+            <>
               <CustomCodeGroupingParagraph />
-              <Button
-                className="margin-top-1em"
-                variant="secondary"
-                id="open-custom-code"
-                aria-label="Add new custom code to configuration"
-                onClick={() => setIsModalOpen(true)}
+              <ModalToggleButton
+                modalRef={modalRef}
+                opener
+                className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
+                aria-label="Add new custom code"
               >
-                <span>Add code</span>
-              </Button>
-              {customCodes.length > 0 && (
-                <table className="width-full !mt-6 w-full border-separate">
-                  <tbody>
-                    {customCodes.map((c, i) => (
-                      <tr key={i} className="align-middle">
-                        <td>{c.code}</td>
-                        <td>{c.system}</td>
-                        <td>{c.name}</td>
-                        <td className="text-right whitespace-nowrap">
-                          <button
-                            className="usa-button usa-button--unstyled text-blue-60 !mr-2"
-                            onClick={() => {
-                              setEditingIndex(i);
-                              setModalInitialData(c);
-                              setIsModalOpen(true);
-                            }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="usa-button usa-button--unstyled text-red-60"
-                            onClick={() =>
-                              setCustomCodes((prev) =>
-                                prev.filter((_, idx) => idx !== i)
-                              )
-                            }
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                Add code
+              </ModalToggleButton>
+              <CustomCodesDetail
+                configurationId={id}
+                modalRef={modalRef}
+                customCodes={custom_codes}
+              />
+            </>
           ) : null}
         </div>
       </div>
@@ -258,17 +222,141 @@ function Builder({ id, code_sets }: BuilderProps) {
         conditions={conditionsResponse || []}
         configurationId={id}
       />
-      <AddCustomCodeModal
-        open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingIndex(null);
-          setModalInitialData(null);
-        }}
-        onSubmit={handleAddOrEditCustomCode}
-        initialData={modalInitialData}
-      />
     </div>
+  );
+}
+
+function OptionsLabel({
+  children,
+  htmlFor,
+}: {
+  children: React.ReactNode;
+  htmlFor?: string;
+}) {
+  const styles = 'text-gray-cool-60 font-bold';
+
+  if (!htmlFor) return <span className={styles}>{children}</span>;
+
+  return (
+    <label className={styles} htmlFor={htmlFor}>
+      {children}
+    </label>
+  );
+}
+
+function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+      {children}
+    </div>
+  );
+}
+
+function OptionsListContainer({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+      {children}
+    </div>
+  );
+}
+
+function OptionsList({ children }: { children: React.ReactNode }) {
+  return <ul className="flex flex-col gap-2">{children}</ul>;
+}
+
+interface CustomCodesDetailProps {
+  configurationId: string;
+  modalRef: React.RefObject<ModalRef | null>;
+  customCodes: DbConfigurationCustomCode[];
+}
+
+function CustomCodesDetail({
+  configurationId,
+  modalRef,
+  customCodes,
+}: CustomCodesDetailProps) {
+  const { mutateAsync: deleteCode } = useDeleteCustomCodeFromConfiguration();
+  const [selectedCustomCode, setSelectedCustomCode] =
+    useState<DbConfigurationCustomCode | null>(null);
+  const queryClient = useQueryClient();
+  const showToast = useToast();
+
+  function toggleModal() {
+    modalRef.current?.toggleModal();
+    setSelectedCustomCode(null);
+  }
+
+  return (
+    <>
+      <table className="!mt-6 w-full border-separate">
+        <thead className="sr-only">
+          <tr>
+            <th>Custom code</th>
+            <th>Custom code system</th>
+            <th>Custom code name</th>
+            <th>Modify the custom code</th>
+          </tr>
+        </thead>
+        <tbody>
+          {customCodes.map((customCode) => (
+            <tr
+              key={customCode.code + customCode.system}
+              className="align-middle"
+            >
+              <td>{customCode.code}</td>
+              <td>{customCode.system}</td>
+              <td>{customCode.name}</td>
+              <td className="text-right whitespace-nowrap">
+                <ModalToggleButton
+                  modalRef={modalRef}
+                  opener
+                  className="usa-button--unstyled !text-blue-cool-50 !mr-2 !no-underline hover:!underline"
+                  onClick={() => setSelectedCustomCode(customCode)}
+                  aria-label={`Edit custom code ${customCode.name}`}
+                >
+                  Edit
+                </ModalToggleButton>
+                <button
+                  className="!text-blue-cool-50 !no-underline hover:!cursor-pointer hover:!underline"
+                  aria-label={`Delete custom code ${customCode.name}`}
+                  onClick={async () => {
+                    await deleteCode(
+                      {
+                        code: customCode.code,
+                        system: customCode.system,
+                        configurationId: configurationId,
+                      },
+                      {
+                        onSuccess: async () => {
+                          await queryClient.invalidateQueries({
+                            queryKey:
+                              getGetConfigurationQueryKey(configurationId),
+                          });
+                          showToast({
+                            heading: 'Deleted code',
+                            body: customCode.code,
+                          });
+                        },
+                      }
+                    );
+                  }}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <CustomCodeModal
+        configurationId={configurationId}
+        initialCode={selectedCustomCode?.code}
+        initialSystem={selectedCustomCode?.system}
+        initialName={selectedCustomCode?.name}
+        modalRef={modalRef}
+        onClose={toggleModal}
+      />
+    </>
   );
 }
 
@@ -276,14 +364,7 @@ function ConditionCodeGroupingParagraph() {
   return (
     <p>
       These condition code sets come from the default groupings in the{' '}
-      <a
-        className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-        href="https://tes.tools.aimsplatform.org/auth/signin"
-        target="_blank"
-        rel="noopener"
-      >
-        TES (Terminology Exchange Service).
-      </a>
+      <TesLink />
     </p>
   );
 }
@@ -291,16 +372,21 @@ function ConditionCodeGroupingParagraph() {
 function CustomCodeGroupingParagraph() {
   return (
     <p>
-      Add codes that are not included in the code sets from the{' '}
-      <a
-        className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-        href="https://tes.tools.aimsplatform.org/auth/signin"
-        target="_blank"
-        rel="noopener"
-      >
-        TES (Terminology Exchange Service).
-      </a>
+      Add codes that are not included in the code sets from the <TesLink />
     </p>
+  );
+}
+
+function TesLink() {
+  return (
+    <a
+      className="text-blue-cool-60 hover:text-blue-cool-50 underline"
+      href="https://tes.tools.aimsplatform.org/auth/signin"
+      target="_blank"
+      rel="noopener"
+    >
+      TES (Terminology Exchange Service).
+    </a>
   );
 }
 
@@ -437,6 +523,205 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   );
 }
 
+interface CustomCodeModalProps {
+  configurationId: string;
+  modalRef: React.RefObject<ModalRef | null>;
+  onClose: () => void;
+  initialCode?: string;
+  initialSystem?: string;
+  initialName?: string;
+}
+
+export function CustomCodeModal({
+  configurationId,
+  modalRef,
+  onClose,
+  initialCode,
+  initialSystem,
+  initialName,
+}: CustomCodeModalProps) {
+  const { mutate: addCode } = useAddCustomCodeToConfiguration();
+  const { mutate: editCode } = useEditCustomCodeFromConfiguration();
+  const queryClient = useQueryClient();
+  const showToast = useToast();
+
+  // TODO: this should come from the server.
+  // Maybe get this info as part of the seed script?
+  const systemValues = [
+    { name: 'ICD-10', value: 'icd-10' },
+    { name: 'SNOMED', value: 'snomed' },
+    { name: 'RxNorm', value: 'rxnorm' },
+    { name: 'LOINC', value: 'loinc' },
+  ];
+
+  const isEditing = initialCode && initialSystem && initialName;
+
+  const [form, setForm] = useState({
+    code: initialCode ?? '',
+    system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
+    name: initialName ?? '',
+  });
+
+  useEffect(() => {
+    setForm({
+      code: initialCode ?? '',
+      system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
+      name: initialName ?? '',
+    });
+  }, [initialCode, initialSystem, initialName]);
+
+  function resetForm() {
+    setForm({ code: '', system: 'icd-10', name: '' });
+  }
+
+  const isButtonEnabled = form.code && form.system && form.name;
+
+  const handleChange =
+    (field: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isEditing) {
+      editCode(
+        {
+          configurationId,
+          data: {
+            code: initialCode,
+            system: normalizeSystem(initialSystem),
+            new_code: form.code,
+            new_system: normalizeSystem(form.system),
+            new_name: form.name,
+          },
+        },
+        {
+          onSuccess: async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetConfigurationQueryKey(configurationId),
+            });
+            showToast({ heading: 'Custom code updated', body: form.code });
+            resetForm();
+            onClose();
+          },
+          onError: () => {
+            showToast({
+              variant: 'error',
+              heading: 'Custom code update failed',
+              body: 'The code/system pair already exists.',
+            });
+            resetForm();
+            onClose();
+          },
+        }
+      );
+    } else {
+      addCode(
+        {
+          configurationId,
+          data: {
+            code: form.code,
+            system: normalizeSystem(form.system),
+            name: form.name,
+          },
+        },
+        {
+          onSuccess: async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetConfigurationQueryKey(configurationId),
+            });
+            showToast({ heading: 'Custom code added', body: form.code });
+            resetForm();
+            onClose();
+          },
+        }
+      );
+    }
+  };
+
+  return (
+    <Modal
+      ref={modalRef}
+      id="custom-code-modal"
+      aria-describedby="modal-heading"
+      aria-labelledby="modal-heading"
+      isLarge
+      className="!max-w-[35rem] !rounded-none"
+      forceAction
+    >
+      <ModalHeading
+        id="modal-heading"
+        className="text-bold font-merriweather mb-6 text-xl"
+      >
+        {isEditing ? 'Edit custom code' : 'Add custom code'}
+      </ModalHeading>
+
+      <button
+        type="button"
+        aria-label="Close this window"
+        onClick={() => {
+          resetForm();
+          onClose();
+        }}
+        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
+      >
+        <Icon.Close className="h-5 w-5" aria-hidden />
+      </button>
+
+      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
+        <div>
+          <Label htmlFor="code">Code #</Label>
+          <TextInput
+            id="code"
+            name="code"
+            type="text"
+            value={form.code}
+            onChange={handleChange('code')}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="system">Code system</Label>
+          <Select
+            id="system"
+            name="system"
+            value={form.system}
+            onChange={handleChange('system')}
+          >
+            {systemValues.map((sv) => (
+              <option key={sv.value} value={sv.value}>
+                {sv.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="name">Code name</Label>
+          <TextInput
+            id="name"
+            name="name"
+            type="text"
+            value={form.name}
+            onChange={handleChange('name')}
+          />
+        </div>
+      </div>
+
+      <ModalFooter className="flex justify-end pt-6">
+        <Button
+          onClick={handleSubmit}
+          disabled={!isButtonEnabled}
+          variant={isButtonEnabled ? 'primary' : 'disabled'}
+        >
+          {isEditing ? 'Update' : 'Add custom code'}
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
+
 interface ConditionCodeRowProps {
   code: string;
   codeSystem: string;
@@ -461,143 +746,8 @@ function ConditionCodeRow({
   );
 }
 
-interface AddCustomCodeModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: { code: string; system: string; name: string }) => void;
-  initialData?: { code: string; system: string; name: string } | null;
-}
-
-export function AddCustomCodeModal({
-  open,
-  onClose,
-  onSubmit,
-  initialData,
-}: AddCustomCodeModalProps) {
-  const modalRef = useRef<ModalRef>(null);
-  const showToast = useToast();
-
-  const [code, setCode] = useState(initialData?.code ?? '');
-  const [system, setSystem] = useState(initialData?.system ?? '');
-  const [name, setName] = useState(initialData?.name ?? '');
-
-  useEffect(() => {
-    if (open) {
-      setCode(initialData?.code ?? '');
-      setSystem(initialData?.system ?? '');
-      setName(initialData?.name ?? '');
-      modalRef.current?.toggleModal(undefined, true);
-    } else {
-      modalRef.current?.toggleModal(undefined, false);
-    }
-  }, [open, initialData]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit({ code, system, name });
-
-    showToast({
-      heading: initialData ? 'Custom code updated' : 'Custom code added',
-      body: `${code}`,
-    });
-    onClose();
-  };
-
-  return (
-    <Modal
-      ref={modalRef}
-      id="add-custom-code-modal"
-      aria-labelledby="add-custom-code-title"
-      aria-describedby="Modal for adding custom code"
-      isLarge
-      className="!h-[30.125rem] !w-[35rem] !rounded-none"
-      forceAction
-    >
-      <ModalHeading
-        id="add-custom-code-title"
-        className="text-bold font-merriweather mb-6 text-xl"
-      >
-        {initialData ? 'Edit custom code' : 'Add custom code'}
-      </ModalHeading>
-
-      <button
-        type="button"
-        aria-label="Close this window"
-        onClick={onClose}
-        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline focus:outline-indigo-500"
-      >
-        <Icon.Close className="h-5 w-5" aria-hidden />
-      </button>
-
-      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
-        <div className="max-w-3/4">
-          <Label
-            htmlFor="code"
-            className="font-public-sans text-sm text-gray-700"
-          >
-            Code #
-          </Label>
-          <TextInput
-            id="code"
-            name="code"
-            type="text"
-            value={code}
-            className="w-full rounded-md border px-3 py-2"
-            onChange={(e) => setCode(e.target.value)}
-          />
-        </div>
-
-        <div className="max-w-3/4">
-          <Label
-            htmlFor="system"
-            className="font-public-sans text-sm text-gray-700"
-          >
-            Code system
-          </Label>
-          <Select
-            id="system"
-            name="system"
-            value={system}
-            className="w-full rounded-md border px-3 py-2"
-            onChange={(e) => setSystem(e.target.value)}
-          >
-            <option value="">- Select -</option>
-            <option value="ICD-10">ICD-10</option>
-            <option value="SNOMED">SNOMED</option>
-            <option value="LOINC">LOINC</option>
-            <option value="RXNORM">RxNorm</option>
-            <option value="LOCAL">Local</option>
-          </Select>
-        </div>
-
-        <div className="max-w-3/4">
-          <Label
-            htmlFor="name"
-            className="font-public-sans text-sm text-gray-700"
-          >
-            Code name
-          </Label>
-          <TextInput
-            id="name"
-            name="name"
-            type="text"
-            value={name}
-            className="w-full rounded-md border px-3 py-2"
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-
-        <ModalFooter className="maxw-4/4 flex justify-end space-x-4 pt-6">
-          <Button
-            type="submit"
-            variant={!code || !system || !name ? 'disabled' : 'primary'}
-            disabled={!code || !system || !name}
-            onClick={handleSubmit}
-          >
-            {initialData ? 'Update' : 'Add custom code'}
-          </Button>
-        </ModalFooter>
-      </div>
-    </Modal>
-  );
+function normalizeSystem(
+  system: DbConfigurationCustomCodeSystem | string
+): AddCustomCodeInputSystem {
+  return system.toLowerCase() as AddCustomCodeInputSystem;
 }
