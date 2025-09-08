@@ -18,11 +18,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
         list[Condition]: List of conditions.
     """
     query = """
-            SELECT
-                id,
-                display_name,
-                canonical_url,
-                version
+            SELECT *
             FROM conditions
             WHERE version = '2.0.0'
             ORDER BY display_name ASC;
@@ -46,10 +42,7 @@ async def get_condition_by_id_db(
     """
 
     query = """
-        SELECT id,
-        canonical_url,
-        display_name,
-        version
+        SELECT *
         FROM conditions
         WHERE version = '2.0.0'
         AND id = %s
