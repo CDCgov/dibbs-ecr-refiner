@@ -11,7 +11,7 @@ import { Button } from '../../../components/Button';
  * Displays the condition name and lets users add/remove association with the configuration.
  */
 interface ConditionCodeSetProps {
-  display_name: string;
+  conditionName: string;
   associated: boolean;
   configurationId: string;
   onAssociate: () => void;
@@ -20,7 +20,7 @@ interface ConditionCodeSetProps {
 }
 
 const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
-  display_name,
+  conditionName,
   associated,
   onAssociate,
   onDisassociate,
@@ -36,7 +36,7 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
     <li
       className="flex h-16 items-center justify-between rounded-md p-4 hover:bg-white"
       role="listitem"
-      aria-label={display_name}
+      aria-label={conditionName}
       onMouseEnter={() => setShowButton(true)}
       onMouseLeave={() => {
         if (!associated) setShowButton(false);
@@ -58,13 +58,13 @@ const ConditionCodeSet: React.FC<ConditionCodeSetProps> = ({
         }
       }}
     >
-      <p>{highlight ? <>{highlight}</> : display_name}</p>
+      <p>{highlight ? <>{highlight}</> : conditionName}</p>
       {showButton ? (
         <Button
           variant={associated ? 'selected' : 'primary'}
           aria-pressed={associated}
           aria-label={
-            associated ? `Remove ${display_name}` : `Add ${display_name}`
+            associated ? `Remove ${conditionName}` : `Add ${conditionName}`
           }
           onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
             e.stopPropagation();
