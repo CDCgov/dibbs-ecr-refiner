@@ -128,14 +128,26 @@ async def create_configuration(
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
 
+class IncludedCondition(BaseModel):
+    """
+    Model for a condition that is associated with a configuration.
+    """
+
+    id: UUID
+    display_name: str
+    canonical_url: str
+    version: str
+
+
 class GetConfigurationResponse(BaseModel):
     """
-    Information about a specific condition to return to the client.
+    Information about a specific configuration to return to the client.
     """
 
     id: UUID
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
+    included_conditions: list[IncludedCondition]
 
 
 @router.get(
@@ -150,36 +162,40 @@ async def get_configuration(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
     """
-    Get a single configuration by its ID.
-
-    Args:
-        configuration_id (UUID): ID of the configuration record
-        user (dict[str, Any], optional): _description_. Defaults to Depends(get_logged_in_user).
-        db (AsyncDatabaseConnection, optional): _description_. Defaults to Depends(get_db).
-
-    Returns:
-        GetConfigurationResponse: Response from the API
+    Get a single configuration by its ID including all associated conditions.
     """
-
-    # get user jurisdiction
     db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
     jd = db_user.jurisdiction_id
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
-
     if not config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
-
-    # Get all associated conditions and their # of codes
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
+    # Fetch associated conditions
+    from ...db.conditions.db import get_conditions_by_configuration_id_db
 
+    associated_conditions = await get_conditions_by_configuration_id_db(
+        config.id, db=db
+    )
+    included_conditions = [
+        IncludedCondition(
+            id=c.id,
+            display_name=c.display_name,
+            canonical_url=c.canonical_url,
+            version=c.version,
+        )
+        for c in associated_conditions
+    ]
     return GetConfigurationResponse(
-        id=config.id, display_name=config.name, code_sets=config_condition_info
+        id=config.id,
+        display_name=config.name,
+        code_sets=config_condition_info,
+        included_conditions=included_conditions,
     )
 
 

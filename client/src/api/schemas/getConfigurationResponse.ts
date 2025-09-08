@@ -6,12 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
+import type { IncludedCondition } from './includedCondition';
 
 /**
- * Information about a specific condition to return to the client.
+ * Information about a specific configuration to return to the client.
  */
 export interface GetConfigurationResponse {
   id: string;
   display_name: string;
   code_sets: DbTotalConditionCodeCount[];
+  included_conditions: IncludedCondition[];
 }

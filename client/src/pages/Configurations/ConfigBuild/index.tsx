@@ -23,10 +23,7 @@ import {
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
-import {
-  useGetConditionsByConfiguration,
-  useGetCondition,
-} from '../../../api/conditions/conditions';
+import { useGetCondition } from '../../../api/conditions/conditions';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
@@ -105,8 +102,21 @@ function Builder({ id, code_sets }: BuilderProps) {
     setSelectedCodesetId(id);
   }
 
-  const { data: conditionsResponse } = useGetConditionsByConfiguration(
-    id ?? ''
+  type ConditionWithAssociation = {
+    id: string;
+    display_name: string;
+    canonical_url?: string;
+    version?: string;
+    associated: boolean;
+  };
+  const conditionsResponse: ConditionWithAssociation[] = code_sets.map(
+    (cond) => ({
+      id: cond.condition_id,
+      display_name: cond.display_name,
+      canonical_url: cond.canonical_url,
+      version: cond.version,
+      associated: true,
+    })
   );
 
   const isCustomCodes = selectedCodesetId === 'custom';
@@ -245,7 +255,7 @@ function Builder({ id, code_sets }: BuilderProps) {
       <AddConditionCodeSetsDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        conditions={conditionsResponse?.data || []}
+        conditions={conditionsResponse || []}
         configurationId={id}
       />
       <AddCustomCodeModal

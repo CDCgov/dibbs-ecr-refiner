@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import Drawer from '../../../components/Drawer';
 import ConditionCodeSetListItem from './ConditionCodeSet';
 import { Link } from 'react-router';
-import { GetConditionsWithAssociationResponse } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
   useAssociateConditionWithConfiguration,
@@ -15,14 +14,20 @@ import {
 } from '../../../api/configurations/configurations';
 import { useToast } from '../../../hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
-import { getGetConditionsByConfigurationQueryKey } from '../../../api/conditions/conditions';
 import { highlightMatches } from '../../../utils/highlight';
 import { stringify } from 'orval';
 
+type ConditionWithAssociation = {
+  id: string;
+  display_name: string;
+  canonical_url?: string;
+  version?: string;
+  associated: boolean;
+};
 type AddConditionCodeSetsDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
-  conditions: GetConditionsWithAssociationResponse[];
+  conditions: ConditionWithAssociation[];
   configurationId: string;
 };
 
@@ -68,9 +73,6 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
-          await queryClient.invalidateQueries({
-            queryKey: getGetConditionsByConfigurationQueryKey(configurationId),
-          });
         },
       }
     );
@@ -90,9 +92,6 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
           });
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetConditionsByConfigurationQueryKey(configurationId),
           });
         },
         onError: (error) => {
@@ -135,7 +134,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
       <div className="flex h-full flex-col">
         <ol className="flex-grow overflow-y-auto">
           {filteredConditions.map(
-            (condition: GetConditionsWithAssociationResponse, i: number) => {
+            (condition: ConditionWithAssociation, i: number) => {
               const highlight = searchTerm
                 ? highlightMatches(
                     condition.display_name,
