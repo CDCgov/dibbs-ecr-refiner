@@ -43,7 +43,11 @@ vi.mock('../../api/configurations/configurations', async () => {
           custom_codes: [], // not needed for these tests
           included_conditions: [
             { id: '1', display_name: 'Anaplasmosis', associated: true },
-            { id: 'exists-id', display_name: 'already-created', associated: false },
+            {
+              id: 'exists-id',
+              display_name: 'already-created',
+              associated: false,
+            },
           ],
         },
       },

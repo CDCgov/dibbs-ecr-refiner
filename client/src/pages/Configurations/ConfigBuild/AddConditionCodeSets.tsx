@@ -50,6 +50,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
 
   const showToast = useToast();
   const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
 
   // Add/remove handlers
   async function handleAssociate(conditionId: string) {
@@ -89,7 +90,6 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
           });
         },
         onError: (error) => {
-          const formatError = useApiErrorFormatter();
           const errorDetail =
             formatError(error?.response?.data?.detail) ||
             error.message ||
