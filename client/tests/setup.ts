@@ -35,3 +35,11 @@ vi.hoisted(async () => {
 afterEach(() => {
   cleanup();
 });
+
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+(global as any).ResizeObserver = ResizeObserver;
