@@ -3,18 +3,21 @@ import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 
 import NavigationBar from '../NavigationBar';
+import { Icon } from '@trussworks/react-uswds';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
 interface LayoutProps {
   children: React.ReactNode;
+  username: string;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ username, children }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
-      <Header />
+      <Header username={username} />
       <main
         id="main-content"
         className="bg-primary-container flex grow flex-col"
@@ -26,7 +29,11 @@ export function Layout({ children }: LayoutProps) {
   );
 }
 
-export function Header() {
+interface HeaderProps {
+  username: string;
+}
+
+export function Header({ username }: HeaderProps) {
   return (
     <header>
       <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center xl:px-20">
@@ -40,6 +47,27 @@ export function Header() {
         </Link>
 
         <NavigationBar />
+        {/* User dropdown */}
+        <Menu as="div" className="relative">
+          <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
+            <Icon.Person size={3} aria-hidden />
+            {username}
+          </MenuButton>
+
+          <MenuItems
+            anchor="bottom"
+            className="ring-opacity-5 absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black focus:outline-none"
+          >
+            <MenuItem>
+              <a
+                href="/api/logout"
+                className="font-public-sans block w-full px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
+              >
+                Logout
+              </a>
+            </MenuItem>
+          </MenuItems>
+        </Menu>
       </div>
     </header>
   );
