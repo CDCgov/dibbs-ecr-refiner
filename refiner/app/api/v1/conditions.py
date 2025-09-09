@@ -14,16 +14,6 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 router = APIRouter(prefix="/conditions")
 
 
-class GetConditionsWithAssociationResponse(BaseModel):
-    """
-    Conditions response model with association flag.
-    """
-
-    id: UUID
-    display_name: str
-    associated: bool
-
-
 class GetConditionsResponse(BaseModel):
     """
     Conditions response model.
