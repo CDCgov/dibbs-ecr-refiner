@@ -6,9 +6,10 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
 import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
+import { defineConfig } from 'eslint/config';
 
-export default tseslint.config(
-  { ignores: ['dist', 'tests/setup.ts'] },
+export default defineConfig(
+  { ignores: ['dist', 'tests/setup.ts', 'src/api'] },
   {
     extends: [
       js.configs.recommended,
