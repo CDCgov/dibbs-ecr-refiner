@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
+import userEvent from '@testing-library/user-event';
 
 // Mocks for child components and hooks
 vi.mock('../../../components/Drawer', () => ({
@@ -32,23 +33,23 @@ vi.mock('../../../components/Drawer', () => ({
 
 vi.mock('./ConditionCodeSet', () => ({
   default: ({
-    display_name,
+    conditionName,
     onAssociate,
     onDisassociate,
     highlight,
   }: {
-    display_name: string;
+    conditionName: string;
     onAssociate: () => void;
     onDisassociate: () => void;
-    highlight?: { start: number; end: number } | undefined;
+    highlight?: React.ReactNode;
   }) => (
     <div>
-      <span>{display_name}</span>
-      <button data-testid={`associate-${display_name}`} onClick={onAssociate}>
+      <span>{conditionName}</span>
+      <button data-testid={`associate-${conditionName}`} onClick={onAssociate}>
         Add
       </button>
       <button
-        data-testid={`disassociate-${display_name}`}
+        data-testid={`disassociate-${conditionName}`}
         onClick={onDisassociate}
       >
         Remove
@@ -106,31 +107,35 @@ describe('AddConditionCodeSetsDrawer', () => {
     });
   });
 
-  it('triggers onClose when close button is clicked', () => {
+  it('triggers onClose when close button is clicked', async () => {
+    const user = userEvent.setup();
     render(<AddConditionCodeSetsDrawer {...defaultProps} />);
-    fireEvent.click(screen.getByTestId('drawer-close'));
+    await user.click(screen.getByTestId('drawer-close'));
     expect(defaultProps.onClose).toHaveBeenCalledOnce();
   });
 
-  it('filters conditions when searching', () => {
+  it('filters conditions when searching', async () => {
+    const user = userEvent.setup();
     render(<AddConditionCodeSetsDrawer {...defaultProps} />);
     const searchInput = screen.getByTestId('search-input');
-    fireEvent.change(searchInput, { target: { value: 'Flu' } });
+    await user.type(searchInput, 'Flu');
     expect(screen.getByText('Flu')).toBeInTheDocument();
     expect(screen.queryByText('Asthma')).not.toBeInTheDocument();
     expect(screen.queryByText('Diabetes')).not.toBeInTheDocument();
   });
 
-  it('shows highlight when search matches a condition', () => {
+  it('shows highlight when search matches a condition', async () => {
+    const user = userEvent.setup();
     render(<AddConditionCodeSetsDrawer {...defaultProps} />);
     const searchInput = screen.getByTestId('search-input');
-    fireEvent.change(searchInput, { target: { value: 'Asthma' } });
+    await user.type(searchInput, 'Asthma');
     expect(screen.getByTestId('highlight')).toBeInTheDocument();
   });
 
-  it('calls onAssociate/onDisassociate for condition actions', () => {
+  it('calls onAssociate/onDisassociate for condition actions', async () => {
+    const user = userEvent.setup();
     render(<AddConditionCodeSetsDrawer {...defaultProps} />);
-    fireEvent.click(screen.getByTestId('associate-Asthma'));
-    fireEvent.click(screen.getByTestId('disassociate-Diabetes'));
+    await user.click(screen.getByTestId('associate-Asthma'));
+    await user.click(screen.getByTestId('associate-Diabetes'));
   });
 });
