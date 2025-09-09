@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
-from ...db.conditions.db import get_condition_by_id_db
+from ...db.conditions.db import (
+    get_condition_by_id_db,
+    get_conditions_db,
+)
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     add_custom_code_to_configuration_db,
@@ -141,6 +144,18 @@ class IncludedCondition(BaseModel):
     display_name: str
     canonical_url: str
     version: str
+    associated: bool
+
+
+class OriginalIncludedCondition(BaseModel):
+    """
+    Model for a condition that is associated with a configuration.
+    """
+
+    id: UUID
+    display_name: str
+    canonical_url: str
+    version: str
 
 
 class GetConfigurationResponse(BaseModel):
@@ -153,6 +168,7 @@ class GetConfigurationResponse(BaseModel):
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
+    original_included_conditions: list
 
 
 @router.get(
@@ -181,27 +197,44 @@ async def get_configuration(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
-    # Fetch associated conditions
-    from ...db.conditions.db import get_conditions_by_configuration_id_db
 
-    associated_conditions = await get_conditions_by_configuration_id_db(
-        config.id, db=db
-    )
-    included_conditions = [
-        IncludedCondition(
-            id=c.id,
-            display_name=c.display_name,
-            canonical_url=c.canonical_url,
-            version=c.version,
+    # Get all conditions
+    all_conditions = await get_conditions_db(db=db)
+
+    associated_conditions = set()
+    if hasattr(config, "included_conditions") and config.included_conditions:
+        for c in config.included_conditions:
+            canonical_url = None
+            version = None
+            if isinstance(c, dict):
+                canonical_url = c.get("canonical_url")
+                version = c.get("version")
+            else:
+                canonical_url = getattr(c, "canonical_url", None)
+                version = getattr(c, "version", None)
+            if canonical_url and version:
+                associated_conditions.add((canonical_url, version))
+
+    included_conditions = []
+    for cond in all_conditions:
+        is_associated = (cond.canonical_url, cond.version) in associated_conditions
+        included_conditions.append(
+            IncludedCondition(
+                id=cond.id,
+                display_name=cond.display_name,
+                canonical_url=cond.canonical_url,
+                version=cond.version,
+                associated=is_associated,
+            )
         )
-        for c in associated_conditions
-    ]
+
     return GetConfigurationResponse(
         id=config.id,
         display_name=config.name,
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
+        original_included_conditions=config.included_conditions,
     )
 
 

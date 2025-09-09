@@ -1,12 +1,5 @@
 import { describe, expect, Mock } from 'vitest';
 
-// Prevent AggregateError by globally mocking fetch and XMLHttpRequest
-beforeAll(() => {
-  global.fetch = vi.fn(() =>
-    Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
-  );
-  global.XMLHttpRequest = vi.fn();
-});
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { Configurations } from '.';
@@ -22,6 +15,13 @@ vi.mock('../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
     '../../api/configurations/configurations'
   );
+  // Provide a default mocked implementation for useCreateConfiguration
+  const useCreateConfiguration = vi.fn(() => ({
+    mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
+    isPending: false,
+    isError: false,
+    reset: vi.fn(),
+  }));
   return {
     ...actual,
     useGetConfigurations: vi.fn(() => ({
@@ -34,12 +34,6 @@ vi.mock('../../api/configurations/configurations', async () => {
       isLoading: false,
       error: null,
     })),
-    useCreateConfiguration: vi.fn(() => ({
-      mutateAsync: vi.fn(),
-      isPending: false,
-      isError: false,
-      reset: vi.fn(),
-    })),
     useGetConfiguration: vi.fn(() => ({
       data: {
         data: {
@@ -47,11 +41,16 @@ vi.mock('../../api/configurations/configurations', async () => {
           display_name: 'Anaplasmosis',
           code_sets: [], // not needed for these tests
           custom_codes: [], // not needed for these tests
+          included_conditions: [
+            { id: '1', display_name: 'Anaplasmosis', associated: true },
+            { id: 'exists-id', display_name: 'already-created', associated: false },
+          ],
         },
       },
       isLoading: false,
       isError: false,
     })),
+    useCreateConfiguration,
   };
 });
 

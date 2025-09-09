@@ -50,6 +50,11 @@ vi.mock('../../../api/configurations/configurations', async () => {
           display_name: 'COVID-19',
           code_sets: mockCodeSets,
           custom_codes: mockCustomCodes,
+          included_conditions: [
+            { id: 'covid-1', display_name: 'COVID-19', associated: true },
+            { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
+            { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
+          ],
         },
       },
       isLoading: false,
@@ -76,6 +81,17 @@ vi.mock('../../../api/conditions/conditions', async () => {
       },
       isLoading: false,
       isError: false,
+    })),
+    useGetConditions: vi.fn(() => ({
+      data: {
+        data: [
+          { id: 'covid-1', display_name: 'COVID-19' },
+          { id: 'chlamydia-1', display_name: 'Chlamydia' },
+          { id: 'gonorrhea-1', display_name: 'Gonorrhea' },
+        ],
+      },
+      isLoading: false,
+      error: null,
     })),
   };
 });

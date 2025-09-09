@@ -15,18 +15,13 @@ import {
 import { useToast } from '../../../hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
 import { highlightMatches } from '../../../utils/highlight';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { IncludedCondition } from '../../../api/schemas';
 
-type ConditionWithAssociation = {
-  id: string;
-  display_name: string;
-  canonical_url?: string;
-  version?: string;
-  associated: boolean;
-};
 type AddConditionCodeSetsDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
-  conditions: ConditionWithAssociation[];
+  conditions: IncludedCondition[];
   configurationId: string;
 };
 
@@ -94,10 +89,9 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
           });
         },
         onError: (error) => {
+          const formatError = useApiErrorFormatter();
           const errorDetail =
-            // There's a type issue where `.detail` is considered a
-            // `ValidationError[]` rather than a string.
-            error?.response?.data?.detail?.join('') ||
+            formatError(error?.response?.data?.detail) ||
             error.message ||
             'Unknown error';
           showToast({
@@ -134,52 +128,50 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
     >
       <div className="flex h-full flex-col">
         <ol className="flex-grow overflow-y-auto">
-          {filteredConditions.map(
-            (condition: ConditionWithAssociation, i: number) => {
-              const highlight = searchTerm
-                ? highlightMatches(
-                    condition.display_name,
-                    [
-                      {
-                        indices: [
-                          [
-                            condition.display_name
-                              .toLowerCase()
-                              .indexOf(searchTerm.toLowerCase()),
-                            condition.display_name
-                              .toLowerCase()
-                              .indexOf(searchTerm.toLowerCase()) +
-                              searchTerm.length -
-                              1,
-                          ],
+          {filteredConditions.map((condition: IncludedCondition, i: number) => {
+            const highlight = searchTerm
+              ? highlightMatches(
+                  condition.display_name,
+                  [
+                    {
+                      indices: [
+                        [
+                          condition.display_name
+                            .toLowerCase()
+                            .indexOf(searchTerm.toLowerCase()),
+                          condition.display_name
+                            .toLowerCase()
+                            .indexOf(searchTerm.toLowerCase()) +
+                            searchTerm.length -
+                            1,
                         ],
-                        key: 'display_name',
-                        value: condition.display_name,
-                      },
-                    ],
-                    'display_name'
-                  )
-                : undefined;
-              const key = condition.id
-                ? condition.id
-                : `${condition.display_name}-${i}`;
-              return (
-                <ConditionCodeSetListItem
-                  key={key}
-                  conditionName={condition.display_name}
-                  associated={condition.associated}
-                  configurationId={configurationId}
-                  onAssociate={async () => {
-                    await handleAssociate(condition.id);
-                  }}
-                  onDisassociate={async () => {
-                    await handleDisassociate(condition.id);
-                  }}
-                  highlight={highlight}
-                />
-              );
-            }
-          )}
+                      ],
+                      key: 'display_name',
+                      value: condition.display_name,
+                    },
+                  ],
+                  'display_name'
+                )
+              : undefined;
+            const key = condition.id
+              ? condition.id
+              : `${condition.display_name}-${i}`;
+            return (
+              <ConditionCodeSetListItem
+                key={key}
+                conditionName={condition.display_name}
+                associated={condition.associated}
+                configurationId={configurationId}
+                onAssociate={async () => {
+                  await handleAssociate(condition.id);
+                }}
+                onDisassociate={async () => {
+                  await handleDisassociate(condition.id);
+                }}
+                highlight={highlight}
+              />
+            );
+          })}
         </ol>
       </div>
     </Drawer>

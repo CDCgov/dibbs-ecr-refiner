@@ -73,6 +73,7 @@ export default function ConfigBuild() {
         <Builder
           id={id}
           code_sets={response.data.code_sets}
+          included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
         />
       </SectionContainer>
@@ -82,10 +83,15 @@ export default function ConfigBuild() {
 
 type BuilderProps = Pick<
   GetConfigurationResponse,
-  'id' | 'code_sets' | 'custom_codes'
+  'id' | 'code_sets' | 'custom_codes' | 'included_conditions'
 >;
 
-function Builder({ id, code_sets, custom_codes }: BuilderProps) {
+function Builder({
+  id,
+  code_sets,
+  custom_codes,
+  included_conditions,
+}: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
     'none'
@@ -99,23 +105,6 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
     setSelectedCodesetId(id);
     setTableView('codeset');
   }
-
-  type ConditionWithAssociation = {
-    id: string;
-    display_name: string;
-    canonical_url?: string;
-    version?: string;
-    associated: boolean;
-  };
-  const conditionsResponse: ConditionWithAssociation[] = code_sets.map(
-    (cond) => ({
-      id: cond.condition_id,
-      display_name: cond.display_name,
-      canonical_url: cond.canonical_url,
-      version: cond.version,
-      associated: true,
-    })
-  );
 
   function onCustomCodeClick() {
     setSelectedCodesetId(null);
@@ -219,7 +208,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
       <AddConditionCodeSetsDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        conditions={conditionsResponse || []}
+        conditions={included_conditions}
         configurationId={id}
       />
     </div>

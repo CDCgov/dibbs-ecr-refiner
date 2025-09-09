@@ -14,4 +14,5 @@ export interface IncludedCondition {
   display_name: string;
   canonical_url: string;
   version: string;
+  associated: boolean;
 }
