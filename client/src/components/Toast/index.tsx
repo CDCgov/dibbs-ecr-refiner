@@ -1,10 +1,9 @@
 import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
-import { ValidationError } from '../../api/schemas/validationError';
 
 type ToastProps = {
   heading: string;
-  body?: string | ValidationError[] | undefined;
+  body?: string;
   variant: 'success' | 'error';
 };
 
@@ -36,7 +35,7 @@ export function Toast({ heading, body, variant = 'success' }: ToastProps) {
           </h4>
           {body ? (
             <p className="font-public-sans truncate overflow-hidden whitespace-nowrap">
-              <>{body}</>
+              {body}
             </p>
           ) : null}
         </div>

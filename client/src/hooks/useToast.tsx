@@ -1,7 +1,6 @@
 import classNames from 'classnames';
 import { toast, ToastOptions } from 'react-toastify';
 import { Toast } from '../components/Toast';
-import { ValidationError } from '../api/schemas/validationError';
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
@@ -22,7 +21,7 @@ const globalOptions: ToastOptions = {
 
 export function useToast() {
   return (options: {
-    body?: string | ValidationError[] | undefined;
+    body?: string;
     heading?: string;
     variant?: 'success' | 'error';
     duration?: number;
