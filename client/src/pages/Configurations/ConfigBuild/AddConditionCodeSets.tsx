@@ -15,7 +15,6 @@ import {
 import { useToast } from '../../../hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
 import { highlightMatches } from '../../../utils/highlight';
-import { stringify } from 'orval';
 
 type ConditionWithAssociation = {
   id: string;
@@ -96,7 +95,9 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
         },
         onError: (error) => {
           const errorDetail =
-            stringify(error?.response?.data?.detail) ||
+            // There's a type issue where `.detail` is considered a
+            // `ValidationError[]` rather than a string.
+            error?.response?.data?.detail?.join('') ||
             error.message ||
             'Unknown error';
           showToast({
