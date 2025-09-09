@@ -117,7 +117,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
           Codes relevant to each condition are grouped together. These code sets
           are derived from the{' '}
           <Link
-            to={'https://tes.tools.aimsplatform.org'}
+            to="https://tes.tools.aimsplatform.org"
             className="text-blue-cool-60 font-bold"
           >
             TES (Terminology Exchange Service)
