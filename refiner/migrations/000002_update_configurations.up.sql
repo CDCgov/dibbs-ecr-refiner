@@ -26,8 +26,9 @@ ALTER TABLE configurations
     DROP COLUMN rxnorm_codes_additions;
 
 -- update constraints
--- this is a better constraint since it explictly ensures a configuration is tied to
--- a condition. checking that the jsonb array is greater than one isn't as sound as
--- the proposed constraint below
+-- * previously, the configurations table used a constraint named configurations_must_have_conditions
+-- to ensure at least one condition was included (jsonb_array_length(included_conditions) > 0)
+-- * this migration removes that constraint in favor of requiring an explicit condition_id foreign key
+-- which more directly and reliably ties every configuration to a condition.
 ALTER TABLE configurations
-    DROP CONSTRAINT check_included_conditions;
+    DROP CONSTRAINT configurations_must_have_conditions;
