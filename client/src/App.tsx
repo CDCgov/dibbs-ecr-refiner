@@ -10,8 +10,6 @@ import ConfigBuild from './pages/Configurations/ConfigBuild';
 import ConfigTest from './pages/Configurations/ConfigTest';
 import ConfigActivate from './pages/Configurations/ConfigActivate';
 
-
-
 function App() {
   const [user, isLoading] = useLogin();
   if (isLoading) {

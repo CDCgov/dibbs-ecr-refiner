@@ -4,7 +4,7 @@ import CdcLogo from '../../assets/cdc-logo.svg';
 
 import NavigationBar from '../NavigationBar';
 import { Icon } from '@trussworks/react-uswds';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,7 +17,7 @@ export function Layout({ username, children }: LayoutProps) {
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
-      <Header username={username}/>
+      <Header username={username} />
       <main
         id="main-content"
         className="bg-primary-container flex grow flex-col"
@@ -50,19 +50,19 @@ export function Header({ username }: HeaderProps) {
 
         {/* User dropdown */}
         <Menu as="div" className="relative">
-          <MenuButton className="font-public-sans flex items-center gap-2 text-white px-3 py-2 rounded hover:bg-blue-cool-70 focus:outline-none">
+          <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
             <Icon.Person size={3} aria-hidden />
             {username}
           </MenuButton>
 
           <MenuItems
-              anchor="bottom"
-              className="absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            anchor="bottom"
+            className="ring-opacity-5 absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black focus:outline-none"
           >
             <MenuItem>
               <a
-                  href="/api/logout"
-                  className="font-public-sans block w-full px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
+                href="/api/logout"
+                className="font-public-sans block w-full px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
               >
                 Logout
               </a>
