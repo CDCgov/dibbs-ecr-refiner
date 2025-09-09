@@ -168,7 +168,6 @@ class GetConfigurationResponse(BaseModel):
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
-    original_included_conditions: list
 
 
 @router.get(
@@ -234,7 +233,6 @@ async def get_configuration(
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
-        original_included_conditions=config.included_conditions,
     )
 
 

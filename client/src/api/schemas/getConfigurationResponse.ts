@@ -18,5 +18,4 @@ export interface GetConfigurationResponse {
   code_sets: DbTotalConditionCodeCount[];
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];
-  original_included_conditions: unknown[];
 }
