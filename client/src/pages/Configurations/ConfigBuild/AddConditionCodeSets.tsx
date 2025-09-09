@@ -95,11 +95,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
         },
         onError: (error) => {
           const errorDetail =
-            // There's a type issue where `.detail` is considered a
-            // `ValidationError[]` rather than a string.
-            error?.response?.data?.detail?.join('') ||
-            error.message ||
-            'Unknown error';
+            error?.response?.data?.detail || error.message || 'Unknown error';
           showToast({
             variant: 'error',
             heading: 'Error removing condition',
