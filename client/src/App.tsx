@@ -26,7 +26,7 @@ function App() {
   }
 
   return (
-    <Layout>
+    <Layout username={user.username}>
       <ToastContainer />
       <Routes>
         {/* this is the home page for authenticated users */}
