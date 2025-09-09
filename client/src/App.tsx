@@ -10,6 +10,8 @@ import ConfigBuild from './pages/Configurations/ConfigBuild';
 import ConfigTest from './pages/Configurations/ConfigTest';
 import ConfigActivate from './pages/Configurations/ConfigActivate';
 
+
+
 function App() {
   const [user, isLoading] = useLogin();
   if (isLoading) {
@@ -26,7 +28,7 @@ function App() {
   }
 
   return (
-    <Layout>
+    <Layout username={user.username}>
       <ToastContainer />
       <Routes>
         {/* this is the home page for authenticated users */}

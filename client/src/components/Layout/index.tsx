@@ -1,24 +1,23 @@
-import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 
 import NavigationBar from '../NavigationBar';
-import { getUser } from '../../api/user/user.ts';
-import type { GetUser200 } from '../../api/schemas';
 import { Icon } from '@trussworks/react-uswds';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 
 interface LayoutProps {
   children: React.ReactNode;
+  username: string;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ username, children }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
-      <Header />
+      <Header username={username}/>
       <main
         id="main-content"
         className="bg-primary-container flex grow flex-col"
@@ -30,34 +29,11 @@ export function Layout({ children }: LayoutProps) {
   );
 }
 
-export function Header() {
-  const [currentUser, setCurrentUser] = useState<GetUser200>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+interface HeaderProps {
+  username: string;
+}
 
-  useEffect(() => {
-    getUser()
-      .then((response) => {
-        setCurrentUser(response.data);
-      })
-      .catch((err) => {
-        console.error('Failed to load user', err);
-      });
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
+export function Header({ username }: HeaderProps) {
   return (
     <header>
       <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center xl:px-20">
@@ -73,27 +49,26 @@ export function Header() {
         <NavigationBar />
 
         {/* User dropdown */}
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((prev) => !prev)}
-            className="font-public-sans hover:bg-blue-cool-70 flex items-center gap-2 rounded px-3 py-2 text-white focus:outline-none"
-          >
+        <Menu as="div" className="relative">
+          <MenuButton className="font-public-sans flex items-center gap-2 text-white px-3 py-2 rounded hover:bg-blue-cool-70 focus:outline-none">
             <Icon.Person size={3} aria-hidden />
-            {currentUser ? currentUser.username : 'Loading...'}
-          </button>
+            {username}
+          </MenuButton>
 
-          {menuOpen && (
-            <div className="ring-opacity-5 absolute right-0 mt-2 w-40 overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black">
+          <MenuItems
+              anchor="bottom"
+              className="absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+          >
+            <MenuItem>
               <a
-                href="/api/logout"
-                className="font-public-sans block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  href="/api/logout"
+                  className="font-public-sans block w-full px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
               >
                 Logout
               </a>
-            </div>
-          )}
-        </div>
+            </MenuItem>
+          </MenuItems>
+        </Menu>
       </div>
     </header>
   );
