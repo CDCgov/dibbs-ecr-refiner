@@ -19,3 +19,8 @@ clean:
 [doc('Runs the seeding script to seed the database with condition data')]
 seed:
     docker compose run --rm seed
+
+[group('db')]
+[doc('Runs a full database refresh (wipe, migrate, seed)')]
+refresh:
+    just db clean && just migrate local && just db seed
