@@ -19,15 +19,15 @@ ALTER TABLE configurations
 -- since we're not using these to store user driven "custom codes" there's
 -- no reason to keep them around
 ALTER TABLE configurations
-    DROP COLUMN IF EXISTS description,
-    DROP COLUMN IF EXISTS loinc_codes_additions,
-    DROP COLUMN IF EXISTS snomed_codes_additions,
-    DROP COLUMN IF EXISTS icd10_codes_additions,
-    DROP COLUMN IF EXISTS rxnorm_codes_additions;
+    DROP COLUMN description,
+    DROP COLUMN loinc_codes_additions,
+    DROP COLUMN snomed_codes_additions,
+    DROP COLUMN icd10_codes_additions,
+    DROP COLUMN rxnorm_codes_additions;
 
 -- update constraints
 -- this is a better constraint since it explictly ensures a configuration is tied to
 -- a condition. checking that the jsonb array is greater than one isn't as sound as
 -- the proposed constraint below
 ALTER TABLE configurations
-    DROP CONSTRAINT IF EXISTS check_included_conditions;
+    DROP CONSTRAINT check_included_conditions;
