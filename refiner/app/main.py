@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, FastAPI, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from psycopg.rows import dict_row
@@ -149,6 +150,7 @@ if ENVIRONMENT["ENV"] == "local":
     )
 
 app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
 
 @app.middleware("http")
