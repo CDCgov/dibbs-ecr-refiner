@@ -235,9 +235,8 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Next: Test configuration')).toBeInTheDocument();
 
-    // make sure we get a success toast
-    expect((await screen.findAllByText('Anaplasmosis')).length).toBeGreaterThan(
-      0
-    );
+    expect(
+      await screen.findByText('New configuration created')
+    ).toBeInTheDocument();
   });
 });
