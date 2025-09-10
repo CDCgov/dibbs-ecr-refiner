@@ -18,11 +18,12 @@ import {
   ModalRef,
   ComboBoxRef,
 } from '@trussworks/react-uswds';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
+import { useSearch } from '../../hooks/useSearch';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -46,6 +47,13 @@ interface ConfigurationsTable {
 
 export function Configurations() {
   const { data: response, isLoading } = useGetConfigurations();
+
+  const configs = useMemo(() => response?.data ?? [], [response?.data]);
+
+  const { searchText, setSearchText, results } = useSearch(configs, {
+    keys: [{ name: 'name', weight: 1 }],
+  });
+
   const modalRef = useRef<ModalRef>(null);
 
   if (isLoading || !response?.data) return 'Loading...';
@@ -65,6 +73,7 @@ export function Configurations() {
           id="search-configurations"
           name="search"
           type="text"
+          onChange={(e) => setSearchText(e.target.value)}
         />
         <ModalToggleButton
           modalRef={modalRef}
@@ -76,12 +85,7 @@ export function Configurations() {
         <NewConfigModal modalRef={modalRef} />
       </div>
       <ConfigurationsTable
-        columns={{ name: 'Reportable condition', status: 'Status' }}
-        data={response.data.map((config) => ({
-          id: config.id,
-          name: config.name,
-          status: config.is_active ? 'on' : 'off',
-        }))}
+        data={searchText ? results.map((r) => r.item) : configs}
       />
     </section>
   );

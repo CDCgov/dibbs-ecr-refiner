@@ -1,26 +1,12 @@
 import { Table as UswdsTable } from '@trussworks/react-uswds';
 import { StatusPill } from '../StatusPill';
 import { useNavigate } from 'react-router';
-
-interface TableColumns {
-  [key: string]: string;
-}
-
-interface TableItem {
-  name: string;
-  status: 'on' | 'off';
-  id: string;
-}
-
+import { GetConfigurationsResponse } from '../../api/schemas';
 interface ConfigurationsTableProps {
-  columns: TableColumns;
-  data: TableItem[];
+  data: GetConfigurationsResponse[];
 }
 
-export function ConfigurationsTable({
-  columns,
-  data,
-}: ConfigurationsTableProps) {
+export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   const navigate = useNavigate();
 
   if (!data.length) {
@@ -28,42 +14,31 @@ export function ConfigurationsTable({
       <UswdsTable stackedStyle="default">
         <thead>
           <tr>
-            <th scope="col">{columns['name']}</th>
+            <th scope="col">REPORTABLE CONDITION</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <th data-label={columns['name']} scope="row">
-              No configurations available
-            </th>
+            <th scope="row">No configurations available</th>
           </tr>
         </tbody>
       </UswdsTable>
     );
   }
 
-  // README: This maps the keys of the `data` to a list that can be  so it can be used to create a
-  // Table Headers row.
-  const dataColumnsMap = Object.keys(data[0]).filter((k) => k !== 'id');
-
   return (
     <UswdsTable stackedStyle="default">
       <thead>
         <tr>
-          {dataColumnsMap.map((k, idx) => {
-            return (
-              <th key={idx} scope="col">
-                {columns[k]}
-              </th>
-            );
-          })}
+          <th scope="col">REPORTABLE CONDITION</th>
+          <th scope="col">STATUS</th>
         </tr>
       </thead>
       <tbody>
-        {data.map(({ name, id, status }, idx) => {
+        {data.map(({ name, id, is_active }) => {
           return (
             <tr
-              key={idx}
+              key={id}
               onClick={() => void navigate(`/configurations/${id}/build`)}
               tabIndex={0}
               onKeyDown={(e) => {
@@ -73,11 +48,11 @@ export function ConfigurationsTable({
               }}
               aria-label={`View configuration for ${name}`}
             >
-              <th data-label={columns['name']} scope="row">
+              <td className="!font-bold" scope="row">
                 {name}
-              </th>
-              <td data-label={columns['status']}>
-                <StatusPill status={status} />
+              </td>
+              <td>
+                <StatusPill status={is_active ? 'on' : 'off'} />
               </td>
             </tr>
           );
