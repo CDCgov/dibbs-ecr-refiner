@@ -37,6 +37,15 @@ const ConditionCodeSetListItem: React.FC<ConditionCodeSetProps> = ({
       className="flex h-16 items-center justify-between rounded-md p-4 hover:bg-white"
       role="listitem"
       aria-label={conditionName}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (associated) {
+          onDisassociate();
+        } else {
+          onAssociate();
+        }
+        setShowButton(true);
+      }}
       onMouseEnter={() => setShowButton(true)}
       onMouseLeave={() => {
         if (!associated) setShowButton(false);
@@ -66,6 +75,7 @@ const ConditionCodeSetListItem: React.FC<ConditionCodeSetProps> = ({
           aria-label={
             associated ? `Remove ${conditionName}` : `Add ${conditionName}`
           }
+          className="!w-[80px]"
           onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
             e.stopPropagation();
             if (associated) {

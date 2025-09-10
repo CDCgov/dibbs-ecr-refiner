@@ -98,7 +98,16 @@ describe('AddConditionCodeSetsDrawer', () => {
   });
 
   it('renders drawer and condition names', () => {
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    render(
+      <AddConditionCodeSetsDrawer
+        {...defaultProps}
+        conditions={mockConditions.map((condition) => ({
+          ...condition,
+          canonical_url: '',
+          version: '',
+        }))}
+      />
+    );
     expect(screen.getByTestId('drawer-title').textContent).toMatch(
       /Add condition code sets/
     );
@@ -109,14 +118,32 @@ describe('AddConditionCodeSetsDrawer', () => {
 
   it('triggers onClose when close button is clicked', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    render(
+      <AddConditionCodeSetsDrawer
+        {...defaultProps}
+        conditions={mockConditions.map((condition) => ({
+          ...condition,
+          canonical_url: '',
+          version: '',
+        }))}
+      />
+    );
     await user.click(screen.getByTestId('drawer-close'));
     expect(defaultProps.onClose).toHaveBeenCalledOnce();
   });
 
   it('filters conditions when searching', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    render(
+      <AddConditionCodeSetsDrawer
+        {...defaultProps}
+        conditions={mockConditions.map((condition) => ({
+          ...condition,
+          canonical_url: '',
+          version: '',
+        }))}
+      />
+    );
     const searchInput = screen.getByTestId('search-input');
     await user.type(searchInput, 'Flu');
     expect(screen.getByText('Flu')).toBeInTheDocument();
@@ -126,7 +153,16 @@ describe('AddConditionCodeSetsDrawer', () => {
 
   it('shows highlight when search matches a condition', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    render(
+      <AddConditionCodeSetsDrawer
+        {...defaultProps}
+        conditions={mockConditions.map((condition) => ({
+          ...condition,
+          canonical_url: '',
+          version: '',
+        }))}
+      />
+    );
     const searchInput = screen.getByTestId('search-input');
     await user.type(searchInput, 'Asthma');
     expect(screen.getByTestId('highlight')).toBeInTheDocument();
@@ -134,7 +170,16 @@ describe('AddConditionCodeSetsDrawer', () => {
 
   it('calls onAssociate/onDisassociate for condition actions', async () => {
     const user = userEvent.setup();
-    render(<AddConditionCodeSetsDrawer {...defaultProps} />);
+    render(
+      <AddConditionCodeSetsDrawer
+        {...defaultProps}
+        conditions={mockConditions.map((condition) => ({
+          ...condition,
+          canonical_url: '',
+          version: '',
+        }))}
+      />
+    );
     await user.click(screen.getByTestId('associate-Asthma'));
     await user.click(screen.getByTestId('associate-Diabetes'));
   });

@@ -91,9 +91,7 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
         },
         onError: (error) => {
           const errorDetail =
-            formatError(error?.response?.data?.detail) ||
-            error.message ||
-            'Unknown error';
+            formatError(error) || error.message || 'Unknown error';
           showToast({
             variant: 'error',
             heading: 'Error removing condition',

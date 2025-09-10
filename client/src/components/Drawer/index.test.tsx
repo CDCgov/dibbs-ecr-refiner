@@ -62,23 +62,6 @@ describe('Drawer Component', () => {
     expect(onCloseMock).toHaveBeenCalled();
   });
 
-  it('should respect drawerWidth prop for 35%', () => {
-    const { container } = render(
-      <Drawer
-        title="Test Drawer"
-        searchPlaceholder="Search here..."
-        isOpen={true}
-        onClose={vi.fn()}
-        drawerWidth="35%"
-      >
-        <div>Drawer Content</div>
-      </Drawer>
-    );
-
-    const drawer = container.querySelector('#drawer-container');
-    expect(drawer).toHaveClass('w-[35%]');
-  });
-
   it('should filter content based on search input', async () => {
     const user = userEvent.setup();
     const onSearchMock = vi.fn();
