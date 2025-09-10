@@ -27,6 +27,7 @@ import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
   useDeleteCustomCodeFromConfiguration,
+  useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
@@ -42,6 +43,7 @@ import { FuseResultMatch } from 'fuse.js';
 import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -111,6 +113,42 @@ function Builder({
     setTableView('custom');
   }
 
+  const { mutateAsync: disassociateMutation } =
+    useDisassociateConditionWithConfiguration();
+
+  const showToast = useToast();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+
+  async function handleDisassociateCondition(conditionId: string) {
+    await disassociateMutation(
+      {
+        configurationId: id,
+        conditionId,
+      },
+      {
+        onSuccess: async (resp) => {
+          showToast({
+            heading: 'Condition removed',
+            body: resp.data.condition_name,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(id),
+          });
+        },
+        onError: (error) => {
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error removing condition',
+            body: errorDetail,
+          });
+        },
+      }
+    );
+  }
+
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -132,23 +170,45 @@ function Builder({
           <OptionsListContainer>
             <OptionsList>
               {code_sets.map((codeSet) => (
-                <li key={codeSet.display_name}>
+                <li
+                  key={codeSet.display_name}
+                  className={classNames(
+                    'group relative flex items-center hover:bg-stone-50',
+                    {
+                      'bg-white': selectedCodesetId === codeSet.condition_id,
+                    }
+                  )}
+                >
                   <button
                     className={classNames(
-                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                      {
-                        'bg-white': selectedCodesetId === codeSet.condition_id,
-                      }
+                      'flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
                     )}
                     onClick={() => onCodesetClick(codeSet.condition_id)}
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
                     aria-pressed={selectedCodesetId === codeSet.condition_id}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Delete' || e.key === 'Backspace') {
+                        e.preventDefault();
+                        await handleDisassociateCondition(codeSet.condition_id);
+                      }
+                    }}
                   >
-                    <span>{codeSet.display_name}</span>
-                    <span>{codeSet.total_codes}</span>
+                    <span className="">{codeSet.display_name}</span>
+                    <span className="">{codeSet.total_codes}</span>
                   </button>
+                  <span
+                    className="text-gray-cool-40 show-delete ml-2 hidden cursor-pointer border-none p-0 pr-3 group-hover:inline-block group-hover:bg-stone-50 group-focus:inline-block hover:text-red-700 focus:outline focus:outline-indigo-500"
+                    aria-label={`Delete codeset ${codeSet.display_name}`}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await handleDisassociateCondition(codeSet.condition_id);
+                    }}
+                    role="button"
+                  >
+                    <Icon.Delete size={3} aria-hidden />
+                  </span>
                 </li>
               ))}
             </OptionsList>
