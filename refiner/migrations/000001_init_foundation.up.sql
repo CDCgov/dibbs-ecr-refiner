@@ -1,4 +1,12 @@
--- table for storing groupers with associated codes
+-- both the groupers and filters tables are from a previous data model
+-- of a SQLite3 db that leveraged Reporting Specification Grouper (RSG)
+-- codes rather than their parent Condition Grouper (CG) codes
+--
+-- they will eventually be removed and are only here to keep the independent
+-- testing working while we build out the functionality to support the features
+-- we want which will be configuration + condigtion grouper sets of codes
+
+-- table for storing groupers (RSG) with associated codes
 CREATE TABLE groupers (
     condition TEXT PRIMARY KEY,           -- SNOMED code for the condition
     display_name TEXT,                    -- the display name of the condition
@@ -8,7 +16,7 @@ CREATE TABLE groupers (
     rxnorm_codes TEXT DEFAULT '[]'        -- JSON array of RxNorm codes
 );
 
--- table for storing user-defined filters
+-- table for storing user-defined filters (this was renamed to "configurations")
 CREATE TABLE filters (
     condition TEXT PRIMARY KEY,           -- Links to condition_code in groupers
     display_name TEXT,                    -- the display name of the condition
@@ -19,11 +27,11 @@ CREATE TABLE filters (
     included_groupers TEXT DEFAULT '[]'   -- JSON array of grouper condition codes
 );
 
--- new stuff --
+-- the first draft data model from the /database directory --
+-- this model centered around activations being a look up table with
+-- computed codes for fast RR -> RC SNOMED code -> Configuration -> outputs
 
--- drop old objects if they exist, using IF EXISTS to prevent errors on first run.
--- the order is important to respect dependencies.
-
+-- it will likely evolve over time but this was the first pass
 
 -- this table stores a list of known jurisdictions
 -- * we may want to prepopulate this with a list from APHL that would

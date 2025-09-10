@@ -18,7 +18,16 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
         list[Condition]: List of conditions.
     """
     query = """
-            SELECT *
+            SELECT
+                id,
+                display_name,
+                canonical_url,
+                version,
+                child_rsg_snomed_codes,
+                snomed_codes,
+                loinc_codes,
+                icd10_codes,
+                rxnorm_codes
             FROM conditions
             WHERE version = '2.0.0'
             ORDER BY display_name ASC;
@@ -42,11 +51,20 @@ async def get_condition_by_id_db(
     """
 
     query = """
-        SELECT *
-        FROM conditions
-        WHERE version = '2.0.0'
-        AND id = %s
-        """
+            SELECT
+                id,
+                canonical_url,
+                display_name,
+                version,
+                child_rsg_snomed_codes,
+                snomed_codes,
+                loinc_codes,
+                icd10_codes,
+                rxnorm_codes
+            FROM conditions
+            WHERE version = '2.0.0'
+            AND id = %s
+            """
     params = (id,)
 
     async with db.get_connection() as conn:
@@ -117,7 +135,7 @@ async def get_condition_codes_by_condition_id_db(
             ) t
             WHERE code IS NOT NULL
             ORDER BY system, code;
-    """
+            """
     params = (id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
