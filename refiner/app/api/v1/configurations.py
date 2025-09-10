@@ -274,7 +274,7 @@ async def associate_condition_codeset_with_configuration(
     body: AssociateCodesetInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> dict:
+) -> AssociateCodesetResponse:
     """
     Associate a specified code set with the given configuration.
 
@@ -290,7 +290,7 @@ async def associate_condition_codeset_with_configuration(
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
-        dict: ID of updated configuration, the full list of included conditions,
+        AssociateCodesetResponse: ID of updated configuration, the full list of included conditions,
               and the condition_name
     """
 
@@ -344,7 +344,7 @@ async def remove_condition_codeset_from_configuration(
     condition_id: UUID,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> dict:
+) -> AssociateCodesetResponse:
     """
     Remove a specified code set from the given configuration.
 
@@ -361,7 +361,7 @@ async def remove_condition_codeset_from_configuration(
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
-        dict: ID of updated configuration and the full list
+        AssociateCodesetResponse: ID of updated configuration and the full list
         of included conditions plus condition_name
     """
     db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
@@ -532,6 +532,7 @@ async def add_custom_code(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
+        included_conditions=getattr(updated_config, "included_conditions", []),
         custom_codes=updated_config.custom_codes,
     )
 
@@ -612,6 +613,7 @@ async def delete_custom_code(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
+        included_conditions=getattr(updated_config, "included_conditions", []),
         custom_codes=updated_config.custom_codes,
     )
 
@@ -776,5 +778,6 @@ async def edit_custom_code(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
+        included_conditions=getattr(updated_config, "included_conditions", []),
         custom_codes=updated_config.custom_codes,
     )

@@ -299,7 +299,7 @@ Raises:
     HTTPException: 500 if configuration is cannot be updated
 
 Returns:
-    dict: ID of updated configuration, the full list of included conditions,
+    AssociateCodesetResponse: ID of updated configuration, the full list of included conditions,
           and the condition_name
  * @summary Associate Condition Codeset With Configuration
  */
@@ -378,7 +378,7 @@ Raises:
     HTTPException: 500 if configuration is cannot be updated
 
 Returns:
-    dict: ID of updated configuration and the full list
+    AssociateCodesetResponse: ID of updated configuration and the full list
     of included conditions plus condition_name
  * @summary Remove Condition Codeset From Configuration
  */
