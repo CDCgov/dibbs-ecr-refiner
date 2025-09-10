@@ -118,7 +118,7 @@ async def create_configuration(
 
     # check that there isn't already a config for the condition + JD
     if not await is_config_valid_to_insert_db(
-        condition_name=condition.display_name, jurisidiction_id=jd, db=db
+        condition_id=condition.id, jurisdiction_id=jd, db=db
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

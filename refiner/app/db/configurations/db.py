@@ -6,66 +6,75 @@ from pydantic import BaseModel
 
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import DbConfiguration, DbConfigurationCustomCode
+from .model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+)
+
+# NOTE: the db table for configurations has a family_id field (for future versioning/families),
+# but this is intentionally omitted from the pydantic models and sql queries for now.
+# if/when versioning is fully implemented, we can decide exactly how we'll tackle it
+
+EMPTY_JSONB = Jsonb([])
 
 
 async def insert_configuration_db(
-    condition: DbCondition, jurisdiction_id: str, db: AsyncDatabaseConnection
+    condition: DbCondition,
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
     Inserts a configuration into the database.
+
+    The `name` field is always set to the display_name of the associated condition at creation time,
+    for easier display and searching. The authoritative clinical context is still given by `condition_id`.
+
+    family_id is omitted from the insert and assigned automatically by the DB sequence.
     """
 
     query = """
     INSERT INTO configurations (
-        version,
         jurisdiction_id,
+        condition_id,
         name,
-        description,
         included_conditions,
-        loinc_codes_additions,
-        snomed_codes_additions,
-        icd10_codes_additions,
-        rxnorm_codes_additions,
         custom_codes,
+        local_codes,
         sections_to_include,
-        cloned_from_configuration_id
+        cloned_from_configuration_id,
+        version
     )
     VALUES (
         %s,
         %s,
         %s,
-        %s,
-        %s::jsonb,
-        %s::jsonb,
-        %s::jsonb,
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
         %s::text[],
+        %s,
         %s
     )
     RETURNING
         id,
-        family_id,
-        jurisdiction_id,
         name,
-        description,
+        jurisdiction_id,
+        condition_id,
         included_conditions,
-        loinc_codes_additions,
-        snomed_codes_additions,
-        icd10_codes_additions,
-        rxnorm_codes_additions,
         custom_codes,
+        local_codes,
         sections_to_include,
-        cloned_from_configuration_id
+        cloned_from_configuration_id,
+        version
     """
 
     params = (
-        1,  # version
         jurisdiction_id,
+        # always link a configuration to a primary condition
+        condition.id,
+        # always set name to condition display name
         condition.display_name,
-        condition.display_name,
+        # included_conditions: always start with primary
         Jsonb(
             [
                 {
@@ -73,14 +82,17 @@ async def insert_configuration_db(
                     "version": condition.version,
                 }
             ]
-        ),  # included_conditions
-        Jsonb([]),  # loinc_codes_additions
-        Jsonb([]),  # snomed_codes_additions
-        Jsonb([]),  # icd10_codes_additions
-        Jsonb([]),  # rxnorm_codes_additions
-        Jsonb([]),  # custom_codes
-        [""],  # sections_to_include
-        None,  # cloned_from_configuration_id
+        ),
+        # custom_codes
+        EMPTY_JSONB,
+        # local_codes
+        EMPTY_JSONB,
+        # sections_to_include (empty array)
+        [""],
+        # cloned_from_configuration_id
+        None,
+        # version (start at 1 for new configs)
+        1,
     )
 
     async with db.get_connection() as conn:
@@ -95,25 +107,24 @@ async def get_configurations_db(
     """
     Fetch all configurations from the DB for a given jurisdiction.
     """
+
     query = """
         SELECT
             id,
-            family_id,
-            jurisdiction_id,
             name,
-            description,
+            jurisdiction_id,
+            condition_id,
             included_conditions,
-            loinc_codes_additions,
-            snomed_codes_additions,
-            icd10_codes_additions,
-            rxnorm_codes_additions,
             custom_codes,
+            local_codes,
             sections_to_include,
-            cloned_from_configuration_id
+            cloned_from_configuration_id,
+            version
         FROM configurations
         WHERE jurisdiction_id = %s
         ORDER BY name asc;
         """
+
     params = (jurisdiction_id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
@@ -127,30 +138,29 @@ async def get_configuration_by_id_db(
     """
     Fetch a configuration by the given ID.
     """
+
     query = """
         SELECT
             id,
-            family_id,
-            jurisdiction_id,
             name,
-            description,
+            jurisdiction_id,
+            condition_id,
             included_conditions,
-            loinc_codes_additions,
-            snomed_codes_additions,
-            icd10_codes_additions,
-            rxnorm_codes_additions,
             custom_codes,
+            local_codes,
             sections_to_include,
-            cloned_from_configuration_id
+            cloned_from_configuration_id,
+            version
         FROM configurations
         WHERE id = %s
         AND jurisdiction_id = %s
-        ORDER BY name asc;
         """
+
     params = (
         id,
         jurisdiction_id,
     )
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
             await cur.execute(query, params)
@@ -158,21 +168,24 @@ async def get_configuration_by_id_db(
 
 
 async def is_config_valid_to_insert_db(
-    condition_name: str, jurisidiction_id: str, db: AsyncDatabaseConnection
+    condition_id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> bool:
     """
     Query the database to check if a configuration can be created. If a config for a condition already exists, returns False.
     """
+
     query = """
         SELECT id
         from configurations
-        WHERE name = %s
+        WHERE condition_id = %s
         AND jurisdiction_id = %s
         """
+
     params = (
-        condition_name,
-        jurisidiction_id,
+        condition_id,
+        jurisdiction_id,
     )
+
     async with db.get_connection() as conn:
         async with conn.cursor() as cur:
             await cur.execute(query, params)
@@ -189,6 +202,8 @@ async def associate_condition_codeset_with_configuration_db(
 ) -> DbConfiguration | None:
     """
     Given a condition, associate its set of codes with the specified configuration. Prevents the addition of duplicate conditions.
+
+    NOTE: If the primary condition ever changes, you should also update the `name` field to match the new condition's display_name.
 
     Args:
         config (DbConfiguration): The configuration
@@ -220,10 +235,21 @@ async def associate_condition_codeset_with_configuration_db(
                 )
             ) s
             )
-            FROM new_condition nc
             WHERE id = %s
-            RETURNING *;
+            RETURNING
+                id,
+                name,
+                jurisdiction_id,
+                condition_id,
+                included_conditions,
+                custom_codes,
+                local_codes,
+                sections_to_include,
+                cloned_from_configuration_id,
+                version
+            ;
             """
+
     new_condition = Jsonb(
         [{"canonical_url": condition.canonical_url, "version": condition.version}]
     )
@@ -350,6 +376,7 @@ async def get_total_condition_code_counts_by_configuration_db(
             GROUP BY c.id, c.display_name
             ORDER BY c.display_name;
             """
+
     params = (config_id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
@@ -366,11 +393,23 @@ async def add_custom_code_to_configuration_db(
     """
     Given a config, adds a user-defined custom code to the configuration.
     """
+
     query = """
             UPDATE configurations
             SET custom_codes = %s::jsonb
             WHERE id = %s
-            RETURNING *;
+            RETURNING
+                id,
+                name,
+                jurisdiction_id,
+                condition_id,
+                included_conditions,
+                custom_codes,
+                local_codes,
+                sections_to_include,
+                cloned_from_configuration_id,
+                version
+            ;
             """
 
     custom_codes = config.custom_codes
@@ -409,7 +448,18 @@ async def delete_custom_code_from_configuration_db(
             UPDATE configurations
             SET custom_codes = %s::jsonb
             WHERE id = %s
-            RETURNING *;
+            RETURNING
+                id,
+                name,
+                jurisdiction_id,
+                condition_id,
+                included_conditions,
+                custom_codes,
+                local_codes,
+                sections_to_include,
+                cloned_from_configuration_id,
+                version
+            ;
             """
 
     updated_custom_codes = [
@@ -439,7 +489,18 @@ async def edit_custom_code_from_configuration_db(
             UPDATE configurations
             SET custom_codes = %s::jsonb
             WHERE id = %s
-            RETURNING *;
+            RETURNING
+                id,
+                name,
+                jurisdiction_id,
+                condition_id,
+                included_conditions,
+                custom_codes,
+                local_codes,
+                sections_to_include,
+                cloned_from_configuration_id,
+                version
+            ;
             """
 
     json_codes = [

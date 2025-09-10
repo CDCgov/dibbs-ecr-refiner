@@ -14,6 +14,7 @@ from ...core.models.types import XMLFiles
 from ...db.connection import DatabaseConnection
 from ...db.pool import AsyncDatabaseConnection
 from ..file_io import read_json_asset
+from ..terminology import ProcessedConfiguration
 from .grouper_utils import (
     get_condition_codes_xpath,
     get_processed_groupers_from_condition_codes,
@@ -269,6 +270,7 @@ def process_rr(xml_files: XMLFiles) -> ProcessedRR:
 def _refine_eicr(
     xml_files: XMLFiles,
     condition_codes_xpath: str,
+    processed_configuration: ProcessedConfiguration | None = None,
     sections_to_include: list[str] | None = None,
 ) -> str:
     """
@@ -283,6 +285,8 @@ def _refine_eicr(
         xml_files: The XMLFiles container with the eICR document to refine.
         sections_to_include: Optional list of section LOINC codes to preserve.
         condition_codes_xpath: The xpath of the condition codes
+        processed_configuration: Optional Configuration based set() of all codes from list[DbCondition] and
+            DbConfiguration.
 
     Returns:
         str: The refined eICR XML document as a string.
@@ -314,6 +318,13 @@ def _refine_eicr(
         # _process_section
         version: Literal["1.1"] = "1.1"
 
+        # use configuration-based xpath if available
+        xpath_to_use = (
+            processed_configuration.build_xpath()
+            if processed_configuration is not None
+            else condition_codes_xpath
+        )
+
         for section_code, section_config in REFINER_DETAILS["sections"].items():
             # skip if in sections_to_include (preserve unmodified)
             if sections_to_include and section_code in sections_to_include:
@@ -323,9 +334,7 @@ def _refine_eicr(
             if section is None:
                 continue
 
-            _process_section(
-                section, condition_codes_xpath, namespaces, section_config, version
-            )
+            _process_section(section, xpath_to_use, namespaces, section_config, version)
 
         # format and return the result
         return etree.tostring(validated_message, encoding="unicode")
