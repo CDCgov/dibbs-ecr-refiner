@@ -28,7 +28,7 @@ vi.mock('../../api/configurations/configurations', async () => {
       error: null,
     })),
     useCreateConfiguration: vi.fn(() => ({
-      mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
+      mutate: vi.fn().mockResolvedValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),
@@ -98,7 +98,7 @@ describe('Configurations Page', () => {
     const user = userEvent.setup();
 
     // Mock the mutation to trigger onError
-    const mockMutateAsync = vi.fn().mockImplementation(
+    const mockMutate = vi.fn().mockImplementation(
       (
         _: { data: { condition_id: string } },
         options: {
@@ -115,7 +115,7 @@ describe('Configurations Page', () => {
     );
 
     (useCreateConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: mockMutateAsync,
+      mutate: mockMutate,
       isPending: false,
       isError: false,
       reset: vi.fn(),
@@ -151,7 +151,7 @@ describe('Configurations Page', () => {
       name: 'Anaplasmosis',
     };
 
-    const mockMutateAsync = vi.fn().mockImplementation(
+    const mockMutate = vi.fn().mockImplementation(
       (
         _: { data: { condition_id: string } },
         options: {
@@ -168,7 +168,7 @@ describe('Configurations Page', () => {
 
     // navigate to reportable conditions
     (useCreateConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: mockMutateAsync,
+      mutate: mockMutate,
       data: { data: response },
       isLoading: false,
       isError: false,

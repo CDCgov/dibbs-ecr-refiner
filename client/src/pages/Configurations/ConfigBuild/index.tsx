@@ -248,7 +248,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
 }: CustomCodesDetailProps) {
-  const { mutateAsync: deleteCode } = useDeleteCustomCodeFromConfiguration();
+  const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
     useState<DbConfigurationCustomCode | null>(null);
   const queryClient = useQueryClient();
@@ -292,8 +292,8 @@ function CustomCodesDetail({
                 <button
                   className="!text-blue-cool-50 !no-underline hover:!cursor-pointer hover:!underline"
                   aria-label={`Delete custom code ${customCode.name}`}
-                  onClick={async () => {
-                    await deleteCode(
+                  onClick={() => {
+                    deleteCode(
                       {
                         code: customCode.code,
                         system: customCode.system,
