@@ -201,7 +201,7 @@ describe('Config builder page', () => {
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockReturnValue({ data: {} }),
+      mutate: vi.fn().mockReturnValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),
@@ -256,7 +256,7 @@ describe('Config builder page', () => {
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockReturnValue({ data: {} }),
+      mutate: vi.fn().mockReturnValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),
@@ -309,7 +309,7 @@ describe('Config builder page', () => {
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockReturnValue({ data: {} }),
+      mutate: vi.fn().mockReturnValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),
