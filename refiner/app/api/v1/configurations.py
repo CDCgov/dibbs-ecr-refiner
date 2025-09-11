@@ -147,17 +147,6 @@ class IncludedCondition(BaseModel):
     associated: bool
 
 
-class OriginalIncludedCondition(BaseModel):
-    """
-    Model for a condition that is associated with a configuration.
-    """
-
-    id: UUID
-    display_name: str
-    canonical_url: str
-    version: str
-
-
 class GetConfigurationResponse(BaseModel):
     """
     Information about a specific configuration to return to the client.
