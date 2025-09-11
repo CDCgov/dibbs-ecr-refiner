@@ -277,10 +277,9 @@ async def test_associate_codeset_with_configuration(authed_client):
 async def test_disassociate_codeset_with_configuration(authed_client):
     config_id = "33333333-3333-3333-3333-333333333333"
     payload = {"condition_id": "22222222-2222-2222-2222-222222222222"}
-    response = await authed_client.request(
-        "DELETE",
+    response = await authed_client.delete(
         f"/api/v1/configurations/{config_id}/code-sets/{payload['condition_id']}",
-        headers={"Content-Type": "application/json"},
+    )
     )
     assert response.status_code == 200
     data = response.json()
