@@ -280,7 +280,6 @@ async def test_disassociate_codeset_with_configuration(authed_client):
     response = await authed_client.delete(
         f"/api/v1/configurations/{config_id}/code-sets/{payload['condition_id']}",
     )
-    )
     assert response.status_code == 200
     data = response.json()
     # After disassociation, included_conditions should be empty or not contain the removed condition
