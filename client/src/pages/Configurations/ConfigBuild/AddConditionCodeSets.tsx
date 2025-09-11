@@ -43,9 +43,9 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
       )
     : conditions;
 
-  const { mutateAsync: associateMutation } =
+  const { mutate: associateMutation } =
     useAssociateConditionWithConfiguration();
-  const { mutateAsync: disassociateMutation } =
+  const { mutate: disassociateMutation } =
     useDisassociateConditionWithConfiguration();
 
   const showToast = useToast();
@@ -53,8 +53,8 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
   const formatError = useApiErrorFormatter();
 
   // Add/remove handlers
-  async function handleAssociate(conditionId: string) {
-    await associateMutation(
+  function handleAssociate(conditionId: string) {
+    associateMutation(
       {
         configurationId,
         data: { condition_id: conditionId },
@@ -73,8 +73,8 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
     );
   }
 
-  async function handleDisassociate(conditionId: string) {
-    await disassociateMutation(
+  function handleDisassociate(conditionId: string) {
+    disassociateMutation(
       {
         configurationId,
         conditionId,
@@ -160,11 +160,11 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
                 conditionName={condition.display_name}
                 associated={condition.associated}
                 configurationId={configurationId}
-                onAssociate={async () => {
-                  await handleAssociate(condition.id);
+                onAssociate={() => {
+                  handleAssociate(condition.id);
                 }}
-                onDisassociate={async () => {
-                  await handleDisassociate(condition.id);
+                onDisassociate={() => {
+                  handleDisassociate(condition.id);
                 }}
                 highlight={highlight}
               />

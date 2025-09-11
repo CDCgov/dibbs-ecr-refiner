@@ -113,15 +113,15 @@ function Builder({
     setTableView('custom');
   }
 
-  const { mutateAsync: disassociateMutation } =
+  const { mutate: disassociateMutation } =
     useDisassociateConditionWithConfiguration();
 
   const showToast = useToast();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
 
-  async function handleDisassociateCondition(conditionId: string) {
-    await disassociateMutation(
+  function handleDisassociateCondition(conditionId: string) {
+    disassociateMutation(
       {
         configurationId: id,
         conditionId,
@@ -188,10 +188,10 @@ function Builder({
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
                     aria-pressed={selectedCodesetId === codeSet.condition_id}
-                    onKeyDown={async (e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Delete' || e.key === 'Backspace') {
                         e.preventDefault();
-                        await handleDisassociateCondition(codeSet.condition_id);
+                        handleDisassociateCondition(codeSet.condition_id);
                       }
                     }}
                   >
@@ -201,9 +201,9 @@ function Builder({
                   <span
                     className="text-gray-cool-40 show-delete ml-2 hidden cursor-pointer border-none p-0 pr-3 group-hover:inline-block group-hover:bg-stone-50 group-focus:inline-block hover:text-red-700 focus:outline focus:outline-indigo-500"
                     aria-label={`Delete codeset ${codeSet.display_name}`}
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       e.stopPropagation();
-                      await handleDisassociateCondition(codeSet.condition_id);
+                      handleDisassociateCondition(codeSet.condition_id);
                     }}
                     role="button"
                   >
@@ -324,7 +324,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
 }: CustomCodesDetailProps) {
-  const { mutateAsync: deleteCode } = useDeleteCustomCodeFromConfiguration();
+  const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
     useState<DbConfigurationCustomCode | null>(null);
   const queryClient = useQueryClient();
@@ -368,8 +368,8 @@ function CustomCodesDetail({
                 <button
                   className="!text-blue-cool-50 !no-underline hover:!cursor-pointer hover:!underline"
                   aria-label={`Delete custom code ${customCode.name}`}
-                  onClick={async () => {
-                    await deleteCode(
+                  onClick={() => {
+                    deleteCode(
                       {
                         code: customCode.code,
                         system: customCode.system,
