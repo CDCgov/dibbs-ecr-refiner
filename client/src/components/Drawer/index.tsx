@@ -79,7 +79,7 @@ const Drawer = ({
                 className="absolute top-6 right-4 flex shrink-0 cursor-pointer items-center justify-center border-none bg-none p-0"
                 onClick={handleClose}
                 aria-label="Close drawer"
-                data-testid={'close-drawer'}
+                data-testid="close-drawer"
               >
                 <Icon.Close size={3} aria-label="X icon indicating closure" />
               </button>
