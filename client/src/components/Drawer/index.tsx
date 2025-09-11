@@ -87,9 +87,7 @@ const Drawer = ({
                 <Title>{title}</Title>
                 {subtitle ? (
                   <div className="m-0 !py-4 text-gray-600">{subtitle}</div>
-                ) : (
-                  <></>
-                )}
+                ) : null}
                 {onSearch ? (
                   <>
                     <Search
