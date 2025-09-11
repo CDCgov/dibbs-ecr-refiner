@@ -21,6 +21,7 @@ export function Home() {
               <a
                 className="usa-button usa-button--big !bg-violet-warm-60 hover:!bg-violet-warm-70"
                 href="/api/login"
+                role="button"
               >
                 Log in
               </a>
