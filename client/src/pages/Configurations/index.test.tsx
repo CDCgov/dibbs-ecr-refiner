@@ -1,6 +1,5 @@
 import { describe, expect, Mock } from 'vitest';
-
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { Configurations } from '.';
 import { TestQueryClientProvider } from '../../test-utils';
@@ -27,12 +26,19 @@ vi.mock('../../api/configurations/configurations', async () => {
     useGetConfigurations: vi.fn(() => ({
       data: {
         data: [
-          { id: '1', name: 'test', is_active: true },
-          { id: 'exists-id', name: 'already-created', is_active: true },
+          { id: '1', name: 'COVID-19', is_active: true },
+          { id: '2', name: 'Zika Virus Disease', is_active: true },
+          { id: '3', name: 'Zika Virus Disease', is_active: false },
         ],
       },
       isLoading: false,
       error: null,
+    })),
+    useCreateConfiguration: vi.fn(() => ({
+      mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
+      isPending: false,
+      isError: false,
+      reset: vi.fn(),
     })),
     useGetConfiguration: vi.fn(() => ({
       data: {
@@ -91,15 +97,7 @@ const renderPageView = () =>
 describe('Configurations Page', () => {
   beforeEach(() => vi.resetAllMocks());
 
-  test('renders the Configurations page with title and search bar', async () => {
-    // Default mock (no need to be called as part of this test)
-    (useCreateConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
-      isPending: false,
-      isError: false,
-      reset: vi.fn(),
-    });
-
+  it('should render the Configurations page with title and search bar', async () => {
     renderPageView();
     expect(
       screen.getByText('Your reportable condition configurations')
@@ -112,7 +110,7 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
   });
 
-  test('should show an error toast when user attempts to create duplicate config', async () => {
+  it('should show an error toast when user attempts to create duplicate config', async () => {
     const user = userEvent.setup();
 
     // Mock the mutation to trigger onError
@@ -161,7 +159,7 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
   });
 
-  test('should create a new config and takes the user to the build page', async () => {
+  it('should create a new config and takes the user to the build page', async () => {
     const user = userEvent.setup();
 
     const response: CreateConfigurationResponse = {
@@ -238,5 +236,37 @@ describe('Configurations Page', () => {
     expect(
       await screen.findByText('New configuration created')
     ).toBeInTheDocument();
+  });
+
+  it('should allow users to search for a configuration', async () => {
+    const user = userEvent.setup();
+    renderPageView();
+
+    // search
+    const searchInput = screen.getByPlaceholderText(/search configurations/i);
+    await user.type(searchInput, 'cov');
+    expect(searchInput).toHaveValue('cov');
+
+    // 2 because header + the row we're looking for
+    expect(
+      await within(screen.getByRole('table')).findAllByRole('row')
+    ).toHaveLength(2);
+
+    // [1] because this is the non-header row we're looking for
+    expect(
+      (await within(screen.getByRole('table')).findAllByRole('row'))[1]
+    ).toHaveTextContent('COVID-19');
+  });
+
+  it('should show all configurations if no search text is provided', () => {
+    renderPageView();
+
+    const searchInput = screen.getByPlaceholderText(/search configurations/i);
+    expect(searchInput).toHaveValue('');
+
+    // 4 because header + all 3 configs
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(
+      4
+    );
   });
 });

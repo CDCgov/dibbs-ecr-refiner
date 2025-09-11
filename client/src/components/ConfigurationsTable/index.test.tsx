@@ -14,25 +14,16 @@ vi.mock('react-router', async () => {
   };
 });
 
-enum ConfigurationStatus {
-  on = 'on',
-  off = 'off',
-}
-
 const testCfg = {
-  columns: {
-    name: 'Reportable condition',
-    status: 'Status',
-  },
   data: [
     {
       name: 'Chlamydia trachomatis infection',
-      status: ConfigurationStatus.on,
+      is_active: true,
       id: 'chlamydia-config-id',
     },
     {
       name: 'Disease caused by Enterovirus',
-      status: ConfigurationStatus.off,
+      is_active: false,
       id: 'asdf-zxcv-qwer-hjkl',
     },
   ],
@@ -46,24 +37,24 @@ describe('Configurations Table component', () => {
   it('should render a table when supplied with data', () => {
     render(
       <BrowserRouter>
-        <ConfigurationsTable columns={testCfg.columns} data={testCfg.data} />
+        <ConfigurationsTable data={testCfg.data} />
       </BrowserRouter>
     );
 
-    testCfg.data.forEach(({ name, status }) => {
+    testCfg.data.forEach(({ name, is_active }) => {
       const row = getByText(screen.getByTestId('table'), name).parentElement;
       expect(row).toHaveTextContent(name);
-      expect(row).toHaveTextContent(`Refiner ${status}`);
+      expect(row).toHaveTextContent(`Refiner ${is_active ? 'on' : 'off'}`);
     });
   });
   it('should render an error message if no data is supplied', () => {
     render(
       <BrowserRouter>
-        <ConfigurationsTable columns={testCfg.columns} data={[]} />
+        <ConfigurationsTable data={[]} />
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Reportable condition')).toBeInTheDocument();
+    expect(screen.getByText(/reportable condition/i)).toBeInTheDocument();
     expect(screen.getByText('No configurations available')).toBeInTheDocument();
   });
 
@@ -72,7 +63,7 @@ describe('Configurations Table component', () => {
 
     render(
       <BrowserRouter>
-        <ConfigurationsTable columns={testCfg.columns} data={testCfg.data} />
+        <ConfigurationsTable data={testCfg.data} />
       </BrowserRouter>
     );
 
@@ -93,7 +84,7 @@ describe('Configurations Table component', () => {
 
     render(
       <BrowserRouter>
-        <ConfigurationsTable columns={testCfg.columns} data={testCfg.data} />
+        <ConfigurationsTable data={testCfg.data} />
       </BrowserRouter>
     );
 
