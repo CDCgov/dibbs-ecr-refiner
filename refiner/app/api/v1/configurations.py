@@ -385,7 +385,7 @@ async def remove_condition_codeset_from_configuration(
     if condition.display_name == config.name:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Cannot remove the main condition from a configuration.",
+            detail="Cannot remove initial condition.",
         )
 
     updated_config = await disassociate_condition_codeset_with_configuration_db(

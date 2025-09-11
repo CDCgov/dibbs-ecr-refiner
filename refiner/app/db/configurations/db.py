@@ -226,7 +226,8 @@ async def associate_condition_codeset_with_configuration_db(
                 FROM jsonb_array_elements(included_conditions) elem
                 UNION ALL
                 SELECT elem
-                FROM jsonb_array_elements(nc.val) elem
+                FROM new_condition,
+                     jsonb_array_elements(new_condition.val) elem
                 WHERE NOT EXISTS (
                 SELECT 1
                 FROM jsonb_array_elements(included_conditions) existing
