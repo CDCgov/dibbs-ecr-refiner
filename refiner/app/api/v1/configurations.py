@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -21,6 +21,7 @@ from ...db.configurations.db import (
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import get_user_by_id_db
+from ...db.users.model import DbUser
 
 router = APIRouter(prefix="/configurations")
 
@@ -42,7 +43,7 @@ class GetConfigurationsResponse(BaseModel):
     operation_id="getConfigurations",
 )
 async def get_configurations(
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[GetConfigurationsResponse]:
     """
@@ -53,7 +54,7 @@ async def get_configurations(
     """
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
 
     configs = await get_configurations_db(jurisdiction_id=jd, db=db)
@@ -93,7 +94,7 @@ class CreateConfigurationResponse(BaseModel):
 )
 async def create_configuration(
     body: CreateConfigInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> CreateConfigurationResponse:
     """
@@ -109,7 +110,7 @@ async def create_configuration(
         )
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
 
     # check that there isn't already a config for the condition + JD
@@ -150,7 +151,7 @@ class GetConfigurationResponse(BaseModel):
 )
 async def get_configuration(
     configuration_id: UUID,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
     """
@@ -166,7 +167,7 @@ async def get_configuration(
     """
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
@@ -220,7 +221,7 @@ class AssociateCodesetResponse(BaseModel):
 async def associate_condition_codeset_with_configuration(
     configuration_id: UUID,
     body: AssociateCodesetInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> AssociateCodesetResponse:
     """
@@ -241,7 +242,7 @@ async def associate_condition_codeset_with_configuration(
         AssociateCodesetResponse: ID of updated configuration and the full list of included conditions
     """
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
@@ -337,7 +338,7 @@ def _get_sanitized_system_name(system: str):
 async def add_custom_code(
     configuration_id: UUID,
     body: AddCustomCodeInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
     """
@@ -363,7 +364,7 @@ async def add_custom_code(
     sanitized_system_name = _get_sanitized_system_name(body.system)
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
 
     # find config
@@ -416,7 +417,7 @@ async def delete_custom_code(
     configuration_id: UUID,
     system: str,
     code: str,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
     """
@@ -450,7 +451,7 @@ async def delete_custom_code(
         )
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
 
     # find config
@@ -582,7 +583,7 @@ def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
 async def edit_custom_code(
     configuration_id: UUID,
     body: UpdateCustomCodeInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
     """
@@ -607,7 +608,7 @@ async def edit_custom_code(
     _validate_edit_custom_code_input(body)
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
 
     # find config
