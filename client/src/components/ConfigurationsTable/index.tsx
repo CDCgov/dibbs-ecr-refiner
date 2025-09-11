@@ -9,17 +9,22 @@ interface ConfigurationsTableProps {
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   const navigate = useNavigate();
 
+  const reportableConditionHeader = 'reportable condition'.toUpperCase();
+  const statusHeader = 'status'.toUpperCase();
+
   if (!data.length) {
     return (
       <UswdsTable stackedStyle="default">
         <thead>
           <tr>
-            <th scope="col">REPORTABLE CONDITION</th>
+            <th scope="col">{reportableConditionHeader}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <th scope="row">No configurations available</th>
+            <th data-label={reportableConditionHeader} scope="row">
+              No configurations available
+            </th>
           </tr>
         </tbody>
       </UswdsTable>
@@ -30,8 +35,8 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
     <UswdsTable stackedStyle="default">
       <thead>
         <tr>
-          <th scope="col">REPORTABLE CONDITION</th>
-          <th scope="col">STATUS</th>
+          <th scope="col">{reportableConditionHeader}</th>
+          <th scope="col">{statusHeader}</th>
         </tr>
       </thead>
       <tbody>
@@ -48,10 +53,14 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
               }}
               aria-label={`View configuration for ${name}`}
             >
-              <td className="!font-bold" scope="row">
+              <td
+                data-label={reportableConditionHeader}
+                className="!font-bold"
+                scope="row"
+              >
                 {name}
               </td>
-              <td>
+              <td data-label={statusHeader}>
                 <StatusPill status={is_active ? 'on' : 'off'} />
               </td>
             </tr>
