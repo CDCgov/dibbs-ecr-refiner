@@ -14,7 +14,7 @@ from .session import SESSION_TTL, get_hashed_token
 RENEW_THRESHOLD = timedelta(minutes=15)
 
 
-class UserWithSessionExpiryTime(DbUser):
+class DbUserWithSessionExpiryTime(DbUser):
     """
     DbUser model that includes the `expires_at` field.
     """
@@ -52,7 +52,7 @@ async def get_logged_in_user(
 
         async with db.get_connection() as conn:
             async with conn.cursor(
-                row_factory=class_row(UserWithSessionExpiryTime)
+                row_factory=class_row(DbUserWithSessionExpiryTime)
             ) as cur:
                 now = dt.now(UTC)
                 await cur.execute(
@@ -83,8 +83,11 @@ async def get_logged_in_user(
                         (new_expiration, token_hash),
                     )
 
+            # Create a DbUser from the DbUserWithSessionExpiryTime to return
             return DbUser(
-                **user_with_expiration.model_dump(include=DbUser.model_fields.keys())
+                **user_with_expiration.model_dump(
+                    include=set(DbUser.model_fields.keys())
+                )
             )
 
     except (DatabaseConnectionError, DatabaseQueryError) as db_err:
