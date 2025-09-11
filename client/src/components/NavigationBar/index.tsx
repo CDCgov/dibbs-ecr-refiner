@@ -9,12 +9,6 @@ export default function NavigationBar() {
     >
       <NavigationLink to="/configurations" title="Configurations" />
       <NavigationLink to="/testing" title="Testing" />
-      <a
-        className="hover:border-blue-cool-30 mx-6 inline-block py-1 text-white hover:cursor-pointer hover:border-b-4"
-        href="/api/logout"
-      >
-        Logout
-      </a>
     </nav>
   );
 }
