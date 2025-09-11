@@ -1,12 +1,5 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 
-// Prevent AggregateError by globally mocking fetch and XMLHttpRequest
-beforeAll(() => {
-  global.fetch = vi.fn(() =>
-    Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
-  );
-  global.XMLHttpRequest = vi.fn();
-});
 import { MemoryRouter, Route, Routes } from 'react-router';
 import ConfigBuild from '.';
 import userEvent from '@testing-library/user-event';

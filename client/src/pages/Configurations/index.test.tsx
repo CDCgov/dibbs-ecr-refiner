@@ -14,13 +14,6 @@ vi.mock('../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
     '../../api/configurations/configurations'
   );
-  // Provide a default mocked implementation for useCreateConfiguration
-  const useCreateConfiguration = vi.fn(() => ({
-    mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
-    isPending: false,
-    isError: false,
-    reset: vi.fn(),
-  }));
   return {
     ...actual,
     useGetConfigurations: vi.fn(() => ({
@@ -60,7 +53,6 @@ vi.mock('../../api/configurations/configurations', async () => {
       isLoading: false,
       isError: false,
     })),
-    useCreateConfiguration,
   };
 });
 
