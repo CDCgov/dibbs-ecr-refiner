@@ -208,36 +208,23 @@ async def get_configuration(
         config_id=config.id, db=db
     )
 
-    # Get all conditions
+    associated_conditions = {
+        (c.canonical_url, c.version)
+        for c in config.included_conditions
+        if c.canonical_url and c.version
+    }
+
     all_conditions = await get_conditions_db(db=db)
-
-    associated_conditions = set()
-    if hasattr(config, "included_conditions") and config.included_conditions:
-        for c in config.included_conditions:
-            canonical_url = None
-            version = None
-            if isinstance(c, dict):
-                canonical_url = c.get("canonical_url")
-                version = c.get("version")
-            else:
-                canonical_url = getattr(c, "canonical_url", None)
-                version = getattr(c, "version", None)
-            if canonical_url and version:
-                associated_conditions.add((canonical_url, version))
-
-    included_conditions = []
-    for cond in all_conditions:
-        is_associated = (cond.canonical_url, cond.version) in associated_conditions
-        included_conditions.append(
-            IncludedCondition(
-                id=cond.id,
-                display_name=cond.display_name,
-                canonical_url=cond.canonical_url,
-                version=cond.version,
-                associated=is_associated,
-            )
+    included_conditions = [
+        IncludedCondition.model_construct(
+            id=cond.id,
+            display_name=cond.display_name,
+            canonical_url=cond.canonical_url,
+            version=cond.version,
+            associated=(cond.canonical_url, cond.version) in associated_conditions,
         )
-
+        for cond in all_conditions
+    ]
     return GetConfigurationResponse(
         id=config.id,
         display_name=config.name,
