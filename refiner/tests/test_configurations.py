@@ -1,5 +1,5 @@
 from unittest.mock import AsyncMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
@@ -98,6 +98,23 @@ def mock_db_functions(monkeypatch):
     monkeypatch.setattr(
         "app.api.v1.configurations.get_condition_by_id_db",
         AsyncMock(return_value=condition_mock),
+    )
+
+    fake_condition = DbCondition(
+        id=uuid4(),
+        display_name="Hypertension",
+        canonical_url="http://url.com",
+        version="2.0.0",
+        child_rsg_snomed_codes=["11111"],
+        snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
+        loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
+        icd10_codes=[make_db_condition_coding("I10", "Essential hypertension")],
+        rxnorm_codes=[make_db_condition_coding("33333", "Hypertension RXNORM")],
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_conditions_db",
+        AsyncMock(return_value=[fake_condition]),
     )
 
     # mock get_configuration_by_id_db with default: no custom codes
