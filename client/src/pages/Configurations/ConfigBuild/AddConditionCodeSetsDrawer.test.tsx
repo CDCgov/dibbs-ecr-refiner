@@ -70,8 +70,8 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('../../../api/configurations/configurations', () => ({
-  useAssociateConditionWithConfiguration: () => ({ mutateAsync: vi.fn() }),
-  useDisassociateConditionWithConfiguration: () => ({ mutateAsync: vi.fn() }),
+  useAssociateConditionWithConfiguration: () => ({ mutate: vi.fn() }),
+  useDisassociateConditionWithConfiguration: () => ({ mutate: vi.fn() }),
   getGetConfigurationQueryKey: vi.fn(),
 }));
 
