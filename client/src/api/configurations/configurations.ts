@@ -35,6 +35,7 @@ import type {
   AddCustomCodeInput,
   AssociateCodesetInput,
   AssociateCodesetResponse,
+  ConfigurationCustomCodeResponse,
   CreateConfigInput,
   CreateConfigurationResponse,
   GetConfigurationResponse,
@@ -454,13 +455,13 @@ Raises:
     HTTPException: 500 if custom code can't be added
 
 Returns:
-    GetConfigurationResponse: Updated configuration
+    ConfigurationCustomCodeResponse: Updated configuration
  * @summary Add Custom Code
  */
 export const addCustomCodeToConfiguration = (
     configurationId: string,
     addCustomCodeInput: AddCustomCodeInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConfigurationResponse>> => {
+ ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
     
     
     return axios.default.post(
@@ -532,13 +533,13 @@ Raises:
     HTTPException: 500 if the configuration can't be updated
 
 Returns:
-    GetConfigurationResponse: The updated configuration.
+    ConfigurationCustomCodeResponse: The updated configuration.
  * @summary Edit Custom Code
  */
 export const editCustomCodeFromConfiguration = (
     configurationId: string,
     updateCustomCodeInput: UpdateCustomCodeInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConfigurationResponse>> => {
+ ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
     
     
     return axios.default.put(
@@ -611,14 +612,14 @@ Raises:
     HTTPException: 500 if configuration can't be updated
 
 Returns:
-    GetConfigurationResponse: The updated configuration
+    ConfigurationCustomCodeResponse: The updated configuration
  * @summary Delete Custom Code
  */
 export const deleteCustomCodeFromConfiguration = (
     configurationId: string,
     system: string,
     code: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConfigurationResponse>> => {
+ ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
     
     
     return axios.default.delete(

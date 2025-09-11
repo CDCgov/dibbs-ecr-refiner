@@ -170,6 +170,17 @@ class GetConfigurationResponse(BaseModel):
     custom_codes: list[DbConfigurationCustomCode]
 
 
+class ConfigurationCustomCodeResponse(BaseModel):
+    """
+    Configuration response for custom code operations (add/edit/delete).
+    """
+
+    id: UUID
+    display_name: str
+    code_sets: list[DbTotalConditionCodeCount]
+    custom_codes: list[DbConfigurationCustomCode]
+
+
 @router.get(
     "/{configuration_id}",
     response_model=GetConfigurationResponse,
@@ -460,7 +471,7 @@ def _get_sanitized_system_name(system: str):
 
 @router.post(
     "/{configuration_id}/custom-codes",
-    response_model=GetConfigurationResponse,
+    response_model=ConfigurationCustomCodeResponse,
     tags=["configurations"],
     operation_id="addCustomCodeToConfiguration",
 )
@@ -469,7 +480,7 @@ async def add_custom_code(
     body: AddCustomCodeInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> GetConfigurationResponse:
+) -> ConfigurationCustomCodeResponse:
     """
     Add a user-defined custom code to a configuration.
 
@@ -484,7 +495,7 @@ async def add_custom_code(
         HTTPException: 500 if custom code can't be added
 
     Returns:
-        GetConfigurationResponse: Updated configuration
+        ConfigurationCustomCodeResponse: Updated configuration
     """
 
     # validate input
@@ -528,18 +539,17 @@ async def add_custom_code(
         config_id=config.id, db=db
     )
 
-    return GetConfigurationResponse(
+    return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
-        included_conditions=getattr(updated_config, "included_conditions", []),
         custom_codes=updated_config.custom_codes,
     )
 
 
 @router.delete(
     "/{configuration_id}/custom-codes/{system}/{code}",
-    response_model=GetConfigurationResponse,
+    response_model=ConfigurationCustomCodeResponse,
     tags=["configurations"],
     operation_id="deleteCustomCodeFromConfiguration",
 )
@@ -549,7 +559,7 @@ async def delete_custom_code(
     code: str,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> GetConfigurationResponse:
+) -> ConfigurationCustomCodeResponse:
     """
     Delete a custom code from a configuration.
 
@@ -567,7 +577,7 @@ async def delete_custom_code(
         HTTPException: 500 if configuration can't be updated
 
     Returns:
-        GetConfigurationResponse: The updated configuration
+        ConfigurationCustomCodeResponse: The updated configuration
     """
 
     if not system:
@@ -609,11 +619,10 @@ async def delete_custom_code(
         config_id=config.id, db=db
     )
 
-    return GetConfigurationResponse(
+    return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
-        included_conditions=getattr(updated_config, "included_conditions", []),
         custom_codes=updated_config.custom_codes,
     )
 
@@ -707,7 +716,7 @@ def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
 
 @router.put(
     "/{configuration_id}/custom-codes",
-    response_model=GetConfigurationResponse,
+    response_model=ConfigurationCustomCodeResponse,
     tags=["configurations"],
     operation_id="editCustomCodeFromConfiguration",
 )
@@ -716,7 +725,7 @@ async def edit_custom_code(
     body: UpdateCustomCodeInput,
     user: dict[str, Any] = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> GetConfigurationResponse:
+) -> ConfigurationCustomCodeResponse:
     """
     Modify a configuration's custom code based on system/code pair.
 
@@ -733,7 +742,7 @@ async def edit_custom_code(
         HTTPException: 500 if the configuration can't be updated
 
     Returns:
-        GetConfigurationResponse: The updated configuration.
+        ConfigurationCustomCodeResponse: The updated configuration.
     """
 
     _validate_edit_custom_code_input(body)
@@ -774,10 +783,9 @@ async def edit_custom_code(
         config_id=config.id, db=db
     )
 
-    return GetConfigurationResponse(
+    return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
-        included_conditions=getattr(updated_config, "included_conditions", []),
         custom_codes=updated_config.custom_codes,
     )
