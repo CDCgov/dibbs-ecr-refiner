@@ -119,26 +119,32 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       <p id="add-configuration-modal-description" className="sr-only">
         Select a reportable condition you'd like to configure.
       </p>
-      <Label htmlFor="new-condition" className="!leading-6" data-focus="true">
-        Condition
-      </Label>
       {isLoading || !response?.data ? (
-        'Loading...'
+        'Loading conditions...'
       ) : (
-        <ComboBox
-          id="new-condition"
-          ref={comboBoxRef}
-          name="new-condition"
-          options={response?.data.map((condition) => ({
-            value: condition.id,
-            label: condition.display_name,
-          }))}
-          onChange={(conditionId) => {
-            const found =
-              response.data.find((c) => c.id === conditionId) ?? null;
-            setSelectedCondition(found);
-          }}
-        />
+        <>
+          <Label
+            htmlFor="new-condition"
+            className="!leading-6"
+            data-focus="true"
+          >
+            Condition
+          </Label>
+          <ComboBox
+            id="new-condition"
+            ref={comboBoxRef}
+            name="new-condition"
+            options={response?.data.map((condition) => ({
+              value: condition.id,
+              label: condition.display_name,
+            }))}
+            onChange={(conditionId) => {
+              const found =
+                response.data.find((c) => c.id === conditionId) ?? null;
+              setSelectedCondition(found);
+            }}
+          />
+        </>
       )}
       <ModalFooter className="flex justify-self-end">
         <Button
