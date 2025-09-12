@@ -43,6 +43,8 @@ jobs:
         working-directory: client
       - name: Start Application
         run: just dev up --detach
+      - name: Seed Database
+        run: just dev run --rm seed
       - name: Wait for Application Startup
         run: |
           for i in {1..20}; do
