@@ -2,8 +2,7 @@ import io
 from collections.abc import Callable
 from logging import Logger
 from pathlib import Path
-from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -19,6 +18,7 @@ from ...core.exceptions import (
 )
 from ...db.demo.model import Condition, ConditionProcessingInfo, RefinedTestingDocument
 from ...db.pool import AsyncDatabaseConnection, get_db
+from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import refine_async
@@ -145,14 +145,14 @@ async def _validate_zip_file(file: UploadFile) -> UploadFile:
     return file
 
 
-def _get_upload_refined_ecr() -> Callable[[str, io.BytesIO, str, Logger], str]:
+def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
     """
     Provides a dependency-injectable reference to the `upload_refined_ecr` function.
 
     Returns:
-        Callable[[str, io.BytesIO, str], str]: A callable that uploads a
+        Callable[[UUID, io.BytesIO, str], str]: A callable that uploads a
         file to S3 and returns a pre-signed download URL. The arguments are:
-            - user_id (str): The ID of the uploading user.
+            - user_id (UUID): The ID of the uploading user.
             - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
             - filename (str): Filename for the uploaded file.
             - logger (Logger): The standard logger
@@ -172,10 +172,10 @@ async def demo_upload(
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
         _get_zip_creator
     ),
-    user: dict[str, Any] = Depends(get_logged_in_user),
-    upload_refined_files_to_s3: Callable[[str, io.BytesIO, str, Logger], str] = Depends(
-        _get_upload_refined_ecr
-    ),
+    user: DbUser = Depends(get_logged_in_user),
+    upload_refined_files_to_s3: Callable[
+        [UUID, io.BytesIO, str, Logger], str
+    ] = Depends(_get_upload_refined_ecr),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> RefinedTestingDocument:
@@ -254,7 +254,7 @@ async def demo_upload(
 
         presigned_s3_url = await run_in_threadpool(
             upload_refined_files_to_s3,
-            user["id"],
+            user.id,
             output_zip_buffer,
             output_file_name,
             logger,

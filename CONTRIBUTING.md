@@ -75,7 +75,7 @@ class DeleteConfigurationResponse(BaseModel):
 )
 async def delete_configuration(
     configuration_id: UUID,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ):
     # Write the implementation

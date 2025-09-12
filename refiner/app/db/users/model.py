@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -5,10 +6,12 @@ from pydantic import BaseModel
 
 class DbUser(BaseModel):
     """
-    Model for a logged-in user.
+    A `user` row from the database.
     """
 
     id: UUID
     username: str
     email: str
     jurisdiction_id: str
+    created_at: datetime
+    updated_at: datetime

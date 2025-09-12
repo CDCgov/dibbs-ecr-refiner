@@ -7,7 +7,7 @@
  */
 
 /**
- * User response model.
+ * User information to send to the client.
  */
 export interface UserResponse {
   id: string;
