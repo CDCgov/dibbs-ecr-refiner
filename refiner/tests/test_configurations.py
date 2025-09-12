@@ -1,6 +1,6 @@
 from datetime import datetime
 from unittest.mock import AsyncMock
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
@@ -105,6 +105,23 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=condition_mock),
     )
 
+    fake_condition = DbCondition(
+        id=uuid4(),
+        display_name="Hypertension",
+        canonical_url="http://url.com",
+        version="2.0.0",
+        child_rsg_snomed_codes=["11111"],
+        snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
+        loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
+        icd10_codes=[make_db_condition_coding("I10", "Essential hypertension")],
+        rxnorm_codes=[make_db_condition_coding("33333", "Hypertension RXNORM")],
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_conditions_db",
+        AsyncMock(return_value=[fake_condition]),
+    )
+
     # mock get_configuration_by_id_db with default: no custom codes
     config_by_id_mock = DbConfiguration(
         id=UUID("11111111-1111-1111-1111-111111111111"),
@@ -159,6 +176,16 @@ def mock_db_functions(monkeypatch):
     monkeypatch.setattr(
         "app.api.v1.configurations.associate_condition_codeset_with_configuration_db",
         AsyncMock(return_value=updated_config_mock),
+    )
+
+    # Mock disassociate_condition_codeset_with_configuration_db
+    updated_config_mock_disassoc = AsyncMock()
+    updated_config_mock_disassoc.id = UUID("33333333-3333-3333-3333-333333333333")
+    updated_config_mock_disassoc.included_conditions = []
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.disassociate_condition_codeset_with_configuration_db",
+        AsyncMock(return_value=updated_config_mock_disassoc),
     )
 
     # for get_total_condition_code_counts_by_configuration_db, could use a list of count objects if needed
@@ -243,12 +270,30 @@ async def test_associate_codeset_with_configuration(authed_client):
     config_id = "33333333-3333-3333-3333-333333333333"
     payload = {"condition_id": "22222222-2222-2222-2222-222222222222"}
     response = await authed_client.put(
-        f"/api/v1/configurations/{config_id}/code-set", json=payload
+        f"/api/v1/configurations/{config_id}/code-sets", json=payload
     )
     assert response.status_code == 200
     data = response.json()
     assert len(data["included_conditions"]) == 1
     assert data["included_conditions"][0]["canonical_url"] == "url-1"
+
+
+@pytest.mark.asyncio
+async def test_disassociate_codeset_with_configuration(authed_client):
+    config_id = "33333333-3333-3333-3333-333333333333"
+    payload = {"condition_id": "22222222-2222-2222-2222-222222222222"}
+    response = await authed_client.delete(
+        f"/api/v1/configurations/{config_id}/code-sets/{payload['condition_id']}",
+    )
+    assert response.status_code == 200
+    data = response.json()
+    # After disassociation, included_conditions should be empty or not contain the removed condition
+    included_conditions = data.get("included_conditions", [])
+    assert isinstance(included_conditions, list)
+    assert all(
+        c.get("canonical_url") != "url-1" or c.get("version") != "2.0.0"
+        for c in included_conditions
+    )
 
 
 @pytest.mark.asyncio

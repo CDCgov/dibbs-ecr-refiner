@@ -22,6 +22,7 @@ api/
 ### Endpoints
 
 API endpoints are organized by version and functionality:
+
 - `demo.py`: Demo endpoints for testing and examples
 - `ecr.py`: Electronic Case Reporting (eCR) processing endpoints
 - `file_io.py`: File handling and processing endpoints
@@ -30,6 +31,7 @@ API endpoints are organized by version and functionality:
 ### Middleware
 
 Custom middleware components that modify request/response behavior:
+
 - `spa.py`: Fallback middleware for Single Page Application (SPA) routing, serving index.html for client-side routes
 
 ## Versioning

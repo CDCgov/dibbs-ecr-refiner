@@ -102,7 +102,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
   const [selectedCondition, setSelectedCondition] =
     useState<GetConditionsResponse | null>(null);
 
-  const { mutateAsync } = useCreateConfiguration();
+  const { mutate: createConfig } = useCreateConfiguration();
   const navigate = useNavigate();
   const formatError = useApiErrorFormatter();
 
@@ -154,37 +154,33 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         <Button
           variant={`${selectedCondition ? 'primary' : 'disabled'}`}
           disabled={!selectedCondition}
-          onClick={async () => {
+          onClick={() => {
             if (!selectedCondition) return;
-            try {
-              await mutateAsync(
-                { data: { condition_id: selectedCondition.id } },
-                {
-                  onSuccess: async (resp) => {
-                    await navigate(`/configurations/${resp.data.id}/build`);
-                    comboBoxRef.current?.clearSelection();
-                    modalRef.current?.toggleModal();
-                    showToast({
-                      heading: 'New configuration created',
-                      body: selectedCondition?.display_name ?? '',
-                    });
-                    setSelectedCondition(null);
-                  },
-                  onError: (e) => {
-                    showToast({
-                      heading: 'Configuration could not be created',
-                      variant: 'error',
-                      body: formatError(e),
-                    });
-                    comboBoxRef.current?.clearSelection();
-                    modalRef.current?.toggleModal();
-                    setSelectedCondition(null);
-                  },
-                }
-              );
-            } catch {
-              // no-op: handled in onError
-            }
+            createConfig(
+              { data: { condition_id: selectedCondition.id } },
+              {
+                onSuccess: async (resp) => {
+                  await navigate(`/configurations/${resp.data.id}/build`);
+                  comboBoxRef.current?.clearSelection();
+                  modalRef.current?.toggleModal();
+                  showToast({
+                    heading: 'New configuration created',
+                    body: selectedCondition?.display_name ?? '',
+                  });
+                  setSelectedCondition(null);
+                },
+                onError: (e) => {
+                  showToast({
+                    heading: 'Configuration could not be created',
+                    variant: 'error',
+                    body: formatError(e),
+                  });
+                  comboBoxRef.current?.clearSelection();
+                  modalRef.current?.toggleModal();
+                  setSelectedCondition(null);
+                },
+              }
+            );
           }}
         >
           Add condition

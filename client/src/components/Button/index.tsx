@@ -7,10 +7,15 @@ import classNames from 'classnames';
 
 interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   type?: UswdsButtonProps['type'];
-  variant?: 'primary' | 'secondary' | 'disabled';
+  variant?: 'primary' | 'secondary' | 'disabled' | 'selected';
   to?: string;
 }
 
+/**
+ * Button component supporting multiple variants and behaviors,
+ * including primary, secondary, and disabled styles, with optional
+ * routing functionality.
+ */
 export function Button({
   children,
   variant = 'primary',
@@ -26,6 +31,8 @@ export function Button({
       variant === 'secondary',
     '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed':
       variant === 'disabled',
+    'bg-transparent text-black hover:!bg-transparent hover:!text-black active:!bg-transparent active:!text-black':
+      variant === 'selected',
   });
 
   if (to) {

@@ -1,4 +1,5 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
+
 import { MemoryRouter, Route, Routes } from 'react-router';
 import ConfigBuild from '.';
 import userEvent from '@testing-library/user-event';
@@ -14,6 +15,7 @@ import {
 } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 
+// Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
   { condition_id: 'covid-1', display_name: 'COVID-19', total_codes: 12 },
   { condition_id: 'chlamydia-1', display_name: 'Chlamydia', total_codes: 8 },
@@ -41,6 +43,11 @@ vi.mock('../../../api/configurations/configurations', async () => {
           display_name: 'COVID-19',
           code_sets: mockCodeSets,
           custom_codes: mockCustomCodes,
+          included_conditions: [
+            { id: 'covid-1', display_name: 'COVID-19', associated: true },
+            { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
+            { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
+          ],
         },
       },
       isLoading: false,
@@ -67,6 +74,17 @@ vi.mock('../../../api/conditions/conditions', async () => {
       },
       isLoading: false,
       isError: false,
+    })),
+    useGetConditions: vi.fn(() => ({
+      data: {
+        data: [
+          { id: 'covid-1', display_name: 'COVID-19' },
+          { id: 'chlamydia-1', display_name: 'Chlamydia' },
+          { id: 'gonorrhea-1', display_name: 'Gonorrhea' },
+        ],
+      },
+      isLoading: false,
+      error: null,
     })),
   };
 });
@@ -150,7 +168,7 @@ describe('Config builder page', () => {
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
-    const searchBox = await screen.findByPlaceholderText(/search/i);
+    const searchBox = await screen.findByPlaceholderText(/Search code set/);
     await user.type(searchBox, covidCode);
     expect(searchBox).toHaveValue(covidCode);
 
@@ -183,7 +201,7 @@ describe('Config builder page', () => {
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockReturnValue({ data: {} }),
+      mutate: vi.fn().mockReturnValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),
@@ -238,7 +256,7 @@ describe('Config builder page', () => {
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockReturnValue({ data: {} }),
+      mutate: vi.fn().mockReturnValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),
@@ -291,7 +309,7 @@ describe('Config builder page', () => {
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutateAsync: vi.fn().mockReturnValue({ data: {} }),
+      mutate: vi.fn().mockReturnValue({ data: {} }),
       isPending: false,
       isError: false,
       reset: vi.fn(),

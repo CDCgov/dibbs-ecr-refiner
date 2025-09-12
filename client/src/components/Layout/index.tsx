@@ -47,7 +47,6 @@ export function Header({ username }: HeaderProps) {
         </Link>
 
         <NavigationBar />
-
         {/* User dropdown */}
         <Menu as="div" className="relative">
           <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">

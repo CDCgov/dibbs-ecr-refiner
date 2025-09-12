@@ -23,9 +23,12 @@ function NavigationLink({ to, title }: NavigationLinkProps) {
     <NavLink to={to} className="text-blue-cool-5">
       {({ isActive }) => (
         <span
-          className={classNames('mx-6 inline-block py-1', {
-            'border-blue-cool-30 border-b-4': isActive,
-          })}
+          className={classNames(
+            'hover:border-blue-cool-30 mx-6 inline-block py-1 hover:border-b-4',
+            {
+              'border-blue-cool-30 border-b-4': isActive,
+            }
+          )}
         >
           {title}
         </span>

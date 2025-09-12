@@ -13,4 +13,5 @@ import type { ConditionEntry } from './conditionEntry';
 export interface AssociateCodesetResponse {
   id: string;
   included_conditions: ConditionEntry[];
+  condition_name: string;
 }
