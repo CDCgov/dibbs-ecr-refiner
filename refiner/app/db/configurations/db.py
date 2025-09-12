@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -9,9 +8,7 @@ from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
     DbConfiguration,
-    DbConfigurationCondition,
     DbConfigurationCustomCode,
-    DbConfigurationLocalCode,
 )
 
 # NOTE: the db table for configurations has a family_id field (for future versioning/families),
@@ -19,27 +16,6 @@ from .model import (
 # if/when versioning is fully implemented, we can decide exactly how we'll tackle it
 
 EMPTY_JSONB = Jsonb([])
-
-
-def _build_configuration(row: dict[str, Any]):
-    included_conditions = [
-        DbConfigurationCondition(**c) for c in row["included_conditions"]
-    ]
-    custom_codes = [DbConfigurationCustomCode(**c) for c in row["custom_codes"]]
-    local_codes = [DbConfigurationLocalCode(**lc) for lc in row["local_codes"]]
-
-    return DbConfiguration(
-        id=row["id"],
-        name=row["name"],
-        jurisdiction_id=row["jurisdiction_id"],
-        condition_id=row["condition_id"],
-        included_conditions=included_conditions,
-        custom_codes=custom_codes,
-        local_codes=local_codes,
-        sections_to_include=row["sections_to_include"],
-        cloned_from_configuration_id=row["cloned_from_configuration_id"],
-        version=row["version"],
-    )
 
 
 async def insert_configuration_db(
@@ -125,7 +101,7 @@ async def insert_configuration_db(
             row = await cur.fetchone()
             if not row:
                 return None
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
 
 
 async def get_configurations_db(
@@ -157,7 +133,7 @@ async def get_configurations_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
-            return [_build_configuration(row) for row in rows]
+            return [DbConfiguration.from_db_row(row) for row in rows]
 
 
 async def get_configuration_by_id_db(
@@ -196,7 +172,7 @@ async def get_configuration_by_id_db(
             if not row:
                 return None
 
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
 
 
 async def is_config_valid_to_insert_db(
@@ -294,7 +270,7 @@ async def associate_condition_codeset_with_configuration_db(
             row = await cur.fetchone()
             if not row:
                 return None
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
 
 
 async def disassociate_condition_codeset_with_configuration_db(
@@ -351,7 +327,7 @@ async def disassociate_condition_codeset_with_configuration_db(
             row = await cur.fetchone()
             if not row:
                 return None
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
 
 
 @dataclass(frozen=True)
@@ -481,7 +457,7 @@ async def add_custom_code_to_configuration_db(
             row = await cur.fetchone()
             if not row:
                 return None
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
 
 
 async def delete_custom_code_from_configuration_db(
@@ -525,7 +501,7 @@ async def delete_custom_code_from_configuration_db(
             row = await cur.fetchone()
             if not row:
                 return None
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
 
 
 async def edit_custom_code_from_configuration_db(
@@ -567,4 +543,4 @@ async def edit_custom_code_from_configuration_db(
             row = await cur.fetchone()
             if not row:
                 return None
-            return _build_configuration(row)
+            return DbConfiguration.from_db_row(row)
