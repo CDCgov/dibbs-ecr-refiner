@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 
@@ -37,3 +38,26 @@ class DbCondition:
     loinc_codes: list[DbConditionCoding]
     icd10_codes: list[DbConditionCoding]
     rxnorm_codes: list[DbConditionCoding]
+
+    @classmethod
+    def from_db_row(cls, row: dict[str, Any]) -> "DbCondition":
+        """
+        Transforms a dictionary object into a DbCondition.
+
+        Args:
+            row (dict[str, Any]): Dictionary containing condition data from the database.
+
+        Returns:
+            DbCondition: The condition object
+        """
+        return cls(
+            id=row["id"],
+            display_name=row["display_name"],
+            canonical_url=row["canonical_url"],
+            version=row["version"],
+            child_rsg_snomed_codes=row["child_rsg_snomed_codes"],
+            snomed_codes=[DbConditionCoding(**c) for c in row["snomed_codes"]],
+            loinc_codes=[DbConditionCoding(**c) for c in row["loinc_codes"]],
+            icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],
+            rxnorm_codes=[DbConditionCoding(**c) for c in row["rxnorm_codes"]],
+        )
