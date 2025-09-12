@@ -354,7 +354,7 @@ async def remove_condition_codeset_from_configuration(
         AssociateCodesetResponse: ID of updated configuration and the full list
         of included conditions plus condition_name
     """
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
+    db_user = await get_user_by_id_db(id=user.id, db=db)
     jd = db_user.jurisdiction_id
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
