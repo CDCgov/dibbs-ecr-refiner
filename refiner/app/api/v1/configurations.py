@@ -1,4 +1,5 @@
-from typing import Any, Literal
+from dataclasses import dataclass
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -24,12 +25,13 @@ from ...db.configurations.db import (
 )
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.users.db import get_user_by_id_db
+from ...db.users.model import DbUser
 
 router = APIRouter(prefix="/configurations")
 
 
-class GetConfigurationsResponse(BaseModel):
+@dataclass(frozen=True)
+class GetConfigurationsResponse:
     """
     Model for a user-defined configuration.
     """
@@ -46,7 +48,7 @@ class GetConfigurationsResponse(BaseModel):
     operation_id="getConfigurations",
 )
 async def get_configurations(
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> list[GetConfigurationsResponse]:
     """
@@ -57,8 +59,7 @@ async def get_configurations(
     """
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+    jd = user.jurisdiction_id
 
     configs = await get_configurations_db(jurisdiction_id=jd, db=db)
 
@@ -80,7 +81,8 @@ class CreateConfigInput(BaseModel):
     condition_id: UUID
 
 
-class CreateConfigurationResponse(BaseModel):
+@dataclass(frozen=True)
+class CreateConfigurationResponse:
     """
     Configuration creation response model.
     """
@@ -97,7 +99,7 @@ class CreateConfigurationResponse(BaseModel):
 )
 async def create_configuration(
     body: CreateConfigInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> CreateConfigurationResponse:
     """
@@ -113,8 +115,7 @@ async def create_configuration(
         )
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+    jd = user.jurisdiction_id
 
     # check that there isn't already a config for the condition + JD
     if not await is_config_valid_to_insert_db(
@@ -135,7 +136,8 @@ async def create_configuration(
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
 
-class IncludedCondition(BaseModel):
+@dataclass(frozen=True)
+class IncludedCondition:
     """
     Model for a condition that is associated with a configuration.
     """
@@ -147,7 +149,8 @@ class IncludedCondition(BaseModel):
     associated: bool
 
 
-class GetConfigurationResponse(BaseModel):
+@dataclass(frozen=True)
+class GetConfigurationResponse:
     """
     Information about a specific configuration to return to the client.
     """
@@ -159,7 +162,8 @@ class GetConfigurationResponse(BaseModel):
     custom_codes: list[DbConfigurationCustomCode]
 
 
-class ConfigurationCustomCodeResponse(BaseModel):
+@dataclass(frozen=True)
+class ConfigurationCustomCodeResponse:
     """
     Configuration response for custom code operations (add/edit/delete).
     """
@@ -178,14 +182,16 @@ class ConfigurationCustomCodeResponse(BaseModel):
 )
 async def get_configuration(
     configuration_id: UUID,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> GetConfigurationResponse:
     """
     Get a single configuration by its ID including all associated conditions.
     """
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+
+    # get user jurisdiction
+    jd = user.jurisdiction_id
+
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
@@ -204,8 +210,9 @@ async def get_configuration(
     }
 
     all_conditions = await get_conditions_db(db=db)
+
     included_conditions = [
-        IncludedCondition.model_construct(
+        IncludedCondition(
             id=cond.id,
             display_name=cond.display_name,
             canonical_url=cond.canonical_url,
@@ -231,7 +238,8 @@ class AssociateCodesetInput(BaseModel):
     condition_id: UUID
 
 
-class ConditionEntry(BaseModel):
+@dataclass(frozen=True)
+class ConditionEntry:
     """
     Condition model.
     """
@@ -240,7 +248,8 @@ class ConditionEntry(BaseModel):
     version: str
 
 
-class AssociateCodesetResponse(BaseModel):
+@dataclass(frozen=True)
+class AssociateCodesetResponse:
     """
     Response from adding a code set to a config.
     """
@@ -259,7 +268,7 @@ class AssociateCodesetResponse(BaseModel):
 async def associate_condition_codeset_with_configuration(
     configuration_id: UUID,
     body: AssociateCodesetInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> AssociateCodesetResponse:
     """
@@ -282,8 +291,9 @@ async def associate_condition_codeset_with_configuration(
     """
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+
+    jd = user.jurisdiction_id
+
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
@@ -329,7 +339,7 @@ async def associate_condition_codeset_with_configuration(
 async def remove_condition_codeset_from_configuration(
     configuration_id: UUID,
     condition_id: UUID,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> AssociateCodesetResponse:
     """
@@ -338,8 +348,8 @@ async def remove_condition_codeset_from_configuration(
     Args:
         configuration_id (UUID): ID of the configuration
         condition_id (UUID): ID of the condition to remove
-        user (dict[str, Any], optional): User making the request
-        db (AsyncDatabaseConnection, optional): Database connection
+        user (DbUser): User making the request
+        db (AsyncDatabaseConnection): Database connection
 
     Raises:
         HTTPException: 404 if configuration is not found in JD
@@ -351,8 +361,9 @@ async def remove_condition_codeset_from_configuration(
         AssociateCodesetResponse: ID of updated configuration and the full list
         of included conditions plus condition_name
     """
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+
+    jd = user.jurisdiction_id
+
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
@@ -454,7 +465,7 @@ def _get_sanitized_system_name(system: str):
 async def add_custom_code(
     configuration_id: UUID,
     body: AddCustomCodeInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationCustomCodeResponse:
     """
@@ -480,8 +491,7 @@ async def add_custom_code(
     sanitized_system_name = _get_sanitized_system_name(body.system)
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+    jd = user.jurisdiction_id
 
     # find config
     config = await get_configuration_by_id_db(
@@ -533,7 +543,7 @@ async def delete_custom_code(
     configuration_id: UUID,
     system: str,
     code: str,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationCustomCodeResponse:
     """
@@ -567,8 +577,7 @@ async def delete_custom_code(
         )
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+    jd = user.jurisdiction_id
 
     # find config
     config = await get_configuration_by_id_db(
@@ -699,7 +708,7 @@ def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
 async def edit_custom_code(
     configuration_id: UUID,
     body: UpdateCustomCodeInput,
-    user: dict[str, Any] = Depends(get_logged_in_user),
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationCustomCodeResponse:
     """
@@ -724,8 +733,7 @@ async def edit_custom_code(
     _validate_edit_custom_code_input(body)
 
     # get user jurisdiction
-    db_user = await get_user_by_id_db(id=str(user["id"]), db=db)
-    jd = db_user.jurisdiction_id
+    jd = user.jurisdiction_id
 
     # find config
     config = await get_configuration_by_id_db(

@@ -1,7 +1,7 @@
+from dataclasses import dataclass
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 
 from ...db.conditions.db import (
     GetConditionCode,
@@ -14,7 +14,8 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 router = APIRouter(prefix="/conditions")
 
 
-class GetConditionsResponse(BaseModel):
+@dataclass(frozen=True)
+class GetConditionsResponse:
     """
     Conditions response model.
     """
@@ -48,7 +49,8 @@ async def get_conditions(
     ]
 
 
-class GetConditionResponse(BaseModel):
+@dataclass(frozen=True)
+class GetConditionResponse:
     """
     Condition response model.
     """

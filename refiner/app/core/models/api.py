@@ -1,6 +1,5 @@
+from dataclasses import dataclass
 from typing import Literal
-
-from pydantic import BaseModel
 
 from ...services.file_io import read_json_asset
 
@@ -9,13 +8,15 @@ ECR_RESPONSE_EXAMPLES = read_json_asset("sample_refine_ecr_response.json")
 
 
 # response models
-class StatusResponse(BaseModel):
+@dataclass(frozen=True)
+class StatusResponse:
     """Health check response."""
 
     status: Literal["OK"]
 
 
-class XMLUploadResponse(BaseModel):
+@dataclass(frozen=True)
+class XMLUploadResponse:
     """XML upload response."""
 
     eicr: str
@@ -23,7 +24,8 @@ class XMLUploadResponse(BaseModel):
     reportable_conditions: str | None = None
 
 
-class RefineECRResponse(BaseModel):
+@dataclass(frozen=True)
+class RefineECRResponse:
     """ECR refinement response."""
 
     refined_message: str

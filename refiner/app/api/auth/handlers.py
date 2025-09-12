@@ -1,7 +1,9 @@
 from logging import Logger
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 
 from ...db.jurisdictions.db import upsert_jurisdiction_db
 from ...db.jurisdictions.model import DbJurisdiction
@@ -10,7 +12,6 @@ from ...db.users.db import IdpUserResponse, upsert_user_db
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
-    UserResponse,
     create_session,
     delete_session,
     get_user_from_session,
@@ -152,6 +153,15 @@ async def auth_callback(
         raise e
 
 
+class UserResponse(BaseModel):
+    """
+    User information to send to the client.
+    """
+
+    id: UUID
+    username: str
+
+
 @auth_router.get(
     "/user", response_model=(UserResponse | None), tags=["user"], operation_id="getUser"
 )
@@ -177,7 +187,7 @@ async def get_user(request: Request) -> UserResponse | None:
     if not user:
         return None
 
-    return user
+    return UserResponse(id=user.id, username=user.username)
 
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)

@@ -1,6 +1,7 @@
 from datetime import date
 from io import BytesIO
 from logging import Logger
+from uuid import UUID
 
 import boto3
 from botocore.exceptions import ClientError
@@ -17,13 +18,13 @@ s3_client = boto3.client(
 
 
 def upload_refined_ecr(
-    user_id: str, file_buffer: BytesIO, filename: str, logger: Logger
+    user_id: UUID, file_buffer: BytesIO, filename: str, logger: Logger
 ) -> str:
     """
     Uploads a refined ZIP file to AWS S3 and provides the uploader with a pre-signed link.
 
     Args:
-        user_id (str): Logged-in user ID
+        user_id (UUID): Logged-in user ID
         file_buffer (BytesIO): ZIP file in memory
         filename (str): The filename that will be written to S3
         logger (Logger): The standard logger

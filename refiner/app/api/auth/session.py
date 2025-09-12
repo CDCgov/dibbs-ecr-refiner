@@ -5,13 +5,12 @@ import secrets
 from datetime import UTC, timedelta
 from datetime import datetime as dt
 from logging import Logger
-from uuid import UUID
 
 from psycopg.rows import dict_row
-from pydantic import BaseModel
 
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
+from ...db.users.model import DbUser
 
 SESSION_TTL = timedelta(hours=1)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
@@ -54,22 +53,13 @@ async def create_session(user_id: str) -> str:
         expires,
     )
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
+        async with conn.cursor() as cur:
             await cur.execute(query, params)
 
     return token
 
 
-class UserResponse(BaseModel):
-    """
-    User response model.
-    """
-
-    id: UUID
-    username: str
-
-
-async def get_user_from_session(token: str) -> UserResponse | None:
+async def get_user_from_session(token: str) -> DbUser | None:
     """
     Given a session token, find the user associated with the session.
 
@@ -79,7 +69,7 @@ async def get_user_from_session(token: str) -> UserResponse | None:
     token_hash = get_hashed_token(token)
     now = dt.now(UTC)
     query = """
-        SELECT u.id, u.username FROM sessions s
+        SELECT u.* FROM sessions s
         JOIN users u ON s.user_id = u.id
         WHERE s.token_hash = %s AND s.expires_at > %s
     """
@@ -89,10 +79,9 @@ async def get_user_from_session(token: str) -> UserResponse | None:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             user = await cur.fetchone()
-
-        if user:
-            return UserResponse(id=user["id"], username=user["username"])
-    return None
+            if not user:
+                return None
+            return DbUser(**user)
 
 
 async def _delete_expired_sessions() -> None:
@@ -105,7 +94,7 @@ async def _delete_expired_sessions() -> None:
     query = "DELETE FROM sessions where expires_at < %s"
     params = (now,)
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
+        async with conn.cursor() as cur:
             await cur.execute(query, params)
 
 
@@ -136,5 +125,5 @@ async def delete_session(token: str) -> None:
     query = "DELETE FROM sessions WHERE token_hash = %s"
     params = (token_hash,)
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
+        async with conn.cursor() as cur:
             await cur.execute(query, params)

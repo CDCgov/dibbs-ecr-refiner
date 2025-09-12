@@ -1,10 +1,10 @@
-from typing import Literal
+from dataclasses import dataclass
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel
 
-
-class DbConfigurationCondition(BaseModel):
+@dataclass(frozen=True)
+class DbConfigurationCondition:
     """
     Condition associated with a Configuration.
     """
@@ -18,7 +18,8 @@ class DbConfigurationCondition(BaseModel):
 # This is one object in the `custom_codes` list and we have many objects that are Similar
 # shaped. A flexible FHIR R4 Coding model with standard metadata could simplify a lot of
 # redundancy.
-class DbConfigurationCustomCode(BaseModel):
+@dataclass(frozen=True)
+class DbConfigurationCustomCode:
     """
     Custom code associated with a Configuration.
     """
@@ -28,7 +29,8 @@ class DbConfigurationCustomCode(BaseModel):
     name: str
 
 
-class DbConfigurationLocalCode(BaseModel):
+@dataclass(frozen=True)
+class DbConfigurationLocalCode:
     """
     Local code associated with a Configuration.
 
@@ -40,7 +42,8 @@ class DbConfigurationLocalCode(BaseModel):
     name: str
 
 
-class DbConfiguration(BaseModel):
+@dataclass(frozen=True)
+class DbConfiguration:
     """
     Model for a database Configuration object (row).
 
@@ -64,3 +67,31 @@ class DbConfiguration(BaseModel):
     local_codes: list[DbConfigurationLocalCode]
     sections_to_include: list[str]
     cloned_from_configuration_id: UUID | None
+    version: int
+
+    @classmethod
+    def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
+        """
+        Transforms a dictionary object into a DbConfiguration.
+
+        Args:
+            row (dict[str, Any]): Dictionary containing configuration data from the database
+
+        Returns:
+            DbConfiguration: The configuration object
+        """
+
+        return cls(
+            id=row["id"],
+            name=row["name"],
+            jurisdiction_id=row["jurisdiction_id"],
+            condition_id=row["condition_id"],
+            included_conditions=[
+                DbConfigurationCondition(**c) for c in row["included_conditions"]
+            ],
+            custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
+            local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
+            sections_to_include=row["sections_to_include"],
+            cloned_from_configuration_id=row["cloned_from_configuration_id"],
+            version=row["version"],
+        )

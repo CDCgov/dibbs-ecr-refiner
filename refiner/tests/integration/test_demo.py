@@ -1,6 +1,7 @@
 import io
 import pathlib
 import zipfile
+from datetime import datetime
 from typing import Any
 
 import pytest
@@ -15,6 +16,7 @@ from app.api.v1.demo import (
     _get_file_size_difference_percentage,
     _validate_zip_file,
 )
+from app.db.users.model import DbUser
 from app.main import app
 
 api_route_base = "/api/v1/demo"
@@ -61,7 +63,14 @@ class TestDemo:
             return ""
 
         def mock_get_logged_in_user():
-            return {"id": test_user_id, "username": test_username}
+            return DbUser(
+                id=test_user_id,
+                username=test_username,
+                email="test@test.com",
+                jurisdiction_id="test",
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+            )
 
         # Override the dependency
         app.dependency_overrides[_get_upload_refined_ecr] = (
@@ -91,7 +100,14 @@ class TestDemo:
             return pathlib.Path("/nonexistent/demo.zip")
 
         def mock_get_logged_in_user():
-            return {"id": test_user_id, "username": test_username}
+            return DbUser(
+                id=test_user_id,
+                username=test_username,
+                email="test@test.com",
+                jurisdiction_id="test",
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+            )
 
         # use the actual function reference, not a string
         app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
