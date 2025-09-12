@@ -9,7 +9,7 @@ import { useCreateConfiguration } from '../../api/configurations/configurations'
 import { CreateConfigurationResponse } from '../../api/schemas';
 import ConfigBuild from './ConfigBuild';
 
-// Mock configurations request
+// Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
     '../../api/configurations/configurations'
@@ -40,6 +40,14 @@ vi.mock('../../api/configurations/configurations', async () => {
           display_name: 'Anaplasmosis',
           code_sets: [], // not needed for these tests
           custom_codes: [], // not needed for these tests
+          included_conditions: [
+            { id: '1', display_name: 'Anaplasmosis', associated: true },
+            {
+              id: 'exists-id',
+              display_name: 'already-created',
+              associated: false,
+            },
+          ],
         },
       },
       isLoading: false,
@@ -217,7 +225,6 @@ describe('Configurations Page', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Next: Test configuration')).toBeInTheDocument();
 
-    // make sure we get a success toast
     expect(
       await screen.findByText('New configuration created')
     ).toBeInTheDocument();

@@ -6,20 +6,16 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
-  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
-  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -31,94 +27,11 @@ import type {
   AxiosResponse
 } from 'axios';
 
-import type {
-  AssociateCodesetInput,
-  AssociateCodesetResponse,
-  HTTPValidationError
-} from '.././schemas';
-
 
 
 
 
 /**
- * Associate a specified code set with the given configuration.
-
-Args:
-    configuration_id (UUID): ID of the configuration
-    body (AssociateCodesetInput): payload containing a condition_id
-    user (dict[str, Any], optional): User making the request
-    db (AsyncDatabaseConnection, optional): Database connection
-
-Raises:
-    HTTPException: 404 if configuration is not found in JD
-    HTTPException: 404 if condition is not found
-    HTTPException: 500 if configuration is cannot be updated
-
-Returns:
-    AssociateCodesetResponse: ID of updated configuration and the full list of included conditions
- * @summary Associate Condition Codeset With Configuration
- */
-export const associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut = (
-    configurationId: string,
-    associateCodesetInput: AssociateCodesetInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AssociateCodesetResponse>> => {
-    
-    
-    return axios.default.put(
-      `/api/v1/configurations/${configurationId}/code-set`,
-      associateCodesetInput,options
-    );
-  }
-
-
-
-export const getAssociateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPutMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext> => {
-
-const mutationKey = ['associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut>>, {configurationId: string;data: AssociateCodesetInput}> = (props) => {
-          const {configurationId,data} = props ?? {};
-
-          return  associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut(configurationId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AssociateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPutMutationResult = NonNullable<Awaited<ReturnType<typeof associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut>>>
-    export type AssociateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPutMutationBody = AssociateCodesetInput
-    export type AssociateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPutMutationError = AxiosError<HTTPValidationError>
-
-    /**
- * @summary Associate Condition Codeset With Configuration
- */
-export const useAssociateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof associateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPut>>,
-        TError,
-        {configurationId: string;data: AssociateCodesetInput},
-        TContext
-      > => {
-
-      const mutationOptions = getAssociateConditionCodesetWithConfigurationApiV1ConfigurationsConfigurationIdCodeSetPutMutationOptions(options);
-
-      return useMutation(mutationOptions , queryClient);
-    }
-    /**
  * Download the unrefined sample eCR zip file.
  * @summary Demo Download
  */

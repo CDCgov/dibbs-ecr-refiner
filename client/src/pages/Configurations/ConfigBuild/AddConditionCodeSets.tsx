@@ -1,0 +1,179 @@
+/**
+ * AddConditionCodeSetsDrawer: Main container component for adding condition code sets to a configuration.
+ * Uses a Drawer UI to present a searchable list of conditions, each with controls to add or remove their association.
+ * Delegates individual code set row UI to the ConditionCodeSet component.
+ */
+import React, { useState } from 'react';
+import Drawer from '../../../components/Drawer';
+import ConditionCodeSetListItem from './ConditionCodeSet';
+import { Link } from 'react-router';
+import {
+  getGetConfigurationQueryKey,
+  useAssociateConditionWithConfiguration,
+  useDisassociateConditionWithConfiguration,
+} from '../../../api/configurations/configurations';
+import { useToast } from '../../../hooks/useToast';
+import { useQueryClient } from '@tanstack/react-query';
+import { highlightMatches } from '../../../utils/highlight';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { IncludedCondition } from '../../../api/schemas';
+
+type AddConditionCodeSetsDrawerProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  conditions: IncludedCondition[];
+  configurationId: string;
+};
+
+/**
+ * Drawer to add condition code sets to a configuration.
+ */
+const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
+  isOpen,
+  onClose,
+  configurationId,
+  conditions,
+}: AddConditionCodeSetsDrawerProps) => {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Search and highlight logic
+  const filteredConditions = searchTerm
+    ? conditions.filter((cond) =>
+        cond.display_name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : conditions;
+
+  const { mutate: associateMutation } =
+    useAssociateConditionWithConfiguration();
+  const { mutate: disassociateMutation } =
+    useDisassociateConditionWithConfiguration();
+
+  const showToast = useToast();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+
+  // Add/remove handlers
+  function handleAssociate(conditionId: string) {
+    associateMutation(
+      {
+        configurationId,
+        data: { condition_id: conditionId },
+      },
+      {
+        onSuccess: async (resp) => {
+          showToast({
+            heading: 'Condition added',
+            body: resp.data.condition_name,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
+      }
+    );
+  }
+
+  function handleDisassociate(conditionId: string) {
+    disassociateMutation(
+      {
+        configurationId,
+        conditionId,
+      },
+      {
+        onSuccess: async (resp) => {
+          showToast({
+            heading: 'Condition removed',
+            body: resp.data.condition_name,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
+        onError: (error) => {
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error removing condition',
+            body: errorDetail,
+          });
+        },
+      }
+    );
+  }
+
+  return (
+    <Drawer
+      title="Add condition code sets"
+      subtitle={
+        <p className="!pt-2">
+          Codes relevant to each condition are grouped together. These code sets
+          are derived from the{' '}
+          <Link
+            to="https://tes.tools.aimsplatform.org"
+            className="text-blue-cool-60 font-bold"
+          >
+            TES (Terminology Exchange Service)
+          </Link>
+          .
+        </p>
+      }
+      isOpen={isOpen}
+      searchPlaceholder="Search by condition name"
+      onSearch={setSearchTerm}
+      onClose={onClose}
+      drawerWidth="35%"
+    >
+      <div className="flex h-full flex-col">
+        <ol className="flex-grow overflow-y-auto">
+          {filteredConditions.map((condition: IncludedCondition, i: number) => {
+            const highlight = searchTerm
+              ? highlightMatches(
+                  condition.display_name,
+                  [
+                    {
+                      indices: [
+                        [
+                          condition.display_name
+                            .toLowerCase()
+                            .indexOf(searchTerm.toLowerCase()),
+                          condition.display_name
+                            .toLowerCase()
+                            .indexOf(searchTerm.toLowerCase()) +
+                            searchTerm.length -
+                            1,
+                        ],
+                      ],
+                      key: 'display_name',
+                      value: condition.display_name,
+                    },
+                  ],
+                  'display_name'
+                )
+              : undefined;
+            const key = condition.id
+              ? condition.id
+              : `${condition.display_name}-${i}`;
+            return (
+              <ConditionCodeSetListItem
+                key={key}
+                conditionName={condition.display_name}
+                associated={condition.associated}
+                configurationId={configurationId}
+                onAssociate={() => {
+                  handleAssociate(condition.id);
+                }}
+                onDisassociate={() => {
+                  handleDisassociate(condition.id);
+                }}
+                highlight={highlight}
+              />
+            );
+          })}
+        </ol>
+      </div>
+    </Drawer>
+  );
+};
+
+export default AddConditionCodeSetsDrawer;

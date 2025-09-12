@@ -34,7 +34,10 @@ export function Toast({ heading, body, variant = 'success' }: ToastProps) {
             {heading}
           </h4>
           {body ? (
-            <p className="font-public-sans truncate overflow-hidden whitespace-nowrap">
+            <p
+              className="font-public-sans truncate overflow-hidden whitespace-nowrap"
+              title={body}
+            >
               {body}
             </p>
           ) : null}
