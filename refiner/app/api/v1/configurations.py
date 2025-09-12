@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
@@ -29,7 +30,8 @@ from ...db.users.model import DbUser
 router = APIRouter(prefix="/configurations")
 
 
-class GetConfigurationsResponse(BaseModel):
+@dataclass(frozen=True)
+class GetConfigurationsResponse:
     """
     Model for a user-defined configuration.
     """
@@ -79,7 +81,8 @@ class CreateConfigInput(BaseModel):
     condition_id: UUID
 
 
-class CreateConfigurationResponse(BaseModel):
+@dataclass(frozen=True)
+class CreateConfigurationResponse:
     """
     Configuration creation response model.
     """
@@ -133,7 +136,8 @@ async def create_configuration(
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
 
-class IncludedCondition(BaseModel):
+@dataclass(frozen=True)
+class IncludedCondition:
     """
     Model for a condition that is associated with a configuration.
     """
@@ -145,7 +149,8 @@ class IncludedCondition(BaseModel):
     associated: bool
 
 
-class GetConfigurationResponse(BaseModel):
+@dataclass(frozen=True)
+class GetConfigurationResponse:
     """
     Information about a specific configuration to return to the client.
     """
@@ -157,7 +162,8 @@ class GetConfigurationResponse(BaseModel):
     custom_codes: list[DbConfigurationCustomCode]
 
 
-class ConfigurationCustomCodeResponse(BaseModel):
+@dataclass(frozen=True)
+class ConfigurationCustomCodeResponse:
     """
     Configuration response for custom code operations (add/edit/delete).
     """
@@ -204,8 +210,9 @@ async def get_configuration(
     }
 
     all_conditions = await get_conditions_db(db=db)
+
     included_conditions = [
-        IncludedCondition.model_construct(
+        IncludedCondition(
             id=cond.id,
             display_name=cond.display_name,
             canonical_url=cond.canonical_url,
@@ -231,7 +238,8 @@ class AssociateCodesetInput(BaseModel):
     condition_id: UUID
 
 
-class ConditionEntry(BaseModel):
+@dataclass(frozen=True)
+class ConditionEntry:
     """
     Condition model.
     """
@@ -240,7 +248,8 @@ class ConditionEntry(BaseModel):
     version: str
 
 
-class AssociateCodesetResponse(BaseModel):
+@dataclass(frozen=True)
+class AssociateCodesetResponse:
     """
     Response from adding a code set to a config.
     """

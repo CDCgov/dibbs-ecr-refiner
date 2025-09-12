@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 
-class DbJurisdiction(BaseModel):
+@dataclass(frozen=True)
+class DbJurisdiction:
     """
     Jurisdiction info.
     """

@@ -1,14 +1,13 @@
 import json
 from dataclasses import dataclass
 
-from pydantic import BaseModel
-
 from ..db.conditions.model import DbCondition
 from ..db.configurations.model import DbConfiguration
 from ..db.models import GrouperRow
 
 
-class Configuration(BaseModel):
+@dataclass(frozen=True)
+class Configuration:
     """
     Model representing the configuration data needed for refinement.
 
@@ -35,7 +34,8 @@ class Configuration(BaseModel):
     configuration: "DbConfiguration"
 
 
-class ProcessedConfiguration(BaseModel):
+@dataclass(frozen=True)
+class ProcessedConfiguration:
     """
     Represents the minimal configuration needed for refining eICRs.
 
@@ -79,8 +79,8 @@ class ProcessedConfiguration(BaseModel):
         # add custom codes from configuration if they exist
         if configuration.configuration.custom_codes:
             codes.update(
-                custome_code.code
-                for custome_code in configuration.configuration.custom_codes
+                custom_code.code
+                for custom_code in configuration.configuration.custom_codes
             )
 
         return cls(codes=codes)

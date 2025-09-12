@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
 
-
-class DbUser(BaseModel):
+@dataclass(frozen=True)
+class DbUser:
     """
     A `user` row from the database.
     """

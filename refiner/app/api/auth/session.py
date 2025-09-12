@@ -6,7 +6,7 @@ from datetime import UTC, timedelta
 from datetime import datetime as dt
 from logging import Logger
 
-from psycopg.rows import class_row
+from psycopg.rows import dict_row
 
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
@@ -76,10 +76,12 @@ async def get_user_from_session(token: str) -> DbUser | None:
     params = (token_hash, now)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             user = await cur.fetchone()
-            return user
+            if not user:
+                return None
+            return DbUser(**user)
 
 
 async def _delete_expired_sessions() -> None:
