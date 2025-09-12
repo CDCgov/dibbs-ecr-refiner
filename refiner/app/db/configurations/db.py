@@ -1,13 +1,14 @@
+from dataclasses import dataclass
 from uuid import UUID
 
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
-from pydantic import BaseModel
 
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
     DbConfiguration,
+    DbConfigurationCondition,
     DbConfigurationCustomCode,
 )
 
@@ -98,7 +99,8 @@ async def insert_configuration_db(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
             await cur.execute(query, params)
-            return await cur.fetchone()
+            row = await cur.fetchone()
+            return row
 
 
 async def get_configurations_db(
@@ -162,9 +164,31 @@ async def get_configuration_by_id_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            return await cur.fetchone()
+            row = await cur.fetchone()
+            if not row:
+                return None
+
+            # Convert nested JSON columns into typed dataclasses
+            included_conditions = [
+                DbConfigurationCondition(**c) for c in row["included_conditions"]
+            ]
+            custom_codes = [DbConfigurationCustomCode(**c) for c in row["custom_codes"]]
+            local_codes = row["local_codes"]  # assuming DB returns a list
+
+            return DbConfiguration(
+                id=row["id"],
+                name=row["name"],
+                jurisdiction_id=row["jurisdiction_id"],
+                condition_id=row["condition_id"],
+                included_conditions=included_conditions,
+                custom_codes=custom_codes,
+                local_codes=local_codes,
+                sections_to_include=row["sections_to_include"],
+                cloned_from_configuration_id=row["cloned_from_configuration_id"],
+                version=row["version"],
+            )
 
 
 async def is_config_valid_to_insert_db(
@@ -308,7 +332,8 @@ async def disassociate_condition_codeset_with_configuration_db(
             return row
 
 
-class DbTotalConditionCodeCount(BaseModel):
+@dataclass(frozen=True)
+class DbTotalConditionCodeCount:
     """
     Total code count model.
     """

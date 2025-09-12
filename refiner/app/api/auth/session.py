@@ -2,13 +2,13 @@ import asyncio
 import hashlib
 import hmac
 import secrets
+from dataclasses import dataclass
 from datetime import UTC, timedelta
 from datetime import datetime as dt
 from logging import Logger
 from uuid import UUID
 
 from psycopg.rows import dict_row
-from pydantic import BaseModel
 
 from ...core.config import ENVIRONMENT
 from ...db.pool import db
@@ -60,7 +60,8 @@ async def create_session(user_id: str) -> str:
     return token
 
 
-class UserResponse(BaseModel):
+@dataclass(frozen=True)
+class UserResponse:
     """
     User response model.
     """

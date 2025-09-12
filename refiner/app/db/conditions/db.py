@@ -1,7 +1,7 @@
+from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg.rows import class_row
-from pydantic import BaseModel
 
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition
@@ -75,7 +75,8 @@ async def get_condition_by_id_db(
     return row
 
 
-class GetConditionCode(BaseModel):
+@dataclass(frozen=True)
+class GetConditionCode:
     """
     Model for a condition code.
     """

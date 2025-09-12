@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
 
-
-class DbConfigurationCondition(BaseModel):
+@dataclass(frozen=True)
+class DbConfigurationCondition:
     """
     Condition associated with a Configuration.
     """
@@ -18,7 +18,8 @@ class DbConfigurationCondition(BaseModel):
 # This is one object in the `custom_codes` list and we have many objects that are Similar
 # shaped. A flexible FHIR R4 Coding model with standard metadata could simplify a lot of
 # redundancy.
-class DbConfigurationCustomCode(BaseModel):
+@dataclass(frozen=True)
+class DbConfigurationCustomCode:
     """
     Custom code associated with a Configuration.
     """
@@ -28,7 +29,8 @@ class DbConfigurationCustomCode(BaseModel):
     name: str
 
 
-class DbConfigurationLocalCode(BaseModel):
+@dataclass(frozen=True)
+class DbConfigurationLocalCode:
     """
     Local code associated with a Configuration.
 
@@ -40,7 +42,8 @@ class DbConfigurationLocalCode(BaseModel):
     name: str
 
 
-class DbConfiguration(BaseModel):
+@dataclass(frozen=True)
+class DbConfiguration:
     """
     Model for a database Configuration object (row).
 
@@ -64,3 +67,4 @@ class DbConfiguration(BaseModel):
     local_codes: list[DbConfigurationLocalCode]
     sections_to_include: list[str]
     cloned_from_configuration_id: UUID | None
+    version: int

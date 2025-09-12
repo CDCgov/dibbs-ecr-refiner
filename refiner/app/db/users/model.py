@@ -1,9 +1,9 @@
+from dataclasses import dataclass
 from uuid import UUID
 
-from pydantic import BaseModel
 
-
-class DbUser(BaseModel):
+@dataclass(frozen=True)
+class DbUser:
     """
     Model for a logged-in user.
     """
