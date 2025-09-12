@@ -43,18 +43,6 @@ jobs:
         working-directory: client
       - name: Start Application
         run: just dev up --detach
-      - name: Wait for Application Startup
-        run: |
-          for i in {1..20}; do
-            response=$(curl -sf http://localhost:8081/api/healthcheck || true)
-            if echo "$response" | grep -q '"status":"OK"' && echo "$response" | grep -q '"db":"OK"'; then
-              echo "Application healthcheck passed."
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Application healthcheck failed after 20 seconds."
-          exit 1
       - name: Seed Database
         run: just dev run --rm seed
       - name: Run Playwright E2E Tests
