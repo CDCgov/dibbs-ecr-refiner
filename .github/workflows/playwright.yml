@@ -50,7 +50,7 @@ jobs:
             sleep 1
           done
           echo "Application healthcheck failed after 20 seconds."
-          exit 1
+          exit 42
       - name: Run Playwright E2E Tests
         run: npm run e2e
         working-directory: client
