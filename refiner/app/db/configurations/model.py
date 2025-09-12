@@ -80,20 +80,17 @@ class DbConfiguration:
         Returns:
             DbConfiguration: The configuration object
         """
-        included_conditions = [
-            DbConfigurationCondition(**c) for c in row["included_conditions"]
-        ]
-        custom_codes = [DbConfigurationCustomCode(**c) for c in row["custom_codes"]]
-        local_codes = [DbConfigurationLocalCode(**lc) for lc in row["local_codes"]]
 
         return cls(
             id=row["id"],
             name=row["name"],
             jurisdiction_id=row["jurisdiction_id"],
             condition_id=row["condition_id"],
-            included_conditions=included_conditions,
-            custom_codes=custom_codes,
-            local_codes=local_codes,
+            included_conditions=[
+                DbConfigurationCondition(**c) for c in row["included_conditions"]
+            ],
+            custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
+            local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             sections_to_include=row["sections_to_include"],
             cloned_from_configuration_id=row["cloned_from_configuration_id"],
             version=row["version"],
