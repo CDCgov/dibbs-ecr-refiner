@@ -34,6 +34,7 @@ class Configuration:
     configuration: "DbConfiguration"
 
 
+@dataclass
 class ProcessedConfiguration:
     """
     Represents the minimal configuration needed for refining eICRs.
@@ -78,8 +79,8 @@ class ProcessedConfiguration:
         # add custom codes from configuration if they exist
         if configuration.configuration.custom_codes:
             codes.update(
-                custome_code.code
-                for custome_code in configuration.configuration.custom_codes
+                custom_code.code
+                for custom_code in configuration.configuration.custom_codes
             )
 
         return cls(codes=codes)
