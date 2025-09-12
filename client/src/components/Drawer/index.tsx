@@ -65,10 +65,10 @@ const Drawer = ({
       <div>
         <div
           className={classNames(
-            'bg-gray-3 fixed top-0 z-[1050] flex h-full w-[100%] shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 shadow-2xl transition-all duration-300 ease-linear',
+            'bg-gray-3 fixed top-0 z-[1050] flex h-full w-full shrink-0 flex-col items-start gap-6 border-l border-solid border-gray-400 p-0 shadow-2xl transition-all duration-300 ease-linear',
             {
-              'right-0 opacity-100': isOpen,
-              'right-[-60%] opacity-0': !isOpen,
+              'pointer-events-auto right-0 opacity-100': isOpen,
+              'pointer-events-none right-[-60%] opacity-0': !isOpen,
               'md:w-[60%]': drawerWidth === '60%',
               'md:w-[35%]': drawerWidth !== '60%',
             }
@@ -76,6 +76,7 @@ const Drawer = ({
           role="dialog"
           id="drawer-container"
           aria-label="drawer-container"
+          inert={!isOpen}
         >
           <div className="w-full overflow-y-scroll p-8">
             <div className="max-w-[95%]">
