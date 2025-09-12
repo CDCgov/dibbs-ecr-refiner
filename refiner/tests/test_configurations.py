@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -45,12 +46,14 @@ def mock_logged_in_user():
     """
 
     def mock_user():
-        return {
-            "id": "5deb43c2-6a82-4052-9918-616e01d255c7",
-            "username": "tester",
-            "email": "tester@test.com",
-            "jurisdiction_id": "JD-1",
-        }
+        return DbUser(
+            id="5deb43c2-6a82-4052-9918-616e01d255c7",
+            username="tester",
+            email="tester@test.com",
+            jurisdiction_id="JD-1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
 
     app.dependency_overrides[get_logged_in_user] = mock_user
     yield
@@ -62,16 +65,6 @@ def mock_db_functions(monkeypatch):
     """
     Mock return values of the `_db` functions called by the routes.
     """
-    # Mock get_user_by_id_db
-    user_mock = DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
-        username="tester",
-        email="tester@test.com",
-        jurisdiction_id="JD-1",
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_user_by_id_db", AsyncMock(return_value=user_mock)
-    )
 
     # Mock get_configurations_db
     config_mock = GetConfigurationsResponse(

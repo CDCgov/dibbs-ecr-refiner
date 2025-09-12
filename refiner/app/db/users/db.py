@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from psycopg.rows import class_row, dict_row
 from pydantic import BaseModel
 
@@ -55,12 +57,12 @@ async def upsert_user_db(
     return str(row["id"])
 
 
-async def get_user_by_id_db(id: str, db: AsyncDatabaseConnection) -> DbUser:
+async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
     """
     Gets a user from the database with the provided ID.
     """
     query = """
-            SELECT id, username, email, jurisdiction_id
+            SELECT *
             FROM users
             WHERE id = %s
             """
