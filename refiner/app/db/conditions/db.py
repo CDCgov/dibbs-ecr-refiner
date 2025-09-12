@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition
@@ -33,9 +33,10 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
             ORDER BY display_name ASC;
             """
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query)
             rows = await cur.fetchall()
+            return [DbCondition.from_db_row(row) for row in rows]
 
     if not rows:
         raise Exception("No conditions found for version 2.0.0.")
@@ -68,9 +69,12 @@ async def get_condition_by_id_db(
     params = (id,)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
+            if not row:
+                return None
+            return DbCondition.from_db_row(row)
 
     return row
 
