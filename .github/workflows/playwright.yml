@@ -10,6 +10,12 @@ jobs:
   e2e:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    services:
+        docker:
+          image: docker:19.03.12
+          options: --privileged
+          ports:
+            - 5432:5432  # Expose database port for testing
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
