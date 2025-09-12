@@ -1,9 +1,9 @@
+from dataclasses import dataclass
 from uuid import UUID
 
-from pydantic import BaseModel
 
-
-class DbConditionCoding(BaseModel):
+@dataclass
+class DbConditionCoding:
     """
     Model for code/display pairs from conditions table JSONB columns.
 
@@ -14,7 +14,8 @@ class DbConditionCoding(BaseModel):
     display: str
 
 
-class DbCondition(BaseModel):
+@dataclass
+class DbCondition:
     """
     Model to represent a complete condition row from the database (row).
 

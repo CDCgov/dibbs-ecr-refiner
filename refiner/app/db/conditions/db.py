@@ -15,7 +15,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        list[Condition]: List of conditions.
+        list[DbCondition]: List of conditions.
     """
     query = """
             SELECT

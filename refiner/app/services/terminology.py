@@ -1,14 +1,13 @@
 import json
 from dataclasses import dataclass
 
-from pydantic import BaseModel
-
 from ..db.conditions.model import DbCondition
 from ..db.configurations.model import DbConfiguration
 from ..db.models import GrouperRow
 
 
-class Configuration(BaseModel):
+@dataclass
+class Configuration:
     """
     Model representing the configuration data needed for refinement.
 
@@ -35,7 +34,7 @@ class Configuration(BaseModel):
     configuration: "DbConfiguration"
 
 
-class ProcessedConfiguration(BaseModel):
+class ProcessedConfiguration:
     """
     Represents the minimal configuration needed for refining eICRs.
 
