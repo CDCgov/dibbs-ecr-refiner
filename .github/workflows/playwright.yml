@@ -43,24 +43,20 @@ jobs:
         working-directory: client
       - name: Start Application
         run: just dev up --detach
-      - name: Seed Database
-        run: just dev run --rm seed
       - name: Wait for Application Startup
         run: |
           for i in {1..20}; do
             response=$(curl -sf http://localhost:8081/api/healthcheck || true)
-            status=$(echo "$response" | grep -o '"status":"OK"')
-            db=$(echo "$response" | grep -o '"db":"OK"')
-            if [ "$status" = '"status":"OK"' ] && [ "$db" = '"db":"OK"' ]; then
+            if echo "$response" | grep -q '"status":"OK"' && echo "$response" | grep -q '"db":"OK"'; then
               echo "Application healthcheck passed."
-              break
+              exit 0
             fi
             sleep 1
           done
-          if [ "$status" != '"status":"OK"' ] || [ "$db" != '"db":"OK"' ]; then
-            echo "Application healthcheck failed after 20 seconds."
-            exit 1
-          fi
+          echo "Application healthcheck failed after 20 seconds."
+          exit 1
+      - name: Seed Database
+        run: just dev run --rm seed
       - name: Run Playwright E2E Tests
         run: npm run e2e
         working-directory: client
