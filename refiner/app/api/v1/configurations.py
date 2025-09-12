@@ -204,6 +204,7 @@ async def get_configuration(
     }
 
     all_conditions = await get_conditions_db(db=db)
+
     included_conditions = [
         IncludedCondition.model_construct(
             id=cond.id,

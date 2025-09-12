@@ -6,7 +6,7 @@ from ..db.configurations.model import DbConfiguration
 from ..db.models import GrouperRow
 
 
-@dataclass
+@dataclass(frozen=True)
 class Configuration:
     """
     Model representing the configuration data needed for refinement.
@@ -34,7 +34,7 @@ class Configuration:
     configuration: "DbConfiguration"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ProcessedConfiguration:
     """
     Represents the minimal configuration needed for refining eICRs.
