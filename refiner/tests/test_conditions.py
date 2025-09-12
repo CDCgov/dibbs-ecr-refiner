@@ -76,6 +76,7 @@ async def test_get_conditions(monkeypatch, authed_client):
     assert isinstance(data, list)
     assert data[0]["id"] == str(fake_condition.id)
     assert data[0]["display_name"] == fake_condition.display_name
+    assert "associated" not in data[0]
 
 
 @pytest.mark.asyncio

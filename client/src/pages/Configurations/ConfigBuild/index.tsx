@@ -27,6 +27,7 @@ import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
   useDeleteCustomCodeFromConfiguration,
+  useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
@@ -39,7 +40,10 @@ import {
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
+import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
+import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -71,6 +75,7 @@ export default function ConfigBuild() {
         <Builder
           id={id}
           code_sets={response.data.code_sets}
+          included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
         />
       </SectionContainer>
@@ -80,10 +85,16 @@ export default function ConfigBuild() {
 
 type BuilderProps = Pick<
   GetConfigurationResponse,
-  'id' | 'code_sets' | 'custom_codes'
+  'id' | 'code_sets' | 'custom_codes' | 'included_conditions'
 >;
 
-function Builder({ id, code_sets, custom_codes }: BuilderProps) {
+function Builder({
+  id,
+  code_sets,
+  custom_codes,
+  included_conditions,
+}: BuilderProps) {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
     'none'
   );
@@ -102,6 +113,42 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
     setTableView('custom');
   }
 
+  const { mutate: disassociateMutation } =
+    useDisassociateConditionWithConfiguration();
+
+  const showToast = useToast();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+
+  function handleDisassociateCondition(conditionId: string) {
+    disassociateMutation(
+      {
+        configurationId: id,
+        conditionId,
+      },
+      {
+        onSuccess: async (resp) => {
+          showToast({
+            heading: 'Condition removed',
+            body: resp.data.condition_name,
+          });
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(id),
+          });
+        },
+        onError: (error) => {
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error removing condition',
+            body: errorDetail,
+          });
+        },
+      }
+    );
+  }
+
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -114,6 +161,7 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
               className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
+              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             >
               <Icon.Add size={3} aria-hidden />
               <span>ADD</span>
@@ -122,23 +170,45 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
           <OptionsListContainer>
             <OptionsList>
               {code_sets.map((codeSet) => (
-                <li key={codeSet.display_name}>
+                <li
+                  key={codeSet.display_name}
+                  className={classNames(
+                    'group relative flex items-center hover:bg-stone-50',
+                    {
+                      'bg-white': selectedCodesetId === codeSet.condition_id,
+                    }
+                  )}
+                >
                   <button
                     className={classNames(
-                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                      {
-                        'bg-white': selectedCodesetId === codeSet.condition_id,
-                      }
+                      'flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
                     )}
                     onClick={() => onCodesetClick(codeSet.condition_id)}
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
                     aria-pressed={selectedCodesetId === codeSet.condition_id}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Delete' || e.key === 'Backspace') {
+                        e.preventDefault();
+                        handleDisassociateCondition(codeSet.condition_id);
+                      }
+                    }}
                   >
-                    <span>{codeSet.display_name}</span>
-                    <span>{codeSet.total_codes}</span>
+                    <span className="">{codeSet.display_name}</span>
+                    <span className="">{codeSet.total_codes}</span>
                   </button>
+                  <span
+                    className="text-gray-cool-40 show-delete ml-2 hidden cursor-pointer border-none p-0 pr-3 group-hover:inline-block group-hover:bg-stone-50 group-focus:inline-block hover:text-red-700 focus:outline focus:outline-indigo-500"
+                    aria-label={`Delete codeset ${codeSet.display_name}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDisassociateCondition(codeSet.condition_id);
+                    }}
+                    role="button"
+                  >
+                    <Icon.Delete size={3} aria-hidden />
+                  </span>
                 </li>
               ))}
             </OptionsList>
@@ -195,6 +265,12 @@ function Builder({ id, code_sets, custom_codes }: BuilderProps) {
           ) : null}
         </div>
       </div>
+      <AddConditionCodeSetsDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        conditions={included_conditions}
+        configurationId={id}
+      />
     </div>
   );
 }
@@ -248,7 +324,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
 }: CustomCodesDetailProps) {
-  const { mutateAsync: deleteCode } = useDeleteCustomCodeFromConfiguration();
+  const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
     useState<DbConfigurationCustomCode | null>(null);
   const queryClient = useQueryClient();
@@ -292,8 +368,8 @@ function CustomCodesDetail({
                 <button
                   className="!text-blue-cool-50 !no-underline hover:!cursor-pointer hover:!underline"
                   aria-label={`Delete custom code ${customCode.name}`}
-                  onClick={async () => {
-                    await deleteCode(
+                  onClick={() => {
+                    deleteCode(
                       {
                         code: customCode.code,
                         system: customCode.system,
@@ -723,33 +799,4 @@ function normalizeSystem(
   system: DbConfigurationCustomCodeSystem | string
 ): AddCustomCodeInputSystem {
   return system.toLowerCase() as AddCustomCodeInputSystem;
-}
-
-function highlightMatches(
-  text: string,
-  matches?: readonly FuseResultMatch[],
-  key?: string
-) {
-  if (!matches || !key) return text;
-
-  const match = matches.find((m) => m.key === key);
-  if (!match || !match.indices.length) return text;
-
-  const indices = match.indices;
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  indices.forEach(([start, end], i) => {
-    if (lastIndex < start) {
-      parts.push(text.slice(lastIndex, start));
-    }
-    parts.push(<mark key={i}>{text.slice(start, end + 1)}</mark>);
-    lastIndex = end + 1;
-  });
-
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts;
 }

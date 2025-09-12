@@ -226,7 +226,8 @@ async def associate_condition_codeset_with_configuration_db(
                 FROM jsonb_array_elements(included_conditions) elem
                 UNION ALL
                 SELECT elem
-                FROM jsonb_array_elements(nc.val) elem
+                FROM new_condition,
+                     jsonb_array_elements(new_condition.val) elem
                 WHERE NOT EXISTS (
                 SELECT 1
                 FROM jsonb_array_elements(included_conditions) existing
@@ -254,6 +255,51 @@ async def associate_condition_codeset_with_configuration_db(
         [{"canonical_url": condition.canonical_url, "version": condition.version}]
     )
     params = (new_condition, config.id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row
+
+
+async def disassociate_condition_codeset_with_configuration_db(
+    config: DbConfiguration, condition: DbCondition, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Given a condition, remove its codeset from the specified configuration.
+
+    This is the opposite of associate_condition_codeset_with_configuration_db.
+
+    Args:
+        config (DbConfiguration): The configuration
+        condition (DbCondition): The condition to remove
+        db (AsyncDatabaseConnection): Database connection
+
+    Returns:
+        DbConfiguration: The updated configuration
+    """
+
+    query = """
+        UPDATE configurations
+        SET included_conditions = (
+            SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+            FROM (
+                SELECT elem
+                FROM jsonb_array_elements(included_conditions) elem
+                WHERE NOT (
+                    elem->>'canonical_url' = %s AND elem->>'version' = %s
+                )
+            ) filtered
+        )
+        WHERE id = %s
+        RETURNING *;
+    """
+    params = (
+        condition.canonical_url,
+        condition.version,
+        config.id,
+    )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfiguration)) as cur:
