@@ -39,3 +39,6 @@ refined-ecr
 
 # Local testing
 .scratch
+
+test-results/
+playwright-report/
