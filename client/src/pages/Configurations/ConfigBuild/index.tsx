@@ -226,7 +226,7 @@ function Builder({
                       'bg-white': tableView === 'custom',
                     }
                   )}
-                  onClick={() => onCustomCodeClick()}
+                  onClick={onCustomCodeClick}
                   aria-controls={
                     tableView === 'custom' ? 'custom-table' : undefined
                   }
@@ -337,7 +337,7 @@ function CustomCodesDetail({
 
   return (
     <>
-      <table className="!mt-6 w-full border-separate">
+      <table id="custom-table" className="!mt-6 w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
