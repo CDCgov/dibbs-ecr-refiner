@@ -35,9 +35,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('client/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('client/package-lock.json') }}
           restore-keys: |
-            playwright-browsers-${{ runner.os }}-
+            ${{ runner.os }}-playwright-browsers-
+            ${{ runner.os }}-playwright-
+            ${{ runner.os }}-
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
         working-directory: client
@@ -46,8 +48,10 @@ jobs:
       - name: Wait for Server Startup
         run: |
           for i in {1..24}; do
-            if curl -sSf http://localhost:8081/api/healthcheck > /dev/null; then
-              echo "Server is up!"
+            response=$(curl -sSf http://localhost:8081/api/healthcheck)
+            if [ $? -eq 0 ]; then
+              echo "Server is up! Response:"
+              echo "$response"
               exit 0
             fi
             echo "Waiting for server startup... ($i/24)"
