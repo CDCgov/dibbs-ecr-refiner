@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 
-class ConditionProcessingInfo(BaseModel):
+@dataclass(frozen=True)
+class ConditionProcessingInfo:
     """
     Model for a Condition's processing information.
     """
@@ -11,7 +12,8 @@ class ConditionProcessingInfo(BaseModel):
     method: str
 
 
-class Condition(BaseModel):
+@dataclass(frozen=True)
+class Condition:
     """
     Model for a Condition.
     """
@@ -23,7 +25,8 @@ class Condition(BaseModel):
     processing_info: ConditionProcessingInfo
 
 
-class RefinedTestingDocument(BaseModel):
+@dataclass(frozen=True)
+class RefinedTestingDocument:
     """
     Model for the response when uploading a document in the testing suite.
     """

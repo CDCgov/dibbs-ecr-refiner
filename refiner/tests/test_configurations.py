@@ -1,3 +1,5 @@
+from dataclasses import replace
+from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -44,12 +46,14 @@ def mock_logged_in_user():
     """
 
     def mock_user():
-        return {
-            "id": "5deb43c2-6a82-4052-9918-616e01d255c7",
-            "username": "tester",
-            "email": "tester@test.com",
-            "jurisdiction_id": "JD-1",
-        }
+        return DbUser(
+            id="5deb43c2-6a82-4052-9918-616e01d255c7",
+            username="tester",
+            email="tester@test.com",
+            jurisdiction_id="JD-1",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
 
     app.dependency_overrides[get_logged_in_user] = mock_user
     yield
@@ -61,16 +65,6 @@ def mock_db_functions(monkeypatch):
     """
     Mock return values of the `_db` functions called by the routes.
     """
-    # Mock get_user_by_id_db
-    user_mock = DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
-        username="tester",
-        email="tester@test.com",
-        jurisdiction_id="JD-1",
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_user_by_id_db", AsyncMock(return_value=user_mock)
-    )
 
     # Mock get_configurations_db
     config_mock = GetConfigurationsResponse(
@@ -128,6 +122,7 @@ def mock_db_functions(monkeypatch):
         local_codes=[],
         sections_to_include=[],
         cloned_from_configuration_id=None,
+        version=1,
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
@@ -166,6 +161,7 @@ def mock_db_functions(monkeypatch):
         local_codes=[],
         sections_to_include=[],
         cloned_from_configuration_id=None,
+        version=1,
     )
 
     monkeypatch.setattr(
@@ -190,14 +186,13 @@ def mock_db_functions(monkeypatch):
     )
 
     # Mock adding custom code to a config
-    custom_code_config_mock = config_by_id_mock.model_copy(
-        update={
-            "custom_codes": [
-                DbConfigurationCustomCode(
-                    code="test-code", name="test-name", system="LOINC"
-                )
-            ],
-        }
+    custom_code_config_mock = replace(
+        config_by_id_mock,
+        custom_codes=[
+            DbConfigurationCustomCode(
+                code="test-code", name="test-name", system="LOINC"
+            )
+        ],
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.add_custom_code_to_configuration_db",
@@ -205,10 +200,9 @@ def mock_db_functions(monkeypatch):
     )
 
     # Mock deleting a custom code from a config
-    custom_code_deletion_mock = config_by_id_mock.model_copy(
-        update={
-            "custom_codes": [],
-        }
+    custom_code_deletion_mock = replace(
+        config_by_id_mock,
+        custom_codes=[],
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.delete_custom_code_from_configuration_db",
@@ -216,14 +210,13 @@ def mock_db_functions(monkeypatch):
     )
 
     # Mock editing a custom code from a config
-    custom_code_edit_mock = config_by_id_mock.model_copy(
-        update={
-            "custom_codes": [
-                DbConfigurationCustomCode(
-                    code="edited-code", name="test-name", system="SNOMED"
-                )
-            ],
-        }
+    custom_code_edit_mock = replace(
+        config_by_id_mock,
+        custom_codes=[
+            DbConfigurationCustomCode(
+                code="edited-code", name="test-name", system="SNOMED"
+            )
+        ],
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.edit_custom_code_from_configuration_db",
@@ -337,6 +330,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         local_codes=[],
         sections_to_include=[],
         cloned_from_configuration_id=None,
+        version=1,
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",

@@ -50,6 +50,7 @@ def make_dbconfiguration(**kwargs):
         "local_codes": [],
         "sections_to_include": [],
         "cloned_from_configuration_id": None,
+        "version": 1,
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)

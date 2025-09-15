@@ -1,23 +1,44 @@
-from datetime import UTC, timedelta
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 from datetime import datetime as dt
 from logging import Logger
-from typing import Any
 
 from fastapi import Depends, HTTPException, Request, status
 from psycopg.rows import dict_row
 
 from ...core.exceptions import DatabaseConnectionError, DatabaseQueryError
 from ...db.pool import db
+from ...db.users.model import DbUser
 from ...services.logger import get_logger
 from .session import SESSION_TTL, get_hashed_token
 
 RENEW_THRESHOLD = timedelta(minutes=15)
 
 
+@dataclass(frozen=True)
+class DbUserWithSessionExpiryTime(DbUser):
+    """
+    DbUser model that includes the `expires_at` field.
+    """
+
+    expires_at: datetime
+
+    def to_db_user(self) -> DbUser:
+        """
+        Transform DbUserWithSessionExpiryTime to a DbUser.
+
+        Returns:
+            DbUser: the user object
+        """
+        data = asdict(self)
+        data.pop("expires_at", None)
+        return DbUser(**data)
+
+
 # This function can be used as an auth check for handlers or routers
 async def get_logged_in_user(
     request: Request, logger: Logger = Depends(get_logger)
-) -> dict[str, Any]:
+) -> DbUser:
     """
     Gets the current user from the session. Throws an error if the user is unauthenticated.
 
@@ -30,7 +51,7 @@ async def get_logged_in_user(
         HTTPException: 500 Internal Server Error is thrown for DB or unknown issues
 
     Returns:
-        dict[str, Any]: Returns the user information if it's available
+        DbUser: Returns the user information
     """
     session_token = request.cookies.get("refiner-session")
     if not session_token:
@@ -55,17 +76,16 @@ async def get_logged_in_user(
                     (token_hash, now),
                 )
 
-                result = await cur.fetchone()
+                row = await cur.fetchone()
 
-                if not result:
+                if not row:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="Invalid or expired session token",
                     )
 
-                # Grab user info without `expires_at`
-                user = {k: v for k, v in result.items() if k != "expires_at"}
-                expires_at = result["expires_at"]
+                user = DbUserWithSessionExpiryTime(**row)
+                expires_at = user.expires_at
 
                 # Renew session if it's close to expiring
                 if expires_at - now < RENEW_THRESHOLD:
@@ -75,7 +95,9 @@ async def get_logged_in_user(
                         (new_expiration, token_hash),
                     )
 
-            return user
+            # Create a DbUser from the DbUserWithSessionExpiryTime to return
+            return user.to_db_user()
+
     except (DatabaseConnectionError, DatabaseQueryError) as db_err:
         logger.error(
             "Database error occurred while getting user information",
