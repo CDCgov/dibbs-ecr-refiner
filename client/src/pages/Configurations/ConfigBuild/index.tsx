@@ -728,6 +728,7 @@ export function CustomCodeModal({
             type="text"
             value={form.code}
             onChange={handleChange('code')}
+            autoComplete="off"
           />
         </div>
 
@@ -755,6 +756,7 @@ export function CustomCodeModal({
             type="text"
             value={form.name}
             onChange={handleChange('name')}
+            autoComplete="off"
           />
         </div>
       </div>
