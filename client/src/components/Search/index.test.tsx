@@ -6,7 +6,7 @@ import { Search } from '.';
 const renderComponentView = (text?: string) =>
   render(
     <BrowserRouter>
-      <Search placeholder={text} id='test' name='test' />
+      <Search placeholder={text} id="test" name="test" />
     </BrowserRouter>
   );
 
