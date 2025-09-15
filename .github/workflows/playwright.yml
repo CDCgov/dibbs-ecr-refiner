@@ -57,6 +57,8 @@ jobs:
           exit 42
       - name: Seed Database
         run: just dev run --rm seed
+        env:
+          DB_URL: 'postgresql://postgres:refiner@localhost:5432/refiner'
       - name: Run Playwright E2E Tests
         run: npm run e2e
         working-directory: client
