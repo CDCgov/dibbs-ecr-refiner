@@ -43,6 +43,8 @@ jobs:
         working-directory: client
       - name: Start Application
         run: just dev up --detach
+      - name: Wait for Server Startup
+        run: sleep 80
       - name: Seed Database
         run: just dev run --rm seed
       - name: Run Playwright E2E Tests
