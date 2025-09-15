@@ -58,10 +58,10 @@ jobs:
           done
           echo "Server did not start within 2 minutes."
           exit 42
-      - name: Seed Database
-        env:
-          DB_URL: 'postgresql://postgres:refiner@localhost:5432/refiner'
-        run: just dev run --rm seed
+      - name: Migrate and Seed Database
+        run: |
+          just migrate local
+          just dev run --rm seed
       - name: Run Playwright E2E Tests
         run: npm run e2e
         working-directory: client
