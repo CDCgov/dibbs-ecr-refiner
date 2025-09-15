@@ -28,27 +28,27 @@ refresh:
 [group('db')]
 [doc('Run a raw SQL query against the database (e.g., `just db query "SELECT * FROM conditions LIMIT 5;"`)')]
 query +QUERY:
-    docker compose exec db psql -U postgres -d refiner -c {{QUERY}}
+    docker compose exec db psql -U postgres -d refiner -c "{{QUERY}}"
 
 [group('db')]
 [doc('Run a raw SQL query against the database (e.g., `just db query "SELECT * FROM conditions LIMIT 5;"`)')]
-table +table:
+table TABLE:
     just db query "\d {{TABLE}}"
 
 [group('db')]
 [doc('Get the count of conditions, grouped by version')]
-count-conditions-by-version:
+count-conditions:
     just db query "SELECT version, COUNT(*) FROM conditions GROUP BY version ORDER BY version;"
 
 [group('db')]
 [doc('Find a condition by its name (case-insensitive search)')]
 find-condition NAME:
-    just db query "SELECT * FROM conditions WHERE display_name ILIKE '%{{NAME}}%';"
+    just db query "SELECT id, canonical_url, version, display_name FROM conditions WHERE display_name ILIKE '%{{NAME}}%';"
 
 [group('db')]
 [doc('Show the 5 most recently created configurations')]
 recent-configurations:
-    just db query "SELECT * FROM configurations ORDER BY created_at DESC LIMIT 5;"
+    just db query "SELECT id, version, jurisdiction_id, name FROM configurations ORDER BY created_at DESC LIMIT 5;"
 
 [group('db')]
 [doc('Check if conditions exist for a specific version (e.g., `just db check-condition-version 3.0.0`)')]
