@@ -195,20 +195,18 @@ function Builder({
                       }
                     }}
                   >
-                    <span className="">{codeSet.display_name}</span>
-                    <span className="">{codeSet.total_codes}</span>
+                    <span>{codeSet.display_name}</span>
+                    <span>{codeSet.total_codes}</span>
                   </button>
-                  <span
-                    className="text-gray-cool-40 show-delete ml-2 hidden cursor-pointer border-none p-0 pr-3 group-hover:inline-block group-hover:bg-stone-50 group-focus:inline-block hover:text-red-700 focus:outline focus:outline-indigo-500"
-                    aria-label={`Delete codeset ${codeSet.display_name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDisassociateCondition(codeSet.condition_id);
-                    }}
-                    role="button"
+                  <button
+                    className="text-gray-cool-40 sr-only group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer hover:text-red-700 focus:text-red-700 focus:outline focus:outline-indigo-500"
+                    aria-label={`Delete code set ${codeSet.display_name}`}
+                    onClick={() =>
+                      handleDisassociateCondition(codeSet.condition_id)
+                    }
                   >
                     <Icon.Delete size={3} aria-hidden />
-                  </span>
+                  </button>
                 </li>
               ))}
             </OptionsList>
