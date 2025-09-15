@@ -34,7 +34,7 @@
     "react-router": "^7.5.2",
     "react-toastify": "^11.0.5",
     "tailwindcss": "^4.1.12",
-    "use-debounce": "^10.0.5"
+    "use-debounce": "^10.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
