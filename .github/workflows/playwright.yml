@@ -49,10 +49,8 @@ jobs:
         run: |
           sleep 10
           for i in {1..24}; do
-            response=$(curl -sSf http://localhost:8081/api/healthcheck)
-            if [ $? -eq 0 ]; then
-              echo "Server is up! Response:"
-              echo "$response"
+            if curl -sSf http://localhost:8081/api/healthcheck > /dev/null; then
+              echo "Server is up!"
               exit 0
             fi
             echo "Waiting for server startup... ($i/24)"
@@ -61,9 +59,9 @@ jobs:
           echo "Server did not start within 2 minutes."
           exit 42
       - name: Seed Database
-        run: just dev run --rm seed
         env:
           DB_URL: 'postgresql://postgres:refiner@localhost:5432/refiner'
+        run: just dev run --rm seed
       - name: Run Playwright E2E Tests
         run: npm run e2e
         working-directory: client
