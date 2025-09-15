@@ -195,8 +195,12 @@ function Builder({
                       }
                     }}
                   >
-                    <span>{codeSet.display_name}</span>
-                    <span>{codeSet.total_codes}</span>
+                    <span aria-hidden>{codeSet.display_name}</span>
+                    <span aria-hidden>{codeSet.total_codes}</span>
+                    <span className="sr-only">
+                      {codeSet.display_name}, {codeSet.total_codes} codes in
+                      code set
+                    </span>
                   </button>
                   <button
                     className="text-gray-cool-40 sr-only group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer hover:text-red-700 focus:text-red-700 focus:outline focus:outline-indigo-500"
