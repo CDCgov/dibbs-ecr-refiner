@@ -31,7 +31,12 @@ query +QUERY:
     docker compose exec db psql -U postgres -d refiner -c "{{QUERY}}"
 
 [group('db')]
-[doc('Run a raw SQL query against the database (e.g., `just db query "SELECT * FROM conditions LIMIT 5;"`)')]
+[doc('List all tables in the public schema')]
+tables:
+    just db query "\dt"
+
+[group('db')]
+[doc('Describe the schema of a table (e.g., `just db table conditions`)')]
 table TABLE:
     just db query "\d {{TABLE}}"
 
