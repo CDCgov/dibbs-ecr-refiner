@@ -502,7 +502,6 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
           onChange={(e) => debouncedSearchUpdate(e.target.value)}
           id="code-search"
           name="code-search"
-          type="search"
           placeholder="Search code set"
         />
         <div data-testid="code-system-select-container">

@@ -7,19 +7,15 @@ import {
 
 import SearchSvg from '../../assets/sprite.svg';
 
-export function Search({ placeholder = 'Search', ...props }: TextInputProps) {
+type SearchProps = Omit<TextInputProps, 'type'>;
+
+export function Search({ placeholder = 'Search', ...props }: SearchProps) {
   return (
     <InputGroup className="!m-0">
       <InputPrefix>
         <SearchIcon />
       </InputPrefix>
-      <TextInput
-        {...props}
-        id="search"
-        name="search"
-        type="text"
-        placeholder={placeholder}
-      />
+      <TextInput placeholder={placeholder} type="search" {...props} />
     </InputGroup>
   );
 }
