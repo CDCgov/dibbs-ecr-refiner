@@ -39,10 +39,19 @@ const renderApp = () => {
 };
 
 describe('App', () => {
-  it('App renders expected text', async () => {
+  it('Should render expected text', async () => {
     renderApp();
+
     expect(
       await screen.findByText('Your reportable condition configurations')
     ).toBeInTheDocument();
+  });
+
+  it('Should display a deployed version code to the user', () => {
+    vi.stubEnv('VITE_GIT_HASH', 'test-hash');
+
+    renderApp();
+
+    expect(screen.getByText(`Version code: test-hash`)).toBeInTheDocument();
   });
 });
