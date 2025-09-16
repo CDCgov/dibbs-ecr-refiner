@@ -7,9 +7,6 @@
  */
 import type { Condition } from './condition';
 
-/**
- * Model for the response when uploading a document in the testing suite.
- */
 export interface RefinedTestingDocument {
   message: string;
   conditions_found: number;

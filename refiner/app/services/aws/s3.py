@@ -9,6 +9,8 @@ from botocore.exceptions import ClientError
 
 from ...core.config import ENVIRONMENT
 
+uploaded_artifact_bucket_name = ENVIRONMENT["S3_UPLOADED_FILES_BUCKET_NAME"]
+
 s3_client = boto3.client(
     "s3",
     region_name=ENVIRONMENT["AWS_REGION"],
@@ -34,18 +36,18 @@ def upload_refined_ecr(
         str: The pre-signed S3 URL to download the uploaded file
     """
 
-    bucket_name = "refiner-app"
+    # bucket_name = "refiner-app"
     expires = 3600  # 1 hour
 
     try:
         today = date.today().isoformat()  # YYYY-MM-DD
         key = f"refiner-test-suite/{today}/{user_id}/{filename}"
 
-        s3_client.upload_fileobj(file_buffer, bucket_name, key)
+        s3_client.upload_fileobj(file_buffer, uploaded_artifact_bucket_name, key)
 
         presigned_url = s3_client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": bucket_name, "Key": key},
+            Params={"Bucket": uploaded_artifact_bucket_name, "Key": key},
             ExpiresIn=expires,
         )
 
@@ -56,7 +58,7 @@ def upload_refined_ecr(
             "Attempted refined file upload to S3 failed",
             extra={
                 "error": str(e),
-                "bucket": bucket_name,
+                "bucket": uploaded_artifact_bucket_name,
                 "key": key,
                 "user_id": user_id,
             },
