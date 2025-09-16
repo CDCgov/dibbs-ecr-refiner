@@ -90,7 +90,7 @@ export function Footer() {
             </span>
           </a>
         </div>
-        <div>
+        <div className="flex flex-col items-end gap-1">
           <p className="text-white">
             For more information about this solution, send us an email at{' '}
             <a
@@ -99,6 +99,9 @@ export function Footer() {
             >
               dibbs@cdc.gov
             </a>
+          </p>
+          <p className="text-gray-cool-20">
+            Version code: {import.meta.env.VITE_GIT_HASH ?? 'local'}
           </p>
         </div>
       </div>

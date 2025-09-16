@@ -3,6 +3,10 @@ FROM node:20-alpine3.20 AS client-builder
 
 WORKDIR /src
 
+# install git to capture hash
+RUN apk add --no-cache git
+COPY .git .git
+
 COPY ./client/package*.json ./
 RUN npm install
 
@@ -27,8 +31,6 @@ COPY ./refiner/app /code/app
 COPY ./refiner/assets /code/assets
 COPY ./refiner/README.md /code/README.md
 COPY --from=client-builder /src/dist /code/dist
-
-ENV ENV=prod
 
 EXPOSE 8080
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
