@@ -76,20 +76,6 @@ jobs:
         run: npm test
   run-e2e-tests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:alpine
-        env:
-          POSTGRES_DB: refiner
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: refinter
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
