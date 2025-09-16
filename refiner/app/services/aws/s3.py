@@ -36,7 +36,6 @@ def upload_refined_ecr(
         str: The pre-signed S3 URL to download the uploaded file
     """
 
-    # bucket_name = "refiner-app"
     expires = 3600  # 1 hour
 
     try:
