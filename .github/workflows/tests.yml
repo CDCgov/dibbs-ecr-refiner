@@ -107,10 +107,10 @@ jobs:
         run: just dev up --detach
       - name: Migrate Database
         run: |
+          sleep 10
           just migrate local
       - name: Seed Database
-        run: |
-          just dev run --rm seed
+        run: just dev run --rm seed
       - name: Run Playwright E2E Tests
         run: just client run e2e
       - name: Upload HTML Report
