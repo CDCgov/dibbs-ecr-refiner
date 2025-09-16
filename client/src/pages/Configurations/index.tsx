@@ -72,7 +72,6 @@ export function Configurations() {
           placeholder="Search configurations"
           id="search-configurations"
           name="search"
-          type="text"
           onChange={(e) => setSearchText(e.target.value)}
         />
         <ModalToggleButton
