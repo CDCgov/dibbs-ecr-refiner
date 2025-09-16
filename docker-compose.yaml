@@ -34,6 +34,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=refiner
       - AWS_REGION=us-east-1
       - S3_ENDPOINT_URL=http://localhost:4566
+      - S3_UPLOADED_FILES_BUCKET_NAME=refiner-app
     logging:
       driver: "json-file"
     depends_on:
@@ -41,7 +42,7 @@ services:
       - auth
       - localstack
   auth:
-    image: quay.io/keycloak/keycloak:26.3.3
+    image: quay.io/keycloak/keycloak:26.3.4
     command:
       - "start-dev"
       - "--import-realm"

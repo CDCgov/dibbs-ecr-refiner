@@ -6,9 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Total code count model.
- */
 export interface DbTotalConditionCodeCount {
   condition_id: string;
   display_name: string;
