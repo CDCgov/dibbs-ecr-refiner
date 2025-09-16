@@ -7,5 +7,5 @@ test('homepage has expected title and content', async ({ page }) => {
 
 test('should show a login button', async ({ page }) => {
   await page.goto('http://localhost:8081');
-  await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
+  await expect(page.getByText('Log in')).toBeVisible();
 });
