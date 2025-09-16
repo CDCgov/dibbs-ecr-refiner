@@ -96,13 +96,9 @@ const Drawer = ({
                 {onSearch ? (
                   <>
                     <Search
-                      onChange={(e) => {
-                        e.preventDefault();
-                        setSearchFilter(e.target.value);
-                      }}
+                      onChange={(e) => setSearchFilter(e.target.value)}
                       id="code-set-search"
                       name="code-set-search"
-                      type="search"
                       value={searchFilter}
                       placeholder={searchPlaceholder}
                     />
