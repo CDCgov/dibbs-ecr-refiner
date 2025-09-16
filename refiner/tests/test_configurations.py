@@ -82,7 +82,7 @@ def mock_db_functions(monkeypatch):
         id=UUID("22222222-2222-2222-2222-222222222222"),
         display_name="Condition A",
         canonical_url="url-1",
-        version="2.0.0",
+        version="3.0.0",
         child_rsg_snomed_codes=["12345"],
         snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
         loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
@@ -98,7 +98,7 @@ def mock_db_functions(monkeypatch):
         id=uuid4(),
         display_name="Hypertension",
         canonical_url="http://url.com",
-        version="2.0.0",
+        version="3.0.0",
         child_rsg_snomed_codes=["11111"],
         snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
         loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
@@ -149,7 +149,7 @@ def mock_db_functions(monkeypatch):
     # mock associate_condition_codeset_with_configuration_db
     assoc_condition = DbConfigurationCondition(
         canonical_url="url-1",
-        version="2.0.0",
+        version="3.0.0",
     )
     updated_config_mock = DbConfiguration(
         id=UUID("33333333-3333-3333-3333-333333333333"),
@@ -279,7 +279,7 @@ async def test_disassociate_codeset_with_configuration(authed_client):
     included_conditions = data.get("included_conditions", [])
     assert isinstance(included_conditions, list)
     assert all(
-        c.get("canonical_url") != "url-1" or c.get("version") != "2.0.0"
+        c.get("canonical_url") != "url-1" or c.get("version") != "3.0.0"
         for c in included_conditions
     )
 

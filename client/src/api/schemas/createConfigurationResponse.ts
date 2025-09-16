@@ -6,9 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Configuration creation response model.
- */
 export interface CreateConfigurationResponse {
   id: string;
   name: string;

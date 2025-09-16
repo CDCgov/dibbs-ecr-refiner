@@ -7,9 +7,6 @@
  */
 import type { ConditionProcessingInfo } from './conditionProcessingInfo';
 
-/**
- * Model for a Condition.
- */
 export interface Condition {
   code: string;
   display_name: string;

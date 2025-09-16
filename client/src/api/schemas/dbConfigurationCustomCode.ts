@@ -7,9 +7,6 @@
  */
 import type { DbConfigurationCustomCodeSystem } from './dbConfigurationCustomCodeSystem';
 
-/**
- * Custom code associated with a Configuration.
- */
 export interface DbConfigurationCustomCode {
   code: string;
   system: DbConfigurationCustomCodeSystem;

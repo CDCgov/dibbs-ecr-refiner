@@ -50,6 +50,7 @@ The eCR Refiner requires the following environment variables to be specified in 
 - `AWS_ACCESS_KEY_ID`: The access key for your AWS account
 - `AWS_SECRET_ACCESS_KEY`: The secret key for your AWS account
 - `AWS_REGION`: The AWS region to use
+- `S3_UPLOADED_FILES_BUCKET_NAME`: Name of the S3 bucket that holds user-uploaded eICR/RR pairs
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 

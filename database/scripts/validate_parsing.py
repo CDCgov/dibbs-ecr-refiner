@@ -1,15 +1,21 @@
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-# an empty list means we will process ALL parent conditions found in the data
+# configuration
+# * an empty list means we will process **all** parent conditions found in the data
 TARGET_CONDITIONS: list[str] = []
 
 # the directory where the raw json data files are stored
 DATA_DIR = Path(__file__).parent.parent / "data"
 
+# setup basic logging
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
+
+# data models
 @dataclass
 class ReportingSpecGrouper:
     """
@@ -26,7 +32,7 @@ class ReportingSpecGrouper:
 @dataclass
 class ConditionGrouper:
     """
-    A container for a parsed Condition Grouper and its children.
+    A container for a parsed CG and its children.
     """
 
     name: str
@@ -35,6 +41,7 @@ class ConditionGrouper:
     children: list[ReportingSpecGrouper] = field(default_factory=list)
 
 
+# helper functions ---
 def extract_codes_from_valueset(valueset: dict[str, Any]) -> dict[str, list[dict]]:
     """
     Extracts all code types from a single ValueSet into structured lists.
@@ -74,33 +81,87 @@ def parse_snomed_from_url(url: str) -> str | None:
     return None
 
 
+# ValueSet extractor
+def get_valuesets_from_file(file_path: Path) -> tuple[str, list[dict]]:
+    """
+    Extract the data we want from the TES ValueSet resource.
+
+    Reads a JSON file and extracts ValueSet resources, handling both
+    standard FHIR Bundles and the custom {"valuesets": [...]} format.
+    Returns a tuple of (detected_format, list_of_valuesets).
+    """
+
+    try:
+        with open(file_path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        if data.get("resourceType") == "Bundle" and "entry" in data:
+            valuesets = [
+                entry.get("resource")
+                for entry in data.get("entry", [])
+                if entry.get("resource", {}).get("resourceType") == "ValueSet"
+            ]
+            return "FHIR Bundle", valuesets
+
+        if "valuesets" in data and isinstance(data["valuesets"], list):
+            valuesets = [
+                vs for vs in data["valuesets"] if vs.get("resourceType") == "ValueSet"
+            ]
+            return "Custom 'valuesets' List", valuesets
+
+        if data.get("resourceType") == "ValueSet":
+            return "Single ValueSet", [data]
+
+    except json.JSONDecodeError:
+        logging.error(f"Could not decode JSON from {file_path.name}")
+    except Exception as e:
+        logging.error(f"An unexpected error occurred with {file_path.name}: {e}")
+
+    return "Unknown or Empty", []
+
+
 def main():
     """
     Main script to read, parse, and validate the logic for specific conditions.
     """
 
-    print("🚀 Starting ValueSet parsing and pre-flight database validation...")
-    print(f"📁 Reading data from: {DATA_DIR.resolve()}")
+    logging.info("🚀 Starting ValueSet parsing and pre-flight database validation...")
+    logging.info(f"📁 Reading data from: {DATA_DIR.resolve()}")
     print("-" * 50)
 
-    # pass 1: read all ValueSet data into a lookup map
+    # pass 1: analyze file structures and collecting all ValueSets
+    logging.info("🔎 Pass 1: Analyzing file structures and collecting all ValueSets")
     all_valuesets_map: dict[tuple[str, str], dict] = {}
-    for file_path in [
-        file for file in DATA_DIR.glob("*.json") if file.name != "manifest.json"
-    ]:
-        with open(file_path) as file:
-            data = json.load(file)
-            for valueset in data.get("valuesets", []):
-                url, version = valueset.get("url"), valueset.get("version")
-                if not url or not version:
-                    continue
-                all_valuesets_map[(url, version)] = valueset
+    json_files = [f for f in DATA_DIR.glob("*.json") if f.name != "manifest.json"]
 
-    print(f"✅ Found {len(all_valuesets_map)} unique (url + version) combinations.")
+    for file_path in json_files:
+        file_type, valuesets = get_valuesets_from_file(file_path)
+        if not valuesets:
+            logging.warning(
+                f"  ❌ No ValueSets found in {file_path.name} (Type: {file_type})"
+            )
+            continue
 
-    # pass 1.5: pre-flight check for database integrity
+        logging.info(
+            f"  ⭐ Parsed {len(valuesets):>4} ValueSets from {file_path.name:<45} (Type: {file_type})"
+        )
+        for valueset in valuesets:
+            url, version = valueset.get("url"), valueset.get("version")
+            if not url or not version:
+                logging.warning(
+                    f"  🦘 Skipping ValueSet with missing URL or version (ID: {valueset.get('id', 'N/A')})"
+                )
+                continue
+            all_valuesets_map[(url, version)] = valueset
+
+    print("-" * 50)
+    logging.info(
+        f"✅ Found {len(all_valuesets_map)} unique (url + version) combinations across all files."
+    )
+
+    # validation checks
     print("\n" + "=" * 80)
-    print("✈️ PRE-FLIGHT CHECK: Validating data against database schema rules...")
+    logging.info("✈️ PRE-FLIGHT CHECK: Validating data against database schema rules...")
     print("=" * 80)
 
     parent_valuesets = [
@@ -112,23 +173,25 @@ def main():
         )
     ]
 
-    print(f"🔎 Found {len(parent_valuesets)} potential 'parent' conditions to check.")
+    logging.info(
+        f"🔎 Found {len(parent_valuesets)} potential 'parent' conditions to check."
+    )
 
     has_failed_check = False
 
-    # check 1: unique primary key
+    # check 1: unique primary key (URL, Version)
     seen_primary_keys: set[tuple[str, str]] = set()
     primary_key_check_failed = False
     for valueset in parent_valuesets:
         primary_key = (valueset.get("url"), valueset.get("version"))
         if primary_key in seen_primary_keys:
-            print(
+            logging.error(
                 f"  ❌ FAILED [PK]: Duplicate Primary Key found: URL={primary_key[0]}, Version={primary_key[1]}"
             )
             primary_key_check_failed = True
         seen_primary_keys.add(primary_key)
     if not primary_key_check_failed:
-        print(
+        logging.info(
             "  ✅ PASSED [PK]: All parent conditions have a unique (URL, Version) primary key."
         )
     has_failed_check = has_failed_check or primary_key_check_failed
@@ -137,36 +200,43 @@ def main():
     name_check_failed = False
     for valueset in parent_valuesets:
         if not (valueset.get("name") or valueset.get("title")):
-            print(
+            logging.error(
                 f"  ❌ FAILED [Name]: Parent condition found with no name or title: URL={valueset.get('url')}"
             )
             name_check_failed = True
     if not name_check_failed:
-        print("  ✅ PASSED [Name]: All parent conditions have a valid display name.")
+        logging.info(
+            "  ✅ PASSED [Name]: All parent conditions have a valid display name."
+        )
     has_failed_check = has_failed_check or name_check_failed
 
-    # check 3: parent must have at least one valid child
+    # check 3: parent must have at least one valid child that meets seeder criteria
     child_check_failed = False
     for valueset in parent_valuesets:
-        child_snomed_codes = set()
+        found_valid_children = False
         for include_item in valueset.get("compose", {}).get("include", []):
             for child_ref in include_item.get("valueSet", []):
                 try:
                     child_url, child_version = child_ref.split("|", 1)
-                    if all_valuesets_map.get(
-                        (child_url, child_version)
-                    ) and parse_snomed_from_url(child_url):
-                        child_snomed_codes.add(parse_snomed_from_url(child_url))
+                    child_vs = all_valuesets_map.get((child_url, child_version))
+                    if child_vs and parse_snomed_from_url(child_vs.get("url", "")):
+                        found_valid_children = True
+                        break
                 except ValueError:
                     continue
-        if not child_snomed_codes:
-            print(
-                f"  ❌ FAILED [Children]: Parent condition has no valid RS-Grouper children: URL={valueset.get('url')}"
+            if found_valid_children:
+                break
+
+        if not found_valid_children:
+            logging.error(
+                f"  ❌ FAILED [Children]: Parent '{valueset.get('name')}' (v{valueset.get('version')}) "
+                "has no valid children that meet the seeder's criteria (e.g., must be an 'rs-grouper')."
             )
             child_check_failed = True
+
     if not child_check_failed:
-        print(
-            "  ✅ PASSED [Children]: All parent conditions have at least one valid child."
+        logging.info(
+            "  ✅ PASSED [Children]: All parent conditions have at least one child that meets the seeder's criteria."
         )
     has_failed_check = has_failed_check or child_check_failed
 
@@ -186,37 +256,36 @@ def main():
                             aggregated_codes[code_type].extend(codes)
                 except (ValueError, KeyError):
                     continue
-        # verify the final structure
+
         if set(aggregated_codes.keys()) != expected_keys:
-            print(
+            logging.error(
                 f"  ❌ FAILED [Codes]: Aggregated codes dict has wrong keys for URL={valueset.get('url')}"
             )
             code_structure_failed = True
         for key, value in aggregated_codes.items():
             if not isinstance(value, list):
-                print(
+                logging.error(
                     f"  ❌ FAILED [Codes]: Aggregated code value for '{key}' is not a list for URL={valueset.get('url')}"
                 )
                 code_structure_failed = True
 
     if not code_structure_failed:
-        print(
+        logging.info(
             "  ✅ PASSED [Codes]: Aggregated code structures are valid for all parents."
         )
     has_failed_check = has_failed_check or code_structure_failed
 
+    # final result
     if has_failed_check:
-        print(
-            "\n🔥 CRITICAL ERROR: One or more pre-flight checks failed. Seeding would fail."
+        print("\n" + "=" * 80)
+        logging.critical(
+            "😭 One or more pre-flight checks failed. Seeding would likely fail or result in incomplete data."
         )
-        return
+        exit(1)
 
-    # pass 2: if all checks pass, we can be confident in the data
     print("\n" + "=" * 80)
-    print("📊 PARSING AND AGGREGATING RESULTS (All checks passed)")
-    print("=" * 80)
-    print(f"✅ Successfully parsed and validated {len(parent_valuesets)} conditions.")
-    print("✅ Validation script finished.")
+    logging.info("🎉 SUCCESS: All pre-flight checks passed.")
+    logging.info("Validation script finished.")
 
 
 if __name__ == "__main__":

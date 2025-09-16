@@ -6,9 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Model for a condition code.
- */
 export interface GetConditionCode {
   code: string;
   system: string;
