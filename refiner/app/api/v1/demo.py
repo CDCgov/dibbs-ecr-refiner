@@ -21,7 +21,7 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import refine_async
+from ...services.ecr.refine import refine
 from ...services.logger import get_logger
 
 FILE_NAME_SUFFIX = "refined_ecr.zip"
@@ -201,7 +201,9 @@ async def demo_upload(
 
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
-        refined_results = await refine_async(original_xml=original_xml_files, db=db)
+        refined_results = await refine(
+            original_xml=original_xml_files, db=db, jurisdiction_id="SDDH"
+        )
 
         conditions = []
         refined_files_to_zip = []
