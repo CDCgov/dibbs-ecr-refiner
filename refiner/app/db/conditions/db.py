@@ -9,7 +9,7 @@ from .model import DbCondition
 
 async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     """
-    Queries the database and retrieves a list of conditions with version 2.0.0.
+    Queries the database and retrieves a list of conditions with version 3.0.0.
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
@@ -29,7 +29,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE version = '2.0.0'
+            WHERE version = '3.0.0'
             ORDER BY display_name ASC;
             """
     async with db.get_connection() as conn:
@@ -39,7 +39,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
             return [DbCondition.from_db_row(row) for row in rows]
 
     if not rows:
-        raise Exception("No conditions found for version 2.0.0.")
+        raise Exception("No conditions found for version 3.0.0.")
 
     return rows
 
@@ -63,7 +63,7 @@ async def get_condition_by_id_db(
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE version = '2.0.0'
+            WHERE version = '3.0.0'
             AND id = %s
             """
     params = (id,)
