@@ -3,6 +3,7 @@ import SuccessSvg from '../../assets/green-check.svg';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { FaColumns, FaAlignLeft } from 'react-icons/fa';
 import { RefinedTestingDocument } from '../../api/schemas';
+import classNames from 'classnames';
 
 type DiffProps = Pick<
   RefinedTestingDocument,
@@ -51,11 +52,7 @@ export function Diff({
               <a
                 href="#"
                 onClick={() => downloadFile(refined_download_url)}
-                style={{
-                  color: 'blue',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                }}
+                className="text-blue-400 underline hover:cursor-pointer"
               >
                 Download results
               </a>
@@ -70,18 +67,28 @@ export function Diff({
           <div className="flex h-[38px] items-center gap-2">
             <span className="font-medium">Layout</span>
             <button
+              aria-label="Show split diff"
               onClick={() => setSplitView(true)}
-              className={`rounded-md border border-blue-500 px-3 py-1 hover:cursor-pointer hover:bg-blue-100 ${
-                splitView ? 'bg-blue-500 text-white' : 'bg-white text-black'
-              }`}
+              className={classNames(
+                'rounded-md border border-blue-500 px-3 py-1 hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                {
+                  'bg-blue-500 text-white': splitView,
+                  'bg-white text-black': !splitView,
+                }
+              )}
             >
               <FaColumns />
             </button>
             <button
+              aria-label="Show stacked diff"
               onClick={() => setSplitView(false)}
-              className={`rounded-md border border-blue-500 px-3 py-1 hover:cursor-pointer hover:bg-blue-100 ${
-                !splitView ? 'bg-blue-500 text-white' : 'bg-white text-black'
-              }`}
+              className={classNames(
+                'rounded-md border border-blue-500 px-3 py-1 hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                {
+                  'bg-blue-500 text-white': !splitView,
+                  'bg-white text-black': splitView,
+                }
+              )}
             >
               <FaAlignLeft />
             </button>
@@ -93,21 +100,25 @@ export function Diff({
             <div className="flex h-[38px] overflow-hidden rounded-full border-[4px] border-blue-500 bg-white">
               <button
                 onClick={() => setShowDiffOnly(false)}
-                className={`px-4 py-1 text-sm font-medium transition-colors hover:cursor-pointer hover:bg-blue-100 ${
-                  !showDiffOnly
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-blue-500'
-                }`}
+                className={classNames(
+                  'px-4 py-1 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                  {
+                    'bg-blue-500 text-white': !showDiffOnly,
+                    'bg-white text-blue-500': showDiffOnly,
+                  }
+                )}
               >
                 Show all
               </button>
               <button
                 onClick={() => setShowDiffOnly(true)}
-                className={`px-4 py-1 text-sm font-medium transition-colors hover:cursor-pointer hover:bg-blue-100 ${
-                  showDiffOnly
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-white text-blue-500'
-                }`}
+                className={classNames(
+                  'px-4 py-1 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                  {
+                    'bg-blue-500 text-white': showDiffOnly,
+                    'bg-white text-blue-500': !showDiffOnly,
+                  }
+                )}
               >
                 Diff only
               </button>
@@ -121,8 +132,8 @@ export function Diff({
         splitView={splitView}
         showDiffOnly={showDiffOnly}
         compareMethod={DiffMethod.WORDS_WITH_SPACE}
-        leftTitle={'Original eICR'}
-        rightTitle={'Refined eICR'}
+        leftTitle="Original eICR"
+        rightTitle="Refined eICR"
         styles={{
           titleBlock: {
             fontFamily: 'Public Sans, sans-serif',
@@ -131,6 +142,10 @@ export function Diff({
           diffContainer: {
             borderRadius: '1px',
             borderStyle: '',
+          },
+          lineNumber: {
+            color: 'black !important',
+            opacity: '100 !important',
           },
         }}
       />

@@ -195,20 +195,22 @@ function Builder({
                       }
                     }}
                   >
-                    <span className="">{codeSet.display_name}</span>
-                    <span className="">{codeSet.total_codes}</span>
+                    <span aria-hidden>{codeSet.display_name}</span>
+                    <span aria-hidden>{codeSet.total_codes}</span>
+                    <span className="sr-only">
+                      {codeSet.display_name}, {codeSet.total_codes} codes in
+                      code set
+                    </span>
                   </button>
-                  <span
-                    className="text-gray-cool-40 show-delete ml-2 hidden cursor-pointer border-none p-0 pr-3 group-hover:inline-block group-hover:bg-stone-50 group-focus:inline-block hover:text-red-700 focus:outline focus:outline-indigo-500"
-                    aria-label={`Delete codeset ${codeSet.display_name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDisassociateCondition(codeSet.condition_id);
-                    }}
-                    role="button"
+                  <button
+                    className="text-gray-cool-40 sr-only group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer hover:text-red-700 focus:text-red-700 focus:outline focus:outline-indigo-500"
+                    aria-label={`Delete code set ${codeSet.display_name}`}
+                    onClick={() =>
+                      handleDisassociateCondition(codeSet.condition_id)
+                    }
                   >
                     <Icon.Delete size={3} aria-hidden />
-                  </span>
+                  </button>
                 </li>
               ))}
             </OptionsList>
@@ -226,7 +228,7 @@ function Builder({
                       'bg-white': tableView === 'custom',
                     }
                   )}
-                  onClick={() => onCustomCodeClick()}
+                  onClick={onCustomCodeClick}
                   aria-controls={
                     tableView === 'custom' ? 'custom-table' : undefined
                   }
@@ -337,7 +339,7 @@ function CustomCodesDetail({
 
   return (
     <>
-      <table className="!mt-6 w-full border-separate">
+      <table id="custom-table" className="!mt-6 w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
@@ -500,7 +502,6 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
           onChange={(e) => debouncedSearchUpdate(e.target.value)}
           id="code-search"
           name="code-search"
-          type="search"
           placeholder="Search code set"
         />
         <div data-testid="code-system-select-container">
@@ -727,6 +728,7 @@ export function CustomCodeModal({
             type="text"
             value={form.code}
             onChange={handleChange('code')}
+            autoComplete="off"
           />
         </div>
 
@@ -754,6 +756,7 @@ export function CustomCodeModal({
             type="text"
             value={form.name}
             onChange={handleChange('name')}
+            autoComplete="off"
           />
         </div>
       </div>
