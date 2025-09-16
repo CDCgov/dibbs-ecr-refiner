@@ -47,7 +47,6 @@ jobs:
         run: just dev up --detach
       - name: Wait for Server Startup
         run: |
-          sleep 10
           for i in {1..24}; do
             if curl -sSf http://localhost:8081/api/healthcheck > /dev/null; then
               echo "Server is up!"

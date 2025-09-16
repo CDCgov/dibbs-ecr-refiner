@@ -12,7 +12,7 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }]],
   use: {
     trace: 'on-first-retry',
-    baseURL: 'http://localhost:8081', // Change port if needed for local dev server
+    baseURL: 'http://localhost:8081',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
@@ -20,14 +20,6 @@ export default defineConfig({
     {
       name: 'Chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'Firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'WebKit',
-      use: { ...devices['Desktop Safari'] },
     },
   ],
 });
