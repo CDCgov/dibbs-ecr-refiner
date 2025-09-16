@@ -6,9 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Model for a user-defined configuration.
- */
 export interface GetConfigurationsResponse {
   id: string;
   name: string;

@@ -369,8 +369,8 @@ export const useAssociateConditionWithConfiguration = <TError = AxiosError<HTTPV
 Args:
     configuration_id (UUID): ID of the configuration
     condition_id (UUID): ID of the condition to remove
-    user (dict[str, Any], optional): User making the request
-    db (AsyncDatabaseConnection, optional): Database connection
+    user (DbUser): User making the request
+    db (AsyncDatabaseConnection): Database connection
 
 Raises:
     HTTPException: 404 if configuration is not found in JD
