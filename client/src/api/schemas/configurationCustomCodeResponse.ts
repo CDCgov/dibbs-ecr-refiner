@@ -8,9 +8,6 @@
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 
-/**
- * Configuration response for custom code operations (add/edit/delete).
- */
 export interface ConfigurationCustomCodeResponse {
   id: string;
   display_name: string;

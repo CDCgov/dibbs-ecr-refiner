@@ -6,9 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Model for a Condition's processing information.
- */
 export interface ConditionProcessingInfo {
   condition_specific: boolean;
   sections_processed: string;

@@ -9,9 +9,6 @@ import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 import type { IncludedCondition } from './includedCondition';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 
-/**
- * Information about a specific configuration to return to the client.
- */
 export interface GetConfigurationResponse {
   id: string;
   display_name: string;

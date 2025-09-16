@@ -3,7 +3,7 @@ import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
 import { Title } from '../../components/Title';
-import { ChangeEvent } from 'react';
+import { ChangeEvent, useRef } from 'react';
 import classNames from 'classnames';
 import { Icon } from '@trussworks/react-uswds';
 import { useGetEnv } from '../../hooks/useGetEnv';
@@ -89,6 +89,7 @@ function UploadZipFile({
   selectedFile,
   onSelectedFileChange,
 }: UploadZipFile) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const labelStyling = classNames({
     'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
     'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer':
@@ -98,6 +99,7 @@ function UploadZipFile({
   return (
     <div className="flex flex-col items-start gap-3">
       <input
+        ref={inputRef}
         id="zip-upload"
         type="file"
         className="hidden"
@@ -110,12 +112,17 @@ function UploadZipFile({
           {selectedFile ? (
             <Button onClick={() => void onClick()}>Upload .zip file</Button>
           ) : null}
-          <label className={labelStyling} htmlFor="zip-upload">
-            {selectedFile ? (
-              <span>Change file</span>
-            ) : (
-              <span>Select .zip file</span>
-            )}
+          <label
+            htmlFor="zip-upload"
+            className={labelStyling}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                inputRef.current?.click();
+              }
+            }}
+          >
+            {selectedFile ? 'Change file' : 'Select .zip file'}
           </label>
         </div>
       </div>
