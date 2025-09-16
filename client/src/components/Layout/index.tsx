@@ -76,7 +76,7 @@ export function Header({ username }: HeaderProps) {
 export function Footer() {
   return (
     <footer>
-      <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-20 py-5 md:flex-row">
+      <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
         <div>
           <a
             href="https://www.cdc.gov"
@@ -90,7 +90,7 @@ export function Footer() {
             </span>
           </a>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-col gap-2 md:items-end lg:gap-1">
           <p className="text-white">
             For more information about this solution, send us an email at{' '}
             <a
