@@ -17,6 +17,7 @@
     "fmt": "prettier . --write",
     "preview": "vite preview",
     "e2e": "npx playwright test",
+    "e2e:dev": "npx playwright test --ui",
     "e2e:report": "npx playwright show-report"
   },
   "dependencies": {
