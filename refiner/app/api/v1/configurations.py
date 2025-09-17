@@ -298,6 +298,15 @@ async def get_configuration_export(
                 ]
             )
 
+    for custom in config.custom_codes or []:
+        writer.writerow(
+            [
+                custom.system or "",
+                custom.code or "",
+                custom.name or "",
+            ]
+        )
+
     # Convert to bytes for StreamingResponse
     csv_bytes = csv_text.getvalue().encode("utf-8")
 

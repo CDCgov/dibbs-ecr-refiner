@@ -286,8 +286,7 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 
 
 /**
- * Create a CSV listing all included conditions and their codes (flat list).
-Each code row includes the code system, code, and description.
+ * Create a CSV export of a configuration and all associated codes.
  * @summary Get Configuration Export
  */
 export const getConfigurationExport = (
