@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
@@ -24,6 +24,7 @@ from ...db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from ...db.demo.model import Condition, ConditionProcessingInfo
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 
@@ -772,4 +773,66 @@ async def edit_custom_code(
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+    )
+
+
+@dataclass(frozen=True)
+class ConfigurationTestResponse:
+    """
+    Model to represent the response provided to the client when in-line testing is run.
+    """
+
+    original_eicr: str
+    condition: Condition
+
+
+@router.post(
+    "/test",
+    response_model=ConfigurationTestResponse,
+    tags=["configurations"],
+    operation_id="runInlineConfigurationTest",
+)
+async def run_configuration_test(
+    id: UUID = Form(...),
+    uploaded_file: UploadFile | None = File(None),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> ConfigurationTestResponse:
+    """
+    Runs an in-line test using the provided configuration ID and test files.
+
+    Args:
+        id (UUID): ID of Configuration to use for the test
+        uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+        user (DbUser): Logged in user
+        db (AsyncDatabaseConnection, optional): Database connection
+
+    Returns:
+        ConfigurationTestResponse: response given to the client
+    """
+
+    if not uploaded_file:
+        print("No file provided. Use default.")
+    else:
+        print("processing uploaded file.")
+
+    # get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+
+    print(config)
+
+    return ConfigurationTestResponse(
+        original_eicr="test_original_eicr",
+        condition=Condition(
+            code="test",
+            display_name="test",
+            refined_eicr="test_refined_eicr",
+            stats=["eICR size reduced."],
+            processing_info=ConditionProcessingInfo(
+                condition_specific=True, sections_processed="", method=""
+            ),
+        ),
     )

@@ -5,19 +5,83 @@ import {
 } from '../layout';
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
-import NotFound from '../../NotFound';
 import { Button } from '../../../components/Button';
 import { Title } from '../../../components/Title';
+import { RunTest } from '../../Testing/RunTest';
+import { ChangeEvent, useState } from 'react';
+import {
+  useGetConfiguration,
+  useRunInlineConfigurationTest,
+} from '../../../api/configurations/configurations';
+import { Error as ErrorScreen } from '../../Testing/Error';
+import { Diff } from '../../../components/Diff';
+
+type View = 'run-test' | 'success' | 'error';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
+  const {
+    data: response,
+    isLoading,
+    isError,
+  } = useGetConfiguration(id ?? '', {
+    query: { enabled: !!id },
+  });
 
-  if (!id) return <NotFound />;
+  const [view, setView] = useState<View>('run-test');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const {
+    data: uploadResponseData,
+    errorMessage,
+    resetState,
+    uploadZip,
+  } = useZipUpload();
+
+  if (isLoading || !response?.data) return 'Loading...';
+  if (!id || isError) return 'Error!';
+
+  // TS will know configId is defined by this point
+  const configId = id;
+
+  function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      if (file.name.endsWith('.zip')) {
+        setSelectedFile(file);
+      } else {
+        console.error('No file input or incorrect file type.');
+        setSelectedFile(null);
+      }
+    }
+  }
+
+  async function runTestWithCustomFile() {
+    try {
+      await uploadZip(configId, selectedFile);
+      setView('success');
+    } catch {
+      setView('error');
+    }
+  }
+
+  async function runTestWithSampleFile() {
+    try {
+      await uploadZip(configId, null);
+      setView('success');
+    } catch {
+      setView('error');
+    }
+  }
+
+  function reset() {
+    setView('run-test');
+    resetState();
+  }
 
   return (
     <div>
       <TitleContainer>
-        <Title>Condition name</Title>
+        <Title>{response.data.display_name}</Title>
       </TitleContainer>
       <NavigationContainer>
         <StepsContainer>
@@ -28,8 +92,66 @@ export default function ConfigTest() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <div>Configuration testing</div>
+        {view === 'run-test' && (
+          <RunTest
+            onClickSampleFile={runTestWithSampleFile}
+            onClickCustomFile={runTestWithCustomFile}
+            selectedFile={selectedFile}
+            onSelectedFileChange={onSelectedFileChange}
+          />
+        )}
+        {view === 'success' && uploadResponseData?.data && (
+          <Diff
+            condition={uploadResponseData?.data.condition}
+            refined_download_url="http://test.com"
+            unrefined_eicr={uploadResponseData?.data.original_eicr}
+          />
+        )}
+        {view === 'error' && (
+          <ErrorScreen message={errorMessage} onClick={reset} />
+        )}
       </SectionContainer>
     </div>
   );
+}
+
+function useZipUpload() {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {
+    mutateAsync,
+    data,
+    isError,
+    isPending,
+    reset: resetState,
+  } = useRunInlineConfigurationTest({
+    mutation: {
+      onError: (error) => {
+        const rawError = error.response?.data;
+
+        const message = Array.isArray(rawError?.detail)
+          ? rawError.detail.map((d) => d.msg).join(' ')
+          : rawError?.detail || 'Upload failed. Please try again.';
+        setErrorMessage(message);
+      },
+    },
+  });
+
+  async function uploadZip(configId: string, selectedFile: File | null) {
+    setErrorMessage(null);
+
+    const resp = await mutateAsync({
+      data: { id: configId, uploaded_file: selectedFile },
+    });
+
+    return resp;
+  }
+
+  return {
+    uploadZip,
+    data,
+    errorMessage,
+    isError,
+    isPending,
+    resetState,
+  };
 }
