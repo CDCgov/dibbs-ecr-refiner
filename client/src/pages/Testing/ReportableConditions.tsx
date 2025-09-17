@@ -12,7 +12,7 @@ export function ReportableConditions({
 }: ReportableConditionsProps) {
   return (
     <div className="flex flex-col gap-12">
-      <Title>Test filter</Title>
+      <Title>Test Refiner</Title>
       <Container color="blue">
         <Content className="flex flex-col">
           <div className="flex flex-col gap-10">
@@ -37,10 +37,10 @@ export function ReportableConditions({
               <div className="flex max-w-[800px] flex-col gap-4">
                 <p>Would you like to refine the eCR?</p>
                 <p>
-                  Taking this action will split the original eICR into two
-                  eICRs, one for each reportable condition, and retain content
-                  relevant only to that condition as defined in the TES (see
-                  landing page for more details).
+                  Taking this action will split the original eICR, producing one
+                  refiner eICR for each reportable condition and retaining
+                  content relevant only to that condition as defined in its
+                  configuration.
                 </p>
               </div>
             </div>
