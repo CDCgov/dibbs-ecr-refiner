@@ -59,7 +59,7 @@ async def insert_configuration_db(
         version
     """
 
-    params = (
+    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, list, int] = (
         jurisdiction_id,
         # always link a configuration to a primary condition
         condition.id,
