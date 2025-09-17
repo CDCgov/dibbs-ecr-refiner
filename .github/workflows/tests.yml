@@ -74,3 +74,49 @@ jobs:
       - name: Run tests
         working-directory: ./client
         run: npm test
+  run-e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Install Just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+          curl -fsSL https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{env.NODE_VERSION}}
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: client
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('client/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers-
+            ${{ runner.os }}-playwright-
+            ${{ runner.os }}-
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        working-directory: client
+      - name: Start Application
+        run: just dev up --detach
+      - name: Migrate Database
+        run: |
+          sleep 10
+          just migrate local
+      - name: Seed Database
+        run: just dev run --rm seed
+      - name: Run Playwright E2E Tests
+        run: just client run e2e
+      - name: Upload HTML Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: client/playwright-report/
+          retention-days: 30

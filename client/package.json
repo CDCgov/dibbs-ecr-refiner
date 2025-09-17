@@ -8,14 +8,17 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "check": "tsc --noEmit",
-    "build": "tsc -b && vite build --base=/dist",
+    "build": "tsc -b && VITE_GIT_HASH=$(git rev-parse --short HEAD) vite build --base=/dist",
     "watch:openapi": "nodemon",
     "codegen": "rimraf src/api/* && orval --config orval.config.ts",
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
     "fmt:check": "prettier . --check",
     "fmt": "prettier . --write",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "npx playwright test",
+    "e2e:dev": "npx playwright test --ui",
+    "e2e:report": "npx playwright show-report"
   },
   "dependencies": {
     "@fontsource-variable/merriweather": "^5.2.2",
@@ -67,7 +70,8 @@
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.43.0",
     "vite": "^7.1.5",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.1",
+    "@playwright/test": "^1.43.1"
   },
   "engines": {
     "node": ">=20.19.0"
