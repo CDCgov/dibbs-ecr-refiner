@@ -121,7 +121,6 @@ def mock_db_functions(monkeypatch):
         custom_codes=[],
         local_codes=[],
         sections_to_include=[],
-        cloned_from_configuration_id=None,
         version=1,
     )
     monkeypatch.setattr(
@@ -160,7 +159,6 @@ def mock_db_functions(monkeypatch):
         custom_codes=[],
         local_codes=[],
         sections_to_include=[],
-        cloned_from_configuration_id=None,
         version=1,
     )
 
@@ -329,7 +327,6 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         ],
         local_codes=[],
         sections_to_include=[],
-        cloned_from_configuration_id=None,
         version=1,
     )
     monkeypatch.setattr(
