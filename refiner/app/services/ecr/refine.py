@@ -1,14 +1,11 @@
 from ...core.exceptions import SectionValidationError
 from ...core.models.types import XMLFiles
-from ...db.conditions import get_conditions_by_child_rsg_snomed_codes
-from ...db.configurations import get_configuration_by_condition_id
+from ...db.conditions.db import get_conditions_by_child_rsg_snomed_codes
 from ...db.pool import AsyncDatabaseConnection
 from ..file_io import read_json_asset
 from ..terminology import (
     ConditionPayload,
-    ConfigurationPayload,
     ProcessedCondition,
-    ProcessedConfiguration,
 )
 from .models import RefinedDocument
 from .process_eicr import build_condition_eicr_pairs, refine_eicr
@@ -104,25 +101,12 @@ async def refine(
         condition_payload = ConditionPayload(conditions=db_conditions)
         processed_condition = ProcessedCondition.from_payload(condition_payload)
 
-        # STEP 5: create the ProcessedConfiguration object. this is forward-looking work
-        # it finds a jurisdiction-specific DbConfiguration and uses the same Payload -> Processed
-        # pattern to create a comprehensive set of codes for refinement
+        # TODO: implement configuration-based refinement next.
+        # * this will involve fetching a jurisdiction-specific configuration for the condition
+        #   and creating a ProcessedConfiguration object to be used in the refinement process
         processed_configuration = None
-        if db_conditions:
-            # assume the first condition found is the primary one for config lookup
-            primary_condition_id = db_conditions[0].id
-            db_config = await get_configuration_by_condition_id(
-                db, primary_condition_id, jurisdiction_id
-            )
-            if db_config:
-                config_payload = ConfigurationPayload(
-                    configuration=db_config, conditions=db_conditions
-                )
-                processed_configuration = ProcessedConfiguration.from_payload(
-                    config_payload
-                )
 
-        # STEP 6: call the eICR refiner with the final processed objects
+        # STEP 5: call the eICR refiner with the final processed objects
         # the refiner can now work with the clean data without needing to know how it was assembled
         refined_eicr_str = refine_eicr(
             xml_files=condition_specific_xml_pair,
@@ -131,7 +115,7 @@ async def refine(
             sections_to_include=sections_to_include,
         )
 
-        # STEP 7: assemble the final refined document object and add it to the results
+        # STEP 6: assemble the final refined document object and add it to the results
         refined_eicrs.append(
             RefinedDocument(
                 reportable_condition=condition, refined_eicr=refined_eicr_str
