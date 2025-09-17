@@ -1,20 +1,19 @@
 import csv
 from dataclasses import dataclass
 from datetime import datetime
-from io import StringIO, BytesIO
-
+from io import StringIO
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import (
-    get_condition_by_id_db,
-    get_conditions_db,
     GetConditionCode,
-    get_condition_codes_by_condition_id_db
+    get_condition_by_id_db,
+    get_condition_codes_by_condition_id_db,
+    get_conditions_db,
 )
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
@@ -32,7 +31,6 @@ from ...db.configurations.db import (
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
-from ...db.conditions.model import DbConditionCoding
 
 router = APIRouter(prefix="/configurations")
 
@@ -248,8 +246,7 @@ async def get_configuration_export(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> Response:
     """
-    Create a CSV listing all included conditions and their codes (flat list).
-    Each code row includes the code system, code, and description.
+    Create a CSV export of a configuration and all associated codes.
     """
 
     # --- Validate configuration ---
@@ -297,7 +294,6 @@ async def get_configuration_export(
 
     # Convert to bytes for StreamingResponse
     csv_bytes = csv_text.getvalue().encode("utf-8")
-    csv_buffer = BytesIO(csv_bytes)
 
     # Replace spaces with underscores in the config name
     safe_name = config.name.replace(" ", "_")
