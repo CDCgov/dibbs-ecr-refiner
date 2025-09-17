@@ -20,26 +20,13 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import refine_async
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine_async
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ..validation.file_validation import validate_zip_file
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
-
-
-def _get_file_size_difference_percentage(
-    unrefined_document: str, refined_document: str
-) -> int:
-    unrefined_bytes = len(unrefined_document.encode("utf-8"))
-    refined_bytes = len(refined_document.encode("utf-8"))
-
-    if unrefined_bytes == 0:
-        return 0
-
-    percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
-    return round(percent_diff)
 
 
 def _create_refined_ecr_zip_in_memory(
@@ -163,7 +150,7 @@ async def demo_upload(
                     refined_eicr=stripped_refined_eicr,
                     stats=[
                         f"eICR file size reduced by {
-                            _get_file_size_difference_percentage(
+                            get_file_size_reduction_percentage(
                                 original_xml_files.eicr, condition_refined_eicr
                             )
                         }%",
