@@ -66,7 +66,6 @@ class DbConfiguration:
     custom_codes: list[DbConfigurationCustomCode]
     local_codes: list[DbConfigurationLocalCode]
     sections_to_include: list[str]
-    cloned_from_configuration_id: UUID | None
     version: int
 
     @classmethod
@@ -92,6 +91,5 @@ class DbConfiguration:
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             sections_to_include=row["sections_to_include"],
-            cloned_from_configuration_id=row["cloned_from_configuration_id"],
             version=row["version"],
         )

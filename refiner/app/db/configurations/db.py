@@ -79,7 +79,7 @@ async def insert_configuration_db(
         # local_codes
         EMPTY_JSONB,
         # sections_to_include (empty array)
-        [""],
+        [],
         # version (start at 1 for new configs)
         1,
     )
@@ -88,9 +88,11 @@ async def insert_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def get_configurations_db(
@@ -121,7 +123,8 @@ async def get_configurations_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
-            return [DbConfiguration.from_db_row(row) for row in rows]
+
+    return [DbConfiguration.from_db_row(row) for row in rows]
 
 
 async def get_configuration_by_id_db(
@@ -156,10 +159,11 @@ async def get_configuration_by_id_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
 
-            return DbConfiguration.from_db_row(row)
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def is_config_valid_to_insert_db(
@@ -254,9 +258,11 @@ async def associate_condition_codeset_with_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def disassociate_condition_codeset_with_configuration_db(
@@ -310,9 +316,11 @@ async def disassociate_condition_codeset_with_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 @dataclass(frozen=True)
@@ -391,7 +399,8 @@ async def get_total_condition_code_counts_by_configuration_db(
         async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
             await cur.execute(query, params)
             row = await cur.fetchall()
-            return row
+
+    return row
 
 
 async def add_custom_code_to_configuration_db(
@@ -435,13 +444,15 @@ async def add_custom_code_to_configuration_db(
     ]
 
     params = (Jsonb(json), config.id)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+    return DbConfiguration.from_db_row(row)
 
 
 async def delete_custom_code_from_configuration_db(
@@ -482,9 +493,11 @@ async def delete_custom_code_from_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def edit_custom_code_from_configuration_db(
@@ -519,10 +532,13 @@ async def edit_custom_code_from_configuration_db(
     ]
 
     params = (Jsonb(json_codes), config.id)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)

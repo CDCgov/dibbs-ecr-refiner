@@ -38,13 +38,14 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
             """
 
     params = (CURRENT_VERSION,)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
     if not rows:
-        return []
+        raise Exception("No conditions found for version {CURRENT_VERSION}.")
 
     return [DbCondition.from_db_row(row) for row in rows]
 
@@ -68,10 +69,10 @@ async def get_condition_by_id_db(
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE id = %s
+            WHERE id = %s AND version = %s
             """
 
-    params = (id,)
+    params = (id, CURRENT_VERSION)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -158,11 +159,18 @@ async def get_condition_codes_by_condition_id_db(
             """
 
     params = (id,)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
-            return list(rows)
+
+    if not rows:
+        raise Exception(
+            "Error: Codes were not unpacked from conditions table correctly."
+        )
+
+    return list(rows)
 
 
 async def get_conditions_by_child_rsg_snomed_codes(
@@ -212,5 +220,10 @@ async def get_conditions_by_child_rsg_snomed_codes(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
+
+    if not rows:
+        raise Exception(
+            f"Did not find any matchng conditions for these RC SNOMED codes: {codes}"
+        )
 
     return [DbCondition.from_db_row(row) for row in rows]
