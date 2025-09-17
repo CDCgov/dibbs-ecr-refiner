@@ -11,10 +11,6 @@ from .model import (
     DbConfigurationCustomCode,
 )
 
-# NOTE: the db table for configurations has a family_id field (for future versioning/families),
-# but this is intentionally omitted from the pydantic models and sql queries for now.
-# if/when versioning is fully implemented, we can decide exactly how we'll tackle it
-
 EMPTY_JSONB = Jsonb([])
 
 
@@ -28,8 +24,6 @@ async def insert_configuration_db(
 
     The `name` field is always set to the display_name of the associated condition at creation time,
     for easier display and searching. The authoritative clinical context is still given by `condition_id`.
-
-    family_id is omitted from the insert and assigned automatically by the DB sequence.
     """
 
     query = """
@@ -41,7 +35,6 @@ async def insert_configuration_db(
         custom_codes,
         local_codes,
         sections_to_include,
-        cloned_from_configuration_id,
         version
     )
     VALUES (
@@ -52,7 +45,6 @@ async def insert_configuration_db(
         %s::jsonb,
         %s::jsonb,
         %s::text[],
-        %s,
         %s
     )
     RETURNING
@@ -64,7 +56,6 @@ async def insert_configuration_db(
         custom_codes,
         local_codes,
         sections_to_include,
-        cloned_from_configuration_id,
         version
     """
 
@@ -89,8 +80,6 @@ async def insert_configuration_db(
         EMPTY_JSONB,
         # sections_to_include (empty array)
         [""],
-        # cloned_from_configuration_id
-        None,
         # version (start at 1 for new configs)
         1,
     )
@@ -121,7 +110,6 @@ async def get_configurations_db(
             custom_codes,
             local_codes,
             sections_to_include,
-            cloned_from_configuration_id,
             version
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -153,7 +141,6 @@ async def get_configuration_by_id_db(
             custom_codes,
             local_codes,
             sections_to_include,
-            cloned_from_configuration_id,
             version
         FROM configurations
         WHERE id = %s
@@ -254,7 +241,6 @@ async def associate_condition_codeset_with_configuration_db(
                 custom_codes,
                 local_codes,
                 sections_to_include,
-                cloned_from_configuration_id,
                 version
             ;
             """
@@ -312,7 +298,6 @@ async def disassociate_condition_codeset_with_configuration_db(
             custom_codes,
             local_codes,
             sections_to_include,
-            cloned_from_configuration_id,
             version
     """
     params = (
@@ -431,7 +416,6 @@ async def add_custom_code_to_configuration_db(
                 custom_codes,
                 local_codes,
                 sections_to_include,
-                cloned_from_configuration_id,
                 version
             ;
             """
@@ -483,7 +467,6 @@ async def delete_custom_code_from_configuration_db(
                 custom_codes,
                 local_codes,
                 sections_to_include,
-                cloned_from_configuration_id,
                 version
             ;
             """
@@ -526,7 +509,6 @@ async def edit_custom_code_from_configuration_db(
                 custom_codes,
                 local_codes,
                 sections_to_include,
-                cloned_from_configuration_id,
                 version
             ;
             """
