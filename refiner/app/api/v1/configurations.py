@@ -234,6 +234,7 @@ async def get_configuration(
         custom_codes=config.custom_codes,
     )
 
+
 @router.get(
     "/{configuration_id}/export",
     tags=["configurations"],
@@ -268,29 +269,34 @@ async def get_configuration_export(
         if c.canonical_url and c.version
     }
     included_conditions = [
-        cond for cond in all_conditions
+        cond
+        for cond in all_conditions
         if (cond.canonical_url, cond.version) in associated_conditions
     ]
 
     # Write CSV to StringIO (text)
     csv_text = StringIO()
     writer = csv.writer(csv_text)
-    writer.writerow([
-        "Code System",
-        "Code",
-        "Display Name",
-    ])
+    writer.writerow(
+        [
+            "Code System",
+            "Code",
+            "Display Name",
+        ]
+    )
 
     for cond in included_conditions:
         codes: list[GetConditionCode] = await get_condition_codes_by_condition_id_db(
             id=cond.id, db=db
         )
         for code_obj in codes:
-            writer.writerow([
-                code_obj.system or "",
-                code_obj.code or "",
-                code_obj.description or "",
-            ])
+            writer.writerow(
+                [
+                    code_obj.system or "",
+                    code_obj.code or "",
+                    code_obj.description or "",
+                ]
+            )
 
     # Convert to bytes for StreamingResponse
     csv_bytes = csv_text.getvalue().encode("utf-8")
@@ -302,13 +308,14 @@ async def get_configuration_export(
     timestamp = datetime.now().strftime("%m%d%y_%H:%M:%S")
 
     # Build final filename
-    filename = f'{safe_name}_Code Export_{timestamp}.csv'
+    filename = f"{safe_name}_Code Export_{timestamp}.csv"
 
     return Response(
-         content=csv_bytes,
-         media_type="text/csv; charset=utf-8",
-         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-     )
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 class AssociateCodesetInput(BaseModel):
     """
