@@ -25,8 +25,6 @@ from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ..validation.file_validation import validate_zip_file
 
-FILE_NAME_SUFFIX = "refined_ecr.zip"
-
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
 
