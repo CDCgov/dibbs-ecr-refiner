@@ -30,6 +30,7 @@ import {
   useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
   useGetConfiguration,
+  getConfigurationExport
 } from '../../../api/configurations/configurations';
 import {
   AddCustomCodeInputSystem,
@@ -72,6 +73,9 @@ export default function ConfigBuild() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
+        <Export
+          id={id}
+        />
         <Builder
           id={id}
           code_sets={response.data.code_sets}
@@ -80,6 +84,51 @@ export default function ConfigBuild() {
         />
       </SectionContainer>
     </div>
+  );
+}
+
+type ExportBuilderProps = {
+  id: string;
+};
+
+export function Export({ id }: ExportBuilderProps) {
+  async function handleExport() {
+    try {
+      const response = await getConfigurationExport(id);
+
+      if (!response.data) {
+        throw new Error("Empty response from server");
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data as BlobPart]));
+      const a = document.createElement("a");
+      a.href = url;
+
+      const disposition = response.headers["content-disposition"];
+      const match = disposition?.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] ?? "configuration.csv";
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
+  }
+
+  return (
+      <div className="flex w-full justify-end mb-6">
+        <button
+            onClick={handleExport}
+            className="text-blue-cool-60 flex items-center font-bold hover:cursor-pointer"
+            id="export-configuration"
+            aria-label="Export configuration"
+        >
+          <span>Export Configuration</span>
+        </button>
+      </div>
   );
 }
 

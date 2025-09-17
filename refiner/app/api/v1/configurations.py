@@ -1,14 +1,20 @@
+import csv
 from dataclasses import dataclass
+from datetime import datetime
+from io import StringIO, BytesIO
+
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_db,
+    GetConditionCode,
+    get_condition_codes_by_condition_id_db
 )
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
@@ -26,6 +32,7 @@ from ...db.configurations.db import (
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
+from ...db.conditions.model import DbConditionCoding
 
 router = APIRouter(prefix="/configurations")
 
@@ -229,6 +236,83 @@ async def get_configuration(
         custom_codes=config.custom_codes,
     )
 
+@router.get(
+    "/{configuration_id}/export",
+    tags=["configurations"],
+    operation_id="getConfigurationExport",
+    response_class=Response,
+)
+async def get_configuration_export(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Create a CSV listing all included conditions and their codes (flat list).
+    Each code row includes the code system, code, and description.
+    """
+
+    # --- Validate configuration ---
+    jd = user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+
+    # Determine included conditions
+    all_conditions = await get_conditions_db(db=db)
+    associated_conditions = {
+        (c.canonical_url, c.version)
+        for c in config.included_conditions
+        if c.canonical_url and c.version
+    }
+    included_conditions = [
+        cond for cond in all_conditions
+        if (cond.canonical_url, cond.version) in associated_conditions
+    ]
+
+    # Write CSV to StringIO (text)
+    csv_text = StringIO()
+    writer = csv.writer(csv_text)
+    writer.writerow([
+        "Code System",
+        "Code",
+        "Display Name",
+    ])
+
+    for cond in included_conditions:
+        codes: list[GetConditionCode] = await get_condition_codes_by_condition_id_db(
+            id=cond.id, db=db
+        )
+        for code_obj in codes:
+            writer.writerow([
+                code_obj.system or "",
+                code_obj.code or "",
+                code_obj.description or "",
+            ])
+
+    # Convert to bytes for StreamingResponse
+    csv_bytes = csv_text.getvalue().encode("utf-8")
+    csv_buffer = BytesIO(csv_bytes)
+
+    # Replace spaces with underscores in the config name
+    safe_name = config.name.replace(" ", "_")
+
+    # Format current date/time as YYMMDD HH:MM:SS
+    timestamp = datetime.now().strftime("%m%d%y_%H:%M:%S")
+
+    # Build final filename
+    filename = f'{safe_name}_Code Export_{timestamp}.csv'
+
+    return Response(
+         content=csv_bytes,
+         media_type="text/csv; charset=utf-8",
+         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+     )
 
 class AssociateCodesetInput(BaseModel):
     """
