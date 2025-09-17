@@ -90,7 +90,7 @@ export function Footer() {
             </span>
           </a>
         </div>
-        <div className="flex flex-col gap-2 md:items-end lg:gap-1">
+        <div className="flex flex-col gap-2 lg:items-end lg:gap-1">
           <p className="text-white">
             For more information about this solution, send us an email at{' '}
             <a
