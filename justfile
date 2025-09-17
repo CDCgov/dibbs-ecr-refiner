@@ -37,6 +37,7 @@ mod migrate './.justscripts/just/migrate.just'
 mod server './.justscripts/just/server.just'
 
 alias d := dev
+alias t := test
 
 docker := require("docker")
 
@@ -55,3 +56,4 @@ lint:
 test:
     just server::test
     just client::run test:coverage
+    just client::run e2e
