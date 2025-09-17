@@ -7,7 +7,6 @@ from zipfile import ZipFile
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from fastapi.datastructures import Headers
 from fastapi.responses import FileResponse
 
 from ...api.auth.middleware import get_logged_in_user
@@ -23,23 +22,13 @@ from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import refine_async
 from ...services.logger import get_logger
+from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
+from ..validation.file_validation import validate_zip_file
 
 FILE_NAME_SUFFIX = "refined_ecr.zip"
 
-# File uploads
-MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
-
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
-
-
-def _get_demo_zip_path() -> Path:
-    """
-    Get the path to the demo ZIP file.
-    """
-
-    return file_io.get_asset_path("demo", "mon-mothma-two-conditions.zip")
 
 
 def _get_file_size_difference_percentage(
@@ -91,60 +80,6 @@ def _get_zip_creator() -> Callable[..., tuple[str, io.BytesIO]]:
     return _create_refined_ecr_zip_in_memory
 
 
-def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
-    filename = demo_zip_path.name
-    with open(demo_zip_path, "rb") as demo_file:
-        zip_content = demo_file.read()
-
-    file_like = io.BytesIO(zip_content)
-    file_like.seek(0)
-    file = UploadFile(
-        file=file_like,
-        filename=filename,
-        headers=Headers({"Content-Type": "application/zip"}),
-    )
-    return file
-
-
-async def _validate_zip_file(file: UploadFile) -> UploadFile:
-    # Check extension
-    if not file.filename or not file.filename.lower().endswith(".zip"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only .zip files are allowed.",
-        )
-
-    # Name safety check
-    if file.filename.startswith("."):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File name cannot start with a period (.).",
-        )
-
-    # Name safety check
-    if ".." in file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File name cannot contain multiple periods (.) in a row",
-        )
-
-    # Ensure file has content
-    if file.size is None or file.size == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=".zip must not be empty.",
-        )
-
-    # Ensure compressed size is valid
-    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=".zip file must be less than 10MB in size.",
-        )
-
-    return file
-
-
 def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
     """
     Provides a dependency-injectable reference to the `upload_refined_ecr` function.
@@ -168,7 +103,7 @@ def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
 )
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
-    demo_zip_path: Path = Depends(_get_demo_zip_path),
+    demo_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
         _get_zip_creator
     ),
@@ -192,9 +127,9 @@ async def demo_upload(
 
     file = None
     if uploaded_file:
-        file = await _validate_zip_file(file=uploaded_file)
+        file = await validate_zip_file(file=uploaded_file)
     else:
-        file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
+        file = create_sample_zip_file(demo_zip_path=demo_zip_path)
 
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})
@@ -303,7 +238,7 @@ async def demo_upload(
 
 @router.get("/download")
 async def demo_download(
-    file_path: Path = Depends(_get_demo_zip_path), logger: Logger = Depends(get_logger)
+    file_path: Path = Depends(get_sample_zip_path), logger: Logger = Depends(get_logger)
 ) -> FileResponse:
     """
     Download the unrefined sample eCR zip file.
