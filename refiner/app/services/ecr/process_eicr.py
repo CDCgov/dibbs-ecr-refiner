@@ -184,7 +184,7 @@ def _process_section(
 
     Args:
         section: The XML section element to process
-        combined_xpath: XPath query from ProcessedGrouper codes
+        combined_xpath: XPath query from ProcessedCondition codes
         namespaces: XML namespaces for XPath evaluation
         section_config: Configuration for this section from refiner_details.json
         version: eICR version being processed
@@ -239,7 +239,7 @@ def _find_condition_relevant_elements(
 
     Args:
         section: The XML section element to search within
-        combined_xpath: XPath query from ProcessedGrouper codes
+        combined_xpath: XPath query from ProcessedCondition codes
         namespaces: XML namespaces for XPath evaluation
 
     Returns:
