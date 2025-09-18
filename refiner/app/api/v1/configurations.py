@@ -24,7 +24,7 @@ from ...db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
-from ...db.demo.model import Condition, ConditionProcessingInfo
+from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 
@@ -831,8 +831,5 @@ async def run_configuration_test(
             display_name="test",
             refined_eicr="test_refined_eicr",
             stats=["eICR size reduced."],
-            processing_info=ConditionProcessingInfo(
-                condition_specific=True, sections_processed="", method=""
-            ),
         ),
     )

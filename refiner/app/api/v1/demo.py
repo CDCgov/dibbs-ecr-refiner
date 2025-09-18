@@ -15,7 +15,7 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...db.demo.model import Condition, ConditionProcessingInfo, RefinedTestingDocument
+from ...db.demo.model import Condition, RefinedTestingDocument
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
@@ -155,11 +155,6 @@ async def demo_upload(
                             )
                         }%",
                     ],
-                    processing_info=ConditionProcessingInfo(
-                        condition_specific=True,
-                        sections_processed="All sections scoped to condition codes",
-                        method="ProcessedGrouper-based filtering",
-                    ),
                 )
             )
 
