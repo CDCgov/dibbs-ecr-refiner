@@ -24,7 +24,24 @@ ALTER TABLE configurations
 
     -- the 'cloned_from_configuration_id' column was intended for tracking
     -- the provenance of a configuration, a feature that is not implemented
-    DROP COLUMN cloned_from_configuration_id;
+    DROP COLUMN cloned_from_configuration_id,
+
+    -- drop the sections_to_include column
+    -- rather than cast an empty column to jsonb for section
+    -- processing instructions as jsonb this will make the
+    -- migration logic a lot simpler (see below)
+    DROP COLUMN sections_to_include;
 
 -- drop the sequence associated with the removed 'family_id' column.
 DROP SEQUENCE configuration_family_id_seq;
+
+-- add the new section_processing column as jsonb, default empty object
+ALTER TABLE configurations
+    -- the idea for this lis that it would end upooking like:
+    -- {
+    --   display_name: 'Social History',
+    --   code: '29762-2',
+    --   action: 'retain'
+    -- },
+    -- actions can be: retain, refine, remove
+    ADD COLUMN section_processing jsonb DEFAULT '{}'::jsonb;

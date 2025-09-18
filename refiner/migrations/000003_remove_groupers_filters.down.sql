@@ -1,13 +1,20 @@
 -- re-create the sequence for 'family_id' before it's referenced in the table alteration
 CREATE SEQUENCE configuration_family_id_seq START 1000 INCREMENT 1;
 
--- re-add the removed columns to the 'configurations' table with their original definitions
+-- re-create columns in the configurations table
 ALTER TABLE configurations
     -- restore 'family_id' column and set its default to use the re-created sequence
     ADD COLUMN family_id INTEGER NOT NULL DEFAULT nextval('configuration_family_id_seq'),
 
     -- restore 'cloned_from_configuration_id' column with its foreign key constraint
-    ADD COLUMN cloned_from_configuration_id UUID REFERENCES configurations(id);
+    ADD COLUMN cloned_from_configuration_id UUID REFERENCES configurations(id),
+
+    -- restore 'sections_to_include' column with its default array
+    ADD COLUMN sections_to_include text[] DEFAULT ARRAY[]::text[];
+
+-- remove the section_processing column
+ALTER TABLE configurations
+    DROP COLUMN section_processing;
 
 -- re-create the 'labels' table for tagging configurations
 CREATE TABLE labels (
