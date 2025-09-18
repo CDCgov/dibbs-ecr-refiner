@@ -183,9 +183,6 @@ async def demo_upload(
     Grabs an eCR zip file from the file system and runs it through the upload/refine process.
     """
 
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # Grab the demo zip file and turn it into an UploadFile
     if not demo_zip_path.exists():
         raise HTTPException(
@@ -202,10 +199,14 @@ async def demo_upload(
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})
 
+        jd = user.jurisdiction_id
+
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
         refined_results = await refine(
-            original_xml=original_xml_files, db=db, jurisdiction_id=jd
+            original_xml=original_xml_files,
+            db=db,
+            jurisdiction_id=jd,
         )
 
         conditions = []
