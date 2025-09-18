@@ -55,7 +55,7 @@ export function RunTest({
                 <span className="font-bold">Don't have a file ready?</span>
                 <span>You can try out eCR Refiner with our test file.</span>
               </p>
-              <div className="flex flex-col items-center gap-4 md:flex-row">
+              <div className="flex flex-col items-start md:items-center gap-4 md:flex-row">
                 <Button
                   variant="secondary"
                   onClick={() => void onClickSampleFile()}
