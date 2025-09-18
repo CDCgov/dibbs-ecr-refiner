@@ -452,6 +452,7 @@ async def add_custom_code_to_configuration_db(
 
     if not row:
         return None
+
     return DbConfiguration.from_db_row(row)
 
 
@@ -489,6 +490,7 @@ async def delete_custom_code_from_configuration_db(
     ]
 
     params = (Jsonb(updated_custom_codes), config.id)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
