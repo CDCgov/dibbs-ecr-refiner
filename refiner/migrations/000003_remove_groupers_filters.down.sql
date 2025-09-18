@@ -1,8 +1,8 @@
 -- re-create the sequence for 'family_id' before it's referenced in the table alteration
-CREATE SEQUENCE public.configuration_family_id_seq START 1000 INCREMENT 1;
+CREATE SEQUENCE configuration_family_id_seq START 1000 INCREMENT 1;
 
 -- re-add the removed columns to the 'configurations' table with their original definitions
-ALTER TABLE public.configurations
+ALTER TABLE configurations
     -- restore 'family_id' column and set its default to use the re-created sequence
     ADD COLUMN family_id INTEGER NOT NULL DEFAULT nextval('configuration_family_id_seq'),
 
@@ -10,7 +10,7 @@ ALTER TABLE public.configurations
     ADD COLUMN cloned_from_configuration_id UUID REFERENCES configurations(id);
 
 -- re-create the 'labels' table for tagging configurations
-CREATE TABLE public.labels (
+CREATE TABLE labels (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT UNIQUE NOT NULL,
     color TEXT,
@@ -21,7 +21,7 @@ CREATE TABLE public.labels (
 
 -- re-create the join table for applying labels to configurations
 -- this depends on the 'labels' and 'configurations' tables
-CREATE TABLE public.configuration_labels (
+CREATE TABLE configuration_labels (
     configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
     label_id UUID NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -30,7 +30,7 @@ CREATE TABLE public.configuration_labels (
 
 -- re-create the 'activations' table for managing active configurations
 -- this depends on the 'jurisdictions' and 'configurations' tables
-CREATE TABLE public.activations (
+CREATE TABLE activations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     jurisdiction_id TEXT NOT NULL REFERENCES jurisdictions(id),
     snomed_code TEXT NOT NULL,
@@ -44,16 +44,16 @@ CREATE TABLE public.activations (
 
 -- re-create the indexes on the 'activations' table
 CREATE UNIQUE INDEX idx_one_active_per_snomed
-ON public.activations (jurisdiction_id, snomed_code)
+ON activations (jurisdiction_id, snomed_code)
 WHERE deactivated_at IS NULL;
 
 CREATE INDEX idx_activations_active_lookup
-ON public.activations (jurisdiction_id, snomed_code)
+ON activations (jurisdiction_id, snomed_code)
 WHERE deactivated_at IS NULL;
 
 
 -- re-create the legacy 'filters' table
-CREATE TABLE public.filters (
+CREATE TABLE filters (
     condition TEXT PRIMARY KEY,
     display_name TEXT,
     ud_loinc_codes TEXT DEFAULT '[]',
@@ -64,7 +64,7 @@ CREATE TABLE public.filters (
 );
 
 -- re-create the legacy 'groupers' table
-CREATE TABLE public.groupers (
+CREATE TABLE groupers (
     condition TEXT PRIMARY KEY,
     display_name TEXT,
     loinc_codes TEXT DEFAULT '[]',
