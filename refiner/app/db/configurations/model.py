@@ -105,6 +105,9 @@ class DbConfiguration:
             ],
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
-            section_processing=[DbConfigurationSectionProcessing],
+            section_processing=[
+                DbConfigurationSectionProcessing(**sp)
+                for sp in row["section_processing"]
+            ],
             version=row["version"],
         )
