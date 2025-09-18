@@ -45,7 +45,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
             rows = await cur.fetchall()
 
     if not rows:
-        raise Exception("No conditions found for version {CURRENT_VERSION}.")
+        raise Exception(f"No conditions found for version {CURRENT_VERSION}.")
 
     return [DbCondition.from_db_row(row) for row in rows]
 
