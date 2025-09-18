@@ -170,8 +170,7 @@ class ProcessedConfiguration:
                 all_codes.update(c.code for c in code_list)
 
         # 2. add custom codes defined directly on the configuration
-        if payload.configuration.custom_codes:
-            all_codes.update(cc.code for cc in payload.configuration.custom_codes)
+        all_codes.update(cc.code for cc in payload.configuration.custom_codes)
 
         return cls(codes=all_codes)
 
