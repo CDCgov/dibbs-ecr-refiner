@@ -49,13 +49,12 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <a
-                href="#"
+              <button
                 onClick={() => downloadFile(refined_download_url)}
                 className="text-blue-400 underline hover:cursor-pointer"
               >
                 Download results
-              </a>
+              </button>
               {downloadError && <span>File download has expired.</span>}
             </div>
           </div>
