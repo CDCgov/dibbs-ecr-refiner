@@ -43,6 +43,21 @@ class DbConfigurationLocalCode:
 
 
 @dataclass(frozen=True)
+class DbConfigurationSectionProcessing:
+    """
+    Section Processing instructions for a Configuration.
+
+    Name is the section's name.
+    Code is the LOINC code for the section.
+    Action is either: retain, refine, or remove
+    """
+
+    name: str
+    code: str
+    action: str
+
+
+@dataclass(frozen=True)
 class DbConfiguration:
     """
     Model for a database Configuration object (row).
@@ -65,7 +80,7 @@ class DbConfiguration:
     included_conditions: list[DbConfigurationCondition]
     custom_codes: list[DbConfigurationCustomCode]
     local_codes: list[DbConfigurationLocalCode]
-    sections_to_include: list[str]
+    section_processing: list[DbConfigurationSectionProcessing]
     version: int
 
     @classmethod
@@ -90,6 +105,6 @@ class DbConfiguration:
             ],
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
-            sections_to_include=row["sections_to_include"],
+            section_processing=[DbConfigurationSectionProcessing],
             version=row["version"],
         )

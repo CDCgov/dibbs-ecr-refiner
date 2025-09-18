@@ -40,7 +40,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "included_conditions": [],
         "custom_codes": [],
         "local_codes": [],
-        "sections_to_include": [],
+        "section_processing": [],
         "version": 1,
     }
     defaults.update(kwargs)

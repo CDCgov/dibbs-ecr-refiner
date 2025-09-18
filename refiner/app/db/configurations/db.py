@@ -34,7 +34,7 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        sections_to_include,
+        section_processing,
         version
     )
     VALUES (
@@ -55,7 +55,7 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        sections_to_include,
+        section_processing,
         version
     """
 
@@ -78,7 +78,7 @@ async def insert_configuration_db(
         EMPTY_JSONB,
         # local_codes
         EMPTY_JSONB,
-        # sections_to_include (empty array)
+        # section_processing (empty array)
         [],
         # version (start at 1 for new configs)
         1,
@@ -111,7 +111,7 @@ async def get_configurations_db(
             included_conditions,
             custom_codes,
             local_codes,
-            sections_to_include,
+            section_processing,
             version
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -143,7 +143,7 @@ async def get_configuration_by_id_db(
             included_conditions,
             custom_codes,
             local_codes,
-            sections_to_include,
+            section_processing,
             version
         FROM configurations
         WHERE id = %s
@@ -244,7 +244,7 @@ async def associate_condition_codeset_with_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
+                section_processing,
                 version
             ;
             """
@@ -303,7 +303,7 @@ async def disassociate_condition_codeset_with_configuration_db(
             included_conditions,
             custom_codes,
             local_codes,
-            sections_to_include,
+            section_processing,
             version
     """
     params = (
@@ -424,7 +424,7 @@ async def add_custom_code_to_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
+                section_processing,
                 version
             ;
             """
@@ -478,7 +478,7 @@ async def delete_custom_code_from_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
+                section_processing,
                 version
             ;
             """
@@ -523,7 +523,7 @@ async def edit_custom_code_from_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
+                section_processing,
                 version
             ;
             """
