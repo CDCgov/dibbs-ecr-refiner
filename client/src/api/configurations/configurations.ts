@@ -683,8 +683,9 @@ Args:
     id (UUID): ID of Configuration to use for the test
     uploaded_file (UploadFile | None): user uploaded eICR/RR pair
     user (DbUser): Logged in user
-    db (AsyncDatabaseConnection, optional): Database connection
-
+    db (AsyncDatabaseConnection): Database connection
+    sample_zip_path (Path): Path to example .zip eICR/RR pair
+    logger (Logger): Standard logger
 Returns:
     ConfigurationTestResponse: response given to the client
  * @summary Run Configuration Test

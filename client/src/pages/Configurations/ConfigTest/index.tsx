@@ -90,9 +90,9 @@ export default function ConfigTest() {
         )}
         {view === 'success' && uploadResponseData?.data && (
           <Diff
-            condition={uploadResponseData?.data.condition}
-            refined_download_url="http://test.com"
-            unrefined_eicr={uploadResponseData?.data.original_eicr}
+            condition={uploadResponseData.data.condition}
+            refined_download_url={uploadResponseData.data.refined_download_url}
+            unrefined_eicr={uploadResponseData.data.original_eicr}
           />
         )}
         {view === 'error' && (

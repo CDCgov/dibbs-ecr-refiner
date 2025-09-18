@@ -9,5 +9,6 @@ import type { Condition } from './condition';
 
 export interface ConfigurationTestResponse {
   original_eicr: string;
+  refined_download_url: string;
   condition: Condition;
 }
