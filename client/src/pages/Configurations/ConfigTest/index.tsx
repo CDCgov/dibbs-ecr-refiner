@@ -8,7 +8,7 @@ import { useParams } from 'react-router';
 import { Button } from '../../../components/Button';
 import { Title } from '../../../components/Title';
 import { RunTest } from '../../Testing/RunTest';
-import { ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 import {
   useGetConfiguration,
   useRunInlineConfigurationTest,
@@ -42,18 +42,6 @@ export default function ConfigTest() {
 
   // TS will know configId is defined by this point
   const configId = id;
-
-  function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      const file = e.target.files[0];
-      if (file.name.endsWith('.zip')) {
-        setSelectedFile(file);
-      } else {
-        console.error('No file input or incorrect file type.');
-        setSelectedFile(null);
-      }
-    }
-  }
 
   async function runTestWithCustomFile() {
     try {
@@ -97,7 +85,7 @@ export default function ConfigTest() {
             onClickSampleFile={runTestWithSampleFile}
             onClickCustomFile={runTestWithCustomFile}
             selectedFile={selectedFile}
-            onSelectedFileChange={onSelectedFileChange}
+            setSelectedFile={setSelectedFile}
           />
         )}
         {view === 'success' && uploadResponseData?.data && (

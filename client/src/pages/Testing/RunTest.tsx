@@ -12,15 +12,27 @@ interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
   onClickSampleFile: () => Promise<void>;
   selectedFile: File | null;
-  onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  setSelectedFile: React.Dispatch<React.SetStateAction<File | null>>;
 }
 export function RunTest({
-  onSelectedFileChange,
   onClickSampleFile,
   onClickCustomFile,
   selectedFile,
+  setSelectedFile,
 }: RunTestProps) {
   const env = useGetEnv();
+
+  function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      if (file.name.endsWith('.zip')) {
+        setSelectedFile(file);
+      } else {
+        console.error('No file input or incorrect file type.');
+        setSelectedFile(null);
+      }
+    }
+  }
 
   return (
     <div className="flex flex-col gap-12">
@@ -55,7 +67,7 @@ export function RunTest({
                 <span className="font-bold">Don't have a file ready?</span>
                 <span>You can try out eCR Refiner with our test file.</span>
               </p>
-              <div className="flex flex-col items-start md:items-center gap-4 md:flex-row">
+              <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
                 <Button
                   variant="secondary"
                   onClick={() => void onClickSampleFile()}
@@ -81,7 +93,7 @@ export function RunTest({
 interface UploadZipFile {
   onClick: () => Promise<void>;
   selectedFile: RunTestProps['selectedFile'];
-  onSelectedFileChange: RunTestProps['onSelectedFileChange'];
+  onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
 function UploadZipFile({
