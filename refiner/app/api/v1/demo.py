@@ -114,7 +114,7 @@ async def demo_upload(
     if uploaded_file:
         file = await validate_zip_file(file=uploaded_file)
     else:
-        file = create_sample_zip_file(demo_zip_path=demo_zip_path)
+        file = create_sample_zip_file(sample_zip_path=demo_zip_path)
 
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})

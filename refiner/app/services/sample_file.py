@@ -15,18 +15,18 @@ def get_sample_zip_path() -> Path:
     return get_asset_path("demo", "mon-mothma-two-conditions.zip")
 
 
-def create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
+def create_sample_zip_file(sample_zip_path: Path) -> UploadFile:
     """
     Given a path to a sample file, packages the file as an UploadFile to use for processing.
 
     Args:
-        demo_zip_path (Path): Path to file
+        sample_zip_path (Path): Path to file
 
     Returns:
         UploadFile: The file packaged as an UploadFile
     """
-    filename = demo_zip_path.name
-    with open(demo_zip_path, "rb") as demo_file:
+    filename = sample_zip_path.name
+    with open(sample_zip_path, "rb") as demo_file:
         zip_content = demo_file.read()
 
     file_like = io.BytesIO(zip_content)

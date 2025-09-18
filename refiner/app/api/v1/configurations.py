@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from logging import Logger
+from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
@@ -6,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
+from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_db,
@@ -27,6 +30,8 @@ from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCod
 from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
+from ...services.logger import get_logger
+from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 
 router = APIRouter(prefix="/configurations")
 
@@ -783,6 +788,7 @@ class ConfigurationTestResponse:
     """
 
     original_eicr: str
+    refined_download_url: str
     condition: Condition
 
 
@@ -797,6 +803,8 @@ async def run_configuration_test(
     uploaded_file: UploadFile | None = File(None),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    sample_zip_path: Path = Depends(get_sample_zip_path),
+    logger: Logger = Depends(get_logger),
 ) -> ConfigurationTestResponse:
     """
     Runs an in-line test using the provided configuration ID and test files.
@@ -805,27 +813,50 @@ async def run_configuration_test(
         id (UUID): ID of Configuration to use for the test
         uploaded_file (UploadFile | None): user uploaded eICR/RR pair
         user (DbUser): Logged in user
-        db (AsyncDatabaseConnection, optional): Database connection
-
+        db (AsyncDatabaseConnection): Database connection
+        sample_zip_path (Path): Path to example .zip eICR/RR pair
+        logger (Logger): Standard logger
     Returns:
         ConfigurationTestResponse: response given to the client
     """
 
-    if not uploaded_file:
-        print("No file provided. Use default.")
+    if not sample_zip_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unable to find demo zip file to download.",
+        )
+
+    file = None
+    if uploaded_file:
+        file = await validate_zip_file(file=uploaded_file)
+        logger.info(
+            "Running inline test using user-provided file",
+            extra={"file": file.filename},
+        )
     else:
-        print("processing uploaded file.")
+        file = create_sample_zip_file(sample_zip_path=sample_zip_path)
+        logger.info(
+            "Running inline test using sample file", extra={"file": file.filename}
+        )
 
     # get user jurisdiction
     jd = user.jurisdiction_id
 
     # find config
     config = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
 
-    print(config)
+    logger.info(
+        "Using config for inline testing",
+        extra={"config_id": config.id, "jurisdiction_id": jd},
+    )
 
     return ConfigurationTestResponse(
         original_eicr="test_original_eicr",
+        refined_download_url="http://s3.com",
         condition=Condition(
             code="test",
             display_name="test",
