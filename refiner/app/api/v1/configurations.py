@@ -32,6 +32,7 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.ecr.refine import get_file_size_reduction_percentage, refine
 from ...services.file_io import read_xml_zip
+from ...services.format import normalize_xml, strip_comments
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 
@@ -888,17 +889,23 @@ async def run_configuration_test(
             detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
         )
 
+    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+
+    matched_condition_refined_eicr = strip_comments(
+        normalize_xml(matched_result.refined_eicr)
+    )
+
     return ConfigurationTestResponse(
-        original_eicr=original_xml_files.eicr,
+        original_eicr=original_unrefined_eicr,
         refined_download_url="http://s3.com",
         condition=Condition(
             code=matched_result.reportable_condition.code,
             display_name=matched_result.reportable_condition.display_name,
-            refined_eicr=format.strip_comments(matched_result.refined_eicr),
+            refined_eicr=matched_condition_refined_eicr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        original_xml_files.eicr, matched_result.refined_eicr
+                        original_unrefined_eicr, matched_condition_refined_eicr
                     )
                 }%",
             ],
