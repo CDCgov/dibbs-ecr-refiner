@@ -6,10 +6,13 @@ from psycopg.rows import class_row, dict_row
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition
 
+# TES and refiner are currently using version 3.0.0 for CGs and its child RSGs
+CURRENT_VERSION = "3.0.0"
+
 
 async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     """
-    Queries the database and retrieves a list of conditions with version 3.0.0.
+    Queries the database and retrieves a list of conditions matching CURRENT_VERSION.
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
@@ -17,6 +20,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     Returns:
         list[DbCondition]: List of conditions.
     """
+
     query = """
             SELECT
                 id,
@@ -29,26 +33,28 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE version = '3.0.0'
+            WHERE version = %s
             ORDER BY display_name ASC;
             """
+
+    params = (CURRENT_VERSION,)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query)
+            await cur.execute(query, params)
             rows = await cur.fetchall()
-            return [DbCondition.from_db_row(row) for row in rows]
 
     if not rows:
-        raise Exception("No conditions found for version 3.0.0.")
+        raise Exception(f"No conditions found for version {CURRENT_VERSION}.")
 
-    return rows
+    return [DbCondition.from_db_row(row) for row in rows]
 
 
 async def get_condition_by_id_db(
     id: UUID, db: AsyncDatabaseConnection
 ) -> DbCondition | None:
     """
-    Gets a condition from the database with the provided ID.
+    Gets a single, specific condition from the database by its primary key (UUID).
     """
 
     query = """
@@ -63,22 +69,27 @@ async def get_condition_by_id_db(
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE version = '3.0.0'
-            AND id = %s
+            WHERE id = %s AND version = %s
             """
-    params = (id,)
+
+    params = (id, CURRENT_VERSION)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbCondition.from_db_row(row)
 
-    return row
+    if not row:
+        return None
+
+    return DbCondition.from_db_row(row)
 
 
+# TODO:
+# this is a candidate for a uniform Coding model
+# that represents the combination of either:
+# 1. a code and a display
+# 2. a code, display, and system
 @dataclass(frozen=True)
 class GetConditionCode:
     """
@@ -94,8 +105,13 @@ async def get_condition_codes_by_condition_id_db(
     id: UUID, db: AsyncDatabaseConnection
 ) -> list[GetConditionCode]:
     """
-    Queries the database to collect code info about a given condition.
+    For a condition ID, flatten all codes into a GetConditionCode shape.
+
+    For a given condition ID, unnests and combines all terminology codes
+    (LOINC, SNOMED, ICD-10, RxNorm) from their respective JSONB columns
+    into a single, flat list of GetConditionCode objects.
     """
+
     query = """
             WITH c AS (
                 SELECT *
@@ -141,9 +157,63 @@ async def get_condition_codes_by_condition_id_db(
             WHERE code IS NOT NULL
             ORDER BY system, code;
             """
+
     params = (id,)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(GetConditionCode)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
-            return list(rows)
+
+    return list(rows)
+
+
+async def get_conditions_by_child_rsg_snomed_codes(
+    db: AsyncDatabaseConnection, codes: list[str]
+) -> list[DbCondition]:
+    """
+    Given a list of RC SNOMED codes, find their assocaited CG rows.
+
+    Finds all conditions that are associated with the given list of child RSG SNOMED codes,
+    matching CURRENT_VERSION.
+
+    This uses the GIN index on the `child_rsg_snomed_codes` array column for performance.
+
+    Args:
+        db: The database connection.
+        codes: A list of RC SNOMED codes extracted from an RR.
+
+    Returns:
+        A list of matching DbCondition objects.
+    """
+
+    if not codes:
+        return []
+
+    query = """
+        SELECT
+            id,
+            display_name,
+            canonical_url,
+            version,
+            child_rsg_snomed_codes,
+            snomed_codes,
+            loinc_codes,
+            icd10_codes,
+            rxnorm_codes
+        FROM conditions
+        WHERE child_rsg_snomed_codes && %s::text[]
+        AND version = %s;
+    """
+
+    params = (
+        codes,
+        CURRENT_VERSION,
+    )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return [DbCondition.from_db_row(row) for row in rows]
