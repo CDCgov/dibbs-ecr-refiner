@@ -96,9 +96,9 @@ function Builder({
   included_conditions,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
-    'none'
-  );
+  const [tableView, setTableView] = useState<
+    'none' | 'codeset' | 'custom' | 'sections'
+  >('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
