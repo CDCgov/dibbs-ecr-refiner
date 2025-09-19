@@ -873,13 +873,15 @@ async def run_configuration_test(
         jurisdiction_id=jd,
     )
 
-    seen = set()
+    child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
+    seen_condition_codes = set()
     matched_result = None
     for result in refined_results:
-        seen.add(result.reportable_condition.code)
-        # check if any child rsg is has been detected
-        if any(code in seen for code in associated_condition.child_rsg_snomed_codes):
-            # when found, set the condition and break early
+        # Add current code to seen codes
+        seen_condition_codes.add(result.reportable_condition.code)
+
+        # If a child rsg code is found in the "seen" set then we have a match
+        if seen_condition_codes & child_rsg_codes:
             matched_result = result
             break
 
