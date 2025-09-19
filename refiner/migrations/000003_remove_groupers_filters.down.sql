@@ -12,6 +12,10 @@ ALTER TABLE configurations
     -- restore 'sections_to_include' column with its default array
     ADD COLUMN sections_to_include text[] DEFAULT ARRAY[]::text[];
 
+-- remove the section_processing constraint before dropping column
+ALTER TABLE configurations
+    DROP CONSTRAINT section_processing_must_be_json_array;
+
 -- remove the section_processing column
 ALTER TABLE configurations
     DROP COLUMN section_processing;

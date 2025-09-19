@@ -45,3 +45,8 @@ ALTER TABLE configurations
     -- },
     -- actions can be: retain, refine, remove
     ADD COLUMN section_processing jsonb DEFAULT '[]'::jsonb;
+
+-- add constraint to ensure section_processing is always a JSON array
+ALTER TABLE configurations
+    ADD CONSTRAINT section_processing_must_be_json_array
+    CHECK (jsonb_typeof(section_processing) = 'array');
