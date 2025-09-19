@@ -20,7 +20,7 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import get_file_size_reduction_percentage, refine_async
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ..validation.file_validation import validate_zip_file
@@ -119,9 +119,15 @@ async def demo_upload(
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})
 
+        jd = user.jurisdiction_id
+
         # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
-        refined_results = await refine_async(original_xml=original_xml_files, db=db)
+        refined_results = await refine(
+            original_xml=original_xml_files,
+            db=db,
+            jurisdiction_id=jd,
+        )
 
         conditions = []
         refined_files_to_zip = []
