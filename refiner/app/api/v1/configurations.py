@@ -30,6 +30,8 @@ from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCod
 from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine
+from ...services.file_io import read_xml_zip
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 
@@ -854,13 +856,51 @@ async def run_configuration_test(
         extra={"config_id": config.id, "jurisdiction_id": jd},
     )
 
+    # find the primary condition associated with the config
+    associated_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+    if not associated_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Condition associated with configuration (ID: {config.id}) not found.",
+        )
+
+    original_xml_files = await read_xml_zip(file)
+
+    refined_results = await refine(
+        original_xml=original_xml_files,
+        db=db,
+        jurisdiction_id=jd,
+    )
+
+    seen = set()
+    matched_result = None
+    for result in refined_results:
+        seen.add(result.reportable_condition.code)
+        # check if any child rsg is has been detected
+        if any(code in seen for code in associated_condition.child_rsg_snomed_codes):
+            # when found, set the condition and break early
+            matched_result = result
+            break
+
+    if not matched_result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
+        )
+
     return ConfigurationTestResponse(
-        original_eicr="test_original_eicr",
+        original_eicr=original_xml_files.eicr,
         refined_download_url="http://s3.com",
         condition=Condition(
-            code="test",
-            display_name="test",
-            refined_eicr="test_refined_eicr",
-            stats=["eICR size reduced."],
+            code=matched_result.reportable_condition.code,
+            display_name=matched_result.reportable_condition.display_name,
+            refined_eicr=format.strip_comments(matched_result.refined_eicr),
+            stats=[
+                f"eICR file size reduced by {
+                    get_file_size_reduction_percentage(
+                        original_xml_files.eicr, matched_result.refined_eicr
+                    )
+                }%",
+            ],
         ),
     )
