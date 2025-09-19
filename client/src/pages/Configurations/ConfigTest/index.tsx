@@ -13,8 +13,8 @@ import {
   useGetConfiguration,
   useRunInlineConfigurationTest,
 } from '../../../api/configurations/configurations';
-import { Error as ErrorScreen } from '../../Testing/Error';
 import { Diff } from '../../../components/Diff';
+import { Icon } from '@trussworks/react-uswds';
 
 type View = 'run-test' | 'success' | 'error';
 
@@ -96,7 +96,18 @@ export default function ConfigTest() {
           />
         )}
         {view === 'error' && (
-          <ErrorScreen message={errorMessage} onClick={reset} />
+          <div className="flex flex-col gap-3">
+            <ServerError>{errorMessage}</ServerError>
+            <div>
+              <Button
+                onClick={() => {
+                  reset();
+                }}
+              >
+                Go back
+              </Button>
+            </div>
+          </div>
         )}
       </SectionContainer>
     </div>
@@ -121,6 +132,7 @@ function useZipUpload() {
           : rawError?.detail || 'Upload failed. Please try again.';
         setErrorMessage(message);
       },
+      retry: false,
     },
   });
 
@@ -142,4 +154,23 @@ function useZipUpload() {
     isPending,
     resetState,
   };
+}
+
+interface ServerErrorProps {
+  children: React.ReactNode;
+}
+function ServerError({ children }: ServerErrorProps) {
+  return (
+    <div className="bg-state-error-lighter rounded p-4">
+      <p className="text-state-error-dark flex flex-col gap-3">
+        <span className="flex items-center gap-2">
+          <Icon.Warning
+            className="[&_path]:fill-state-error shrink-0"
+            aria-label="Warning"
+          />
+          <span>{children}</span>
+        </span>
+      </p>
+    </div>
+  );
 }
