@@ -1,11 +1,14 @@
 from dataclasses import dataclass
+from logging import Logger
+from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
+from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_db,
@@ -24,8 +27,14 @@ from ...db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine
+from ...services.file_io import read_xml_zip
+from ...services.format import normalize_xml, strip_comments
+from ...services.logger import get_logger
+from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 
 router = APIRouter(prefix="/configurations")
 
@@ -772,4 +781,135 @@ async def edit_custom_code(
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+    )
+
+
+@dataclass(frozen=True)
+class ConfigurationTestResponse:
+    """
+    Model to represent the response provided to the client when in-line testing is run.
+    """
+
+    original_eicr: str
+    refined_download_url: str
+    condition: Condition
+
+
+@router.post(
+    "/test",
+    response_model=ConfigurationTestResponse,
+    tags=["configurations"],
+    operation_id="runInlineConfigurationTest",
+)
+async def run_configuration_test(
+    id: UUID = Form(...),
+    uploaded_file: UploadFile | None = File(None),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    sample_zip_path: Path = Depends(get_sample_zip_path),
+    logger: Logger = Depends(get_logger),
+) -> ConfigurationTestResponse:
+    """
+    Runs an in-line test using the provided configuration ID and test files.
+
+    Args:
+        id (UUID): ID of Configuration to use for the test
+        uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+        user (DbUser): Logged in user
+        db (AsyncDatabaseConnection): Database connection
+        sample_zip_path (Path): Path to example .zip eICR/RR pair
+        logger (Logger): Standard logger
+    Returns:
+        ConfigurationTestResponse: response given to the client
+    """
+
+    if not sample_zip_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unable to find demo zip file to download.",
+        )
+
+    file = None
+    if uploaded_file:
+        file = await validate_zip_file(file=uploaded_file)
+        logger.info(
+            "Running inline test using user-provided file",
+            extra={"file": file.filename},
+        )
+    else:
+        file = create_sample_zip_file(sample_zip_path=sample_zip_path)
+        logger.info(
+            "Running inline test using sample file", extra={"file": file.filename}
+        )
+
+    # get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    logger.info(
+        "Using config for inline testing",
+        extra={"config_id": config.id, "jurisdiction_id": jd},
+    )
+
+    # find the primary condition associated with the config
+    associated_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+    if not associated_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Condition associated with configuration (ID: {config.id}) not found.",
+        )
+
+    original_xml_files = await read_xml_zip(file)
+
+    refined_results = await refine(
+        original_xml=original_xml_files,
+        db=db,
+        jurisdiction_id=jd,
+    )
+
+    child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
+    seen_condition_codes = set()
+    matched_result = None
+    for result in refined_results:
+        # Add current code to seen codes
+        seen_condition_codes.add(result.reportable_condition.code)
+
+        # If a child rsg code is found in the "seen" set then we have a match
+        if seen_condition_codes & child_rsg_codes:
+            matched_result = result
+            break
+
+    if not matched_result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
+        )
+
+    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+
+    matched_condition_refined_eicr = strip_comments(
+        normalize_xml(matched_result.refined_eicr)
+    )
+
+    return ConfigurationTestResponse(
+        original_eicr=original_unrefined_eicr,
+        refined_download_url="http://s3.com",
+        condition=Condition(
+            code=matched_result.reportable_condition.code,
+            display_name=matched_result.reportable_condition.display_name,
+            refined_eicr=matched_condition_refined_eicr,
+            stats=[
+                f"eICR file size reduced by {
+                    get_file_size_reduction_percentage(
+                        original_unrefined_eicr, matched_condition_refined_eicr
+                    )
+                }%",
+            ],
+        ),
     )

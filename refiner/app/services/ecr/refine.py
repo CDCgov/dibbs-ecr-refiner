@@ -57,6 +57,27 @@ def validate_sections_to_include(
     return sections
 
 
+def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -> int:
+    """
+    Given an unrefined document eICR document and a refined eICR document, calculate the percentage in which the file size was reduced post-refinement.
+
+    Args:
+        unrefined_eicr (str): An unrefined eICR XML document
+        refined_eicr (str): A refined eICR XML document
+    Returns:
+        int: Integer representing the percentage in which the file size was reduced.
+    """
+
+    unrefined_bytes = len(unrefined_eicr.encode("utf-8"))
+    refined_bytes = len(refined_eicr.encode("utf-8"))
+
+    if unrefined_bytes == 0:
+        return 0
+
+    percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
+    return round(percent_diff)
+
+
 async def refine(
     original_xml: XMLFiles,
     db: AsyncDatabaseConnection,

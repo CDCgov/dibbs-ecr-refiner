@@ -2,17 +2,6 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class ConditionProcessingInfo:
-    """
-    Model for a Condition's processing information.
-    """
-
-    condition_specific: bool
-    sections_processed: str
-    method: str
-
-
-@dataclass(frozen=True)
 class Condition:
     """
     Model for a Condition.
@@ -22,7 +11,6 @@ class Condition:
     display_name: str
     refined_eicr: str
     stats: list[str]
-    processing_info: ConditionProcessingInfo
 
 
 @dataclass(frozen=True)
