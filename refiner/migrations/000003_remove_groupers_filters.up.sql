@@ -44,4 +44,4 @@ ALTER TABLE configurations
     --   action: 'retain'
     -- },
     -- actions can be: retain, refine, remove
-    ADD COLUMN section_processing jsonb DEFAULT '{}'::jsonb;
+    ADD COLUMN section_processing jsonb DEFAULT '[]'::jsonb;

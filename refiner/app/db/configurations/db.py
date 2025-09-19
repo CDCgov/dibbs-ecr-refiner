@@ -44,7 +44,7 @@ async def insert_configuration_db(
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
-        %s::text[],
+        %s::jsonb,
         %s
     )
     RETURNING
@@ -78,8 +78,8 @@ async def insert_configuration_db(
         EMPTY_JSONB,
         # local_codes
         EMPTY_JSONB,
-        # section_processing (empty array)
-        [],
+        # section_processing
+        EMPTY_JSONB,
         # version (start at 1 for new configs)
         1,
     )
