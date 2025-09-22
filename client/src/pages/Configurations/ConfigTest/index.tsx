@@ -99,13 +99,7 @@ function Tester({ config }: TesterProps) {
         <div className="flex flex-col gap-3">
           <ServerError>{errorMessage}</ServerError>
           <div>
-            <Button
-              onClick={() => {
-                reset();
-              }}
-            >
-              Go back
-            </Button>
+            <Button onClick={reset}>Go back</Button>
           </div>
         </div>
       )}
