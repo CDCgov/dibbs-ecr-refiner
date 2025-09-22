@@ -15,8 +15,7 @@ import {
 } from '../../../api/configurations/configurations';
 import { Diff } from '../../../components/Diff';
 import { Icon } from '@trussworks/react-uswds';
-
-type View = 'run-test' | 'success' | 'error';
+import { GetConfigurationResponse } from '../../../api/schemas';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -28,43 +27,8 @@ export default function ConfigTest() {
     query: { enabled: !!id },
   });
 
-  const [view, setView] = useState<View>('run-test');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const {
-    data: uploadResponseData,
-    errorMessage,
-    resetState,
-    uploadZip,
-  } = useZipUpload();
-
   if (isLoading || !response?.data) return 'Loading...';
   if (!id || isError) return 'Error!';
-
-  // TS will know configId is defined by this point
-  const configId = id;
-
-  async function runTestWithCustomFile() {
-    try {
-      await uploadZip(configId, selectedFile);
-      setView('success');
-    } catch {
-      setView('error');
-    }
-  }
-
-  async function runTestWithSampleFile() {
-    try {
-      await uploadZip(configId, null);
-      setView('success');
-    } catch {
-      setView('error');
-    }
-  }
-
-  function reset() {
-    setView('run-test');
-    resetState();
-  }
 
   return (
     <div>
@@ -80,36 +44,79 @@ export default function ConfigTest() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        {view === 'run-test' && (
-          <RunTest
-            onClickSampleFile={runTestWithSampleFile}
-            onClickCustomFile={runTestWithCustomFile}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-          />
-        )}
-        {view === 'success' && uploadResponseData?.data && (
-          <Diff
-            condition={uploadResponseData.data.condition}
-            refined_download_url={uploadResponseData.data.refined_download_url}
-            unrefined_eicr={uploadResponseData.data.original_eicr}
-          />
-        )}
-        {view === 'error' && (
-          <div className="flex flex-col gap-3">
-            <ServerError>{errorMessage}</ServerError>
-            <div>
-              <Button
-                onClick={() => {
-                  reset();
-                }}
-              >
-                Go back
-              </Button>
-            </div>
-          </div>
-        )}
+        <Tester config={response.data} />
       </SectionContainer>
+    </div>
+  );
+}
+
+type Status = 'idle' | 'pending' | 'error' | 'success';
+
+interface TesterProps {
+  config: GetConfigurationResponse;
+}
+
+function Tester({ config }: TesterProps) {
+  const [status, setStatus] = useState<Status>('idle');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  async function runTest(file: File | null) {
+    setStatus('pending');
+    try {
+      await uploadZip(config.id, file);
+      setStatus('success');
+    } catch {
+      setStatus('error');
+    }
+  }
+
+  function reset() {
+    setStatus('idle');
+    resetState();
+  }
+
+  const {
+    data: uploadResponseData,
+    errorMessage,
+    resetState,
+    uploadZip,
+  } = useZipUpload();
+
+  return (
+    <div>
+      {status === 'idle' && (
+        <RunTest
+          onClickSampleFile={() => runTest(null)}
+          onClickCustomFile={() => runTest(selectedFile)}
+          selectedFile={selectedFile}
+          setSelectedFile={setSelectedFile}
+        />
+      )}
+
+      {status === 'pending' && <p>Loading...</p>}
+
+      {status === 'error' && (
+        <div className="flex flex-col gap-3">
+          <ServerError>{errorMessage}</ServerError>
+          <div>
+            <Button
+              onClick={() => {
+                reset();
+              }}
+            >
+              Go back
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {status === 'success' && uploadResponseData?.data && (
+        <Diff
+          condition={uploadResponseData.data.condition}
+          refined_download_url={uploadResponseData.data.refined_download_url}
+          unrefined_eicr={uploadResponseData.data.original_eicr}
+        />
+      )}
     </div>
   );
 }
@@ -119,8 +126,6 @@ function useZipUpload() {
   const {
     mutateAsync,
     data,
-    isError,
-    isPending,
     reset: resetState,
   } = useRunInlineConfigurationTest({
     mutation: {
@@ -150,8 +155,6 @@ function useZipUpload() {
     uploadZip,
     data,
     errorMessage,
-    isError,
-    isPending,
     resetState,
   };
 }
