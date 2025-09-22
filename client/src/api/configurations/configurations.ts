@@ -682,6 +682,8 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
 Args:
     id (UUID): ID of Configuration to use for the test
     uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+    create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
+    upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
     user (DbUser): Logged in user
     db (AsyncDatabaseConnection): Database connection
     sample_zip_path (Path): Path to example .zip eICR/RR pair

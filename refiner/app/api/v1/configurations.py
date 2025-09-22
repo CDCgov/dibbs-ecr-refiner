@@ -1,3 +1,5 @@
+import io
+from collections.abc import Callable
 from dataclasses import dataclass
 from logging import Logger
 from pathlib import Path
@@ -5,6 +7,7 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
@@ -30,8 +33,13 @@ from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCod
 from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
+from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import get_file_size_reduction_percentage, refine
-from ...services.file_io import read_xml_zip
+from ...services.file_io import (
+    create_refined_ecr_zip_in_memory,
+    create_split_condition_filename,
+    read_xml_zip,
+)
 from ...services.format import normalize_xml, strip_comments
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
@@ -804,6 +812,12 @@ class ConfigurationTestResponse:
 async def run_configuration_test(
     id: UUID = Form(...),
     uploaded_file: UploadFile | None = File(None),
+    create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
+        lambda: create_refined_ecr_zip_in_memory
+    ),
+    upload_refined_files_to_s3: Callable[
+        [UUID, io.BytesIO, str, Logger], str
+    ] = Depends(lambda: upload_refined_ecr),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     sample_zip_path: Path = Depends(get_sample_zip_path),
@@ -815,6 +829,8 @@ async def run_configuration_test(
     Args:
         id (UUID): ID of Configuration to use for the test
         uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+        create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
+        upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
         user (DbUser): Logged in user
         db (AsyncDatabaseConnection): Database connection
         sample_zip_path (Path): Path to example .zip eICR/RR pair
@@ -897,9 +913,38 @@ async def run_configuration_test(
         normalize_xml(matched_result.refined_eicr)
     )
 
+    s3_file_package = []
+
+    # Add original files to file package
+    s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
+    s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
+
+    # Add the matched result's eICR to file package
+    s3_file_package.append(
+        (
+            create_split_condition_filename(
+                condition_name=matched_result.reportable_condition.display_name,
+                condition_code=matched_result.reportable_condition.code,
+            ),
+            matched_result.refined_eicr,
+        )
+    )
+
+    output_file_name, output_zip_buffer = create_output_zip(
+        files=s3_file_package,
+    )
+
+    presigned_s3_url = await run_in_threadpool(
+        upload_refined_files_to_s3,
+        user.id,
+        output_zip_buffer,
+        output_file_name,
+        logger,
+    )
+
     return ConfigurationTestResponse(
         original_eicr=original_unrefined_eicr,
-        refined_download_url="http://s3.com",
+        refined_download_url=presigned_s3_url,
         condition=Condition(
             code=matched_result.reportable_condition.code,
             display_name=matched_result.reportable_condition.display_name,

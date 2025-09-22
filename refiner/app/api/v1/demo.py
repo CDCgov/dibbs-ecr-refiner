@@ -2,8 +2,7 @@ import io
 from collections.abc import Callable
 from logging import Logger
 from pathlib import Path
-from uuid import UUID, uuid4
-from zipfile import ZipFile
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
@@ -29,31 +28,6 @@ from ..validation.file_validation import validate_zip_file
 router = APIRouter(prefix="/demo")
 
 
-def _create_refined_ecr_zip_in_memory(
-    *,
-    files: list[tuple[str, str]],
-) -> tuple[str, io.BytesIO]:
-    """
-    Create a zip archive containing all provided (filename, content) pairs.
-
-    Args:
-        files (list): List of tuples [(filename, content)], content must be string.
-
-    Returns:
-        (filename, buffer)
-    """
-    token = str(uuid4())
-    zip_filename = f"{token}_refined_ecr.zip"
-    zip_buffer = io.BytesIO()
-
-    with ZipFile(zip_buffer, "w") as zf:
-        for filename, content in files:
-            zf.writestr(filename, content)
-
-    zip_buffer.seek(0)
-    return zip_filename, zip_buffer
-
-
 def _get_zip_creator() -> Callable[..., tuple[str, io.BytesIO]]:
     """
     Dependency-injected function responsible for passing the function that will write the output zip file to the handler.
@@ -62,7 +36,7 @@ def _get_zip_creator() -> Callable[..., tuple[str, io.BytesIO]]:
         A callable that takes a list of (filename, content) tuples and an output directory,
         and returns a tuple (zip_filename, zip_filepath, token).
     """
-    return _create_refined_ecr_zip_in_memory
+    return file_io.create_refined_ecr_zip_in_memory
 
 
 def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
@@ -139,8 +113,9 @@ async def demo_upload(
             condition_refined_eicr = format.normalize_xml(result.refined_eicr)
 
             # Construct a filename for each XML (e.g. "covid_840539006.xml")
-            safe_name = condition_name.replace(" ", "_").replace("/", "_")
-            filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+            filename = file_io.create_split_condition_filename(
+                condition_name=condition_name, condition_code=condition_code
+            )
 
             # Add to the list of files to include in the ZIP
             refined_files_to_zip.append((filename, condition_refined_eicr))
