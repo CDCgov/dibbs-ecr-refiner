@@ -59,6 +59,12 @@ interface TesterProps {
 function Tester({ config }: TesterProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const {
+    data: uploadResponseData,
+    errorMessage,
+    resetState,
+    uploadZip,
+  } = useZipUpload();
 
   async function runTest(file: File | null) {
     setStatus('pending');
@@ -74,13 +80,6 @@ function Tester({ config }: TesterProps) {
     setStatus('idle');
     resetState();
   }
-
-  const {
-    data: uploadResponseData,
-    errorMessage,
-    resetState,
-    uploadZip,
-  } = useZipUpload();
 
   return (
     <div>
