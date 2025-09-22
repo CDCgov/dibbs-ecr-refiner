@@ -31,7 +31,10 @@ def create_sample_zip_file(sample_zip_path: Path) -> UploadFile:
 
     # Check that sample zip path is within expected asset path
     fullpath = sample_zip_path.resolve()
-    if not str(fullpath).startswith(str(asset_root)):
+    try:
+        # Path-based check: ensure fullpath is within asset_root
+        fullpath.relative_to(asset_root)
+    except ValueError:
         raise ValueError("Attempt to access file outside allowed asset directory.")
 
     filename = sample_zip_path.name
