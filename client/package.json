@@ -21,7 +21,7 @@
     "e2e:report": "npx playwright show-report"
   },
   "dependencies": {
-    "@fontsource-variable/merriweather": "^5.2.2",
+    "@fontsource-variable/merriweather": "^5.2.6",
     "@fontsource-variable/public-sans": "^5.2.6",
     "@headlessui/react": "^2.2.7",
     "@tailwindcss/vite": "^4.1.13",
