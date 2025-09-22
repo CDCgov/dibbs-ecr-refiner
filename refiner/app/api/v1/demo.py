@@ -28,32 +28,6 @@ from ..validation.file_validation import validate_zip_file
 router = APIRouter(prefix="/demo")
 
 
-def _get_zip_creator() -> Callable[..., tuple[str, io.BytesIO]]:
-    """
-    Dependency-injected function responsible for passing the function that will write the output zip file to the handler.
-
-    Returns:
-        A callable that takes a list of (filename, content) tuples and an output directory,
-        and returns a tuple (zip_filename, zip_filepath, token).
-    """
-    return file_io.create_refined_ecr_zip_in_memory
-
-
-def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
-    """
-    Provides a dependency-injectable reference to the `upload_refined_ecr` function.
-
-    Returns:
-        Callable[[UUID, io.BytesIO, str], str]: A callable that uploads a
-        file to S3 and returns a pre-signed download URL. The arguments are:
-            - user_id (UUID): The ID of the uploading user.
-            - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
-            - filename (str): Filename for the uploaded file.
-            - logger (Logger): The standard logger
-    """
-    return upload_refined_ecr
-
-
 @router.post(
     "/upload",
     response_model=RefinedTestingDocument,
@@ -64,12 +38,12 @@ async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
-        _get_zip_creator
+        lambda: file_io.create_refined_ecr_zip_in_memory
     ),
     user: DbUser = Depends(get_logged_in_user),
     upload_refined_files_to_s3: Callable[
         [UUID, io.BytesIO, str, Logger], str
-    ] = Depends(_get_upload_refined_ecr),
+    ] = Depends(lambda: upload_refined_ecr),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> RefinedTestingDocument:
@@ -95,7 +69,6 @@ async def demo_upload(
 
         jd = user.jurisdiction_id
 
-        # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
         refined_results = await refine(
             original_xml=original_xml_files,
@@ -103,7 +76,7 @@ async def demo_upload(
             jurisdiction_id=jd,
         )
 
-        conditions = []
+        conditions: list[Condition] = []
         refined_files_to_zip = []
 
         # Track condition metadata and gather refined XMLs to zip
@@ -123,7 +96,7 @@ async def demo_upload(
             # Strip comments afer adding to zip download for diff view
             stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
 
-            # Build per-condition metadata (zip token added later)
+            # Build per-condition metadata
             conditions.append(
                 Condition(
                     code=condition_code,
@@ -156,14 +129,15 @@ async def demo_upload(
             logger,
         )
 
-        normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
-        stripped_unrefined_eicr = format.strip_comments(normalized_unrefined_eicr)
+        formatted_unrefined_eicr = format.strip_comments(
+            format.normalize_xml(original_xml_files.eicr)
+        )
 
         return RefinedTestingDocument(
             message="Successfully processed eICR with condition-specific refinement",
             conditions_found=len(conditions),
             conditions=conditions,
-            unrefined_eicr=stripped_unrefined_eicr,
+            unrefined_eicr=formatted_unrefined_eicr,
             processing_notes=[
                 "Each condition gets its own refined eICR",
                 "Sections contain only data relevant to that specific condition",
