@@ -3,9 +3,11 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import ConfigActivate from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
+  Condition,
   DbConfigurationCustomCode,
   DbTotalConditionCodeCount,
 } from '../../../api/schemas';
+import userEvent from '@testing-library/user-event';
 
 // Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
@@ -17,6 +19,13 @@ const mockCodeSets: DbTotalConditionCodeCount[] = [
 const mockCustomCodes: DbConfigurationCustomCode[] = [
   { code: 'custom-code1', name: 'test-custom-code1', system: 'ICD-10' },
 ];
+
+const mockMatchedCondition: Condition = {
+  code: '840539006',
+  display_name: 'COVID-19',
+  refined_eicr: '<xml>refined covid</xml>',
+  stats: ['eICR file reduced by 71%'],
+};
 
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {
@@ -40,6 +49,25 @@ vi.mock('../../../api/configurations/configurations', async () => {
             { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
             { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
           ],
+        },
+      },
+      isLoading: false,
+      isError: false,
+    })),
+    useRunInlineConfigurationTest: vi.fn(() => ({
+      mutateAsync: vi.fn().mockResolvedValue({
+        data: {
+          condition: mockMatchedCondition,
+          original_eicr: '<xml>unrefined covid</xml>',
+          refined_download_url: 'http://mocks3download.com',
+        },
+      }),
+      reset: vi.fn(),
+      data: {
+        data: {
+          condition: mockMatchedCondition,
+          original_eicr: '<xml>unrefined covid</xml>',
+          refined_download_url: 'http://mocks3download.com',
         },
       },
       isLoading: false,
@@ -75,5 +103,30 @@ describe('Config testing page', () => {
     expect(
       screen.getByText('Turn on configuration', { selector: 'a' })
     ).toBeInTheDocument();
+  });
+
+  it('should allow config testing with inline testing flow', async () => {
+    const user = userEvent.setup();
+
+    renderPage();
+
+    // check initial screen
+    expect(
+      screen.getByText('Next: Turn on configuration', { selector: 'a' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Want to refine your own eCR file?')
+    ).toBeInTheDocument();
+    expect(screen.getByText("Don't have a file ready?")).toBeInTheDocument();
+
+    // mock the upload
+    await user.click(screen.getByText('Use test file'));
+
+    // Check success page
+    expect(
+      await screen.findByText('eICR file reduced by 71%')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Original eICR')).toBeInTheDocument();
+    expect(screen.getByText('Refined eICR')).toBeInTheDocument();
   });
 });
