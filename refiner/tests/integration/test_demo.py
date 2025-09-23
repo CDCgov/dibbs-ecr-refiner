@@ -25,6 +25,7 @@ client = TestClient(app=app)
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_demo_upload_success(
     test_assets_path: pathlib.Path, authed_client, test_user_id
 ) -> None:
@@ -48,6 +49,7 @@ async def test_demo_upload_success(
     )
 
 
+@pytest.mark.integration
 def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     from app.services.aws.s3 import upload_refined_ecr
 
@@ -87,6 +89,7 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     app.dependency_overrides.clear()
 
 
+@pytest.mark.integration
 def test_demo_file_not_found(test_user_id, test_username):
     from app.services.sample_file import get_sample_zip_path
 
@@ -141,6 +144,7 @@ def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_valid_zip():
     zip_bytes = create_zip_file(
         {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
@@ -151,6 +155,7 @@ async def test_valid_zip():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_invalid_extension():
     zip_bytes = create_zip_file({"test.txt": b"abc"})
     file = create_mock_upload_file("invalid.txt", zip_bytes)
@@ -160,6 +165,7 @@ async def test_invalid_extension():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_filename_starts_with_period():
     file = create_mock_upload_file(".hidden.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
@@ -168,6 +174,7 @@ async def test_filename_starts_with_period():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_filename_with_double_dot():
     file = create_mock_upload_file("bad..name.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
@@ -176,6 +183,7 @@ async def test_filename_with_double_dot():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_empty_file():
     file = create_mock_upload_file("empty.zip", b"")
     with pytest.raises(HTTPException) as exc:
@@ -184,6 +192,7 @@ async def test_empty_file():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_file_too_large():
     content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
     file = create_mock_upload_file("big.zip", content)
