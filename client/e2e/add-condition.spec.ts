@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { login, logout } from './utils';
+import { login, logout, refreshDatabase } from './utils';
+
+// Force all tests in this file to run sequentially
+test.describe.configure({ mode: 'serial' });
 
 test.beforeEach(async ({ page }) => {
+  refreshDatabase();
   await login(page);
 });
 
