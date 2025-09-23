@@ -883,12 +883,15 @@ async def run_configuration_test(
 
     original_xml_files = await read_xml_zip(file)
 
+    # TODO: this will need to be replaced with a version of `refine` that accepts
+    # and makes use of a configuration.
     refined_results = await refine(
         original_xml=original_xml_files,
         db=db,
         jurisdiction_id=jd,
     )
 
+    # TODO: Revisit this matching functionality at a later point.
     child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
     seen_condition_codes = set()
     matched_result = None
