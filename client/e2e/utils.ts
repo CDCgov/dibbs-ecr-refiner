@@ -26,14 +26,14 @@ export function refreshDatabase(): string {
     return output;
   } catch (error: unknown) {
     if (typeof error === 'object' && error !== null) {
-      const err = error as { stderr?: string, message?: string };
+      const err = error as { stderr?: string; message?: string };
       if (err.stderr) {
-              throw new Error(String(err.stderr));
-            } else if (err.message) {
-              throw new Error(String(err.message));
-            } else {
-              throw new Error(JSON.stringify(err));
-            }
+        throw new Error(String(err.stderr));
+      } else if (err.message) {
+        throw new Error(String(err.message));
+      } else {
+        throw new Error(JSON.stringify(err));
+      }
     }
     throw new Error(String(error));
   }
