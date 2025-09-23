@@ -24,7 +24,17 @@ export function refreshDatabase(): string {
   try {
     const output = execSync('just db refresh', { encoding: 'utf-8' });
     return output;
-  } catch (error: any) {
-    throw new Error(error.stderr || error.message || String(error));
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null) {
+      const err = error as { stderr?: string, message?: string };
+      if (err.stderr) {
+              throw new Error(String(err.stderr));
+            } else if (err.message) {
+              throw new Error(String(err.message));
+            } else {
+              throw new Error(JSON.stringify(err));
+            }
+    }
+    throw new Error(String(error));
   }
 }

@@ -35,13 +35,23 @@ test('should be able to create a configuration for Acanthamoeba', async ({
   /// Test that the drawer can open and add condition code sets
   /// ==========================================================================
   await page.getByRole('button', { name: 'Add new code set to' }).click();
-  await expect(page.getByRole('heading', { name: 'Add condition code sets' })).toBeVisible();
-  await page.getByRole('searchbox', { name: 'Search by condition name' }).click();
-  await page.getByRole('searchbox', { name: 'Search by condition name' }).fill('disease');
+  await expect(
+    page.getByRole('heading', { name: 'Add condition code sets' })
+  ).toBeVisible();
+  await page
+    .getByRole('searchbox', { name: 'Search by condition name' })
+    .click();
+  await page
+    .getByRole('searchbox', { name: 'Search by condition name' })
+    .fill('disease');
   await page.getByRole('listitem', { name: 'Balamuthia mandrillaris' }).click();
   await page.getByRole('heading', { name: 'Condition added' }).click();
   await page.getByTestId('close-drawer').click();
-  await expect(page.getByRole('button', { name: 'Balamuthia mandrillaris Disease, 1178 codes in code set' })).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
+    })
+  ).toBeVisible();
 
   /// ==========================================================================
   /// Test that custom codes work
@@ -54,7 +64,16 @@ test('should be able to create a configuration for Acanthamoeba', async ({
   await page.getByRole('textbox', { name: 'Code name' }).click();
   await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
   await page.getByTestId('modalFooter').getByTestId('button').click();
-  await expect(page.locator('div').filter({ hasText: /^Custom code added1234$/ }).nth(2)).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'qwert', exact: true })).toBeVisible();
-  await expect(page.getByRole('cell', { name: '1234', exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator('div')
+      .filter({ hasText: /^Custom code added1234$/ })
+      .nth(2)
+  ).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: 'qwert', exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: '1234', exact: true })
+  ).toBeVisible();
 });
