@@ -5,20 +5,21 @@ from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
+from fastapi import status
 from httpx import ASGITransport, AsyncClient
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations import (
-    GetConfigurationsResponse,
-)
+from app.api.v1.configurations import GetConfigurationsResponse, _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
     DbConfigurationCustomCode,
 )
+from app.db.pool import get_db
 from app.db.users.model import DbUser
 from app.main import app
+from app.services.ecr.models import RefinedDocument, ReportableCondition
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
@@ -26,6 +27,17 @@ TEST_SESSION_TOKEN = "test-token"
 
 def make_db_condition_coding(code, display):
     return DbConditionCoding(code=code, display=display)
+
+
+def mock_user():
+    return DbUser(
+        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        username="tester",
+        email="tester@test.com",
+        jurisdiction_id="JD-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
 
 
 @pytest_asyncio.fixture
@@ -44,16 +56,6 @@ def mock_logged_in_user():
     """
     Mock the logged-in user dependency
     """
-
-    def mock_user():
-        return DbUser(
-            id="5deb43c2-6a82-4052-9918-616e01d255c7",
-            username="tester",
-            email="tester@test.com",
-            jurisdiction_id="JD-1",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
 
     app.dependency_overrides[get_logged_in_user] = mock_user
     yield
@@ -350,3 +352,83 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
     assert len(data["custom_codes"]) == 1
     assert data["custom_codes"][0]["code"] == "edited-code"
     assert data["custom_codes"][0]["system"] == "SNOMED"
+
+
+@pytest.mark.asyncio
+async def test_run_configuration_success(authed_client, monkeypatch):
+    def mock_s3_upload(*args, **kwargs):
+        return "http://fake-s3-url.com"
+
+    app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    app.dependency_overrides[get_db] = lambda: "db"
+
+    # get config
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_by_id_db",
+        AsyncMock(
+            return_value=DbConfiguration(
+                id=UUID("11111111-1111-1111-1111-111111111111"),
+                name="test config",
+                jurisdiction_id="SDDH",
+                condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+                included_conditions=[],
+                custom_codes=[],
+                local_codes=[],
+                section_processing=[],
+                version=1,
+            )
+        ),
+    )
+
+    # get config's associated condition
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_condition_by_id_db",
+        AsyncMock(
+            return_value=DbCondition(
+                id=UUID("22222222-2222-2222-2222-222222222222"),
+                display_name="Condition A",
+                canonical_url="url-1",
+                version="3.0.0",
+                child_rsg_snomed_codes=["12345", "54321"],
+                snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
+                loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
+                icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
+                rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
+            )
+        ),
+    )
+
+    # run the refinement
+    monkeypatch.setattr(
+        "app.api.v1.configurations.refine",
+        AsyncMock(
+            return_value=[
+                RefinedDocument(
+                    refined_eicr="<xml>related refined eicr</xml>",
+                    reportable_condition=ReportableCondition(
+                        code="54321", display_name="Condition A (2)"
+                    ),
+                ),
+                RefinedDocument(
+                    refined_eicr="<xml>unrelated refined eicr</xml>",
+                    reportable_condition=ReportableCondition(
+                        code="55555", display_name="Unreleated condition)"
+                    ),
+                ),
+            ]
+        ),
+    )
+
+    payload = {"id": "11111111-1111-1111-1111-111111111111"}
+
+    response = await authed_client.post(
+        "/api/v1/configurations/test",
+        data=payload,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["condition"]["code"] == "54321"
+    assert response.json()["condition"]["display_name"] == "Condition A (2)"
+    assert response.json()["refined_download_url"] == "http://fake-s3-url.com"
+
+    app.dependency_overrides.clear()

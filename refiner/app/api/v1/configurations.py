@@ -792,6 +792,13 @@ async def edit_custom_code(
     )
 
 
+def _upload_to_s3():
+    """
+    Returns a function to upload an eICR/RR pair .zip to S3.
+    """
+    return upload_refined_ecr
+
+
 @dataclass(frozen=True)
 class ConfigurationTestResponse:
     """
@@ -817,7 +824,7 @@ async def run_configuration_test(
     ),
     upload_refined_files_to_s3: Callable[
         [UUID, io.BytesIO, str, Logger], str
-    ] = Depends(lambda: upload_refined_ecr),
+    ] = Depends(_upload_to_s3),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     sample_zip_path: Path = Depends(get_sample_zip_path),
