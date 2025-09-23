@@ -8,6 +8,8 @@ import {
   DbTotalConditionCodeCount,
 } from '../../../api/schemas';
 import userEvent from '@testing-library/user-event';
+import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
+import { Mock } from 'vitest';
 
 // Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
@@ -25,6 +27,14 @@ const mockMatchedCondition: Condition = {
   display_name: 'COVID-19',
   refined_eicr: '<xml>refined covid</xml>',
   stats: ['eICR file reduced by 71%'],
+};
+
+const mockSuccessfulInlineTestResponse = {
+  data: {
+    condition: mockMatchedCondition,
+    original_eicr: '<xml>unrefined covid</xml>',
+    refined_download_url: 'http://mocks3download.com',
+  },
 };
 
 // Mock configurations request
@@ -55,13 +65,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
       isError: false,
     })),
     useRunInlineConfigurationTest: vi.fn(() => ({
-      mutateAsync: vi.fn().mockResolvedValue({
-        data: {
-          condition: mockMatchedCondition,
-          original_eicr: '<xml>unrefined covid</xml>',
-          refined_download_url: 'http://mocks3download.com',
-        },
-      }),
+      mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
       reset: vi.fn(),
       data: {
         data: {
@@ -105,8 +109,50 @@ describe('Config testing page', () => {
     ).toBeInTheDocument();
   });
 
-  it('should allow config testing with inline testing flow', async () => {
+  it('should warn the user that the expected condition was not found during inline testing', async () => {
     const user = userEvent.setup();
+
+    const warningMessage =
+      'Condition was not detected in the eCR file you uploaded.';
+
+    (useRunInlineConfigurationTest as unknown as Mock).mockImplementation(
+      ({ mutation }) => {
+        return {
+          mutateAsync: vi.fn().mockImplementation(() => {
+            const error = {
+              response: { data: { detail: warningMessage } },
+            };
+            mutation?.onError?.(error);
+            throw new Error(); // reject so we get an error state
+          }),
+          reset: vi.fn(),
+          data: null,
+        };
+      }
+    );
+
+    renderPage();
+
+    // check initial screen
+    expect(
+      screen.getByText('Next: Turn on configuration', { selector: 'a' })
+    ).toBeInTheDocument();
+
+    // mock the upload
+    await user.click(screen.getByText('Use test file'));
+
+    // find warning screen elements
+    expect(await screen.findByText(warningMessage)).toBeInTheDocument();
+    expect(await screen.findByText('Go back')).toBeInTheDocument();
+  });
+
+  it('should allow config testing using inline testing flow', async () => {
+    const user = userEvent.setup();
+
+    (useRunInlineConfigurationTest as unknown as Mock).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue(mockSuccessfulInlineTestResponse),
+      data: mockSuccessfulInlineTestResponse,
+    });
 
     renderPage();
 
