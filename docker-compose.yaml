@@ -7,7 +7,7 @@ services:
       - ./refiner/openapi.json:/app/shared/openapi.json
     command: sh -c "npm i && npm run dev"
     ports:
-    - "8081:8081"
+      - "8081:8081"
     depends_on:
       - refiner-service
   refiner-service:
@@ -20,7 +20,7 @@ services:
     ports:
       - "8080:8080"
     extra_hosts:
-        - "localhost:host-gateway"
+      - "localhost:host-gateway"
     environment:
       - PIP_ROOT_USER_ACTION=ignore
       - ENV=local
@@ -96,8 +96,8 @@ services:
     depends_on:
       - db
     volumes:
-        - .:/app
-# Run with `docker compose run --rm seed`
+      - .:/app
+  # Run with `docker compose run --rm seed`
   seed:
     image: python:3.13-slim
     working_dir: /app
@@ -110,9 +110,7 @@ services:
     environment:
       - DB_URL=postgresql://postgres:refiner@db:5432/refiner
     volumes:
-        - .:/app
-
-
+      - .:/app
 
 volumes:
   pgdata:

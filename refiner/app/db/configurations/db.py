@@ -11,10 +11,6 @@ from .model import (
     DbConfigurationCustomCode,
 )
 
-# NOTE: the db table for configurations has a family_id field (for future versioning/families),
-# but this is intentionally omitted from the pydantic models and sql queries for now.
-# if/when versioning is fully implemented, we can decide exactly how we'll tackle it
-
 EMPTY_JSONB = Jsonb([])
 
 
@@ -28,8 +24,6 @@ async def insert_configuration_db(
 
     The `name` field is always set to the display_name of the associated condition at creation time,
     for easier display and searching. The authoritative clinical context is still given by `condition_id`.
-
-    family_id is omitted from the insert and assigned automatically by the DB sequence.
     """
 
     query = """
@@ -40,8 +34,7 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        sections_to_include,
-        cloned_from_configuration_id,
+        section_processing,
         version
     )
     VALUES (
@@ -51,8 +44,7 @@ async def insert_configuration_db(
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
-        %s::text[],
-        %s,
+        %s::jsonb,
         %s
     )
     RETURNING
@@ -63,12 +55,11 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        sections_to_include,
-        cloned_from_configuration_id,
+        section_processing,
         version
     """
 
-    params = (
+    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb, int] = (
         jurisdiction_id,
         # always link a configuration to a primary condition
         condition.id,
@@ -87,10 +78,8 @@ async def insert_configuration_db(
         EMPTY_JSONB,
         # local_codes
         EMPTY_JSONB,
-        # sections_to_include (empty array)
-        [""],
-        # cloned_from_configuration_id
-        None,
+        # section_processing
+        EMPTY_JSONB,
         # version (start at 1 for new configs)
         1,
     )
@@ -99,9 +88,11 @@ async def insert_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def get_configurations_db(
@@ -120,8 +111,7 @@ async def get_configurations_db(
             included_conditions,
             custom_codes,
             local_codes,
-            sections_to_include,
-            cloned_from_configuration_id,
+            section_processing,
             version
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -133,7 +123,8 @@ async def get_configurations_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
-            return [DbConfiguration.from_db_row(row) for row in rows]
+
+    return [DbConfiguration.from_db_row(row) for row in rows]
 
 
 async def get_configuration_by_id_db(
@@ -152,8 +143,7 @@ async def get_configuration_by_id_db(
             included_conditions,
             custom_codes,
             local_codes,
-            sections_to_include,
-            cloned_from_configuration_id,
+            section_processing,
             version
         FROM configurations
         WHERE id = %s
@@ -169,10 +159,11 @@ async def get_configuration_by_id_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
 
-            return DbConfiguration.from_db_row(row)
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def is_config_valid_to_insert_db(
@@ -253,8 +244,7 @@ async def associate_condition_codeset_with_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
-                cloned_from_configuration_id,
+                section_processing,
                 version
             ;
             """
@@ -268,9 +258,11 @@ async def associate_condition_codeset_with_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def disassociate_condition_codeset_with_configuration_db(
@@ -311,8 +303,7 @@ async def disassociate_condition_codeset_with_configuration_db(
             included_conditions,
             custom_codes,
             local_codes,
-            sections_to_include,
-            cloned_from_configuration_id,
+            section_processing,
             version
     """
     params = (
@@ -325,9 +316,11 @@ async def disassociate_condition_codeset_with_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 @dataclass(frozen=True)
@@ -406,7 +399,8 @@ async def get_total_condition_code_counts_by_configuration_db(
         async with conn.cursor(row_factory=class_row(DbTotalConditionCodeCount)) as cur:
             await cur.execute(query, params)
             row = await cur.fetchall()
-            return row
+
+    return row
 
 
 async def add_custom_code_to_configuration_db(
@@ -430,8 +424,7 @@ async def add_custom_code_to_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
-                cloned_from_configuration_id,
+                section_processing,
                 version
             ;
             """
@@ -451,13 +444,16 @@ async def add_custom_code_to_configuration_db(
     ]
 
     params = (Jsonb(json), config.id)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def delete_custom_code_from_configuration_db(
@@ -482,8 +478,7 @@ async def delete_custom_code_from_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
-                cloned_from_configuration_id,
+                section_processing,
                 version
             ;
             """
@@ -495,13 +490,16 @@ async def delete_custom_code_from_configuration_db(
     ]
 
     params = (Jsonb(updated_custom_codes), config.id)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
 
 
 async def edit_custom_code_from_configuration_db(
@@ -525,8 +523,7 @@ async def edit_custom_code_from_configuration_db(
                 included_conditions,
                 custom_codes,
                 local_codes,
-                sections_to_include,
-                cloned_from_configuration_id,
+                section_processing,
                 version
             ;
             """
@@ -537,10 +534,13 @@ async def edit_custom_code_from_configuration_db(
     ]
 
     params = (Jsonb(json_codes), config.id)
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
-            if not row:
-                return None
-            return DbConfiguration.from_db_row(row)
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)

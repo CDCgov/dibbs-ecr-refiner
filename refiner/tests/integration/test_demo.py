@@ -24,177 +24,172 @@ api_route_base = "/api/v1/demo"
 client = TestClient(app=app)
 
 
-@pytest.mark.integration
-class TestDemo:
-    @pytest.mark.asyncio
-    async def test_demo_upload_success(
-        self, test_assets_path: pathlib.Path, authed_client, test_user_id
-    ) -> None:
-        """
-        Test successful demo file upload and processing
-        """
+@pytest.mark.asyncio
+async def test_demo_upload_success(
+    test_assets_path: pathlib.Path, authed_client, test_user_id
+) -> None:
+    uploaded_file = test_assets_path / "demo" / "monmothma.zip"
+    with open(uploaded_file, "rb") as file_data:
+        response = await authed_client.post(
+            f"{api_route_base}/upload",
+            files={"uploaded_file": ("monmothma.zip", file_data, "application/zip")},
+        )
+    assert response.status_code == 200
 
-        uploaded_file = test_assets_path / "demo" / "monmothma.zip"
-        with open(uploaded_file, "rb") as file_data:
-            response = await authed_client.post(
-                f"{api_route_base}/upload",
-                files={
-                    "uploaded_file": ("monmothma.zip", file_data, "application/zip")
-                },
-            )
-        assert response.status_code == 200
+    data: dict[str, Any] = response.json()
+    assert "conditions" in data
+    assert "unrefined_eicr" in data
+    assert "refined_download_url" in data
+    assert test_user_id in data["refined_download_url"]
+    assert "/refiner-app/refiner-test-suite/" in data["refined_download_url"]
+    assert "stats" in data["conditions"][0]
+    assert any(
+        "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
+    )
 
-        data: dict[str, Any] = response.json()
-        assert "conditions" in data
-        assert "unrefined_eicr" in data
-        assert "refined_download_url" in data
-        assert test_user_id in data["refined_download_url"]
-        assert "/refiner-app/refiner-test-suite/" in data["refined_download_url"]
-        assert "stats" in data["conditions"][0]
-        assert any(
-            "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
+
+def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
+    from app.api.v1.demo import _get_upload_refined_ecr
+
+    def fake_upload_refined_ecr(user_id, file_buffer, filename, expires=3600):
+        return ""
+
+    def mock_get_logged_in_user():
+        return DbUser(
+            id=test_user_id,
+            username=test_username,
+            email="test@test.com",
+            jurisdiction_id="test",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
 
-    def test_upload_route_s3_failure(self, test_user_id, test_username):
-        from app.api.v1.demo import _get_upload_refined_ecr
+    # patch refine's db condition lookup to return empty list (so no DB connection)
+    async def fake_get_conditions_by_child_rsg_snomed_codes(db, codes):
+        return []
 
-        # Create a fake version of upload_refined_ecr that simulates an S3 failure
-        def fake_upload_refined_ecr(user_id, file_buffer, filename, expires=3600):
-            return ""
+    monkeypatch.setattr(
+        "app.services.ecr.refine.get_conditions_by_child_rsg_snomed_codes",
+        fake_get_conditions_by_child_rsg_snomed_codes,
+    )
 
-        def mock_get_logged_in_user():
-            return DbUser(
-                id=test_user_id,
-                username=test_username,
-                email="test@test.com",
-                jurisdiction_id="test",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
+    app.dependency_overrides[_get_upload_refined_ecr] = lambda: fake_upload_refined_ecr
+    app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
 
-        # Override the dependency
-        app.dependency_overrides[_get_upload_refined_ecr] = (
-            lambda: fake_upload_refined_ecr
-        )
-        app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
+    client = TestClient(app)
 
-        client = TestClient(app)
+    response = client.post(f"{api_route_base}/upload")
 
-        response = client.post(f"{api_route_base}/upload")
+    assert response.status_code == 200
+    assert "refined_download_url" in response.json()
+    assert response.json()["refined_download_url"] == ""
 
-        # S3 upload failure results in an empty string being returned to the client
-        assert response.status_code == 200
-        assert "refined_download_url" in response.json()
-        assert response.json()["refined_download_url"] == ""
+    app.dependency_overrides.clear()
 
-        app.dependency_overrides.clear()
 
-    def test_demo_file_not_found(self, test_user_id, test_username) -> None:
-        """
-        Test error handling when demo file is missing
-        """
+def test_demo_file_not_found(test_user_id, test_username):
+    from app.api.v1.demo import _get_demo_zip_path
 
-        from app.api.v1.demo import _get_demo_zip_path
+    def mock_missing_path() -> pathlib.Path:
+        return pathlib.Path("/nonexistent/demo.zip")
 
-        def mock_missing_path() -> pathlib.Path:
-            return pathlib.Path("/nonexistent/demo.zip")
-
-        def mock_get_logged_in_user():
-            return DbUser(
-                id=test_user_id,
-                username=test_username,
-                email="test@test.com",
-                jurisdiction_id="test",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
-
-        # use the actual function reference, not a string
-        app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
-        app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
-
-        # test both endpoints with missing file
-        response = client.post(f"{api_route_base}/upload")
-        assert response.status_code == 404
-        assert response.json() == {
-            "detail": "Unable to find demo zip file to download."
-        }
-
-        response = client.get(f"{api_route_base}/download")
-        assert response.status_code == 404
-        assert response.json() == {
-            "detail": "Unable to find demo zip file to download."
-        }
-
-        app.dependency_overrides.clear()
-
-    def create_mock_upload_file(
-        self,
-        filename: str,
-        content: bytes,
-    ) -> UploadFile:
-        file_like = io.BytesIO(content)
-        upload = UploadFile(
-            file=file_like,
-            filename=filename,
-            headers=Headers({"Content-Type": "application/zip"}),
+    def mock_get_logged_in_user():
+        return DbUser(
+            id=test_user_id,
+            username=test_username,
+            email="test@test.com",
+            jurisdiction_id="test",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
 
-        upload.size = len(content)
-        return upload
+    app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
+    app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
 
-    def create_zip_file(self, file_dict: dict[str, bytes]) -> bytes:
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-            for name, content in file_dict.items():
-                z.writestr(name, content)
-        return buf.getvalue()
+    response = client.post(f"{api_route_base}/upload")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Unable to find demo zip file to download."}
 
-    @pytest.mark.asyncio
-    async def test_valid_zip(self):
-        zip_bytes = self.create_zip_file(
-            {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
-        )
-        file = self.create_mock_upload_file("valid.zip", zip_bytes)
-        validated = await _validate_zip_file(file)
-        assert validated is file
+    response = client.get(f"{api_route_base}/download")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Unable to find demo zip file to download."}
 
-    @pytest.mark.asyncio
-    async def test_invalid_extension(self):
-        zip_bytes = self.create_zip_file({"test.txt": b"abc"})
-        file = self.create_mock_upload_file("invalid.txt", zip_bytes)
-        with pytest.raises(HTTPException) as exc:
-            await _validate_zip_file(file)
-        assert "Only .zip files are allowed" in exc.value.detail
+    app.dependency_overrides.clear()
 
-    @pytest.mark.asyncio
-    async def test_filename_starts_with_period(self):
-        file = self.create_mock_upload_file(".hidden.zip", b"fake")
-        with pytest.raises(HTTPException) as exc:
-            await _validate_zip_file(file)
-        assert "cannot start with a period" in exc.value.detail
 
-    @pytest.mark.asyncio
-    async def test_filename_with_double_dot(self):
-        file = self.create_mock_upload_file("bad..name.zip", b"fake")
-        with pytest.raises(HTTPException) as exc:
-            await _validate_zip_file(file)
-        assert "cannot contain multiple periods" in exc.value.detail
+def create_mock_upload_file(
+    filename: str,
+    content: bytes,
+) -> UploadFile:
+    file_like = io.BytesIO(content)
+    upload = UploadFile(
+        file=file_like,
+        filename=filename,
+        headers=Headers({"Content-Type": "application/zip"}),
+    )
 
-    @pytest.mark.asyncio
-    async def test_empty_file(self):
-        file = self.create_mock_upload_file("empty.zip", b"")
-        with pytest.raises(HTTPException) as exc:
-            await _validate_zip_file(file)
-        assert ".zip must not be empty" in exc.value.detail
+    upload.size = len(content)
+    return upload
 
-    @pytest.mark.asyncio
-    async def test_file_too_large(self):
-        content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
-        file = self.create_mock_upload_file("big.zip", content)
-        with pytest.raises(HTTPException) as exc:
-            await _validate_zip_file(file)
-        assert "must be less than 10MB" in exc.value.detail
+
+def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, content in file_dict.items():
+            z.writestr(name, content)
+    return buf.getvalue()
+
+
+@pytest.mark.asyncio
+async def test_valid_zip():
+    zip_bytes = create_zip_file(
+        {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
+    )
+    file = create_mock_upload_file("valid.zip", zip_bytes)
+    validated = await _validate_zip_file(file)
+    assert validated is file
+
+
+@pytest.mark.asyncio
+async def test_invalid_extension():
+    zip_bytes = create_zip_file({"test.txt": b"abc"})
+    file = create_mock_upload_file("invalid.txt", zip_bytes)
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "Only .zip files are allowed" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_filename_starts_with_period():
+    file = create_mock_upload_file(".hidden.zip", b"fake")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "cannot start with a period" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_filename_with_double_dot():
+    file = create_mock_upload_file("bad..name.zip", b"fake")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "cannot contain multiple periods" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_empty_file():
+    file = create_mock_upload_file("empty.zip", b"")
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert ".zip must not be empty" in exc.value.detail
+
+
+@pytest.mark.asyncio
+async def test_file_too_large():
+    content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
+    file = create_mock_upload_file("big.zip", content)
+    with pytest.raises(HTTPException) as exc:
+        await _validate_zip_file(file)
+    assert "must be less than 10MB" in exc.value.detail
 
 
 @pytest.mark.parametrize(
@@ -208,22 +203,16 @@ class TestDemo:
 def test_file_size_difference_percentage(
     unrefined: str, refined: str, expected: int
 ) -> None:
-    """
-    Test the file size difference calculation function
-    """
-
     result = _get_file_size_difference_percentage(unrefined, refined)
     assert result == expected
 
 
 def test_create_refined_ecr_zip():
-    # Simulated refined files
     refined_files = [
         ("covid_condition.xml", "<eICR>Covid Data</eICR>"),
         ("flu_condition.xml", "<eICR>Flu Data</eICR>"),
     ]
 
-    # Simulated eICR XML
     eicr = "<eICR>Some RR Data</eICR>"
 
     refined_files.append(("CDA_eICR.xml", eicr))
