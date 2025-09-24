@@ -95,10 +95,25 @@ function Tester({ config }: TesterProps) {
       {status === 'pending' && <p>Loading...</p>}
 
       {status === 'error' && (
-        <div className="flex flex-col gap-3">
-          <ServerError>{errorMessage}</ServerError>
-          <div>
-            <Button onClick={reset}>Go back</Button>
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Title>Test configuration</Title>
+              <p>
+                Check the results of your configuration before turning it on.
+              </p>
+            </div>
+            <WarningMessage>{errorMessage}</WarningMessage>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <p className="max-w-[550px]">
+              Please ensure your file is valid and includes the reportable
+              condition matching the configuration being tested.
+            </p>
+            <div>
+              <Button onClick={reset}>Try again</Button>
+            </div>
           </div>
         </div>
       )}
@@ -152,12 +167,12 @@ function useZipUpload() {
   };
 }
 
-interface ServerErrorProps {
+interface WarningMessageProps {
   children: React.ReactNode;
 }
-function ServerError({ children }: ServerErrorProps) {
+function WarningMessage({ children }: WarningMessageProps) {
   return (
-    <div className="bg-state-error-lighter rounded p-4">
+    <div className="bg-state-error-lighter w-fit rounded p-4">
       <p className="text-state-error-dark flex flex-col gap-3">
         <span className="flex items-center gap-2">
           <Icon.Warning

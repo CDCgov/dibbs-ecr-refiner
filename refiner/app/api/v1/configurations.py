@@ -849,7 +849,7 @@ async def run_configuration_test(
     if not sample_zip_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Unable to find demo zip file to download.",
+            detail="Unable to find sample zip file to download.",
         )
 
     file = None
