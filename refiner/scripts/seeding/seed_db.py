@@ -15,8 +15,12 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-current_dir = Path(__file__).parent
-DATA_DIR = current_dir / "data"
+SEEDING_DIR = Path(__file__).parent
+SCRIPTS_DIR = SEEDING_DIR.parent
+DATA_DIR = SCRIPTS_DIR / "data"
+TES_DATA_DIR = DATA_DIR / "tes"
+SEEDING_DATA_DIR = DATA_DIR / "seeding"
+ENV_PATH = SCRIPTS_DIR / ".env"
 
 
 def get_db_connection(db_url) -> Connection:
@@ -80,7 +84,7 @@ def seed_database(db_url) -> None:
     # pass 1: prepare condition data from ValueSet files
     all_valuesets_map: dict[tuple, dict] = {}
     json_files = [
-        file for file in DATA_DIR.glob("*.json") if file.name != "manifest.json"
+        file for file in TES_DATA_DIR.glob("*.json") if file.name != "manifest.json"
     ]
     for file_path in json_files:
         with open(file_path) as file:
@@ -196,6 +200,6 @@ def seed_database(db_url) -> None:
 
 
 if __name__ == "__main__":
-    load_dotenv()
+    load_dotenv(dotenv_path=ENV_PATH)
     db_url = os.getenv("DB_URL")
     seed_database(db_url=db_url)
