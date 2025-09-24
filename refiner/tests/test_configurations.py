@@ -16,7 +16,6 @@ from app.db.configurations.model import (
     DbConfigurationCondition,
     DbConfigurationCustomCode,
 )
-from app.db.pool import get_db
 from app.db.users.model import DbUser
 from app.main import app
 from app.services.ecr.models import RefinedDocument, ReportableCondition
@@ -355,12 +354,11 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_inline_success(authed_client, monkeypatch):
+async def test_inline_example_file_success(authed_client, monkeypatch):
     def mock_s3_upload(*args, **kwargs):
         return "http://fake-s3-url.com"
 
     app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
-    app.dependency_overrides[get_db] = lambda: "db"
 
     # get config
     monkeypatch.setattr(
@@ -437,8 +435,6 @@ async def test_inline_success(authed_client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_inline_no_matching_conditions(authed_client, monkeypatch):
-    app.dependency_overrides[get_db] = lambda: "db"
-
     # get config
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
@@ -508,5 +504,74 @@ async def test_inline_no_matching_conditions(authed_client, monkeypatch):
         response.json()["detail"]
         == "Condition associated with config was not detected as a reportable condition in the eCR file you uploaded."
     )
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypatch):
+    # get config
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_by_id_db",
+        AsyncMock(
+            return_value=DbConfiguration(
+                id=UUID("11111111-1111-1111-1111-111111111111"),
+                name="test config",
+                jurisdiction_id="SDDH",
+                condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+                included_conditions=[],
+                custom_codes=[],
+                local_codes=[],
+                section_processing=[],
+                version=1,
+            )
+        ),
+    )
+
+    # get config's associated condition
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_condition_by_id_db",
+        AsyncMock(
+            return_value=DbCondition(
+                id=UUID("22222222-2222-2222-2222-222222222222"),
+                display_name="COVID-19",
+                canonical_url="url-1",
+                version="3.0.0",
+                child_rsg_snomed_codes=["186747009", "840539006"],
+                snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
+                loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
+                icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
+                rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
+            )
+        ),
+    )
+
+    # run the refinement
+    monkeypatch.setattr(
+        "app.api.v1.configurations.refine",
+        AsyncMock(
+            return_value=[
+                RefinedDocument(
+                    refined_eicr="<xml>COVID-19 refined doc</xml>",
+                    reportable_condition=ReportableCondition(
+                        code="840539006", display_name="COVID-19"
+                    ),
+                ),
+            ]
+        ),
+    )
+
+    payload = {"id": "11111111-1111-1111-1111-111111111111"}
+
+    uploaded_file = test_assets_path / "demo" / "monmothma.zip"
+    with open(uploaded_file, "rb") as file_data:
+        response = await authed_client.post(
+            "/api/v1/configurations/test",
+            files={"uploaded_file": ("monmothma.zip", file_data, "application/zip")},
+            data=payload,
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["condition"]["code"] == "840539006"
 
     app.dependency_overrides.clear()
