@@ -143,7 +143,7 @@ describe('Config testing page', () => {
 
     // find warning screen elements
     expect(await screen.findByText(warningMessage)).toBeInTheDocument();
-    expect(await screen.findByText('Go back')).toBeInTheDocument();
+    expect(await screen.findByText('Try again')).toBeInTheDocument();
   });
 
   it('should allow config testing using inline testing flow', async () => {
