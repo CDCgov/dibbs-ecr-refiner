@@ -432,3 +432,80 @@ async def test_run_configuration_success(authed_client, monkeypatch):
     assert response.json()["refined_download_url"] == "http://fake-s3-url.com"
 
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_run_configuration_no_matching_conditions(authed_client, monkeypatch):
+    app.dependency_overrides[get_db] = lambda: "db"
+
+    # get config
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_by_id_db",
+        AsyncMock(
+            return_value=DbConfiguration(
+                id=UUID("11111111-1111-1111-1111-111111111111"),
+                name="test config",
+                jurisdiction_id="SDDH",
+                condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+                included_conditions=[],
+                custom_codes=[],
+                local_codes=[],
+                section_processing=[],
+                version=1,
+            )
+        ),
+    )
+
+    # get config's associated condition
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_condition_by_id_db",
+        AsyncMock(
+            return_value=DbCondition(
+                id=UUID("22222222-2222-2222-2222-222222222222"),
+                display_name="Condition associated with config",
+                canonical_url="url-1",
+                version="3.0.0",
+                child_rsg_snomed_codes=["12345", "54321"],
+                snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
+                loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
+                icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
+                rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
+            )
+        ),
+    )
+
+    # run the refinement
+    monkeypatch.setattr(
+        "app.api.v1.configurations.refine",
+        AsyncMock(
+            return_value=[
+                RefinedDocument(
+                    refined_eicr="<xml>unrelated refined eicr</xml>",
+                    reportable_condition=ReportableCondition(
+                        code="99999", display_name="Unreleated condition 1"
+                    ),
+                ),
+                RefinedDocument(
+                    refined_eicr="<xml>unrelated refined eicr</xml>",
+                    reportable_condition=ReportableCondition(
+                        code="55555", display_name="Unreleated condition 2"
+                    ),
+                ),
+            ]
+        ),
+    )
+
+    payload = {"id": "11111111-1111-1111-1111-111111111111"}
+
+    response = await authed_client.post(
+        "/api/v1/configurations/test",
+        data=payload,
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert (
+        response.json()["detail"]
+        == "Condition associated with config was not detected as a reportable condition in the eCR file you uploaded."
+    )
+
+    app.dependency_overrides.clear()
