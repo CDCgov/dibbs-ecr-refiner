@@ -355,7 +355,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_run_configuration_success(authed_client, monkeypatch):
+async def test_inline_success(authed_client, monkeypatch):
     def mock_s3_upload(*args, **kwargs):
         return "http://fake-s3-url.com"
 
@@ -430,12 +430,13 @@ async def test_run_configuration_success(authed_client, monkeypatch):
     assert response.json()["condition"]["code"] == "54321"
     assert response.json()["condition"]["display_name"] == "Condition A (2)"
     assert response.json()["refined_download_url"] == "http://fake-s3-url.com"
+    assert "eICR file size reduced by" in response.json()["condition"]["stats"][0]
 
     app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
-async def test_run_configuration_no_matching_conditions(authed_client, monkeypatch):
+async def test_inline_no_matching_conditions(authed_client, monkeypatch):
     app.dependency_overrides[get_db] = lambda: "db"
 
     # get config
