@@ -278,6 +278,7 @@ async def get_configuration_export(
         writer = csv.writer(csv_text)
         writer.writerow(
             [
+                "Code Type",
                 "Code System",
                 "Code",
                 "Display Name",
@@ -288,6 +289,7 @@ async def get_configuration_export(
             for code_obj in codes:
                 writer.writerow(
                     [
+                        "TES condition grouper code",
                         code_obj.system or "",
                         code_obj.code or "",
                         code_obj.description or "",
@@ -296,6 +298,7 @@ async def get_configuration_export(
         for custom in config.custom_codes or []:
             writer.writerow(
                 [
+                    "Custom code",
                     custom.system or "",
                     custom.code or "",
                     custom.name or "",
