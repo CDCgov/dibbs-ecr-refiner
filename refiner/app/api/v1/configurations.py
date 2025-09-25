@@ -10,7 +10,6 @@ from pydantic import BaseModel, field_validator
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.conditions.db import (
-    GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
     get_conditions_db,
@@ -275,40 +274,35 @@ async def get_configuration_export(
     ]
 
     # Write CSV to StringIO (text)
-    csv_text = StringIO()
-    writer = csv.writer(csv_text)
-    writer.writerow(
-        [
-            "Code System",
-            "Code",
-            "Display Name",
-        ]
-    )
-
-    for cond in included_conditions:
-        codes: list[GetConditionCode] = await get_condition_codes_by_condition_id_db(
-            id=cond.id, db=db
+    with StringIO() as csv_text:
+        writer = csv.writer(csv_text)
+        writer.writerow(
+            [
+                "Code System",
+                "Code",
+                "Display Name",
+            ]
         )
-        for code_obj in codes:
+        for cond in included_conditions:
+            codes = await get_condition_codes_by_condition_id_db(id=cond.id, db=db)
+            for code_obj in codes:
+                writer.writerow(
+                    [
+                        code_obj.system or "",
+                        code_obj.code or "",
+                        code_obj.description or "",
+                    ]
+                )
+        for custom in config.custom_codes or []:
             writer.writerow(
                 [
-                    code_obj.system or "",
-                    code_obj.code or "",
-                    code_obj.description or "",
+                    custom.system or "",
+                    custom.code or "",
+                    custom.name or "",
                 ]
             )
 
-    for custom in config.custom_codes or []:
-        writer.writerow(
-            [
-                custom.system or "",
-                custom.code or "",
-                custom.name or "",
-            ]
-        )
-
-    # Convert to bytes for StreamingResponse
-    csv_bytes = csv_text.getvalue().encode("utf-8")
+        csv_bytes = csv_text.getvalue().encode("utf-8")
 
     # Replace spaces with underscores in the config name
     safe_name = config.name.replace(" ", "_")
