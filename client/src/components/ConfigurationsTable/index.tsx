@@ -22,9 +22,9 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
         </thead>
         <tbody>
           <tr>
-            <th data-label={reportableConditionHeader} scope="row">
+            <td data-label={reportableConditionHeader} scope="row">
               No configurations available
-            </th>
+            </td>
           </tr>
         </tbody>
       </Table>
