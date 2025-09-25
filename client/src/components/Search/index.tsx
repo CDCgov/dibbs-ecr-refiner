@@ -11,11 +11,16 @@ type SearchProps = Omit<TextInputProps, 'type'>;
 
 export function Search({ placeholder = 'Search', ...props }: SearchProps) {
   return (
-    <InputGroup className="!m-0">
+    <InputGroup className="!border-gray-cool-40 !m-0 !rounded-sm bg-white">
       <InputPrefix>
         <SearchIcon />
       </InputPrefix>
-      <TextInput placeholder={placeholder} type="search" {...props} />
+      <TextInput
+        className="!rounded-sm"
+        placeholder={placeholder}
+        type="search"
+        {...props}
+      />
     </InputGroup>
   );
 }
