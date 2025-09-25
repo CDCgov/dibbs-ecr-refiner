@@ -331,7 +331,7 @@ describe('Config builder page', () => {
   it('should display an "Export configuration" button', () => {
     renderPage();
     expect(
-        screen.getByText('Export configuration', { selector: 'a' })
+      screen.getByText('Export configuration', { selector: 'a' })
     ).toBeInTheDocument();
   });
 });
