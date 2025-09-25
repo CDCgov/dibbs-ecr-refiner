@@ -9,7 +9,7 @@ interface ConfigurationsTableProps {
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   const navigate = useNavigate();
 
-  const reportableConditionHeader = 'reportable condition'.toUpperCase();
+  const reportableConditionHeader = 'Reportable condition';
   const statusHeader = 'status'.toUpperCase();
 
   if (!data.length) {

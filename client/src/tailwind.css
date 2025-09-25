@@ -168,7 +168,7 @@
 }
 
 .usa-table--borderless thead th {
-  @apply text-blue-cool-90 bg-gray-cool-10 py-3 leading-[26px] uppercase;
+  @apply text-gray-cool-60 bg-gray-cool-10 py-3 leading-[26px];
 }
 
 .usa-table--stacked th[data-label]:before,
