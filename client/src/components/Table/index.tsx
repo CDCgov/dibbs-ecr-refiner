@@ -4,18 +4,16 @@ import {
 } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 
-type TableProps = {
-  children: React.ReactNode;
-  contained?: boolean;
-  className?: string;
-  bordered?: boolean;
-  striped?: boolean;
-  fullWidth?: boolean;
-  fixed?: boolean;
-  loading?: boolean;
-  scrollable?: boolean;
-  stackedStyle?: UswdsTableProps['stackedStyle'];
-};
+type TableProps = Pick<
+  UswdsTableProps,
+  | 'children'
+  | 'className'
+  | 'bordered'
+  | 'striped'
+  | 'scrollable'
+  | 'stackedStyle'
+  | 'fullWidth'
+> & { contained?: boolean };
 
 const Table: React.FC<TableProps> = ({
   children,
