@@ -105,6 +105,15 @@ just migrate local
 just db seed
 ```
 
+or; more simply:
+
+```bash
+docker compose up -d db migrate
+just db refresh
+```
+
+The `just db refresh` command will combine the cleaning, migration, and seeding in one go.
+
 ### Step 5: Run Sanity Checks (Optional)
 
 **Maintenance & Exports**
