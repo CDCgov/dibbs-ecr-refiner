@@ -328,10 +328,10 @@ describe('Config builder page', () => {
     await user.click(screen.getByText('Delete', { selector: 'button' }));
   });
 
-  it('should display an "Export configuration" button', async () => {
+  it('should display an "Export configuration" button', () => {
     renderPage();
     expect(
-      await screen.getByText('Export configuration', { selector: 'a' })
+        screen.getByText('Export configuration', { selector: 'a' })
     ).toBeInTheDocument();
   });
 });
