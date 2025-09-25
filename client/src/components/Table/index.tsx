@@ -14,7 +14,7 @@ type TableProps = Pick<
   | 'fullWidth'
 >;
 
-const Table: React.FC<TableProps> = ({
+const Table = ({
   children,
   bordered,
   className,
@@ -22,7 +22,7 @@ const Table: React.FC<TableProps> = ({
   fullWidth,
   scrollable,
   stackedStyle = 'default',
-}) => {
+}: TableProps) => {
   return (
     <UswdsTable
       bordered={bordered}
