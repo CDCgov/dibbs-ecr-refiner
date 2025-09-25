@@ -121,7 +121,7 @@ The `just db refresh` command will combine the cleaning, migration, and seeding 
 - **Maintenance scripts**: use for verifying data integrity and structure before/after seeding.
 - **Exports**: use scripts in `exports/` for generating CSVs or other data artifacts to share with stakeholders.
 
-There are a handful of helpful `just` commands that you can run to check that the seeding was successful but the `check_seeding` command in `maintenance` is going to contain a suite of helpful checks that we can quickly run to verify things are working as expected (and it should evolve over time):
+There are a handful of helpful `just` commands that you can run to check that the seeding was successful but the `check-seeding` command in `maintenance` is going to contain a suite of helpful checks that we can quickly run to verify things are working as expected (and it should evolve over time):
 
 ```bash
 just db check-seeding
