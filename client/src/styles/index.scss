@@ -44,3 +44,9 @@ button:focus:not(:focus-visible),
 .usa-skipnav[href]:focus-visible {
   @include outline-on-dark-bg;
 }
+
+// turn off default table styling in favor of DIBBs styles
+.usa-table td,
+.usa-table th {
+  border: none;
+}

@@ -68,12 +68,17 @@ export function Configurations() {
         </p>
       </div>
       <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
-        <Search
-          placeholder="Search configurations"
-          id="search-configurations"
-          name="search"
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+        {configs.length > 0 ? (
+          <Search
+            placeholder="Search configurations"
+            id="search-configurations"
+            name="search"
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        ) : (
+          <div></div>
+        )}
+
         <ModalToggleButton
           modalRef={modalRef}
           opener

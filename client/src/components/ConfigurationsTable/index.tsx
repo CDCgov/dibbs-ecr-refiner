@@ -1,7 +1,7 @@
-import { Table as UswdsTable } from '@trussworks/react-uswds';
 import { StatusPill } from '../StatusPill';
 import { useNavigate } from 'react-router';
 import { GetConfigurationsResponse } from '../../api/schemas';
+import Table from '../Table';
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
 }
@@ -9,12 +9,12 @@ interface ConfigurationsTableProps {
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   const navigate = useNavigate();
 
-  const reportableConditionHeader = 'reportable condition'.toUpperCase();
-  const statusHeader = 'status'.toUpperCase();
+  const reportableConditionHeader = 'Reportable condition';
+  const statusHeader = 'Status';
 
   if (!data.length) {
     return (
-      <UswdsTable stackedStyle="default">
+      <Table stackedStyle="default">
         <thead>
           <tr>
             <th scope="col">{reportableConditionHeader}</th>
@@ -22,17 +22,17 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
         </thead>
         <tbody>
           <tr>
-            <th data-label={reportableConditionHeader} scope="row">
+            <td data-label={reportableConditionHeader} scope="row">
               No configurations available
-            </th>
+            </td>
           </tr>
         </tbody>
-      </UswdsTable>
+      </Table>
     );
   }
 
   return (
-    <UswdsTable stackedStyle="default">
+    <Table>
       <thead>
         <tr>
           <th scope="col">{reportableConditionHeader}</th>
@@ -67,6 +67,6 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
           );
         })}
       </tbody>
-    </UswdsTable>
+    </Table>
   );
 }
