@@ -27,8 +27,8 @@ refresh:
 
 [group('db')]
 [doc('Run all DB sanity checks (seeding, integrity, etc)')]
-check_seeding:
-    python maintenance/check_seeded_db.py
+check-seeding:
+    docker compose exec refiner-service python ./scripts/maintenance/check_seeded_db.py
 
 [group('db')]
 [doc('Run a raw SQL query against the database (e.g., `just db query "SELECT * FROM conditions LIMIT 5;"`)')]
