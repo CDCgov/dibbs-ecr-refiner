@@ -6,10 +6,12 @@ import {
   Condition,
   DbConfigurationCustomCode,
   DbTotalConditionCodeCount,
+  HTTPValidationError,
 } from '../../../api/schemas';
 import userEvent from '@testing-library/user-event';
 import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
+import { AxiosError } from 'axios';
 
 // Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
@@ -119,11 +121,16 @@ describe('Config testing page', () => {
       ({ mutation }) => {
         return {
           mutateAsync: vi.fn().mockImplementation(() => {
-            const error = {
-              response: { data: { detail: warningMessage } },
-            };
+            const error = new AxiosError<HTTPValidationError>();
+            error.response = {
+              data: { detail: warningMessage },
+            } as any;
+
+            // trigger your mutation onError callback
             mutation?.onError?.(error);
-            throw new Error(); // reject so we get an error state
+
+            // reject so the hook enters error state
+            return Promise.reject(error);
           }),
           reset: vi.fn(),
           data: null,

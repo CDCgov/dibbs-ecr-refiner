@@ -45,6 +45,7 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-redundant-type-constituents': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
     },
     settings: {
       'import/resolver': {
@@ -55,5 +56,13 @@ export default defineConfig(
       },
     },
   },
+  {
+    // provide some flexibility for test files
+    files: ['**/*.test.{ts,tsx}', '**/tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
   prettier
 );
