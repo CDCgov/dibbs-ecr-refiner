@@ -131,29 +131,6 @@ The script `validate_parsing.py` is designed to run **after** you've run the TES
 
 #### Additional `just` utility commands:
 
- ```bash
-just db help
-Available recipes:
-    [db]
-    check-condition-version VERSION                   # Check if conditions exist for a specific version (e.g., `just db check-condition-version 3.0.0`)
-    check-config-combo JURISDICTION_ID CONDITION_NAME # Find configurations for a jurisdiction and condition name (e.g., `just db check-config-combo wa zika`)
-    check-configs-by-jurisdiction JURISDICTION_ID     # Find all configurations for a specific jurisdiction (e.g., `just db check-configs-by-jurisdiction wa`)
-    check-seeding                                     # Run all DB sanity checks (seeding, integrity, etc)
-    clean                                             # Completely wipes the refiner local development database [alias: c]
-    count-conditions                                  # Get the count of conditions, grouped by version
-    fetch-tes-data                                    # Runs the pipeline scripts that fetch data from the TES API (you must have a TES_API_KEY in your local .env file)
-    find-condition NAME                               # Find a condition by its name (case-insensitive search)
-    query +QUERY                                      # Run a raw SQL query against the database (e.g., `just db query "SELECT * FROM conditions LIMIT 5;"`)
-    recent-configurations                             # Show the 5 most recently created configurations
-    refresh                                           # Runs a full database refresh (wipe, migrate, seed)
-    seed                                              # Runs the seeding script to seed the database with condition data
-    table TABLE                                       # Describe the schema of a table (e.g., `just db table conditions`)
-    tables                                            # List all tables in the public schema
-    validate-tes-data                                 # If new or changed file from `fetch-tes-data` are found, check that their stucture supports the seeding process.
-```
-
-Try:
-
 ```bash
 # schema for all tables and an individual table
 just db tables
