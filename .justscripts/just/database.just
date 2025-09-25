@@ -16,6 +16,16 @@ clean:
     docker compose exec db psql -U postgres -d refiner -f drop-all.sql
 
 [group('db')]
+[doc('Runs the pipeline scripts that fetch data from the TES API (you must have a TES_API_KEY in your local .env file)')]
+fetch-tes-data:
+    docker compose exec refiner-service python scripts/pipeline/detect_changes.py
+
+[group('db')]
+[doc('If new or changed file from `fetch-tes-data` are found, check that their stucture supports the seeding process.')]
+validate-tes-data:
+    docker compose exec refiner-service python scripts/maintenance/validate_parsing.py
+
+[group('db')]
 [doc('Runs the seeding script to seed the database with condition data')]
 seed:
     docker compose run --rm seed

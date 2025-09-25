@@ -6,8 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
-
-from pipeline.fetch_api_data import run_fetch_pipeline
+from fetch_api_data import run_fetch_pipeline
 
 # configuration
 load_dotenv()
