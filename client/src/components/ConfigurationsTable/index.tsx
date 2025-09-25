@@ -1,7 +1,7 @@
-import { Table as UswdsTable } from '@trussworks/react-uswds';
 import { StatusPill } from '../StatusPill';
 import { useNavigate } from 'react-router';
 import { GetConfigurationsResponse } from '../../api/schemas';
+import Table from '../Table';
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
 }
@@ -14,7 +14,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
 
   if (!data.length) {
     return (
-      <UswdsTable stackedStyle="default">
+      <Table stackedStyle="default">
         <thead>
           <tr>
             <th scope="col">{reportableConditionHeader}</th>
@@ -27,12 +27,12 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
             </th>
           </tr>
         </tbody>
-      </UswdsTable>
+      </Table>
     );
   }
 
   return (
-    <UswdsTable stackedStyle="default">
+    <Table>
       <thead>
         <tr>
           <th scope="col">{reportableConditionHeader}</th>
@@ -67,6 +67,6 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
           );
         })}
       </tbody>
-    </UswdsTable>
+    </Table>
   );
 }

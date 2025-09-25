@@ -130,20 +130,36 @@
   */
 
 .usa-table {
-  @apply border-gray-cool-30 w-full rounded-sm border-1 shadow-[0_4px_8px_0_rgba(0,0,0,0.15)];
+  @apply border-gray-cool-30 w-full max-w-[1208px] table-auto !border-separate rounded-lg border-1 md:table-fixed;
+}
+/* round the four corner cells */
+.usa-table tr:last-child td:first-child {
+  border-bottom-left-radius: 7px;
+}
+.usa-table tr:last-child td:last-child {
+  border-bottom-right-radius: 7px;
 }
 
-.usa-table--borderless thead th {
-  @apply text-blue-cool-90 bg-gray-cool-10 border-none py-3 leading-[26px] uppercase;
+.usa-table tr:last-child th:first-child {
+  border-top-left-radius: 7px;
 }
 
-.usa-table tbody th,
-.usa-table tbody td {
-  @apply cursor-pointer border-0;
+.usa-table tr:last-child th:last-child {
+  border-top-right-radius: 7px;
 }
 
 .usa-table tbody tr {
-  @apply border-gray-cool-30 h-17 border-t border-b;
+  @apply h-17;
+}
+
+.usa-table thead th,
+.usa-table tbody td {
+  @apply cursor-pointer;
+}
+
+.usa-table th,
+.usa-table tr:not(:last-child) td {
+  @apply !border-gray-cool-60 !border-b;
 }
 
 .usa-table tbody tr:hover th,
@@ -151,15 +167,11 @@
   @apply bg-gray-200;
 }
 
-.usa-table {
-  @apply max-w-[1208px] table-auto md:table-fixed;
+.usa-table--borderless thead th {
+  @apply text-blue-cool-90 bg-gray-cool-10 py-3 leading-[26px] uppercase;
 }
 
 .usa-table--stacked th[data-label]:before,
 .usa-table--stacked td[data-label]:before {
   @apply bg-gray-cool-10 mb-3! pb-3!;
-}
-
-.usa-table--stacked tr th {
-  @apply border-gray-cool-30 border-b;
 }
