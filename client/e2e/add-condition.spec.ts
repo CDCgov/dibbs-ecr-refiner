@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 import { login, logout } from './utils';
 
 test.describe('Adding configurations by initial condition', () => {
-
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
@@ -42,7 +41,9 @@ test.describe('Adding configurations by initial condition', () => {
     await page
       .getByRole('searchbox', { name: 'Search by condition name' })
       .fill('disease');
-    await page.getByRole('listitem', { name: 'Balamuthia mandrillaris' }).click();
+    await page
+      .getByRole('listitem', { name: 'Balamuthia mandrillaris' })
+      .click();
     await page.getByRole('heading', { name: 'Condition added' }).click();
     await page.getByTestId('close-drawer').click();
     await expect(
@@ -75,5 +76,4 @@ test.describe('Adding configurations by initial condition', () => {
       page.getByRole('cell', { name: '1234', exact: true })
     ).toBeVisible();
   });
-
-})
+});
