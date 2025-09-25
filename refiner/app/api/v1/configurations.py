@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
+from app.core.exceptions import ZipValidationError
+
 from ...api.auth.middleware import get_logged_in_user
 from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
@@ -888,7 +890,15 @@ async def run_configuration_test(
             detail=f"Condition associated with configuration (ID: {config.id}) not found.",
         )
 
-    original_xml_files = await read_xml_zip(file)
+    try:
+        original_xml_files = await read_xml_zip(file)
+    except ZipValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File could not be processed. Please provide a ZIP file with a matching eICR/RR pair within.",
+        )
 
     # TODO: this will need to be replaced with a version of `refine` that accepts
     # and makes use of a configuration.
