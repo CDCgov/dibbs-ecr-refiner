@@ -2,7 +2,6 @@ import {
   Table as UswdsTable,
   TableProps as UswdsTableProps,
 } from '@trussworks/react-uswds';
-import classNames from 'classnames';
 
 type TableProps = Pick<
   UswdsTableProps,
@@ -13,11 +12,10 @@ type TableProps = Pick<
   | 'scrollable'
   | 'stackedStyle'
   | 'fullWidth'
-> & { contained?: boolean };
+>;
 
 const Table: React.FC<TableProps> = ({
   children,
-  contained = true,
   bordered,
   className,
   striped,
@@ -26,17 +24,16 @@ const Table: React.FC<TableProps> = ({
   stackedStyle = 'default',
 }) => {
   return (
-    <div className={classNames(className, contained)}>
-      <UswdsTable
-        bordered={bordered}
-        striped={striped}
-        fullWidth={fullWidth}
-        scrollable={scrollable}
-        stackedStyle={stackedStyle}
-      >
-        {children}
-      </UswdsTable>
-    </div>
+    <UswdsTable
+      bordered={bordered}
+      striped={striped}
+      fullWidth={fullWidth}
+      scrollable={scrollable}
+      stackedStyle={stackedStyle}
+      className={className}
+    >
+      {children}
+    </UswdsTable>
   );
 };
 
