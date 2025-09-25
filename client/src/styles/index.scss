@@ -1,5 +1,5 @@
-@forward "uswds-theme";
-@forward "uswds";
+@forward 'uswds-theme';
+@forward 'uswds';
 
 /**
   * @mixin
@@ -36,7 +36,7 @@ button:focus:not(:focus-visible),
   iframe:focus-visible,
   [href]:focus-visible,
   [tabindex]:focus-visible,
-  [contentEditable="true"]:focus-visible {
+  [contentEditable='true']:focus-visible {
     @include outline-on-dark-bg;
   }
 }
