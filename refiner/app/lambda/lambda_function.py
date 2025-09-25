@@ -65,9 +65,15 @@ def lambda_handler(event, context):
             rr = base64.b64decode(data["rr"]).decode("utf-8")
 
             # Process the EICR and RR using the refiner
-            # NOTE: Need a database for this to work
+            # TODO: since we will not be using a database and will instead use s3
+            # to read in an object that is in the shape of ProcessedConfiguration
+            # we no longer need to persist a "refine_async" and a "refine_sync".
+            # * we need to implement a way for the server to write these objects to s3
+            # * we need to be able to check that what's in the database and s3 are in sync
+            # * we need to be able to orchestrate refining here; composing from the refine service
+            # * we need to be able to go from RC SNOMED codes -> jd + configuration -> refined output
             # xml_files = XMLFiles(eicr=eicr, rr=rr)
-            # refined_eicr_docs = refine_sync(original_xml=xml_files, db=db)
+            # refined_eicr_docs = refine_lambda(original_xml=xml_files, ...)
             refined_eicr_docs = [eicr, rr]
 
             # Sample data until we have database connectivity
