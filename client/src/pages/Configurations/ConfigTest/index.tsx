@@ -16,6 +16,7 @@ import {
 import { Diff } from '../../../components/Diff';
 import { Icon } from '@trussworks/react-uswds';
 import { GetConfigurationResponse } from '../../../api/schemas';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -130,6 +131,7 @@ function Tester({ config }: TesterProps) {
 }
 
 function useZipUpload() {
+  const errorFormatter = useApiErrorFormatter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {
     mutateAsync,
@@ -138,12 +140,7 @@ function useZipUpload() {
   } = useRunInlineConfigurationTest({
     mutation: {
       onError: (error) => {
-        const rawError = error.response?.data;
-
-        const message = Array.isArray(rawError?.detail)
-          ? rawError.detail.map((d) => d.msg).join(' ')
-          : rawError?.detail || 'Upload failed. Please try again.';
-        setErrorMessage(message);
+        setErrorMessage(errorFormatter(error));
       },
       retry: false,
     },
