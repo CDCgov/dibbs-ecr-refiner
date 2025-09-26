@@ -63,8 +63,6 @@ vi.mock('../../../api/configurations/configurations', async () => {
           ],
         },
       },
-      isLoading: false,
-      isError: false,
     })),
     useRunInlineConfigurationTest: vi.fn(() => ({
       mutateAsync: vi.fn().mockResolvedValue({ data: {} }),
@@ -76,8 +74,6 @@ vi.mock('../../../api/configurations/configurations', async () => {
           refined_download_url: 'http://mocks3download.com',
         },
       },
-      isLoading: false,
-      isError: false,
     })),
   };
 });

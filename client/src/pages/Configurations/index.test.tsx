@@ -24,13 +24,9 @@ vi.mock('../../api/configurations/configurations', async () => {
           { id: '3', name: 'Zika Virus Disease', is_active: false },
         ],
       },
-      isLoading: false,
-      error: null,
     })),
     useCreateConfiguration: vi.fn(() => ({
       mutate: vi.fn().mockResolvedValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     })),
     useGetConfiguration: vi.fn(() => ({
@@ -50,8 +46,6 @@ vi.mock('../../api/configurations/configurations', async () => {
           ],
         },
       },
-      isLoading: false,
-      isError: false,
     })),
   };
 });
@@ -67,8 +61,6 @@ vi.mock('../../api/conditions/conditions', async () => {
           { id: 'exists-id', display_name: 'already-created' },
         ],
       },
-      isLoading: false,
-      error: null,
     })),
   };
 });
@@ -124,8 +116,6 @@ describe('Configurations Page', () => {
 
     (useCreateConfiguration as unknown as Mock).mockReturnValue({
       mutate: mockMutate,
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
@@ -178,8 +168,6 @@ describe('Configurations Page', () => {
     (useCreateConfiguration as unknown as Mock).mockReturnValue({
       mutate: mockMutate,
       data: { data: response },
-      isLoading: false,
-      isError: false,
       reset: vi.fn(),
     });
 
