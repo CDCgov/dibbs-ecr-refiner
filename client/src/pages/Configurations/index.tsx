@@ -24,6 +24,7 @@ import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
+import { CONFIGURATION_CTA } from './utils';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -84,7 +85,7 @@ export function Configurations() {
           opener
           className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
         >
-          Set up new configuration
+          {CONFIGURATION_CTA}
         </ModalToggleButton>
         <NewConfigModal modalRef={modalRef} />
       </div>
@@ -122,7 +123,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         id="add-configuration-modal-heading"
         className="font-merriweather !text-3xl !leading-18 font-bold text-black"
       >
-        Set up new condition
+        {CONFIGURATION_CTA}
       </ModalHeading>
       <p id="add-configuration-modal-description" className="sr-only">
         Select a reportable condition you'd like to configure.

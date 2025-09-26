@@ -8,6 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse } from '../../api/schemas';
 import ConfigBuild from './ConfigBuild';
+import { CONFIGURATION_CTA } from './utils';
 
 // Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
@@ -98,7 +99,7 @@ describe('Configurations Page', () => {
       await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Set up new configuration' })
+      screen.getByRole('button', { name: CONFIGURATION_CTA })
     ).toBeInTheDocument();
   });
 
@@ -132,7 +133,7 @@ describe('Configurations Page', () => {
     renderPageView();
 
     const setUpButton = screen.getByRole('button', {
-      name: 'Set up new configuration',
+      name: CONFIGURATION_CTA,
     });
     await user.click(setUpButton);
 
@@ -185,7 +186,7 @@ describe('Configurations Page', () => {
 
     renderPageView();
     const setUpButton = screen.getByRole('button', {
-      name: 'Set up new configuration',
+      name: CONFIGURATION_CTA,
     });
     await user.click(setUpButton);
 
