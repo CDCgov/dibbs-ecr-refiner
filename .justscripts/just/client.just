@@ -7,6 +7,7 @@ alias help := _default
     just --list client
 
 npm := require('npm')
+npx := require('npx')
 
 alias r := run
 
@@ -24,6 +25,16 @@ install *ARGS:
     {{ npm }} install {{ ARGS }}
 
 alias t := test
+
+[group('e2e')]
+[doc('Run arbitrary `npx playwright <command>` within `client/` (e.g. `just client playwright test`)')]
+playwright *ARGS:
+    {{ npx }} playwright {{ ARGS }}
+
+[group('e2e')]
+[doc('Run e2e Playwright tests in dev mode; use this for local/regression testing')]
+e2e:
+    {{ npm }} run e2e:dev
 
 [group('test')]
 [doc('Run ui/ux tests')]

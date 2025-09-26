@@ -1,13 +1,34 @@
+import csv
+import io
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
+from io import StringIO
+from logging import Logger
+from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Response,
+    UploadFile,
+    status,
+)
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
+from app.core.exceptions import ZipValidationError
+
 from ...api.auth.middleware import get_logged_in_user
+from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
+    get_condition_codes_by_condition_id_db,
     get_conditions_db,
 )
 from ...db.configurations.db import (
@@ -24,8 +45,19 @@ from ...db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
+from ...services.aws.s3 import upload_refined_ecr
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine
+from ...services.file_io import (
+    create_refined_ecr_zip_in_memory,
+    create_split_condition_filename,
+    read_xml_zip,
+)
+from ...services.format import normalize_xml, strip_comments
+from ...services.logger import get_logger
+from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 
 router = APIRouter(prefix="/configurations")
 
@@ -227,6 +259,95 @@ async def get_configuration(
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
+    )
+
+
+@router.get(
+    "/{configuration_id}/export",
+    tags=["configurations"],
+    operation_id="getConfigurationExport",
+    response_class=Response,
+)
+async def get_configuration_export(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Create a CSV export of a configuration and all associated codes.
+    """
+
+    # --- Validate configuration ---
+    jd = user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+
+    # Determine included conditions
+    all_conditions = await get_conditions_db(db=db)
+    associated_conditions = {
+        (c.canonical_url, c.version)
+        for c in config.included_conditions
+        if c.canonical_url and c.version
+    }
+    included_conditions = [
+        cond
+        for cond in all_conditions
+        if (cond.canonical_url, cond.version) in associated_conditions
+    ]
+
+    # Write CSV to StringIO (text)
+    with StringIO() as csv_text:
+        writer = csv.writer(csv_text)
+        writer.writerow(
+            [
+                "Code Type",
+                "Code System",
+                "Code",
+                "Display Name",
+            ]
+        )
+        for cond in included_conditions:
+            codes = await get_condition_codes_by_condition_id_db(id=cond.id, db=db)
+            for code_obj in codes:
+                writer.writerow(
+                    [
+                        "TES condition grouper code",
+                        code_obj.system or "",
+                        code_obj.code or "",
+                        code_obj.description or "",
+                    ]
+                )
+        for custom in config.custom_codes or []:
+            writer.writerow(
+                [
+                    "Custom code",
+                    custom.system or "",
+                    custom.code or "",
+                    custom.name or "",
+                ]
+            )
+
+        csv_bytes = csv_text.getvalue().encode("utf-8")
+
+    # Replace spaces with underscores in the config name
+    safe_name = config.name.replace(" ", "_")
+
+    # Format current date/time as YYMMDD HH:MM:SS
+    timestamp = datetime.now().strftime("%m%d%y_%H:%M:%S")
+
+    # Build final filename
+    filename = f"{safe_name}_Code Export_{timestamp}.csv"
+
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -772,4 +893,190 @@ async def edit_custom_code(
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+    )
+
+
+def _upload_to_s3():
+    """
+    Returns a function to upload an eICR/RR pair .zip to S3.
+    """
+    return upload_refined_ecr
+
+
+@dataclass(frozen=True)
+class ConfigurationTestResponse:
+    """
+    Model to represent the response provided to the client when in-line testing is run.
+    """
+
+    original_eicr: str
+    refined_download_url: str
+    condition: Condition
+
+
+@router.post(
+    "/test",
+    response_model=ConfigurationTestResponse,
+    tags=["configurations"],
+    operation_id="runInlineConfigurationTest",
+)
+async def run_configuration_test(
+    id: UUID = Form(...),
+    uploaded_file: UploadFile | None = File(None),
+    create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
+        lambda: create_refined_ecr_zip_in_memory
+    ),
+    upload_refined_files_to_s3: Callable[
+        [UUID, io.BytesIO, str, Logger], str
+    ] = Depends(_upload_to_s3),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    sample_zip_path: Path = Depends(get_sample_zip_path),
+    logger: Logger = Depends(get_logger),
+) -> ConfigurationTestResponse:
+    """
+    Runs an in-line test using the provided configuration ID and test files.
+
+    Args:
+        id (UUID): ID of Configuration to use for the test
+        uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+        create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
+        upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
+        user (DbUser): Logged in user
+        db (AsyncDatabaseConnection): Database connection
+        sample_zip_path (Path): Path to example .zip eICR/RR pair
+        logger (Logger): Standard logger
+    Returns:
+        ConfigurationTestResponse: response given to the client
+    """
+
+    if not sample_zip_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Unable to find sample zip file to download.",
+        )
+
+    file = None
+    if uploaded_file:
+        file = await validate_zip_file(file=uploaded_file)
+        logger.info(
+            "Running inline test using user-provided file",
+            extra={"file": file.filename},
+        )
+    else:
+        file = create_sample_zip_file(sample_zip_path=sample_zip_path)
+        logger.info(
+            "Running inline test using sample file", extra={"file": file.filename}
+        )
+
+    # get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    logger.info(
+        "Using config for inline testing",
+        extra={"config_id": config.id, "jurisdiction_id": jd},
+    )
+
+    # find the primary condition associated with the config
+    associated_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+    if not associated_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Condition associated with configuration (ID: {config.id}) not found.",
+        )
+
+    try:
+        original_xml_files = await read_xml_zip(file)
+    except ZipValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File could not be processed. Please provide a ZIP file with a matching eICR/RR pair within.",
+        )
+
+    # TODO: this will need to be replaced with a version of `refine` that accepts
+    # and makes use of a configuration.
+    refined_results = await refine(
+        original_xml=original_xml_files,
+        db=db,
+        jurisdiction_id=jd,
+    )
+
+    # TODO: Revisit this matching functionality at a later point.
+    child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
+    seen_condition_codes = set()
+    matched_result = None
+    for result in refined_results:
+        # Add current code to seen codes
+        seen_condition_codes.add(result.reportable_condition.code)
+
+        # If a child rsg code is found in the "seen" set then we have a match
+        if seen_condition_codes & child_rsg_codes:
+            matched_result = result
+            break
+
+    if not matched_result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
+        )
+
+    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+
+    matched_condition_refined_eicr = strip_comments(
+        normalize_xml(matched_result.refined_eicr)
+    )
+
+    s3_file_package = []
+
+    # Add original files to file package
+    s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
+    s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
+
+    # Add the matched result's eICR to file package
+    s3_file_package.append(
+        (
+            create_split_condition_filename(
+                condition_name=matched_result.reportable_condition.display_name,
+                condition_code=matched_result.reportable_condition.code,
+            ),
+            matched_result.refined_eicr,
+        )
+    )
+
+    output_file_name, output_zip_buffer = create_output_zip(
+        files=s3_file_package,
+    )
+
+    presigned_s3_url = await run_in_threadpool(
+        upload_refined_files_to_s3,
+        user.id,
+        output_zip_buffer,
+        output_file_name,
+        logger,
+    )
+
+    return ConfigurationTestResponse(
+        original_eicr=original_unrefined_eicr,
+        refined_download_url=presigned_s3_url,
+        condition=Condition(
+            code=matched_result.reportable_condition.code,
+            display_name=matched_result.reportable_condition.display_name,
+            refined_eicr=matched_condition_refined_eicr,
+            stats=[
+                f"eICR file size reduced by {
+                    get_file_size_reduction_percentage(
+                        original_unrefined_eicr, matched_condition_refined_eicr
+                    )
+                }%",
+            ],
+        ),
     )

@@ -73,6 +73,7 @@ export default function ConfigBuild() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
+        <Export id={id} />
         <Builder
           id={id}
           code_sets={response.data.code_sets}
@@ -80,6 +81,24 @@ export default function ConfigBuild() {
           custom_codes={response.data.custom_codes}
         />
       </SectionContainer>
+    </div>
+  );
+}
+
+type ExportBuilderProps = {
+  id: string;
+};
+
+export function Export({ id }: ExportBuilderProps) {
+  return (
+    <div className="mb-6 flex w-full justify-end">
+      <a
+        className="text-blue-cool-50 font-bold hover:cursor-pointer hover:underline"
+        href={`/api/v1/configurations/${id}/export`}
+        download
+      >
+        Export configuration
+      </a>
     </div>
   );
 }
@@ -328,7 +347,7 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+    <div className="max-h-[10rem] overflow-y-auto md:max-h-[20rem]">
       {children}
     </div>
   );

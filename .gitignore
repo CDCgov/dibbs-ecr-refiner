@@ -35,7 +35,6 @@ coverage.xml
 # Static files
 dist
 refined-ecr
-**/scripts/seed-data.sql
 
 # Local testing
 .scratch
