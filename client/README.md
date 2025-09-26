@@ -95,9 +95,9 @@ Continuing from the example above, the `useGetConfigurations` hook will be gener
 
 ```tsx
 function MyPage() {
-  const { data, isError, isLoading } = useGetConfigurations();
+  const { data, isPending, isError } = useGetConfigurations();
 
-  if (isLoading || !data?.data) return 'Loading...';
+  if (isPending) return 'Loading...';
   if (isError) return 'Error occurred!';
 
   return <div>{data.data.length === 0 ? 'No data' : data.data[0].name}</div>;

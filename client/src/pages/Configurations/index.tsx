@@ -46,7 +46,7 @@ interface ConfigurationsTable {
 }
 
 export function Configurations() {
-  const { data: response, isLoading } = useGetConfigurations();
+  const { data: response, isPending, isError } = useGetConfigurations();
 
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
@@ -56,7 +56,9 @@ export function Configurations() {
 
   const modalRef = useRef<ModalRef>(null);
 
-  if (isLoading || !response?.data) return 'Loading...';
+  if (isPending) return 'Loading...';
+
+  if (isError) return 'Error!';
 
   return (
     <section className="mx-auto p-3">
@@ -102,7 +104,7 @@ interface NewConfigModalProps {
 function NewConfigModal({ modalRef }: NewConfigModalProps) {
   const showToast = useToast();
   const comboBoxRef = useRef<ComboBoxRef>(null);
-  const { data: response, isLoading } = useGetConditions();
+  const { data: response, isPending, isError } = useGetConditions();
   const [selectedCondition, setSelectedCondition] =
     useState<GetConditionsResponse | null>(null);
 
@@ -127,8 +129,12 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       <p id="add-configuration-modal-description" className="sr-only">
         Select a reportable condition you'd like to configure.
       </p>
-      {isLoading || !response?.data ? (
-        'Loading conditions...'
+      {isPending ? (
+        'Loading...'
+      ) : isError ? (
+        <p className="text-state-error-dark">
+          Failed to load conditions. Please try again.
+        </p>
       ) : (
         <>
           <Label

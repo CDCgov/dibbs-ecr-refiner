@@ -22,13 +22,13 @@ export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
   const {
     data: response,
-    isLoading,
+    isPending,
     isError,
   } = useGetConfiguration(id ?? '', {
     query: { enabled: !!id },
   });
 
-  if (isLoading || !response?.data) return 'Loading...';
+  if (isPending) return 'Loading...';
   if (!id || isError) return 'Error!';
 
   return (
