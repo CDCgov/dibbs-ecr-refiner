@@ -4,7 +4,7 @@ set -e
 # Ensure an environment argument is provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <environment>"
-  echo "Available environments: local, demo, prod"
+  echo "Available environments: e2e, local, demo, prod"
   exit 1
 fi
 
@@ -12,6 +12,9 @@ ENV=$1
 
 # Define database URLs for each environment
 case "$ENV" in
+  e2e)
+    DB_URL="postgresql://postgres:refiner_e2e@db:5437/refiner_e2e?sslmode=disable"
+    ;;
   local)
     DB_URL="postgresql://postgres:refiner@db:5432/refiner?sslmode=disable"
     ;;
@@ -23,7 +26,7 @@ case "$ENV" in
     ;;
   *)
     echo "Unknown environment: $ENV"
-    echo "Available environments: local, demo, prod"
+    echo "Available environments: e2e, local, demo, prod"
     exit 1
     ;;
 esac

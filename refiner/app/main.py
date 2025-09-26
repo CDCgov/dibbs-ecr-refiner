@@ -71,7 +71,7 @@ async def health_check(
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     # Write OpenAPI doc
-    if ENVIRONMENT["ENV"] == "local":
+    if ENVIRONMENT["ENV"] in ("local", "e2e"):
         schema = create_custom_openapi(app)
         with open("openapi.json", "w") as f:
             json.dump(schema, f)
@@ -140,7 +140,7 @@ async def serve_index(full_path: str) -> HTMLResponse:
     return HTMLResponse(content=html)
 
 
-if ENVIRONMENT["ENV"] == "local":
+if ENVIRONMENT["ENV"] in ("local", "e2e"):
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:8081"],  # Client dev server

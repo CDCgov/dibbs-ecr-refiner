@@ -1,0 +1,32 @@
+services:
+  refiner-service:
+    environment:
+      - ENV=e2e
+      - DB_URL=postgresql://postgres:refiner_e2e@db:5432/refiner_e2e
+    depends_on:
+      - db-e2e
+  db-e2e:
+    image: postgres:alpine
+    restart: on-failure
+    user: postgres
+    environment:
+      - POSTGRES_DB=refiner_e2e
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=refiner_e2e
+    ports:
+      - "5432:5432"
+    # command: postgres -p 5437
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./.justscripts/sql/drop-all.sql:/drop-all.sql
+      - pgdata-e2e:/var/lib/postgresql/data
+  seed:
+    environment:
+      - DB_URL=postgresql://postgres:refiner_e2e@db:5432/refiner_e2e
+
+volumes:
+  pgdata-e2e:
