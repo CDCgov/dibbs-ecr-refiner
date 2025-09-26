@@ -34,14 +34,12 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        section_processing,
         version
     )
     VALUES (
         %s,
         %s,
         %s,
-        %s::jsonb,
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
@@ -55,7 +53,6 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        section_processing,
         version
     """
 
@@ -111,7 +108,6 @@ async def get_configurations_db(
             included_conditions,
             custom_codes,
             local_codes,
-            section_processing,
             version
         FROM configurations
         WHERE jurisdiction_id = %s

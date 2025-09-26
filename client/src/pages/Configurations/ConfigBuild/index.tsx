@@ -1,4 +1,5 @@
 import { useParams } from 'react-router';
+import EicrSectionReview from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -114,9 +115,9 @@ function Builder({
   included_conditions,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
-    'none'
-  );
+  const [tableView, setTableView] = useState<
+    'none' | 'codeset' | 'custom' | 'sections'
+  >('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
@@ -257,6 +258,26 @@ function Builder({
                   <span>{custom_codes.length}</span>
                 </button>
               </li>
+              <li key="sections">
+                <button
+                  className={classNames(
+                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                    {
+                      'bg-white': tableView === 'sections',
+                    }
+                  )}
+                  onClick={() => {
+                    setSelectedCodesetId(null);
+                    setTableView('sections');
+                  }}
+                  aria-controls={
+                    tableView === 'sections' ? 'sections-table' : undefined
+                  }
+                  aria-pressed={tableView === 'sections'}
+                >
+                  <span>Sections</span>
+                </button>
+              </li>
             </OptionsList>
           </OptionsListContainer>
         </div>
@@ -283,6 +304,8 @@ function Builder({
                 customCodes={custom_codes}
               />
             </>
+          ) : tableView === 'sections' ? (
+            <EicrSectionReview />
           ) : null}
         </div>
       </div>
