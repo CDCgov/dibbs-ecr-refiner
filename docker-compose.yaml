@@ -103,7 +103,7 @@ services:
     working_dir: /app
     command: >
       sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv &&
-             python refiner/scripts/seed_db.py"
+             python refiner/scripts/seeding/seed_db.py"
     profiles: ["seed"]
     depends_on:
       - db
