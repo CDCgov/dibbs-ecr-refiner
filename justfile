@@ -24,6 +24,14 @@ mod s './.justscripts/just/server.just'
 [doc('Run commands against `client/` code')]
 mod client './.justscripts/just/client.just'
 
+[group('alias')]
+[doc('Alias for `dev`')]
+mod d './.justscripts/just/dev.just'
+
+[group('sub-command')]
+[doc('Run dev-related docker compose commands')]
+mod dev './.justscripts/just/dev.just'
+
 [group('sub-command')]
 [doc('Run database commands against `refiner/` code')]
 mod database './.justscripts/just/database.just'
@@ -36,15 +44,8 @@ mod migrate './.justscripts/just/migrate.just'
 [doc('Run server commands against `refiner/` code')]
 mod server './.justscripts/just/server.just'
 
-alias d := dev
+alias l := lint
 alias t := test
-
-docker := require("docker")
-
-[group('docker')]
-[doc("Run abitrary `docker compose *` commands using project's docker-compose.yaml file.")]
-dev +ARGS:
-    {{ docker }} compose -f {{ absolute_path('./docker-compose.yaml') }} {{ ARGS }}
 
 [doc('Run linting and formatting rules on all code')]
 lint:
