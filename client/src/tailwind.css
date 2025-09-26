@@ -10,9 +10,10 @@
 
 @layer base {
   html,
-  select {
-    @apply !font-public-sans;
+  body {
+    @apply h-full;
   }
+
   h1,
   h2,
   h3,

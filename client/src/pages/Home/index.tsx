@@ -5,7 +5,7 @@ export function Home() {
   return (
     <>
       <Header></Header>
-      <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
+      <div className="bg-blue-cool-10 flex flex-1 flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
         <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
           <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
             <div className="flex flex-col items-start gap-4">
@@ -39,7 +39,7 @@ export function Home() {
 
 function HowItWorks() {
   return (
-    <div className="flex flex-col items-center gap-13 px-10 py-10 xl:px-34">
+    <div className="flex flex-1 flex-col items-center gap-13 px-10 py-10 xl:px-34">
       <h2 className="text-2xl font-bold text-black lg:text-4xl">
         How it works
       </h2>
