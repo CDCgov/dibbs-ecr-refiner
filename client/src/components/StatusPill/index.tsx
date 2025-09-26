@@ -1,17 +1,16 @@
-import classNames from 'classnames';
-
 interface StatusPillProps {
   status: 'on' | 'off';
 }
 
 export function StatusPill({ status }: StatusPillProps) {
-  const styles = classNames(
-    'rounded-full px-2 py-1 font-bold text-white text-nowrap',
-    {
-      'bg-state-success-dark': status === 'on',
-      'bg-state-error-dark': status === 'off',
-    }
-  );
+  const statusDisplay =
+    status === 'on' ? (
+      <span className="text-success-dark">
+        <span className="text-color-success pr-1">⏺︎</span>Active
+      </span>
+    ) : (
+      <span>Refiner off</span>
+    );
 
-  return <span className={styles}>Refiner {status}</span>;
+  return statusDisplay;
 }

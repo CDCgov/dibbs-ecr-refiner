@@ -30,10 +30,35 @@ export function Layout({ username, children }: LayoutProps) {
 }
 
 interface HeaderProps {
-  username: string;
+  username?: string;
 }
 
 export function Header({ username }: HeaderProps) {
+  const loggedInHeaderContent = (
+    <>
+      <NavigationBar />
+      <Menu>
+        <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
+          <Icon.Person size={3} aria-hidden />
+          {username}
+        </MenuButton>
+        <MenuItems
+          anchor="bottom"
+          className="ring-opacity-5 absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg focus:outline-none"
+        >
+          <MenuItem>
+            <a
+              href="/api/logout"
+              className="!border-gray-cool-40 block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
+            >
+              Log out
+            </a>
+          </MenuItem>
+        </MenuItems>
+      </Menu>
+    </>
+  );
+
   return (
     <header>
       <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center xl:px-20">
@@ -46,26 +71,7 @@ export function Header({ username }: HeaderProps) {
           </h1>
         </Link>
 
-        <NavigationBar />
-        <Menu>
-          <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
-            <Icon.Person size={3} aria-hidden />
-            {username}
-          </MenuButton>
-          <MenuItems
-            anchor="bottom"
-            className="ring-opacity-5 absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black focus:outline-none"
-          >
-            <MenuItem>
-              <a
-                href="/api/logout"
-                className="font-public-sans block w-full px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
-              >
-                Logout
-              </a>
-            </MenuItem>
-          </MenuItems>
-        </Menu>
+        {username ? loggedInHeaderContent : <></>}
       </div>
     </header>
   );
@@ -98,7 +104,7 @@ export function Footer() {
               dibbs@cdc.gov
             </a>
           </p>
-          <p className="text-gray-cool-20">
+          <p className="text-gray-cool-20 text-xs">
             Version code: {import.meta.env.VITE_GIT_HASH ?? 'local'}
           </p>
         </div>

@@ -11,9 +11,10 @@ const globalOptions: ToastOptions = {
   className: classNames(
     '!p-0',
     '!m-0',
-    '!w-[26.25rem]',
     '!h-[4.5rem]',
-    '!items-center'
+    '!w-1/3',
+    '!items-center',
+    'rounded-md'
   ),
   pauseOnFocusLoss: false,
   pauseOnHover: true,

@@ -63,8 +63,8 @@ export function Configurations() {
       <div className="flex flex-col gap-4 py-10">
         <Title>Your reportable condition configurations</Title>
         <p>
-          Set up reportable configurations here to specify the data you'd like
-          to retain in the refined eCRs for that condition.
+          Set up reportable condition configurations here to specify the data
+          you'd like to retain in the refined eCRs for that condition.
         </p>
       </div>
       <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
@@ -84,12 +84,18 @@ export function Configurations() {
           opener
           className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
         >
-          Set up new condition
+          Set up new configuration
         </ModalToggleButton>
         <NewConfigModal modalRef={modalRef} />
       </div>
       <ConfigurationsTable
-        data={searchText ? results.map((r) => r.item) : configs}
+        data={
+          searchText
+            ? results.map((r) => {
+                return { ...r.item, is_active: true };
+              })
+            : configs
+        }
       />
     </section>
   );

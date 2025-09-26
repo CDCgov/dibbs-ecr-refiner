@@ -1,8 +1,10 @@
 import IllustrationImg from '../../assets/home/illustration.svg';
+import { Footer, Header } from '../../components/Layout';
 
 export function Home() {
   return (
     <>
+      <Header></Header>
       <div className="bg-blue-cool-10 flex flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
         <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
           <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
@@ -30,6 +32,7 @@ export function Home() {
         </div>
       </div>
       <HowItWorks />
+      <Footer />
     </>
   );
 }
@@ -44,26 +47,26 @@ function HowItWorks() {
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
           <p>
-            This early conceptual demonstration of the power of the eCR Refiner
-            takes as input a single electronic initial case report (eICR) and
-            reportability response (RR) file pair.
+            The jurisdiction creates a custom configuration for each reportable
+            condition that specifies what data should be included in electronic
+            initial case reports (eICRs) for that reportable condition.
           </p>
         </li>
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>2</Number>
           <p>
-            The Refiner extracts the reportable condition(s) from the RR and
-            looks up relevant clinical concept codes from APHL's Terminology
-            Exchange Service (TES) for each reportable condition.
+            The Refiner detects the reportable condition(s) from the
+            reportability response (RR), splits the eICR and RR - one per
+            reportable condition - and retains only the data relevant to what
+            has been configured by the jurisdiction for each condition.
           </p>
         </li>
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>3</Number>
           <p>
-            The Refiner splits the original eICR into child eICRs - one per
-            reportable condition in the RR - and applies a filter that retains
-            only the information associated with the relevant clinical concept
-            codes identified in the TES for that condition.
+            The original eICR/RR pair is sent to the jurisdiction in addition to
+            one eICR/RR pair per reportable condition, received wherever the
+            jurisdiction already receives eCR files.
           </p>
         </li>
       </ol>

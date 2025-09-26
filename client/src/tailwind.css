@@ -36,7 +36,6 @@
 @theme {
   --font-public-sans: 'Public Sans Variable', 'sans-serif';
   --font-merriweather: 'Merriweather Variable', 'serif';
-
   --color-primary-container: #3a7d950d;
 
   --color-blue-100: #e8f5ff;
@@ -152,7 +151,6 @@
   @apply h-17;
 }
 
-.usa-table thead th,
 .usa-table tbody td {
   @apply cursor-pointer;
 }
@@ -167,6 +165,10 @@
   @apply bg-gray-200;
 }
 
+.usa-table thead tr {
+  @apply bg-gray-cool-10;
+}
+
 .usa-table--borderless thead th {
   @apply text-gray-cool-60 bg-gray-cool-10 py-3 leading-[26px];
 }
@@ -174,4 +176,8 @@
 .usa-table--stacked th[data-label]:before,
 .usa-table--stacked td[data-label]:before {
   @apply bg-gray-cool-10 mb-3! pb-3!;
+}
+
+.Toastify__toast div {
+  @apply rounded-lg;
 }

@@ -24,9 +24,9 @@ function NavigationLink({ to, title }: NavigationLinkProps) {
       {({ isActive }) => (
         <span
           className={classNames(
-            'hover:border-blue-cool-30 mx-6 inline-block py-1 hover:border-b-4',
+            'hover:border-blue-cool-30 mx-6 inline-block py-1 hover:border-b-4 ',
             {
-              'border-blue-cool-30 border-b-4': isActive,
+              'border-blue-cool-30 border-b-4 font-semibold': isActive,
             }
           )}
         >
