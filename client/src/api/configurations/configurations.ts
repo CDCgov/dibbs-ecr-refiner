@@ -35,7 +35,9 @@ import type {
   AddCustomCodeInput,
   AssociateCodesetInput,
   AssociateCodesetResponse,
+  BodyRunInlineConfigurationTest,
   ConfigurationCustomCodeResponse,
+  ConfigurationTestResponse,
   CreateConfigInput,
   CreateConfigurationResponse,
   GetConfigurationResponse,
@@ -275,6 +277,92 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetConfigurationQueryOptions(configurationId,options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * Create a CSV export of a configuration and all associated codes.
+ * @summary Get Configuration Export
+ */
+export const getConfigurationExport = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<null>> => {
+    
+    
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/export`,options
+    );
+  }
+
+
+export const getGetConfigurationExportQueryKey = (configurationId?: string,) => {
+    return [`/api/v1/configurations/${configurationId}/export`] as const;
+    }
+
+    
+export const getGetConfigurationExportQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationExportQueryKey(configurationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationExport>>> = ({ signal }) => getConfigurationExport(configurationId, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetConfigurationExportQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationExport>>>
+export type GetConfigurationExportQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationExport>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationExport>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationExport>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationExport>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Configuration Export
+ */
+
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetConfigurationExportQueryOptions(configurationId,options)
 
   const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -671,6 +759,85 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
       > => {
 
       const mutationOptions = getDeleteCustomCodeFromConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    /**
+ * Runs an in-line test using the provided configuration ID and test files.
+
+Args:
+    id (UUID): ID of Configuration to use for the test
+    uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+    create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
+    upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
+    user (DbUser): Logged in user
+    db (AsyncDatabaseConnection): Database connection
+    sample_zip_path (Path): Path to example .zip eICR/RR pair
+    logger (Logger): Standard logger
+Returns:
+    ConfigurationTestResponse: response given to the client
+ * @summary Run Configuration Test
+ */
+export const runInlineConfigurationTest = (
+    bodyRunInlineConfigurationTest: BodyRunInlineConfigurationTest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ConfigurationTestResponse>> => {
+    
+    const formData = new FormData();
+formData.append(`id`, bodyRunInlineConfigurationTest.id)
+if(bodyRunInlineConfigurationTest.uploaded_file !== undefined && bodyRunInlineConfigurationTest.uploaded_file !== null) {
+ formData.append(`uploaded_file`, bodyRunInlineConfigurationTest.uploaded_file)
+ }
+
+    return axios.default.post(
+      `/api/v1/configurations/test`,
+      formData,options
+    );
+  }
+
+
+
+export const getRunInlineConfigurationTestMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext> => {
+
+const mutationKey = ['runInlineConfigurationTest'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runInlineConfigurationTest>>, {data: BodyRunInlineConfigurationTest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  runInlineConfigurationTest(data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunInlineConfigurationTestMutationResult = NonNullable<Awaited<ReturnType<typeof runInlineConfigurationTest>>>
+    export type RunInlineConfigurationTestMutationBody = BodyRunInlineConfigurationTest
+    export type RunInlineConfigurationTestMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Run Configuration Test
+ */
+export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+        TError,
+        {data: BodyRunInlineConfigurationTest},
+        TContext
+      > => {
+
+      const mutationOptions = getRunInlineConfigurationTestMutationOptions(options);
 
       return useMutation(mutationOptions , queryClient);
     }

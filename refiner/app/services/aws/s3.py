@@ -5,11 +5,14 @@ from logging import Logger
 from uuid import UUID
 
 import boto3
+from botocore.client import Config
 from botocore.exceptions import ClientError
 
 from ...core.config import ENVIRONMENT
 
 uploaded_artifact_bucket_name = ENVIRONMENT["S3_UPLOADED_FILES_BUCKET_NAME"]
+
+config = Config(signature_version="s3v4")
 
 s3_client = boto3.client(
     "s3",
@@ -17,6 +20,7 @@ s3_client = boto3.client(
     aws_access_key_id=ENVIRONMENT["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
     endpoint_url=os.getenv("S3_ENDPOINT_URL"),
+    config=config,
 )
 
 

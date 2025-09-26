@@ -10,14 +10,14 @@ from fastapi.datastructures import Headers
 from fastapi.testclient import TestClient
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.demo import (
+from app.api.validation.file_validation import (
     MAX_ALLOWED_UPLOAD_FILE_SIZE,
-    _create_refined_ecr_zip_in_memory,
-    _get_file_size_difference_percentage,
-    _validate_zip_file,
+    validate_zip_file,
 )
 from app.db.users.model import DbUser
 from app.main import app
+from app.services.ecr.refine import get_file_size_reduction_percentage
+from app.services.file_io import create_refined_ecr_zip_in_memory
 
 api_route_base = "/api/v1/demo"
 
@@ -25,6 +25,7 @@ client = TestClient(app=app)
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_demo_upload_success(
     test_assets_path: pathlib.Path, authed_client, test_user_id
 ) -> None:
@@ -48,8 +49,9 @@ async def test_demo_upload_success(
     )
 
 
+@pytest.mark.integration
 def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
-    from app.api.v1.demo import _get_upload_refined_ecr
+    from app.services.aws.s3 import upload_refined_ecr
 
     def fake_upload_refined_ecr(user_id, file_buffer, filename, expires=3600):
         return ""
@@ -73,7 +75,7 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
         fake_get_conditions_by_child_rsg_snomed_codes,
     )
 
-    app.dependency_overrides[_get_upload_refined_ecr] = lambda: fake_upload_refined_ecr
+    app.dependency_overrides[upload_refined_ecr] = lambda: fake_upload_refined_ecr
     app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
 
     client = TestClient(app)
@@ -87,8 +89,9 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     app.dependency_overrides.clear()
 
 
+@pytest.mark.integration
 def test_demo_file_not_found(test_user_id, test_username):
-    from app.api.v1.demo import _get_demo_zip_path
+    from app.services.sample_file import get_sample_zip_path
 
     def mock_missing_path() -> pathlib.Path:
         return pathlib.Path("/nonexistent/demo.zip")
@@ -103,7 +106,7 @@ def test_demo_file_not_found(test_user_id, test_username):
             updated_at=datetime.now(),
         )
 
-    app.dependency_overrides[_get_demo_zip_path] = mock_missing_path
+    app.dependency_overrides[get_sample_zip_path] = mock_missing_path
     app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
 
     response = client.post(f"{api_route_base}/upload")
@@ -141,54 +144,60 @@ def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_valid_zip():
     zip_bytes = create_zip_file(
         {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
     )
     file = create_mock_upload_file("valid.zip", zip_bytes)
-    validated = await _validate_zip_file(file)
+    validated = await validate_zip_file(file)
     assert validated is file
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_invalid_extension():
     zip_bytes = create_zip_file({"test.txt": b"abc"})
     file = create_mock_upload_file("invalid.txt", zip_bytes)
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await validate_zip_file(file)
     assert "Only .zip files are allowed" in exc.value.detail
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_filename_starts_with_period():
     file = create_mock_upload_file(".hidden.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await validate_zip_file(file)
     assert "cannot start with a period" in exc.value.detail
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_filename_with_double_dot():
     file = create_mock_upload_file("bad..name.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await validate_zip_file(file)
     assert "cannot contain multiple periods" in exc.value.detail
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_empty_file():
     file = create_mock_upload_file("empty.zip", b"")
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await validate_zip_file(file)
     assert ".zip must not be empty" in exc.value.detail
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_file_too_large():
     content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await validate_zip_file(file)
     assert "must be less than 10MB" in exc.value.detail
 
 
@@ -203,7 +212,7 @@ async def test_file_too_large():
 def test_file_size_difference_percentage(
     unrefined: str, refined: str, expected: int
 ) -> None:
-    result = _get_file_size_difference_percentage(unrefined, refined)
+    result = get_file_size_reduction_percentage(unrefined, refined)
     assert result == expected
 
 
@@ -217,7 +226,7 @@ def test_create_refined_ecr_zip():
 
     refined_files.append(("CDA_eICR.xml", eicr))
 
-    file_name, file_buffer = _create_refined_ecr_zip_in_memory(files=refined_files)
+    file_name, file_buffer = create_refined_ecr_zip_in_memory(files=refined_files)
 
     assert "_refined_ecr.zip" in file_name
 

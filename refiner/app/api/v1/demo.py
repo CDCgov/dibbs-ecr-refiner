@@ -2,12 +2,10 @@ import io
 from collections.abc import Callable
 from logging import Logger
 from pathlib import Path
-from uuid import UUID, uuid4
-from zipfile import ZipFile
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from fastapi.datastructures import Headers
 from fastapi.responses import FileResponse
 
 from ...api.auth.middleware import get_logged_in_user
@@ -16,148 +14,18 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...db.demo.model import Condition, ConditionProcessingInfo, RefinedTestingDocument
+from ...db.demo.model import Condition, RefinedTestingDocument
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import refine
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine
 from ...services.logger import get_logger
-
-FILE_NAME_SUFFIX = "refined_ecr.zip"
-
-# File uploads
-MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
+from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
+from ..validation.file_validation import validate_zip_file
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
-
-
-def _get_demo_zip_path() -> Path:
-    """
-    Get the path to the demo ZIP file.
-    """
-
-    return file_io.get_asset_path("demo", "mon-mothma-two-conditions.zip")
-
-
-def _get_file_size_difference_percentage(
-    unrefined_document: str, refined_document: str
-) -> int:
-    unrefined_bytes = len(unrefined_document.encode("utf-8"))
-    refined_bytes = len(refined_document.encode("utf-8"))
-
-    if unrefined_bytes == 0:
-        return 0
-
-    percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
-    return round(percent_diff)
-
-
-def _create_refined_ecr_zip_in_memory(
-    *,
-    files: list[tuple[str, str]],
-) -> tuple[str, io.BytesIO]:
-    """
-    Create a zip archive containing all provided (filename, content) pairs.
-
-    Args:
-        files (list): List of tuples [(filename, content)], content must be string.
-
-    Returns:
-        (filename, buffer)
-    """
-    token = str(uuid4())
-    zip_filename = f"{token}_refined_ecr.zip"
-    zip_buffer = io.BytesIO()
-
-    with ZipFile(zip_buffer, "w") as zf:
-        for filename, content in files:
-            zf.writestr(filename, content)
-
-    zip_buffer.seek(0)
-    return zip_filename, zip_buffer
-
-
-def _get_zip_creator() -> Callable[..., tuple[str, io.BytesIO]]:
-    """
-    Dependency-injected function responsible for passing the function that will write the output zip file to the handler.
-
-    Returns:
-        A callable that takes a list of (filename, content) tuples and an output directory,
-        and returns a tuple (zip_filename, zip_filepath, token).
-    """
-    return _create_refined_ecr_zip_in_memory
-
-
-def _create_sample_zip_file(demo_zip_path: Path) -> UploadFile:
-    filename = demo_zip_path.name
-    with open(demo_zip_path, "rb") as demo_file:
-        zip_content = demo_file.read()
-
-    file_like = io.BytesIO(zip_content)
-    file_like.seek(0)
-    file = UploadFile(
-        file=file_like,
-        filename=filename,
-        headers=Headers({"Content-Type": "application/zip"}),
-    )
-    return file
-
-
-async def _validate_zip_file(file: UploadFile) -> UploadFile:
-    # Check extension
-    if not file.filename or not file.filename.lower().endswith(".zip"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only .zip files are allowed.",
-        )
-
-    # Name safety check
-    if file.filename.startswith("."):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File name cannot start with a period (.).",
-        )
-
-    # Name safety check
-    if ".." in file.filename:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File name cannot contain multiple periods (.) in a row",
-        )
-
-    # Ensure file has content
-    if file.size is None or file.size == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=".zip must not be empty.",
-        )
-
-    # Ensure compressed size is valid
-    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=".zip file must be less than 10MB in size.",
-        )
-
-    return file
-
-
-def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
-    """
-    Provides a dependency-injectable reference to the `upload_refined_ecr` function.
-
-    Returns:
-        Callable[[UUID, io.BytesIO, str], str]: A callable that uploads a
-        file to S3 and returns a pre-signed download URL. The arguments are:
-            - user_id (UUID): The ID of the uploading user.
-            - file_buffer (io.BytesIO): The in-memory ZIP file to upload.
-            - filename (str): Filename for the uploaded file.
-            - logger (Logger): The standard logger
-    """
-    return upload_refined_ecr
 
 
 @router.post(
@@ -168,14 +36,14 @@ def _get_upload_refined_ecr() -> Callable[[UUID, io.BytesIO, str, Logger], str]:
 )
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
-    demo_zip_path: Path = Depends(_get_demo_zip_path),
+    demo_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
-        _get_zip_creator
+        lambda: file_io.create_refined_ecr_zip_in_memory
     ),
     user: DbUser = Depends(get_logged_in_user),
     upload_refined_files_to_s3: Callable[
         [UUID, io.BytesIO, str, Logger], str
-    ] = Depends(_get_upload_refined_ecr),
+    ] = Depends(lambda: upload_refined_ecr),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> RefinedTestingDocument:
@@ -192,16 +60,15 @@ async def demo_upload(
 
     file = None
     if uploaded_file:
-        file = await _validate_zip_file(file=uploaded_file)
+        file = await validate_zip_file(file=uploaded_file)
     else:
-        file = _create_sample_zip_file(demo_zip_path=demo_zip_path)
+        file = create_sample_zip_file(sample_zip_path=demo_zip_path)
 
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})
 
         jd = user.jurisdiction_id
 
-        # Refine each pair and collect results
         original_xml_files = await file_io.read_xml_zip(file)
         refined_results = await refine(
             original_xml=original_xml_files,
@@ -209,7 +76,7 @@ async def demo_upload(
             jurisdiction_id=jd,
         )
 
-        conditions = []
+        conditions: list[Condition] = []
         refined_files_to_zip = []
 
         # Track condition metadata and gather refined XMLs to zip
@@ -219,8 +86,9 @@ async def demo_upload(
             condition_refined_eicr = format.normalize_xml(result.refined_eicr)
 
             # Construct a filename for each XML (e.g. "covid_840539006.xml")
-            safe_name = condition_name.replace(" ", "_").replace("/", "_")
-            filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+            filename = file_io.create_split_condition_filename(
+                condition_name=condition_name, condition_code=condition_code
+            )
 
             # Add to the list of files to include in the ZIP
             refined_files_to_zip.append((filename, condition_refined_eicr))
@@ -228,7 +96,7 @@ async def demo_upload(
             # Strip comments afer adding to zip download for diff view
             stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
 
-            # Build per-condition metadata (zip token added later)
+            # Build per-condition metadata
             conditions.append(
                 Condition(
                     code=condition_code,
@@ -236,16 +104,11 @@ async def demo_upload(
                     refined_eicr=stripped_refined_eicr,
                     stats=[
                         f"eICR file size reduced by {
-                            _get_file_size_difference_percentage(
+                            get_file_size_reduction_percentage(
                                 original_xml_files.eicr, condition_refined_eicr
                             )
                         }%",
                     ],
-                    processing_info=ConditionProcessingInfo(
-                        condition_specific=True,
-                        sections_processed="All sections scoped to condition codes",
-                        method="ProcessedGrouper-based filtering",
-                    ),
                 )
             )
 
@@ -266,14 +129,15 @@ async def demo_upload(
             logger,
         )
 
-        normalized_unrefined_eicr = format.normalize_xml(original_xml_files.eicr)
-        stripped_unrefined_eicr = format.strip_comments(normalized_unrefined_eicr)
+        formatted_unrefined_eicr = format.strip_comments(
+            format.normalize_xml(original_xml_files.eicr)
+        )
 
         return RefinedTestingDocument(
             message="Successfully processed eICR with condition-specific refinement",
             conditions_found=len(conditions),
             conditions=conditions,
-            unrefined_eicr=stripped_unrefined_eicr,
+            unrefined_eicr=formatted_unrefined_eicr,
             processing_notes=[
                 "Each condition gets its own refined eICR",
                 "Sections contain only data relevant to that specific condition",
@@ -309,7 +173,7 @@ async def demo_upload(
 
 @router.get("/download")
 async def demo_download(
-    file_path: Path = Depends(_get_demo_zip_path), logger: Logger = Depends(get_logger)
+    file_path: Path = Depends(get_sample_zip_path), logger: Logger = Depends(get_logger)
 ) -> FileResponse:
     """
     Download the unrefined sample eCR zip file.
