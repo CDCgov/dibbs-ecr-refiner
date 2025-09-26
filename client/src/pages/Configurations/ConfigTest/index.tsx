@@ -20,13 +20,7 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
-  const {
-    data: response,
-    isPending,
-    isError,
-  } = useGetConfiguration(id ?? '', {
-    query: { enabled: !!id },
-  });
+  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
 
   if (isPending) return 'Loading...';
   if (!id || isError) return 'Error!';
