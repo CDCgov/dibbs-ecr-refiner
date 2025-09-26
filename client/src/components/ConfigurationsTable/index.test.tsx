@@ -44,7 +44,7 @@ describe('Configurations Table component', () => {
     testCfg.data.forEach(({ name, is_active }) => {
       const row = getByText(screen.getByTestId('table'), name).parentElement;
       expect(row).toHaveTextContent(name);
-      expect(row).toHaveTextContent(`Refiner ${is_active ? 'on' : 'off'}`);
+      expect(row).toHaveTextContent(`${is_active ? 'Active' : 'Refiner off'}`);
     });
   });
   it('should render an error message if no data is supplied', () => {
