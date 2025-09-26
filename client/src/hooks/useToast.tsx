@@ -4,16 +4,18 @@ import { Toast } from '../components/Toast';
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
-  // progress: 0.2,
+  progress: 0.2,
   position: 'bottom-left',
   closeOnClick: true,
   closeButton: false,
   className: classNames(
     '!p-0',
     '!m-0',
-    '!w-[26.25rem]',
     '!h-[4.5rem]',
-    '!items-center'
+    '!w-[45rem]',
+    '!min-w-1/2',
+    '!items-center',
+    'rounded-md'
   ),
   pauseOnFocusLoss: false,
   pauseOnHover: true,

@@ -14,7 +14,7 @@ describe('Status pill component', () => {
   it('should render with status on', () => {
     renderComponentView('on');
 
-    expect(screen.getByText('Refiner on')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
   it('should render with status off', () => {
     renderComponentView('off');

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login, logout } from './utils';
+import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
 test.describe('Adding configurations by initial condition', () => {
   test.beforeEach(async ({ page }) => {
@@ -16,7 +17,7 @@ test.describe('Adding configurations by initial condition', () => {
     /// ==========================================================================
     /// Test that a new condition can be added
     /// ==========================================================================
-    await page.getByRole('button', { name: 'Set up new condition' }).click();
+    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
     await page.getByTestId('combo-box-input').click();
     await page.getByTestId('combo-box-input').fill('Acanthamoeba');
     await page.getByTestId('combo-box-input').press('Tab');
