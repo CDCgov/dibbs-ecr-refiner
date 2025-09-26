@@ -20,11 +20,6 @@ const mockUploadResponse: RefinedTestingDocument = {
       display_name: 'mock condition name',
       refined_eicr: '<data>less data</data>',
       stats: ['eICR reduced by 59%'],
-      processing_info: {
-        condition_specific: true,
-        method: 'testing',
-        sections_processed: 'testing',
-      },
     },
   ],
   conditions_found: 1,
@@ -41,11 +36,6 @@ const mockCustomUploadResponse: RefinedTestingDocument = {
       display_name: 'custom condition',
       refined_eicr: '<data>refined custom data</data>',
       stats: ['eICR reduced by 77%'],
-      processing_info: {
-        condition_specific: true,
-        method: 'testing',
-        sections_processed: 'testing',
-      },
     },
   ],
   conditions_found: 1,

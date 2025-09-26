@@ -39,7 +39,7 @@ export function Diff({
   return (
     <div>
       {/* Main header container */}
-      <div className="mt-6 mb-8 flex h-[64px] items-center justify-between rounded-md bg-sky-100 p-3">
+      <div className="mt-6 mb-8 flex flex-col items-start justify-between rounded-md bg-sky-100 p-3 md:flex-row md:items-center">
         {/* Left section */}
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-4 lg:flex-row">
@@ -49,13 +49,12 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <a
-                href="#"
+              <button
                 onClick={() => downloadFile(refined_download_url)}
                 className="text-blue-400 underline hover:cursor-pointer"
               >
                 Download results
-              </a>
+              </button>
               {downloadError && <span>File download has expired.</span>}
             </div>
           </div>
@@ -64,7 +63,7 @@ export function Diff({
         {/* Right section */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
           {/* Layout group */}
-          <div className="flex h-[38px] items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="font-medium">Layout</span>
             <button
               aria-label="Show split diff"
@@ -97,7 +96,7 @@ export function Diff({
           {/* Content toggle */}
           <div className="flex items-center gap-2">
             <span className="font-medium">Content</span>
-            <div className="flex h-[38px] overflow-hidden rounded-full border-[4px] border-blue-500 bg-white">
+            <div className="flex overflow-hidden rounded-full border-[4px] border-blue-500 bg-white">
               <button
                 onClick={() => setShowDiffOnly(false)}
                 className={classNames(

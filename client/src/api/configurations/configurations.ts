@@ -35,7 +35,9 @@ import type {
   AddCustomCodeInput,
   AssociateCodesetInput,
   AssociateCodesetResponse,
+  BodyRunInlineConfigurationTest,
   ConfigurationCustomCodeResponse,
+  ConfigurationTestResponse,
   CreateConfigInput,
   CreateConfigurationResponse,
   GetConfigurationResponse,
@@ -757,6 +759,85 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
       > => {
 
       const mutationOptions = getDeleteCustomCodeFromConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    /**
+ * Runs an in-line test using the provided configuration ID and test files.
+
+Args:
+    id (UUID): ID of Configuration to use for the test
+    uploaded_file (UploadFile | None): user uploaded eICR/RR pair
+    create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
+    upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
+    user (DbUser): Logged in user
+    db (AsyncDatabaseConnection): Database connection
+    sample_zip_path (Path): Path to example .zip eICR/RR pair
+    logger (Logger): Standard logger
+Returns:
+    ConfigurationTestResponse: response given to the client
+ * @summary Run Configuration Test
+ */
+export const runInlineConfigurationTest = (
+    bodyRunInlineConfigurationTest: BodyRunInlineConfigurationTest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ConfigurationTestResponse>> => {
+    
+    const formData = new FormData();
+formData.append(`id`, bodyRunInlineConfigurationTest.id)
+if(bodyRunInlineConfigurationTest.uploaded_file !== undefined && bodyRunInlineConfigurationTest.uploaded_file !== null) {
+ formData.append(`uploaded_file`, bodyRunInlineConfigurationTest.uploaded_file)
+ }
+
+    return axios.default.post(
+      `/api/v1/configurations/test`,
+      formData,options
+    );
+  }
+
+
+
+export const getRunInlineConfigurationTestMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext> => {
+
+const mutationKey = ['runInlineConfigurationTest'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runInlineConfigurationTest>>, {data: BodyRunInlineConfigurationTest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  runInlineConfigurationTest(data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunInlineConfigurationTestMutationResult = NonNullable<Awaited<ReturnType<typeof runInlineConfigurationTest>>>
+    export type RunInlineConfigurationTestMutationBody = BodyRunInlineConfigurationTest
+    export type RunInlineConfigurationTestMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Run Configuration Test
+ */
+export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+        TError,
+        {data: BodyRunInlineConfigurationTest},
+        TContext
+      > => {
+
+      const mutationOptions = getRunInlineConfigurationTestMutationOptions(options);
 
       return useMutation(mutationOptions , queryClient);
     }

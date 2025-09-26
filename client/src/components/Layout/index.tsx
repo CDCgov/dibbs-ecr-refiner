@@ -47,13 +47,11 @@ export function Header({ username }: HeaderProps) {
         </Link>
 
         <NavigationBar />
-        {/* User dropdown */}
-        <Menu as="div" className="relative">
+        <Menu>
           <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
             <Icon.Person size={3} aria-hidden />
             {username}
           </MenuButton>
-
           <MenuItems
             anchor="bottom"
             className="ring-opacity-5 absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black focus:outline-none"
