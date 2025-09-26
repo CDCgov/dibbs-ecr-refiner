@@ -1,6 +1,8 @@
+import io
 import json
 from io import BytesIO
 from pathlib import Path
+from uuid import uuid4
 from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from chardet import detect
@@ -90,6 +92,49 @@ def parse_xml(xml_content: str | bytes) -> _Element:
                 "column": getattr(e, "column", None),
             },
         )
+
+
+def create_split_condition_filename(condition_name: str, condition_code: str) -> str:
+    """
+    Create a standard file name from a condition's name and code.
+
+    Args:
+        condition_name (str): Name of a condition
+        condition_code (str): Code of a condition
+
+    Returns:
+        str: Standard XML file name
+    """
+
+    safe_name = condition_name.replace(" ", "_").replace("/", "_")
+    filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+
+    return filename
+
+
+def create_refined_ecr_zip_in_memory(
+    *,
+    files: list[tuple[str, str]],
+) -> tuple[str, io.BytesIO]:
+    """
+    Create a zip archive containing all provided (filename, content) pairs.
+
+    Args:
+        files (list[tuple[str, str]]): List of tuples [(filename, content)], content must be a string.
+
+    Returns:
+        (filename, buffer)
+    """
+    token = str(uuid4())
+    zip_filename = f"{token}_refined_ecr.zip"
+    zip_buffer = io.BytesIO()
+
+    with ZipFile(zip_buffer, "w") as zf:
+        for filename, content in files:
+            zf.writestr(filename, content)
+
+    zip_buffer.seek(0)
+    return zip_filename, zip_buffer
 
 
 def _decode_file(filename: str, zipfile: ZipFile) -> str:

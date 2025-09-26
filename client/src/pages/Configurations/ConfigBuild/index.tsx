@@ -324,7 +324,7 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="max-h-[10rem] overflow-y-auto md:max-h-[34.5rem]">
+    <div className="max-h-[10rem] overflow-y-auto md:max-h-[20rem]">
       {children}
     </div>
   );

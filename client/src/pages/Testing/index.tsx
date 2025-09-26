@@ -2,7 +2,7 @@ import { Success } from './Success';
 import { ReportableConditions } from './ReportableConditions';
 import { Error as ErrorScreen } from './Error';
 import { RunTest } from './RunTest';
-import { ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
@@ -18,18 +18,6 @@ export default function Demo() {
     isPending,
     resetState,
   } = useZipUpload();
-
-  function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      const file = e.target.files[0];
-      if (file.name.endsWith('.zip')) {
-        setSelectedFile(file);
-      } else {
-        console.error('No file input or incorrect file type.');
-        setSelectedFile(null);
-      }
-    }
-  }
 
   async function runTestWithCustomFile() {
     try {
@@ -64,7 +52,7 @@ export default function Demo() {
             onClickSampleFile={runTestWithSampleFile}
             onClickCustomFile={runTestWithCustomFile}
             selectedFile={selectedFile}
-            onSelectedFileChange={onSelectedFileChange}
+            setSelectedFile={setSelectedFile}
           />
         )}
         {view === 'reportable-conditions' && response?.data && (
