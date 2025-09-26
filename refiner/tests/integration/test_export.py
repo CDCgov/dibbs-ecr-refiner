@@ -15,7 +15,7 @@ class TestConfigurationExportBasic:
     async def test_export_endpoint_does_not_crash(self, setup, authed_client):
         # Use a dummy UUID so we don't depend on seeded data
         dummy_id = "00000000-0000-0000-0000-000000000000"
-        response = await authed_client.get(f"/api/configurations/{dummy_id}/export")
+        response = await authed_client.get(f"/api/v1/configurations/{dummy_id}/export")
 
         # Endpoint should at least return a proper HTTP status, not hang.
         # Accept 200 (success), 404 (not found), or 500 (server error when DB empty).
