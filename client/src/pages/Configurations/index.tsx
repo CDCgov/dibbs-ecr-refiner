@@ -89,7 +89,13 @@ export function Configurations() {
         <NewConfigModal modalRef={modalRef} />
       </div>
       <ConfigurationsTable
-        data={searchText ? results.map((r) => r.item) : configs}
+        data={
+          searchText
+            ? results.map((r) => {
+                return { ...r.item, is_active: true };
+              })
+            : configs
+        }
       />
     </section>
   );
