@@ -9,7 +9,17 @@ class ReportableCondition:
     """
 
     code: str
-    display_name: str
+    display: str
+
+
+@dataclass
+class JurisdictionReportableConditions:
+    """
+    Object to hold all reportable conditions for a given jurisdiction.
+    """
+
+    jurisdiction: str
+    conditions: list[ReportableCondition]
 
 
 class ProcessedRR(TypedDict):
@@ -17,7 +27,7 @@ class ProcessedRR(TypedDict):
     The returned result of processing an RR.
     """
 
-    reportable_conditions: list[ReportableCondition]
+    reportable_conditions: list[JurisdictionReportableConditions]
 
 
 @dataclass

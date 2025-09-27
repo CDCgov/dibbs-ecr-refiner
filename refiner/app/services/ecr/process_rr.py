@@ -1,11 +1,9 @@
 from typing import cast
 
-from lxml import etree
 from lxml.etree import _Element
 
-from ...core.exceptions import StructureValidationError, XMLParsingError
-from ...core.models.types import XMLFiles
-from .models import ProcessedRR, ReportableCondition
+from ...core.exceptions import StructureValidationError
+from .models import JurisdictionReportableConditions, ReportableCondition
 
 # NOTE:
 # =============================================================================
@@ -21,65 +19,36 @@ from .models import ProcessedRR, ReportableCondition
 
 
 # NOTE:
-# PUBLIC API FUNCTIONS
-# =============================================================================
-
-
-def process_rr(xml_files: XMLFiles) -> ProcessedRR:
-    """
-    Process the RR XML document to extract relevant information.
-
-    Args:
-        xml_files: Container with both eICR and RR XML content
-                  (currently only using RR)
-
-    Returns:
-        dict: Extracted information from the RR document
-
-    Raises:
-        XMLParsingError
-    """
-
-    try:
-        rr_root = xml_files.parse_rr()
-        return {"reportable_conditions": _get_reportable_conditions(rr_root)}
-    except etree.XMLSyntaxError as e:
-        raise XMLParsingError(
-            message="Failed to parse RR document", details={"error": str(e)}
-        )
-
-
-# NOTE:
 # INTERNAL HELPERS
 # =============================================================================
 
 
-def _get_reportable_conditions(root: _Element) -> list[ReportableCondition]:
+def get_reportable_conditions_by_jurisdiction(
+    root: _Element,
+) -> list[JurisdictionReportableConditions]:
     """
-    Get reportable conditions from the Report Summary section.
+    Traverse the RR11 Coded Information Organizer in a Reportability Response (RR) CDA document to extract all SNOMED-coded reportable conditions, grouped by jurisdiction/routing agency.
 
-    Following RR spec 1.1 structure:
-    - Summary Section (55112-7) contains exactly one RR11 organizer
-    - RR11 Coded Information Organizer contains condition observations
-    - Each observation must have:
-      - Template ID 2.16.840.1.113883.10.20.15.2.3.12
-      - RR1 determination code with RRVS1 value for reportable conditions
-      - SNOMED CT code in value element (codeSystem 2.16.840.1.113883.6.96)
+    Steps performed:
+        1. Locate the single RR11 Coded Information Organizer within the Summary Section
+           (LOINC code 55112-7). This organizer contains the context for routing and conditions.
+        2. Prepare a mapping from jurisdiction code (RR7 Routing Entity extension) to a dictionary
+           of unique SNOMED-coded reportable conditions.
+        3. For each SNOMED-coded condition observation (templateId 2.16.840.1.113883.10.20.15.2.3.12):
+            A. Extract the SNOMED code and display name from its <value> element.
+            B. For each entryRelationship/component/organizer beneath the condition:
+                i. Identify RR7 Routing Entity participantRole and extract its jurisdiction code (extension attribute).
+                ii. Confirm this context contains a reportability determination (RR1 observation with value RRVS1).
+                iii. If reportable, associate the SNOMED code with the jurisdiction in the mapping, deduplicating by code.
+        4. Build and return a list of JurisdictionReportableConditions instances, each containing the jurisdiction code and its unique list of reportable conditions.
 
     Args:
-        root: The root element of the XML document to parse.
+        root (_Element): Parsed lxml root of the RR CDA document.
 
     Returns:
-        list[ReportableCondition]
-
-    Raises:
-        StructureValidationError: If RR11 Coded Information Organizer is missing (invalid RR)
-        XMLParsingError: If XPath evaluation fails
+        list[JurisdictionReportableConditions]: List of jurisdiction → reportable condition groupings.
     """
 
-    conditions = []
-
-    # standard CDA namespace declarations required for RR documents
     namespaces = {
         "cda": "urn:hl7-org:v3",
         "sdtc": "urn:hl7-org:sdtc",
@@ -87,85 +56,100 @@ def _get_reportable_conditions(root: _Element) -> list[ReportableCondition]:
         "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     }
 
-    try:
-        # the summary section (55112-7) must contain exactly one RR11 organizer
-        # this is specified in the RR IG
-        coded_info_organizers = cast(
-            list[_Element],
-            root.xpath(
-                ".//cda:section[cda:code/@code='55112-7']"
-                "//cda:entry/cda:organizer[cda:code/@code='RR11']",
-                namespaces=namespaces,
-            ),
+    # STEP 1.
+    # locate RR11 organizer (should be only one per RR document)
+    rr11_organizers = cast(
+        list[_Element],
+        root.xpath(
+            ".//cda:section[cda:code/@code='55112-7']//cda:entry/cda:organizer[cda:code/@code='RR11']",
+            namespaces=namespaces,
+        ),
+    )
+    if not rr11_organizers:
+        raise StructureValidationError(
+            message="Missing required RR11 Coded Information Organizer",
+            details={
+                "document_type": "RR",
+                "error": "RR11 organizer not found in Summary Section",
+            },
         )
+    rr11_organizer = rr11_organizers[0]
 
-        # if there is no coded information organizer then the RR is not valid
-        # this would be a major problem
-        if not coded_info_organizers:
-            raise StructureValidationError(
-                message="Missing required RR11 Coded Information Organizer",
-                details={
-                    "document_type": "RR",
-                    "error": "RR11 organizer with cardinality 1..1 not found in Summary Section",
-                },
+    # STEP 2.
+    # prepare jurisdiction → condition mapping
+    jurisdiction_to_conditions: dict[str, dict[str, ReportableCondition]] = {}
+
+    # STEP 3.
+    # traverse condition observations in RR11
+    condition_observations = cast(
+        list[_Element],
+        rr11_organizer.xpath(
+            ".//cda:observation[cda:templateId[@root='2.16.840.1.113883.10.20.15.2.3.12']]",
+            namespaces=namespaces,
+        ),
+    )
+    for condition_observation in condition_observations:
+        # A.
+        # get SNOMED code + display name
+        value_element = condition_observation.find("cda:value", namespaces)
+        if value_element is None:
+            continue
+        snomed_code = value_element.get("code")
+        display_name = value_element.get(
+            "displayName", "Condition display name not found"
+        )
+        if not snomed_code:
+            continue
+        condition_object = ReportableCondition(code=snomed_code, display=display_name)
+
+        # B.
+        # for each entryRelationship/component/organizer under this observation
+        entry_relationships = condition_observation.findall(
+            "cda:entryRelationship", namespaces
+        )
+        for entry_relationship in entry_relationships:
+            organizer = entry_relationship.find("cda:organizer", namespaces)
+            if organizer is None:
+                continue
+
+            # i.
+            # find RR7 Routing Entity participantRole
+            rr7_roles = organizer.xpath(
+                ".//cda:participantRole[cda:code/@code='RR7']", namespaces=namespaces
             )
+            if not rr7_roles:
+                continue
+            rr7_role = rr7_roles[0]
+            id_element = rr7_role.find("cda:id", namespaces)
+            if id_element is None or not id_element.get("extension"):
+                continue
+            jurisdiction_code = id_element.get("extension")
 
-        # we can safely take [0] because cardinality is 1..1
-        coded_info_organizer = coded_info_organizers[0]
-
-        # find all condition observations using the specified templateId
-        # This templateId is fixed in the RR spec and identifies condition observations
-        observations = cast(
-            list[_Element],
-            coded_info_organizer.xpath(
-                ".//cda:observation[cda:templateId[@root='2.16.840.1.113883.10.20.15.2.3.12']]",
-                namespaces=namespaces,
-            ),
-        )
-
-        for observation in observations:
-            # RR1 with value RRVS1 indicates a "reportable" condition
-            # this is how the RR explicitly marks conditions that should be reported
-            # other values like "not reportable" or "may be reportable" are filtered out
-            determination = observation.xpath(
+            # ii.
+            # confirm RR1/RRVS1 "reportable" determination exists in this organizer
+            rr1_reportable = organizer.xpath(
                 ".//cda:observation[cda:code/@code='RR1']/cda:value[@code='RRVS1']",
                 namespaces=namespaces,
             )
-            if not determination:
+            if not rr1_reportable:
                 continue
 
-            # per RR spec, each reportable condition observation MUST contain
-            # a valid SNOMED CT code (CONF:3315-552) in its value element
-            # codeSystem 2.16.840.1.113883.6.96 is required for SNOMED CT
-            value = cast(
-                list[_Element],
-                observation.xpath(
-                    ".//cda:value[@codeSystem='2.16.840.1.113883.6.96']",
-                    namespaces=namespaces,
-                ),
+            # iii.
+            # add to jurisdiction mapping, deduping SNOMED code
+            if jurisdiction_code not in jurisdiction_to_conditions:
+                jurisdiction_to_conditions[jurisdiction_code] = {}
+            jurisdiction_to_conditions[jurisdiction_code][snomed_code] = (
+                condition_object
             )
-            if not value:
-                continue
 
-            code = value[0].get("code")
-            display_name = value[0].get(
-                "displayName", "Condition display name not found"
-            )
-            if not code:
-                continue
-
-            # when a condition is reportable, we must capture its
-            # required SNOMED CT code and display name and build the
-            # condition object and ensure uniqueness--duplicate conditions
-            # should not be reported multiple times
-            condition = ReportableCondition(code=code, display_name=display_name)
-            if condition not in conditions:
-                conditions.append(condition)
-
-    except etree.XPathEvalError as e:
-        raise XMLParsingError(
-            message="Failed to evaluate XPath expression in RR document",
-            details={"xpath_error": str(e)},
+    # STEP 4.
+    # build output: List of JurisdictionReportableConditions
+    jurisdiction_groups = [
+        JurisdictionReportableConditions(
+            jurisdiction=jurisdiction,
+            conditions=list(cond_map.values()),
         )
+        for jurisdiction, cond_map in jurisdiction_to_conditions.items()
+    ]
 
-    return conditions
+    return jurisdiction_groups
