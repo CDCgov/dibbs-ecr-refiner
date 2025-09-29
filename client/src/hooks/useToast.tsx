@@ -10,8 +10,9 @@ const globalOptions: ToastOptions = {
   closeButton: false,
   className: classNames(
     '!p-0',
-    '!h-[4.5rem]',
-    '!max-w-4/5',
+    '!m-0',
+    '!min-h-[4.5rem]',
+    'lg:!w-[45rem]',
     '!items-center',
     'rounded-md'
   ),
