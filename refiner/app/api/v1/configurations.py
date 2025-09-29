@@ -49,7 +49,7 @@ from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import get_file_size_reduction_percentage, refine
+from ...services.ecr.refine import get_file_size_reduction_percentage, refine_eicr
 from ...services.file_io import (
     create_refined_ecr_zip_in_memory,
     create_split_condition_filename,
@@ -1004,7 +1004,7 @@ async def run_configuration_test(
 
     # TODO: this will need to be replaced with a version of `refine` that accepts
     # and makes use of a configuration.
-    refined_results = await refine(
+    refined_results = await refine_eicr(
         original_xml=original_xml_files,
         db=db,
         jurisdiction_id=jd,

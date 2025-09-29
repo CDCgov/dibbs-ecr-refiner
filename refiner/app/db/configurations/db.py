@@ -544,3 +544,53 @@ async def edit_custom_code_from_configuration_db(
         return None
 
     return DbConfiguration.from_db_row(row)
+
+
+async def get_configurations_by_condition_ids_and_jurisdiction(
+    db: AsyncDatabaseConnection,
+    condition_ids: list[UUID],
+    jurisdiction_id: str,
+) -> dict[UUID, DbConfiguration | None]:
+    """
+    For each condition_id, fetch the configuration for the given jurisdiction.
+
+    Returns a dict: {condition_id: DbConfiguration or None}
+    """
+
+    if not condition_ids:
+        return {}
+
+    query = """
+        SELECT
+            id,
+            name,
+            jurisdiction_id,
+            condition_id,
+            included_conditions,
+            custom_codes,
+            local_codes,
+            section_processing,
+            version
+        FROM configurations
+        WHERE jurisdiction_id = %s
+          AND condition_id = ANY(%s::uuid[])
+    """
+
+    params = (jurisdiction_id, condition_ids)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    # build mapping from condition_id to config
+    configs_by_condition_id = {
+        row["condition_id"]: DbConfiguration.from_db_row(row) for row in rows
+    }
+
+    # ensure every input condition_id is present (with None if absent)
+    result: dict[UUID, DbConfiguration | None] = {}
+    for cond_id in condition_ids:
+        result[cond_id] = configs_by_condition_id.get(cond_id)
+
+    return result

@@ -8,6 +8,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
+from app.services.testing import independent_testing
+
 from ...api.auth.middleware import get_logged_in_user
 from ...core.exceptions import (
     FileProcessingError,
@@ -19,7 +21,7 @@ from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import get_file_size_reduction_percentage, refine
+from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ..validation.file_validation import validate_zip_file
@@ -48,16 +50,30 @@ async def demo_upload(
     logger: Logger = Depends(get_logger),
 ) -> RefinedTestingDocument:
     """
-    Grabs an eCR zip file from the file system and runs it through the upload/refine process.
+    Handles the demo upload workflow for eICR refinement.
+
+    Steps:
+      1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
+         refiner/assets/demo/mon-mothma-two-conditions.zip).
+      2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
+      3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
+      4. Build per-condition refined XML documents and collect metadata.
+      5. Package all refined and original files into a ZIP.
+      6. Upload the ZIP to S3 and get a download URL.
+      7. Construct and return the response model for the frontend.
+
+    Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
-    # Grab the demo zip file and turn it into an UploadFile
+    # STEP 1:
+    # obtain demo file (upload or local sample)
     if not demo_zip_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find demo zip file to download.",
         )
 
+    # validate and load the file
     file = None
     if uploaded_file:
         file = await validate_zip_file(file=uploaded_file)
@@ -67,36 +83,43 @@ async def demo_upload(
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})
 
+        # STEP 2:
+        # read jurisdiction and XML files from ZIP
         jd = user.jurisdiction_id
-
         original_xml_files = await file_io.read_xml_zip(file)
-        refined_results = await refine(
-            original_xml=original_xml_files,
+
+        # STEP 3:
+        # orchestrate refinement workflow via service layer
+        result = await independent_testing(
             db=db,
+            xml_files=original_xml_files,
             jurisdiction_id=jd,
         )
+        refined_documents = result["refined_documents"]
 
+        # STEP 4:
+        # build per-condition refined XMLs and collect metadata
         conditions: list[Condition] = []
         refined_files_to_zip = []
-
-        # Track condition metadata and gather refined XMLs to zip
-        for result in refined_results:
-            condition_code = result.reportable_condition.code
-            condition_name = result.reportable_condition.display_name
+        for result in refined_documents:
+            condition_obj = result.reportable_condition
             condition_refined_eicr = format.normalize_xml(result.refined_eicr)
 
-            # Construct a filename for each XML (e.g. "covid_840539006.xml")
+            condition_code = (
+                condition_obj.child_rsg_snomed_codes[0]
+                if condition_obj.child_rsg_snomed_codes
+                else "unknown"
+            )
+            condition_name = condition_obj.display_name
+
             filename = file_io.create_split_condition_filename(
                 condition_name=condition_name, condition_code=condition_code
             )
 
-            # Add to the list of files to include in the ZIP
             refined_files_to_zip.append((filename, condition_refined_eicr))
 
-            # Strip comments afer adding to zip download for diff view
             stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
 
-            # Build per-condition metadata
             conditions.append(
                 Condition(
                     code=condition_code,
@@ -112,15 +135,16 @@ async def demo_upload(
                 )
             )
 
-        # Add eICR + RR file as well
+        # STEP 5:
+        # add original eICR + RR files to ZIP
         refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
         refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
 
-        # Now create the combined zip
+        # STEP 6:
+        # package files into ZIP and upload to S3
         output_file_name, output_zip_buffer = create_output_zip(
             files=refined_files_to_zip,
         )
-
         presigned_s3_url = await run_in_threadpool(
             upload_refined_files_to_s3,
             user.id,
@@ -129,10 +153,11 @@ async def demo_upload(
             logger,
         )
 
+        # STEP 7:
+        # construct and return the response model
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)
         )
-
         return RefinedTestingDocument(
             message="Successfully processed eICR with condition-specific refinement",
             conditions_found=len(conditions),
