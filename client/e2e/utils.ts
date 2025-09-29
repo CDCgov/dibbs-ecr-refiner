@@ -16,7 +16,7 @@ export async function login(page: Page) {
 export async function logout(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'refiner' }).click();
-  await page.getByRole('menuitem', { name: 'Logout' }).click();
+  await page.getByRole('menuitem', { name: 'Log out' }).click();
   await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
 }
 

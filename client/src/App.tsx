@@ -10,6 +10,8 @@ import ConfigBuild from './pages/Configurations/ConfigBuild';
 import ConfigTest from './pages/Configurations/ConfigTest';
 import ConfigActivate from './pages/Configurations/ConfigActivate';
 
+import 'react-toastify/dist/ReactToastify.css';
+
 function App() {
   const [user, isLoading] = useLogin();
   if (isLoading) {
@@ -27,7 +29,7 @@ function App() {
 
   return (
     <Layout username={user.username}>
-      <ToastContainer />
+      <ToastContainer className={'!w-full'} />
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />

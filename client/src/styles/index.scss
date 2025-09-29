@@ -1,6 +1,11 @@
 @forward 'uswds-theme';
 @forward 'uswds';
 
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 /**
   * @mixin
   * @desc Sets outline to a better complimentary and WCAG AA rated contrast
@@ -49,4 +54,47 @@ button:focus:not(:focus-visible),
 .usa-table td,
 .usa-table th {
   border: none;
+}
+
+@media only screen and (max-width: 480px) {
+  .Toastify__toast {
+    margin-left: 1rem !important;
+    margin-bottom: 2rem !important;
+  }
+}
+
+.Toastify__toast-container {
+  .Toastify__toast--success {
+    background-color: var(--color-state-success);
+  }
+
+  .Toastify__toast--error {
+    background-color: var(--color-state-error);
+  }
+
+  .Toastify__progress-bar--success {
+    background-color: var(--color-state-success-lighter);
+  }
+
+  .Toastify__progress-bar--error {
+    background-color: var(--color-state-error-lighter);
+  }
+}
+
+.Toastify__toast-body {
+  margin: 0 !important;
+
+  div {
+    height: 100%;
+    border-radius: var(--toastify-toast-bd-radius);
+  }
+
+  .usa-alert__body::before {
+    mask-size: 1.5rem 1.5rem !important;
+    top: unset !important;
+  }
+
+  .usa-alert__body > * {
+    margin-left: 2rem !important;
+  }
 }
