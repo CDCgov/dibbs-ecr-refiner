@@ -6,7 +6,7 @@ const defaultToastWidthInRem = 45;
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
-  progress: 0.2,
+  // progress: 0.2,
   position: 'bottom-left',
   closeOnClick: true,
   closeButton: false,
