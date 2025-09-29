@@ -2,6 +2,8 @@ import classNames from 'classnames';
 import { toast, ToastOptions } from 'react-toastify';
 import { Toast } from '../components/Toast';
 
+const defaultToastWidthInRem = 45;
+
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
   // progress: 0.2,
@@ -12,8 +14,9 @@ const globalOptions: ToastOptions = {
     '!p-0',
     '!m-0',
     '!h-[4.5rem]',
-    '!lg:w-[45rem]',
+    `!w-[${defaultToastWidthInRem}rem]`,
     '!min-w-1/2',
+    '!max-w-3/4',
     '!items-center',
     'rounded-md'
   ),
@@ -32,6 +35,8 @@ export function useToast() {
     const { body, heading, variant, duration, hideProgressBar } = options;
 
     const defaultedVariant = variant ?? 'success';
+    const toastDefaultWiderThanViewPort =
+      window.innerWidth <= defaultToastWidthInRem * 16;
 
     toast(
       <Toast
@@ -43,7 +48,8 @@ export function useToast() {
         ...globalOptions,
         theme: defaultedVariant === 'success' ? 'light' : 'dark',
         autoClose: duration ?? 5000,
-        hideProgressBar: hideProgressBar ?? false,
+        hideProgressBar:
+          (hideProgressBar || toastDefaultWiderThanViewPort) ?? false,
         className: classNames(globalOptions.className, {
           '!bg-state-success-lighter': defaultedVariant === 'success',
           '!bg-state-error': defaultedVariant === 'error',

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login, logout } from './utils';
-import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
+import { CONFIGURATION_CTA } from '../src/pages/Configurations/index';
 
 test.describe('Adding configurations by initial condition', () => {
   test.beforeEach(async ({ page }) => {
