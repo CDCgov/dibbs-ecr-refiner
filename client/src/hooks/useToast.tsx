@@ -11,9 +11,10 @@ const globalOptions: ToastOptions = {
   className: classNames(
     '!p-0',
     '!m-0',
-    '!w-[26.25rem]',
-    '!h-[4.5rem]',
-    '!items-center'
+    '!min-h-[4.5rem]',
+    'lg:!w-[45rem]',
+    '!items-center',
+    'rounded-md'
   ),
   pauseOnFocusLoss: false,
   pauseOnHover: true,
@@ -30,6 +31,7 @@ export function useToast() {
     const { body, heading, variant, duration, hideProgressBar } = options;
 
     const defaultedVariant = variant ?? 'success';
+    const isMobileViewport = window.innerWidth <= 480;
 
     toast(
       <Toast
@@ -41,7 +43,7 @@ export function useToast() {
         ...globalOptions,
         theme: defaultedVariant === 'success' ? 'light' : 'dark',
         autoClose: duration ?? 5000,
-        hideProgressBar: hideProgressBar ?? false,
+        hideProgressBar: (hideProgressBar || isMobileViewport) ?? false,
         className: classNames(globalOptions.className, {
           '!bg-state-success-lighter': defaultedVariant === 'success',
           '!bg-state-error': defaultedVariant === 'error',

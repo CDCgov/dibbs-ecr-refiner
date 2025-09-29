@@ -8,6 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse } from '../../api/schemas';
 import ConfigBuild from './ConfigBuild';
+import { CONFIGURATION_CTA } from './utils';
 
 // Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
@@ -24,13 +25,9 @@ vi.mock('../../api/configurations/configurations', async () => {
           { id: '3', name: 'Zika Virus Disease', is_active: false },
         ],
       },
-      isLoading: false,
-      error: null,
     })),
     useCreateConfiguration: vi.fn(() => ({
       mutate: vi.fn().mockResolvedValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     })),
     useGetConfiguration: vi.fn(() => ({
@@ -50,8 +47,6 @@ vi.mock('../../api/configurations/configurations', async () => {
           ],
         },
       },
-      isLoading: false,
-      isError: false,
     })),
   };
 });
@@ -67,8 +62,6 @@ vi.mock('../../api/conditions/conditions', async () => {
           { id: 'exists-id', display_name: 'already-created' },
         ],
       },
-      isLoading: false,
-      error: null,
     })),
   };
 });
@@ -98,7 +91,7 @@ describe('Configurations Page', () => {
       await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Set up new condition' })
+      screen.getByRole('button', { name: CONFIGURATION_CTA })
     ).toBeInTheDocument();
   });
 
@@ -124,15 +117,13 @@ describe('Configurations Page', () => {
 
     (useCreateConfiguration as unknown as Mock).mockReturnValue({
       mutate: mockMutate,
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     renderPageView();
 
     const setUpButton = screen.getByRole('button', {
-      name: 'Set up new condition',
+      name: CONFIGURATION_CTA,
     });
     await user.click(setUpButton);
 
@@ -178,14 +169,12 @@ describe('Configurations Page', () => {
     (useCreateConfiguration as unknown as Mock).mockReturnValue({
       mutate: mockMutate,
       data: { data: response },
-      isLoading: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     renderPageView();
     const setUpButton = screen.getByRole('button', {
-      name: 'Set up new condition',
+      name: CONFIGURATION_CTA,
     });
     await user.click(setUpButton);
 

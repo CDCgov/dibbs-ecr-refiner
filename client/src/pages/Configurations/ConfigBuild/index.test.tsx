@@ -50,8 +50,6 @@ vi.mock('../../../api/configurations/configurations', async () => {
           ],
         },
       },
-      isLoading: false,
-      isError: false,
     })),
   };
 });
@@ -72,8 +70,6 @@ vi.mock('../../../api/conditions/conditions', async () => {
           ],
         },
       },
-      isLoading: false,
-      isError: false,
     })),
     useGetConditions: vi.fn(() => ({
       data: {
@@ -83,8 +79,6 @@ vi.mock('../../../api/conditions/conditions', async () => {
           { id: 'gonorrhea-1', display_name: 'Gonorrhea' },
         ],
       },
-      isLoading: false,
-      error: null,
     })),
   };
 });
@@ -188,22 +182,16 @@ describe('Config builder page', () => {
 
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
@@ -243,22 +231,16 @@ describe('Config builder page', () => {
 
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
@@ -296,22 +278,16 @@ describe('Config builder page', () => {
 
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
     (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
