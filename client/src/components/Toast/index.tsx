@@ -5,6 +5,7 @@ type ToastProps = {
   heading?: string;
   body: string | React.ReactNode;
   headingLevel?: HeadingLevel;
+  hideProgressBar?: boolean;
 };
 
 /**
