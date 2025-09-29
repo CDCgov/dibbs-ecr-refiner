@@ -71,7 +71,7 @@ export function Header({ username }: HeaderProps) {
           </h1>
         </Link>
 
-        {username ? loggedInHeaderContent : <></>}
+        {username && loggedInHeaderContent}
       </div>
     </header>
   );

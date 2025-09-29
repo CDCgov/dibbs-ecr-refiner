@@ -4,7 +4,7 @@ import { Toast } from '../components/Toast';
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
-  progress: 0.2,
+  // progress: 0.2,
   position: 'bottom-left',
   closeOnClick: true,
   closeButton: false,
@@ -12,7 +12,7 @@ const globalOptions: ToastOptions = {
     '!p-0',
     '!m-0',
     '!h-[4.5rem]',
-    '!w-[45rem]',
+    '!lg:w-[45rem]',
     '!min-w-1/2',
     '!items-center',
     'rounded-md'

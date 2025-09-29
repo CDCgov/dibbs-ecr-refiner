@@ -1,13 +1,10 @@
-import { Alert, HeadingLevel } from '@trussworks/react-uswds';
-
-export type AlertType = 'info' | 'success' | 'warning' | 'error';
+import { Alert, AlertProps, HeadingLevel } from '@trussworks/react-uswds';
 
 type ToastProps = {
-  variant: AlertType;
+  variant: AlertProps['type'];
   heading?: string;
   body: string | React.ReactNode;
   headingLevel?: HeadingLevel;
-  hideProgressBar?: boolean;
 };
 
 /**
@@ -33,7 +30,7 @@ export function Toast({
           <span className={`usa-alert__heading ml-8 text-lg font-bold`}>
             {heading}
           </span>
-        ) : undefined
+        ) : null
       }
       headingLevel={heading ? headingLevel : 'h4'}
     >
