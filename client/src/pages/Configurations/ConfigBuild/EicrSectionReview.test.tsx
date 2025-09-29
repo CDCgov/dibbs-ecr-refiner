@@ -5,7 +5,12 @@ import EicrSectionReview from './EicrSectionReview';
 
 describe('EicrSectionReview', () => {
   it('renders the heading and placeholder', () => {
-    render(<EicrSectionReview />);
+    const mockSectionProcessing = [
+      { name: 'Section 1', code: '001', action: 'refine' },
+      { name: 'Section 2', code: '002', action: 'include' },
+      { name: 'Section 3', code: '003', action: 'remove' },
+    ];
+    render(<EicrSectionReview sectionProcessing={mockSectionProcessing} />);
     // Check heading
     expect(
       screen.getByRole('heading', {
@@ -19,7 +24,12 @@ describe('EicrSectionReview', () => {
   });
 
   it('has accessible section landmark', () => {
-    render(<EicrSectionReview />);
+    const mockSectionProcessing = [
+      { name: 'Section 1', code: '001', action: 'refine' },
+      { name: 'Section 2', code: '002', action: 'include' },
+      { name: 'Section 3', code: '003', action: 'remove' },
+    ];
+    render(<EicrSectionReview sectionProcessing={mockSectionProcessing} />);
     const section = screen.getByLabelText(
       /Choose what you'd like to do with the sections in your eICR/i
     );

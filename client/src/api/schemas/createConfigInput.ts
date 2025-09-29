@@ -8,6 +8,26 @@
 
 /**
  * Body required to create a new configuration.
+
+# Load section display names from refiner_details.json
+from ...services.refiner_details import read_section_display_names
+from pathlib import Path
+
+try:
+    refiner_details_path = Path(__file__).parent.parent.parent.parent / "assets" / "refiner_details.json"
+    section_display_names = read_section_display_names(refiner_details_path)
+except Exception as e:
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"Failed to load section display names: {str(e)}",
+    )
+
+# Construct default section_processing if none are provided
+if not config.section_processing:
+    config.section_processing = [
+        DbConfigurationSectionProcessing(section_name=name)
+        for name in section_display_names
+    ]
  */
 export interface CreateConfigInput {
   condition_id: string;

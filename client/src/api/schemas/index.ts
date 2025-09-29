@@ -22,6 +22,7 @@ export * from './createConfigInput';
 export * from './createConfigurationResponse';
 export * from './dbConfigurationCustomCode';
 export * from './dbConfigurationCustomCodeSystem';
+export * from './dbConfigurationSectionProcessing';
 export * from './dbTotalConditionCodeCount';
 export * from './getConditionCode';
 export * from './getConditionResponse';

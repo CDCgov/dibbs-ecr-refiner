@@ -1,14 +1,14 @@
 import React from 'react';
+import Table from '../../../components/Table';
+import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 
 /**
  * EicrSectionReview displays an overview or review of eICR sections.
  * This is a placeholder implementation. Replace with real content as needed.
- *
- * @component
- * @example
- * return <EicrSectionReview />
  */
-const EicrSectionReview: React.FC = () => {
+const EicrSectionReview: React.FC<{
+  sectionProcessing: DbConfigurationSectionProcessing[];
+}> = ({ sectionProcessing }) => {
   return (
     <section
       aria-label="Choose what you'd like to do with the sections in your eICR"
@@ -35,10 +35,51 @@ const EicrSectionReview: React.FC = () => {
           <b>Remove section:</b> Excludes this section from the eICR entirely.
         </li>
       </ul>
-      {/* TODO: Replace with actual section content, data, or UI */}
-      <div className="rounded border border-blue-100 bg-blue-50 p-4 text-blue-900">
-        <p>Section content placeholder.</p>
-      </div>
+      {/* USWDS Table Component */}
+      <Table bordered fullWidth className="margin-top-2" scrollable>
+        <caption className="usa-sr-only">
+          Choose actions for each eICR section
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Section name</th>
+            <th scope="col">Include &amp; refine section</th>
+            <th scope="col">Include entire section</th>
+            <th scope="col">Remove section</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sectionProcessing.map((section, index) => (
+            <tr key={section.name}>
+              <td>{section.name}</td>
+              <td className="text-center">
+                <input
+                  type="radio"
+                  name={`action-${index}`}
+                  value="retain"
+                  aria-label={`Include and refine section ${section.name}`}
+                />
+              </td>
+              <td className="text-center">
+                <input
+                  type="radio"
+                  name={`action-${index}`}
+                  value="refine"
+                  aria-label={`Include entire section ${section.name}`}
+                />
+              </td>
+              <td className="text-center">
+                <input
+                  type="radio"
+                  name={`action-${index}`}
+                  value="remove"
+                  aria-label={`Remove section ${section.name}`}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
     </section>
   );
 };

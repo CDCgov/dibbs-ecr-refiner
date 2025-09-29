@@ -73,6 +73,7 @@ export default function ConfigBuild() {
           code_sets={response.data.code_sets}
           included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
+          section_processing={response.data.section_processing}
         />
       </SectionContainer>
     </div>
@@ -99,7 +100,11 @@ export function Export({ id }: ExportBuilderProps) {
 
 type BuilderProps = Pick<
   GetConfigurationResponse,
-  'id' | 'code_sets' | 'custom_codes' | 'included_conditions'
+  | 'id'
+  | 'code_sets'
+  | 'custom_codes'
+  | 'included_conditions'
+  | 'section_processing'
 >;
 
 function Builder({
@@ -107,6 +112,7 @@ function Builder({
   code_sets,
   custom_codes,
   included_conditions,
+  section_processing,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -299,7 +305,7 @@ function Builder({
               />
             </>
           ) : tableView === 'sections' ? (
-            <EicrSectionReview />
+            <EicrSectionReview sectionProcessing={section_processing} />
           ) : null}
         </div>
       </div>
