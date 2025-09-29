@@ -69,8 +69,6 @@ describe('Demo', () => {
     (useUploadEcr as unknown as Mock).mockReturnValue({
       mutateAsync: mockMutateAsync,
       data: { data: mockUploadResponse },
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
@@ -112,8 +110,6 @@ describe('Demo', () => {
     (useUploadEcr as unknown as Mock).mockReturnValue({
       mutateAsync: mockMutateAsync,
       data: { data: mockCustomUploadResponse },
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     });
 
@@ -180,9 +176,6 @@ describe('Demo', () => {
 
             throw error;
           }),
-          data: null,
-          isPending: false,
-          isError: false,
           reset: vi.fn(),
         };
       }
@@ -216,9 +209,6 @@ it('should show PHI/PII banner in the "local" environment', () => {
   (useUploadEcr as unknown as Mock).mockImplementation(() => {
     return {
       mutateAsync: vi.fn().mockImplementation(() => {}),
-      data: null,
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     };
   });
@@ -234,9 +224,6 @@ it('should show PHI/PII banner in the "demo" environment', () => {
   (useUploadEcr as unknown as Mock).mockImplementation(() => {
     return {
       mutateAsync: vi.fn().mockImplementation(() => {}),
-      data: null,
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     };
   });
@@ -252,9 +239,6 @@ it('should NOT show PHI/PII banner in the "prod" environment', () => {
   (useUploadEcr as unknown as Mock).mockImplementation(() => {
     return {
       mutateAsync: vi.fn().mockImplementation(() => {}),
-      data: null,
-      isPending: false,
-      isError: false,
       reset: vi.fn(),
     };
   });
