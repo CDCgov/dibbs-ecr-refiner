@@ -4,7 +4,7 @@ import { Footer, Header } from '../../components/Layout';
 export function Home() {
   return (
     <>
-      <Header></Header>
+      <Header />
       <div className="bg-blue-cool-10 flex flex-1 flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
         <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
           <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
