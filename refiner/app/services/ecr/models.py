@@ -9,7 +9,7 @@ class ReportableCondition:
     """
 
     code: str
-    display: str
+    display_name: str
 
 
 @dataclass

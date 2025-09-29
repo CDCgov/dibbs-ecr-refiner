@@ -134,8 +134,8 @@ def test_get_reportable_conditions_uniqueness() -> None:
 
     # should deduplicate conditions, so only two unique conditions returned
     expected_conditions: list[ReportableCondition] = [
-        ReportableCondition(code="840539006", display="COVID-19"),
-        ReportableCondition(code="27836007", display="Pertussis"),
+        ReportableCondition(code="840539006", display_name="COVID-19"),
+        ReportableCondition(code="27836007", display_name="Pertussis"),
     ]
     assert sorted(jurisdiction_group.conditions, key=lambda c: c.code) == sorted(
         expected_conditions, key=lambda c: c.code

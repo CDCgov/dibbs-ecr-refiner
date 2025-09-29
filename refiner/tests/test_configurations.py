@@ -398,7 +398,7 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
 
     # run the refinement
     monkeypatch.setattr(
-        "app.api.v1.configurations.refine",
+        "app.api.v1.configurations.refine_eicr",
         AsyncMock(
             return_value=[
                 RefinedDocument(
@@ -473,7 +473,7 @@ async def test_inline_no_matching_conditions(authed_client, monkeypatch):
 
     # run the refinement
     monkeypatch.setattr(
-        "app.api.v1.configurations.refine",
+        "app.api.v1.configurations.refine_eicr",
         AsyncMock(
             return_value=[
                 RefinedDocument(
@@ -548,7 +548,7 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
 
     # run the refinement
     monkeypatch.setattr(
-        "app.api.v1.configurations.refine",
+        "app.api.v1.configurations.refine_eicr",
         AsyncMock(
             return_value=[
                 RefinedDocument(

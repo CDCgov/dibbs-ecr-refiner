@@ -100,7 +100,9 @@ def get_reportable_conditions_by_jurisdiction(
         )
         if not snomed_code:
             continue
-        condition_object = ReportableCondition(code=snomed_code, display=display_name)
+        condition_object = ReportableCondition(
+            code=snomed_code, display_name=display_name
+        )
 
         # B.
         # for each entryRelationship/component/organizer under this observation

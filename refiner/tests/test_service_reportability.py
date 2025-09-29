@@ -67,7 +67,7 @@ def test_determine_reportability_with_valid_xml():
     jurisdiction_group = result["reportable_conditions"][0]
     assert jurisdiction_group.jurisdiction == "SDDH"
     assert jurisdiction_group.conditions == [
-        ReportableCondition(code="840539006", display="COVID-19")
+        ReportableCondition(code="840539006", display_name="COVID-19")
     ]
 
 
