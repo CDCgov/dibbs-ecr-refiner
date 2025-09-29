@@ -2,9 +2,19 @@
 import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
-// import * as matchers from "@testing-library/jest-dom/matchers";
 
-// expect.extend(matchers);
+/**
+ * Simulates index.html having this meta tag
+ * <meta name="app-env" content="test" />
+ *
+ * Prevents console errors from being written during testing.
+ */
+beforeAll(() => {
+  const meta = document.createElement('meta');
+  meta.name = 'app-env';
+  meta.content = 'test';
+  document.head.appendChild(meta);
+});
 
 async function mock(mockedUri: string, stub: unknown) {
   const { Module } = (await import('module')) as unknown as {

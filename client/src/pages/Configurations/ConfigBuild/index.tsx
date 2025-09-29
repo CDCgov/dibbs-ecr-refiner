@@ -47,15 +47,9 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const {
-    data: response,
-    isLoading,
-    isError,
-  } = useGetConfiguration(id ?? '', {
-    query: { enabled: !!id },
-  });
+  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
 
-  if (isLoading || !response?.data) return 'Loading...';
+  if (isPending) return 'Loading...';
   if (!id || isError) return 'Error!';
 
   return (
@@ -65,7 +59,7 @@ export default function ConfigBuild() {
       </TitleContainer>
       <NavigationContainer>
         <StepsContainer>
-          <Steps configurationId={response?.data.id} />
+          <Steps configurationId={response.data.id} />
           <Button to={`/configurations/${id}/test`}>
             Next: Test configuration
           </Button>
@@ -467,7 +461,7 @@ interface ConditionCodeTableProps {
 function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   const DEBOUNCE_TIME_MS = 300;
 
-  const { data: response, isLoading, isError } = useGetCondition(conditionId);
+  const { data: response, isPending, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -507,7 +501,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
-  if (isLoading || !response?.data) return 'Loading...';
+  if (isPending) return 'Loading...';
   if (isError) return 'Error!';
 
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
