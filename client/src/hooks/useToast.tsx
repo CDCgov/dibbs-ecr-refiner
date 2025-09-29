@@ -6,17 +6,14 @@ const defaultToastWidthInRem = 45;
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
-  // progress: 0.2,
+  progress: 0.2,
   position: 'bottom-left',
   closeOnClick: true,
   closeButton: false,
   className: classNames(
     '!p-0',
-    '!m-0',
     '!h-[4.5rem]',
-    `!w-[${defaultToastWidthInRem}rem]`,
-    '!min-w-1/2',
-    '!max-w-3/4',
+    '!max-w-4/5',
     '!items-center',
     'rounded-md'
   ),

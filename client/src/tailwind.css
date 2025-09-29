@@ -6,6 +6,7 @@
   */
   --toastify-color-progress-light: #00a91c; /* success */
   --toastify-color-progress-dark: #d54309; /* error */
+  --toastify-toast-width: 45rem;
 }
 
 @layer base {
