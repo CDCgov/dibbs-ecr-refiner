@@ -64,7 +64,7 @@ export default function Demo() {
   };
 
   return (
-    <div className="flex justify-center px-10 md:px-20">
+    <div className="flex px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
         {view === 'run-test' && (
           <RunTest
@@ -115,8 +115,8 @@ function ConditionsResults({
   startOver,
   goToSuccessScreen,
 }: ConditionsResultsProps) {
-  const hasFoundConditions = conditions.found.length > 0;
-  // const hasFoundConditions = false;
+  // const hasFoundConditions = conditions.found.length > 0;
+  const hasFoundConditions = false;
   const hasMissingConditions = conditions.missing.length > 0;
 
   if (hasFoundConditions) {
@@ -150,11 +150,11 @@ function ConditionsResults({
   }
 
   return (
-    <Container className="lg:w-4/7">
+    <Container className="max-w-[47rem]">
       <ConditionsContainer>
         <MissingConditions missingConditions={conditions.missing} />
       </ConditionsContainer>
-      <div className="flex flex-col gap-4 md:w-2/3">
+      <div className="flex flex-col gap-4 md:w-lg">
         <p>
           Please either create configurations for these conditions or upload a
           file that includes conditions that have been configured.
@@ -216,7 +216,7 @@ interface MissingConditionsProps {
 function MissingConditions({ missingConditions }: MissingConditionsProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-4">
+      <div className="flex gap-4">
         <Icon.Warning
           className="[&_path]:fill-state-error shrink-0"
           aria-label="Warning"
