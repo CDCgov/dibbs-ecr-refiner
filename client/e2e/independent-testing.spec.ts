@@ -1,26 +1,37 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { login, logout } from './utils';
 import path from 'path';
 import fs from 'fs';
 
 test.describe.serial('should be able to access independent testing', () => {
-  test.beforeEach(async ({ page }) => {
+  let page: Page;
+
+  // Login once before all tests
+  test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext();
+    page = await context.newPage();
     await login(page);
   });
 
-  test.afterEach(async ({ page }) => {
+  // Logout once after all tests
+  test.afterAll(async () => {
     await logout(page);
+    await page.close();
   });
 
-  test('should be able to see the click on testing tab', async ({ page }) => {
+  test('should be able to see the click on testing tab', async () => {
+    /// ==========================================================================
+    /// Test that testing tab can be accessed
+    /// ==========================================================================
     await page.getByRole('link', { name: 'Testing' }).click();
     await expect(
       page.getByText('Want to refine your own eCR file?')
     ).toBeVisible();
   });
-  test('should be able to upload a file, refine, and download results', async ({
-    page,
-  }) => {
+  test('should be able to upload a file, refine, and download results', async () => {
+    /// ==========================================================================
+    /// Test independent test flow: upload, refine, download
+    /// ==========================================================================
     await page.getByRole('link', { name: 'Testing' }).click();
 
     // Locate the file input by its id

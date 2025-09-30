@@ -17,8 +17,11 @@ test.describe('Viewing the application without logging in', () => {
 
 test.describe('Viewing the application when logged in', () => {
   test('should be able to see the configuration page, and both testing and configuration tabs', async ({
+    browser,
     page,
   }) => {
+    const context = await browser.newContext();
+    page = await context.newPage();
     await login(page);
     await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
     await expect(
@@ -28,6 +31,7 @@ test.describe('Viewing the application when logged in', () => {
       page.getByText('Your reportable condition configurations')
     ).toBeVisible();
     await logout(page);
+    await page.close();
   });
 
   test('should show the username in the top right and able to logout', async ({
