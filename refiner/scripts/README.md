@@ -60,7 +60,7 @@ Below you'll find an overview of the high-level structure, directory purposes, a
 ### Step 1: Install Dependencies
 
 ```bash
-pip install -r requirements.txt && pip install -r requirements-dev.txt
+just server install-dev
 ```
 
 ### Step 2: Fetch TES Data
@@ -99,7 +99,7 @@ just db seed
 But the full workflow looks like:
 
 ```bash
-docker compose up -d db migrate
+just dev up -d db migrate
 just db clean
 just migrate local
 just db seed
@@ -108,7 +108,7 @@ just db seed
 or; more simply:
 
 ```bash
-docker compose up -d db migrate
+just dev up -d db migrate
 just db refresh
 ```
 
@@ -154,5 +154,5 @@ just db find-condition "COVID-19"
 To stop and remove the database container and its data volume:
 
 ```bash
-docker compose down -v
+just dev down
 ```
