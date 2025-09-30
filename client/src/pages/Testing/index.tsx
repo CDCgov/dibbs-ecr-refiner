@@ -65,31 +65,47 @@ export default function Demo() {
 
   return (
     <div className="flex flex-col gap-8">
-      <OutcomeMessageContainer>
-        <div className="flex items-center gap-4">
-          <Icon.Warning
-            className="[&_path]:fill-state-error shrink-0"
-            aria-label="Warning"
-            size={3}
-          />
-          <p className="text-state-error-dark">
-            The following detected conditions have not been configured and will
-            not produce a refined eICR in the output
+      <div className="!border-blue-cool-20 flex flex-col gap-5 rounded-lg border border-dashed bg-white px-6 py-8 md:w-2/3">
+        <div className="flex flex-col gap-4">
+          <p className="font-bold">
+            We found the following reportable condition(s) in the RR:
           </p>
+          <ul className="ml-2 list-inside list-disc">
+            {conditions.found.map((foundCondition) => (
+              <li>{foundCondition.display_name}</li>
+            ))}
+          </ul>
         </div>
-        <ul className="ml-2 list-inside list-disc">
-          {conditions.missing.map((missingCondition) => (
-            <li>{missingCondition.display_name}</li>
-          ))}
-        </ul>
-      </OutcomeMessageContainer>
+        <hr className="border-gray-cool-20" />
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <Icon.Warning
+              className="[&_path]:fill-state-error shrink-0"
+              aria-label="Warning"
+              size={3}
+            />
+            <p className="text-state-error-dark">
+              The following detected conditions have not been configured and
+              will not produce a refined eICR in the output
+            </p>
+          </div>
+          <ul className="ml-2 list-inside list-disc">
+            {conditions.missing.map((missingCondition) => (
+              <li>{missingCondition.display_name}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
       <div className="flex flex-col gap-4">
-        <p className="md:w-1/3">
+        <p className="md:w-1/2">
           Please either create configurations for these conditions or upload a
           file that includes conditions that have been configured.
         </p>
         <div>
-          <Button onClick={reset}>Start over</Button>
+          <Button>Refine eCR</Button>
+          <Button variant="secondary" onClick={reset}>
+            Start over
+          </Button>
         </div>
       </div>
     </div>
@@ -123,14 +139,6 @@ export default function Demo() {
           <ErrorScreen message={errorMessage} onClick={reset} />
         )}
       </div>
-    </div>
-  );
-}
-
-function OutcomeMessageContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="!border-blue-cool-20 flex flex-col gap-4 rounded-lg border border-dashed bg-white px-6 py-8 md:w-2/3">
-      {children}
     </div>
   );
 }
