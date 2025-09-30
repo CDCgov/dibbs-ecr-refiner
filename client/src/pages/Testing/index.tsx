@@ -45,6 +45,7 @@ export default function Demo() {
 
   if (isPending) return 'Loading...';
 
+  // PLACEHOLDER - this will come from the API response
   const conditions = {
     missing: [
       {

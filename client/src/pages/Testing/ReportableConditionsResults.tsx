@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import { Button } from '../../components/Button';
 import { Icon } from '@trussworks/react-uswds';
 
+// PLACEHOLDER - this will come from the API
 interface Conditions {
   found: { display_name: string }[];
   missing: { display_name: string }[];
@@ -20,6 +21,8 @@ export function ReportableConditionsResults({
 }: ReportableConditionsResultsProps) {
   const hasFoundConditions = conditions.found.length > 0;
   // const hasFoundConditions = false;
+  // PLACEHOLDER - remove this
+
   const hasMissingConditions = conditions.missing.length > 0;
 
   if (hasFoundConditions) {
