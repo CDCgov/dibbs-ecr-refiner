@@ -305,7 +305,10 @@ function Builder({
               />
             </>
           ) : tableView === 'sections' ? (
-            <EicrSectionReview sectionProcessing={section_processing} />
+            <EicrSectionReview
+              sectionProcessing={section_processing}
+              configurationId={id}
+            />
           ) : null}
         </div>
       </div>
