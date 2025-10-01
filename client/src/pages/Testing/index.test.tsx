@@ -119,7 +119,7 @@ describe('Demo', () => {
     expect(screen.getByText('Upload .zip file')).toBeInTheDocument();
 
     const file = new File(['test'], 'test.zip', { type: 'application/zip' });
-    const input: HTMLInputElement = screen.getByTestId('zip-upload-input');
+    const input: HTMLInputElement = screen.getByLabelText('Upload .zip file');
 
     // upload the file
     await user.upload(input, file);

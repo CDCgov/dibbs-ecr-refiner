@@ -5,6 +5,7 @@ import ForwardSvg from '../../assets/forward.svg';
 import { ChangeEvent, useRef } from 'react';
 import { Icon } from '@trussworks/react-uswds';
 import { useGetEnv } from '../../hooks/useGetEnv';
+import classNames from 'classnames';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -91,12 +92,20 @@ interface UploadZipFile {
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
+const autoFocus = (element: HTMLElement | null) => element?.focus();
+
 function UploadZipFile({
   onClick,
   selectedFile,
   onSelectedFileChange,
 }: UploadZipFile) {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const labelStyling = classNames({
+    'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
+    'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer !text-blue-cool-60':
+      selectedFile,
+  });
 
   return (
     <div className="flex flex-col items-start gap-3">
@@ -112,30 +121,23 @@ function UploadZipFile({
       <div className="flex flex-col gap-6">
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
-          <Button
-            onClick={() => {
-              // swap out onClick based on selectedFile to maintain focus
-              // on the button after file upload
-              if (selectedFile) {
-                void onClick();
-              } else {
+          {selectedFile ? (
+            <Button ref={autoFocus} onClick={() => void onClick()}>
+              Refine .zip file
+            </Button>
+          ) : null}
+          <label
+            htmlFor="zip-upload"
+            className={labelStyling}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
                 inputRef.current?.click();
               }
             }}
           >
-            {selectedFile ? 'Refine .zip file' : 'Upload .zip file'}
-          </Button>
-
-          {selectedFile && (
-            <Button
-              onClick={() => {
-                inputRef.current?.click();
-              }}
-              variant="tertiary"
-            >
-              Change file
-            </Button>
-          )}
+            {selectedFile ? 'Change file' : 'Upload .zip file'}
+          </label>
         </div>
       </div>
     </div>
