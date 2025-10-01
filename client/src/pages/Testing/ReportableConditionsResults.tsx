@@ -1,10 +1,11 @@
 import classNames from 'classnames';
 import { Button } from '../../components/Button';
-import { Icon } from '@trussworks/react-uswds';
+import { Condition } from '../../api/schemas';
+import { WarningIcon } from '../../components/WarningIcon';
 
 // PLACEHOLDER - this will come from the API
 interface Conditions {
-  found: { display_name: string }[];
+  found: Condition[];
   missing: { display_name: string }[];
 }
 
@@ -123,11 +124,7 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-4">
-        <Icon.Warning
-          className="[&_path]:fill-state-error shrink-0"
-          aria-label="Warning"
-          size={3}
-        />
+        <WarningIcon aria-label="Warning" size={3} />
         <p className="text-state-error-dark">
           The following detected conditions have not been configured and will
           not produce a refined eICR in the output

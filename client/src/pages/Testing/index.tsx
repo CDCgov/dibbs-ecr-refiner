@@ -77,7 +77,10 @@ export default function Demo() {
           <>
             <Title>Test Refiner</Title>
             <ReportableConditionsResults
-              conditions={conditions}
+              conditions={{
+                found: response.data.conditions,
+                missing: conditions.missing,
+              }}
               startOver={reset}
               goToSuccessScreen={() => setView('success')}
             />
