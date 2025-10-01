@@ -124,7 +124,7 @@ function UploadZipFile({
               }
             }}
           >
-            Upload .zip file
+            {selectedFile ? 'Refine .zip file' : 'Upload .zip file'}
           </Button>
 
           {selectedFile && (
