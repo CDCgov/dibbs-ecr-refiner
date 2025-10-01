@@ -285,7 +285,7 @@ function Builder({
             </OptionsList>
           </OptionsListContainer>
         </div>
-        <div className="flex max-h-[34.5rem] flex-col items-start overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex max-h-[34.5rem] !w-full flex-col items-start overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
