@@ -105,6 +105,7 @@ function UploadZipFile({
       <input
         ref={inputRef}
         id="zip-upload"
+        data-testid="zip-upload-input"
         type="file"
         className="hidden"
         accept=".zip"

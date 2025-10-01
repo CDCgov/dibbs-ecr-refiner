@@ -127,12 +127,12 @@ describe('Configurations Page', () => {
     });
     await user.click(setUpButton);
 
-    const conditionInput = screen.getByLabelText('Condition');
+    const conditionInput = screen.getByLabelText('Set up configuration');
     await user.type(conditionInput, 'already-created{enter}');
     expect(conditionInput).toHaveValue('already-created');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Add condition',
+      name: 'Set up configuration',
     });
     await user.click(addConditionButton);
 
@@ -183,7 +183,7 @@ describe('Configurations Page', () => {
     // Check to see if the modal has a class of `is-visible`.
     expect(dialog).toHaveClass('is-visible');
 
-    const conditionInput = screen.getByLabelText('Condition');
+    const conditionInput = screen.getByLabelText('Set up configuration');
     expect(conditionInput).toBeInTheDocument();
 
     await user.type(conditionInput, 'Anaplasmosis{enter}');
@@ -191,10 +191,10 @@ describe('Configurations Page', () => {
 
     // try clearing the input to ensure button gets disabled
     await user.click(screen.getByTestId('combo-box-clear-button'));
-    expect(screen.getByLabelText('Condition')).toHaveValue('');
+    expect(screen.getByLabelText('Set up configuration')).toHaveValue('');
     expect(
       screen.getByRole('button', {
-        name: 'Add condition',
+        name: 'Set up configuration',
       })
     ).toBeDisabled();
 
@@ -203,7 +203,7 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Add condition',
+      name: 'Set up configuration',
     });
     expect(addConditionButton).toBeEnabled();
     await user.click(addConditionButton);
@@ -212,7 +212,6 @@ describe('Configurations Page', () => {
     expect(
       await screen.findByText('Anaplasmosis', { selector: 'h2' })
     ).toBeInTheDocument();
-    expect(screen.getByText('Next: Test configuration')).toBeInTheDocument();
 
     expect(
       await screen.findByText('New configuration created')

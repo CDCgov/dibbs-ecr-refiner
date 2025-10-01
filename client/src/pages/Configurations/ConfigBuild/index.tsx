@@ -36,7 +36,6 @@ import {
   AddCustomCodeInputSystem,
   DbConfigurationCustomCode,
   DbConfigurationCustomCodeSystem,
-  DbTotalConditionCodeCount,
   GetConfigurationResponse,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
@@ -173,22 +172,6 @@ function Builder({
     }
   }, [code_sets, default_condition_name]);
 
-  const deleteButton = (
-    codeSet: DbTotalConditionCodeCount,
-    disabled: boolean
-  ) => {
-    return (
-      <button
-        className="delete-codes-button text-gray-cool-40 sr-only !pr-4 group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer"
-        aria-label={`Delete code set ${codeSet.display_name}`}
-        onClick={() => handleDisassociateCondition(codeSet.condition_id)}
-        disabled={disabled}
-      >
-        <Icon.Delete size={3} aria-hidden />
-      </button>
-    );
-  };
-
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -249,14 +232,26 @@ function Builder({
                   {codeSet.display_name === default_condition_name ? (
                     <Tooltip
                       className={
-                        'relative !mr-0 hidden overflow-visible bg-transparent hover:block hover:bg-transparent'
+                        'delete-codes-button sr-only relative !mr-0 overflow-visible !bg-transparent !pr-4 group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer'
                       }
                       label={'The default condition cannot be deleted.'}
                     >
-                      {deleteButton(codeSet, true)}
+                      <Icon.Delete
+                        className="text-gray-cool-40"
+                        size={3}
+                        aria-hidden
+                      />
                     </Tooltip>
                   ) : (
-                    deleteButton(codeSet, false)
+                    <button
+                      className="delete-codes-button text-gray-cool-40 sr-only !pr-4 group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer"
+                      aria-label={`Delete code set ${codeSet.display_name}`}
+                      onClick={() =>
+                        handleDisassociateCondition(codeSet.condition_id)
+                      }
+                    >
+                      <Icon.Delete size={3} aria-hidden />
+                    </button>
                   )}
                 </li>
               ))}
