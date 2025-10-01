@@ -105,9 +105,9 @@ async def demo_upload(
         # build a refined XML and collect metadata. The code used is from the RR.
         conditions: list[Condition] = []
         refined_files_to_zip = []
-        for result in refined_documents:
-            condition_obj = result.reportable_condition
-            condition_refined_eicr = format.normalize_xml(result.refined_eicr)
+        for refined_document in refined_documents:
+            condition_obj = refined_document.reportable_condition
+            condition_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
 
             condition_code = condition_obj.code
             condition_name = condition_obj.display_name
