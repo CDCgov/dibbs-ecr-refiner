@@ -98,8 +98,6 @@ function UploadZipFile({
 }: UploadZipFile) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  console.log(document.activeElement);
-
   return (
     <div className="flex flex-col items-start gap-3">
       <input
