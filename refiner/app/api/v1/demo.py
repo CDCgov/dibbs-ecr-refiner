@@ -53,14 +53,17 @@ async def demo_upload(
     Handles the demo upload workflow for eICR refinement.
 
     Steps:
-      1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
-         refiner/assets/demo/mon-mothma-two-conditions.zip).
-      2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
-      3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
-      4. Build per-condition refined XML documents and collect metadata.
-      5. Package all refined and original files into a ZIP.
-      6. Upload the ZIP to S3 and get a download URL.
-      7. Construct and return the response model for the frontend.
+    1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
+        refiner/assets/demo/mon-mothma-two-conditions.zip).
+    2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
+    3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
+    4. For each unique reportable condition code found in the RR (and having a configuration),
+        build a refined XML document and collect metadata. The code used is the actual code
+        from the RR that triggered the match, not a canonical or database code.
+    5. Package all refined and original files into a ZIP.
+    6. Upload the ZIP to S3 and get a download URL.
+    7. Construct and return the response model for the frontend, including per-condition
+        refinement results and a link to the ZIP of outputs.
 
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
@@ -98,18 +101,15 @@ async def demo_upload(
         refined_documents = result["refined_documents"]
 
         # STEP 4:
-        # build per-condition refined XMLs and collect metadata
+        # for each unique reportable condition code found in the RR (with a config),
+        # build a refined XML and collect metadata. The code used is from the RR.
         conditions: list[Condition] = []
         refined_files_to_zip = []
         for result in refined_documents:
             condition_obj = result.reportable_condition
             condition_refined_eicr = format.normalize_xml(result.refined_eicr)
 
-            condition_code = (
-                condition_obj.child_rsg_snomed_codes[0]
-                if condition_obj.child_rsg_snomed_codes
-                else "unknown"
-            )
+            condition_code = condition_obj.code
             condition_name = condition_obj.display_name
 
             filename = file_io.create_split_condition_filename(
