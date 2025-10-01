@@ -81,8 +81,8 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
 
 def refine_eicr(
     xml_files: XMLFiles,
-    processed_condition: ProcessedCondition,
-    processed_configuration: ProcessedConfiguration | None = None,
+    processed_configuration: ProcessedConfiguration,
+    processed_condition: ProcessedCondition | None = None,
     sections_to_include: list[str] | None = None,
 ) -> str:
     """
@@ -95,9 +95,12 @@ def refine_eicr(
 
     Args:
         xml_files: The XMLFiles container with the eICR document to refine.
-        processed_condition: A required object containing processed data from the 'conditions' table.
-        processed_configuration: An optional, more comprehensive object containing data from multiple terminology tables.
-        sections_to_include: Optional list of section LOINC codes to preserve.
+        processed_configuration: A more comprehensive object containing data from DbCondition and DbConfiguration.
+        processed_condition: Optional object containing processed data from DbCondition.
+        sections_to_include: Optional list of LOINC codes for eICR sections with instructions to either:
+          - retain: do not process/refine. (TODO)
+          - refine: refine this section. (working)
+          - remove: force section to be a "minimal section". (TODO)
 
     Returns:
         str: The refined eICR XML document as a string.
@@ -128,12 +131,15 @@ def refine_eicr(
         # _process_section
         version: Literal["1.1"] = "1.1"
 
-        # Determine which XPath to use. For now, it will prefer the more
-        # comprehensive configuration if it's provided. The logic for how
-        # to combine these two sources will be determined in a future ticket.
+        # Determine which XPath to use; configuration based object is no longer optional;
+        # this is the preferred way to go about this and we'll need to phase the other option
+        # out eventually
         xpath_to_use = (
             processed_configuration.build_xpath()
             if processed_configuration
+            # TODO:
+            # eventually phase this completely out of the codebase
+            # it's now the optional object
             else processed_condition.build_xpath()
         )
 

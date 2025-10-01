@@ -1,5 +1,5 @@
-from collections import defaultdict
-from typing import Any
+from dataclasses import dataclass, field
+from typing import TypedDict
 from uuid import UUID
 
 from ..core.models.types import XMLFiles
@@ -13,12 +13,47 @@ from .ecr.models import RefinedDocument, ReportableCondition
 from .ecr.refine import refine_eicr
 from .ecr.reportability import determine_reportability
 
+# NOTE:
+# DATA STRUCTURES
+# =============================================================================
+
+
+@dataclass
+class IndependentTestingTrace:
+    """
+    Holds all the tracing data for a single condition through the independent testing pipeline.
+    """
+
+    matching_condition: DbCondition
+    rc_snomed_codes: list[str] = field(default_factory=list)
+    matching_configuration: DbConfiguration | None = None
+    refine_object: ProcessedConfiguration | None = None
+    refined_document: RefinedDocument | None = None
+
+
+class IndependentTestingResult(TypedDict):
+    """
+    The structured result of the independent_testing function.
+
+    A TypedDict that contains:
+        - 'refined_documents': list of RefinedDocument objects for successfully refined conditions.
+        - 'no_match': A list of conditions that were found but had no matching configuration for the jurisdiction.
+    """
+
+    refined_documents: list[RefinedDocument]
+    no_match: list[dict[str, str | list[str]]]
+
+
+# NOTE:
+# PUBLIC FUNCTIONS
+# =============================================================================
+
 
 async def independent_testing(
     db: AsyncDatabaseConnection,
     xml_files: XMLFiles,
     jurisdiction_id: str,
-) -> dict[str, Any]:
+) -> IndependentTestingResult:
     """
     Orchestrates the full independent testing workflow for eICR refinement.
 
@@ -32,81 +67,76 @@ async def independent_testing(
         and run the refinement logic to generate a per-condition refined eICR.
     7. Build a trace list containing context and outcome for each processed condition.
 
-    Throughout the workflow, a 'trace' list is built to record:
-    - All RC codes found and filtered
-    - Mappings between codes, conditions, and configurations
-    - The RR codes that mapped to each condition
-    - The final list of 'RefinedDocument' objects produced by the refinement step,
-        where each RefinedDocument uses the *first* RR code (from the RR) that mapped to the condition.
-
     Args:
         db: AsyncDatabaseConnection
         xml_files: XMLFiles object containing eICR and RR XML strings
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
 
     Returns:
-        dict: Minimal payload containing:
-            - 'refined_documents': list of RefinedDocument objects for conditions that have a configuration and successful refinement.
-            Each RefinedDocument's reportable_condition.code is the first RR code from the RR that mapped to that condition.
+        A dictionary with a defined structure containing refined documents and a list of non-matches.
     """
-
-    trace = []
 
     # STEP 1:
     # extract and filter reportable RC codes for jurisdiction
-    reportability_data = extract_reportable_conditions_for_jurisdiction(
+    reportability_data = _extract_reportable_conditions_for_jurisdiction(
         xml_files, jurisdiction_id
     )
     rc_codes_for_jurisdiction = reportability_data["rc_codes_for_jurisdiction"]
-    rc_to_condition = await map_rc_codes_to_conditions(db, rc_codes_for_jurisdiction)
+    rc_to_condition = await _map_rc_codes_to_conditions(db, rc_codes_for_jurisdiction)
 
     # STEP 2:
     # group RR codes by their matched DbCondition (by .id)
-    condition_map = defaultdict(
-        lambda: {
-            "rc_snomed_codes": [],
-            "matching_condition": None,
-            "matching_configuration": None,
-            "refine_object": None,
-            "refined_document": None,
-        }
-    )
+    condition_map: dict[UUID, IndependentTestingTrace] = {}
     for rc_code, cond in rc_to_condition.items():
         if cond is None:
             continue
-        entry = condition_map[cond.id]
-        entry["rc_snomed_codes"].append(rc_code)
-        entry["matching_condition"] = cond
+        if cond.id not in condition_map:
+            condition_map[cond.id] = IndependentTestingTrace(matching_condition=cond)
+        trace = condition_map[cond.id]
+        trace.rc_snomed_codes.append(rc_code)
 
     # STEP 3:
     # map conditions to configurations
-    conditions = [entry["matching_condition"] for entry in condition_map.values()]
-    condition_to_configuration = await map_conditions_to_configurations(
+    conditions = [trace.matching_condition for trace in condition_map.values()]
+    condition_to_configuration = await _map_conditions_to_configurations(
         db, conditions, jurisdiction_id
     )
-    for entry in condition_map.values():
-        cond = entry["matching_condition"]
-        entry["matching_configuration"] = condition_to_configuration.get(cond.id)
+    for trace in condition_map.values():
+        trace.matching_configuration = condition_to_configuration.get(
+            trace.matching_condition.id
+        )
+
+    # no_match: list[dict{str: str, str: list | str}] = []
+    no_match: list[dict[str, str | list[str]]] = []
 
     # STEP 4:
     # for each unique condition with a configuration, process and run refinement
     # (only output if config found)
-    for entry in condition_map.values():
-        cond = entry["matching_condition"]
-        config = entry["matching_configuration"]
-        if not config:
-            # no config==cannot proceed
+    for trace in condition_map.values():
+        # if no configuration exists, this is a "no match"
+        if not trace.matching_configuration:
+            # add info to no_match list
+            no_match.append(
+                {
+                    "display_name": trace.matching_condition.display_name,
+                    "rc_snomed_codes": trace.rc_snomed_codes,
+                }
+            )
             continue
+
+        cond = trace.matching_condition
+        config = trace.matching_configuration
 
         payload = ConfigurationPayload(configuration=config, conditions=[cond])
         processed_config = ProcessedConfiguration.from_payload(payload)
-        entry["refine_object"] = processed_config
+        trace.refine_object = processed_config
 
         sections_to_include = (
             [sp.code for sp in config.section_processing if sp.action == "retain"]
             if config.section_processing
             else None
         )
+
         refined_eicr_str = refine_eicr(
             xml_files=XMLFiles(xml_files.eicr, xml_files.rr),
             processed_condition=None,
@@ -120,8 +150,8 @@ async def independent_testing(
         # matched to the condition, and has a configuration. picking the first entry
         # in an index doesn't feel right but we should wait to see how the trace object
         # evolves and how the response model evolves
-        rr_code_used = entry["rc_snomed_codes"][0]
-        entry["refined_document"] = RefinedDocument(
+        rr_code_used = trace.rc_snomed_codes[0]
+        trace.refined_document = RefinedDocument(
             reportable_condition=ReportableCondition(
                 code=rr_code_used,
                 display_name=cond.display_name,
@@ -130,18 +160,22 @@ async def independent_testing(
         )
 
     # STEP 5:
-    # build final trace list and output only successful refinements
-    trace = list(condition_map.values())
-
-    # output only successful refinements
+    # build final list of successful refinements
     refined_documents = [
-        entry["refined_document"] for entry in trace if entry["refined_document"]
+        trace.refined_document
+        for trace in condition_map.values()
+        if trace.refined_document is not None
     ]
 
-    return {"refined_documents": refined_documents}
+    return {"refined_documents": refined_documents, "no_match": no_match}
 
 
-def extract_reportable_conditions_for_jurisdiction(
+# NOTE:
+# PRIVATE FUNCTIONS
+# =============================================================================
+
+
+def _extract_reportable_conditions_for_jurisdiction(
     xml_files: XMLFiles, jurisdiction_id: str
 ) -> dict:
     """
@@ -172,7 +206,7 @@ def extract_reportable_conditions_for_jurisdiction(
     }
 
 
-async def map_rc_codes_to_conditions(
+async def _map_rc_codes_to_conditions(
     db: AsyncDatabaseConnection,
     rc_codes: list[str],
 ) -> dict[str, DbCondition | None]:
@@ -200,7 +234,7 @@ async def map_rc_codes_to_conditions(
     return rc_to_condition
 
 
-async def map_conditions_to_configurations(
+async def _map_conditions_to_configurations(
     db: AsyncDatabaseConnection,
     conditions: list[DbCondition],
     jurisdiction_id: str,
