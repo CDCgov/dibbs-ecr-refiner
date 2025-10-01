@@ -76,7 +76,7 @@ function Tester({ config }: TesterProps) {
   }
 
   return (
-    <div>
+    <div className="mb-6">
       {status === 'idle' && (
         <RunTest
           onClickSampleFile={() => runTest(null)}
