@@ -143,7 +143,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
             className="!leading-6"
             data-focus="true"
           >
-            Set up configuration
+            Select condition
           </Label>
           <ComboBox
             id="new-condition"
@@ -194,7 +194,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
             );
           }}
         >
-          Set up configuration
+          Select condition
         </Button>
       </ModalFooter>
     </Modal>

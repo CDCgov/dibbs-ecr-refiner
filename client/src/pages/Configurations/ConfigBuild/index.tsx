@@ -167,10 +167,10 @@ function Builder({
   }
 
   useEffect(() => {
-    if (code_sets[0] && code_sets[0].condition_id) {
+    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
       onCodesetClick(code_sets[0].condition_id);
     }
-  }, [code_sets, default_condition_name]);
+  }, [code_sets, default_condition_name, tableView]);
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
@@ -190,14 +190,63 @@ function Builder({
               ADD
             </Button>
           </OptionsLabelContainer>
+          {code_sets.slice(0, 1).map((codeSet) => (
+            <div
+              key={codeSet.display_name}
+              className={classNames(
+                'condition-codes',
+                'group drop-shadow-base relative mt-4 flex items-center overflow-visible rounded-sm hover:bg-stone-50',
+                {
+                  'bg-white': selectedCodesetId === codeSet.condition_id,
+                }
+              )}
+            >
+              <button
+                className={classNames(
+                  'flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
+                )}
+                onClick={() => onCodesetClick(codeSet.condition_id)}
+                aria-controls={selectedCodesetId ? 'codeset-table' : undefined}
+                aria-pressed={selectedCodesetId === codeSet.condition_id}
+                onKeyDown={(e) => {
+                  if (e.key === 'Delete' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    handleDisassociateCondition(codeSet.condition_id);
+                  }
+                }}
+              >
+                <span aria-hidden>{codeSet.display_name}</span>
+                <span aria-hidden className="code-set-total">
+                  {codeSet.total_codes}
+                </span>
+                <span className="sr-only">
+                  {codeSet.display_name}, {codeSet.total_codes} codes in code
+                  set
+                </span>
+              </button>
+
+              <Tooltip
+                className={
+                  'delete-codes-button sr-only fixed !mr-0 overflow-visible !bg-transparent !pr-4 group-hover:not-sr-only hover:cursor-pointer'
+                }
+                label={'The default condition cannot be deleted.'}
+              >
+                <Icon.Delete
+                  className="text-gray-cool-40"
+                  size={3}
+                  aria-hidden
+                />
+              </Tooltip>
+            </div>
+          ))}
           <OptionsListContainer>
             <OptionsList>
-              {code_sets.map((codeSet) => (
+              {code_sets.slice(1, code_sets.length).map((codeSet) => (
                 <li
                   key={codeSet.display_name}
                   className={classNames(
                     'condition-codes',
-                    'group drop-shadow-base relative z-10 flex items-center overflow-visible rounded-sm hover:bg-stone-50',
+                    'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
                     {
                       'bg-white': selectedCodesetId === codeSet.condition_id,
                     }
@@ -232,7 +281,7 @@ function Builder({
                   {codeSet.display_name === default_condition_name ? (
                     <Tooltip
                       className={
-                        'delete-codes-button sr-only relative !mr-0 overflow-visible !bg-transparent !pr-4 group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer'
+                        'delete-codes-button sr-only fixed !mr-0 overflow-visible !bg-transparent !pr-4 group-hover:not-sr-only hover:cursor-pointer'
                       }
                       label={'The default condition cannot be deleted.'}
                     >
@@ -244,13 +293,17 @@ function Builder({
                     </Tooltip>
                   ) : (
                     <button
-                      className="delete-codes-button text-gray-cool-40 sr-only !pr-4 group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer"
+                      className="delete-codes-button text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer"
                       aria-label={`Delete code set ${codeSet.display_name}`}
                       onClick={() =>
                         handleDisassociateCondition(codeSet.condition_id)
                       }
                     >
-                      <Icon.Delete size={3} aria-hidden />
+                      <Icon.Delete
+                        className="!fill-red-700"
+                        size={3}
+                        aria-hidden
+                      />
                     </button>
                   )}
                 </li>
@@ -330,7 +383,7 @@ type OptionsLabelsProps = {
 };
 
 function OptionsLabel({ children, htmlFor }: OptionsLabelsProps) {
-  const styles = 'text-gray-500 text-base font-bold font';
+  const styles = 'text-gray-500 text-base font-bold';
 
   if (!htmlFor) return <span className={styles}>{children}</span>;
 
@@ -349,7 +402,9 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="z-10 max-h-[10rem] pt-4 md:max-h-[20rem]">{children}</div>
+    <div className="z-5 max-h-[10rem] overflow-y-scroll pt-2 md:max-h-[20rem]">
+      {children}
+    </div>
   );
 }
 
@@ -396,9 +451,11 @@ function CustomCodesDetail({
               key={customCode.code + customCode.system}
               className="align-middle"
             >
-              <td className={'w-1/6'}>{customCode.code}</td>
-              <td className={'text-gray-cool-60 w-1/6'}>{customCode.system}</td>
-              <td className={'w-1/6'}>{customCode.name}</td>
+              <td className={'w-1/6 pb-6'}>{customCode.code}</td>
+              <td className={'text-gray-cool-60 w-1/6 pb-6'}>
+                {customCode.system}
+              </td>
+              <td className={'w-1/6 pb-6'}>{customCode.name}</td>
               <td className={'w-1/2 text-right whitespace-nowrap'}>
                 <ModalToggleButton
                   modalRef={modalRef}
@@ -763,9 +820,9 @@ export function CustomCodeModal({
           resetForm();
           onClose();
         }}
-        className="absolute top-4 right-4 rounded text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
+        className="absolute top-4 right-4 h-6 w-6 rounded text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
       >
-        <Icon.Close className="h-6 w-6" aria-hidden />
+        <Icon.Close className="!h-6 !w-6" aria-hidden />
       </button>
 
       <div className="mt-5 flex max-w-3/4 flex-col gap-5 !p-0">

@@ -127,12 +127,12 @@ describe('Configurations Page', () => {
     });
     await user.click(setUpButton);
 
-    const conditionInput = screen.getByLabelText('Set up configuration');
+    const conditionInput = screen.getByLabelText('Select condition');
     await user.type(conditionInput, 'already-created{enter}');
     expect(conditionInput).toHaveValue('already-created');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Set up configuration',
+      name: 'Select condition',
     });
     await user.click(addConditionButton);
 
@@ -183,7 +183,7 @@ describe('Configurations Page', () => {
     // Check to see if the modal has a class of `is-visible`.
     expect(dialog).toHaveClass('is-visible');
 
-    const conditionInput = screen.getByLabelText('Set up configuration');
+    const conditionInput = screen.getByLabelText('Select condition');
     expect(conditionInput).toBeInTheDocument();
 
     await user.type(conditionInput, 'Anaplasmosis{enter}');
@@ -191,10 +191,10 @@ describe('Configurations Page', () => {
 
     // try clearing the input to ensure button gets disabled
     await user.click(screen.getByTestId('combo-box-clear-button'));
-    expect(screen.getByLabelText('Set up configuration')).toHaveValue('');
+    expect(screen.getByLabelText('Select condition')).toHaveValue('');
     expect(
       screen.getByRole('button', {
-        name: 'Set up configuration',
+        name: 'Select condition',
       })
     ).toBeDisabled();
 
@@ -203,7 +203,7 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Set up configuration',
+      name: 'Select condition',
     });
     expect(addConditionButton).toBeEnabled();
     await user.click(addConditionButton);

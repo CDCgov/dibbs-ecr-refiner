@@ -1,1 +1,1 @@
-export const CONFIGURATION_CTA = 'Set up a new configuration';
+export const CONFIGURATION_CTA = 'Set up new configuration';

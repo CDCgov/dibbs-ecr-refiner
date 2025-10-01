@@ -53,7 +53,7 @@ export function Diff({
                 onClick={() => downloadFile(refined_download_url)}
                 className="text-blue-400 underline"
               >
-                Download eICR file
+                Download results
               </Button>
               {downloadError && <span>File download has expired.</span>}
             </div>
