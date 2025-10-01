@@ -1,6 +1,5 @@
 import csv
 import io
-import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,7 +23,6 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
 from app.core.exceptions import ZipValidationError
-from app.services import file_io
 
 from ...api.auth.middleware import get_logged_in_user
 from ...api.validation.file_validation import validate_zip_file
@@ -114,26 +112,6 @@ async def get_configurations(
 class CreateConfigInput(BaseModel):
     """
     Body required to create a new configuration.
-
-    # Load section display names from refiner_details.json
-    from ...services.refiner_details import read_section_display_names
-    from pathlib import Path
-
-    try:
-        refiner_details_path = Path(__file__).parent.parent.parent.parent / "assets" / "refiner_details.json"
-        section_display_names = read_section_display_names(refiner_details_path)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to load section display names: {str(e)}",
-        )
-
-    # Construct default section_processing if none are provided
-    if not config.section_processing:
-        config.section_processing = [
-            DbConfigurationSectionProcessing(section_name=name)
-            for name in section_display_names
-        ]
     """
 
     condition_id: UUID
@@ -270,39 +248,6 @@ async def get_configuration(
 
     all_conditions = await get_conditions_db(db=db)
 
-    section_processing = config.section_processing
-
-    refiner_details_path = file_io.get_asset_path("refiner_details.json")
-
-    try:
-        with open(refiner_details_path, encoding="utf-8") as f:
-            section_details = json.load(f)
-            section_display_names = [
-                details["display_name"]
-                for details in section_details["sections"].values()
-            ]
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to load section display names: {str(e)}",
-        )
-
-    # Ensure all sections are included
-    existing_section_names = {sp.name for sp in section_processing}
-    missing_sections = set(section_display_names) - existing_section_names
-
-    # Add default entries for missing sections
-    for missing_section in missing_sections:
-        for section_key, details in section_details["sections"].items():
-            if details["display_name"] == missing_section:
-                section_processing.append(
-                    DbConfigurationSectionProcessing(
-                        name=missing_section,
-                        code=section_key,
-                        action="retain",
-                    )
-                )
-
     included_conditions = [
         IncludedCondition(
             id=cond.id,
@@ -319,7 +264,7 @@ async def get_configuration(
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
-        section_processing=section_processing,
+        section_processing=config.section_processing,
     )
 
 

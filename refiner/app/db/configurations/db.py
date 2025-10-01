@@ -1,8 +1,11 @@
+import json
 from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
+
+from app.services import file_io
 
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
@@ -59,6 +62,20 @@ async def insert_configuration_db(
         version
     """
 
+    # Load section display names and codes from refiner_details.json
+    refiner_details_path = file_io.get_asset_path("refiner_details.json")
+    with open(refiner_details_path, encoding="utf-8") as f:
+        section_details = json.load(f)["sections"]
+
+    section_processing_defaults = [
+        {
+            "name": details["display_name"],
+            "code": code,
+            "action": "retain",
+        }
+        for code, details in section_details.items()
+    ]
+
     params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb, int] = (
         jurisdiction_id,
         # always link a configuration to a primary condition
@@ -79,7 +96,7 @@ async def insert_configuration_db(
         # local_codes
         EMPTY_JSONB,
         # section_processing
-        EMPTY_JSONB,
+        Jsonb(section_processing_defaults),
         # version (start at 1 for new configs)
         1,
     )
