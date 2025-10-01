@@ -190,6 +190,8 @@ function Builder({
               ADD
             </Button>
           </OptionsLabelContainer>
+          {/* render the first code set separately / as a sticky element 
+          to bypass issues with tooltip clipping */}
           {code_sets.slice(0, 1).map((codeSet) => (
             <div
               key={codeSet.display_name}
