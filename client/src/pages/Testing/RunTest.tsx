@@ -3,7 +3,6 @@ import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
 import { ChangeEvent, useRef } from 'react';
-import classNames from 'classnames';
 import { Icon } from '@trussworks/react-uswds';
 import { useGetEnv } from '../../hooks/useGetEnv';
 
@@ -92,17 +91,8 @@ interface UploadZipFile {
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
-function UploadZipFile({
-  onClick,
-  selectedFile,
-  onSelectedFileChange,
-}: UploadZipFile) {
+function UploadZipFile({ selectedFile, onSelectedFileChange }: UploadZipFile) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const labelStyling = classNames({
-    'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
-    'justify-start font-bold hover:underline hover:cursor-pointer text-blue-cool-50':
-      selectedFile,
-  });
 
   return (
     <div className="flex flex-col items-start gap-3">
@@ -117,18 +107,14 @@ function UploadZipFile({
       <div className="flex flex-col gap-6">
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
-          <label
-            htmlFor="zip-upload"
-            className={labelStyling}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                inputRef.current?.click();
-              }
+          <Button
+            variant={selectedFile ? 'tertiary' : 'primary'}
+            onClick={() => {
+              inputRef.current?.click();
             }}
           >
             {selectedFile ? 'Change file' : 'Upload .zip file'}
-          </label>
+          </Button>
         </div>
       </div>
     </div>
