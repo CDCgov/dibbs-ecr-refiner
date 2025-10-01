@@ -91,8 +91,14 @@ interface UploadZipFile {
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
-function UploadZipFile({ selectedFile, onSelectedFileChange }: UploadZipFile) {
+function UploadZipFile({
+  onClick,
+  selectedFile,
+  onSelectedFileChange,
+}: UploadZipFile) {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  console.log(document.activeElement);
 
   return (
     <div className="flex flex-col items-start gap-3">
@@ -108,13 +114,29 @@ function UploadZipFile({ selectedFile, onSelectedFileChange }: UploadZipFile) {
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
           <Button
-            variant={selectedFile ? 'tertiary' : 'primary'}
             onClick={() => {
-              inputRef.current?.click();
+              // swap out onClick based on selectedFile to maintain focus
+              // on the button after file upload
+              if (selectedFile) {
+                void onClick();
+              } else {
+                inputRef.current?.click();
+              }
             }}
           >
-            {selectedFile ? 'Change file' : 'Upload .zip file'}
+            Upload .zip file
           </Button>
+
+          {selectedFile && (
+            <Button
+              onClick={() => {
+                inputRef.current?.click();
+              }}
+              variant="tertiary"
+            >
+              Change file
+            </Button>
+          )}
         </div>
       </div>
     </div>
