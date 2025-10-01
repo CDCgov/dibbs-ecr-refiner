@@ -33,7 +33,7 @@ export function Button({
       variant === 'disabled',
     'bg-transparent text-black hover:!bg-transparent hover:!text-black active:!bg-transparent active:!text-black':
       variant === 'selected',
-    '!bg-transparent !text-blue-cool-50 hover:!text-blue-cool-60  active:!text-blue-cool-60 !p-0 !m-0':
+    '!bg-transparent !text-blue-cool-50 hover:!text-blue-cool-60  hover:cursor-pointer active:!text-blue-cool-60 !p-0 !m-0':
       variant === 'tertiary',
   });
 

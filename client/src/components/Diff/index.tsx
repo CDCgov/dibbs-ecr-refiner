@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import SuccessSvg from '../../assets/green-check.svg';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { FaColumns, FaAlignLeft } from 'react-icons/fa';
 import { RefinedTestingDocument } from '../../api/schemas';
 import classNames from 'classnames';
+import { Button } from '../Button';
 
 type DiffProps = Pick<
   RefinedTestingDocument,
@@ -39,7 +39,7 @@ export function Diff({
   return (
     <div>
       {/* Main header container */}
-      <div className="mt-6 mb-8 flex flex-col items-start justify-between rounded-md bg-sky-100 p-3 md:flex-row md:items-center">
+      <div className="mt-6 mb-8 flex flex-col items-start justify-between rounded-md bg-white p-3 md:flex-row md:items-center">
         {/* Left section */}
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-4 lg:flex-row">
@@ -49,12 +49,13 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-3">
-              <button
+              <Button
+                variant="tertiary"
                 onClick={() => downloadFile(refined_download_url)}
-                className="text-blue-400 underline hover:cursor-pointer"
+                className="text-blue-400 underline"
               >
-                Download results
-              </button>
+                Download eICR file
+              </Button>
               {downloadError && <span>File download has expired.</span>}
             </div>
           </div>
@@ -96,14 +97,14 @@ export function Diff({
           {/* Content toggle */}
           <div className="flex items-center gap-2">
             <span className="font-medium">Content</span>
-            <div className="flex overflow-hidden rounded-full border-[4px] border-blue-500 bg-white">
+            <div className="border-blue-cool-60 bg-blue-cool-10 flex overflow-hidden rounded-sm border-[1px]">
               <button
                 onClick={() => setShowDiffOnly(false)}
                 className={classNames(
-                  'px-4 py-1 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                  'px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
                   {
-                    'bg-blue-500 text-white': !showDiffOnly,
-                    'bg-white text-blue-500': showDiffOnly,
+                    'text-gray-cool-50 bg-white': showDiffOnly,
+                    'bg-blue-cool-10 text-blue-cool-60': !showDiffOnly,
                   }
                 )}
               >
@@ -114,8 +115,8 @@ export function Diff({
                 className={classNames(
                   'px-4 py-1 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
                   {
-                    'bg-blue-500 text-white': showDiffOnly,
-                    'bg-white text-blue-500': !showDiffOnly,
+                    'bg-blue-cool-10 text-blue-cool-60': showDiffOnly,
+                    'text-gray-cool-50 bg-white': !showDiffOnly,
                   }
                 )}
               >
@@ -159,12 +160,8 @@ interface SuccessItemProps {
 function SuccessItem({ children }: SuccessItemProps) {
   return (
     <div className="flex items-center gap-3 p-4">
-      <GreenCheck />
+      <span className="font-bold">Refiner results:</span>
       <p className="leading-snug">{children}</p>
     </div>
   );
-}
-
-function GreenCheck() {
-  return <img className="h-6 w-6" src={SuccessSvg} alt="" />;
 }
