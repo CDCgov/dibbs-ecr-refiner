@@ -1,5 +1,5 @@
-@forward 'uswds-theme';
-@forward 'uswds';
+@forward "uswds-theme";
+@forward "uswds";
 
 #root {
   display: flex;
@@ -41,16 +41,28 @@ button:focus:not(:focus-visible),
   iframe:focus-visible,
   [href]:focus-visible,
   [tabindex]:focus-visible,
-  [contentEditable='true']:focus-visible {
+  [contentEditable="true"]:focus-visible {
     @include outline-on-dark-bg;
   }
+}
+
+.drop-shadow-nav {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.15);
 }
 
 .usa-skipnav[href]:focus-visible {
   @include outline-on-dark-bg;
 }
 
-// turn off default table styling in favor of DIBBs styles
+// turn off default  styling in favor of DIBBs styles
+.usa-modal__main,
+.usa-modal__content {
+  padding: 0 !important;
+}
+.usa-label,
+.usa-select {
+  margin: 0;
+}
 .usa-table td,
 .usa-table th {
   border: none;
@@ -97,4 +109,27 @@ button:focus:not(:focus-visible),
   .usa-alert__body > * {
     margin-left: 2rem !important;
   }
+}
+
+.usa-tooltip:has(.delete-codes-button) {
+  display: none;
+}
+
+.condition-codes:hover,
+.condition-codes:focus-within {
+  .code-set-total {
+    display: none;
+  }
+
+  .usa-tooltip:has(.delete-codes-button) {
+    display: block;
+  }
+
+  .delete-codes-button:enabled {
+    color: var(--color-red-700);
+  }
+}
+
+.usa-tooltip__trigger {
+  padding: 0 !important;
 }

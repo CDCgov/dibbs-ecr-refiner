@@ -17,6 +17,7 @@ import { Diff } from '../../../components/Diff';
 import { Icon } from '@trussworks/react-uswds';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { ConfigurationTitleBar } from '../titleBar';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -33,12 +34,10 @@ export default function ConfigTest() {
       <NavigationContainer>
         <StepsContainer>
           <Steps configurationId={id} />
-          <Button to={`/configurations/${id}/activate`}>
-            Next: Turn on configuration
-          </Button>
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
+        <ConfigurationTitleBar step={'test'} />
         <Tester config={response.data} />
       </SectionContainer>
     </div>
@@ -92,12 +91,6 @@ function Tester({ config }: TesterProps) {
       {status === 'error' && (
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Title>Test configuration</Title>
-              <p>
-                Check the results of your configuration before turning it on.
-              </p>
-            </div>
             <WarningMessage>{errorMessage}</WarningMessage>
           </div>
 

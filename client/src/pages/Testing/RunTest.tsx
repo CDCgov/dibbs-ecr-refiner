@@ -72,7 +72,7 @@ export function RunTest({
                 Use test file
               </Button>
               <a
-                className="text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline"
+                className="text-blue-cool-50 justify-start font-bold hover:underline"
                 href="/api/v1/demo/download"
                 download
               >
@@ -100,7 +100,7 @@ function UploadZipFile({
   const inputRef = useRef<HTMLInputElement>(null);
   const labelStyling = classNames({
     'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
-    'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer':
+    'justify-start font-bold hover:underline hover:cursor-pointer text-blue-cool-50':
       selectedFile,
   });
 
@@ -117,9 +117,6 @@ function UploadZipFile({
       <div className="flex flex-col gap-6">
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
-          {selectedFile ? (
-            <Button onClick={() => void onClick()}>Upload .zip file</Button>
-          ) : null}
           <label
             htmlFor="zip-upload"
             className={labelStyling}
@@ -130,7 +127,7 @@ function UploadZipFile({
               }
             }}
           >
-            {selectedFile ? 'Change file' : 'Select .zip file'}
+            {selectedFile ? 'Change file' : 'Upload .zip file'}
           </label>
         </div>
       </div>
