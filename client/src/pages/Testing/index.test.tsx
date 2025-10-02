@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import Demo from '.';
 import { BrowserRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
-import { RefinedTestingDocument } from '../../api/schemas/refinedTestingDocument.ts';
 import { Mock } from 'vitest';
 import { useGetEnv } from '../../hooks/useGetEnv.ts';
+import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
@@ -13,8 +13,8 @@ vi.mock('../../hooks/useGetEnv', () => ({
   useGetEnv: vi.fn(() => 'local'),
 }));
 
-const mockUploadResponse: RefinedTestingDocument = {
-  conditions: [
+const mockUploadResponse: IndependentTestUploadResponse = {
+  refined_conditions: [
     {
       code: 'mock-code',
       display_name: 'mock condition name',
@@ -22,15 +22,15 @@ const mockUploadResponse: RefinedTestingDocument = {
       stats: ['eICR reduced by 59%'],
     },
   ],
-  conditions_found: 1,
-  processing_notes: ['Testing notes'],
+  conditions_without_matching_configs: [],
+  refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
   refined_download_url: 'http://s3-standard.com',
 };
 
-const mockCustomUploadResponse: RefinedTestingDocument = {
-  conditions: [
+const mockCustomUploadResponse: IndependentTestUploadResponse = {
+  refined_conditions: [
     {
       code: 'mock-custom-file',
       display_name: 'custom condition',
@@ -38,8 +38,8 @@ const mockCustomUploadResponse: RefinedTestingDocument = {
       stats: ['eICR reduced by 77%'],
     },
   ],
-  conditions_found: 1,
-  processing_notes: ['Testing notes'],
+  conditions_without_matching_configs: [],
+  refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
   refined_download_url: 'http://s3-custom.com',
