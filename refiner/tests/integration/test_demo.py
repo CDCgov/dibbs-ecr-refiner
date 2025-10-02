@@ -40,7 +40,8 @@ async def test_demo_upload_smoke(test_assets_path: pathlib.Path, authed_client) 
         )
     assert response.status_code == 200
     data: dict[str, Any] = response.json()
-    assert "conditions" in data
+    assert "refined_conditions" in data
+    assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
     assert "refined_download_url" in data
 

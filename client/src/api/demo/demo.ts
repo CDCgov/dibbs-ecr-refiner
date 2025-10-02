@@ -25,7 +25,7 @@ import type {
 import type {
   BodyUploadEcr,
   HTTPValidationError,
-  RefinedTestingDocument
+  IndependentTestUploadResponse
 } from '.././schemas';
 
 
@@ -53,7 +53,7 @@ Any exceptions during file processing or workflow execution are caught and mappe
  */
 export const uploadEcr = (
     bodyUploadEcr: BodyUploadEcr, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<RefinedTestingDocument>> => {
+ ): Promise<AxiosResponse<IndependentTestUploadResponse>> => {
     
     const formData = new FormData();
 if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== null) {

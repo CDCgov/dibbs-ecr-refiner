@@ -14,14 +14,14 @@ class Condition:
 
 
 @dataclass(frozen=True)
-class RefinedTestingDocument:
+class IndependentTestUploadResponse:
     """
     Model for the response when uploading a document in the testing suite.
     """
 
     message: str
-    conditions_found: int
-    conditions: list[Condition]
+    conditions_without_matching_configs: list[str]
+    refined_conditions_found: int
+    refined_conditions: list[Condition]
     unrefined_eicr: str
-    processing_notes: list[str]
     refined_download_url: str

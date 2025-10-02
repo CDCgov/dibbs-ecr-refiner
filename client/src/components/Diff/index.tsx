@@ -2,14 +2,14 @@ import { useState } from 'react';
 import SuccessSvg from '../../assets/green-check.svg';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { FaColumns, FaAlignLeft } from 'react-icons/fa';
-import { RefinedTestingDocument } from '../../api/schemas';
+import { IndependentTestUploadResponse } from '../../api/schemas';
 import classNames from 'classnames';
 
 type DiffProps = Pick<
-  RefinedTestingDocument,
+  IndependentTestUploadResponse,
   'refined_download_url' | 'unrefined_eicr'
 > & {
-  condition: RefinedTestingDocument['conditions'][0];
+  condition: IndependentTestUploadResponse['refined_conditions'][0];
 };
 
 export function Diff({

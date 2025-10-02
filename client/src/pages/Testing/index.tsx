@@ -1,9 +1,10 @@
 import { Success } from './Success';
-import { ReportableConditions } from './ReportableConditions';
 import { Error as ErrorScreen } from './Error';
 import { RunTest } from './RunTest';
 import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
+import { Title } from '../../components/Title';
+import { ReportableConditionsResults } from './ReportableConditionsResults';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
@@ -45,7 +46,7 @@ export default function Demo() {
   if (isPending) return 'Loading...';
 
   return (
-    <div className="flex justify-center px-10 md:px-20">
+    <div className="flex px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
         {view === 'run-test' && (
           <RunTest
@@ -56,14 +57,23 @@ export default function Demo() {
           />
         )}
         {view === 'reportable-conditions' && response?.data && (
-          <ReportableConditions
-            conditionNames={response.data.conditions.map((c) => c.display_name)}
-            onClick={() => setView('success')}
-          />
+          <>
+            <Title>Test Refiner</Title>
+            <ReportableConditionsResults
+              matchedConditions={response.data.refined_conditions.map(
+                (c) => c.display_name
+              )}
+              unmatchedConditions={
+                response.data.conditions_without_matching_configs
+              }
+              startOver={reset}
+              goToSuccessScreen={() => setView('success')}
+            />
+          </>
         )}
         {view === 'success' && response?.data && (
           <Success
-            conditions={response.data.conditions}
+            refined_conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
             refined_download_url={response.data.refined_download_url}
           />

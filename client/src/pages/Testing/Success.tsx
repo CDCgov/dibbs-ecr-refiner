@@ -1,29 +1,31 @@
 import { useState } from 'react';
 import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
-import { RefinedTestingDocument } from '../../api/schemas';
+import { IndependentTestUploadResponse } from '../../api/schemas';
 import { Diff } from '../../components/Diff';
 
 type SuccessProps = Pick<
-  RefinedTestingDocument,
-  'conditions' | 'refined_download_url' | 'unrefined_eicr'
+  IndependentTestUploadResponse,
+  'refined_conditions' | 'refined_download_url' | 'unrefined_eicr'
 >;
 
-type Condition = SuccessProps['conditions'][0];
+type Condition = SuccessProps['refined_conditions'][0];
 
 export function Success({
-  conditions,
+  refined_conditions,
   unrefined_eicr,
   refined_download_url,
 }: SuccessProps) {
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
-    conditions[0]
+    refined_conditions[0]
   );
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const value = e.currentTarget.value;
-    const newSelectedCondition = conditions.find((c) => c.code === value);
+    const newSelectedCondition = refined_conditions.find(
+      (c) => c.code === value
+    );
 
     if (!newSelectedCondition) return selectedCondition;
 
@@ -43,7 +45,7 @@ export function Success({
           defaultValue={selectedCondition.code}
           onChange={onChange}
         >
-          {conditions.map((c) => (
+          {refined_conditions.map((c) => (
             <option key={c.code} value={c.code}>
               {c.display_name}
             </option>

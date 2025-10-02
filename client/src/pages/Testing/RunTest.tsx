@@ -4,8 +4,8 @@ import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
 import { ChangeEvent, useRef } from 'react';
 import classNames from 'classnames';
-import { Icon } from '@trussworks/react-uswds';
 import { useGetEnv } from '../../hooks/useGetEnv';
+import { WarningIcon } from '../../components/WarningIcon';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -143,10 +143,7 @@ function UploadFileWarning() {
     <div className="bg-state-error-lighter rounded p-4">
       <p className="text-state-error-dark flex flex-col gap-3">
         <span className="flex items-center gap-2">
-          <Icon.Warning
-            className="[&_path]:fill-state-error shrink-0"
-            aria-label="Warning"
-          />
+          <WarningIcon aria-label="Warning" />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
         <span className="font-bold">

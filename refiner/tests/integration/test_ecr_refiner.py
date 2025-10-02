@@ -117,7 +117,7 @@ async def test_zip_upload_mon_mothma_two_conditions(setup, authed_client):
     )
 
     response_json = response.json()
-    conditions = response_json["conditions"]
+    conditions = response_json["refined_conditions"]
 
     # STEP 1
     # only check for reportable codes/display_names from RR

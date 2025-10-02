@@ -31,7 +31,7 @@ export * from './getConfigurationsResponse';
 export * from './getUser200';
 export * from './hTTPValidationError';
 export * from './includedCondition';
-export * from './refinedTestingDocument';
+export * from './independentTestUploadResponse';
 export * from './updateCustomCodeInput';
 export * from './updateCustomCodeInputNewCode';
 export * from './updateCustomCodeInputNewName';
