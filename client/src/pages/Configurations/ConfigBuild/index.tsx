@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
-import { Button } from '../../../components/Button';
+import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
@@ -301,10 +301,10 @@ function Builder({
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className="!mt-4 !bg-transparent !p-0 hover:!bg-transparent"
+                className={`!mt-4 ${SECONDARY_BUTTON_STYLES}`}
                 aria-label="Add new custom code"
               >
-                <Button variant="secondary">Add code</Button>
+                Add code
               </ModalToggleButton>
               <CustomCodesDetail
                 configurationId={id}
@@ -331,7 +331,7 @@ type OptionsLabelsProps = {
 };
 
 function OptionsLabel({ children, htmlFor }: OptionsLabelsProps) {
-  const styles = 'text-gray-500 text-base font-bold';
+  const styles = '!text-gray-600 text-base font-bold';
 
   if (!htmlFor) return <span className={styles}>{children}</span>;
 
@@ -747,7 +747,7 @@ export function CustomCodeModal({
       aria-describedby="modal-heading"
       aria-labelledby="modal-heading"
       isLarge
-      className="!max-w-[35rem] !rounded-none p-10"
+      className="!max-w-[25rem] !rounded-none p-10"
       forceAction
     >
       <ModalHeading
@@ -769,7 +769,7 @@ export function CustomCodeModal({
         <Icon.Close className="!h-6 !w-6" aria-hidden />
       </button>
 
-      <div className="mt-5 flex max-w-3/4 flex-col gap-5 !p-0">
+      <div className="mt-5 flex flex-col gap-5 !p-0">
         <div>
           <Label htmlFor="code">Code #</Label>
           <TextInput
@@ -816,6 +816,7 @@ export function CustomCodeModal({
           onClick={handleSubmit}
           disabled={!isButtonEnabled}
           variant={isButtonEnabled ? 'primary' : 'disabled'}
+          className="!m-0"
         >
           {isEditing ? 'Update' : 'Add custom code'}
         </Button>

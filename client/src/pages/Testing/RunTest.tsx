@@ -72,7 +72,7 @@ export function RunTest({
                 Use test file
               </Button>
               <a
-                className="text-blue-cool-50 justify-start font-bold hover:underline"
+                className="text-blue-cool-60 justify-start font-bold hover:underline"
                 href="/api/v1/demo/download"
                 download
               >
