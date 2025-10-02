@@ -116,22 +116,33 @@ def get_reportable_conditions_by_jurisdiction(
 
             # i.
             # find RR7 Routing Entity participantRole
-            rr7_roles = organizer.xpath(
-                ".//cda:participantRole[cda:code/@code='RR7']", namespaces=namespaces
+            rr7_roles = cast(
+                list[_Element],
+                organizer.xpath(
+                    ".//cda:participantRole[cda:code/@code='RR7']",
+                    namespaces=namespaces,
+                ),
             )
             if not rr7_roles:
                 continue
             rr7_role = rr7_roles[0]
+
             id_element = rr7_role.find("cda:id", namespaces)
-            if id_element is None or not id_element.get("extension"):
+            if id_element is None:
                 continue
+
             jurisdiction_code = id_element.get("extension")
+            if not jurisdiction_code:
+                continue
 
             # ii.
             # confirm RR1/RRVS1 "reportable" determination exists in this organizer
-            rr1_reportable = organizer.xpath(
-                ".//cda:observation[cda:code/@code='RR1']/cda:value[@code='RRVS1']",
-                namespaces=namespaces,
+            rr1_reportable = cast(
+                list[_Element],
+                organizer.xpath(
+                    ".//cda:observation[cda:code/@code='RR1']/cda:value[@code='RRVS1']",
+                    namespaces=namespaces,
+                ),
             )
             if not rr1_reportable:
                 continue

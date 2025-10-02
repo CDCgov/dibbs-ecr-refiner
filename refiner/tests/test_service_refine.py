@@ -1,7 +1,7 @@
 from lxml import etree
 
 from app.services.ecr.refine import refine_eicr
-from app.services.terminology import ProcessedCondition
+from app.services.terminology import ProcessedConfiguration
 
 NAMESPACES = {"hl7": "urn:hl7-org:v3"}
 
@@ -10,8 +10,8 @@ def test_preserve_social_history_section(sample_xml_files):
     # social history loinc code is 29762-2
     refined_xml = refine_eicr(
         xml_files=sample_xml_files,
-        processed_condition=ProcessedCondition(codes={"NOT_A_CODE"}),
-        processed_configuration=None,
+        processed_configuration=ProcessedConfiguration(codes={"NOT_A_CODE"}),
+        processed_condition=None,
         sections_to_include=["29762-2"],
     )
 
@@ -50,8 +50,8 @@ def test_minimal_problems_section(sample_xml_files):
     # no matching codes in problems section
     refined_xml = refine_eicr(
         xml_files=sample_xml_files,
-        processed_condition=ProcessedCondition(codes={"NOT_A_REAL_CODE"}),
-        processed_configuration=None,
+        processed_configuration=ProcessedConfiguration(codes={"NOT_A_REAL_CODE"}),
+        processed_condition=None,
         sections_to_include=None,
     )
     doc = etree.fromstring(refined_xml.encode("utf-8"))
@@ -67,8 +67,8 @@ def test_retain_single_lab_entry(sample_xml_files):
     # use the loinc code "94310-0" present in results section
     refined_xml = refine_eicr(
         xml_files=sample_xml_files,
-        processed_condition=ProcessedCondition(codes={"94310-0"}),
-        processed_configuration=None,
+        processed_configuration=ProcessedConfiguration(codes={"94310-0"}),
+        processed_condition=None,
         sections_to_include=None,
     )
     doc = etree.fromstring(refined_xml.encode("utf-8"))
@@ -87,8 +87,10 @@ def test_retain_multiple_problem_entries(sample_xml_files):
     # use snomed code "840539006" (COVID-19) and "230145002" (Difficulty Breathing) in Problems section
     refined_xml = refine_eicr(
         xml_files=sample_xml_files,
-        processed_condition=ProcessedCondition(codes={"840539006", "230145002"}),
-        processed_configuration=None,
+        processed_configuration=ProcessedConfiguration(
+            codes={"840539006", "230145002"}
+        ),
+        processed_condition=None,
         sections_to_include=None,
     )
     doc = etree.fromstring(refined_xml.encode("utf-8"))
@@ -110,8 +112,8 @@ def test_preserve_encounters_section_with_narrative_and_entry(sample_xml_files):
     # encounters section loinc code is 46240-8
     refined_xml = refine_eicr(
         xml_files=sample_xml_files,
-        processed_condition=ProcessedCondition(codes={"NOT_A_CODE"}),
-        processed_configuration=None,
+        processed_configuration=ProcessedConfiguration(codes={"NOT_A_CODE"}),
+        processed_condition=None,
         sections_to_include=["46240-8"],
     )
     doc = etree.fromstring(refined_xml.encode("utf-8"))
@@ -128,8 +130,8 @@ def test_results_section_minimal_on_nonexistent_code(sample_xml_files):
     # use a code not present in results section ("NOT_A_REAL_CODE")
     refined_xml = refine_eicr(
         xml_files=sample_xml_files,
-        processed_condition=ProcessedCondition(codes={"NOT_A_REAL_CODE"}),
-        processed_configuration=None,
+        processed_configuration=ProcessedConfiguration(codes={"NOT_A_REAL_CODE"}),
+        processed_condition=None,
         sections_to_include=None,
     )
     doc = etree.fromstring(refined_xml.encode("utf-8"))

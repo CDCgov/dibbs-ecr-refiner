@@ -131,17 +131,15 @@ def refine_eicr(
         # _process_section
         version: Literal["1.1"] = "1.1"
 
-        # Determine which XPath to use; configuration based object is no longer optional;
-        # this is the preferred way to go about this and we'll need to phase the other option
-        # out eventually
-        xpath_to_use = (
-            processed_configuration.build_xpath()
-            if processed_configuration
-            # TODO:
-            # eventually phase this completely out of the codebase
-            # it's now the optional object
-            else processed_condition.build_xpath()
-        )
+        # per the function's design, `processed_configuration` is the required,
+        # primary input. we will **always** use it
+        xpath_to_use = processed_configuration.build_xpath()
+
+        # TODO:
+        # eventually phase this completely out of the codebase
+        # it's now the optional object
+        if processed_condition is not None:
+            pass
 
         for section_code, section_config in REFINER_DETAILS["sections"].items():
             # skip if in sections_to_include (preserve unmodified)
