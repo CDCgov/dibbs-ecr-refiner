@@ -106,7 +106,7 @@ const EicrSectionReview: React.FC<{
   }> = ({ index, action, checked, ariaLabel }) => {
     return (
       <td
-        className="cursor-pointer text-center"
+        className="max-w-40 cursor-pointer text-center"
         onClick={(e) => {
           // Prevent double-firing if radio itself is clicked
           if (!(e.target as HTMLElement).closest('input')) {
@@ -124,7 +124,7 @@ const EicrSectionReview: React.FC<{
           pointer-events-none on the input to avoid double-firing when the
           cell is clicked; the <td> click handler drives the interaction.
         */}
-        <label className="usa-radio m-0 flex items-center justify-center">
+        <label className="usa-radio m-0 flex items-center justify-center bg-transparent">
           <input
             className="usa-radio__input pointer-events-none"
             type="radio"
@@ -136,7 +136,7 @@ const EicrSectionReview: React.FC<{
             tabIndex={-1}
           />
           {/* visually-hidden label for screen readers (USWDS uses .usa-sr-only) */}
-          <span className="usa-radio__label top-0"></span>
+          <span className="usa-radio__label -top-4.5 right-8"></span>
           <span className="usa-sr-only">{ariaLabel}</span>
         </label>
       </td>
