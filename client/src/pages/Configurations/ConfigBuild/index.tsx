@@ -21,7 +21,6 @@ import {
   TextInput,
   Select,
   Icon,
-  Tooltip,
 } from '@trussworks/react-uswds';
 import { useSearch } from '../../../hooks/useSearch';
 import {
@@ -172,6 +171,8 @@ function Builder({
     }
   }, [code_sets, default_condition_name, tableView]);
 
+  const shouldDisplayCodesetDeletion = code_sets.length > 1;
+
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -192,58 +193,10 @@ function Builder({
           </OptionsLabelContainer>
           {/* render the first code set separately / as a sticky element 
           to bypass issues with tooltip clipping */}
-          {code_sets.slice(0, 1).map((codeSet) => (
-            <div
-              key={codeSet.display_name}
-              className={classNames(
-                'condition-codes',
-                'group drop-shadow-base relative mt-4 flex items-center overflow-visible rounded-sm hover:bg-stone-50',
-                {
-                  'bg-white': selectedCodesetId === codeSet.condition_id,
-                }
-              )}
-            >
-              <button
-                className={classNames(
-                  'flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
-                )}
-                onClick={() => onCodesetClick(codeSet.condition_id)}
-                aria-controls={selectedCodesetId ? 'codeset-table' : undefined}
-                aria-pressed={selectedCodesetId === codeSet.condition_id}
-                onKeyDown={(e) => {
-                  if (e.key === 'Delete' || e.key === 'Backspace') {
-                    e.preventDefault();
-                    handleDisassociateCondition(codeSet.condition_id);
-                  }
-                }}
-              >
-                <span aria-hidden>{codeSet.display_name}</span>
-                <span aria-hidden className="code-set-total">
-                  {codeSet.total_codes}
-                </span>
-                <span className="sr-only">
-                  {codeSet.display_name}, {codeSet.total_codes} codes in code
-                  set
-                </span>
-              </button>
 
-              <Tooltip
-                className={
-                  'delete-codes-button sr-only fixed !mr-0 overflow-visible !bg-transparent !pr-4 group-hover:not-sr-only hover:cursor-pointer'
-                }
-                label={'The default condition cannot be deleted.'}
-              >
-                <Icon.Delete
-                  className="text-gray-cool-40"
-                  size={3}
-                  aria-hidden
-                />
-              </Tooltip>
-            </div>
-          ))}
           <OptionsListContainer>
             <OptionsList>
-              {code_sets.slice(1, code_sets.length).map((codeSet) => (
+              {code_sets.map((codeSet, i) => (
                 <li
                   key={codeSet.display_name}
                   className={classNames(
@@ -271,7 +224,12 @@ function Builder({
                     }}
                   >
                     <span aria-hidden>{codeSet.display_name}</span>
-                    <span aria-hidden className="code-set-total">
+                    <span
+                      aria-hidden
+                      className={classNames(
+                        shouldDisplayCodesetDeletion ? 'code-set-total' : ''
+                      )}
+                    >
                       {codeSet.total_codes}
                     </span>
                     <span className="sr-only">
@@ -280,45 +238,33 @@ function Builder({
                     </span>
                   </button>
 
-                  {codeSet.display_name === default_condition_name ? (
-                    <Tooltip
-                      className={
-                        'delete-codes-button sr-only fixed !mr-0 overflow-visible !bg-transparent !pr-4 group-hover:not-sr-only hover:cursor-pointer'
-                      }
-                      label={'The default condition cannot be deleted.'}
-                    >
-                      <Icon.Delete
-                        className="text-gray-cool-40"
-                        size={3}
-                        aria-hidden
-                      />
-                    </Tooltip>
-                  ) : (
+                  {shouldDisplayCodesetDeletion && (
                     <button
-                      className="delete-codes-button text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer"
+                      className="text-gray-cool-40 delete-codes-button sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer"
                       aria-label={`Delete code set ${codeSet.display_name}`}
                       onClick={() =>
                         handleDisassociateCondition(codeSet.condition_id)
                       }
+                      // first code in set of codes is the "configuration default", so it can't be deleted
+                      disabled={i === 0}
                     >
-                      <Icon.Delete
-                        className="!fill-red-700"
-                        size={3}
-                        aria-hidden
-                      />
+                      {i === 0 ? (
+                        <span className="italic">Default</span>
+                      ) : (
+                        <Icon.Delete
+                          className={'!fill-red-700'}
+                          size={3}
+                          aria-hidden
+                        />
+                      )}
                     </button>
                   )}
                 </li>
               ))}
-            </OptionsList>
-          </OptionsListContainer>
-          <OptionsLabelContainer>
-            <div className="pt-10">
-              <OptionsLabel>MORE OPTIONS</OptionsLabel>
-            </div>
-          </OptionsLabelContainer>
-          <OptionsListContainer>
-            <OptionsList>
+              <li className="pt-10">
+                <OptionsLabel>MORE OPTIONS</OptionsLabel>
+              </li>
+
               <li key="custom-codes">
                 <button
                   className={classNames(
@@ -340,7 +286,7 @@ function Builder({
             </OptionsList>
           </OptionsListContainer>
         </div>
-        <div className="flex max-h-[34.5rem] !w-full flex-col items-start overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
@@ -403,15 +349,11 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 }
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="z-5 max-h-[10rem] overflow-y-scroll pt-2 md:max-h-[20rem]">
-      {children}
-    </div>
-  );
+  return <div className="max-h-[30rem] overflow-y-scroll pt-2">{children}</div>;
 }
 
 function OptionsList({ children }: { children: React.ReactNode }) {
-  return <ul className="z-10 flex flex-col gap-2">{children}</ul>;
+  return <ul className="flex flex-col gap-2">{children}</ul>;
 }
 
 interface CustomCodesDetailProps {

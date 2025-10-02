@@ -8,7 +8,7 @@ import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse } from '../../api/schemas';
 import ConfigBuild from './ConfigBuild';
-import { CONFIGURATION_CTA } from './utils';
+import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 
 // Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
@@ -132,7 +132,7 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('already-created');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Select condition',
+      name: CONFIGURATION_CONFIRMATION_CTA,
     });
     await user.click(addConditionButton);
 
@@ -194,7 +194,7 @@ describe('Configurations Page', () => {
     expect(screen.getByLabelText('Select condition')).toHaveValue('');
     expect(
       screen.getByRole('button', {
-        name: 'Select condition',
+        name: CONFIGURATION_CONFIRMATION_CTA,
       })
     ).toBeDisabled();
 
@@ -203,7 +203,7 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const addConditionButton = screen.getByRole('button', {
-      name: 'Select condition',
+      name: CONFIGURATION_CONFIRMATION_CTA,
     });
     expect(addConditionButton).toBeEnabled();
     await user.click(addConditionButton);

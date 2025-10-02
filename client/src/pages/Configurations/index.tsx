@@ -24,7 +24,7 @@ import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
-import { CONFIGURATION_CTA } from './utils';
+import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -194,7 +194,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
             );
           }}
         >
-          Select condition
+          {CONFIGURATION_CONFIRMATION_CTA}
         </Button>
       </ModalFooter>
     </Modal>
