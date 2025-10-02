@@ -6,19 +6,12 @@ from lxml.etree import _Element
 from ...core.exceptions import (
     StructureValidationError,
     XMLParsingError,
-    XMLValidationError,
 )
-from ...core.models.types import XMLFiles
-from ..file_io import read_json_asset
-from ..terminology import ProcessedCondition, ProcessedConfiguration
-from .models import ReportableCondition
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-# read json that contains details for refining and is the base of what drives `refine`
-REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 # <text> constants for refined sections
 REFINER_OUTPUT_TITLE = (
@@ -32,127 +25,6 @@ CLINICAL_DATA_TABLE_HEADERS = [
     "Is Trigger Code",
     "Matching Condition Code",
 ]
-
-# NOTE:
-# PUBLIC API FUNCTIONS
-# =============================================================================
-
-
-def refine_eicr(
-    xml_files: XMLFiles,
-    processed_condition: ProcessedCondition,
-    processed_configuration: ProcessedConfiguration | None = None,
-    sections_to_include: list[str] | None = None,
-) -> str:
-    """
-    Refine an eICR XML document by processing its sections.
-
-    Processing behavior:
-        - If sections_to_include is provided, those sections are preserved unmodified.
-        - For all other sections, only entries matching the clinical codes related to the given condition_codes are kept.
-        - If no matching entries are found in a section, it is replaced with a minimal section and marked with nullFlavor="NI".
-
-    Args:
-        xml_files: The XMLFiles container with the eICR document to refine.
-        processed_condition: A required object containing processed data from the 'conditions' table.
-        processed_configuration: An optional, more comprehensive object containing data from multiple terminology tables.
-        sections_to_include: Optional list of section LOINC codes to preserve.
-
-    Returns:
-        str: The refined eICR XML document as a string.
-
-    Raises:
-        XMLValidationError: If the XML is invalid.
-        StructureValidationError: If the document structure is invalid.
-    """
-
-    try:
-        # parse the eicr document
-        validated_message = xml_files.parse_eicr()
-
-        namespaces = {"hl7": "urn:hl7-org:v3"}
-        structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
-
-        # if we don't have a structuredBody this is a major problem
-        if structured_body is None:
-            raise StructureValidationError(
-                message="No structured body found in eICR",
-                details={"document_type": "eICR"},
-            )
-
-        # TODO:
-        # detect version from document. in future we'll have a function here to check
-        # we'll then use the 'refiner_config.json' as the brain for processing in a
-        # config-driven way for section processing where the version will be passed to
-        # _process_section
-        version: Literal["1.1"] = "1.1"
-
-        # Determine which XPath to use. For now, it will prefer the more
-        # comprehensive configuration if it's provided. The logic for how
-        # to combine these two sources will be determined in a future ticket.
-        xpath_to_use = (
-            processed_configuration.build_xpath()
-            if processed_configuration
-            else processed_condition.build_xpath()
-        )
-
-        for section_code, section_config in REFINER_DETAILS["sections"].items():
-            # skip if in sections_to_include (preserve unmodified)
-            if sections_to_include and section_code in sections_to_include:
-                continue
-
-            section = _get_section_by_code(structured_body, section_code, namespaces)
-            if section is None:
-                continue
-
-            _process_section(section, xpath_to_use, namespaces, section_config, version)
-
-        # format and return the result
-        return etree.tostring(validated_message, encoding="unicode")
-
-    except etree.XMLSyntaxError as e:
-        raise XMLValidationError(
-            message="Failed to parse eICR document", details={"error": str(e)}
-        )
-    except etree.XPathEvalError as e:
-        raise XMLValidationError(
-            message="Failed to evaluate XPath expression in eICR document",
-            details={"error": str(e)},
-        )
-
-
-def build_condition_eicr_pairs(
-    original_xml_files: XMLFiles,
-    reportable_conditions: list[ReportableCondition],
-) -> list[tuple[ReportableCondition, XMLFiles]]:
-    """
-    Generate pairs of reportable conditions and fresh XMLFiles copies.
-
-    Each reportable condition gets its own copy of the XMLFiles object so that
-    condition-specific refinement can be performed independently.
-
-    Args:
-        original_xml_files: The original XMLFiles object containing eICR and RR.
-        reportable_conditions: List of reportable condition objects with 'code' keys.
-
-    Returns:
-        list[tuple[ReportableCondition, XMLFiles]]: A list of tuples containing a ReportableCondition
-        and XMLFiles pair.
-    """
-
-    condition_eicr_pairs = []
-
-    for condition in reportable_conditions:
-        # create fresh XMLFiles for each condition to ensure complete isolation
-        condition_xml_files = XMLFiles(original_xml_files.eicr, original_xml_files.rr)
-        condition_eicr_pairs.append(
-            (
-                condition,
-                condition_xml_files,
-            )
-        )
-
-    return condition_eicr_pairs
 
 
 # NOTE:
