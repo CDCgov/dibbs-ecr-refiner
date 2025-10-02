@@ -16,9 +16,6 @@ export function ReportableConditionsResults({
   goToSuccessScreen,
 }: ReportableConditionsResultsProps) {
   const hasFoundConditions = refined_condition_names.length > 0;
-  // const hasFoundConditions = false;
-  // PLACEHOLDER - remove this
-
   const hasMissingConditions = conditions_without_config_names.length > 0;
 
   if (hasFoundConditions) {
