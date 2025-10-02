@@ -45,23 +45,6 @@ export default function Demo() {
 
   if (isPending) return 'Loading...';
 
-  // PLACEHOLDER - this will come from the API response
-  const conditions = {
-    missing: [
-      {
-        display_name:
-          'Influenza caused by Influenza A virus subtype H5N1 (disorder)',
-      },
-      { display_name: 'Syphilis' },
-    ],
-    found: [
-      {
-        display_name:
-          'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
-      },
-    ],
-  };
-
   return (
     <div className="flex px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
@@ -77,10 +60,12 @@ export default function Demo() {
           <>
             <Title>Test Refiner</Title>
             <ReportableConditionsResults
-              conditions={{
-                found: response.data.conditions,
-                missing: conditions.missing,
-              }}
+              refined_condition_names={response.data.refined_conditions.map(
+                (c) => c.display_name
+              )}
+              conditions_without_config_names={
+                response.data.conditions_without_matching_configs
+              }
               startOver={reset}
               goToSuccessScreen={() => setView('success')}
             />
@@ -88,7 +73,7 @@ export default function Demo() {
         )}
         {view === 'success' && response?.data && (
           <Success
-            conditions={response.data.conditions}
+            conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
             refined_download_url={response.data.refined_download_url}
           />

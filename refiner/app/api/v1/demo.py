@@ -16,7 +16,7 @@ from ...core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from ...db.demo.model import Condition, RefinedTestingDocument
+from ...db.demo.model import Condition, IndependentTestUploadResponse
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
@@ -32,7 +32,7 @@ router = APIRouter(prefix="/demo")
 
 @router.post(
     "/upload",
-    response_model=RefinedTestingDocument,
+    response_model=IndependentTestUploadResponse,
     tags=["demo"],
     operation_id="uploadEcr",
 )
@@ -48,7 +48,7 @@ async def demo_upload(
     ] = Depends(lambda: upload_refined_ecr),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> RefinedTestingDocument:
+) -> IndependentTestUploadResponse:
     """
     Handles the demo upload workflow for eICR refinement.
 
@@ -99,6 +99,9 @@ async def demo_upload(
             jurisdiction_id=jd,
         )
         refined_documents = result["refined_documents"]
+        conditions_without_matching_config_names = [
+            mc["display_name"] for mc in result["no_match"]
+        ]
 
         # STEP 4:
         # for each unique reportable condition code found in the RR (with a config),
@@ -158,16 +161,12 @@ async def demo_upload(
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)
         )
-        return RefinedTestingDocument(
+        return IndependentTestUploadResponse(
             message="Successfully processed eICR with condition-specific refinement",
-            conditions_found=len(conditions),
-            conditions=conditions,
+            refined_conditions_found=len(conditions),
+            refined_conditions=conditions,
+            conditions_without_matching_configs=conditions_without_matching_config_names,
             unrefined_eicr=formatted_unrefined_eicr,
-            processing_notes=[
-                "Each condition gets its own refined eICR",
-                "Sections contain only data relevant to that specific condition",
-                "Clinical codes matched using ProcessedGrouper database",
-            ],
             refined_download_url=presigned_s3_url,
         )
     except XMLValidationError as e:

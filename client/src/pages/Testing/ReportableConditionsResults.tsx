@@ -1,40 +1,37 @@
 import classNames from 'classnames';
 import { Button } from '../../components/Button';
-import { Condition } from '../../api/schemas';
 import { WarningIcon } from '../../components/WarningIcon';
 
-// PLACEHOLDER - this will come from the API
-interface Conditions {
-  found: Condition[];
-  missing: { display_name: string }[];
-}
-
 interface ReportableConditionsResultsProps {
-  conditions: Conditions;
+  refined_condition_names: string[];
+  conditions_without_config_names: string[];
   startOver: () => void;
   goToSuccessScreen: () => void;
 }
 
 export function ReportableConditionsResults({
-  conditions,
+  refined_condition_names,
+  conditions_without_config_names,
   startOver,
   goToSuccessScreen,
 }: ReportableConditionsResultsProps) {
-  const hasFoundConditions = conditions.found.length > 0;
+  const hasFoundConditions = refined_condition_names.length > 0;
   // const hasFoundConditions = false;
   // PLACEHOLDER - remove this
 
-  const hasMissingConditions = conditions.missing.length > 0;
+  const hasMissingConditions = conditions_without_config_names.length > 0;
 
   if (hasFoundConditions) {
     return (
       <Container className="lg:w-4/7">
         <ConditionsContainer>
-          <FoundConditions foundConditions={conditions.found} />
+          <FoundConditions foundConditions={refined_condition_names} />
           {hasMissingConditions ? (
             <>
               <hr className="border-gray-cool-20" />
-              <MissingConditions missingConditions={conditions.missing} />
+              <MissingConditions
+                missingConditions={conditions_without_config_names}
+              />
             </>
           ) : null}
         </ConditionsContainer>
@@ -59,7 +56,9 @@ export function ReportableConditionsResults({
   return (
     <Container className="max-w-[47rem]">
       <ConditionsContainer>
-        <MissingConditions missingConditions={conditions.missing} />
+        <MissingConditions
+          missingConditions={conditions_without_config_names}
+        />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
         <p>
@@ -96,7 +95,7 @@ function ConditionsContainer({ children }: { children: React.ReactNode }) {
 }
 
 interface FoundConditionsProps {
-  foundConditions: { display_name: string }[];
+  foundConditions: string[];
 }
 
 function FoundConditions({ foundConditions }: FoundConditionsProps) {
@@ -107,9 +106,7 @@ function FoundConditions({ foundConditions }: FoundConditionsProps) {
       </p>
       <ul className="ml-2 list-inside list-disc">
         {foundConditions.map((foundCondition) => (
-          <li key={foundCondition.display_name}>
-            {foundCondition.display_name}
-          </li>
+          <li key={foundCondition}>{foundCondition}</li>
         ))}
       </ul>
     </div>
@@ -117,7 +114,7 @@ function FoundConditions({ foundConditions }: FoundConditionsProps) {
 }
 
 interface MissingConditionsProps {
-  missingConditions: { display_name: string }[];
+  missingConditions: string[];
 }
 
 function MissingConditions({ missingConditions }: MissingConditionsProps) {
@@ -132,9 +129,7 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
       </div>
       <ul className="ml-2 list-inside list-disc">
         {missingConditions.map((missingCondition) => (
-          <li key={missingCondition.display_name}>
-            {missingCondition.display_name}
-          </li>
+          <li key={missingCondition}>{missingCondition}</li>
         ))}
       </ul>
     </div>
