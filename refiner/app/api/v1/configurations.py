@@ -1094,6 +1094,7 @@ class UpdateSectionProcessingEntry(BaseModel):
     Model for a single section processing update.
     """
 
+    name: str
     code: str
     action: Literal["retain", "refine", "remove"]
 
@@ -1159,6 +1160,7 @@ async def update_section_processing(
 
     # convert payload to DB-friendly format
     section_updates = [{"code": s.code, "action": s.action} for s in payload.sections]
+    section_names = "".join(sorted({s.name for s in payload.sections}))
 
     try:
         updated_config = await update_section_processing_db(
@@ -1175,5 +1177,5 @@ async def update_section_processing(
         )
 
     return UpdateSectionProcessingResponse(
-        message=f"Section processing updated successfully for configuration {section_updates[0]['code']}."
+        message=f"Section processing updated successfully for {section_names}."
     )

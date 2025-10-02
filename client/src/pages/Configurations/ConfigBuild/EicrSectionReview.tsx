@@ -39,7 +39,10 @@ const EicrSectionReview: React.FC<{
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => {
-    // Update UI immediately for optimistic UX
+    // Capture previous action so we can revert if the mutation fails
+    const previousAction = selectedActions[index] ?? 'retain';
+
+    // Optimistically update UI for immediate feedback
     setSelectedActions((prev) => {
       const next = [...prev];
       next[index] = action;
@@ -53,6 +56,7 @@ const EicrSectionReview: React.FC<{
         data: {
           sections: [
             {
+              name: sectionProcessing[index].name,
               code: sectionProcessing[index].code,
               action: action,
             },
@@ -60,12 +64,6 @@ const EicrSectionReview: React.FC<{
         },
       },
       {
-        onSuccess: (resp) => {
-          showToast({
-            heading: 'Section updated successfully',
-            body: resp.data.message,
-          });
-        },
         onError: (error) => {
           const errorDetail =
             formatError(error) || error.message || 'Unknown error';
@@ -73,6 +71,18 @@ const EicrSectionReview: React.FC<{
             heading: 'Section failed to update',
             body: errorDetail,
             variant: 'error',
+          });
+
+          // Revert the optimistic UI change only if the UI still shows the
+          // attempted (failed) action. This prevents clobbering newer user
+          // changes that may have occurred while the request was in-flight.
+          setSelectedActions((prev) => {
+            if (prev[index] !== action) {
+              return prev;
+            }
+            const next = [...prev];
+            next[index] = previousAction;
+            return next;
           });
         },
       }
@@ -106,7 +116,7 @@ const EicrSectionReview: React.FC<{
   }> = ({ index, action, checked, ariaLabel }) => {
     return (
       <td
-        className="max-w-40 cursor-pointer text-center"
+        className="cursor-pointer text-center"
         onClick={(e) => {
           // Prevent double-firing if radio itself is clicked
           if (!(e.target as HTMLElement).closest('input')) {
@@ -118,12 +128,6 @@ const EicrSectionReview: React.FC<{
         aria-checked={checked}
         onKeyDown={(e) => handleTdKeyDown(e, index, action)}
       >
-        {/*
-          USWDS radio markup: wrap input in a label with .usa-radio and use
-          .usa-radio__input and .usa-radio__label classes. We keep
-          pointer-events-none on the input to avoid double-firing when the
-          cell is clicked; the <td> click handler drives the interaction.
-        */}
         <label className="usa-radio m-0 flex items-center justify-center bg-transparent">
           <input
             className="usa-radio__input pointer-events-none"
@@ -136,7 +140,9 @@ const EicrSectionReview: React.FC<{
             tabIndex={-1}
           />
           {/* visually-hidden label for screen readers (USWDS uses .usa-sr-only) */}
-          <span className="usa-radio__label -top-4.5 right-8"></span>
+          <span className="usa-radio__label -top-4.5 right-8">
+            {/*Only exists to display USWDS radio button*/}
+          </span>
           <span className="usa-sr-only">{ariaLabel}</span>
         </label>
       </td>
@@ -169,7 +175,13 @@ const EicrSectionReview: React.FC<{
           <b>Remove section:</b> Excludes this section from the eICR entirely.
         </li>
       </ul>
-      <Table bordered fullWidth className="margin-top-2" scrollable>
+      <Table bordered className="margin-top-2 w-[800px] table-fixed" scrollable>
+        <colgroup>
+          <col className="w-[260px]" />
+          <col className="w-[160px]" />
+          <col className="w-[160px]" />
+          <col className="w-[160px]" />
+        </colgroup>
         <caption className="usa-sr-only">
           Choose actions for each eICR section
         </caption>
@@ -183,8 +195,8 @@ const EicrSectionReview: React.FC<{
         </thead>
         <tbody>
           {sectionProcessing.map((section, index) => (
-            <tr key={section.name} className="usa-fieldset">
-              <td>{section.name}</td>
+            <tr key={section.name}>
+              <td className="!font-bold">{section.name}</td>
               <RadioCell
                 index={index}
                 action="retain"
