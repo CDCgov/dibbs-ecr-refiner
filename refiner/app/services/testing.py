@@ -5,7 +5,9 @@ from uuid import UUID
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import get_conditions_by_child_rsg_snomed_codes
 from ..db.conditions.model import DbCondition
-from ..db.configurations.db import get_configurations_by_condition_ids_and_jurisdiction
+from ..db.configurations.db import (
+    get_configurations_by_condition_ids_and_jurisdiction_db,
+)
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
@@ -244,6 +246,6 @@ async def _map_conditions_to_configurations(
     """
 
     condition_ids = [cond.id for cond in conditions]
-    return await get_configurations_by_condition_ids_and_jurisdiction(
+    return await get_configurations_by_condition_ids_and_jurisdiction_db(
         db, condition_ids, jurisdiction_id
     )

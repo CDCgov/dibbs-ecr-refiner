@@ -546,7 +546,7 @@ async def edit_custom_code_from_configuration_db(
     return DbConfiguration.from_db_row(row)
 
 
-async def get_configurations_by_condition_ids_and_jurisdiction(
+async def get_configurations_by_condition_ids_and_jurisdiction_db(
     db: AsyncDatabaseConnection,
     condition_ids: list[UUID],
     jurisdiction_id: str,
