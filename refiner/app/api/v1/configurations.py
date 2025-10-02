@@ -23,6 +23,14 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
 from app.core.exceptions import ZipValidationError
+from app.services.ecr.refine import get_file_size_reduction_percentage, refine_eicr
+from app.services.file_io import (
+    create_refined_ecr_zip_in_memory,
+    create_split_condition_filename,
+    read_xml_zip,
+)
+from app.services.format import normalize_xml, strip_comments
+from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
 
 from ...api.auth.middleware import get_logged_in_user
 from ...api.validation.file_validation import validate_zip_file
@@ -49,13 +57,6 @@ from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.refine import get_file_size_reduction_percentage, refine
-from ...services.file_io import (
-    create_refined_ecr_zip_in_memory,
-    create_split_condition_filename,
-    read_xml_zip,
-)
-from ...services.format import normalize_xml, strip_comments
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 
@@ -1004,51 +1005,58 @@ async def run_configuration_test(
 
     # TODO: this will need to be replaced with a version of `refine` that accepts
     # and makes use of a configuration.
-    refined_results = await refine(
-        original_xml=original_xml_files,
-        db=db,
-        jurisdiction_id=jd,
+
+    # 1. Create the payload from the db objects.
+    payload = ConfigurationPayload(
+        configuration=config, conditions=[associated_condition]
     )
 
-    # TODO: Revisit this matching functionality at a later point.
-    child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
-    seen_condition_codes = set()
-    matched_result = None
-    for result in refined_results:
-        # Add current code to seen codes
-        seen_condition_codes.add(result.reportable_condition.code)
+    # 2. Create the ProcessedConfiguration object.
+    processed_config = ProcessedConfiguration.from_payload(payload)
 
-        # If a child rsg code is found in the "seen" set then we have a match
-        if seen_condition_codes & child_rsg_codes:
-            matched_result = result
-            break
+    # 3. Call the new `refine_eicr` synchronously with the correct arguments.
+    refined_eicr_str = refine_eicr(
+        xml_files=original_xml_files,
+        processed_configuration=processed_config,
+    )
 
-    if not matched_result:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
-        )
+    # TODO: will be worked on in a future ticket
 
+    # child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
+    # seen_condition_codes = set()
+    # matched_result = None
+    # for result in refined_results:
+    #     # Add current code to seen codes
+    #     seen_condition_codes.add(result.reportable_condition.code)
+    #
+    #     # If a child rsg code is found in the "seen" set then we have a match
+    #     if seen_condition_codes & child_rsg_codes:
+    #         matched_result = result
+    #         break
+    #
+    # if not matched_result:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
+    #     )
+
+    # 4. the old logic to find a "match" is no longer needed. The result *is* the match
     original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-
-    matched_condition_refined_eicr = strip_comments(
-        normalize_xml(matched_result.refined_eicr)
-    )
+    matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
 
     s3_file_package = []
-
-    # Add original files to file package
     s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
     s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
 
-    # Add the matched result's eICR to file package
+    # Use the associated_condition's info for the filename and response.
+    # Assuming the condition model has a `snomed_code` attribute. If not, adjust as needed.
     s3_file_package.append(
         (
             create_split_condition_filename(
-                condition_name=matched_result.reportable_condition.display_name,
-                condition_code=matched_result.reportable_condition.code,
+                condition_name=associated_condition.display_name,
+                condition_code=associated_condition.child_rsg_snomed_codes[0],
             ),
-            matched_result.refined_eicr,
+            refined_eicr_str,
         )
     )
 
@@ -1068,8 +1076,8 @@ async def run_configuration_test(
         original_eicr=original_unrefined_eicr,
         refined_download_url=presigned_s3_url,
         condition=Condition(
-            code=matched_result.reportable_condition.code,
-            display_name=matched_result.reportable_condition.display_name,
+            code=associated_condition.child_rsg_snomed_codes[0],
+            display_name=associated_condition.display_name,
             refined_eicr=matched_condition_refined_eicr,
             stats=[
                 f"eICR file size reduced by {

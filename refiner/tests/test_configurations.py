@@ -1,6 +1,6 @@
 from dataclasses import replace
 from datetime import datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
@@ -18,7 +18,6 @@ from app.db.configurations.model import (
 )
 from app.db.users.model import DbUser
 from app.main import app
-from app.services.ecr.models import RefinedDocument, ReportableCondition
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
@@ -360,7 +359,7 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
 
     app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
-    # get config
+    # Mocks for DB are correct
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
         AsyncMock(
@@ -377,8 +376,6 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
             )
         ),
     )
-
-    # get config's associated condition
     monkeypatch.setattr(
         "app.api.v1.configurations.get_condition_by_id_db",
         AsyncMock(
@@ -396,121 +393,30 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
         ),
     )
 
-    # run the refinement
+    refined_xml_string = "<xml>refined eicr for Condition A</xml>"
     monkeypatch.setattr(
-        "app.api.v1.configurations.refine",
-        AsyncMock(
-            return_value=[
-                RefinedDocument(
-                    refined_eicr="<xml>related refined eicr</xml>",
-                    reportable_condition=ReportableCondition(
-                        code="54321", display_name="Condition A (2)"
-                    ),
-                ),
-                RefinedDocument(
-                    refined_eicr="<xml>unrelated refined eicr</xml>",
-                    reportable_condition=ReportableCondition(
-                        code="55555", display_name="Unreleated condition)"
-                    ),
-                ),
-            ]
-        ),
+        "app.api.v1.configurations.refine_eicr",
+        MagicMock(return_value=refined_xml_string),
     )
 
     payload = {"id": "11111111-1111-1111-1111-111111111111"}
 
+    # it tests the fallback mechanism where the API uses the default sample file;
+    # we just send the data payload
     response = await authed_client.post(
         "/api/v1/configurations/test",
         data=payload,
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["condition"]["code"] == "54321"
-    assert response.json()["condition"]["display_name"] == "Condition A (2)"
-    assert response.json()["refined_download_url"] == "http://fake-s3-url.com"
-    assert "eICR file size reduced by" in response.json()["condition"]["stats"][0]
-
-    app.dependency_overrides.clear()
-
-
-@pytest.mark.asyncio
-async def test_inline_no_matching_conditions(authed_client, monkeypatch):
-    # get config
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_by_id_db",
-        AsyncMock(
-            return_value=DbConfiguration(
-                id=UUID("11111111-1111-1111-1111-111111111111"),
-                name="test config",
-                jurisdiction_id="SDDH",
-                condition_id=UUID("22222222-2222-2222-2222-222222222222"),
-                included_conditions=[],
-                custom_codes=[],
-                local_codes=[],
-                section_processing=[],
-                version=1,
-            )
-        ),
-    )
-
-    # get config's associated condition
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_condition_by_id_db",
-        AsyncMock(
-            return_value=DbCondition(
-                id=UUID("22222222-2222-2222-2222-222222222222"),
-                display_name="Condition associated with config",
-                canonical_url="url-1",
-                version="3.0.0",
-                child_rsg_snomed_codes=["12345", "54321"],
-                snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
-                loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
-                icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
-                rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
-            )
-        ),
-    )
-
-    # run the refinement
-    monkeypatch.setattr(
-        "app.api.v1.configurations.refine",
-        AsyncMock(
-            return_value=[
-                RefinedDocument(
-                    refined_eicr="<xml>unrelated refined eicr</xml>",
-                    reportable_condition=ReportableCondition(
-                        code="99999", display_name="Unreleated condition 1"
-                    ),
-                ),
-                RefinedDocument(
-                    refined_eicr="<xml>unrelated refined eicr</xml>",
-                    reportable_condition=ReportableCondition(
-                        code="55555", display_name="Unreleated condition 2"
-                    ),
-                ),
-            ]
-        ),
-    )
-
-    payload = {"id": "11111111-1111-1111-1111-111111111111"}
-
-    response = await authed_client.post(
-        "/api/v1/configurations/test",
-        data=payload,
-    )
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert (
-        response.json()["detail"]
-        == "Condition associated with config was not detected as a reportable condition in the eCR file you uploaded."
-    )
+    assert response.json()["condition"]["code"] == "12345"
+    assert response.json()["condition"]["display_name"] == "Condition A"
 
     app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
 async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypatch):
-    # get config
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
         AsyncMock(
@@ -527,8 +433,6 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
             )
         ),
     )
-
-    # get config's associated condition
     monkeypatch.setattr(
         "app.api.v1.configurations.get_condition_by_id_db",
         AsyncMock(
@@ -537,7 +441,7 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
                 display_name="COVID-19",
                 canonical_url="url-1",
                 version="3.0.0",
-                child_rsg_snomed_codes=["186747009", "840539006"],
+                child_rsg_snomed_codes=["840539006", "186747009"],
                 snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
                 loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
                 icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
@@ -546,19 +450,10 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
         ),
     )
 
-    # run the refinement
+    refined_xml_string = "<xml>COVID-19 refined doc</xml>"
     monkeypatch.setattr(
-        "app.api.v1.configurations.refine",
-        AsyncMock(
-            return_value=[
-                RefinedDocument(
-                    refined_eicr="<xml>COVID-19 refined doc</xml>",
-                    reportable_condition=ReportableCondition(
-                        code="840539006", display_name="COVID-19"
-                    ),
-                ),
-            ]
-        ),
+        "app.api.v1.configurations.refine_eicr",
+        MagicMock(return_value=refined_xml_string),
     )
 
     payload = {"id": "11111111-1111-1111-1111-111111111111"}

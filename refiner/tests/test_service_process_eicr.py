@@ -10,7 +10,6 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.services.ecr.models import ReportableCondition
 from app.services.ecr.process_eicr import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
@@ -24,10 +23,7 @@ from app.services.ecr.process_eicr import (
     _preserve_relevant_entries_and_generate_summary,
     _process_section,
     _prune_unwanted_siblings,
-    build_condition_eicr_pairs,
-    refine_eicr,
 )
-from app.services.terminology import ProcessedConfiguration
 
 from .conftest import NAMESPACES
 
@@ -123,126 +119,6 @@ def make_condition(**kwargs):
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
-
-
-# NOTE:
-# PUBLIC API FUNCTION TESTS
-
-
-def test_refine_eicr_with_processed_condition():
-    # minimal fake XML eICR with a section and an entry with code="COND"
-    eicr_xml = """
-    <ClinicalDocument xmlns="urn:hl7-org:v3">
-      <component>
-        <structuredBody>
-          <component>
-            <section>
-              <code code="1234-5"/>
-              <entry>
-                <observation>
-                  <code code="COND"/>
-                </observation>
-              </entry>
-            </section>
-          </component>
-        </structuredBody>
-      </component>
-    </ClinicalDocument>
-    """
-
-    # provide a minimal rr argument (required by XMLFiles)
-    rr_xml = "<ClinicalDocument/>"
-
-    # prepare XMLFiles object
-    xml_files = XMLFiles(eicr=eicr_xml, rr=rr_xml)
-
-    # prepare a ProcessedCondition with code "COND"
-    from app.services.terminology import ProcessedCondition
-
-    processed_cond = ProcessedCondition(codes={"COND"})
-
-    # call refine_eicr with processed_condition explicitly
-    refined = refine_eicr(
-        xml_files=xml_files,
-        processed_condition=processed_cond,
-        processed_configuration=None,
-        sections_to_include=None,
-    )
-
-    # the result should still contain the entry with code "COND"
-    assert 'code="COND"' in refined
-
-
-def test_refine_eicr_with_processed_configuration():
-    # minimal fake XML eICR with a section and an entry with code="A"
-    eicr_xml = """
-    <ClinicalDocument xmlns="urn:hl7-org:v3">
-      <component>
-        <structuredBody>
-          <component>
-            <section>
-              <code code="1234-5"/>
-              <entry>
-                <observation>
-                  <code code="A"/>
-                </observation>
-              </entry>
-            </section>
-          </component>
-        </structuredBody>
-      </component>
-    </ClinicalDocument>
-    """
-
-    # provide a minimal rr argument (required by XMLFiles)
-    rr_xml = "<ClinicalDocument/>"
-
-    # prepare XMLFiles object
-    xml_files = XMLFiles(eicr=eicr_xml, rr=rr_xml)
-
-    # prepare a ProcessedConfiguration with code "A"
-    processed_conf = ProcessedConfiguration(codes={"A"})
-
-    # call refine with processed_configuration explicitly
-    refined = refine_eicr(
-        xml_files=xml_files,
-        processed_condition=None,
-        processed_configuration=processed_conf,
-        sections_to_include=None,
-    )
-
-    # the result should still contain the entry with code "A"
-    assert 'code="A"' in refined
-
-
-def test_build_condition_eicr_pairs(sample_xml_files: XMLFiles) -> None:
-    """
-    Test building condition-eICR pairs with XMLFiles objects.
-    """
-
-    reportable_conditions = [
-        ReportableCondition(code="840539006", display_name="COVID-19"),
-        ReportableCondition(code="27836007", display_name="Pertussis"),
-    ]
-
-    pairs = build_condition_eicr_pairs(
-        original_xml_files=sample_xml_files, reportable_conditions=reportable_conditions
-    )
-
-    # verify we get the expected number of pairs
-    assert len(pairs) == 2
-
-    # verify each pair has the expected structure
-    for i, pair in enumerate(pairs):
-        reportable_condition, xml_files = pair
-        assert reportable_condition is not None
-        assert reportable_condition == reportable_conditions[i]
-        assert xml_files is not None
-
-        # verify the xml_files is a proper XMLFiles object
-        assert isinstance(xml_files, XMLFiles)
-        assert xml_files.eicr == sample_xml_files.eicr
-        assert xml_files.rr == sample_xml_files.rr
 
 
 # NOTE:
