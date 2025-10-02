@@ -11,10 +11,6 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
  * users to choose an action for each section (retain, refine, remove).
  * Radio inputs are fully accessible and can be selected by clicking anywhere
  * in the containing table cell (td), supporting keyboard navigation as well.
- *
- * @component
- * @param {string} configurationId - The unique configuration identifier.
- * @param {DbConfigurationSectionProcessing[]} sectionProcessing - List of section processing entries.
  */
 const EicrSectionReview: React.FC<{
   configurationId: string;
@@ -44,9 +40,6 @@ const EicrSectionReview: React.FC<{
   /**
    * Central helper that updates local state and calls the backend API for a
    * single section action change.
-   *
-   * @param {number} index - The index of the section being updated.
-   * @param {UpdateSectionProcessingEntryAction} action - The new action for the section.
    */
   const applyAction = (
     index: number,
@@ -104,10 +97,6 @@ const EicrSectionReview: React.FC<{
   /**
    * Handles keyboard navigation for selecting radios from the containing <td>.
    * Supports Space and Enter activation for accessibility.
-   *
-   * @param {KeyboardEvent<HTMLTableCellElement>} event - Keyboard event.
-   * @param {number} index - The index of the section.
-   * @param {UpdateSectionProcessingEntryAction} action - The action to apply.
    */
   const handleTdKeyDown = (
     event: KeyboardEvent<HTMLTableCellElement>,
@@ -123,12 +112,6 @@ const EicrSectionReview: React.FC<{
   /**
    * Renders a clickable, accessible table cell containing a radio input for a section action.
    * Uses USWDS radio markup/classes for consistent styling and accessibility.
-   *
-   * @param {object} props
-   * @param {number} props.index - Index of the section.
-   * @param {UpdateSectionProcessingEntryAction} props.action - Action represented by this radio.
-   * @param {boolean} props.checked - Whether this radio is selected.
-   * @param {string} props.ariaLabel - Accessible label for the radio input.
    */
   /**
    * Simplified vanilla radio cell for bug isolation.
