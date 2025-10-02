@@ -56,7 +56,6 @@ const EicrSectionReview: React.FC<{
         data: {
           sections: [
             {
-              name: sectionProcessing[index].name,
               code: sectionProcessing[index].code,
               action: action,
             },

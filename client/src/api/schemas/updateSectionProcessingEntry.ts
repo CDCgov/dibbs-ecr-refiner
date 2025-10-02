@@ -11,7 +11,6 @@ import type { UpdateSectionProcessingEntryAction } from './updateSectionProcessi
  * Model for a single section processing update.
  */
 export interface UpdateSectionProcessingEntry {
-  name: string;
   code: string;
   action: UpdateSectionProcessingEntryAction;
 }
