@@ -6,7 +6,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from testcontainers.compose import DockerCompose
 
-# Ensure session secret is set before this file gets imported
+# Ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 from app.api.auth.session import get_hashed_token
 
@@ -15,13 +15,14 @@ TEST_SESSION_TOKEN = "test-token"
 TEST_SESSION_TOKEN_HASH = get_hashed_token(TEST_SESSION_TOKEN)
 
 # User info
-TEST_USERNAME = "test-user"
-TEST_USER_ID = "112569a2-315a-47b7-be57-f7f3b87734f8"
+TEST_USERNAME = "refiner"
+TEST_EMAIL = "refiner@refiner.com"
+TEST_USER_ID = "673da667-6f92-4a50-a40d-f44c5bc6a2d8"
 
 # Jurisdiction info
-TEST_JD_ID = "TEST"
-TEST_JD_NAME = "Test Jurisdiction"
-TEST_JD_STATE_CODE = "TT"
+TEST_JD_ID = "SDDH"
+TEST_JD_NAME = "Senate District Health Department"
+TEST_JD_STATE_CODE = "GC"
 
 
 @pytest.fixture
@@ -59,7 +60,6 @@ def setup_logging():
     """
     Configure logging for integration tests
     """
-
     import logging
 
     logging.basicConfig(level=logging.INFO)
@@ -75,7 +75,6 @@ def base_url() -> str:
     Returns:
         str: The base URL (e.g., "http://0.0.0.0:8080/")
     """
-
     return "http://0.0.0.0:8080/"
 
 
@@ -146,7 +145,7 @@ def setup(request):
         "db",
     )
 
-    print("🧠 Seeding database with test user...")
+    print("🧠 Seeding database with test user and jurisdiction...")
     seed_user = f"""
     DO $$
     BEGIN
@@ -176,13 +175,123 @@ def setup(request):
         "db",
     )
 
+    print(
+        "🔎 Looking up dynamic condition UUIDs and canonical URLs for COVID-19 and Influenza (version 3.0.0)..."
+    )
+
+    def get_id_and_url(exec_result):
+        output = exec_result[0]
+        for line in output.splitlines():
+            line = line.strip()
+            if line:
+                parts = line.split("|")
+                if len(parts) == 2:
+                    return parts[0].strip(), parts[1].strip()
+        raise RuntimeError(f"Could not parse condition id and url from: {output!r}")
+
+    covid_result = refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-t",
+            "-A",
+            "-F",
+            "|",
+            "-c",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'COVID-19' AND version = '3.0.0';",
+        ],
+        "db",
+    )
+    flu_result = refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-t",
+            "-A",
+            "-F",
+            "|",
+            "-c",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Influenza' AND version = '3.0.0';",
+        ],
+        "db",
+    )
+
+    covid_id, covid_canonical_url = get_id_and_url(covid_result)
+    flu_id, flu_canonical_url = get_id_and_url(flu_result)
+
+    if not covid_id or not flu_id or not covid_canonical_url or not flu_canonical_url:
+        raise RuntimeError(
+            f"Could not find COVID-19 or Influenza condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url})"
+        )
+    print(
+        f"✅ Found COVID-19 condition_id: {covid_id} canonical_url: {covid_canonical_url}"
+    )
+    print(
+        f"✅ Found Influenza condition_id: {flu_id} canonical_url: {flu_canonical_url}"
+    )
+
+    print(
+        "📝 Inserting two test configurations for integration tests (app-aligned schema)..."
+    )
+    config_insert = f"""
+    DO $$
+    BEGIN
+        INSERT INTO configurations (
+            jurisdiction_id, condition_id, name, included_conditions, custom_codes, local_codes, section_processing, version
+        )
+        VALUES (
+            '{TEST_JD_ID}',
+            '{covid_id}',
+            'COVID-19',
+            '[{{"canonical_url": "{covid_canonical_url}", "version": "3.0.0"}}]'::jsonb,
+            '[]'::jsonb,
+            '{{}}'::jsonb,
+            '[]'::jsonb,
+            1
+        )
+        ON CONFLICT DO NOTHING;
+
+        INSERT INTO configurations (
+            jurisdiction_id, condition_id, name, included_conditions, custom_codes, local_codes, section_processing, version
+        )
+        VALUES (
+            '{TEST_JD_ID}',
+            '{flu_id}',
+            'Influenza',
+            '[{{"canonical_url": "{flu_canonical_url}", "version": "3.0.0"}}]'::jsonb,
+            '[]'::jsonb,
+            '{{}}'::jsonb,
+            '[]'::jsonb,
+            1
+        )
+        ON CONFLICT DO NOTHING;
+    END $$;
+    """
+    refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-c",
+            config_insert,
+        ],
+        "db",
+    )
+
     print("🏃‍♀️ Database is ready!")
 
     def teardown():
         """
         Registered finalizer to stop Docker Compose services.
         """
-
         print("🧹 Tests finished! Tearing down.")
 
     request.addfinalizer(teardown)
