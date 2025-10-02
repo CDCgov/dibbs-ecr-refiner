@@ -22,11 +22,10 @@
   h5,
   h6,
   p {
-    @apply !m-0 !p-0;
+    @apply m-0 p-0;
   }
-  label,
-  select {
-    @apply !m-0;
+  label + select {
+    @apply !mt-2;
   }
 }
 @layer utilities {
@@ -39,6 +38,7 @@
   --font-public-sans: 'Public Sans Variable', 'sans-serif';
   --font-merriweather: 'Merriweather Variable', 'serif';
   --color-primary-container: #3a7d950d;
+  --drop-shadow-base: drop-shadow(0px 4px 8px rgb(0, 0, 0, 0.15));
 
   --color-blue-100: #e8f5ff;
   --color-blue-200: #a1d3ff;

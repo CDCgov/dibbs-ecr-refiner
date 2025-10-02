@@ -16,16 +16,13 @@ describe('Config activation page', () => {
     );
   }
 
-  it('should show "Turn on configuration" as the current step', () => {
+  it('should show "Activate" as the current step', () => {
     renderPage();
-    expect(
-      screen.getByText('Build configuration', { selector: 'a' })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Test configuration', { selector: 'a' })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Turn on configuration', { selector: 'a' })
-    ).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
+    expect(screen.getByText('Test', { selector: 'a' })).toBeInTheDocument();
+    expect(screen.getByText('Activate', { selector: 'a' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 });

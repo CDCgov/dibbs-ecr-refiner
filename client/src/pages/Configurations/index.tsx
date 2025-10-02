@@ -24,7 +24,7 @@ import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
-import { CONFIGURATION_CTA } from './utils';
+import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -119,7 +119,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       id="add-configuration-modal"
       aria-labelledby="add-configuration-modal-heading"
       aria-describedby="add-configuration-modal-description"
-      className="pb-5 !align-top"
+      className="condition-creation-modal pb-5 !align-top"
     >
       <ModalHeading
         id="add-configuration-modal-heading"
@@ -143,7 +143,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
             className="!leading-6"
             data-focus="true"
           >
-            Condition
+            Select condition
           </Label>
           <ComboBox
             id="new-condition"
@@ -194,7 +194,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
             );
           }}
         >
-          Add condition
+          {CONFIGURATION_CONFIRMATION_CTA}
         </Button>
       </ModalFooter>
     </Modal>
