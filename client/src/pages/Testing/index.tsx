@@ -73,7 +73,7 @@ export default function Demo() {
         )}
         {view === 'success' && response?.data && (
           <Success
-            conditions={response.data.refined_conditions}
+            refined_conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
             refined_download_url={response.data.refined_download_url}
           />
