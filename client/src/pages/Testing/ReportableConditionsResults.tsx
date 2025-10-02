@@ -3,32 +3,30 @@ import { Button } from '../../components/Button';
 import { WarningIcon } from '../../components/WarningIcon';
 
 interface ReportableConditionsResultsProps {
-  refined_condition_names: string[];
-  conditions_without_config_names: string[];
+  matchedConditions: string[];
+  unmatchedConditions: string[];
   startOver: () => void;
   goToSuccessScreen: () => void;
 }
 
 export function ReportableConditionsResults({
-  refined_condition_names,
-  conditions_without_config_names,
+  matchedConditions,
+  unmatchedConditions,
   startOver,
   goToSuccessScreen,
 }: ReportableConditionsResultsProps) {
-  const hasFoundConditions = refined_condition_names.length > 0;
-  const hasMissingConditions = conditions_without_config_names.length > 0;
+  const hasFoundConditions = matchedConditions.length > 0;
+  const hasMissingConditions = unmatchedConditions.length > 0;
 
   if (hasFoundConditions) {
     return (
       <Container className="lg:w-4/7">
         <ConditionsContainer>
-          <FoundConditions foundConditions={refined_condition_names} />
+          <FoundConditions foundConditions={matchedConditions} />
           {hasMissingConditions ? (
             <>
               <hr className="border-gray-cool-20" />
-              <MissingConditions
-                missingConditions={conditions_without_config_names}
-              />
+              <MissingConditions missingConditions={unmatchedConditions} />
             </>
           ) : null}
         </ConditionsContainer>
@@ -53,9 +51,7 @@ export function ReportableConditionsResults({
   return (
     <Container className="max-w-[47rem]">
       <ConditionsContainer>
-        <MissingConditions
-          missingConditions={conditions_without_config_names}
-        />
+        <MissingConditions missingConditions={unmatchedConditions} />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
         <p>

@@ -60,10 +60,10 @@ export default function Demo() {
           <>
             <Title>Test Refiner</Title>
             <ReportableConditionsResults
-              refined_condition_names={response.data.refined_conditions.map(
+              matchedConditions={response.data.refined_conditions.map(
                 (c) => c.display_name
               )}
-              conditions_without_config_names={
+              unmatchedConditions={
                 response.data.conditions_without_matching_configs
               }
               startOver={reset}
