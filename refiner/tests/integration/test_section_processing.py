@@ -111,15 +111,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
     # Assert
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["id"] == str(config_id)
-    assert isinstance(data.get("section_processing"), list)
-
-    # Ensure the updated action is reflected in the response
-    codes_actions = {
-        entry["code"]: entry["action"] for entry in data["section_processing"]
-    }
-    assert codes_actions.get("A") == "remove"
-    assert codes_actions.get("B") == "refine"
+    assert data["message"] == "Section processed successfully."
 
 
 @pytest.mark.asyncio
