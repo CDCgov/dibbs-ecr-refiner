@@ -46,11 +46,23 @@ button:focus:not(:focus-visible),
   }
 }
 
+.drop-shadow-nav {
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.15);
+}
+
 .usa-skipnav[href]:focus-visible {
   @include outline-on-dark-bg;
 }
 
-// turn off default table styling in favor of DIBBs styles
+// turn off default  styling in favor of DIBBs styles
+.usa-modal__main,
+.usa-modal__content {
+  padding: 0 !important;
+}
+.usa-label,
+.usa-select {
+  margin: 0;
+}
 .usa-table td,
 .usa-table th {
   border: none;
@@ -96,5 +108,32 @@ button:focus:not(:focus-visible),
 
   .usa-alert__body > * {
     margin-left: 2rem !important;
+  }
+}
+.usa-tooltip:has(.delete-codes-button) {
+  display: none;
+}
+
+.condition-codes:hover {
+  .code-set-total {
+    display: none;
+  }
+
+  .delete-codes-button {
+    display: block !important;
+  }
+
+  .usa-tooltip:has(.delete-codes-button) {
+    display: block;
+  }
+}
+
+.usa-tooltip__trigger {
+  padding: 0 !important;
+}
+
+.condition-creation-modal {
+  .usa-modal__close {
+    margin: 0;
   }
 }

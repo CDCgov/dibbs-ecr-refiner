@@ -11,6 +11,10 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
  * users to choose an action for each section (retain, refine, remove).
  * Radio inputs are fully accessible and can be selected by clicking anywhere
  * in the containing table cell (td), supporting keyboard navigation as well.
+ *
+ * @component
+ * @param {string} configurationId - The unique configuration identifier.
+ * @param {DbConfigurationSectionProcessing[]} sectionProcessing - List of section processing entries.
  */
 const EicrSectionReview: React.FC<{
   configurationId: string;
@@ -18,22 +22,31 @@ const EicrSectionReview: React.FC<{
 }> = ({ configurationId, sectionProcessing }) => {
   // Store selected action for each section in state
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
+
   const showToast = useToast();
   const formatError = useApiErrorFormatter();
 
   const { mutate: updateSectionProcessing } =
     useUpdateConfigurationSectionProcessing();
 
-  // Initialize state based on the sectionProcessing prop
+  // Initialize state based on the sectionProcessing prop. Only initialize
+  // when local state is empty or the number of sections changes so we don't
+  // clobber optimistic UI updates while a mutation is in-flight.
   useEffect(() => {
-    setSelectedActions(
-      sectionProcessing.map((section) => section.action ?? 'retain')
-    );
+    setSelectedActions((prev) => {
+      if (prev.length === 0 || prev.length !== sectionProcessing.length) {
+        return sectionProcessing.map((section) => section.action ?? 'retain');
+      }
+      return prev;
+    });
   }, [sectionProcessing]);
 
   /**
    * Central helper that updates local state and calls the backend API for a
    * single section action change.
+   *
+   * @param {number} index - The index of the section being updated.
+   * @param {UpdateSectionProcessingEntryAction} action - The new action for the section.
    */
   const applyAction = (
     index: number,
@@ -89,7 +102,12 @@ const EicrSectionReview: React.FC<{
   };
 
   /**
-   * Handle keyboard navigation for selecting radios from <td>
+   * Handles keyboard navigation for selecting radios from the containing <td>.
+   * Supports Space and Enter activation for accessibility.
+   *
+   * @param {KeyboardEvent<HTMLTableCellElement>} event - Keyboard event.
+   * @param {number} index - The index of the section.
+   * @param {UpdateSectionProcessingEntryAction} action - The action to apply.
    */
   const handleTdKeyDown = (
     event: KeyboardEvent<HTMLTableCellElement>,
@@ -103,9 +121,17 @@ const EicrSectionReview: React.FC<{
   };
 
   /**
-   * Small reusable component that renders a clickable, accessible table cell
-   * containing a radio input. Updated to use USWDS radio markup/classes so
-   * styling matches the design system while preserving existing behavior.
+   * Renders a clickable, accessible table cell containing a radio input for a section action.
+   * Uses USWDS radio markup/classes for consistent styling and accessibility.
+   *
+   * @param {object} props
+   * @param {number} props.index - Index of the section.
+   * @param {UpdateSectionProcessingEntryAction} props.action - Action represented by this radio.
+   * @param {boolean} props.checked - Whether this radio is selected.
+   * @param {string} props.ariaLabel - Accessible label for the radio input.
+   */
+  /**
+   * Simplified vanilla radio cell for bug isolation.
    */
   const RadioCell: React.FC<{
     index: number;
@@ -113,6 +139,7 @@ const EicrSectionReview: React.FC<{
     checked: boolean;
     ariaLabel: string;
   }> = ({ index, action, checked, ariaLabel }) => {
+    // Restore accessibility and event handler conventions from original version
     return (
       <td
         className="cursor-pointer text-center"
@@ -129,19 +156,16 @@ const EicrSectionReview: React.FC<{
       >
         <label className="usa-radio m-0 flex items-center justify-center bg-transparent">
           <input
-            className="usa-radio__input pointer-events-none"
+            className="usa-radio__input"
             type="radio"
-            name={`action-${index}`}
+            name={`section-${index}`}
             value={action}
             aria-label={ariaLabel}
             checked={checked}
-            onChange={() => applyAction(index, action)}
             tabIndex={-1}
+            onChange={() => applyAction(index, action)}
           />
-          {/* visually-hidden label for screen readers (USWDS uses .usa-sr-only) */}
-          <span className="usa-radio__label -top-4.5 right-8">
-            {/*Only exists to display USWDS radio button*/}
-          </span>
+          <span className="usa-radio__label -top-4.5 right-8"></span>
           <span className="usa-sr-only">{ariaLabel}</span>
         </label>
       </td>

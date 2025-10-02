@@ -432,7 +432,7 @@
                         <templateId extension="2017-04-01"
                           root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
-                          <id extension="ht" root="2.16.840.1.113883.4.6" />
+                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
                           <code code="RR7"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"

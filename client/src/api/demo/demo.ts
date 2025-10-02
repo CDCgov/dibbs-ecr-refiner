@@ -33,7 +33,22 @@ import type {
 
 
 /**
- * Grabs an eCR zip file from the file system and runs it through the upload/refine process.
+ * Handles the demo upload workflow for eICR refinement.
+
+Steps:
+1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
+    refiner/assets/demo/mon-mothma-two-conditions.zip).
+2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
+3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
+4. For each unique reportable condition code found in the RR (and having a configuration),
+    build a refined XML document and collect metadata. The code used is the actual code
+    from the RR that triggered the match, not a canonical or database code.
+5. Package all refined and original files into a ZIP.
+6. Upload the ZIP to S3 and get a download URL.
+7. Construct and return the response model for the frontend, including per-condition
+    refinement results and a link to the ZIP of outputs.
+
+Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
  * @summary Demo Upload
  */
 export const uploadEcr = (

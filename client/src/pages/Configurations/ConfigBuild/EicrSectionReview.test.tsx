@@ -1,38 +1,228 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import EicrSectionReview from './EicrSectionReview';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-describe('EicrSectionReview', () => {
-  it('renders the heading and placeholder', () => {
-    const mockSectionProcessing = [
-      { name: 'Section 1', code: '001', action: 'refine' },
-      { name: 'Section 2', code: '002', action: 'include' },
-      { name: 'Section 3', code: '003', action: 'remove' },
-    ];
-    render(<EicrSectionReview sectionProcessing={mockSectionProcessing} />);
-    // Check heading
-    expect(
-      screen.getByRole('heading', {
-        name: /Choose what you'd like to do with the sections in your eICR/,
-      })
-    ).toBeInTheDocument();
-    // Check options are there
-    expect(screen.getByText(/include & refine section:/i)).toBeInTheDocument();
-    expect(screen.getByText(/include entire section:/i)).toBeInTheDocument();
-    expect(screen.getByText(/remove section:/i)).toBeInTheDocument();
+// We'll mock the hooks the component uses so tests can control behavior
+const mockMutate = vi.fn();
+const mockShowToast = vi.fn();
+const mockFormatError = vi.fn(
+  (err: any) => (err && err.message) || 'formatted'
+);
+
+vi.mock('../../../api/configurations/configurations', () => ({
+  useUpdateConfigurationSectionProcessing: () => ({
+    mutate: mockMutate,
+  }),
+}));
+
+vi.mock('../../../hooks/useToast', () => ({
+  useToast: () => mockShowToast,
+}));
+
+vi.mock('../../../hooks/useErrorFormatter', () => ({
+  useApiErrorFormatter: () => mockFormatError,
+}));
+
+import EicrSectionReview from './EicrSectionReview';
+import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
+
+// Helper that provides a fresh QueryClient for each test — keeps behavior consistent
+function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+  );
+}
+
+describe('EicrSectionReview (improved)', () => {
+  beforeEach(() => {
+    mockMutate.mockReset();
+    mockShowToast.mockReset();
+    mockFormatError.mockReset();
   });
 
-  it('has accessible section landmark', () => {
-    const mockSectionProcessing = [
-      { name: 'Section 1', code: '001', action: 'refine' },
-      { name: 'Section 2', code: '002', action: 'include' },
-      { name: 'Section 3', code: '003', action: 'remove' },
+  afterEach(() => {
+    // clear DOM between tests
+    vi.clearAllMocks();
+  });
+
+  it('optimistically updates the UI and calls mutate with the correct payload when clicking a radio', async () => {
+    const configurationId = 'config-123';
+    const sections: DbConfigurationSectionProcessing[] = [
+      { name: 'Section A', code: 'A01', action: 'retain' },
     ];
-    render(<EicrSectionReview sectionProcessing={mockSectionProcessing} />);
-    const section = screen.getByLabelText(
-      /Choose what you'd like to do with the sections in your eICR/i
+
+    // Track what payload mutate receives
+    mockMutate.mockImplementation((payload: any, _options: any) => {
+      // no-op: simulate successful response
+    });
+
+    renderWithQueryClient(
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+      />
     );
-    expect(section).toBeInTheDocument();
+
+    // The input has an accessible aria-label set in the component
+    const includeEntireInput = screen.getByLabelText(
+      'Include entire section Section A'
+    );
+    expect(includeEntireInput).toBeInTheDocument();
+
+    // Locate the correct td for the "Include entire section" radio
+    const tdRadios = screen.getAllByRole('radio');
+    // Find the td whose input matches our aria-label
+    const parentTd = Array.from(tdRadios).find((td) =>
+      td.querySelector('input[aria-label="Include entire section Section A"]')
+    ) as HTMLElement;
+    expect(parentTd).toBeTruthy();
+
+    // Simulate clicking the radio input directly
+    await userEvent.click(includeEntireInput);
+
+    // Expect mutate to have been called with the correct payload
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+    const [mutatePayload] = mockMutate.mock.calls[0];
+    expect(mutatePayload).toEqual({
+      configurationId,
+      data: { sections: [{ code: 'A01', action: 'refine' }] },
+    });
+
+    // Wait for the optimistic UI update to reflect in the input.checked
+    await waitFor(() => expect(includeEntireInput).toBeChecked());
+  });
+
+  it('supports keyboard activation (Enter and Space) and updates UI optimistically', async () => {
+    const configurationId = 'config-456';
+    const sections: DbConfigurationSectionProcessing[] = [
+      { name: 'Section B', code: 'B01', action: 'retain' },
+    ];
+
+    mockMutate.mockImplementation((payload: any, _options: any) => {});
+
+    renderWithQueryClient(
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+      />
+    );
+
+    const includeEntireInput = screen.getByLabelText(
+      'Include entire section Section B'
+    );
+    expect(includeEntireInput).toBeInTheDocument();
+
+    // Find the td element with role="radio" that contains the "Include entire section" input
+    const radioCells = screen.getAllByRole('radio');
+    const includeEntireTd = radioCells.find((cell) =>
+      cell.querySelector('input[aria-label="Include entire section Section B"]')
+    ) as HTMLElement;
+    expect(includeEntireTd).toBeTruthy();
+
+    // Fire Enter key event directly on the td element
+    fireEvent.keyDown(includeEntireTd, { key: 'Enter', code: 'Enter' });
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+
+    // Query for fresh element reference after state update
+    await waitFor(() => {
+      const freshIncludeEntireInput = screen.getByLabelText(
+        'Include entire section Section B'
+      );
+      expect(freshIncludeEntireInput).toBeChecked();
+    });
+
+    // Reset call count and revert state for next test
+    mockMutate.mockReset();
+
+    // Click on retain to reset state
+    const retainInput = screen.getByLabelText(
+      'Include and refine section Section B'
+    );
+    await userEvent.click(retainInput);
+    await waitFor(() => {
+      const freshRetainInput = screen.getByLabelText(
+        'Include and refine section Section B'
+      );
+      expect(freshRetainInput).toBeChecked();
+    });
+    mockMutate.mockReset();
+
+    // Focus and fire Space key
+    includeEntireTd.focus();
+    fireEvent.keyDown(includeEntireTd, { key: ' ', code: 'Space' });
+
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      const freshIncludeEntireInput = screen.getByLabelText(
+        'Include entire section Section B'
+      );
+      expect(freshIncludeEntireInput).toBeChecked();
+    });
+  });
+
+  it('reverts optimistic UI when mutate calls onError and displays a toast', async () => {
+    const configurationId = 'config-789';
+    const sections: DbConfigurationSectionProcessing[] = [
+      { name: 'Section C', code: 'C01', action: 'retain' },
+    ];
+
+    // mutate will call onError to simulate a server failure after a slight delay
+    mockMutate.mockImplementation((_payload: any, options: any) => {
+      if (options && typeof options.onError === 'function') {
+        // Use setTimeout to allow optimistic update to be visible first
+        setTimeout(() => {
+          options.onError(new Error('Server error'));
+        }, 10);
+      }
+    });
+
+    renderWithQueryClient(
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+      />
+    );
+
+    const includeEntireInput = screen.getByLabelText(
+      'Include entire section Section C'
+    );
+    const retainInput = screen.getByLabelText(
+      'Include and refine section Section C'
+    );
+
+    expect(includeEntireInput).toBeInTheDocument();
+    expect(retainInput).toBeChecked(); // Initially should be retain (checked)
+    expect(includeEntireInput).not.toBeChecked(); // Include entire should not be checked
+
+    // Simulate user clicking the "Include entire section" radio input
+    await userEvent.click(includeEntireInput);
+
+    // Wait for optimistic UI to be applied (input should be checked)
+    await waitFor(() => {
+      const freshIncludeEntireInput = screen.getByLabelText(
+        'Include entire section Section C'
+      );
+      expect(freshIncludeEntireInput).toBeChecked();
+    });
+
+    // After onError runs, the component should revert the UI back to retain and show a toast
+    await waitFor(() => {
+      const freshIncludeEntireInput = screen.getByLabelText(
+        'Include entire section Section C'
+      );
+      const freshRetainInput = screen.getByLabelText(
+        'Include and refine section Section C'
+      );
+      expect(freshIncludeEntireInput).not.toBeChecked();
+      expect(freshRetainInput).toBeChecked(); // Should revert back to retain
+      expect(mockShowToast).toHaveBeenCalled();
+    });
+
+    // Ensure the error formatting function was called with the error
+    expect(mockFormatError).toHaveBeenCalled();
   });
 });

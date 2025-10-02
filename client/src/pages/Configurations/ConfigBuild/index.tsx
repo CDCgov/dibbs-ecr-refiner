@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import EicrSectionReview from './EicrSectionReview';
 import { Title } from '../../../components/Title';
-import { Button } from '../../../components/Button';
+import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
@@ -45,6 +45,7 @@ import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { ConfigurationTitleBar } from '../titleBar';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +53,11 @@ export default function ConfigBuild() {
 
   if (isPending) return 'Loading...';
   if (!id || isError) return 'Error!';
+
+  // sort so the default code set always displays first
+  const sortedCodeSets = response.data.code_sets.sort((a) => {
+    return a.display_name === response.data.display_name ? -1 : 1;
+  });
 
   return (
     <div>
@@ -61,19 +67,20 @@ export default function ConfigBuild() {
       <NavigationContainer>
         <StepsContainer>
           <Steps configurationId={response.data.id} />
-          <Button to={`/configurations/${id}/test`}>
-            Next: Test configuration
-          </Button>
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <Export id={id} />
+        <div className="content flex flex-wrap justify-between">
+          <ConfigurationTitleBar step={'build'} />
+          <Export id={id} />
+        </div>
         <Builder
           id={id}
-          code_sets={response.data.code_sets}
+          code_sets={sortedCodeSets}
           included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
           section_processing={response.data.section_processing}
+          display_name={response.data.display_name}
         />
       </SectionContainer>
     </div>
@@ -86,15 +93,13 @@ type ExportBuilderProps = {
 
 export function Export({ id }: ExportBuilderProps) {
   return (
-    <div className="mb-6 flex w-full justify-end">
-      <a
-        className="text-blue-cool-50 font-bold hover:cursor-pointer hover:underline"
-        href={`/api/v1/configurations/${id}/export`}
-        download
-      >
-        Export configuration
-      </a>
-    </div>
+    <a
+      className="text-blue-cool-50 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
+      href={`/api/v1/configurations/${id}/export`}
+      download
+    >
+      Export configuration
+    </a>
   );
 }
 
@@ -105,6 +110,7 @@ type BuilderProps = Pick<
   | 'custom_codes'
   | 'included_conditions'
   | 'section_processing'
+  | 'display_name'
 >;
 
 function Builder({
@@ -113,6 +119,7 @@ function Builder({
   custom_codes,
   included_conditions,
   section_processing,
+  display_name: default_condition_name,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -169,31 +176,43 @@ function Builder({
     );
   }
 
+  useEffect(() => {
+    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+      onCodesetClick(code_sets[0].condition_id);
+    }
+  }, [code_sets, default_condition_name, tableView]);
+
+  const shouldDisplayCodesetDeletion = code_sets.length > 1;
+
   return (
-    <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-2">
+    <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
-        <div className="flex flex-col gap-4 py-4 sm:w-1/3 md:px-2">
+        <div className="flex flex-col py-2 pt-4 md:w-[20rem]">
           <OptionsLabelContainer>
             <OptionsLabel htmlFor="open-codesets">
               CONDITION CODE SETS
             </OptionsLabel>
-            <button
-              className="text-blue-cool-60 flex flex-row items-center font-bold hover:cursor-pointer"
+            <Button
+              variant="secondary"
+              className="text-blue-cool-60 !mr-0 flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
               id="open-codesets"
               aria-label="Add new code set to configuration"
               onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             >
-              <Icon.Add size={3} aria-hidden />
-              <span>ADD</span>
-            </button>
+              ADD
+            </Button>
           </OptionsLabelContainer>
+          {/* render the first code set separately / as a sticky element
+          to bypass issues with tooltip clipping */}
+
           <OptionsListContainer>
             <OptionsList>
-              {code_sets.map((codeSet) => (
+              {code_sets.map((codeSet, i) => (
                 <li
                   key={codeSet.display_name}
                   className={classNames(
-                    'group relative flex items-center hover:bg-stone-50',
+                    'condition-codes',
+                    'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
                     {
                       'bg-white': selectedCodesetId === codeSet.condition_id,
                     }
@@ -216,30 +235,47 @@ function Builder({
                     }}
                   >
                     <span aria-hidden>{codeSet.display_name}</span>
-                    <span aria-hidden>{codeSet.total_codes}</span>
+                    <span
+                      aria-hidden
+                      className={classNames(
+                        shouldDisplayCodesetDeletion ? 'code-set-total' : ''
+                      )}
+                    >
+                      {codeSet.total_codes}
+                    </span>
                     <span className="sr-only">
                       {codeSet.display_name}, {codeSet.total_codes} codes in
                       code set
                     </span>
                   </button>
-                  <button
-                    className="text-gray-cool-40 sr-only group-focus-within:not-sr-only group-hover:not-sr-only hover:cursor-pointer hover:text-red-700 focus:text-red-700 focus:outline focus:outline-indigo-500"
-                    aria-label={`Delete code set ${codeSet.display_name}`}
-                    onClick={() =>
-                      handleDisassociateCondition(codeSet.condition_id)
-                    }
-                  >
-                    <Icon.Delete size={3} aria-hidden />
-                  </button>
+
+                  {shouldDisplayCodesetDeletion && (
+                    <button
+                      className="text-gray-cool-40 delete-codes-button sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer"
+                      aria-label={`Delete code set ${codeSet.display_name}`}
+                      onClick={() =>
+                        handleDisassociateCondition(codeSet.condition_id)
+                      }
+                      // first code in set of codes is the "configuration default", so it can't be deleted
+                      disabled={i === 0}
+                    >
+                      {i === 0 ? (
+                        <span className="italic">Default</span>
+                      ) : (
+                        <Icon.Delete
+                          className={'!fill-red-700'}
+                          size={3}
+                          aria-hidden
+                        />
+                      )}
+                    </button>
+                  )}
                 </li>
               ))}
-            </OptionsList>
-          </OptionsListContainer>
-          <OptionsLabelContainer>
-            <OptionsLabel>MORE OPTIONS</OptionsLabel>
-          </OptionsLabelContainer>
-          <OptionsListContainer>
-            <OptionsList>
+              <li className="pt-10">
+                <OptionsLabel>MORE OPTIONS</OptionsLabel>
+              </li>
+
               <li key="custom-codes">
                 <button
                   className={classNames(
@@ -281,19 +317,22 @@ function Builder({
             </OptionsList>
           </OptionsListContainer>
         </div>
-        <div className="flex max-h-[34.5rem] flex-col items-start gap-4 overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
-              <ConditionCodeGroupingParagraph />
-              <ConditionCodeTable conditionId={selectedCodesetId} />
+              <ConditionCodeTable
+                defaultCondition={default_condition_name}
+                conditionId={selectedCodesetId}
+              />
             </>
           ) : tableView === 'custom' ? (
             <>
+              <h3 className="mb-2 text-xl font-bold">Custom codes</h3>
               <CustomCodeGroupingParagraph />
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
+                className={`!mt-4 ${SECONDARY_BUTTON_STYLES}`}
                 aria-label="Add new custom code"
               >
                 Add code
@@ -322,14 +361,13 @@ function Builder({
   );
 }
 
-function OptionsLabel({
-  children,
-  htmlFor,
-}: {
+type OptionsLabelsProps = {
   children: React.ReactNode;
   htmlFor?: string;
-}) {
-  const styles = 'text-gray-cool-60 font-bold';
+};
+
+function OptionsLabel({ children, htmlFor }: OptionsLabelsProps) {
+  const styles = '!text-gray-600 text-base font-bold';
 
   if (!htmlFor) return <span className={styles}>{children}</span>;
 
@@ -342,18 +380,12 @@ function OptionsLabel({
 
 function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
-      {children}
-    </div>
+    <div className="flex w-full items-center justify-between">{children}</div>
   );
 }
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="max-h-[10rem] overflow-y-auto md:max-h-[20rem]">
-      {children}
-    </div>
-  );
+  return <div className="max-h-[30rem] overflow-y-scroll pt-2">{children}</div>;
 }
 
 function OptionsList({ children }: { children: React.ReactNode }) {
@@ -399,21 +431,23 @@ function CustomCodesDetail({
               key={customCode.code + customCode.system}
               className="align-middle"
             >
-              <td>{customCode.code}</td>
-              <td>{customCode.system}</td>
-              <td>{customCode.name}</td>
-              <td className="text-right whitespace-nowrap">
+              <td className={'w-1/6 pb-6'}>{customCode.code}</td>
+              <td className={'text-gray-cool-60 w-1/6 pb-6'}>
+                {customCode.system}
+              </td>
+              <td className={'w-1/6 pb-6'}>{customCode.name}</td>
+              <td className={'w-1/2 text-right whitespace-nowrap'}>
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener
-                  className="usa-button--unstyled !text-blue-cool-50 !mr-2 !no-underline hover:!underline"
+                  className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
-                  className="!text-blue-cool-50 !no-underline hover:!cursor-pointer hover:!underline"
+                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline"
                   aria-label={`Delete custom code ${customCode.name}`}
                   onClick={() => {
                     deleteCode(
@@ -488,9 +522,13 @@ function TesLink() {
 
 interface ConditionCodeTableProps {
   conditionId: string;
+  defaultCondition: string;
 }
 
-function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
+function ConditionCodeTable({
+  conditionId,
+  defaultCondition,
+}: ConditionCodeTableProps) {
   const DEBOUNCE_TIME_MS = 300;
 
   const { data: response, isPending, isError } = useGetCondition(conditionId);
@@ -542,6 +580,7 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
 
   return (
     <div className="min-h-full min-w-full">
+      <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
           onChange={(e) => debouncedSearchUpdate(e.target.value)}
@@ -568,7 +607,9 @@ function ConditionCodeTable({ conditionId }: ConditionCodeTableProps) {
           </Select>
         </div>
       </div>
-      <hr className="border-blue-cool-5 w-full border-[1px]" />
+      <hr className="border-blue-cool-5 mb-6 w-full border-[1px]" />
+      <ConditionCodeGroupingParagraph />
+
       {isLoadingResults ? (
         <div className="pt-10">
           <p>Loading...</p>
@@ -742,12 +783,12 @@ export function CustomCodeModal({
       aria-describedby="modal-heading"
       aria-labelledby="modal-heading"
       isLarge
-      className="!max-w-[35rem] !rounded-none"
+      className="!max-w-[25rem] !rounded-none p-10"
       forceAction
     >
       <ModalHeading
         id="modal-heading"
-        className="text-bold font-merriweather mb-6 text-xl"
+        className="text-bold font-merriweather mb-6 !p-0 text-xl"
       >
         {isEditing ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
@@ -759,12 +800,12 @@ export function CustomCodeModal({
           resetForm();
           onClose();
         }}
-        className="absolute top-4 right-4 rounded p-2 text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
+        className="absolute top-4 right-4 h-6 w-6 rounded text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
       >
-        <Icon.Close className="h-5 w-5" aria-hidden />
+        <Icon.Close className="!h-6 !w-6" aria-hidden />
       </button>
 
-      <div className="mt-5 flex max-w-3/4 flex-col gap-5">
+      <div className="mt-5 flex flex-col gap-5 !p-0">
         <div>
           <Label htmlFor="code">Code #</Label>
           <TextInput
@@ -806,11 +847,12 @@ export function CustomCodeModal({
         </div>
       </div>
 
-      <ModalFooter className="flex justify-end pt-6">
+      <ModalFooter className="flex justify-end p-0">
         <Button
           onClick={handleSubmit}
           disabled={!isButtonEnabled}
           variant={isButtonEnabled ? 'primary' : 'disabled'}
+          className="!m-0"
         >
           {isEditing ? 'Update' : 'Add custom code'}
         </Button>
@@ -834,9 +876,9 @@ function ConditionCodeRow({
 }: ConditionCodeRowProps) {
   return (
     <tr>
-      <td className="w-1/6">{highlightMatches(code, matches, 'code')}</td>
-      <td className="w-1/6">{codeSystem}</td>
-      <td className="w-4/6">
+      <td className="w-1/6 pb-6">{highlightMatches(code, matches, 'code')}</td>
+      <td className="text-gray-cool-60 w-1/6 pb-6">{codeSystem}</td>
+      <td className="w-4/6 pb-6">
         {highlightMatches(text, matches, 'description')}
       </td>
     </tr>

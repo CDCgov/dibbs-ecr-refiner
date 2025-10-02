@@ -12,7 +12,7 @@ export function ReportableConditions({
 }: ReportableConditionsProps) {
   return (
     <div className="flex flex-col gap-12">
-      <Title>Test filter</Title>
+      <Title>Test configuration</Title>
       <Container color="blue">
         <Content className="flex flex-col">
           <div className="flex flex-col gap-10">

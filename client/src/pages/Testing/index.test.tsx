@@ -116,10 +116,10 @@ describe('Demo', () => {
     renderDemoView();
 
     // check that we start on the "run test" page
-    expect(screen.getByText('Select .zip file')).toBeInTheDocument();
+    expect(screen.getByText('Upload .zip file')).toBeInTheDocument();
 
     const file = new File(['test'], 'test.zip', { type: 'application/zip' });
-    const input: HTMLInputElement = screen.getByLabelText('Select .zip file');
+    const input: HTMLInputElement = screen.getByLabelText('Upload .zip file');
 
     // upload the file
     await user.upload(input, file);
@@ -132,10 +132,10 @@ describe('Demo', () => {
     // check that the screen updated with new options
     expect(screen.getByText('test.zip')).toBeInTheDocument();
     expect(screen.getByText('Change file')).toBeInTheDocument();
-    expect(screen.getByText('Upload .zip file')).toBeInTheDocument();
+    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
 
     // run the refine process on the custom file
-    await user.click(screen.getByText('Upload .zip file'));
+    await user.click(screen.getByText('Refine .zip file'));
     expect(mockMutateAsync).toHaveBeenCalledOnce();
 
     // check reportable conditions view
