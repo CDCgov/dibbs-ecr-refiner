@@ -8,6 +8,7 @@
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 import type { IncludedCondition } from './includedCondition';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
+import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
 
 export interface GetConfigurationResponse {
   id: string;
@@ -15,4 +16,5 @@ export interface GetConfigurationResponse {
   code_sets: DbTotalConditionCodeCount[];
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];
+  section_processing: DbConfigurationSectionProcessing[];
 }
