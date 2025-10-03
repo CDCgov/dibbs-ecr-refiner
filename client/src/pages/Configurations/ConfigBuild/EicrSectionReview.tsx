@@ -1,4 +1,4 @@
-import React, { useState, useEffect, KeyboardEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import Table from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useUpdateConfigurationSectionProcessing } from '../../../api/configurations/configurations';
@@ -95,21 +95,6 @@ const EicrSectionReview: React.FC<{
   };
 
   /**
-   * Handles keyboard navigation for selecting radios from the containing <td>.
-   * Supports Space and Enter activation for accessibility.
-   */
-  const handleTdKeyDown = (
-    event: KeyboardEvent<HTMLTableCellElement>,
-    index: number,
-    action: UpdateSectionProcessingEntryAction
-  ) => {
-    if (event.key === ' ' || event.key === 'Enter') {
-      event.preventDefault();
-      applyAction(index, action);
-    }
-  };
-
-  /**
    * Renders a clickable, accessible table cell containing a radio input for a section action.
    * Uses USWDS radio markup/classes for consistent styling and accessibility.
    */
@@ -124,33 +109,36 @@ const EicrSectionReview: React.FC<{
   }> = ({ index, action, checked, ariaLabel }) => {
     // Restore accessibility and event handler conventions from original version
     return (
-      <td
-        className="cursor-pointer text-center"
-        onClick={(e) => {
-          // Prevent double-firing if radio itself is clicked
-          if (!(e.target as HTMLElement).closest('input')) {
-            applyAction(index, action);
-          }
-        }}
-        tabIndex={0}
-        role="radio"
-        aria-checked={checked}
-        onKeyDown={(e) => handleTdKeyDown(e, index, action)}
-      >
-        <label className="usa-radio m-0 flex items-center justify-center bg-transparent">
-          <input
-            className="usa-radio__input"
-            type="radio"
-            name={`section-${index}`}
-            value={action}
-            aria-label={ariaLabel}
-            checked={checked}
-            tabIndex={-1}
-            onChange={() => applyAction(index, action)}
-          />
-          <span className="usa-radio__label -top-4.5 right-8"></span>
-          <span className="usa-sr-only">{ariaLabel}</span>
-        </label>
+      <td className="text-center">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={checked}
+          tabIndex={0}
+          className="flex h-full w-full cursor-pointer items-center justify-center focus:outline-none"
+          onClick={() => applyAction(index, action)}
+          onKeyDown={(e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault();
+              applyAction(index, action);
+            }
+          }}
+        >
+          <label className="usa-radio m-0 flex items-center justify-center bg-transparent">
+            <input
+              className="usa-radio__input"
+              type="radio"
+              name={`section-${index}`}
+              value={action}
+              aria-label={ariaLabel}
+              checked={checked}
+              tabIndex={-1}
+              readOnly
+            />
+            <span className="usa-radio__label -top-4.5 right-8"></span>
+            <span className="usa-sr-only">{ariaLabel}</span>
+          </label>
+        </button>
       </td>
     );
   };

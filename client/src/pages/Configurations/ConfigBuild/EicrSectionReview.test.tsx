@@ -72,11 +72,11 @@ describe('EicrSectionReview (improved)', () => {
     );
     expect(includeEntireInput).toBeInTheDocument();
 
-    // Locate the correct td for the \"Include entire section\" radio
+    // Locate the correct td for the "Include entire section" radio
     const tdRadios = screen.getAllByRole('radio');
     // Find the td whose input matches our aria-label
     const parentTd = Array.from(tdRadios).find((td) =>
-      td.querySelector('input[aria-label=\"Include entire section Section A\"]')
+      td.querySelector('input[aria-label="Include entire section Section A"]')
     ) as HTMLElement;
     expect(parentTd).toBeTruthy();
 
@@ -115,23 +115,49 @@ describe('EicrSectionReview (improved)', () => {
     );
     expect(includeEntireInput).toBeInTheDocument();
 
-    // Find the td element with role=\"radio\" that contains the \"Include entire section\" input
+    // Find the td element with role="radio" that contains the "Include entire section" input
     const radioCells = screen.getAllByRole('radio');
     const includeEntireTd = radioCells.find((cell) =>
-      cell.querySelector(
-        'input[aria-label=\"Include entire section Section B\"]'
-      )
+      cell.querySelector('input[aria-label="Include entire section Section B"]')
     ) as HTMLElement;
     expect(includeEntireTd).toBeTruthy();
 
-    // Simulate clicking the radio input directly
-    await userEvent.click(includeEntireInput);
+    includeEntireTd.focus();
+    await userEvent.click(includeEntireTd);
     expect(mockMutate).toHaveBeenCalledTimes(1);
 
     // Query for fresh element reference after state update
     await waitFor(() => {
       const freshIncludeEntireInput = screen.getByRole('radio', {
         name: 'Include entire section Section B',
+      });
+      expect(freshIncludeEntireInput).toBeChecked();
+    });
+
+    // Reset call count and revert state for next test
+    mockMutate.mockReset();
+
+    // Click on retain to reset state
+    const retainInput = screen.getByLabelText(
+      'Include and refine section Section B'
+    );
+    await userEvent.click(retainInput);
+    await waitFor(() => {
+      const freshRetainInput = screen.getByRole('radio', {
+        name: 'Include and refine section Section B',
+      });
+      expect(freshRetainInput).toBeChecked();
+    });
+    mockMutate.mockReset();
+
+    await userEvent.tab();
+    await userEvent.tab();
+    await userEvent.keyboard(' ');
+    expect(mockMutate).toHaveBeenCalledTimes(1);
+
+    await waitFor(() => {
+      const freshIncludeEntireInput = screen.getByRole('radio', {
+        name: 'Include and refine section Section B',
       });
       expect(freshIncludeEntireInput).toBeChecked();
     });
@@ -171,7 +197,7 @@ describe('EicrSectionReview (improved)', () => {
     expect(retainInput).toBeChecked(); // Initially should be retain (checked)
     expect(includeEntireInput).not.toBeChecked(); // Include entire should not be checked
 
-    // Simulate user clicking the \"Include entire section\" radio input
+    // Simulate user clicking the "Include entire section" radio input
     await userEvent.click(includeEntireInput);
 
     // Wait for optimistic UI to be applied (input should be checked)
