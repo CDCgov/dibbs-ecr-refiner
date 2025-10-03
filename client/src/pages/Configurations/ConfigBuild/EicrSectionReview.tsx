@@ -70,14 +70,6 @@ const EicrSectionReview: React.FC<{
       },
       {
         onError: (error) => {
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            heading: 'Section failed to update',
-            body: errorDetail,
-            variant: 'error',
-          });
-
           // Revert the optimistic UI change only if the UI still shows the
           // attempted (failed) action. This prevents clobbering newer user
           // changes that may have occurred while the request was in-flight.
@@ -88,6 +80,13 @@ const EicrSectionReview: React.FC<{
             const next = [...prev];
             next[index] = previousAction;
             return next;
+          });
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            heading: 'Section failed to update',
+            body: errorDetail,
+            variant: 'error',
           });
         },
       }
