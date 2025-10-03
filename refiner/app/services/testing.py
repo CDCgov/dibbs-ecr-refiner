@@ -15,13 +15,12 @@ from ..db.configurations.db import (
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
-from .ecr.models import RefinedDocument, ReportableCondition
+from .ecr.models import ProcessedRR, RefinedDocument, ReportableCondition
 from .ecr.refine import refine_eicr
 from .ecr.reportability import determine_reportability
 
 # NOTE:
 # DATA STRUCTURES
-# ch ch ch changes
 # =============================================================================
 
 
@@ -146,7 +145,8 @@ async def independent_testing(
             trace.matching_condition.id
         )
 
-    # no_match: list[dict{str: str, str: list | str}] = []
+    # to make mypy happy
+    # may want to create a model for this in the future
     no_matching_configurations: list[dict[str, str | list[str]]] = []
 
     # STEP 4:
@@ -334,9 +334,19 @@ async def inline_testing(
 # =============================================================================
 
 
+class ReportabilityData(TypedDict):
+    """
+    In determining reportability package necessary data into this shape.
+    """
+
+    rc_codes_for_jurisdiction: list[str]
+    rc_codes_all: list[str]
+    full_reportability_result: ProcessedRR
+
+
 def _extract_reportable_conditions_for_jurisdiction(
     xml_files: XMLFiles, jurisdiction_id: str
-) -> dict:
+) -> ReportabilityData:
     """
     Extract RC SNOMED codes from RR, filter by jurisdiction, and collect all RCs for trace.
     """
@@ -358,15 +368,11 @@ def _extract_reportable_conditions_for_jurisdiction(
             if jurisdiction_group.jurisdiction == jurisdiction_id:
                 rc_codes_for_jurisdiction.append(cond.code)
 
-    reportability_data: dict[str, list[str]] = {}
-
-    reportability_data = {
+    return {
         "rc_codes_for_jurisdiction": rc_codes_for_jurisdiction,
         "rc_codes_all": rc_codes_all,
         "full_reportability_result": reportability_result,
     }
-
-    return reportability_data
 
 
 async def _map_rc_codes_to_conditions(
@@ -436,9 +442,11 @@ async def _get_configuration_condition_pair(
     configuration = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jurisdiction_id, db=db
     )
+    assert configuration is not None, "Configuration not found, but was expected."
 
     primary_condition = await get_condition_by_id_db(
         id=configuration.condition_id, db=db
     )
+    assert primary_condition is not None, "Condition not found, but was expected."
 
     return configuration, primary_condition

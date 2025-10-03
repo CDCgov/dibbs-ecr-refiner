@@ -915,138 +915,6 @@ class ConfigurationTestResponse:
     condition: Condition
 
 
-# @router.post(
-#     "/test",
-#     response_model=ConfigurationTestResponse,
-#     tags=["configurations"],
-#     operation_id="runInlineConfigurationTest",
-# )
-# async def run_configuration_test(
-#     id: UUID = Form(...),
-#     uploaded_file: UploadFile | None = File(None),
-#     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
-#         lambda: create_refined_ecr_zip_in_memory
-#     ),
-#     upload_refined_files_to_s3: Callable[
-#         [UUID, io.BytesIO, str, Logger], str
-#     ] = Depends(_upload_to_s3),
-#     user: DbUser = Depends(get_logged_in_user),
-#     db: AsyncDatabaseConnection = Depends(get_db),
-#     sample_zip_path: Path = Depends(get_sample_zip_path),
-#     logger: Logger = Depends(get_logger),
-# ) -> ConfigurationTestResponse:
-#     """
-#     Runs an in-line test using the provided configuration ID and test files.
-#
-#     Args:
-#         id (UUID): ID of Configuration to use for the test
-#         uploaded_file (UploadFile | None): user uploaded eICR/RR pair
-#         create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
-#         upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
-#         user (DbUser): Logged in user
-#         db (AsyncDatabaseConnection): Database connection
-#         sample_zip_path (Path): Path to example .zip eICR/RR pair
-#         logger (Logger): Standard logger
-#     Returns:
-#         ConfigurationTestResponse: response given to the client
-#     """
-#
-#     # STEP 1:
-#     # handle file upload (user-provided or sample)
-#     if not sample_zip_path.exists():
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Unable to find sample zip file to download.",
-#         )
-#
-#     file = None
-#     if uploaded_file:
-#         file = await validate_zip_file(file=uploaded_file)
-#         logger.info(
-#             "Running inline test using user-provided file",
-#             extra={"file": file.filename},
-#         )
-#     else:
-#         file = create_sample_zip_file(sample_zip_path=sample_zip_path)
-#         logger.info(
-#             "Running inline test using sample file", extra={"file": file.filename}
-#         )
-#
-#     try:
-#         # STEP 2:
-#         # read XML from zip and call the service layer
-#         original_xml_files = await read_xml_zip(file)
-#         jd = user.jurisdiction_id
-#
-#         result = await inline_testing(
-#             db=db,
-#             xml_files=original_xml_files,
-#             configuration_id=id,
-#             jurisdiction_id=jd,
-#         )
-#         logger.info(f"result: {result}")
-#         # STEP 3:
-#         # handle the service layer response
-#         if result["configuration_does_not_match_conditions"]:
-#             raise HTTPException(
-#                 status_code=status.HTTP_400_BAD_REQUEST,
-#                 detail=result["configuration_does_not_match_conditions"],
-#             )
-#
-#         refined_document = result["refined_document"]
-#         condition_obj = refined_document.reportable_condition
-#         refined_eicr_str = refined_document.refined_eicr
-#
-#         # STEP 4:
-#         # prepare files for zip and s3 upload
-#         s3_file_package = []
-#         s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
-#         s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
-#
-#         filename = create_split_condition_filename(
-#             condition_name=condition_obj.display_name,
-#             condition_code=condition_obj.code,
-#         )
-#         s3_file_package.append((filename, refined_eicr_str))
-#
-#         output_file_name, output_zip_buffer = create_output_zip(
-#             files=s3_file_package,
-#         )
-#
-#         presigned_s3_url = await run_in_threadpool(
-#             upload_refined_files_to_s3,
-#             user.id,
-#             output_zip_buffer,
-#             output_file_name,
-#             logger,
-#         )
-#
-#         # STEP 5:
-#         # construct and return the final response
-#         original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-#         matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
-#
-#         return ConfigurationTestResponse(
-#             original_eicr=original_unrefined_eicr,
-#             refined_download_url=presigned_s3_url,
-#             condition=Condition(
-#                 code=condition_obj.code,
-#                 display_name=condition_obj.display_name,
-#                 refined_eicr=matched_condition_refined_eicr,
-#                 stats=[
-#                     f"eICR file size reduced by {get_file_size_reduction_percentage(original_unrefined_eicr, matched_condition_refined_eicr)}%",
-#                 ],
-#             ),
-#         )
-#     except ZipValidationError as e:
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
-#     except Exception:
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail="File could not be processed. Please provide a ZIP file with a matching eICR/RR pair within.",
-#         )
-
-
 @router.post(
     "/test",
     response_model=ConfigurationTestResponse,
@@ -1068,10 +936,38 @@ async def run_configuration_test(
     logger: Logger = Depends(get_logger),
 ) -> ConfigurationTestResponse:
     """
-    Runs an in-line test using the provided configuration ID and test files.
+    Runs an inline test of a given configuration against an eICR/RR pair.
+
+    This endpoint orchestrates the validation and refinement process by:
+    1. Handling file input, either from a user upload or a default sample file.
+    2. Calling the `inline_testing` service, which validates that the specified
+       configuration's condition is reportable in the provided file.
+    3. Handling the service response:
+        - If validation fails, raises a 400 Bad Request with a specific error.
+        - If successful, proceeds with the returned refined document.
+    4. Packaging the original eICR, RR, and the single refined eICR into a
+       new in-memory zip archive.
+    5. Uploading the archive to S3 and generating a pre-signed download URL.
+    6. Returning a `ConfigurationTestResponse` with the download URL and details
+       of the successful refinement.
+
+    Args:
+        id: The ID of the configuration to test.
+        uploaded_file: An optional user-provided zip file with an eICR and RR.
+        create_output_zip: Dependency to create a zip archive in memory.
+        upload_refined_files_to_s3: Dependency to upload the archive to S3.
+        user: The authenticated user making the request.
+        db: The database connection.
+        sample_zip_path: Path to the default sample zip file.
+        logger: The application logger.
+
+    Returns:
+        A response object containing the original eICR, a URL to download the
+        zipped results, and details about the refined condition.
     """
 
-    # STEP 1: Handle file upload
+    # STEP 1:
+    # handle file upload
     if not sample_zip_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1092,7 +988,8 @@ async def run_configuration_test(
         )
 
     try:
-        # STEP 2: Read XML and call the service layer
+        # STEP 2:
+        # read xml and call the service layer
         original_xml_files = await read_xml_zip(file)
         jd = user.jurisdiction_id
 
@@ -1102,9 +999,9 @@ async def run_configuration_test(
             configuration_id=id,
             jurisdiction_id=jd,
         )
-        logger.info(f"Result from inline_testing service: {result}")
 
-        # STEP 3: Handle the service layer response
+        # STEP 3:
+        # handle the service layer response
         if result["configuration_does_not_match_conditions"]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -1112,10 +1009,21 @@ async def run_configuration_test(
             )
 
         refined_document = result["refined_document"]
+
+        if refined_document is None:
+            logger.error(
+                "Internal logic error: inline_testing returned no error but also no refined eICR."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="An uexpected error occurred during the refinement process.",
+            )
+
         condition_obj = refined_document.reportable_condition
         refined_eicr_str = refined_document.refined_eicr
 
-        # STEP 4: Prepare files for ZIP and S3 upload
+        # STEP 4:
+        # prepare files for zip and s3 upload
         s3_file_package = []
         s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
         s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
@@ -1138,7 +1046,8 @@ async def run_configuration_test(
             logger,
         )
 
-        # STEP 5: Construct and return the final response
+        # STEP 5:
+        # construct and return the final response
         original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
         matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
 
@@ -1162,8 +1071,6 @@ async def run_configuration_test(
         )
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception:
-        # THIS IS THE IMPORTANT CHANGE
-        # Log the full exception traceback to see the real error
         logger.error(
             "An unexpected error occurred during inline test",
             exc_info=True,
