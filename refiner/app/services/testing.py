@@ -33,6 +33,19 @@ class IndependentTestingTrace:
     refined_document: RefinedDocument | None = None
 
 
+class NoMatchEntry(TypedDict):
+    """
+    The structured result of a condition that doesn't have a matching configuration.
+
+    A TypedDict that contains:
+        - `display_name`: The name of the condition that doesn't have an associated configuration for the jurisdiction.
+        - `rc_snomed_codes`: The list of reportable condition SNOMED codes associated with this condition.
+    """
+
+    display_name: str
+    rc_snomed_codes: list[str]
+
+
 class IndependentTestingResult(TypedDict):
     """
     The structured result of the independent_testing function.
@@ -43,7 +56,7 @@ class IndependentTestingResult(TypedDict):
     """
 
     refined_documents: list[RefinedDocument]
-    no_match: list[dict[str, str | list[str]]]
+    no_match: list[NoMatchEntry]
 
 
 # NOTE:
@@ -108,8 +121,7 @@ async def independent_testing(
             trace.matching_condition.id
         )
 
-    # no_match: list[dict{str: str, str: list | str}] = []
-    no_match: list[dict[str, str | list[str]]] = []
+    no_match: list[NoMatchEntry] = []
 
     # STEP 4:
     # for each unique condition with a configuration, process and run refinement
