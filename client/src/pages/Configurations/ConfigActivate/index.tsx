@@ -25,7 +25,7 @@ export default function ConfigActivate() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <ConfigurationTitleBar step={'activate'} />
+        <ConfigurationTitleBar step="activate" />
         <div>Configuration activation</div>
       </SectionContainer>
     </div>
