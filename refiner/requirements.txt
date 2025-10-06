@@ -1,5 +1,5 @@
 Authlib==1.6.4
-boto3==1.40.40
+boto3==1.40.45
 chardet
 fastapi>=0.109.1
 httpx
