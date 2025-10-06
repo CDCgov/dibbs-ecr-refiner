@@ -92,7 +92,7 @@ type ExportBuilderProps = {
 export function Export({ id }: ExportBuilderProps) {
   return (
     <a
-      className="text-blue-cool-50 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
+      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
       href={`/api/v1/configurations/${id}/export`}
       download
     >
@@ -191,7 +191,7 @@ function Builder({
               ADD
             </Button>
           </OptionsLabelContainer>
-          {/* render the first code set separately / as a sticky element 
+          {/* render the first code set separately / as a sticky element
           to bypass issues with tooltip clipping */}
 
           <OptionsListContainer>

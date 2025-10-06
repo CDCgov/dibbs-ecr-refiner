@@ -51,7 +51,6 @@ export function Diff({
               <Button
                 variant="tertiary"
                 onClick={() => downloadFile(refined_download_url)}
-                className="text-blue-400 underline"
               >
                 Download results
               </Button>
