@@ -165,7 +165,7 @@ const EicrSectionReview: React.FC<{
       </ul>
       <Table
         bordered
-        className="margin-top-2 !max-w-[740px] !table-fixed !border-collapse"
+        className="margin-top-2 !max-w-[740px] !border-separate border-spacing-0 rounded-full border-l-0"
         scrollable
       >
         <colgroup>
