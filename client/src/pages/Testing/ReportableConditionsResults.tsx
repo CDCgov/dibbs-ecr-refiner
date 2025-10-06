@@ -117,7 +117,7 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
         <WarningIcon aria-label="Warning" size={3} />
         <p className="text-state-error-dark">
           The following detected conditions have not been configured and will
-          not produce a refined eICR in the output
+          not produce a refined eICR in the output.
         </p>
       </div>
       <ul className="ml-2 list-inside list-disc">
