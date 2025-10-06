@@ -179,14 +179,16 @@ const EicrSectionReview: React.FC<{
         </caption>
         <thead>
           <tr>
-            <th scope="col">Section name</th>
-            <th scope="col" className="text-center">
+            <th scope="col" className="!text-gray-cool-60">
+              Section name
+            </th>
+            <th scope="col" className="!text-gray-cool-60 text-center">
               Include &amp; refine section
             </th>
-            <th scope="col" className="text-center">
+            <th scope="col" className="!text-gray-cool-60 text-center">
               Include entire section
             </th>
-            <th scope="col" className="text-center">
+            <th scope="col" className="!text-gray-cool-60 text-center">
               Remove section
             </th>
           </tr>
