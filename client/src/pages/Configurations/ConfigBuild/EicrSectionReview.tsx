@@ -183,10 +183,10 @@ const EicrSectionReview: React.FC<{
               Section name
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
-              Include &amp; refine section
+              Include &amp; <br /> refine section
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
-              Include entire section
+              Include <br /> entire section
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
               Remove section
