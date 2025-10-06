@@ -55,7 +55,6 @@ const EicrSectionReview: React.FC<{
       return next;
     });
 
-    // Send patch to backend
     updateSectionProcessing(
       {
         configurationId: configurationId,
@@ -97,18 +96,14 @@ const EicrSectionReview: React.FC<{
    * Renders a clickable, accessible table cell containing a radio input for a section action.
    * Uses USWDS radio markup/classes for consistent styling and accessibility.
    */
-  /**
-   * Simplified vanilla radio cell for bug isolation.
-   */
   const RadioCell: React.FC<{
     index: number;
     action: UpdateSectionProcessingEntryAction;
     checked: boolean;
     ariaLabel: string;
   }> = ({ index, action, checked, ariaLabel }) => {
-    // Restore accessibility and event handler conventions from original version
     return (
-      <td className="text-center">
+      <td className="!cursor-default text-center !break-all !whitespace-normal">
         <button
           type="button"
           role="radio"
@@ -134,7 +129,7 @@ const EicrSectionReview: React.FC<{
               tabIndex={-1}
               readOnly
             />
-            <span className="usa-radio__label -top-4.5 right-8"></span>
+            <span className="usa-radio__label -top-4.5 right-0 cursor-pointer"></span>
             <span className="usa-sr-only">{ariaLabel}</span>
           </label>
         </button>
@@ -145,7 +140,7 @@ const EicrSectionReview: React.FC<{
   return (
     <section
       aria-label="Choose what you'd like to do with the sections in your eICR"
-      className="prose w-full"
+      className="w-full"
     >
       <h2 className="!mb-4 text-lg leading-10 font-bold">
         Choose what you'd like to do with the sections in your eICR
@@ -168,7 +163,11 @@ const EicrSectionReview: React.FC<{
           <b>Remove section:</b> Excludes this section from the eICR entirely.
         </li>
       </ul>
-      <Table bordered className="margin-top-2 w-[800px] table-fixed" scrollable>
+      <Table
+        bordered
+        className="margin-top-2 !max-w-[740px] !table-fixed !border-collapse"
+        scrollable
+      >
         <colgroup>
           <col className="w-[260px]" />
           <col className="w-[160px]" />
@@ -181,15 +180,23 @@ const EicrSectionReview: React.FC<{
         <thead>
           <tr>
             <th scope="col">Section name</th>
-            <th scope="col">Include &amp; refine section</th>
-            <th scope="col">Include entire section</th>
-            <th scope="col">Remove section</th>
+            <th scope="col" className="text-center">
+              Include &amp; refine section
+            </th>
+            <th scope="col" className="text-center">
+              Include entire section
+            </th>
+            <th scope="col" className="text-center">
+              Remove section
+            </th>
           </tr>
         </thead>
         <tbody>
           {sectionProcessing.map((section, index) => (
             <tr key={section.name}>
-              <td className="!font-bold">{section.name}</td>
+              <td className="!cursor-default !font-bold !break-words !whitespace-normal">
+                {section.name}
+              </td>
               <RadioCell
                 index={index}
                 action="retain"
