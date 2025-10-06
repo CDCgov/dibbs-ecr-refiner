@@ -96,15 +96,12 @@ describe('Config testing page', () => {
 
   it('should show "Test configuration" as the current step', () => {
     renderPage();
-    expect(
-      screen.getByText('Build configuration', { selector: 'a' })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Test configuration', { selector: 'a' })
-    ).toHaveAttribute('aria-current', 'page');
-    expect(
-      screen.getByText('Turn on configuration', { selector: 'a' })
-    ).toBeInTheDocument();
+    expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
+    expect(screen.getByText('Test', { selector: 'a' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+    expect(screen.getByText('Activate', { selector: 'a' })).toBeInTheDocument();
   });
 
   it('should warn the user that the expected condition was not found during inline testing', async () => {
@@ -136,11 +133,6 @@ describe('Config testing page', () => {
 
     renderPage();
 
-    // check initial screen
-    expect(
-      screen.getByText('Next: Turn on configuration', { selector: 'a' })
-    ).toBeInTheDocument();
-
     // mock the upload
     await user.click(screen.getByText('Use test file'));
 
@@ -159,10 +151,6 @@ describe('Config testing page', () => {
 
     renderPage();
 
-    // check initial screen
-    expect(
-      screen.getByText('Next: Turn on configuration', { selector: 'a' })
-    ).toBeInTheDocument();
     expect(
       screen.getByText('Want to refine your own eCR file?')
     ).toBeInTheDocument();

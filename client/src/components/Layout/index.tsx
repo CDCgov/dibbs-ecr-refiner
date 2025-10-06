@@ -61,7 +61,7 @@ export function Header({ username }: HeaderProps) {
 
   return (
     <header>
-      <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 py-4 sm:flex-row sm:items-center xl:px-20">
+      <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 sm:flex-row sm:items-center xl:px-20">
         <Link to="/">
           <h1 className="flex items-center gap-3">
             <img src={DibbsLogo} alt="DIBBs" />

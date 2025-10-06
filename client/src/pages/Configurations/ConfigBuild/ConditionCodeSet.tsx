@@ -34,7 +34,7 @@ const ConditionCodeSetListItem: React.FC<ConditionCodeSetProps> = ({
 
   return (
     <li
-      className="flex h-16 items-center justify-between rounded-md p-4 hover:bg-white"
+      className="flex h-16 cursor-pointer items-center justify-between rounded-md p-4 hover:bg-white"
       role="listitem"
       aria-label={conditionName}
       onClick={(e) => {
@@ -75,7 +75,7 @@ const ConditionCodeSetListItem: React.FC<ConditionCodeSetProps> = ({
           aria-label={
             associated ? `Remove ${conditionName}` : `Add ${conditionName}`
           }
-          className="!w-[80px]"
+          className="!mr-0 !w-[80px]"
           onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
             e.stopPropagation();
             if (associated) {

@@ -7,7 +7,7 @@ interface StepsContainer {
 
 export function StepsContainer({ children }: StepsContainer) {
   return (
-    <div className="flex min-h-14 flex-col items-start gap-4 rounded-lg bg-white px-4 py-4 sm:py-2 md:flex-row md:items-center md:justify-between">
+    <div className="flex min-h-14 flex-col items-start gap-4 rounded-lg py-4 sm:py-2 md:flex-row md:items-center md:justify-between">
       {children}
     </div>
   );
@@ -19,20 +19,18 @@ interface StepsProps {
 
 export function Steps({ configurationId }: StepsProps) {
   return (
-    <ol className="flex list-inside list-decimal flex-col gap-4 sm:flex-row sm:gap-10">
+    <ol className="flex list-inside flex-col gap-11 sm:flex-row sm:gap-10">
       <li>
         <StepLink to={`/configurations/${configurationId}/build`}>
-          Build configuration
+          Build
         </StepLink>
       </li>
       <li>
-        <StepLink to={`/configurations/${configurationId}/test`}>
-          Test configuration
-        </StepLink>
+        <StepLink to={`/configurations/${configurationId}/test`}>Test</StepLink>
       </li>
       <li>
         <StepLink to={`/configurations/${configurationId}/activate`}>
-          Turn on configuration
+          Activate
         </StepLink>
       </li>
     </ol>
@@ -44,8 +42,9 @@ function StepLink({ to, className, children, ...props }: NavLinkProps) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        classNames('text-blue-cool-60 hover:underline', className, {
-          'font-bold text-black': isActive,
+        classNames('text-blue-cool-80 hover:underline', className, {
+          'border-blue-cool-30 text-blue-cool-80 border-b-4 pb-1 font-bold':
+            isActive,
         })
       }
       {...props}

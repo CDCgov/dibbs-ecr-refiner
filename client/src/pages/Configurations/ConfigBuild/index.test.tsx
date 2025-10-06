@@ -98,14 +98,15 @@ describe('Config builder page', () => {
 
   it('should show "Build configuration" as the current step', async () => {
     renderPage();
+    expect(await screen.findByText('Build', { selector: 'a' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
     expect(
-      await screen.findByText('Build configuration', { selector: 'a' })
-    ).toHaveAttribute('aria-current', 'page');
-    expect(
-      await screen.findByText('Test configuration', { selector: 'a' })
+      await screen.findByText('Test', { selector: 'a' })
     ).toBeInTheDocument();
     expect(
-      await screen.findByText('Turn on configuration', { selector: 'a' })
+      await screen.findByText('Activate', { selector: 'a' })
     ).toBeInTheDocument();
   });
 
