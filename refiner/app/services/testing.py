@@ -172,15 +172,12 @@ async def independent_testing(
         processed_configuration = ProcessedConfiguration.from_payload(payload)
         trace.refine_object = processed_configuration
 
-        sections_to_include = (
-            [
-                sp.code
-                for sp in configuration.section_processing
-                if sp.action == "retain"
-            ]
-            if configuration.section_processing
-            else None
-        )
+        # TODO:
+        # add in section processing when we've hooked up
+        # all of the section processing instructions
+        # for this to work as expected
+        # for now; just give refine_eicr 'None'
+        sections_to_include = None
 
         refined_eicr_str = refine_eicr(
             xml_files=XMLFiles(xml_files.eicr, xml_files.rr),
@@ -300,11 +297,12 @@ async def inline_testing(
     )
     processed_config = ProcessedConfiguration.from_payload(payload)
 
-    sections_to_include = (
-        [sp.code for sp in configuration.section_processing if sp.action == "retain"]
-        if configuration.section_processing
-        else None
-    )
+    # TODO:
+    # add in section processing when we've hooked up
+    # all of the section processing instructions
+    # for this to work as expected
+    # for now; just give refine_eicr 'None'
+    sections_to_include = None
 
     refined_eicr_str = refine_eicr(
         xml_files=xml_files,
