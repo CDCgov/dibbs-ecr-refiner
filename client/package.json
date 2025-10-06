@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@playwright/test": "^1.43.1",
+    "@playwright/test": "^1.55.1",
     "@tanstack/eslint-plugin-query": "^5.83.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
