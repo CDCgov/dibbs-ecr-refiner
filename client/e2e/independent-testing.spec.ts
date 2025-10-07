@@ -152,32 +152,6 @@ test.describe.serial('should be able to access independent testing', () => {
     /// ==========================================================================
     /// Test independent flow with test file
     /// ==========================================================================
-    /// ==========================================================================
-    //   await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-    //   await page.getByTestId('combo-box-input').click();
-    //   await page.getByTestId('combo-box-input').fill('Influenza');
-    //   await page.getByTestId('combo-box-input').press('Tab');
-    // await page.getByRole('option', { name: /^Influenza$/ }).press('Enter');
-    //   await page.getByTestId('combo-box-input').press('Tab');
-    //   await page.getByTestId('combo-box-clear-button').press('Tab');
-    //   await page.getByTestId('modalFooter').getByTestId('button').click();
-    // await expect(
-    //     page.getByRole('heading', { name: 'New configuration created' }).nth(0)
-    // ).toBeVisible();
-    //
-    //   await page.getByRole('link', { name: /eCR Refiner/i }).click();
-    //
-    // await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-    // await page.getByTestId('combo-box-input').click();
-    // await page.getByTestId('combo-box-input').fill('COVID-19');
-    // await page.getByTestId('combo-box-input').press('Tab');
-    // await page.getByRole('option', { name: 'COVID-19' }).press('Enter');
-    // await page.getByTestId('combo-box-input').press('Tab');
-    // await page.getByTestId('combo-box-clear-button').press('Tab');
-    // await page.getByTestId('modalFooter').getByTestId('button').click();
-    // await expect(
-    //     page.getByRole('heading', { name: 'New configuration created' }).nth(1)
-    // ).toBeVisible();
 
     await page.getByRole('link', { name: /eCR Refiner/i }).click();
 
