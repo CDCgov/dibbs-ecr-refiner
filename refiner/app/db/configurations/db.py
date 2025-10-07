@@ -1,12 +1,10 @@
-import json
 from dataclasses import dataclass
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.services import file_io
-
+from ...services.file_io import read_json_asset
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
@@ -15,6 +13,7 @@ from .model import (
 )
 
 EMPTY_JSONB = Jsonb([])
+REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 
 async def insert_configuration_db(
@@ -62,10 +61,7 @@ async def insert_configuration_db(
         version
     """
 
-    # Load section display names and codes from refiner_details.json
-    refiner_details_path = file_io.get_asset_path("refiner_details.json")
-    with open(refiner_details_path, encoding="utf-8") as f:
-        section_details = json.load(f)["sections"]
+    section_details = REFINER_DETAILS["sections"]
 
     section_processing_defaults = [
         {
