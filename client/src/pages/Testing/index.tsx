@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { Title } from '../../components/Title';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
+import { Spinner } from '../../components/Spinner';
 
 type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
 
@@ -43,7 +44,7 @@ export default function Demo() {
     resetState();
   }
 
-  if (isPending) return 'Loading...';
+  if (isPending) return <Spinner variant="centered" />;
 
   return (
     <div className="flex px-10 md:px-20">

@@ -45,12 +45,13 @@ import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
+import { Spinner } from '../../../components/Spinner';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
   const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
 
-  if (isPending) return 'Loading...';
+  if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
   // sort so the default code set always displays first

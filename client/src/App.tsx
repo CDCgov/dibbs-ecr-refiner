@@ -11,11 +11,12 @@ import ConfigTest from './pages/Configurations/ConfigTest';
 import ConfigActivate from './pages/Configurations/ConfigActivate';
 
 import 'react-toastify/dist/ReactToastify.css';
+import { Spinner } from './components/Spinner';
 
 function App() {
   const [user, isLoading] = useLogin();
   if (isLoading) {
-    return <p>Loading...</p>;
+    return <Spinner variant="centered" />;
   }
 
   if (!user) {
