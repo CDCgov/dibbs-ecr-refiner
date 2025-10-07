@@ -559,9 +559,19 @@ async def edit_custom_code_from_configuration_db(
     return DbConfiguration.from_db_row(row)
 
 
+@dataclass(frozen=True)
+class SectionUpdate:
+    """
+    A section update.
+    """
+
+    code: str
+    action: str
+
+
 async def update_section_processing_db(
     config: DbConfiguration,
-    section_updates: list[dict[str, str]],
+    section_updates: list[SectionUpdate],
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -569,7 +579,7 @@ async def update_section_processing_db(
 
     Args:
         config: The configuration to update
-        section_updates: List of section updates with code and action
+        section_updates: List of section updates, each as a SectionUpdate (with 'code' and 'action' keys).
         db: Database connection
 
     Returns:
@@ -579,8 +589,6 @@ async def update_section_processing_db(
     # Validate input actions
     valid_actions = {"retain", "refine", "remove"}
     for su in section_updates:
-        if "code" not in su or "action" not in su:
-            raise ValueError("Each section update must contain 'code' and 'action'.")
         if su["action"] not in valid_actions:
             raise ValueError(f"Invalid action '{su['action']}' for section update.")
 
