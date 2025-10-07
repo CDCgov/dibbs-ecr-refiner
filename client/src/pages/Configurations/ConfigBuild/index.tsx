@@ -103,15 +103,7 @@ export function Export({ id }: ExportBuilderProps) {
   );
 }
 
-type BuilderProps = Pick<
-  GetConfigurationResponse,
-  | 'id'
-  | 'code_sets'
-  | 'custom_codes'
-  | 'included_conditions'
-  | 'section_processing'
-  | 'display_name'
->;
+type BuilderProps = GetConfigurationResponse;
 
 function Builder({
   id,
