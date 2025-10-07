@@ -3,9 +3,9 @@ import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
 import { ChangeEvent, useRef } from 'react';
-import classNames from 'classnames';
-import { Icon } from '@trussworks/react-uswds';
+import { WarningIcon } from '../../components/WarningIcon';
 import { useGetEnv } from '../../hooks/useGetEnv';
+import classNames from 'classnames';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -72,7 +72,7 @@ export function RunTest({
                 Use test file
               </Button>
               <a
-                className="text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline"
+                className="text-blue-cool-60 font-bold hover:underline"
                 href="/api/v1/demo/download"
                 download
               >
@@ -92,15 +92,18 @@ interface UploadZipFile {
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
+const autoFocus = (element: HTMLElement | null) => element?.focus();
+
 function UploadZipFile({
   onClick,
   selectedFile,
   onSelectedFileChange,
 }: UploadZipFile) {
   const inputRef = useRef<HTMLInputElement>(null);
+
   const labelStyling = classNames({
     'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
-    'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer':
+    'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer !text-blue-cool-60':
       selectedFile,
   });
 
@@ -109,6 +112,7 @@ function UploadZipFile({
       <input
         ref={inputRef}
         id="zip-upload"
+        data-testid="zip-upload-input"
         type="file"
         className="hidden"
         accept=".zip"
@@ -118,7 +122,9 @@ function UploadZipFile({
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
           {selectedFile ? (
-            <Button onClick={() => void onClick()}>Upload .zip file</Button>
+            <Button ref={autoFocus} onClick={() => void onClick()}>
+              Refine .zip file
+            </Button>
           ) : null}
           <label
             htmlFor="zip-upload"
@@ -130,7 +136,7 @@ function UploadZipFile({
               }
             }}
           >
-            {selectedFile ? 'Change file' : 'Select .zip file'}
+            {selectedFile ? 'Change file' : 'Upload .zip file'}
           </label>
         </div>
       </div>
@@ -143,10 +149,7 @@ function UploadFileWarning() {
     <div className="bg-state-error-lighter rounded p-4">
       <p className="text-state-error-dark flex flex-col gap-3">
         <span className="flex items-center gap-2">
-          <Icon.Warning
-            className="[&_path]:fill-state-error shrink-0"
-            aria-label="Warning"
-          />
+          <WarningIcon aria-label="Warning" />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
         <span className="font-bold">

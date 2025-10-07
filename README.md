@@ -14,7 +14,7 @@ For more detailed information about the relationship between the eICR and RR doc
 The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `.docker-compose.yaml` file:
 
 ```sh
-docker compose up -d
+just dev up -d
 ```
 
 Next run the database migrations:

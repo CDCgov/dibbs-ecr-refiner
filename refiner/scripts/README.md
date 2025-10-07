@@ -40,15 +40,15 @@ Below you'll find an overview of the high-level structure, directory purposes, a
 
 ## Directory Purpose Table
 
-| directory      | purpose                                                                                                                             | contains                                                               |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `data`           | Data required to seed the db (e.g., `conditions` table) and test data for app actions (e.g., `configurations`)                     | `tes` and `seeding`                                                    |
-| `data/seeding`   | Flat files for seeding realistic test data (configurations, users, jurisdictions) matching test files used by the app               | Sample configuration seed data, sample user or jurisdiction seed data   |
-| `data/tes`       | Flat files for each CG, RSG, and ACG by version, plus `manifest.json` with checksums to track updates from TES API                  | `manifest.json`, TES API-downloaded JSON files                         |
-| `exports`        | Ephemeral scripts and data for internal/client engagements to help illustrate or explain database relationships                      | Scripts to understand CG-RSG relationships, CSV outputs                |
-| `maintenance`    | Sanity/preflight checks (not quite unit/integration tests) to validate data structure and post-seeding relationships                | Scripts for data structure validation, seeded DB relationship checks    |
-| `pipeline`       | Scripts to check for TES updates, download new files, and compute hashes to detect changes                                          | Scripts for update detection, TES downloads                            |
-| `seeding`        | Database seeding script and related resources (SQL, Python), including gitignored data                                              | Seeding script, seed-data SQL                                          |
+| directory      | purpose                                                                                                               | contains                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `data`         | Data required to seed the db (e.g., `conditions` table) and test data for app actions (e.g., `configurations`)        | `tes` and `seeding`                                                   |
+| `data/seeding` | Flat files for seeding realistic test data (configurations, users, jurisdictions) matching test files used by the app | Sample configuration seed data, sample user or jurisdiction seed data |
+| `data/tes`     | Flat files for each CG, RSG, and ACG by version, plus `manifest.json` with checksums to track updates from TES API    | `manifest.json`, TES API-downloaded JSON files                        |
+| `exports`      | Ephemeral scripts and data for internal/client engagements to help illustrate or explain database relationships       | Scripts to understand CG-RSG relationships, CSV outputs               |
+| `maintenance`  | Sanity/preflight checks (not quite unit/integration tests) to validate data structure and post-seeding relationships  | Scripts for data structure validation, seeded DB relationship checks  |
+| `pipeline`     | Scripts to check for TES updates, download new files, and compute hashes to detect changes                            | Scripts for update detection, TES downloads                           |
+| `seeding`      | Database seeding script and related resources (SQL, Python), including gitignored data                                | Seeding script, seed-data SQL                                         |
 
 ## Local Development Workflow
 
@@ -60,7 +60,7 @@ Below you'll find an overview of the high-level structure, directory purposes, a
 ### Step 1: Install Dependencies
 
 ```bash
-pip install -r requirements.txt && pip install -r requirements-dev.txt
+just server install-dev
 ```
 
 ### Step 2: Fetch TES Data
@@ -99,7 +99,7 @@ just db seed
 But the full workflow looks like:
 
 ```bash
-docker compose up -d db migrate
+just dev up -d db migrate
 just db clean
 just migrate local
 just db seed
@@ -108,7 +108,7 @@ just db seed
 or; more simply:
 
 ```bash
-docker compose up -d db migrate
+just dev up -d db migrate
 just db refresh
 ```
 
@@ -154,5 +154,5 @@ just db find-condition "COVID-19"
 To stop and remove the database container and its data volume:
 
 ```bash
-docker compose down -v
+just dev down
 ```

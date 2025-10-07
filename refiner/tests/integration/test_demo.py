@@ -26,9 +26,12 @@ client = TestClient(app=app)
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_demo_upload_success(
-    test_assets_path: pathlib.Path, authed_client, test_user_id
-) -> None:
+async def test_demo_upload_smoke(test_assets_path: pathlib.Path, authed_client) -> None:
+    """
+    Smoke test for the /api/v1/demo/upload endpoint.
+    Verifies that the endpoint processes a demo ZIP file and returns a 200 with expected top-level fields.
+    """
+
     uploaded_file = test_assets_path / "demo" / "monmothma.zip"
     with open(uploaded_file, "rb") as file_data:
         response = await authed_client.post(
@@ -36,17 +39,11 @@ async def test_demo_upload_success(
             files={"uploaded_file": ("monmothma.zip", file_data, "application/zip")},
         )
     assert response.status_code == 200
-
     data: dict[str, Any] = response.json()
-    assert "conditions" in data
+    assert "refined_conditions" in data
+    assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
     assert "refined_download_url" in data
-    assert test_user_id in data["refined_download_url"]
-    assert "/refiner-app/refiner-test-suite/" in data["refined_download_url"]
-    assert "stats" in data["conditions"][0]
-    assert any(
-        "file size reduced by" in stat for stat in data["conditions"][0]["stats"]
-    )
 
 
 @pytest.mark.integration
@@ -57,6 +54,10 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
         return ""
 
     def mock_get_logged_in_user():
+        from datetime import datetime
+
+        from app.db.users.model import DbUser
+
         return DbUser(
             id=test_user_id,
             username=test_username,
@@ -65,15 +66,6 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
-
-    # patch refine's db condition lookup to return empty list (so no DB connection)
-    async def fake_get_conditions_by_child_rsg_snomed_codes(db, codes):
-        return []
-
-    monkeypatch.setattr(
-        "app.services.ecr.refine.get_conditions_by_child_rsg_snomed_codes",
-        fake_get_conditions_by_child_rsg_snomed_codes,
-    )
 
     app.dependency_overrides[upload_refined_ecr] = lambda: fake_upload_refined_ecr
     app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user

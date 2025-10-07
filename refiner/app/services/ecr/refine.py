@@ -1,15 +1,16 @@
-from ...core.exceptions import SectionValidationError
-from ...core.models.types import XMLFiles
-from ...db.conditions.db import get_conditions_by_child_rsg_snomed_codes
-from ...db.pool import AsyncDatabaseConnection
-from ..file_io import read_json_asset
-from ..terminology import (
-    ConditionPayload,
-    ProcessedCondition,
+from typing import Literal
+
+from lxml import etree
+
+from ...core.exceptions import (
+    SectionValidationError,
+    StructureValidationError,
+    XMLValidationError,
 )
-from .models import RefinedDocument
-from .process_eicr import build_condition_eicr_pairs, refine_eicr
-from .process_rr import process_rr
+from ...core.models.types import XMLFiles
+from ..file_io import read_json_asset
+from ..terminology import ProcessedCondition, ProcessedConfiguration
+from .process_eicr import _get_section_by_code, _process_section
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -78,69 +79,88 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
     return round(percent_diff)
 
 
-async def refine(
-    original_xml: XMLFiles,
-    db: AsyncDatabaseConnection,
-    jurisdiction_id: str,
+def refine_eicr(
+    xml_files: XMLFiles,
+    processed_configuration: ProcessedConfiguration,
+    processed_condition: ProcessedCondition | None = None,
     sections_to_include: list[str] | None = None,
-) -> list[RefinedDocument]:
+) -> str:
     """
-    Orchestrates the eICR refinement process.
+    Refine an eICR XML document by processing its sections.
 
-    This is the primary entry point for the eICR refinement process. It takes an eICR/RR pair,
-    processes them, and produces a list of refined eICR documents—one for each reportable condition found.
+    Processing behavior:
+        - If sections_to_include is provided, those sections are preserved unmodified.
+        - For all other sections, only entries matching the clinical codes related to the given condition_codes are kept.
+        - If no matching entries are found in a section, it is replaced with a minimal section and marked with nullFlavor="NI".
 
     Args:
-        original_xml: An eICR/RR pair.
-        db: An established async DB connection to use.
-        jurisdiction_id: The ID of the jurisdiction to fetch configurations for.
-        sections_to_include: Optional list of section LOINC codes to preserve as-is.
+        xml_files: The XMLFiles container with the eICR document to refine.
+        processed_configuration: A more comprehensive object containing data from DbCondition and DbConfiguration.
+        processed_condition: Optional object containing processed data from DbCondition.
+        sections_to_include: Optional list of LOINC codes for eICR sections with instructions to either:
+          - retain: do not process/refine. (TODO)
+          - refine: refine this section. (working)
+          - remove: force section to be a "minimal section". (TODO)
 
     Returns:
-        A list of `RefinedDocument` objects.
+        str: The refined eICR XML document as a string.
+
+    Raises:
+        XMLValidationError: If the XML is invalid.
+        StructureValidationError: If the document structure is invalid.
     """
 
-    # STEP 1: process the RR to find all reportable conditions
-    rr_results = process_rr(original_xml)
-    reportable_conditions = rr_results["reportable_conditions"]
+    try:
+        # parse the eicr document
+        validated_message = xml_files.parse_eicr()
 
-    # STEP 2: create isolated XML object pairs for each condition to ensure
-    # that the refinement of one document doesn't affect another
-    condition_eicr_pairs = build_condition_eicr_pairs(
-        original_xml, reportable_conditions
-    )
+        namespaces = {"hl7": "urn:hl7-org:v3"}
+        structured_body = validated_message.find(".//hl7:structuredBody", namespaces)
 
-    refined_eicrs = []
-    for condition, condition_specific_xml_pair in condition_eicr_pairs:
-        # STEP 3: fetch all relevant DbCondition objects from the database using the code from the RR
-        db_conditions = await get_conditions_by_child_rsg_snomed_codes(
-            db, [condition.code]
-        )
-
-        # STEP 4: create the ProcessedCondition object using the Payload -> Processed pattern
-        # this transforms the raw database models into a simple set of codes
-        condition_payload = ConditionPayload(conditions=db_conditions)
-        processed_condition = ProcessedCondition.from_payload(condition_payload)
-
-        # TODO: implement configuration-based refinement next.
-        # * this will involve fetching a jurisdiction-specific configuration for the condition
-        #   and creating a ProcessedConfiguration object to be used in the refinement process
-        processed_configuration = None
-
-        # STEP 5: call the eICR refiner with the final processed objects
-        # the refiner can now work with the clean data without needing to know how it was assembled
-        refined_eicr_str = refine_eicr(
-            xml_files=condition_specific_xml_pair,
-            processed_condition=processed_condition,
-            processed_configuration=processed_configuration,
-            sections_to_include=sections_to_include,
-        )
-
-        # STEP 6: assemble the final refined document object and add it to the results
-        refined_eicrs.append(
-            RefinedDocument(
-                reportable_condition=condition, refined_eicr=refined_eicr_str
+        # if we don't have a structuredBody this is a major problem
+        if structured_body is None:
+            raise StructureValidationError(
+                message="No structured body found in eICR",
+                details={"document_type": "eICR"},
             )
-        )
 
-    return refined_eicrs
+        # TODO:
+        # detect version from document. in future we'll have a function here to check
+        # we'll then use the 'refiner_config.json' as the brain for processing in a
+        # config-driven way for section processing where the version will be passed to
+        # _process_section
+        version: Literal["1.1"] = "1.1"
+
+        # per the function's design, `processed_configuration` is the required,
+        # primary input. we will **always** use it
+        xpath_to_use = processed_configuration.build_xpath()
+
+        # TODO:
+        # eventually phase this completely out of the codebase
+        # it's now the optional object
+        if processed_condition is not None:
+            pass
+
+        for section_code, section_config in REFINER_DETAILS["sections"].items():
+            # skip if in sections_to_include (preserve unmodified)
+            if sections_to_include and section_code in sections_to_include:
+                continue
+
+            section = _get_section_by_code(structured_body, section_code, namespaces)
+            if section is None:
+                continue
+
+            _process_section(section, xpath_to_use, namespaces, section_config, version)
+
+        # format and return the result
+        return etree.tostring(validated_message, encoding="unicode")
+
+    except etree.XMLSyntaxError as e:
+        raise XMLValidationError(
+            message="Failed to parse eICR document", details={"error": str(e)}
+        )
+    except etree.XPathEvalError as e:
+        raise XMLValidationError(
+            message="Failed to evaluate XPath expression in eICR document",
+            details={"error": str(e)},
+        )
