@@ -1,8 +1,9 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
-import path from 'path';
-import fs from 'fs';
+// import { Page } from '@playwright/test';
+// import path from 'path';
+// import fs from 'fs';
 
 test.describe.serial('should be able to access independent testing', () => {
   // Login once before all tests
