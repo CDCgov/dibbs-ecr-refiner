@@ -170,7 +170,7 @@ export default function EicrSectionReview({
       </ul>
       <Table
         bordered
-        className="margin-top-2 !max-w-[740px] !border-separate border-spacing-0 rounded-full border-l-0"
+        className="mt-2 !max-w-[740px] !border-separate border-spacing-0 rounded-full border-l-0"
         scrollable
       >
         <colgroup>
