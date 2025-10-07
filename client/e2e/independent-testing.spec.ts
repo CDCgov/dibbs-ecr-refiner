@@ -28,6 +28,7 @@ test.describe.serial('should be able to access independent testing', () => {
       page.getByText('Want to refine your own eCR file?')
     ).toBeVisible();
   });
+
   test('should be able to upload a file, refine, and download results', async () => {
     /// ==========================================================================
     /// Test independent test flow: upload, refine, download
@@ -94,5 +95,51 @@ test.describe.serial('should be able to access independent testing', () => {
 
     // Assert that the file exists
     expect(fs.existsSync(downloadPath)).toBeTruthy();
+  });
+
+  test('should be able to refine with the test file', async () => {
+    /// ==========================================================================
+    /// Test independent flow with test file
+    /// ==========================================================================
+    await page.getByRole('link', { name: 'Testing' }).click();
+
+    // Click the "Use test file" button
+    const useTestFileButton = page.getByRole('button', {
+      name: 'Use test file',
+    });
+    await expect(useTestFileButton).toBeVisible();
+    await useTestFileButton.click();
+
+    // Verify the expected reportable conditions are visible
+    await expect(
+      page.getByText(
+        'We found the following reportable condition(s) in the RR:',
+        { exact: false }
+      )
+    ).toBeVisible();
+
+    await expect(
+      page.getByText(
+        'Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)',
+        { exact: false }
+      )
+    ).toBeVisible();
+
+    await expect(
+      page.getByText(
+        'Influenza caused by Influenza A virus subtype H5N1 (disorder)',
+        { exact: false }
+      )
+    ).toBeVisible();
+
+    // Click the "Refine eCR" button
+    const refineButton = page.getByRole('button', { name: 'Refine eCR' });
+    await expect(refineButton).toBeVisible();
+    await refineButton.click();
+
+    await expect(page.getByText('eCR refinement results')).toBeVisible();
+    await expect(page.getByText('eICR file size reduced by')).toBeVisible();
+    await expect(page.getByText('Original eICR')).toBeVisible();
+    await expect(page.getByText('Refined eICR')).toBeVisible();
   });
 });
