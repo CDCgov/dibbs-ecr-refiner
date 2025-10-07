@@ -6,16 +6,21 @@ import { useToast } from '../../../hooks/useToast';
 import { UpdateSectionProcessingEntryAction } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
+interface EicrSectionReviewProps {
+  configurationId: string;
+  sectionProcessing: DbConfigurationSectionProcessing[];
+}
+
 /**
  * EicrSectionReview displays an overview or review of eICR sections and allows
  * users to choose an action for each section (retain, refine, remove).
  * Radio inputs are fully accessible and can be selected by clicking anywhere
  * in the containing table cell (td), supporting keyboard navigation as well.
  */
-const EicrSectionReview: React.FC<{
-  configurationId: string;
-  sectionProcessing: DbConfigurationSectionProcessing[];
-}> = ({ configurationId, sectionProcessing }) => {
+export default function EicrSectionReview({
+  configurationId,
+  sectionProcessing,
+}: EicrSectionReviewProps) {
   // Store selected action for each section in state
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
 
@@ -223,6 +228,4 @@ const EicrSectionReview: React.FC<{
       </Table>
     </section>
   );
-};
-
-export default EicrSectionReview;
+}
