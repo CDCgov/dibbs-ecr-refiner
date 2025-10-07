@@ -29,7 +29,7 @@ function App() {
 
   return (
     <Layout username={user.username}>
-      <ToastContainer className={'!w-full'} />
+      <ToastContainer className="!w-full" />
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />

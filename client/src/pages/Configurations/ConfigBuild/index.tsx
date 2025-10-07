@@ -71,7 +71,7 @@ export default function ConfigBuild() {
       </NavigationContainer>
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
-          <ConfigurationTitleBar step={'build'} />
+          <ConfigurationTitleBar step="build" />
           <Export id={id} />
         </div>
         <Builder
@@ -94,7 +94,7 @@ type ExportBuilderProps = {
 export function Export({ id }: ExportBuilderProps) {
   return (
     <a
-      className="text-blue-cool-50 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
+      className="text-blue-cool-60 mt-8 mb-6 self-end font-bold hover:cursor-pointer hover:underline"
       href={`/api/v1/configurations/${id}/export`}
       download
     >
@@ -263,7 +263,7 @@ function Builder({
                         <span className="italic">Default</span>
                       ) : (
                         <Icon.Delete
-                          className={'!fill-red-700'}
+                          className="!fill-red-700"
                           size={3}
                           aria-hidden
                         />
@@ -431,12 +431,12 @@ function CustomCodesDetail({
               key={customCode.code + customCode.system}
               className="align-middle"
             >
-              <td className={'w-1/6 pb-6'}>{customCode.code}</td>
-              <td className={'text-gray-cool-60 w-1/6 pb-6'}>
+              <td className="w-1/6 pb-6">{customCode.code}</td>
+              <td className="text-gray-cool-60 w-1/6 pb-6">
                 {customCode.system}
               </td>
-              <td className={'w-1/6 pb-6'}>{customCode.name}</td>
-              <td className={'w-1/2 text-right whitespace-nowrap'}>
+              <td className="w-1/6 pb-6">{customCode.name}</td>
+              <td className="w-1/2 text-right whitespace-nowrap">
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener

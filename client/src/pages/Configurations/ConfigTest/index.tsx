@@ -37,7 +37,7 @@ export default function ConfigTest() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <ConfigurationTitleBar step={'test'} />
+        <ConfigurationTitleBar step="test" />
         <Tester config={response.data} />
       </SectionContainer>
     </div>

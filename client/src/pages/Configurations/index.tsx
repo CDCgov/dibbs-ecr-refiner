@@ -119,7 +119,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       id="add-configuration-modal"
       aria-labelledby="add-configuration-modal-heading"
       aria-describedby="add-configuration-modal-description"
-      className="condition-creation-modal pb-5 !align-top"
+      className="condition-creation-modal p-5 !align-top md:p-0 md:pb-5"
     >
       <ModalHeading
         id="add-configuration-modal-heading"

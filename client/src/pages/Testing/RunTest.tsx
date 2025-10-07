@@ -3,7 +3,7 @@ import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import ForwardSvg from '../../assets/forward.svg';
 import { ChangeEvent, useRef } from 'react';
-import { Icon } from '@trussworks/react-uswds';
+import { WarningIcon } from '../../components/WarningIcon';
 import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
 
@@ -72,7 +72,7 @@ export function RunTest({
                 Use test file
               </Button>
               <a
-                className="text-blue-cool-60 justify-start font-bold hover:underline"
+                className="text-blue-cool-60 font-bold hover:underline"
                 href="/api/v1/demo/download"
                 download
               >
@@ -149,10 +149,7 @@ function UploadFileWarning() {
     <div className="bg-state-error-lighter rounded p-4">
       <p className="text-state-error-dark flex flex-col gap-3">
         <span className="flex items-center gap-2">
-          <Icon.Warning
-            className="[&_path]:fill-state-error shrink-0"
-            aria-label="Warning"
-          />
+          <WarningIcon aria-label="Warning" />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
         <span className="font-bold">
