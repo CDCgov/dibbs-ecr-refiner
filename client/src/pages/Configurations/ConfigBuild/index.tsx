@@ -309,7 +309,7 @@ function Builder({
             </OptionsList>
           </OptionsListContainer>
         </div>
-        <div className="flex max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex !h-full !max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
@@ -336,10 +336,12 @@ function Builder({
               />
             </>
           ) : tableView === 'sections' ? (
-            <EicrSectionReview
-              configurationId={id}
-              sectionProcessing={section_processing}
-            />
+            <>
+              <EicrSectionReview
+                configurationId={id}
+                sectionProcessing={section_processing}
+              />
+            </>
           ) : null}
         </div>
       </div>

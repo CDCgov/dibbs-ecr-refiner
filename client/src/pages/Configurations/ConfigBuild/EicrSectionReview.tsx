@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Table from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useUpdateConfigurationSectionProcessing } from '../../../api/configurations/configurations';
@@ -97,16 +97,18 @@ export default function EicrSectionReview({
     );
   };
 
-  /**
-   * Renders a clickable, accessible table cell containing a radio input for a section action.
-   * Uses USWDS radio markup/classes for consistent styling and accessibility.
-   */
-  const RadioCell: React.FC<{
+  interface RadioCellProps {
     index: number;
     action: UpdateSectionProcessingEntryAction;
     checked: boolean;
     ariaLabel: string;
-  }> = ({ index, action, checked, ariaLabel }) => {
+  }
+
+  /**
+   * Renders a clickable, accessible table cell containing a radio input for a section action.
+   * Uses USWDS radio markup/classes for consistent styling and accessibility.
+   */
+  const RadioCell = ({ index, action, checked, ariaLabel }: RadioCellProps) => {
     return (
       <td className="!cursor-default text-center !break-all !whitespace-normal">
         <button
@@ -143,10 +145,7 @@ export default function EicrSectionReview({
   };
 
   return (
-    <section
-      aria-label="Choose what you'd like to do with the sections in your eICR"
-      className="w-full"
-    >
+    <section aria-label="Choose what you'd like to do with the sections in your eICR">
       <h2 className="!mb-4 text-lg leading-10 font-bold">
         Choose what you'd like to do with the sections in your eICR
       </h2>
@@ -168,11 +167,7 @@ export default function EicrSectionReview({
           <b>Remove section:</b> Excludes this section from the eICR entirely.
         </li>
       </ul>
-      <Table
-        bordered
-        className="mt-2 !max-w-[740px] !border-separate border-spacing-0 rounded-full border-l-0"
-        scrollable
-      >
+      <Table className="mt-2 !max-w-[740px] !border-separate border-spacing-0 rounded-full border-l-0">
         <colgroup>
           <col className="w-[260px]" />
           <col className="w-[160px]" />
