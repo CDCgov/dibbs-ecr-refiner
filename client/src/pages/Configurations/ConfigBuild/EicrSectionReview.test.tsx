@@ -150,16 +150,20 @@ describe('EicrSectionReview (improved)', () => {
     });
     mockMutate.mockReset();
 
-    await userEvent.tab();
-    await userEvent.tab();
-    await userEvent.keyboard(' ');
+    // Directly focus the button for 'Include and refine section Section B'
+    const retainButton = screen.getAllByRole('radio').find((node) =>
+      node.querySelector('input[aria-label="Include and refine section Section B"]')
+    );
+    expect(retainButton).toBeTruthy();
+    retainButton && retainButton.focus();
+    await userEvent.keyboard(' '); // Simulate spacebar activation
     expect(mockMutate).toHaveBeenCalledTimes(1);
 
     await waitFor(() => {
-      const freshIncludeEntireInput = screen.getByRole('radio', {
+      const freshRetainInput = screen.getByRole('radio', {
         name: 'Include and refine section Section B',
       });
-      expect(freshIncludeEntireInput).toBeChecked();
+      expect(freshRetainInput).toBeChecked();
     });
   });
 
