@@ -5,24 +5,12 @@ import path from 'path';
 import fs from 'fs';
 
 test.describe.serial('should be able to access independent testing', () => {
-  // Login once before all tests
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  // Logout once after all tests
   test.afterEach(async ({ page }) => {
     await logout(page);
-  });
-
-  test('should be able to see the click on testing tab', async ({ page }) => {
-    /// ==========================================================================
-    /// Test that testing tab can be accessed
-    /// ==========================================================================
-    await page.getByRole('link', { name: 'Testing' }).click();
-    await expect(
-      page.getByText('Want to refine your own eCR file?')
-    ).toBeVisible();
   });
 
   test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
@@ -35,6 +23,9 @@ test.describe.serial('should be able to access independent testing', () => {
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
+    await expect(
+      page.getByText('Want to refine your own eCR file?')
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Use test file' }).click();
 
     // check for missing configs text

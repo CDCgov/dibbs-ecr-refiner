@@ -4,12 +4,10 @@ import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
 test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
-  // Login once before all tests
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
 
-  // Logout once after all tests
   test.afterEach(async ({ page }) => {
     await logout(page);
   });
