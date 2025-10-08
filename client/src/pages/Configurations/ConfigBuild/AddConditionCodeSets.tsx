@@ -1,9 +1,4 @@
-/**
- * AddConditionCodeSetsDrawer: Main container component for adding condition code sets to a configuration.
- * Uses a Drawer UI to present a searchable list of conditions, each with controls to add or remove their association.
- * Delegates individual code set row UI to the ConditionCodeSet component.
- */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Drawer from '../../../components/Drawer';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
 import { Link } from 'react-router';
@@ -17,15 +12,12 @@ type AddConditionCodeSetsDrawerProps = {
   configurationId: string;
 };
 
-/**
- * Drawer to add condition code sets to a configuration.
- */
-const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
+export function AddConditionCodeSetsDrawer({
   isOpen,
   onClose,
   configurationId,
   conditions,
-}: AddConditionCodeSetsDrawerProps) => {
+}: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Search and highlight logic
@@ -100,6 +92,4 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
       </div>
     </Drawer>
   );
-};
-
-export default AddConditionCodeSetsDrawer;
+}

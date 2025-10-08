@@ -40,7 +40,7 @@ import {
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
-import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
+import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
@@ -558,7 +558,12 @@ function ConditionCodeTable({
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
-  if (isPending) return 'Loading...';
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
   if (isError) return 'Error!';
 
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
