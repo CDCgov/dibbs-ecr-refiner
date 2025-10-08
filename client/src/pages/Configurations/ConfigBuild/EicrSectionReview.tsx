@@ -110,42 +110,40 @@ export default function EicrSectionReview({
    */
   const RadioCell = ({ index, action, checked, ariaLabel }: RadioCellProps) => {
     return (
-      <td className="!cursor-default text-center !break-all !whitespace-normal">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={checked}
-          tabIndex={0}
-          className="flex h-full w-full cursor-pointer items-center justify-center focus:outline-none"
-          onClick={() => applyAction(index, action)}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault();
-              applyAction(index, action);
-            }
-          }}
-        >
-          <label className="usa-radio m-0 flex items-center justify-center bg-transparent">
-            <input
-              className="usa-radio__input"
-              type="radio"
-              name={`section-${index}`}
-              value={action}
-              aria-label={ariaLabel}
-              checked={checked}
-              tabIndex={-1}
-              readOnly
-            />
-            <span className="usa-radio__label -top-4.5 right-0 cursor-pointer"></span>
-            <span className="usa-sr-only">{ariaLabel}</span>
-          </label>
-        </button>
+      <td
+        className="text-center !break-all !whitespace-normal focus:outline-none"
+        tabIndex={0}
+        onClick={() => applyAction(index, action)}
+        onKeyDown={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            applyAction(index, action);
+          }
+        }}
+      >
+        <label className="usa-radio m-0 block cursor-pointer bg-transparent">
+          <input
+            className="usa-radio__input"
+            type="radio"
+            name={`section-${index}`}
+            value={action}
+            aria-label={ariaLabel}
+            checked={checked}
+            tabIndex={-1}
+            readOnly
+          />
+          <span className="usa-radio__label -top-4.5 right-0"></span>
+          <span className="usa-sr-only">{ariaLabel}</span>
+        </label>
       </td>
     );
   };
 
   return (
-    <section aria-label="Choose what you'd like to do with the sections in your eICR">
+    <section
+      id="sections-table"
+      aria-label="Choose what you'd like to do with the sections in your eICR"
+    >
       <h2 className="!mb-4 text-lg leading-10 font-bold">
         Choose what you'd like to do with the sections in your eICR
       </h2>
