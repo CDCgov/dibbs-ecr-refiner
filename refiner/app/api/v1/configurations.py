@@ -1165,8 +1165,12 @@ async def update_section_processing(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    # convert payload to DB-friendly format
-    section_updates = [{"code": s.code, "action": s.action} for s in payload.sections]
+    # convert payload to DB-friendly format (SectionUpdate dataclasses)
+    from ...db.configurations.db import SectionUpdate
+
+    section_updates = [
+        SectionUpdate(code=s.code, action=s.action) for s in payload.sections
+    ]
 
     try:
         updated_config = await update_section_processing_db(

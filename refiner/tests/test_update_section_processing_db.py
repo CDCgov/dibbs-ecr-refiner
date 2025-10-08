@@ -101,9 +101,11 @@ async def test_update_section_processing_valid():
     fake_db = _FakeDB(row=row)
 
     # Payload for updates
+    from app.db.configurations.db import SectionUpdate
+
     section_updates = [
-        {"code": "A", "action": "refine"},
-        {"code": "B", "action": "retain"},
+        SectionUpdate(code="A", action="refine"),
+        SectionUpdate(code="B", action="retain"),
     ]
 
     updated_config = await update_section_processing_db(
@@ -143,8 +145,10 @@ async def test_update_section_processing_invalid_action():
     )
 
     # Invalid payload
+    from app.db.configurations.db import SectionUpdate
+
     section_updates = [
-        {"code": "A", "action": "invalid_action"},
+        SectionUpdate(code="A", action="invalid_action"),
     ]
 
     # The DB is not consulted in this case because validation happens first.
@@ -197,8 +201,10 @@ async def test_update_section_processing_unknown_code():
     fake_db = _FakeDB(row=row)
 
     # Payload with unknown code
+    from app.db.configurations.db import SectionUpdate
+
     section_updates = [
-        {"code": "Unknown", "action": "refine"},
+        SectionUpdate(code="Unknown", action="refine"),
     ]
 
     updated_config = await update_section_processing_db(
