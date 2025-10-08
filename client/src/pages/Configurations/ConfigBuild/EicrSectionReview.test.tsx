@@ -151,11 +151,15 @@ describe('EicrSectionReview (improved)', () => {
     mockMutate.mockReset();
 
     // Directly focus the button for 'Include and refine section Section B'
-    const retainButton = screen.getAllByRole('radio').find((node) =>
-      node.querySelector('input[aria-label="Include and refine section Section B"]')
-    );
+    const retainButton = screen
+      .getAllByRole('radio')
+      .find((node) =>
+        node.querySelector(
+          'input[aria-label="Include and refine section Section B"]'
+        )
+      );
     expect(retainButton).toBeTruthy();
-    retainButton && retainButton.focus();
+    retainButton?.focus();
     await userEvent.keyboard(' '); // Simulate spacebar activation
     expect(mockMutate).toHaveBeenCalledTimes(1);
 
