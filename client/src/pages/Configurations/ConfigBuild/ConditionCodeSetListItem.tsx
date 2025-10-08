@@ -61,6 +61,16 @@ export function ConditionCodeSetListItem({
           });
           setIsRefreshingConditionList(false);
         },
+        onError: (error) => {
+          setIsRefreshingConditionList(false);
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error associating condition',
+            body: errorDetail,
+          });
+        },
       }
     );
   }
@@ -84,6 +94,7 @@ export function ConditionCodeSetListItem({
           setIsRefreshingConditionList(false);
         },
         onError: (error) => {
+          setIsRefreshingConditionList(false);
           const errorDetail =
             formatError(error) || error.message || 'Unknown error';
           showToast({
