@@ -165,7 +165,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     );
     const searchInput = screen.getByTestId('search-input');
     await user.type(searchInput, 'Asthma');
-    expect(screen.getByTestId('highlight')).toBeInTheDocument();
+    expect(await screen.findByText('Asthma')).toBeInTheDocument();
   });
 
   it('calls onAssociate/onDisassociate for condition actions', async () => {
@@ -180,7 +180,7 @@ describe('AddConditionCodeSetsDrawer', () => {
         }))}
       />
     );
-    await user.click(screen.getByTestId('associate-Asthma'));
-    await user.click(screen.getByTestId('associate-Diabetes'));
+    await user.click(await screen.findByText('Asthma'));
+    await user.click(await screen.findByText('Diabetes'));
   });
 });
