@@ -1,5 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { execSync } from 'child_process';
+import AxeBuilder, { AxeResults, RunOptions } from '@axe-core/playwright';
 
 export async function login(page: Page) {
   await page.goto('/');
@@ -37,4 +38,33 @@ export function refreshDatabase(): string {
     }
     throw new Error(String(error));
   }
+}
+
+/**
+ * Runs Axe accessibility checks using best-practice configuration (WCAG 2.1 AA) and fails the test on violations.
+ * Prints all detected accessibility violations to the Playwright console output for debugging.
+ *
+ * @param {Page} page - The Playwright Page object to run accessibility checks against.
+ * @param {Partial<RunOptions>} [options] - Optional Axe run options (e.g., exclude selectors).
+ * @throws Will fail the test if any accessibility violations are found.
+ */
+export async function runAxeAccessibilityCheck(page: Page, options: Partial<RunOptions> = {}) {
+  const results: AxeResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    // .configure({ rules: { 'color-contrast': { enabled: true } } }) // enforce color contrast check
+    .options(options)
+    .analyze();
+
+  if (results.violations.length > 0) {
+    // Print violations in a readable format for debugging
+    console.error('[A11Y] Accessibility Violations:',
+      results.violations.map((v: typeof results.violations[number]) => ({
+        id: v.id,
+        impact: v.impact,
+        description: v.description,
+        nodes: v.nodes.map((n: typeof v.nodes[number]) => n.target)
+      }))
+    );
+  }
+  expect(results.violations, 'No accessibility violations').toEqual([]);
 }

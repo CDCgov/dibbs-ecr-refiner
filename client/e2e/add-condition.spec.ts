@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, logout } from './utils';
+import { login, logout, runAxeAccessibilityCheck } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
 test.describe
@@ -34,6 +34,9 @@ test.describe
     /// Test that the drawer can open and add condition code sets
     /// ==========================================================================
     await page.getByRole('button', { name: 'Add new code set to' }).click();
+    // Accessibility check: after configuration created
+    await runAxeAccessibilityCheck(page);
+
     await expect(
       page.getByRole('heading', { name: 'Add condition code sets' })
     ).toBeVisible();

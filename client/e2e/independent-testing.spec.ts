@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, logout } from './utils';
+import { login, logout, runAxeAccessibilityCheck } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import path from 'path';
 import fs from 'fs';
@@ -13,9 +13,9 @@ test.describe.serial('should be able to access independent testing', () => {
     await logout(page);
   });
 
-  test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
-    page,
-  }) => {
+  test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({ page }) => {
+    // Accessibility check: after login and navigation to configurations
+    await runAxeAccessibilityCheck(page);
     // start on home screen
     await expect(
       page.getByText('Your reportable condition configurations')

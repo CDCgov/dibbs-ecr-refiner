@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, logout } from './utils';
+import { login, logout, runAxeAccessibilityCheck } from './utils';
 
 test.describe('Viewing the application without logging in', () => {
   test.beforeEach(async ({ page }) => {
@@ -8,6 +8,9 @@ test.describe('Viewing the application without logging in', () => {
 
   test('homepage has expected title and content', async ({ page }) => {
     await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
+    // Accessibility check: public homepage
+    await runAxeAccessibilityCheck(page);
+
   });
 
   test('should show a login button', async ({ page }) => {

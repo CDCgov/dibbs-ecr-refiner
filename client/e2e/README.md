@@ -28,13 +28,32 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end (E2E) bro
 import { test, expect } from '@playwright/test';
 
 test('homepage loads', async ({ page }) => {
-  await page.goto('http://localhost:8081');
+  await page.goto('/');
   await expect(page).toHaveTitle(/CDC/);
 });
 ```
 
 - Use `test.beforeEach()` for setup (like navigation or login) if needed.
 - Prefer user-facing locators (roles, labels, text) over CSS selectors.
+
+## Accessibility (a11y) Testing
+
+- All E2E flows are required to include automated accessibility checks using [Axe](https://www.deque.com/axe/) via the [`@axe-core/playwright`](https://github.com/dequelabs/axe-core-playwright) integration.
+- Use the shared `runAxeAccessibilityCheck(page)` utility (from `utils.ts`) after any major navigation or UI state change in your tests.
+- Accessibility violations will cause the test to fail and print a summary to the Playwright output.
+- Axe is configured for WCAG 2.1 AA and common false positives are minimized by default.
+- Example usage:
+
+```ts
+import { runAxeAccessibilityCheck } from './utils';
+
+test('my accessible page', async ({ page }) => {
+  await page.goto('/my-page');
+  await runAxeAccessibilityCheck(page); // checks current DOM for a11y issues
+});
+```
+
+- See [`utils.ts`](./utils.ts) for JSDoc and configuration details.
 
 ## Best Practices
 

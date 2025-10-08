@@ -20,7 +20,7 @@ export function Toast({
   variant,
   heading,
   body,
-  headingLevel = 'h4',
+  headingLevel = 'h1',
 }: ToastProps) {
   return (
     <Alert
@@ -33,7 +33,7 @@ export function Toast({
           </span>
         ) : null
       }
-      headingLevel={heading ? headingLevel : 'h4'}
+      headingLevel={heading ? headingLevel : 'h1'}
     >
       {body}
     </Alert>
