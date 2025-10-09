@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
+import { Spinner } from '../../components/Spinner';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -57,7 +58,7 @@ export function Configurations() {
 
   const modalRef = useRef<ModalRef>(null);
 
-  if (isPending) return 'Loading...';
+  if (isPending) return <Spinner variant="centered" />;
 
   if (isError) return 'Error!';
 
@@ -131,7 +132,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         Select a reportable condition you'd like to configure.
       </p>
       {isPending ? (
-        'Loading...'
+        <Spinner />
       ) : isError ? (
         <p className="text-state-error-dark">
           Failed to load conditions. Please try again.

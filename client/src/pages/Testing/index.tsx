@@ -5,58 +5,74 @@ import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { Title } from '../../components/Title';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
+import { Uploading } from './Uploading';
 
-type View = 'run-test' | 'reportable-conditions' | 'success' | 'error';
+type Status =
+  | 'run-test'
+  | 'reportable-conditions'
+  | 'success'
+  | 'error'
+  | 'pending';
 
 export default function Demo() {
-  const [view, setView] = useState<View>('run-test');
+  const [status, setStatus] = useState<Status>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
     uploadZip,
     data: response,
     errorMessage,
-    isPending,
     resetState,
   } = useZipUpload();
 
   async function runTestWithCustomFile() {
     try {
+      setStatus('pending');
       await uploadZip(selectedFile);
-      setView('reportable-conditions');
+      setStatus('reportable-conditions');
     } catch {
-      setView('error');
+      setStatus('error');
     }
   }
 
   async function runTestWithSampleFile() {
     try {
+      setStatus('pending');
       await uploadZip(null);
-      setView('reportable-conditions');
+      setStatus('reportable-conditions');
     } catch {
-      setView('error');
+      setStatus('error');
     }
   }
 
   function reset() {
-    setView('run-test');
+    setStatus('run-test');
     resetState();
   }
-
-  if (isPending) return 'Loading...';
 
   return (
     <div className="flex px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
-        {view === 'run-test' && (
-          <RunTest
-            onClickSampleFile={runTestWithSampleFile}
-            onClickCustomFile={runTestWithCustomFile}
-            selectedFile={selectedFile}
-            setSelectedFile={setSelectedFile}
-          />
+        {status === 'run-test' && (
+          <>
+            <Title>Test Refiner</Title>
+            <RunTest
+              onClickSampleFile={runTestWithSampleFile}
+              onClickCustomFile={runTestWithCustomFile}
+              selectedFile={selectedFile}
+              setSelectedFile={setSelectedFile}
+            />
+          </>
         )}
-        {view === 'reportable-conditions' && response?.data && (
+
+        {status === 'pending' && (
+          <>
+            <Title>Test Refiner</Title>
+            <Uploading />
+          </>
+        )}
+
+        {status === 'reportable-conditions' && response?.data && (
           <>
             <Title>Test Refiner</Title>
             <ReportableConditionsResults
@@ -67,18 +83,18 @@ export default function Demo() {
                 response.data.conditions_without_matching_configs
               }
               startOver={reset}
-              goToSuccessScreen={() => setView('success')}
+              goToSuccessScreen={() => setStatus('success')}
             />
           </>
         )}
-        {view === 'success' && response?.data && (
+        {status === 'success' && response?.data && (
           <Success
             refined_conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
             refined_download_url={response.data.refined_download_url}
           />
         )}
-        {view === 'error' && (
+        {status === 'error' && (
           <ErrorScreen message={errorMessage} onClick={reset} />
         )}
       </div>

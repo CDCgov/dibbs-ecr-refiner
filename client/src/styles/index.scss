@@ -110,23 +110,6 @@ button:focus:not(:focus-visible),
     margin-left: 2rem !important;
   }
 }
-.usa-tooltip:has(.delete-codes-button) {
-  display: none;
-}
-
-.condition-codes:hover {
-  .code-set-total {
-    display: none;
-  }
-
-  .delete-codes-button {
-    display: block !important;
-  }
-
-  .usa-tooltip:has(.delete-codes-button) {
-    display: block;
-  }
-}
 
 .usa-tooltip__trigger {
   padding: 0 !important;

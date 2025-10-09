@@ -18,12 +18,14 @@ import { Icon } from '@trussworks/react-uswds';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
+import { Spinner } from '../../../components/Spinner';
+import { Uploading } from '../../Testing/Uploading';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
   const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
 
-  if (isPending) return 'Loading...';
+  if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
   return (
@@ -86,7 +88,7 @@ function Tester({ config }: TesterProps) {
         />
       )}
 
-      {status === 'pending' && <p>Loading...</p>}
+      {status === 'pending' && <Uploading />}
 
       {status === 'error' && (
         <div className="flex flex-col gap-8">
