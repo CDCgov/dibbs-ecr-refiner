@@ -41,6 +41,7 @@ from ...db.conditions.db import (
 )
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
+    SectionUpdate,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
     delete_custom_code_from_configuration_db,
@@ -1166,8 +1167,6 @@ async def update_section_processing(
         )
 
     # convert payload to DB-friendly format (SectionUpdate dataclasses)
-    from ...db.configurations.db import SectionUpdate
-
     section_updates = [
         SectionUpdate(code=s.code, action=s.action) for s in payload.sections
     ]
