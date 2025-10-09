@@ -20,6 +20,10 @@ mod m './.justscripts/just/migrate.just'
 [doc('Alias for `server`')]
 mod s './.justscripts/just/server.just'
 
+[group('alias')]
+[doc('Alias for `cloud`')]
+mod cd './.justscripts/just/cloud.just'
+
 [group('sub-command')]
 [doc('Run commands against `client/` code')]
 mod client './.justscripts/just/client.just'
@@ -43,6 +47,10 @@ mod migrate './.justscripts/just/migrate.just'
 [group('sub-command')]
 [doc('Run server commands against `refiner/` code')]
 mod server './.justscripts/just/server.just'
+
+[group('sub-command')]
+[doc('Run commands against Azure')]
+mod cloud './.justscripts/just/cloud.just'
 
 alias l := lint
 alias t := test
