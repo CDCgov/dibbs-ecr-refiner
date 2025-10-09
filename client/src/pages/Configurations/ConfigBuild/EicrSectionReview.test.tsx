@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { TestQueryClientProvider } from '../../../test-utils';
 import EicrSectionReview from './EicrSectionReview';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 
@@ -25,10 +26,7 @@ vi.mock('../../../hooks/useErrorFormatter', () => ({
  * Helper for rendering with a fresh QueryClient per test.
  */
 function renderWithClient(ui: React.ReactElement) {
-  const queryClient = new QueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
-  );
+  return render(<TestQueryClientProvider>{ui}</TestQueryClientProvider>);
 }
 
 describe('EicrSectionReview accessibility & behavior', () => {
