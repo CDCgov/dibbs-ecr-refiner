@@ -159,16 +159,16 @@ export default function EicrSectionReview({
               </td>
               <RadioCell
                 index={index}
-                action="retain"
-                checked={selectedActions[index] === 'retain'}
-                ariaLabel={`Include and refine section ${section.name}`}
+                action="refine"
+                checked={selectedActions[index] === 'refine'}
+                ariaLabel={`Include entire section ${section.name}`}
                 applyAction={applyAction}
               />
               <RadioCell
                 index={index}
-                action="refine"
-                checked={selectedActions[index] === 'refine'}
-                ariaLabel={`Include entire section ${section.name}`}
+                action="retain"
+                checked={selectedActions[index] === 'retain'}
+                ariaLabel={`Include and refine section ${section.name}`}
                 applyAction={applyAction}
               />
               <RadioCell
