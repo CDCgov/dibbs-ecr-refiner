@@ -153,11 +153,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
     expect(cell).toBeTruthy();
     await userEvent.click(cell!);
     // Assert optimistic UI: radio is checked (wait for optimistic update to appear)
-    await waitFor(() => {
-      expect(
-        screen.getByLabelText('Include entire section Section Z')
-      ).toBeChecked();
-    });
+    expect(
+      await screen.findByLabelText('Include entire section Section Z')
+    ).toBeChecked();
     // Now wait for error and assert UI reverts, toast called
     await waitFor(() => {
       expect(
