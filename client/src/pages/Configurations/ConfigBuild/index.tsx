@@ -224,7 +224,7 @@ function Builder({
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className={`!mt-4 ${SECONDARY_BUTTON_STYLES}`}
+                className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
                 aria-label="Add new custom code"
               >
                 Add code
