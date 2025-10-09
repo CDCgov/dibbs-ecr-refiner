@@ -3,13 +3,6 @@ import { execSync } from 'child_process';
 
 export async function login(page: Page) {
   await page.goto('/');
-
-  // skip log in if we already have a session
-  const logoutLink = page.getByRole('link', { name: 'Log out' });
-  if (await logoutLink.isVisible().catch(() => false)) {
-    return;
-  }
-
   await page.getByText('Log in').click();
   await page.getByRole('textbox', { name: 'Username or email' }).click();
   await page
