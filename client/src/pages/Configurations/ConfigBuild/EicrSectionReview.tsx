@@ -11,6 +11,7 @@ interface EicrSectionReviewProps {
   sectionProcessing: DbConfigurationSectionProcessing[];
 }
 
+import { RadioCell } from '../../../components/Button/RadioCell';
 /**
  * EicrSectionReview displays an overview or review of eICR sections and allows
  * users to choose an action for each section (retain, refine, remove).
@@ -97,48 +98,6 @@ export default function EicrSectionReview({
     );
   };
 
-  interface RadioCellProps {
-    index: number;
-    action: UpdateSectionProcessingEntryAction;
-    checked: boolean;
-    ariaLabel: string;
-  }
-
-  /**
-   * Renders a clickable, accessible table cell containing a radio input for a section action.
-   * Uses USWDS radio markup/classes for consistent styling and accessibility.
-   */
-  const RadioCell = ({ index, action, checked, ariaLabel }: RadioCellProps) => {
-    return (
-      <td
-        className="text-center !break-all !whitespace-normal focus:outline-none"
-        tabIndex={0}
-        onClick={() => applyAction(index, action)}
-        onKeyDown={(e) => {
-          if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault();
-            applyAction(index, action);
-          }
-        }}
-      >
-        <label className="usa-radio m-0 block cursor-pointer bg-transparent">
-          <input
-            className="usa-radio__input"
-            type="radio"
-            name={`section-${index}`}
-            value={action}
-            aria-label={ariaLabel}
-            checked={checked}
-            tabIndex={-1}
-            readOnly
-          />
-          <span className="usa-radio__label -top-4.5 right-0"></span>
-          <span className="usa-sr-only">{ariaLabel}</span>
-        </label>
-      </td>
-    );
-  };
-
   return (
     <section
       id="sections-table"
@@ -202,18 +161,21 @@ export default function EicrSectionReview({
                 action="retain"
                 checked={selectedActions[index] === 'retain'}
                 ariaLabel={`Include and refine section ${section.name}`}
+                applyAction={applyAction}
               />
               <RadioCell
                 index={index}
                 action="refine"
                 checked={selectedActions[index] === 'refine'}
                 ariaLabel={`Include entire section ${section.name}`}
+                applyAction={applyAction}
               />
               <RadioCell
                 index={index}
                 action="remove"
                 checked={selectedActions[index] === 'remove'}
                 ariaLabel={`Remove section ${section.name}`}
+                applyAction={applyAction}
               />
             </tr>
           ))}
