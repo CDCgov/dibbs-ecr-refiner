@@ -146,9 +146,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
     const cell = screen
       .getAllByRole('cell')
       .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include entire section Section Z"]'
-        )
+        within(cell).queryByLabelText('Include entire section Section Z')
       );
     expect(cell).toBeTruthy();
     await userEvent.click(cell!);
