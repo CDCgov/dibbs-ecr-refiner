@@ -10,6 +10,9 @@ interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   variant?: 'primary' | 'secondary' | 'disabled' | 'selected' | 'tertiary';
   to?: string;
 }
+export const PRIMARY_BUTTON_STYLES =
+  '!bg-violet-warm-60 hover:!bg-violet-warm-70';
+
 export const SECONDARY_BUTTON_STYLES =
   '!bg-white !text-violet-warm-60 !border-violet-warm-60 !border-[2px] !rounded-sm hover:!border-violet-warm-70 hover:!text-violet-warm-70';
 /**
@@ -27,7 +30,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const styles = classNames(className, {
-    '!bg-violet-warm-60 hover:!bg-violet-warm-70': variant === 'primary',
+    [PRIMARY_BUTTON_STYLES]: variant === 'primary',
     [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
     '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed':
       variant === 'disabled',

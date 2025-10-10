@@ -41,3 +41,5 @@ refined-ecr
 
 test-results/
 playwright-report/
+
+e2e/downloads/
