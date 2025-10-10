@@ -11,6 +11,7 @@ import ConfigTest from './pages/Configurations/ConfigTest';
 import ConfigActivate from './pages/Configurations/ConfigActivate';
 
 import 'react-toastify/dist/ReactToastify.css';
+import SessionRedirect from './pages/SessionRedirect';
 
 function App() {
   const [user, isLoading] = useLogin();
@@ -22,7 +23,7 @@ function App() {
     return (
       <Routes>
         <Route path="/" index element={<Home />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="*" element={<SessionRedirect />} />
       </Routes>
     );
   }

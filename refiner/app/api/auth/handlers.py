@@ -12,6 +12,7 @@ from ...db.users.db import IdpUserResponse, upsert_user_db
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
+    SESSION_EXPIRY_SECONDS,
     create_session,
     delete_session,
     get_user_from_session,
@@ -142,7 +143,7 @@ async def auth_callback(
             key="refiner-session",
             value=session_token,
             httponly=True,
-            max_age=3600,
+            max_age=SESSION_EXPIRY_SECONDS,
             samesite="lax",
             secure=env != "local",  # We'll be serving over https in live envs
         )
