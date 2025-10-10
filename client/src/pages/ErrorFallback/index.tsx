@@ -12,5 +12,5 @@ export default function ErrorFallback({ error }: ErrorFallbackProps) {
     return <SessionRedirect displayHeaderAndFooter={false} />;
   }
 
-  return `Unexpected error with message: ${error?.message}`;
+  return `Error!`;
 }
