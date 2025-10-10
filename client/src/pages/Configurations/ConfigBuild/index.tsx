@@ -46,13 +46,19 @@ import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
+import ErrorFallback from '../../ErrorFallback';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
+  const {
+    data: response,
+    isPending,
+    isError,
+    error,
+  } = useGetConfiguration(id ?? '');
 
   if (isPending) return 'Loading...';
-  if (!id || isError) return 'Error!';
+  if (!id || isError) return <ErrorFallback error={error} />;
 
   // sort so the default code set always displays first
   const sortedCodeSets = response.data.code_sets.sort((a) => {
@@ -525,7 +531,12 @@ function ConditionCodeTable({
 }: ConditionCodeTableProps) {
   const DEBOUNCE_TIME_MS = 300;
 
-  const { data: response, isPending, isError } = useGetCondition(conditionId);
+  const {
+    data: response,
+    isPending,
+    isError,
+    error,
+  } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -566,7 +577,7 @@ function ConditionCodeTable({
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
   if (isPending) return 'Loading...';
-  if (isError) return 'Error!';
+  if (isError) return <ErrorFallback error={error} />;
 
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);
