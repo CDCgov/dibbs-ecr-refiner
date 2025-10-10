@@ -24,13 +24,17 @@ mod s './.justscripts/just/server.just'
 [doc('Alias for `cloud`')]
 mod cd './.justscripts/just/cloud.just'
 
-[group('sub-command')]
-[doc('Run commands against `client/` code')]
-mod client './.justscripts/just/client.just'
-
 [group('alias')]
 [doc('Alias for `dev`')]
 mod d './.justscripts/just/dev.just'
+
+[group('alias')]
+[doc('Alias for `structurizr`')]
+mod s9r './.justscripts/just/structurizr.just'
+
+[group('sub-command')]
+[doc('Run commands against `client/` code')]
+mod client './.justscripts/just/client.just'
 
 [group('sub-command')]
 [doc('Run dev-related docker compose commands')]
@@ -51,6 +55,11 @@ mod server './.justscripts/just/server.just'
 [group('sub-command')]
 [doc('Run commands against Azure')]
 mod cloud './.justscripts/just/cloud.just'
+
+[group('sub-command')]
+[doc('Run Structurizr commands')]
+mod structurizr './.justscripts/just/structurizr.just'
+
 
 alias l := lint
 alias t := test
