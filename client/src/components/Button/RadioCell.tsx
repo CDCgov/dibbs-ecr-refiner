@@ -5,7 +5,7 @@ export interface RadioCellProps {
   action: UpdateSectionProcessingEntryAction;
   checked: boolean;
   ariaLabel: string;
-  applyAction?: (
+  applyAction: (
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => void;
@@ -26,11 +26,11 @@ export function RadioCell({
     <td
       className="text-center !break-all !whitespace-normal focus:outline-none"
       tabIndex={0}
-      onClick={() => applyAction && applyAction(index, action)}
+      onClick={() => applyAction(index, action)}
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();
-          applyAction && applyAction(index, action);
+          applyAction(index, action);
         }
       }}
     >
