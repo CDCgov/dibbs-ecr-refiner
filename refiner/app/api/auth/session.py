@@ -12,7 +12,7 @@ from ...core.config import ENVIRONMENT
 from ...db.pool import db
 from ...db.users.model import DbUser
 
-SESSION_EXPIRY_SECONDS = 5  # one hour
+SESSION_EXPIRY_SECONDS = 3600  # one hour
 SESSION_TTL = timedelta(seconds=SESSION_EXPIRY_SECONDS)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
 
