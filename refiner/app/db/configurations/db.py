@@ -67,7 +67,7 @@ async def insert_configuration_db(
         {
             "name": details["display_name"],
             "code": code,
-            "action": "retain",
+            "action": "refine",
         }
         for code, details in section_details.items()
     ]
