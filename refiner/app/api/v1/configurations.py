@@ -41,6 +41,7 @@ from ...db.conditions.db import (
 )
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
+    SectionUpdate,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
     delete_custom_code_from_configuration_db,
@@ -51,8 +52,13 @@ from ...db.configurations.db import (
     get_total_condition_code_counts_by_configuration_db,
     insert_configuration_db,
     is_config_valid_to_insert_db,
+    update_section_processing_db,
 )
-from ...db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from ...db.configurations.model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+    DbConfigurationSectionProcessing,
+)
 from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
@@ -193,6 +199,7 @@ class GetConfigurationResponse:
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
+    section_processing: list[DbConfigurationSectionProcessing]
 
 
 @dataclass(frozen=True)
@@ -260,6 +267,7 @@ async def get_configuration(
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
+        section_processing=config.section_processing,
     )
 
 
@@ -1088,3 +1096,93 @@ async def run_configuration_test(
             ],
         ),
     )
+
+
+class UpdateSectionProcessingEntry(BaseModel):
+    """
+    Model for a single section processing update.
+    """
+
+    code: str
+    action: Literal["retain", "refine", "remove"]
+
+
+class UpdateSectionProcessingPayload(BaseModel):
+    """
+    Payload for updating section processing entries.
+    """
+
+    sections: list[UpdateSectionProcessingEntry]
+
+
+@dataclass(frozen=True)
+class UpdateSectionProcessingResponse:
+    """
+    Response model for updating section processing entries.
+    """
+
+    message: str
+
+
+@router.patch(
+    "/{configuration_id}/section-processing",
+    response_model=UpdateSectionProcessingResponse,
+    tags=["configurations"],
+    operation_id="updateConfigurationSectionProcessing",
+)
+async def update_section_processing(
+    configuration_id: UUID,
+    payload: UpdateSectionProcessingPayload,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> UpdateSectionProcessingResponse:
+    """
+    Update one or more section_processing entries for a configuration.
+
+    Args:
+        configuration_id (UUID): ID of the configuration to update
+        payload (UpdateSectionProcessingPayload): List of section updates with code and action
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): Database connection
+
+    Raises:
+        HTTPException: 404 if configuration isn't found
+        HTTPException: 500 if section processing can't be updated
+
+    Returns:
+        UpdateSectionProcessingResponse: The message to show the user
+    """
+
+    # get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    # convert payload to DB-friendly format (SectionUpdate dataclasses)
+    section_updates = [
+        SectionUpdate(code=s.code, action=s.action) for s in payload.sections
+    ]
+
+    try:
+        updated_config = await update_section_processing_db(
+            config=config, section_updates=section_updates, db=db
+        )
+    except ValueError as e:
+        # DB layer validation error -> bad request
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+    return UpdateSectionProcessingResponse(message="Section processed successfully.")

@@ -1,4 +1,5 @@
 import { useParams } from 'react-router';
+import EicrSectionReview from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -78,6 +79,7 @@ export default function ConfigBuild() {
           code_sets={sortedCodeSets}
           included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
+          section_processing={response.data.section_processing}
           display_name={response.data.display_name}
         />
       </SectionContainer>
@@ -108,12 +110,13 @@ function Builder({
   code_sets,
   custom_codes,
   included_conditions,
+  section_processing,
   display_name: default_condition_name,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [tableView, setTableView] = useState<'none' | 'codeset' | 'custom'>(
-    'none'
-  );
+  const [tableView, setTableView] = useState<
+    'none' | 'codeset' | 'custom' | 'sections'
+  >('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
@@ -283,10 +286,30 @@ function Builder({
                   <span>{custom_codes.length}</span>
                 </button>
               </li>
+              <li key="sections">
+                <button
+                  className={classNames(
+                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                    {
+                      'bg-white': tableView === 'sections',
+                    }
+                  )}
+                  onClick={() => {
+                    setSelectedCodesetId(null);
+                    setTableView('sections');
+                  }}
+                  aria-controls={
+                    tableView === 'sections' ? 'sections-table' : undefined
+                  }
+                  aria-pressed={tableView === 'sections'}
+                >
+                  <span>Sections</span>
+                </button>
+              </li>
             </OptionsList>
           </OptionsListContainer>
         </div>
-        <div className="flex max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex !h-full !max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
@@ -310,6 +333,13 @@ function Builder({
                 configurationId={id}
                 modalRef={modalRef}
                 customCodes={custom_codes}
+              />
+            </>
+          ) : tableView === 'sections' ? (
+            <>
+              <EicrSectionReview
+                configurationId={id}
+                sectionProcessing={section_processing}
               />
             </>
           ) : null}
