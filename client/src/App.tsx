@@ -15,6 +15,7 @@ import SessionRedirect from './pages/SessionRedirect';
 
 function App() {
   const [user, isLoading] = useLogin();
+
   if (isLoading) {
     return <p>Loading...</p>;
   }
