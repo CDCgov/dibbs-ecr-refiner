@@ -43,3 +43,5 @@ test-results/
 playwright-report/
 
 e2e/downloads/
+
+.structurizr/
