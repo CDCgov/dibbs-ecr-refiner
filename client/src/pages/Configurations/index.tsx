@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
+import ErrorFallback from '../ErrorFallback';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -47,7 +48,7 @@ interface ConfigurationsTable {
 }
 
 export function Configurations() {
-  const { data: response, isPending, isError } = useGetConfigurations();
+  const { data: response, isPending, isError, error } = useGetConfigurations();
 
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
@@ -58,8 +59,7 @@ export function Configurations() {
   const modalRef = useRef<ModalRef>(null);
 
   if (isPending) return 'Loading...';
-
-  if (isError) return 'Error!';
+  if (isError) return <ErrorFallback error={error} />;
 
   return (
     <section className="mx-auto p-3">

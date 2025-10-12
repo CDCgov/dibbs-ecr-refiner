@@ -18,13 +18,19 @@ import { Icon } from '@trussworks/react-uswds';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
+import ErrorFallback from '../../ErrorFallback';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
-  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
+  const {
+    data: response,
+    isPending,
+    isError,
+    error,
+  } = useGetConfiguration(id ?? '');
 
   if (isPending) return 'Loading...';
-  if (!id || isError) return 'Error!';
+  if (!id || isError) return <ErrorFallback error={error} />;
 
   return (
     <div>
