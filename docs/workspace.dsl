@@ -1,8 +1,13 @@
 workspace {
+    !identifiers hierarchical
 
     model {
-        user = person "User" {
-            description "A user of the DIBBs eCR Refiner platform"
+        properties {
+            "structurizr.groupSeparator" "/"
+        }
+
+        user = person "Jurisdiction User" {
+            description "A jurisdiction user of the DIBBs eCR Refiner platform"
         }
 
         refiner = softwareSystem "DIBBs eCR Refiner" {
@@ -45,11 +50,11 @@ workspace {
         }
 
         // Relationships
-        user -> network "Navigates to Refiner Application"
-        network -> app "Serves"
-        app -> api "Makes API calls to"
-        api -> database "Reads from and writes to"
-        api -> storage "Reads from and writes to"
+        user -> refiner.network "Navigates to Refiner Application"
+        refiner.network -> refiner.app "Serves"
+        refiner.app -> refiner.api "Makes API calls to"
+        refiner.api -> refiner.database "Reads from and writes to"
+        refiner.api -> refiner.storage "Reads from and writes to"
     }
 
     views {
@@ -59,24 +64,34 @@ workspace {
 
         container refiner {
             include *
-            exclude registry
+            exclude refiner.registry
         }
 
         styles {
             element "Container" {
-                // background "#6CB5F3"
-                // color "#ffffff"
+                background "#6CB5F3"
+                color "#ffffff"
             }
             element "Component" {
-                // background "#85BB65"
-                // color "#ffffff"
+                background "#85BB65"
+                color "#ffffff"
             }
             element "Person" {
-                shape "person"
+                background "#6e99b2"
+                stroke "#afcadb"
+                color "#ffffff"
+                shape "Person"
             }
             element "Web App" {
                 shape "WebBrowser"
             }
+
+            element "DIBBs" {
+                background "#facc2e"
+                color "#000000"
+                stroke "#000000"
+            }
+
             theme "./styles/theme.json"
 
         }

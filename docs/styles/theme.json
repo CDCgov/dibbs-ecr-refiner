@@ -8,8 +8,6 @@
     },
     {
       "tag": "React Application",
-      "color": "#2c86ab",
-      "stroke": "#2c86ab",
       "shape": "WebBrowser",
       "icon": "./.icons/react-logo.png"
     },
@@ -28,15 +26,15 @@
     },
     {
       "tag": "Microsoft Azure - Container Instances",
-      "stroke": "#a67af4",
-      "color": "#a67af4",
+      "stroke": "#a12aa4",
+      "background": "#d11af4",
       "shape": "Component",
       "icon": "./.icons/azure-container-instances.png"
     },
     {
       "tag": "Microsoft Azure - Virtual Networks",
-      "stroke": "#1490df",
-      "color": "#1490df",
+      "background": "#1540df",
+      "stroke": "#1326da",
       "shape": "Pipe",
       "icon": "./.icons/azure-virtual-networks.png"
     },
@@ -66,8 +64,8 @@
     },
     {
       "tag": "Microsoft Azure - Storage Accounts",
-      "stroke": "#37c2b1",
-      "color": "#37c2b1",
+      "stroke": "#37c8b1",
+      "background": "#17c2b1",
       "shape": "Cylinder",
       "icon": "./.icons/azure-storage-accounts.png"
     },
@@ -79,9 +77,8 @@
     },
     {
       "tag": "Microsoft Azure - Azure Database PostgreSQL Server",
-      "background": "#50e6ff",
-      "stroke": "#4d4d51",
-      "color": "#4d4d51",
+      "background": "#30e6ff",
+      "stroke": "#05e6ff",
       "shape": "Cylinder",
       "icon": "./.icons/azure-database-postgresql-server.png"
     },
@@ -93,8 +90,8 @@
     },
     {
       "tag": "Amazon Web Services - Simple Storage Service S3 Standard",
-      "stroke": "#3f8624",
-      "color": "#3f8624",
+      "background": "#3f8639",
+      "stroke": "#3f8584",
       "icon": "./.icons/aws-s3-standard.png"
     },
     {
