@@ -99,6 +99,14 @@
       "stroke": "#767676",
       "color": "#767676",
       "icon": "./.icons/azure-container-registries.png"
+    },
+    {
+      "tag": "Keycloak",
+      "background": "#312c2f",
+      "stroke": "#767676",
+      "color": "#35a8db",
+      "icon": "./.icons/keycloak-logo.png",
+      "shape": "Hexagon"
     }
   ]
 }

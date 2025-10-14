@@ -6,6 +6,10 @@ workspace {
             "structurizr.groupSeparator" "/"
         }
 
+        dev = person "eCR Developer" {
+            description "A developer of the DIBBs eCR Refiner platform"
+        }
+
         user = person "Jurisdiction User" {
             description "A jurisdiction user of the DIBBs eCR Refiner platform"
         }
@@ -23,6 +27,12 @@ workspace {
                 description "Database for storing application data"
                 technology "Azure SQL Database"
                 tags "Microsoft Azure - Azure Database PostgreSQL Server"
+            }
+
+            auth = container "Authentication \n Service" {
+                description "Handles user authentication and authorization"
+                technology "Keycloak"
+                tags "Keycloak" "Authentication"
             }
 
             storage = container "Storage Account" {
@@ -45,26 +55,41 @@ workspace {
             app = container "Application" {
                 description "Frontend application for user interaction"
                 technology "React, TypeScript"
-                tags "Amazon Web Services - S3" "Web App" "React Application"
+                tags "Web App" "React Application"
             }
         }
 
         // Relationships
         user -> refiner.network "Navigates to Refiner Application"
-        refiner.network -> refiner.app "Serves"
+        refiner.network -> refiner.auth "Authenticates via"
+        refiner.auth -> refiner.app "Provides authentication tokens to"
         refiner.app -> refiner.api "Makes API calls to"
         refiner.api -> refiner.database "Reads from and writes to"
         refiner.api -> refiner.storage "Reads from and writes to"
     }
 
     views {
+
+        systemLandscape {
+            include *
+            autolayout lr
+            title "DIBBs eCR Refiner - System Landscape"
+            description "The system landscape diagram for the DIBBs eCR Refiner platform"
+        }
+
         systemContext refiner {
             include *
+
+            title "DIBBs eCR Refiner - System Context"
+            description "The system context diagram for the DIBBs eCR Refiner platform"
         }
 
         container refiner {
             include *
             exclude refiner.registry
+
+            title "DIBBs eCR Refiner - Application"
+            description "The application diagram for the DIBBs eCR Refiner platform"
         }
 
         styles {
@@ -83,6 +108,9 @@ workspace {
                 shape "Person"
             }
             element "Web App" {
+                background "#dbf6ff"
+                stroke "#3b7082"
+                color "#3b7082"
                 shape "WebBrowser"
             }
 
