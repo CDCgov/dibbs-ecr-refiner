@@ -55,6 +55,25 @@ export default defineConfig(
       '@typescript-eslint/no-misused-promises': 'off',
       '@typescript-eslint/no-redundant-type-constituents': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-restricted-types': [
+        'error',
+        {
+          types: {
+            'React.FC': {
+              message:
+                'Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177',
+            },
+            'React.FunctionComponent': {
+              message:
+                'Useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177',
+            },
+            'React.FunctionalComponent': {
+              message:
+                'Preact specific, useless and has some drawbacks, see https://github.com/facebook/create-react-app/pull/8177',
+            },
+          },
+        },
+      ],
     },
     settings: {
       react: {
