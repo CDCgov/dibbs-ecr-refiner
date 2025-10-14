@@ -1,0 +1,107 @@
+{
+  "name": "DIBBS eCR Refiner",
+  "description": "A custom Structurizr theme for DIBBS eCR Refiner diagrams.",
+  "elements": [
+    {
+      "tag": "DIBBs",
+      "icon": "./.icons/dibbs-logo.png"
+    },
+    {
+      "tag": "React Application",
+      "color": "#2c86ab",
+      "stroke": "#2c86ab",
+      "shape": "WebBrowser",
+      "icon": "./.icons/react-logo.png"
+    },
+    {
+      "tag": "Amazon Web Services - Lambda",
+      "color": "#e2730e",
+      "stroke": "#e2730e",
+      "shape": "RoundedBox",
+      "icon": "./.icons/aws-lambda.png"
+    },
+    {
+      "tag": "Amazon Web Services - Fargate",
+      "stroke": "#e5770d",
+      "color": "#e5770d",
+      "icon": "./.icons/aws-fargate.png"
+    },
+    {
+      "tag": "Microsoft Azure - Container Instances",
+      "stroke": "#a67af4",
+      "color": "#a67af4",
+      "shape": "Component",
+      "icon": "./.icons/azure-container-instances.png"
+    },
+    {
+      "tag": "Microsoft Azure - Virtual Networks",
+      "stroke": "#1490df",
+      "color": "#1490df",
+      "shape": "Pipe",
+      "icon": "./.icons/azure-virtual-networks.png"
+    },
+    {
+      "tag": "Microsoft Azure - Subscriptions",
+      "stroke": "#ffd70f",
+      "color": "#ffd70f",
+      "icon": "./.icons/azure-subscriptions.png"
+    },
+    {
+      "tag": "Microsoft Azure - Resource Groups",
+      "stroke": "#9cebff",
+      "color": "#9cebff",
+      "icon": "./.icons/azure-resource-groups.png"
+    },
+    {
+      "tag": "Microsoft Azure - Subscriptions",
+      "stroke": "#ffd70f",
+      "color": "#ffd70f",
+      "icon": "./.icons/azure-subscriptions.png"
+    },
+    {
+      "tag": "Microsoft Azure - Managed Identities",
+      "stroke": "#50e6ff",
+      "color": "#50e6ff",
+      "icon": "./.icons/azure-managed-identities.png"
+    },
+    {
+      "tag": "Microsoft Azure - Storage Accounts",
+      "stroke": "#37c2b1",
+      "color": "#37c2b1",
+      "shape": "Cylinder",
+      "icon": "./.icons/azure-storage-accounts.png"
+    },
+    {
+      "tag": "Microsoft Azure - SQL Database",
+      "stroke": "#50e6ff",
+      "color": "#50e6ff",
+      "icon": "./.icons/azure-sql-database.png"
+    },
+    {
+      "tag": "Microsoft Azure - Azure Database PostgreSQL Server",
+      "background": "#50e6ff",
+      "stroke": "#4d4d51",
+      "color": "#4d4d51",
+      "shape": "Cylinder",
+      "icon": "./.icons/azure-database-postgresql-server.png"
+    },
+    {
+      "tag": "Amazon Web Services - Simple Queue Service Message",
+      "stroke": "#b0084d",
+      "color": "#b0084d",
+      "icon": "./.icons/aws-simple-queue-service.png"
+    },
+    {
+      "tag": "Amazon Web Services - Simple Storage Service S3 Standard",
+      "stroke": "#3f8624",
+      "color": "#3f8624",
+      "icon": "./.icons/aws-s3-standard.png"
+    },
+    {
+      "tag": "Microsoft Azure - Container Registries",
+      "stroke": "#767676",
+      "color": "#767676",
+      "icon": "./.icons/azure-container-registries.png"
+    }
+  ]
+}
