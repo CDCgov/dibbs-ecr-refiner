@@ -20,13 +20,19 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
 import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
+import ErrorFallback from '../../ErrorFallback';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
-  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
+  const {
+    data: response,
+    isPending,
+    isError,
+    error,
+  } = useGetConfiguration(id ?? '');
 
   if (isPending) return <Spinner variant="centered" />;
-  if (!id || isError) return 'Error!';
+  if (!id || isError) return <ErrorFallback error={error} />;
 
   return (
     <div>

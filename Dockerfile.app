@@ -15,7 +15,7 @@ COPY ./client ./
 RUN npm run build
 
 # Package production app
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 RUN apt-get update && \
     apt-get upgrade -y
