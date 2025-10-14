@@ -176,10 +176,12 @@ function Builder({
                   )}
                 >
                   <ConditionCodeSetButton
-                    codeSetId={codeSet.condition_id}
                     codeSetName={codeSet.display_name}
                     codeSetTotalCodes={codeSet.total_codes}
                     onViewCodeSet={() => onCodesetClick(codeSet.condition_id)}
+                    aria-controls={
+                      selectedCodesetId ? 'codeset-table' : undefined
+                    }
                   />
                   {i === 0 ? (
                     <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
@@ -284,18 +286,17 @@ function Builder({
   );
 }
 
-interface ConditionCodeSetButtonProps {
-  codeSetId: string;
+type ConditionCodeSetButtonProps = {
   codeSetName: string;
   codeSetTotalCodes: number;
   onViewCodeSet: () => void;
-}
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 function ConditionCodeSetButton({
-  codeSetId,
   codeSetName,
   codeSetTotalCodes,
   onViewCodeSet,
+  ...props
 }: ConditionCodeSetButtonProps) {
   return (
     <button
@@ -303,7 +304,7 @@ function ConditionCodeSetButton({
         'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
       )}
       onClick={onViewCodeSet}
-      aria-controls={codeSetId ? 'codeset-table' : undefined}
+      {...props}
     >
       <span aria-hidden>{codeSetName}</span>
       <span aria-hidden className="group-hover:hidden">
