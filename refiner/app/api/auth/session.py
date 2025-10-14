@@ -12,7 +12,8 @@ from ...core.config import ENVIRONMENT
 from ...db.pool import db
 from ...db.users.model import DbUser
 
-SESSION_TTL = timedelta(hours=1)
+SESSION_EXPIRY_SECONDS = 3600  # one hour
+SESSION_TTL = timedelta(seconds=SESSION_EXPIRY_SECONDS)
 SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"].encode("utf-8")
 
 
@@ -102,7 +103,7 @@ async def run_expired_session_cleanup_task(logger: Logger) -> None:
     """
     Task that can be scheduled to run session cleanup once per hour.
     """
-    cleanup_interval_seconds = 3600  # Run once per hour
+    cleanup_interval_seconds = SESSION_EXPIRY_SECONDS  # Run once per hour
     while True:
         try:
             await _delete_expired_sessions()

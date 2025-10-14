@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import Demo from '.';
 import { BrowserRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
-import { RefinedTestingDocument } from '../../api/schemas/refinedTestingDocument.ts';
 import { Mock } from 'vitest';
 import { useGetEnv } from '../../hooks/useGetEnv.ts';
+import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
@@ -13,8 +13,8 @@ vi.mock('../../hooks/useGetEnv', () => ({
   useGetEnv: vi.fn(() => 'local'),
 }));
 
-const mockUploadResponse: RefinedTestingDocument = {
-  conditions: [
+const mockUploadResponse: IndependentTestUploadResponse = {
+  refined_conditions: [
     {
       code: 'mock-code',
       display_name: 'mock condition name',
@@ -22,15 +22,15 @@ const mockUploadResponse: RefinedTestingDocument = {
       stats: ['eICR reduced by 59%'],
     },
   ],
-  conditions_found: 1,
-  processing_notes: ['Testing notes'],
+  conditions_without_matching_configs: [],
+  refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
   refined_download_url: 'http://s3-standard.com',
 };
 
-const mockCustomUploadResponse: RefinedTestingDocument = {
-  conditions: [
+const mockCustomUploadResponse: IndependentTestUploadResponse = {
+  refined_conditions: [
     {
       code: 'mock-custom-file',
       display_name: 'custom condition',
@@ -38,8 +38,8 @@ const mockCustomUploadResponse: RefinedTestingDocument = {
       stats: ['eICR reduced by 77%'],
     },
   ],
-  conditions_found: 1,
-  processing_notes: ['Testing notes'],
+  conditions_without_matching_configs: [],
+  refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
   refined_download_url: 'http://s3-custom.com',
@@ -203,49 +203,168 @@ describe('Demo', () => {
       await screen.findByText('Use test file', { selector: 'button' })
     ).toBeInTheDocument();
   });
-});
 
-it('should show PHI/PII banner in the "local" environment', () => {
-  (useUploadEcr as unknown as Mock).mockImplementation(() => {
-    return {
-      mutateAsync: vi.fn().mockImplementation(() => {}),
-      reset: vi.fn(),
-    };
+  it('should show PHI/PII banner in the "local" environment', () => {
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn().mockImplementation(() => {}),
+        reset: vi.fn(),
+      };
+    });
+
+    const bannerText = 'This environment is not approved to handle PHI/PII.';
+    (useGetEnv as unknown as Mock).mockReturnValue('local');
+
+    renderDemoView();
+    expect(screen.getByText(bannerText)).toBeInTheDocument();
   });
 
-  const bannerText = 'This environment is not approved to handle PHI/PII.';
-  (useGetEnv as unknown as Mock).mockReturnValue('local');
+  it('should show PHI/PII banner in the "demo" environment', () => {
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn().mockImplementation(() => {}),
+        reset: vi.fn(),
+      };
+    });
 
-  renderDemoView();
-  expect(screen.getByText(bannerText)).toBeInTheDocument();
-});
+    const bannerText = 'This environment is not approved to handle PHI/PII.';
+    (useGetEnv as unknown as Mock).mockReturnValue('demo');
 
-it('should show PHI/PII banner in the "demo" environment', () => {
-  (useUploadEcr as unknown as Mock).mockImplementation(() => {
-    return {
-      mutateAsync: vi.fn().mockImplementation(() => {}),
-      reset: vi.fn(),
-    };
+    renderDemoView();
+    expect(screen.getByText(bannerText)).toBeInTheDocument();
   });
 
-  const bannerText = 'This environment is not approved to handle PHI/PII.';
-  (useGetEnv as unknown as Mock).mockReturnValue('demo');
+  it('should NOT show PHI/PII banner in the "prod" environment', () => {
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn().mockImplementation(() => {}),
+        reset: vi.fn(),
+      };
+    });
 
-  renderDemoView();
-  expect(screen.getByText(bannerText)).toBeInTheDocument();
-});
+    const bannerText = 'This environment is not approved to handle PHI/PII.';
+    (useGetEnv as unknown as Mock).mockReturnValue('prod');
 
-it('should NOT show PHI/PII banner in the "prod" environment', () => {
-  (useUploadEcr as unknown as Mock).mockImplementation(() => {
-    return {
-      mutateAsync: vi.fn().mockImplementation(() => {}),
-      reset: vi.fn(),
-    };
+    renderDemoView();
+    expect(screen.queryByText(bannerText)).not.toBeInTheDocument();
   });
 
-  const bannerText = 'This environment is not approved to handle PHI/PII.';
-  (useGetEnv as unknown as Mock).mockReturnValue('prod');
+  it('should display only reportable conditions with missing configurations', async () => {
+    const user = userEvent.setup();
 
-  renderDemoView();
-  expect(screen.queryByText(bannerText)).not.toBeInTheDocument();
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [],
+            conditions_without_matching_configs: [],
+          },
+        },
+      };
+    });
+
+    renderDemoView();
+
+    await user.click(screen.getByText('Use test file'));
+
+    // only start over button is available
+    expect(await screen.findByText('Start over')).toBeInTheDocument();
+    expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
+
+    // only missing condition text is in the doc
+    expect(
+      screen.getByText(
+        'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Would you like to refine the eCR?')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should display only reportable conditions that have a matching configuration', async () => {
+    const user = userEvent.setup();
+
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [
+              {
+                code: '840539006',
+                display_name: 'COVID-19',
+                refined_eicr: '<xml>mock</xml>',
+                stats: ['eICR reduced by XY%'],
+              },
+            ],
+            conditions_without_matching_configs: [],
+          },
+        },
+      };
+    });
+
+    renderDemoView();
+
+    await user.click(screen.getByText('Use test file'));
+
+    // Both buttons should be available
+    expect(screen.getByText('Start over')).toBeInTheDocument();
+    expect(screen.getByText('Refine eCR')).toBeInTheDocument();
+
+    // Missing config text should not be present
+    expect(
+      screen.queryByText(
+        'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
+      )
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.queryByText('Would you like to refine the eCR?')
+    ).toBeInTheDocument();
+  });
+
+  it('should display reportable conditions with both missing and matching configurations', async () => {
+    const user = userEvent.setup();
+
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [
+              {
+                code: '840539006',
+                display_name: 'COVID-19',
+                refined_eicr: '<xml>mock</xml>',
+                stats: ['eICR reduced by XY%'],
+              },
+            ],
+            conditions_without_matching_configs: ['Influenza'],
+          },
+        },
+      };
+    });
+
+    renderDemoView();
+
+    await user.click(screen.getByText('Use test file'));
+
+    // Both buttons should be available
+    expect(screen.getByText('Start over')).toBeInTheDocument();
+    expect(screen.getByText('Refine eCR')).toBeInTheDocument();
+
+    // Missing config warning should be present
+    expect(
+      screen.queryByText(
+        'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
+      )
+    ).toBeInTheDocument();
+
+    // Text asking to refine should be available
+    expect(
+      screen.queryByText('Would you like to refine the eCR?')
+    ).toBeInTheDocument();
+  });
 });

@@ -28,7 +28,7 @@ export function Toast({
       type={variant}
       heading={
         heading ? (
-          <span className={`usa-alert__heading text-lg font-bold`}>
+          <span className="usa-alert__heading text-lg font-bold">
             {heading}
           </span>
         ) : null

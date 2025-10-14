@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
-import { RefinedTestingDocument } from '../../api/schemas';
+import { IndependentTestUploadResponse } from '../../api/schemas';
 import classNames from 'classnames';
 import { Button } from '../Button';
 
 type DiffProps = Pick<
-  RefinedTestingDocument,
+  IndependentTestUploadResponse,
   'refined_download_url' | 'unrefined_eicr'
 > & {
-  condition: RefinedTestingDocument['conditions'][0];
+  condition: IndependentTestUploadResponse['refined_conditions'][0];
 };
 
 export function Diff({
@@ -51,7 +51,6 @@ export function Diff({
               <Button
                 variant="tertiary"
                 onClick={() => downloadFile(refined_download_url)}
-                className="text-blue-400 underline"
               >
                 Download results
               </Button>

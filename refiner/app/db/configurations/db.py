@@ -4,6 +4,7 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
+from ...services.file_io import read_json_asset
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
@@ -12,6 +13,7 @@ from .model import (
 )
 
 EMPTY_JSONB = Jsonb([])
+REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 
 async def insert_configuration_db(
@@ -59,6 +61,17 @@ async def insert_configuration_db(
         version
     """
 
+    section_details = REFINER_DETAILS["sections"]
+
+    section_processing_defaults = [
+        {
+            "name": details["display_name"],
+            "code": code,
+            "action": "refine",
+        }
+        for code, details in section_details.items()
+    ]
+
     params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb, int] = (
         jurisdiction_id,
         # always link a configuration to a primary condition
@@ -79,7 +92,7 @@ async def insert_configuration_db(
         # local_codes
         EMPTY_JSONB,
         # section_processing
-        EMPTY_JSONB,
+        Jsonb(section_processing_defaults),
         # version (start at 1 for new configs)
         1,
     )
@@ -546,6 +559,94 @@ async def edit_custom_code_from_configuration_db(
     return DbConfiguration.from_db_row(row)
 
 
+@dataclass(frozen=True)
+class SectionUpdate:
+    """
+    Represents a section processing update for a configuration.
+    """
+
+    code: str
+    action: str
+
+
+async def update_section_processing_db(
+    config: DbConfiguration,
+    section_updates: list[SectionUpdate],
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Update section processing instructions for a configuration.
+
+    Args:
+        config: The configuration to update
+        section_updates: List of section updates with code and action
+        db: Database connection
+
+    Returns:
+        Updated DbConfiguration or None if the update fails
+    """
+
+    # Validate input actions
+    valid_actions = {"retain", "refine", "remove"}
+    for su in section_updates:
+        if su.action not in valid_actions:
+            raise ValueError(f"Invalid action '{su.action}' for section update.")
+
+    # Build a mapping from code -> action for quick lookup
+    update_map = {su.code: su.action for su in section_updates}
+
+    # Start from the existing section_processing entries on the config
+    existing_sections = [
+        {"name": sp.name, "code": sp.code, "action": sp.action}
+        for sp in config.section_processing
+    ]
+
+    # Apply updates in memory
+    updated_sections = []
+    for sec in existing_sections:
+        if sec["code"] in update_map:
+            updated_sections.append(
+                {
+                    "name": sec["name"],
+                    "code": sec["code"],
+                    "action": update_map[sec["code"]],
+                }
+            )
+        else:
+            updated_sections.append(sec)
+
+    # If any update codes were not present in the existing sections, ignore them.
+    # Persist the updated list back to the database
+    query = """
+            UPDATE configurations
+            SET section_processing = %s::jsonb
+            WHERE id = %s
+            RETURNING
+                id,
+                name,
+                jurisdiction_id,
+                condition_id,
+                included_conditions,
+                custom_codes,
+                local_codes,
+                section_processing,
+                version
+            ;
+            """
+
+    params = (Jsonb(updated_sections), config.id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
+
+
 async def get_configurations_by_condition_ids_and_jurisdiction_db(
     db: AsyncDatabaseConnection,
     condition_ids: list[UUID],
@@ -577,7 +678,6 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
     """
 
     params = (jurisdiction_id, condition_ids)
-
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
