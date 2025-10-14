@@ -27,6 +27,7 @@ import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 import { Spinner } from '../../components/Spinner';
 import ErrorFallback from '../ErrorFallback';
+import classNames from 'classnames';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -62,6 +63,8 @@ export function Configurations() {
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return <ErrorFallback error={error} />;
 
+  const hasMultipleConfigs = configs.length > 0;
+
   return (
     <section className="mx-auto p-3">
       <div className="flex flex-col gap-4 py-10">
@@ -71,17 +74,23 @@ export function Configurations() {
           you'd like to retain in the refined eCRs for that condition.
         </p>
       </div>
-      <div className="flex flex-col justify-between gap-10 sm:flex-row sm:items-start">
-        {configs.length > 0 ? (
+      <div
+        className={classNames(
+          'flex flex-col gap-10 sm:flex-row sm:items-start',
+          {
+            'justify-between': hasMultipleConfigs,
+            'justify-end': !hasMultipleConfigs,
+          }
+        )}
+      >
+        {hasMultipleConfigs ? (
           <Search
             placeholder="Search configurations"
             id="search-configurations"
             name="search"
             onChange={(e) => setSearchText(e.target.value)}
           />
-        ) : (
-          <div></div>
-        )}
+        ) : null}
 
         <ModalToggleButton
           modalRef={modalRef}
