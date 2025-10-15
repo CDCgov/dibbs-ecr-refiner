@@ -41,18 +41,25 @@ import {
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
-import AddConditionCodeSetsDrawer from './AddConditionCodeSets';
+import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils/highlight';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
+import { Spinner } from '../../../components/Spinner';
+import ErrorFallback from '../../ErrorFallback';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
+  const {
+    data: response,
+    isPending,
+    isError,
+    error,
+  } = useGetConfiguration(id ?? '');
 
-  if (isPending) return 'Loading...';
-  if (!id || isError) return 'Error!';
+  if (isPending) return <Spinner variant="centered" />;
+  if (!id || isError) return <ErrorFallback error={error} />;
 
   // sort so the default code set always displays first
   const sortedCodeSets = response.data.code_sets.sort((a) => {
@@ -132,49 +139,11 @@ function Builder({
     setTableView('custom');
   }
 
-  const { mutate: disassociateMutation } =
-    useDisassociateConditionWithConfiguration();
-
-  const showToast = useToast();
-  const queryClient = useQueryClient();
-  const formatError = useApiErrorFormatter();
-
-  function handleDisassociateCondition(conditionId: string) {
-    disassociateMutation(
-      {
-        configurationId: id,
-        conditionId,
-      },
-      {
-        onSuccess: async (resp) => {
-          showToast({
-            heading: 'Condition removed',
-            body: resp.data.condition_name,
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(id),
-          });
-        },
-        onError: (error) => {
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            variant: 'error',
-            heading: 'Error removing condition',
-            body: errorDetail,
-          });
-        },
-      }
-    );
-  }
-
   useEffect(() => {
     if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
       onCodesetClick(code_sets[0].condition_id);
     }
   }, [code_sets, default_condition_name, tableView]);
-
-  const shouldDisplayCodesetDeletion = code_sets.length > 1;
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
@@ -194,80 +163,42 @@ function Builder({
               ADD
             </Button>
           </OptionsLabelContainer>
-          {/* render the first code set separately / as a sticky element
-          to bypass issues with tooltip clipping */}
-
           <OptionsListContainer>
             <OptionsList>
               {code_sets.map((codeSet, i) => (
                 <li
                   key={codeSet.display_name}
                   className={classNames(
-                    'condition-codes',
                     'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
                     {
                       'bg-white': selectedCodesetId === codeSet.condition_id,
                     }
                   )}
                 >
-                  <button
-                    className={classNames(
-                      'flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
-                    )}
-                    onClick={() => onCodesetClick(codeSet.condition_id)}
+                  <ConditionCodeSetButton
+                    codeSetName={codeSet.display_name}
+                    codeSetTotalCodes={codeSet.total_codes}
+                    onViewCodeSet={() => onCodesetClick(codeSet.condition_id)}
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
-                    aria-pressed={selectedCodesetId === codeSet.condition_id}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Delete' || e.key === 'Backspace') {
-                        e.preventDefault();
-                        handleDisassociateCondition(codeSet.condition_id);
-                      }
-                    }}
-                  >
-                    <span aria-hidden>{codeSet.display_name}</span>
-                    <span
-                      aria-hidden
-                      className={classNames(
-                        shouldDisplayCodesetDeletion ? 'code-set-total' : ''
-                      )}
-                    >
-                      {codeSet.total_codes}
+                  />
+                  {i === 0 ? (
+                    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+                      Default
                     </span>
-                    <span className="sr-only">
-                      {codeSet.display_name}, {codeSet.total_codes} codes in
-                      code set
-                    </span>
-                  </button>
-
-                  {shouldDisplayCodesetDeletion && (
-                    <button
-                      className="text-gray-cool-40 delete-codes-button sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer"
-                      aria-label={`Delete code set ${codeSet.display_name}`}
-                      onClick={() =>
-                        handleDisassociateCondition(codeSet.condition_id)
-                      }
-                      // first code in set of codes is the "configuration default", so it can't be deleted
-                      disabled={i === 0}
-                    >
-                      {i === 0 ? (
-                        <span className="italic">Default</span>
-                      ) : (
-                        <Icon.Delete
-                          className="!fill-red-700"
-                          size={3}
-                          aria-hidden
-                        />
-                      )}
-                    </button>
+                  ) : (
+                    <DeleteCodeSetButton
+                      configurationId={id}
+                      conditionId={codeSet.condition_id}
+                      conditionName={codeSet.display_name}
+                    />
                   )}
                 </li>
               ))}
               <li className="pt-10">
                 <OptionsLabel>MORE OPTIONS</OptionsLabel>
               </li>
-
               <li key="custom-codes">
                 <button
                   className={classNames(
@@ -324,7 +255,7 @@ function Builder({
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className={`!mt-4 ${SECONDARY_BUTTON_STYLES}`}
+                className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
                 aria-label="Add new custom code"
               >
                 Add code
@@ -352,6 +283,105 @@ function Builder({
         configurationId={id}
       />
     </div>
+  );
+}
+
+type ConditionCodeSetButtonProps = {
+  codeSetName: string;
+  codeSetTotalCodes: number;
+  onViewCodeSet: () => void;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+function ConditionCodeSetButton({
+  codeSetName,
+  codeSetTotalCodes,
+  onViewCodeSet,
+  ...props
+}: ConditionCodeSetButtonProps) {
+  return (
+    <button
+      className={classNames(
+        'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
+      )}
+      onClick={onViewCodeSet}
+      {...props}
+    >
+      <span aria-hidden>{codeSetName}</span>
+      <span aria-hidden className="group-hover:hidden">
+        {codeSetTotalCodes}
+      </span>
+      <span className="sr-only">
+        {codeSetName}, {codeSetTotalCodes} codes in code set
+      </span>
+    </button>
+  );
+}
+
+interface DeleteCodeSetButtonProps {
+  configurationId: string;
+  conditionId: string;
+  conditionName: string;
+}
+
+function DeleteCodeSetButton({
+  configurationId,
+  conditionId,
+  conditionName,
+}: DeleteCodeSetButtonProps) {
+  const { mutate: disassociateMutation, isPending } =
+    useDisassociateConditionWithConfiguration();
+  const [isListInvalidating, setIsListInvalidating] = useState(false);
+
+  const showToast = useToast();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+
+  const isLoading = isPending || isListInvalidating;
+
+  function handleDisassociateCondition(conditionId: string) {
+    disassociateMutation(
+      {
+        configurationId,
+        conditionId,
+      },
+      {
+        onSuccess: async (resp) => {
+          showToast({
+            heading: 'Condition removed',
+            body: resp.data.condition_name,
+          });
+          setIsListInvalidating(true);
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+          setIsListInvalidating(false);
+        },
+        onError: (error) => {
+          setIsListInvalidating(false);
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error removing condition',
+            body: errorDetail,
+          });
+        },
+      }
+    );
+  }
+
+  if (isLoading) {
+    return <Spinner size={20} className="mr-2" />;
+  }
+
+  return (
+    <button
+      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only"
+      aria-label={`Delete code set ${conditionName}`}
+      onClick={() => handleDisassociateCondition(conditionId)}
+    >
+      <Icon.Delete className="!fill-red-700" size={3} aria-hidden />
+    </button>
   );
 }
 
@@ -525,7 +555,12 @@ function ConditionCodeTable({
 }: ConditionCodeTableProps) {
   const DEBOUNCE_TIME_MS = 300;
 
-  const { data: response, isPending, isError } = useGetCondition(conditionId);
+  const {
+    data: response,
+    isPending,
+    isError,
+    error,
+  } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -565,8 +600,13 @@ function ConditionCodeTable({
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
 
-  if (isPending) return 'Loading...';
-  if (isError) return 'Error!';
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+  if (isError) return <ErrorFallback error={error} />;
 
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);

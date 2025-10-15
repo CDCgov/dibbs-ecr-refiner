@@ -11,6 +11,11 @@ export async function login(page: Page) {
   await page.getByRole('textbox', { name: 'Username or email' }).press('Tab');
   await page.getByRole('textbox', { name: 'Password' }).fill('refiner');
   await page.getByRole('button', { name: 'Sign In' }).click();
+
+  // check that we are on the logged-in home screen
+  await expect(
+    page.getByText('Your reportable condition configurations')
+  ).toBeVisible();
 }
 
 export async function logout(page: Page) {

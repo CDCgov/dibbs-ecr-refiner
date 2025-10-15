@@ -1,21 +1,8 @@
-/**
- * AddConditionCodeSetsDrawer: Main container component for adding condition code sets to a configuration.
- * Uses a Drawer UI to present a searchable list of conditions, each with controls to add or remove their association.
- * Delegates individual code set row UI to the ConditionCodeSet component.
- */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Drawer from '../../../components/Drawer';
-import ConditionCodeSetListItem from './ConditionCodeSet';
+import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
 import { Link } from 'react-router';
-import {
-  getGetConfigurationQueryKey,
-  useAssociateConditionWithConfiguration,
-  useDisassociateConditionWithConfiguration,
-} from '../../../api/configurations/configurations';
-import { useToast } from '../../../hooks/useToast';
-import { useQueryClient } from '@tanstack/react-query';
 import { highlightMatches } from '../../../utils/highlight';
-import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { IncludedCondition } from '../../../api/schemas';
 
 type AddConditionCodeSetsDrawerProps = {
@@ -25,15 +12,12 @@ type AddConditionCodeSetsDrawerProps = {
   configurationId: string;
 };
 
-/**
- * Drawer to add condition code sets to a configuration.
- */
-const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
+export function AddConditionCodeSetsDrawer({
   isOpen,
   onClose,
   configurationId,
   conditions,
-}: AddConditionCodeSetsDrawerProps) => {
+}: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Search and highlight logic
@@ -42,65 +26,6 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
         cond.display_name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : conditions;
-
-  const { mutate: associateMutation } =
-    useAssociateConditionWithConfiguration();
-  const { mutate: disassociateMutation } =
-    useDisassociateConditionWithConfiguration();
-
-  const showToast = useToast();
-  const queryClient = useQueryClient();
-  const formatError = useApiErrorFormatter();
-
-  // Add/remove handlers
-  function handleAssociate(conditionId: string) {
-    associateMutation(
-      {
-        configurationId,
-        data: { condition_id: conditionId },
-      },
-      {
-        onSuccess: async (resp) => {
-          showToast({
-            heading: 'Condition added',
-            body: resp.data.condition_name,
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationId),
-          });
-        },
-      }
-    );
-  }
-
-  function handleDisassociate(conditionId: string) {
-    disassociateMutation(
-      {
-        configurationId,
-        conditionId,
-      },
-      {
-        onSuccess: async (resp) => {
-          showToast({
-            heading: 'Condition removed',
-            body: resp.data.condition_name,
-          });
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationId),
-          });
-        },
-        onError: (error) => {
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            variant: 'error',
-            heading: 'Error removing condition',
-            body: errorDetail,
-          });
-        },
-      }
-    );
-  }
 
   return (
     <Drawer
@@ -157,15 +82,8 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
             return (
               <ConditionCodeSetListItem
                 key={key}
-                conditionName={condition.display_name}
-                associated={condition.associated}
+                condition={condition}
                 configurationId={configurationId}
-                onAssociate={() => {
-                  handleAssociate(condition.id);
-                }}
-                onDisassociate={() => {
-                  handleDisassociate(condition.id);
-                }}
                 highlight={highlight}
               />
             );
@@ -174,6 +92,4 @@ const AddConditionCodeSetsDrawer: React.FC<AddConditionCodeSetsDrawerProps> = ({
       </div>
     </Drawer>
   );
-};
-
-export default AddConditionCodeSetsDrawer;
+}

@@ -43,9 +43,7 @@ test.describe
     await page
       .getByRole('searchbox', { name: 'Search by condition name' })
       .fill('disease');
-    await page
-      .getByRole('listitem', { name: 'Balamuthia mandrillaris' })
-      .click();
+    await page.getByText('Balamuthia mandrillaris Disease').click();
     await page.getByRole('heading', { name: 'Condition added' }).click();
     await page.getByTestId('close-drawer').click();
     await expect(
