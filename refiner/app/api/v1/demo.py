@@ -29,6 +29,17 @@ from ..validation.file_validation import validate_zip_file
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
 
+XML_FILE_ERROR = (
+    "XML file(s) could not be processed. Please try again with valid XML files.",
+)
+ZIP_READING_ERROR = (
+    "ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present and can't be empty files.",
+)
+FILE_PROCESSING_ERROR = (
+    "File cannot be processed. Please ensure ZIP archive only contains the required files.",
+)
+GENERIC_SERVER_ERROR = ("Server error occurred. Please check your file and try again.",)
+
 
 @router.post(
     "/upload",
@@ -173,25 +184,25 @@ async def demo_upload(
         logger.error("XMLValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="XML file(s) could not be processed.",
+            detail=XML_FILE_ERROR,
         )
     except ZipValidationError as e:
         logger.error("ZipValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present and can't be empty files.",
+            detail=ZIP_READING_ERROR,
         )
     except FileProcessingError as e:
         logger.error("FileProcessingError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
+            detail=FILE_PROCESSING_ERROR,
         )
     except Exception as e:
         logger.error("Exception", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server error occurred. Please check your file and try again.",
+            detail=GENERIC_SERVER_ERROR,
         )
 
 

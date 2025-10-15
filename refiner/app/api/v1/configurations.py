@@ -22,7 +22,7 @@ from fastapi import (
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
-from app.core.exceptions import ZipValidationError
+from app.core.exceptions import XMLValidationError, ZipValidationError
 from app.services.ecr.refine import get_file_size_reduction_percentage, refine_eicr
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
@@ -31,6 +31,7 @@ from app.services.file_io import (
 )
 from app.services.format import normalize_xml, strip_comments
 from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
+from refiner.app.api.v1.demo import XML_FILE_ERROR, ZIP_READING_ERROR
 
 from ...api.auth.middleware import get_logged_in_user
 from ...api.validation.file_validation import validate_zip_file
@@ -1008,7 +1009,7 @@ async def run_configuration_test(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="File could not be processed. Please provide a ZIP file with a matching eICR/RR pair within.",
+            detail=ZIP_READING_ERROR,
         )
 
     # TODO: this will need to be replaced with a version of `refine` that accepts
@@ -1022,11 +1023,18 @@ async def run_configuration_test(
     # 2. Create the ProcessedConfiguration object.
     processed_config = ProcessedConfiguration.from_payload(payload)
 
-    # 3. Call the new `refine_eicr` synchronously with the correct arguments.
-    refined_eicr_str = refine_eicr(
-        xml_files=original_xml_files,
-        processed_configuration=processed_config,
-    )
+    try:
+        # 3. Call the new `refine_eicr` synchronously with the correct arguments.
+        refined_eicr_str = refine_eicr(
+            xml_files=original_xml_files,
+            processed_configuration=processed_config,
+        )
+
+    except XMLValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=XML_FILE_ERROR,
+        )
 
     # TODO: will be worked on in a future ticket
 
