@@ -13,8 +13,9 @@
     },
     {
       "tag": "Amazon Web Services - Lambda",
-      "color": "#e2730e",
+      "background": "#e2730e",
       "stroke": "#e2730e",
+      "color": "#ffffff",
       "shape": "RoundedBox",
       "icon": "./.icons/aws-lambda.png"
     },
@@ -70,12 +71,6 @@
       "icon": "./.icons/azure-storage-accounts.png"
     },
     {
-      "tag": "Microsoft Azure - SQL Database",
-      "stroke": "#50e6ff",
-      "color": "#50e6ff",
-      "icon": "./.icons/azure-sql-database.png"
-    },
-    {
       "tag": "Microsoft Azure - Azure Database PostgreSQL Server",
       "background": "#30e6ff",
       "stroke": "#05e6ff",
@@ -85,7 +80,8 @@
     {
       "tag": "Amazon Web Services - Simple Queue Service Message",
       "stroke": "#b0084d",
-      "color": "#b0084d",
+      "background": "#b0084d",
+      "color": "#ffffff",
       "icon": "./.icons/aws-simple-queue-service.png"
     },
     {
@@ -99,6 +95,14 @@
       "stroke": "#767676",
       "color": "#767676",
       "icon": "./.icons/azure-container-registries.png"
+    },
+    {
+      "tag": "LocalStack",
+      "background": "#282531",
+      "stroke": "#4a44a7",
+      "color": "#21e3e3",
+      "icon": "./.icons/localstack-logo.jpeg",
+      "shape": "Cylinder"
     },
     {
       "tag": "Keycloak",
