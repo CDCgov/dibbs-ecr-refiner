@@ -48,16 +48,16 @@ jobs:
       - if: steps.image-cache.outputs.cache-hit == 'true'
         run: docker load -i ~/image-cache/structurizr.tar
 
-      - name: Setup Node v20.10.x
+      - name: Setup Node v22.20.x
         uses: actions/setup-node@v4
         with:
-          node-version: 20.10.x
+          node-version: 22.20.x
 
       - name: Cache dependencies
         id: node-cache
         uses: actions/cache@v4
         with:
-          path: ./structurizr/node_modules
+          path: ./docs/node_modules
           key: modules-${{ hashFiles('docs/package-lock.json') }}-v1
 
       - name: Cache Puppeteer
@@ -77,7 +77,7 @@ jobs:
       # the codebase.
       - name: Run Structurizr Lite
         run: |
-          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v /home/runner/work/dibbs-ecr-refiner/docs:/usr/local/structurizr structurizr/lite:2025.05.28
+          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v ~/work/dibbs-ecr-refiner/docs:/usr/local/structurizr structurizr/lite:2025.05.28
 
       - name: Wait for Structurizr Lite to start
         run: |
