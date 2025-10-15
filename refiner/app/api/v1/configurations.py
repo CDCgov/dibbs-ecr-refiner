@@ -22,15 +22,15 @@ from fastapi import (
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
-from app.core.exceptions import ZipValidationError
-from app.services.ecr.refine import get_file_size_reduction_percentage, refine_eicr
+from app.core.exceptions import FileProcessingError, ZipValidationError
+from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
     create_split_condition_filename,
     read_xml_zip,
 )
 from app.services.format import normalize_xml, strip_comments
-from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
+from app.services.testing import inline_testing
 
 from ...api.auth.middleware import get_logged_in_user
 from ...api.validation.file_validation import validate_zip_file
@@ -944,153 +944,185 @@ async def run_configuration_test(
     logger: Logger = Depends(get_logger),
 ) -> ConfigurationTestResponse:
     """
-    Runs an in-line test using the provided configuration ID and test files.
+    Runs an inline test of a given configuration against an eICR/RR pair.
+
+    This endpoint orchestrates the validation and refinement process by:
+    1. Handling file input, either from a user upload or a default sample file.
+    2. Calling the `inline_testing` service, which validates that the specified
+       configuration's condition is reportable in the provided file.
+    3. Handling the service response:
+        - If validation fails, raises a 400 Bad Request with a specific error.
+        - If successful, proceeds with the returned refined document.
+    4. Packaging the original eICR, RR, and the single refined eICR into a
+       new in-memory zip archive.
+    5. Uploading the archive to S3 and generating a pre-signed download URL.
+    6. Returning a `ConfigurationTestResponse` with the download URL and details
+       of the successful refinement.
 
     Args:
-        id (UUID): ID of Configuration to use for the test
-        uploaded_file (UploadFile | None): user uploaded eICR/RR pair
-        create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
-        upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
-        user (DbUser): Logged in user
-        db (AsyncDatabaseConnection): Database connection
-        sample_zip_path (Path): Path to example .zip eICR/RR pair
-        logger (Logger): Standard logger
+        id: The ID of the configuration to test.
+        uploaded_file: An optional user-provided zip file with an eICR and RR.
+        create_output_zip: Dependency to create a zip archive in memory.
+        upload_refined_files_to_s3: Dependency to upload the archive to S3.
+        user: The authenticated user making the request.
+        db: The database connection.
+        sample_zip_path: Path to the default sample zip file.
+        logger: The application logger.
+
     Returns:
-        ConfigurationTestResponse: response given to the client
+        A response object containing the original eICR, a URL to download the
+        zipped results, and details about the refined condition.
     """
 
+    # STEP 1:
+    # handle file upload
     if not sample_zip_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Unable to find sample zip file to download.",
         )
 
-    file = None
     if uploaded_file:
-        file = await validate_zip_file(file=uploaded_file)
+        try:
+            file = await validate_zip_file(file=uploaded_file)
+        except ZipValidationError as e:
+            logger.error(
+                msg="ZipValidationError in validate_zip_file", extra={"error": str(e)}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+            )
         logger.info(
-            "Running inline test using user-provided file",
+            msg="Running inline test using user-provided file",
             extra={"file": file.filename},
         )
     else:
         file = create_sample_zip_file(sample_zip_path=sample_zip_path)
         logger.info(
-            "Running inline test using sample file", extra={"file": file.filename}
-        )
-
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
-    # find config
-    config = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
-    if not config:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
-        )
-
-    logger.info(
-        "Using config for inline testing",
-        extra={"config_id": config.id, "jurisdiction_id": jd},
-    )
-
-    # find the primary condition associated with the config
-    associated_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
-    if not associated_condition:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Condition associated with configuration (ID: {config.id}) not found.",
+            msg="Running inline test using sample file", extra={"file": file.filename}
         )
 
     try:
+        # STEP 2:
+        # read xml and call the service layer
         original_xml_files = await read_xml_zip(file)
     except ZipValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.message)
-    except Exception:
+        logger.error(msg="ZipValidationError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="File could not be processed. Please provide a ZIP file with a matching eICR/RR pair within.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+        )
+    except FileProcessingError as e:
+        logger.error(msg="FileProcessingError in read_xml_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
 
-    # TODO: this will need to be replaced with a version of `refine` that accepts
-    # and makes use of a configuration.
+    # get the user's jurisdiction_id to pass to inline_testing
+    jd = user.jurisdiction_id
 
-    # 1. Create the payload from the db objects.
-    payload = ConfigurationPayload(
-        configuration=config, conditions=[associated_condition]
+    # get the DbConfiguration row for the jurisdiction
+    configuration = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+    if not configuration:
+        raise HTTPException(
+            status_code=404, detail="Configuration not found for jurisdiction."
+        )
+
+    # get the primary DbCondition row that is linked to the DbConfiguration for the jurisdiction
+    primary_condition = await get_condition_by_id_db(
+        id=configuration.condition_id, db=db
     )
+    if not primary_condition:
+        raise HTTPException(
+            status_code=404, detail="Primary condition not found for configuration."
+        )
 
-    # 2. Create the ProcessedConfiguration object.
-    processed_config = ProcessedConfiguration.from_payload(payload)
-
-    # 3. Call the new `refine_eicr` synchronously with the correct arguments.
-    refined_eicr_str = refine_eicr(
+    # call the testing service
+    # business logic around **how** inline testing works is in services/testing.py
+    result = await inline_testing(
         xml_files=original_xml_files,
-        processed_configuration=processed_config,
+        configuration=configuration,
+        primary_condition=primary_condition,
+        jurisdiction_id=jd,
     )
 
-    # TODO: will be worked on in a future ticket
+    # STEP 3:
+    # handle the service layer response
+    if result["configuration_does_not_match_conditions"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["configuration_does_not_match_conditions"],
+        )
 
-    # child_rsg_codes = set(associated_condition.child_rsg_snomed_codes)
-    # seen_condition_codes = set()
-    # matched_result = None
-    # for result in refined_results:
-    #     # Add current code to seen codes
-    #     seen_condition_codes.add(result.reportable_condition.code)
-    #
-    #     # If a child rsg code is found in the "seen" set then we have a match
-    #     if seen_condition_codes & child_rsg_codes:
-    #         matched_result = result
-    #         break
-    #
-    # if not matched_result:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail=f"{associated_condition.display_name} was not detected as a reportable condition in the eCR file you uploaded.",
-    #     )
+    refined_document = result["refined_document"]
+    if refined_document is None:
+        logger.error(
+            msg="Internal logic error: inline_testing returned no error but also no refined eICR."
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred during the refinement process.",
+        )
 
-    # 4. the old logic to find a "match" is no longer needed. The result *is* the match
-    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-    matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
+    condition_obj = refined_document.reportable_condition
+    refined_eicr_str = refined_document.refined_eicr
 
+    # STEP 4:
+    # prepare files for zip and s3 upload
     s3_file_package = []
     s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
     s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
 
-    # Use the associated_condition's info for the filename and response.
-    # Assuming the condition model has a `snomed_code` attribute. If not, adjust as needed.
-    s3_file_package.append(
-        (
-            create_split_condition_filename(
-                condition_name=associated_condition.display_name,
-                condition_code=associated_condition.child_rsg_snomed_codes[0],
-            ),
-            refined_eicr_str,
+    filename = create_split_condition_filename(
+        condition_name=condition_obj.display_name,
+        condition_code=condition_obj.code,
+    )
+    s3_file_package.append((filename, refined_eicr_str))
+
+    try:
+        output_file_name, output_zip_buffer = create_output_zip(
+            files=s3_file_package,
         )
-    )
+    except Exception as e:
+        logger.error(msg="Error in create_output_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal error creating the results ZIP file during S3 packaging process.",
+        )
+    try:
+        presigned_s3_url = await run_in_threadpool(
+            upload_refined_files_to_s3,
+            user.id,
+            output_zip_buffer,
+            output_file_name,
+            logger,
+        )
+    except Exception as e:
+        logger.error(msg="Error uploading to S3.", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal error uploading ZIP file to S3.",
+        )
 
-    output_file_name, output_zip_buffer = create_output_zip(
-        files=s3_file_package,
-    )
-
-    presigned_s3_url = await run_in_threadpool(
-        upload_refined_files_to_s3,
-        user.id,
-        output_zip_buffer,
-        output_file_name,
-        logger,
-    )
+    # STEP 5:
+    # construct and return the final response
+    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+    matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
 
     return ConfigurationTestResponse(
         original_eicr=original_unrefined_eicr,
         refined_download_url=presigned_s3_url,
         condition=Condition(
-            code=associated_condition.child_rsg_snomed_codes[0],
-            display_name=associated_condition.display_name,
+            code=condition_obj.code,
+            display_name=condition_obj.display_name,
             refined_eicr=matched_condition_refined_eicr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        original_unrefined_eicr, matched_condition_refined_eicr
+                        unrefined_eicr=original_unrefined_eicr,
+                        refined_eicr=matched_condition_refined_eicr,
                     )
                 }%",
             ],
