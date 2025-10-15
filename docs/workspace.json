@@ -3,7 +3,7 @@
   "description" : "Description",
   "documentation" : { },
   "id" : 1,
-  "lastModifiedDate" : "2025-10-15T18:38:14Z",
+  "lastModifiedDate" : "2025-10-15T20:32:57Z",
   "model" : {
     "people" : [ {
       "description" : "A jurisdiction user of the DIBBs eCR Refiner platform",
