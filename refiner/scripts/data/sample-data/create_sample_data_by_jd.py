@@ -3,6 +3,7 @@ import subprocess
 import zipfile
 from datetime import datetime
 from pathlib import Path
+from typing import TypedDict
 
 JURISDICTION_CSV = "eCR_Jurisdictions.csv"
 SAMPLE_FILES = Path("../../../assets/demo/mon-mothma-two-conditions.zip")
@@ -11,21 +12,43 @@ RR_FILENAME = "CDA_RR.xml"
 EICR_FILENAME = "CDA_eICR.xml"
 
 
-def get_git_commit_hash() -> str:
-    """Return the short git commit hash for the current repo, or 'unknown' if unavailable."""
+class GitInfo(TypedDict):
+    """Captured git-related information."""
+
+    branch: str
+    commit_hash: str
+
+
+def get_git_info() -> GitInfo:
+    """Get the git commit hash and branch name from which the file was run."""
     try:
-        result = subprocess.run(
+        branch = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        commit = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
             capture_output=True,
             text=True,
             check=True,
-        )
-        return result.stdout.strip()
+        ).stdout.strip()
+
+        return {"branch": branch, "commit_hash": commit}
     except Exception:
-        return "unknown"
+        return {"branch": "unknown", "commit_hash": "unknown"}
 
 
-def read_jurisdictions(csv_path: str) -> list[dict[str, str]]:
+class Jurisdiction(TypedDict):
+    """Jurisdiction row of the processed CSV."""
+
+    RoutingCode: str
+    Jurisdiction: str
+
+
+def read_jurisdictions(csv_path: str) -> list[Jurisdiction]:
     """Read CSV and return a list of {'RoutingCode': 'AK', 'Jurisdiction': 'Alaska'}."""
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
@@ -55,12 +78,15 @@ def modify_rr(rr_bytes: bytes, new_value: str) -> bytes:
     return rr_bytes.replace(old_bytes, new_bytes)
 
 
-def create_metadata(git_hash: str) -> bytes:
+def create_metadata(git_info: GitInfo, jurisdiction: Jurisdiction) -> bytes:
     """Generates the content of the metadata file."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     metadata_content = f"""Generated at: {timestamp}
-    Git hash of script: {git_hash}
-    """
+Routing Code: {jurisdiction["RoutingCode"]}
+Jurisdiction: {jurisdiction["Jurisdiction"]}
+Git branch of script: {git_info["branch"]}
+Git hash of script: {git_info["commit_hash"]}
+"""
     return metadata_content.encode("utf-8")
 
 
@@ -87,7 +113,7 @@ if __name__ == "__main__":
     )
 
     # Get the git hash
-    git_hash = get_git_commit_hash()
+    git_info = get_git_info()
 
 # Loop through all JD IDs in the doc
 for jurisdiction in jurisdictions:
@@ -110,6 +136,6 @@ for jurisdiction in jurisdictions:
     output_zip = (
         OUTPUT_DIR / f"{routing_code}_eCR_Refiner_COVID_Influenza_Sample_Files.zip"
     )
-    metadata = create_metadata(git_hash)
+    metadata = create_metadata(git_info, jurisdiction)
     create_output_zip(output_zip, new_contents, metadata)
     print(f"✅ Created {output_zip.name}")
