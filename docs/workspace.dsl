@@ -28,6 +28,12 @@ workspace {
                     technology "Keycloak"
                     tags "Keycloak" "Authentication"
                 }
+
+                fusion_auth = container "FusionAuth" {
+                    description "Handles user authentication and authorization"
+                    technology "FusionAuth"
+                    tags "FusionAuth" "Authentication"
+                }
             }
 
             group "Data Layer" {
@@ -43,7 +49,7 @@ workspace {
                 }
             }
 
-            localstack = container "LocalStack" {
+            localstack = container "LocalStackdocs/workspace/diagrams/structurizr/**/*.json -diff0" {
                 description "S3-compatible API local development and testing"
                 technology "LocalStack"
                 tags "LocalStack" "Development"
@@ -55,7 +61,7 @@ workspace {
                 tags "Microsoft Azure - Container Registries"
             }
 
-            group "Refiner API & Client UI" {
+            group "Public VPC" {
                 api = container "API" {
                     description "Handles all HTTPS API requests"
                     technology "Python, FastAPI"
@@ -68,7 +74,7 @@ workspace {
                 }
             }
 
-            group "Serverless Layer" {
+            group "Private VPC" {
                 sqs = container "Message Queue" {
                     description "Message queue for handling asynchronous tasks"
                     technology "AWS SQS"
@@ -85,9 +91,10 @@ workspace {
 
         // Azure Relationships
         user -> refiner.network "Navigates to Refiner Application"
-        refiner.network -> refiner.auth "Authenticates via"
-        refiner.auth -> refiner.app "Provides authentication tokens to"
-        refiner.app -> refiner.api "Makes API calls to"
+        refiner.network -> refiner.app "Redirects to"
+        refiner.app -> refiner.fusion_auth "Authenticates the user"
+        refiner.fusion_auth -> refiner.app "Provides authentication tokens to"
+        refiner.app -> refiner.api "Communicates with token to"
         refiner.api -> refiner.database "Reads from and writes to"
         refiner.api -> refiner.storage "Reads from and writes to"
         refiner.api -> refiner.localstack "Reads from and writes to"
@@ -141,13 +148,13 @@ workspace {
         //     description "The system context diagram for the DIBBs eCR Refiner platform"
         // }
 
-        container refiner "refiner-application-azure" {
-            include *
-            exclude refiner.registry refiner.localstack refiner.sqs refiner.lambda
-
-            title "DIBBs eCR Refiner - Application"
-            description "The application diagram for the DIBBs eCR Refiner platform"
-        }
+        // container refiner "refiner-application-azure" {
+        //     include *
+        //     exclude refiner.registry refiner.localstack refiner.auth
+        //
+        //     title "DIBBs eCR Refiner - Application"
+        //     description "The application diagram for the DIBBs eCR Refiner platform"
+        // }
 
         // deployment * development "local-development" {
         //     include *

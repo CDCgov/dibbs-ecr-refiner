@@ -16,3 +16,6 @@ client/src/api/** -diff
 
 # Ignore server generated OpenAPI file diff
 client/shared/** -diff
+
+# Ignore Structurizr JSON file diffs
+docs/workspace.json -diff

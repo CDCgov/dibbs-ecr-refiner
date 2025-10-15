@@ -105,6 +105,14 @@
       "shape": "Cylinder"
     },
     {
+      "tag": "FusionAuth",
+      "background": "#995827",
+      "stroke": "#767676",
+      "color": "#ffffff",
+      "icon": "./.icons/fusionauth-logo.png",
+      "shape": "Hexagon"
+    },
+    {
       "tag": "Keycloak",
       "background": "#312c2f",
       "stroke": "#767676",
