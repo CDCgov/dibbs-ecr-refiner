@@ -49,6 +49,8 @@ We have a [GitHub action](https://github.com/CDCgov/dibbs-ecr-refiner/actions/wo
 1. Watch the action run and take note of the IP address outputted at the end of the deploy job in the Skylight repo. Save this for reference.
 1. Go to the [Azure backend pool blade](https://portal.azure.com/?l=en.en-us#view/Microsoft_Azure_HybridNetworking/ApplicationGatewayBackendPoolBladeV2/backendPoolId/%2Fsubscriptions%2F6848426c-8ca8-4832-b493-fed851be1f95%2FresourceGroups%2Fdibbs-global-demo%2Fproviders%2FMicrosoft.Network%2FapplicationGateways%2Fhub-appgw%2FbackendAddressPools%2Fdibbs-global-demo-be-ecr-refiner/applicationGatewayVnetId/%2Fsubscriptions%2F6848426c-8ca8-4832-b493-fed851be1f95%2FresourceGroups%2Fdibbs-global-demo%2Fproviders%2FMicrosoft.Network%2FvirtualNetworks%2Fdibbs-global-demo-hub-network/isEdit~/true/isTlsProxyAfecFlagEnabled~/false) and update the target IP address. **The demo site will return a 502 Bad Gateway error until this is updated manually, so only run the deploy job if the downtime won't cause trouble**
 
+The demo site should be updated from there! If you want to double check, the application commit hash is displayed at the bottom of the footer, which you can compare against the latest commit in main.
+
 ## The API
 
 When viewing these docs from the `/redoc` endpoint on a running instance of the Message Refiner or the DIBBs website, detailed documentation on the API will be available below.
