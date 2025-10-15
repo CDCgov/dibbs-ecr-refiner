@@ -1306,17 +1306,6 @@
         "jsonType.label" : "String"
       }
     } ]
-  }, {
-    "id" : "1ae920e7-a809-4e72-854c-3598fbea80f5",
-    "name" : "JD_ID",
-    "description" : "",
-    "protocol" : "openid-connect",
-    "attributes" : {
-      "include.in.token.scope" : "true",
-      "display.on.consent.screen" : "true",
-      "gui.order" : "",
-      "consent.screen.text" : ""
-    }
   } ],
   "defaultDefaultClientScopes" : [ "role_list", "saml_organization", "profile", "email", "roles", "web-origins", "acr", "basic" ],
   "defaultOptionalClientScopes" : [ "offline_access", "address", "phone", "microprofile-jwt", "organization" ],
