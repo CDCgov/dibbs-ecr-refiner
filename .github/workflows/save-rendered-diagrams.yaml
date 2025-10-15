@@ -1,0 +1,118 @@
+name: Save Rendered Diagrams
+
+# README: This workflow runs whenever there are pushes to the `master` branch.
+# This can occur when a PR is merged or when a contributor pushes directly to
+# the branch.
+on:
+  pull_request:
+    paths:
+      - 'docs/models/**'
+      - 'docs/views/**'
+      - 'docs/styles/**'
+      - 'docs/workspace.*'
+      - '.github/workflows/**'
+    branches:
+      - main
+
+jobs:
+  render-static-diagrams:
+    runs-on: ubuntu-latest
+    steps:
+
+      # MARK: :setup
+      #  _______         __
+      # |     __|.-----.|  |_.--.--.-----.
+      # |__     ||  -__||   _|  |  |  _  |
+      # |_______||_____||____|_____|   __|
+      #                            |__|
+      #
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - run: mkdir -p ~/image-cache
+
+      - name: Cache Docker pull of structurizr/lite:2024.06.18 image
+        id: image-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/image-cache
+          # The SHA256 here is copied from the index digest for the 2025.05.28
+          # tag at https://hub.docker.com/r/structurizr/lite/tags
+          key: image-cache-sha256:7dfddc3aa56a6b767ce4e9cc1ea61086e96e37e6893e86748ec4b71a7f354410
+
+      - if: steps.image-cache.outputs.cache-hit != 'true'
+        run: |
+          docker pull structurizr/lite:2025.05.28
+          docker save -o ~/image-cache/structurizr.tar structurizr/lite:2025.05.28
+
+      - if: steps.image-cache.outputs.cache-hit == 'true'
+        run: docker load -i ~/image-cache/structurizr.tar
+
+      - name: Setup Node v20.10.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.10.x
+
+      - name: Cache dependencies
+        id: node-cache
+        uses: actions/cache@v4
+        with:
+          path: ./structurizr/node_modules
+          key: modules-${{ hashFiles('docs/package-lock.json') }}-v1
+
+      - name: Cache Puppeteer
+        id: puppeteer-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ hashFiles('docs/package-lock.json') }}-v1
+
+      # MARK: :tasks
+      #  _______               __
+      # |_     _|.---.-.-----.|  |--.-----.
+      #   |   |  |  _  |__ --||    <|__ --|
+      #   |___|  |___._|_____||__|__|_____|
+      #
+      # README: These are the tasks associated with saving rendered diagrams to
+      # the codebase.
+      - name: Run Structurizr Lite
+        run: |
+          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v /home/runner/work/CaseBridge/CaseBridge/docs:/usr/local/structurizr structurizr/lite:2024.06.18
+
+      - name: Wait for Structurizr Lite to start
+        run: |
+          COUNT=0
+          while [ $COUNT -le 60 ]
+          do
+            sleep 1
+            if curl -s -I http://localhost:9001/workspace/diagrams
+            then
+              break
+            else
+              COUNT=$((COUNT+1))
+              printf 'Checked if Structurizr is up: %d time(s) so far...\n' $COUNT
+            fi
+          done
+          if [ $COUNT -gt 60 ]
+          then
+            journalctl -u docker CONTAINER_NAME=save-rendered-diagrams
+            exit 1
+          fi
+
+      - name: Install Node dependencies
+        if: ${{ (steps.puppeteer-cache.outputs.cache-hit != 'true') || (steps.node-cache.outputs.cache-hit != 'true') }}
+        run: cd docs/ && npm ci
+
+      - name: Render diagrams in PNG format from running instance to `rendered/` directory
+        run: cd docs/ && node scripts/export-diagrams.js http://localhost:9001/workspace/diagrams png
+
+      - name: Commit `rendered/` directory
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout $GITHUB_HEAD_REF
+          git add .
+          git commit -m "Updating rendered Structurizr diagrams"
+          git push origin HEAD:$GITHUB_HEAD_REF

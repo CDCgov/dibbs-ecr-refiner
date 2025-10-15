@@ -4,7 +4,7 @@
   "documentation" : { },
   "id" : 1,
   "lastModifiedAgent" : "structurizr-ui",
-  "lastModifiedDate" : "2025-10-15T13:45:35Z",
+  "lastModifiedDate" : "2025-10-15T14:14:22Z",
   "model" : {
     "people" : [ {
       "description" : "A jurisdiction user of the DIBBs eCR Refiner platform",
@@ -384,7 +384,7 @@
       }, {
         "id" : "10",
         "x" : 959,
-        "y" : 750
+        "y" : 745
       } ],
       "externalSoftwareSystemBoundariesVisible" : false,
       "key" : "refiner-application-azure",
