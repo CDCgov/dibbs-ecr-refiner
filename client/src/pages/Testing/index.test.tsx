@@ -6,6 +6,7 @@ import { useUploadEcr } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
 import { useGetEnv } from '../../hooks/useGetEnv.ts';
 import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
+import { ERROR_UPLOAD_MESSAGE } from '../../components/FileUploadWarning/index.tsx';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
@@ -186,11 +187,7 @@ describe('Demo', () => {
     await user.click(screen.getByText('Use test file'));
 
     // check that we made it to the error view
-    expect(
-      await screen.findByText(
-        'Please double check the format and size. It must be less than 10MB in size.'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
 
     // Server error should be shown to the user
     expect(

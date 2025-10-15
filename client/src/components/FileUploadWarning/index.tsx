@@ -1,6 +1,8 @@
 import { Icon } from '@trussworks/react-uswds';
 import { Button } from '../Button';
 
+export const ERROR_UPLOAD_MESSAGE = 'There was an error uploading the file';
+
 interface FileUploadWarningProps {
   errorMessage: string;
   reset: () => void;
@@ -17,7 +19,7 @@ export default function FileUploadWarning({
         className="text-state-error-dark pb-2.5"
       />
       <h2 className="mb-2">Error</h2>
-      <p className="mb-2">There was an error uploading the file</p>
+      <p className="mb-2">{ERROR_UPLOAD_MESSAGE}</p>
       <p className="mb-10 text-center">{errorMessage}</p>
 
       <Button onClick={reset}>Try again</Button>
