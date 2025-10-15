@@ -179,7 +179,7 @@ async def demo_upload(
         logger.error("ZipValidationError", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present and can't be empty files.",
         )
     except FileProcessingError as e:
         logger.error("FileProcessingError", extra={"error": str(e)})

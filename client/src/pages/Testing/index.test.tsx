@@ -190,9 +190,7 @@ describe('Demo', () => {
     expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
 
     // Server error should be shown to the user
-    expect(
-      await screen.findByText('Error: Server is down')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Server is down')).toBeInTheDocument();
 
     // return to the start to try again
     await user.click(await screen.findByText('Try again'));

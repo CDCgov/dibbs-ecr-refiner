@@ -201,7 +201,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
 
             if not eicr_xml:
                 raise ZipValidationError(
-                    message="Required file CDA_eICR.xml not found in .zip file.",
+                    message="Required file CDA_eICR.xml not found in .zip file or was empty.",
                     details={
                         "files_found": [
                             f
@@ -214,7 +214,7 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
 
             if not rr_xml:
                 raise ZipValidationError(
-                    message="Required file CDA_RR.xml not found in .zip file.",
+                    message="Required file CDA_RR.xml not found in .zip file or was empty",
                     details={
                         "files_found": [
                             f
