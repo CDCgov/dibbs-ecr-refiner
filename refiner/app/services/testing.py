@@ -4,12 +4,10 @@ from uuid import UUID
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
-    get_condition_by_id_db,
     get_conditions_by_child_rsg_snomed_codes,
 )
 from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
-    get_configuration_by_id_db,
     get_configurations_by_condition_ids_and_jurisdiction_db,
 )
 from ..db.configurations.model import DbConfiguration
@@ -39,7 +37,11 @@ class IndependentTestingTrace:
 
 class NoMatchEntry(TypedDict):
     """
-    The structured result of a condition that doesn't have a matching configuration.
+    The structured result of failure to match conditions and configurations bi-directionally.
+
+    This structure is used in both:
+    - IndependentTestingResult: no_matching_configuration_for_conditions
+    - InlineTestingResult: configuration_does_not_match_conditions
 
     A TypedDict that contains:
         - `display_name`: The name of the condition that doesn't have an associated configuration for the jurisdiction.
@@ -227,49 +229,45 @@ async def independent_testing(
 
 
 async def inline_testing(
-    db: AsyncDatabaseConnection,
     xml_files: XMLFiles,
-    configuration_id: UUID,
+    configuration: DbConfiguration,
+    primary_condition: DbCondition,
     jurisdiction_id: str,
 ) -> InlineTestingResult:
     """
-    Orchestrates the full inline testing workflow for eICR refinement.
+    Orchestrates the full inline testing workflow for eICR refinement using an already-fetched configuration and primary condition.
 
     This function performs a validation-focused pipeline:
-    1. Fetch the specified configuration and its associated primary condition from the DB.
-    2. Extract all reportable condition codes from the provided RR file for the given
-       jurisdiction.
-    3. Validate that at least one of the primary condition's `rsg_child_snomed_codes`
-       is present in the reportable codes from the RR; if not, return right away.
-    4. If valid, build a ProcessedConfiguration object using the configuration and its
-       primary condition.
-    5. Run the refinement logic (refine_eicr) using the ProcessedConfiguration.
-    6. Construct and return the InlineTestingResult, containing the refined document
-       or an error message if validation failed.
+    1. Receives the configuration and primary condition as arguments (ensured non-None by the route/controller).
+    2. Extracts all reportable condition codes from the provided RR file for the given jurisdiction.
+    3. Validates that at least one of the primary condition's `child_rsg_snomed_codes`
+       is present in the reportable codes from the RR; if not, returns an error.
+    4. If valid, builds a ProcessedConfiguration object using the configuration and its primary condition.
+    5. Runs the refinement logic (`refine_eicr`) using the ProcessedConfiguration.
+    6. Constructs and returns the InlineTestingResult, containing the refined document or an error message if validation failed.
 
     Args:
-        db: AsyncDatabaseConnection
-        xml_files: XMLFiles object containing eICR and RR XML strings
-        configuration_id: The ID of the configuration to test.
+        xml_files: XMLFiles object containing eICR and RR XML strings.
+        configuration: The configuration to test (must not be None).
+        primary_condition: The primary condition associated with the configuration (must not be None).
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
 
     Returns:
-        An InlineTestingResult dictionary containing either the refined
-        document or a validation error.
+        An InlineTestingResult dictionary containing either the refined document or a validation error.
+
+    TODOs:
+        - When section processing is implemented, pass the correct sections_to_include to refine_eicr.
+        - If supporting multiple matched RR codes, adapt RefinedDocument to handle a list.
     """
 
     # STEP 1:
-    # gather and validate the configuration and its primary condition
-    configuration, primary_condition = await _get_configuration_condition_pair(
-        db, configuration_id=configuration_id, jurisdiction_id=jurisdiction_id
-    )
-
+    # start with already-fetched configuration and primary condition
     trace = InlineTestingTrace(
         configuration=configuration, primary_condition=primary_condition
     )
 
     # STEP 2:
-    # perform reportability validation (fail fast)
+    # extract and validate reportable condition codes from RR
     reportability_data = _extract_reportable_conditions_for_jurisdiction(
         xml_files, jurisdiction_id
     )
@@ -292,7 +290,8 @@ async def inline_testing(
 
     trace.is_reportable_in_file = True
 
-    # use the first RR code that mapped to this condition for RefinedDocument
+    # STEP 3:
+    # use the first RR code that matched the condition for the RefinedDocument
     # TODO: in the future we might want the ReportableCondition model to use
     # a list instead of a string since technically there could be more than one
     # `rc_snomed_code` that was **in** the RR that matches the condition and
@@ -300,7 +299,7 @@ async def inline_testing(
     # we should wait to see how the testing service evolves with the routes
     trace.matched_code = list(matched_codes)[0]
 
-    # STEP 3:
+    # STEP 4:
     # prepare and execute the refinement
     payload = ConfigurationPayload(
         configuration=trace.configuration,
@@ -322,7 +321,7 @@ async def inline_testing(
         sections_to_include=sections_to_include,
     )
 
-    # STEP 4:
+    # STEP 5:
     # finalize and return the successful result
     trace.refined_document = RefinedDocument(
         reportable_condition=ReportableCondition(
@@ -434,28 +433,3 @@ async def _map_conditions_to_configurations(
     return await get_configurations_by_condition_ids_and_jurisdiction_db(
         db, condition_ids, jurisdiction_id
     )
-
-
-async def _get_configuration_condition_pair(
-    db: AsyncDatabaseConnection, configuration_id: UUID, jurisdiction_id: str
-) -> tuple[DbConfiguration, DbCondition]:
-    """
-    Get the DbConfiguration and DbCondition associated with the configuration_id and jurisdiciton_id.
-
-    Before we're able to detrmine reportability we'll need to get some data from the database to check
-    against the reportability_data results.
-
-    Returns a tuple of (configuration, condition).
-    """
-
-    configuration = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jurisdiction_id, db=db
-    )
-    assert configuration is not None, "Configuration not found, but was expected."
-
-    primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id, db=db
-    )
-    assert primary_condition is not None, "Condition not found, but was expected."
-
-    return configuration, primary_condition

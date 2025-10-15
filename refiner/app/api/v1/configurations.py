@@ -982,70 +982,116 @@ async def run_configuration_test(
             detail="Unable to find sample zip file to download.",
         )
 
-    file = None
     if uploaded_file:
-        file = await validate_zip_file(file=uploaded_file)
+        try:
+            file = await validate_zip_file(file=uploaded_file)
+        except ZipValidationError as e:
+            logger.error(
+                msg="ZipValidationError in validate_zip_file", extra={"error": str(e)}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+            )
         logger.info(
-            "Running inline test using user-provided file",
+            msg="Running inline test using user-provided file",
             extra={"file": file.filename},
         )
     else:
         file = create_sample_zip_file(sample_zip_path=sample_zip_path)
         logger.info(
-            "Running inline test using sample file", extra={"file": file.filename}
+            msg="Running inline test using sample file", extra={"file": file.filename}
         )
 
     try:
         # STEP 2:
         # read xml and call the service layer
         original_xml_files = await read_xml_zip(file)
-        jd = user.jurisdiction_id
-
-        result = await inline_testing(
-            db=db,
-            xml_files=original_xml_files,
-            configuration_id=id,
-            jurisdiction_id=jd,
+    except ZipValidationError as e:
+        logger.error(msg="ZipValidationError in read_xml_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+        )
+    except FileProcessingError as e:
+        logger.error(msg="FileProcessingError in read_xml_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
 
-        # STEP 3:
-        # handle the service layer response
-        if result["configuration_does_not_match_conditions"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=result["configuration_does_not_match_conditions"],
-            )
+    # get the user's jurisdiction_id to pass to inline_testing
+    jd = user.jurisdiction_id
 
-        refined_document = result["refined_document"]
-
-        if refined_document is None:
-            logger.error(
-                "Internal logic error: inline_testing returned no error but also no refined eICR."
-            )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="An uexpected error occurred during the refinement process.",
-            )
-
-        condition_obj = refined_document.reportable_condition
-        refined_eicr_str = refined_document.refined_eicr
-
-        # STEP 4:
-        # prepare files for zip and s3 upload
-        s3_file_package = []
-        s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
-        s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
-
-        filename = create_split_condition_filename(
-            condition_name=condition_obj.display_name,
-            condition_code=condition_obj.code,
+    # get the DbConfiguration row for the jurisdiction
+    configuration = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+    if not configuration:
+        raise HTTPException(
+            status_code=404, detail="Configuration not found for jurisdiction."
         )
-        s3_file_package.append((filename, refined_eicr_str))
 
+    # get the primary DbCondition row that is linked to the DbConfiguration for the jurisdiction
+    primary_condition = await get_condition_by_id_db(
+        id=configuration.condition_id, db=db
+    )
+    if not primary_condition:
+        raise HTTPException(
+            status_code=404, detail="Primary condition not found for configuration."
+        )
+
+    # call the testing service
+    # business logic around **how** inline testing works is in services/testing.py
+    result = await inline_testing(
+        xml_files=original_xml_files,
+        configuration=configuration,
+        primary_condition=primary_condition,
+        jurisdiction_id=jd,
+    )
+
+    # STEP 3:
+    # handle the service layer response
+    if result["configuration_does_not_match_conditions"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result["configuration_does_not_match_conditions"],
+        )
+
+    refined_document = result["refined_document"]
+    if refined_document is None:
+        logger.error(
+            msg="Internal logic error: inline_testing returned no error but also no refined eICR."
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred during the refinement process.",
+        )
+
+    condition_obj = refined_document.reportable_condition
+    refined_eicr_str = refined_document.refined_eicr
+
+    # STEP 4:
+    # prepare files for zip and s3 upload
+    s3_file_package = []
+    s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
+    s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
+
+    filename = create_split_condition_filename(
+        condition_name=condition_obj.display_name,
+        condition_code=condition_obj.code,
+    )
+    s3_file_package.append((filename, refined_eicr_str))
+
+    try:
         output_file_name, output_zip_buffer = create_output_zip(
             files=s3_file_package,
         )
-
+    except Exception as e:
+        logger.error(msg="Error in create_output_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal error creating the results ZIP file during S3 packaging process.",
+        )
+    try:
         presigned_s3_url = await run_in_threadpool(
             upload_refined_files_to_s3,
             user.id,
@@ -1053,11 +1099,17 @@ async def run_configuration_test(
             output_file_name,
             logger,
         )
+    except Exception as e:
+        logger.error(msg="Error uploading to S3.", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal error uploading ZIP file to S3.",
+        )
 
-        # STEP 5:
-        # construct and return the final response
-        original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-        matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
+    # STEP 5:
+    # construct and return the final response
+    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+    matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
 
     return ConfigurationTestResponse(
         original_eicr=original_unrefined_eicr,
@@ -1069,28 +1121,13 @@ async def run_configuration_test(
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        original_unrefined_eicr, matched_condition_refined_eicr
+                        unrefined_eicr=original_unrefined_eicr,
+                        refined_eicr=matched_condition_refined_eicr,
                     )
                 }%",
             ],
         ),
     )
-    except (ZipValidationError, FileProcessingError) as e:
-        logger.warning(
-            "File processing error during inline test",
-            extra={"error": str(e)},
-            exc_info=True,
-        )
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception:
-        logger.error(
-            "An unexpected error occurred during inline test",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected server error occurred. Check logs for details.",
-        )
 
 
 class UpdateSectionProcessingEntry(BaseModel):
