@@ -288,8 +288,6 @@ async def inline_testing(
             "configuration_does_not_match_conditions": f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
         }
 
-    trace.is_reportable_in_file = True
-
     # STEP 3:
     # use the first RR code that matched the condition for the RefinedDocument
     # TODO: in the future we might want the ReportableCondition model to use
