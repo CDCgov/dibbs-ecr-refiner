@@ -22,7 +22,13 @@ test.describe('Viewing the application when logged in', () => {
   }) => {
     const context = await browser.newContext();
     page = await context.newPage();
+    await expect(
+      page.getByRole('link', { name: 'Provide Feedback' })
+    ).toBeHidden();
     await login(page);
+    await expect(
+      page.getByRole('link', { name: 'Provide Feedback' })
+    ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Configurations' })
