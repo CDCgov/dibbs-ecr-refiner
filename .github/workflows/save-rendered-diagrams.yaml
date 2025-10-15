@@ -1,8 +1,8 @@
 name: Save Rendered Diagrams
 
-# README: This workflow runs whenever there are pushes to the `master` branch.
-# This can occur when a PR is merged or when a contributor pushes directly to
-# the branch.
+permissions:
+  contents: write
+
 on:
   pull_request:
     paths:
@@ -10,9 +10,7 @@ on:
       - 'docs/views/**'
       - 'docs/styles/**'
       - 'docs/workspace.*'
-      - '.github/workflows/**'
-    branches:
-      - main
+      - '.github/workflows/save-rendered-diagrams.yaml'
 
 jobs:
   render-static-diagrams:
@@ -33,7 +31,7 @@ jobs:
 
       - run: mkdir -p ~/image-cache
 
-      - name: Cache Docker pull of structurizr/lite:2024.06.18 image
+      - name: Cache Docker pull of structurizr/lite:2025.05.28 image
         id: image-cache
         uses: actions/cache@v4
         with:
@@ -79,7 +77,7 @@ jobs:
       # the codebase.
       - name: Run Structurizr Lite
         run: |
-          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v /home/runner/work/CaseBridge/CaseBridge/docs:/usr/local/structurizr structurizr/lite:2024.06.18
+          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v /home/runner/work/dibbs-ecr-refiner/docs:/usr/local/structurizr structurizr/lite:2025.05.28
 
       - name: Wait for Structurizr Lite to start
         run: |
