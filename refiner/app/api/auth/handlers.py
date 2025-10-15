@@ -83,21 +83,32 @@ async def auth_callback(
 
         idp_user_id = oidc_user.get("sub", None)
         idp_username = oidc_user.get("preferred_username", None)
+        idp_jurisdiction_id = oidc_user.get("jurisdiction_id", None)
         idp_email = oidc_user.get("email", None)
 
         if not idp_user_id:
+            logger.error(msg="Unable to get user ID from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'user_id'",
             )
 
         if not idp_username:
+            logger.error(msg="Unable to get username from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'preferred_username'",
             )
 
+        if not idp_jurisdiction_id:
+            logger.error(msg="Unable to get jurisdiction ID from IdP.")
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="IdP response missing required field: 'jurisdiction_id'",
+            )
+
         if not idp_email:
+            logger.error(msg="Unable to get email address from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'email'",
@@ -108,15 +119,18 @@ async def auth_callback(
             extra={
                 "user_id": idp_user_id,
                 "username": idp_username,
+                "jurisdiction_id": idp_jurisdiction_id,
                 "email": idp_email,
             },
         )
 
         # Upsert the user's jurisdiction if needed
-        # TODO: This should come from the IdP eventually
+        # TODO: Should we no longer collect name and state_code?
         jurisdiction_id = await upsert_jurisdiction_db(
             DbJurisdiction(
-                id="SDDH", name="Senate District Health Department", state_code="GC"
+                id=idp_jurisdiction_id,
+                name="Placeholder Jurisdiction",
+                state_code="PLACEHOLDER",
             ),
             db=db,
         )
