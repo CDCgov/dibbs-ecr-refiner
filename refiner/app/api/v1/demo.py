@@ -87,20 +87,48 @@ async def demo_upload(
             detail="Unable to find demo zip file to download.",
         )
 
+    # STEP 2:
     # validate and load the file
-    file = None
     if uploaded_file:
-        file = await validate_zip_file(file=uploaded_file)
+        try:
+            file = await validate_zip_file(file=uploaded_file)
+        except ZipValidationError as e:
+            logger.error(
+                msg="ZipValidationError in validate_zip_file", extra={"error": str(e)}
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+            )
     else:
         file = create_sample_zip_file(sample_zip_path=demo_zip_path)
 
     try:
         logger.info("Processing demo file", extra={"upload_file": file.filename})
 
-        # STEP 2:
-        # read jurisdiction and XML files from ZIP
+        # get jurisdiction_id from user
         jd = user.jurisdiction_id
-        original_xml_files = await file_io.read_xml_zip(file)
+
+        try:
+            original_xml_files = await file_io.read_xml_zip(file)
+        except ZipValidationError as e:
+            logger.error("ZipValidationError in read_xml_zip", extra={"error": str(e)})
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
+            )
+        except XMLValidationError as e:
+            logger.error("XMLValidationError in read_xml_zip", extra={"error": str(e)})
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="XML file(s) could not be processed.",
+            )
+        except FileProcessingError as e:
+            logger.error("FileProcessingError in read_xml_zip", extra={"error": str(e)})
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
+            )
 
         # STEP 3:
         # orchestrate refinement workflow via service layer
@@ -111,7 +139,8 @@ async def demo_upload(
         )
         refined_documents = result["refined_documents"]
         conditions_without_matching_config_names = [
-            mc["display_name"] for mc in result["no_match"]
+            missing_condition["display_name"]
+            for missing_condition in result["no_matching_configuration_for_conditions"]
         ]
 
         # STEP 4:
@@ -142,7 +171,8 @@ async def demo_upload(
                     stats=[
                         f"eICR file size reduced by {
                             get_file_size_reduction_percentage(
-                                original_xml_files.eicr, condition_refined_eicr
+                                unrefined_eicr=original_xml_files.eicr,
+                                refined_eicr=condition_refined_eicr,
                             )
                         }%",
                     ],

@@ -777,19 +777,34 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
       return useMutation(mutationOptions, queryClient);
     }
     /**
- * Runs an in-line test using the provided configuration ID and test files.
+ * Runs an inline test of a given configuration against an eICR/RR pair.
+
+This endpoint orchestrates the validation and refinement process by:
+1. Handling file input, either from a user upload or a default sample file.
+2. Calling the `inline_testing` service, which validates that the specified
+   configuration's condition is reportable in the provided file.
+3. Handling the service response:
+    - If validation fails, raises a 400 Bad Request with a specific error.
+    - If successful, proceeds with the returned refined document.
+4. Packaging the original eICR, RR, and the single refined eICR into a
+   new in-memory zip archive.
+5. Uploading the archive to S3 and generating a pre-signed download URL.
+6. Returning a `ConfigurationTestResponse` with the download URL and details
+   of the successful refinement.
 
 Args:
-    id (UUID): ID of Configuration to use for the test
-    uploaded_file (UploadFile | None): user uploaded eICR/RR pair
-    create_output_zip (Callable[..., tuple[str, io.BytesIO]]): service to create an in-memory zip file
-    upload_refined_files_to_s3 (Callable[[UUID, io.BytesIO, str, Logger], str]): service to upload a zip to S3
-    user (DbUser): Logged in user
-    db (AsyncDatabaseConnection): Database connection
-    sample_zip_path (Path): Path to example .zip eICR/RR pair
-    logger (Logger): Standard logger
+    id: The ID of the configuration to test.
+    uploaded_file: An optional user-provided zip file with an eICR and RR.
+    create_output_zip: Dependency to create a zip archive in memory.
+    upload_refined_files_to_s3: Dependency to upload the archive to S3.
+    user: The authenticated user making the request.
+    db: The database connection.
+    sample_zip_path: Path to the default sample zip file.
+    logger: The application logger.
+
 Returns:
-    ConfigurationTestResponse: response given to the client
+    A response object containing the original eICR, a URL to download the
+    zipped results, and details about the refined condition.
  * @summary Run Configuration Test
  */
 export const runInlineConfigurationTest = (
