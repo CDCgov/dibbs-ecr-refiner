@@ -77,7 +77,8 @@ jobs:
       # the codebase.
       - name: Run Structurizr Lite
         run: |
-          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v ~/work/dibbs-ecr-refiner/docs:/usr/local/structurizr structurizr/lite:2025.05.28
+          cd docs/
+          docker run -d -it --rm --log-driver=journald --name save-rendered-diagrams -p 9001:8080 -v $PWD:/usr/local/structurizr structurizr/lite:2025.05.28
 
       - name: Wait for Structurizr Lite to start
         run: |
