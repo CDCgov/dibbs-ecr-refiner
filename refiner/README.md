@@ -50,6 +50,7 @@ We have a [GitHub action](https://github.com/CDCgov/dibbs-ecr-refiner/actions/wo
 - Access/permissions to run actions in the Skylight infra repo.
 - Access to the Skylight Azure environment and the resources within the Refiner container instances / DIBBs app hub.
 - Ability to run actions in the Refiner repo.
+- **Double check the database schema and what the application expects match each other. If in doubt, run the migrations.**
 
 ### Instructions
 
