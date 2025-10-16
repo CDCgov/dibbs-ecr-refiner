@@ -7,7 +7,7 @@ from typing import TypedDict
 
 JURISDICTION_CSV = "eCR_Jurisdictions.csv"
 SAMPLE_FILES = Path("../../../assets/demo/mon-mothma-two-conditions.zip")
-OUTPUT_DIR = Path("output_zips")
+OUTPUT_DIR = Path("jurisdiction_sample_data")
 RR_FILENAME = "CDA_RR.xml"
 EICR_FILENAME = "CDA_eICR.xml"
 
