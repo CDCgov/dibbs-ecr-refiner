@@ -16,7 +16,7 @@ case "$ENV" in
     DB_URL="postgresql://postgres:refiner@db:5432/refiner?sslmode=disable"
     ;;
   demo)
-    DB_URL="postgresql://postgres:refiner@demo-db-host:5432/refiner?sslmode=require"
+    DB_URL=$(just cloud demo-db-url)
     ;;
   prod)
     DB_URL="postgresql://postgres:refiner@prod-db-host:5432/refiner?sslmode=require"
