@@ -100,18 +100,20 @@ async def auth_callback(
                 detail="IdP response missing required field: 'preferred_username'",
             )
 
-        if not idp_jurisdiction_id:
-            logger.error(msg="Unable to get jurisdiction ID from IdP.")
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="IdP response missing required field: 'jurisdiction_id'",
-            )
-
         if not idp_email:
             logger.error(msg="Unable to get email address from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'email'",
+            )
+
+        # TODO: If the IdP does not send `jurisdiction_id` we fall back to "SDDH"
+        # Do we want to no longer allow this fallback eventually?
+        if not idp_jurisdiction_id:
+            idp_jurisdiction_id = "SDDH"
+            logger.warning(
+                msg="No value for `jurisdiction_id` was received from the IdP, defaulting to fallback value",
+                extra={"fallback_jurisdiction_id": idp_jurisdiction_id},
             )
 
         logger.info(
