@@ -10,6 +10,7 @@ SAMPLE_FILES = Path("../../../assets/demo/mon-mothma-two-conditions.zip")
 OUTPUT_DIR = Path("jurisdiction_sample_data")
 RR_FILENAME = "CDA_RR.xml"
 EICR_FILENAME = "CDA_eICR.xml"
+ORIGINAL_TEST_JD = "SDDH"
 
 
 class GitInfo(TypedDict):
@@ -64,16 +65,15 @@ def extract_zip_to_memory(zip_path: Path) -> dict[str, bytes]:
     return contents
 
 
-def modify_rr(rr_bytes: bytes, new_value: str) -> bytes:
+def modify_rr(rr_bytes: bytes, old_value: str, new_value: str) -> bytes:
     """Replace SDDH JD code with the routing code from the CSV."""
-    old_bytes = b"SDDH"
+    old_bytes = old_value.encode("utf-8")
     new_bytes = new_value.encode("utf-8")
 
     if old_bytes not in rr_bytes:
-        # This shouldn't happen ¯\_(ツ)_/¯
-        print("⚠️  'SDDH' not found in document")
+        print(f"⚠️  '{old_value}' not found in document")
     else:
-        print(f"🔎 Found {rr_bytes.count(old_bytes)} occurrences of 'SDDH'")
+        print(f"🔎 Found {rr_bytes.count(old_bytes)} occurrences of '{old_value}'")
 
     return rr_bytes.replace(old_bytes, new_bytes)
 
@@ -126,7 +126,7 @@ for jurisdiction in jurisdictions:
     rr_data = contents.get(RR_FILENAME)
 
     # Swap "SDDH" with the routing code in the RR
-    modified_rr = modify_rr(rr_data, routing_code)
+    modified_rr = modify_rr(rr_data, ORIGINAL_TEST_JD, routing_code)
 
     # Replace RR with modified copy
     new_contents = contents.copy()
