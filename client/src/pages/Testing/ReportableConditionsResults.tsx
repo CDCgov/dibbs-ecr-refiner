@@ -18,6 +18,31 @@ export function ReportableConditionsResults({
   const hasFoundConditions = matchedConditions.length > 0;
   const hasMissingConditions = unmatchedConditions.length > 0;
 
+  // TODO: This is placeholder design and copy.
+  // No conditions to display.
+  // This is when a valid eICR/RR zip is uploaded but doesn't contain the uploader's jurisdiction ID for any reportable conditions.
+  if (!hasFoundConditions && !hasMissingConditions) {
+    return (
+      <Container>
+        <ConditionsContainer>
+          <div className="flex items-center gap-4">
+            <WarningIcon aria-label="Warning" size={3} />
+            <p className="text-state-error-dark">
+              No conditions reportable to your jurisdiction were found in the
+              RR.
+            </p>
+          </div>
+        </ConditionsContainer>
+        <div>
+          <Button variant="primary" onClick={startOver}>
+            Start over
+          </Button>
+        </div>
+      </Container>
+    );
+  }
+
+  // Display matched conditions and potentially also missing conditions
   if (hasFoundConditions) {
     return (
       <Container className="lg:w-4/7">
@@ -48,6 +73,7 @@ export function ReportableConditionsResults({
     );
   }
 
+  // Display only missing conditions
   return (
     <Container className="max-w-[47rem]">
       <ConditionsContainer>

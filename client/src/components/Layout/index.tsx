@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
+import { ProvideFeedbackButton } from '../ProvideFeedbackButton';
 
 import NavigationBar from '../NavigationBar';
 import { Icon } from '@trussworks/react-uswds';
@@ -24,6 +25,7 @@ export function Layout({ username, children }: LayoutProps) {
       >
         {children}
       </main>
+      <ProvideFeedbackButton />
       <Footer />
     </div>
   );
