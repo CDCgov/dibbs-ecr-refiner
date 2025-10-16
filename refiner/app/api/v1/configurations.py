@@ -190,23 +190,6 @@ class IncludedCondition:
 
 
 @dataclass(frozen=True)
-class IncludedConditionWithCodes:
-    """
-    Model for a condition that is associated with a configuration.
-    """
-
-    id: UUID
-    display_name: str
-    canonical_url: str
-    version: str
-    associated: bool
-    loinc_codes: list[str] = None
-    snomed_codes: list[str] = None
-    icd10_codes: list[str] = None
-    rxnorm_codes: list[str] = None
-
-
-@dataclass(frozen=True)
 class GetConfigurationResponse:
     """
     Information about a specific configuration to return to the client.
@@ -255,7 +238,10 @@ async def get_configuration(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
 
-    print(f"Configuration: {config}")
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
 
     config_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
 
@@ -282,10 +268,6 @@ async def get_configuration(
 
     loinc_codes = sorted(loinc_codes_set)  # final flattened list of strings
 
-    if not config:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
-        )
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
