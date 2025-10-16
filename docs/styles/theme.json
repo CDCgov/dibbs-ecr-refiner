@@ -1,0 +1,124 @@
+{
+  "name": "DIBBS eCR Refiner",
+  "description": "A custom Structurizr theme for DIBBS eCR Refiner diagrams.",
+  "elements": [
+    {
+      "tag": "DIBBs",
+      "icon": "./.icons/dibbs-logo.png"
+    },
+    {
+      "tag": "React Application",
+      "shape": "WebBrowser",
+      "icon": "./.icons/react-logo.png"
+    },
+    {
+      "tag": "Amazon Web Services - Lambda",
+      "background": "#e2730e",
+      "stroke": "#e2730e",
+      "color": "#ffffff",
+      "shape": "RoundedBox",
+      "icon": "./.icons/aws-lambda.png"
+    },
+    {
+      "tag": "Amazon Web Services - Fargate",
+      "stroke": "#e5770d",
+      "color": "#e5770d",
+      "icon": "./.icons/aws-fargate.png"
+    },
+    {
+      "tag": "Microsoft Azure - Container Instances",
+      "stroke": "#a12aa4",
+      "background": "#d11af4",
+      "shape": "Component",
+      "icon": "./.icons/azure-container-instances.png"
+    },
+    {
+      "tag": "Microsoft Azure - Virtual Networks",
+      "background": "#1540df",
+      "stroke": "#1326da",
+      "shape": "Pipe",
+      "icon": "./.icons/azure-virtual-networks.png"
+    },
+    {
+      "tag": "Microsoft Azure - Subscriptions",
+      "stroke": "#ffd70f",
+      "color": "#ffd70f",
+      "icon": "./.icons/azure-subscriptions.png"
+    },
+    {
+      "tag": "Microsoft Azure - Resource Groups",
+      "stroke": "#9cebff",
+      "color": "#9cebff",
+      "icon": "./.icons/azure-resource-groups.png"
+    },
+    {
+      "tag": "Microsoft Azure - Subscriptions",
+      "stroke": "#ffd70f",
+      "color": "#ffd70f",
+      "icon": "./.icons/azure-subscriptions.png"
+    },
+    {
+      "tag": "Microsoft Azure - Managed Identities",
+      "stroke": "#50e6ff",
+      "color": "#50e6ff",
+      "icon": "./.icons/azure-managed-identities.png"
+    },
+    {
+      "tag": "Microsoft Azure - Storage Accounts",
+      "stroke": "#37c8b1",
+      "background": "#17c2b1",
+      "shape": "Cylinder",
+      "icon": "./.icons/azure-storage-accounts.png"
+    },
+    {
+      "tag": "Microsoft Azure - Azure Database PostgreSQL Server",
+      "background": "#30e6ff",
+      "stroke": "#05e6ff",
+      "shape": "Cylinder",
+      "icon": "./.icons/azure-database-postgresql-server.png"
+    },
+    {
+      "tag": "Amazon Web Services - Simple Queue Service Message",
+      "stroke": "#b0084d",
+      "background": "#b0084d",
+      "color": "#ffffff",
+      "icon": "./.icons/aws-simple-queue-service.png"
+    },
+    {
+      "tag": "Amazon Web Services - Simple Storage Service S3 Standard",
+      "background": "#3f8639",
+      "stroke": "#3f8584",
+      "icon": "./.icons/aws-s3-standard.png"
+    },
+    {
+      "tag": "Microsoft Azure - Container Registries",
+      "stroke": "#767676",
+      "color": "#767676",
+      "icon": "./.icons/azure-container-registries.png"
+    },
+    {
+      "tag": "LocalStack",
+      "background": "#282531",
+      "stroke": "#4a44a7",
+      "color": "#21e3e3",
+      "icon": "./.icons/localstack-logo.jpeg",
+      "shape": "Cylinder"
+    },
+    {
+      "tag": "FusionAuth",
+      "background": "#995827",
+      "stroke": "#767676",
+      "color": "#ffffff",
+      "icon": "./.icons/fusionauth-logo.png",
+      "shape": "Hexagon"
+    },
+    {
+      "tag": "Keycloak",
+      "background": "#312c2f",
+      "stroke": "#767676",
+      "color": "#35a8db",
+      "icon": "./.icons/keycloak-logo.png",
+      "shape": "Hexagon"
+    }
+  ]
+}
