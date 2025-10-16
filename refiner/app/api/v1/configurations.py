@@ -188,6 +188,7 @@ class IncludedCondition:
     version: str
     associated: bool
 
+
 @dataclass(frozen=True)
 class IncludedConditionWithCodes:
     """
@@ -203,7 +204,6 @@ class IncludedConditionWithCodes:
     snomed_codes: list[str] = None
     icd10_codes: list[str] = None
     rxnorm_codes: list[str] = None
-
 
 
 @dataclass(frozen=True)
@@ -266,16 +266,18 @@ async def get_configuration(
     loinc_codes_set = set()  # deduplicate codes
 
     for code_list in [
-        getattr(config_condition, 'snomed_codes', []),
-        getattr(config_condition, 'loinc_codes', []),
-        getattr(config_condition, 'icd10_codes', []),
-        getattr(config_condition, 'rxnorm_codes', []),
-        getattr(config, 'custom_codes', []),  # list of DbConfigurationCustomCode
+        getattr(config_condition, "snomed_codes", []),
+        getattr(config_condition, "loinc_codes", []),
+        getattr(config_condition, "icd10_codes", []),
+        getattr(config_condition, "rxnorm_codes", []),
+        getattr(config, "custom_codes", []),  # list of DbConfigurationCustomCode
     ]:
         for coding in code_list:
-            if isinstance(coding, DbConditionCoding) and hasattr(coding, 'code'):
+            if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
                 loinc_codes_set.add(coding.code)
-            elif isinstance(coding, DbConfigurationCustomCode) and hasattr(coding, 'code'):
+            elif isinstance(coding, DbConfigurationCustomCode) and hasattr(
+                coding, "code"
+            ):
                 loinc_codes_set.add(coding.code)
 
     loinc_codes = sorted(loinc_codes_set)  # final flattened list of strings
@@ -314,7 +316,7 @@ async def get_configuration(
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
-        loinc_codes=loinc_codes
+        loinc_codes=loinc_codes,
     )
 
 
