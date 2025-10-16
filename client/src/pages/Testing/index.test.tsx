@@ -249,7 +249,7 @@ describe('Demo', () => {
     expect(screen.queryByText(bannerText)).not.toBeInTheDocument();
   });
 
-  it('should display only reportable conditions with missing configurations', async () => {
+  it('should let the user know that no conditions reportable to their JD ID were found in the RR', async () => {
     const user = userEvent.setup();
 
     (useUploadEcr as unknown as Mock).mockImplementation(() => {
@@ -272,12 +272,43 @@ describe('Demo', () => {
     expect(await screen.findByText('Start over')).toBeInTheDocument();
     expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
 
+    expect(
+      screen.getByText(
+        'No conditions reportable to your jurisdiction were found in the RR.'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('should display only reportable conditions with missing configurations', async () => {
+    const user = userEvent.setup();
+
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [],
+            conditions_without_matching_configs: ['Influenza'],
+          },
+        },
+      };
+    });
+
+    renderDemoView();
+
+    await user.click(screen.getByText('Use test file'));
+
+    // only start over button is available
+    expect(await screen.findByText('Start over')).toBeInTheDocument();
+    expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
+
     // only missing condition text is in the doc
     expect(
       screen.getByText(
         'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
       )
     ).toBeInTheDocument();
+    expect(screen.getByText('Influenza')).toBeInTheDocument();
     expect(
       screen.queryByText('Would you like to refine the eCR?')
     ).not.toBeInTheDocument();
