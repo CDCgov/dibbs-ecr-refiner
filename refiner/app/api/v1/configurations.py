@@ -21,7 +21,6 @@ from fastapi import (
 )
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
-from refiner.app.api.v1.demo import XML_FILE_ERROR, ZIP_READING_ERROR
 
 from app.core.exceptions import (
     FileProcessingError,
@@ -38,6 +37,7 @@ from app.services.format import normalize_xml, strip_comments
 from app.services.testing import inline_testing
 
 from ...api.auth.middleware import get_logged_in_user
+from ...api.v1.demo import XML_FILE_ERROR, ZIP_READING_ERROR
 from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
