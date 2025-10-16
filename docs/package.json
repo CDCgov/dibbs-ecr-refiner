@@ -1,0 +1,12 @@
+{
+  "name": "structurizr-diagram-output",
+  "version": "1.0.0",
+  "description": "This package uses Puppeteer to create static diagrams from Structurizr Lite",
+  "main": "./scripts/export-diagrams.js",
+  "keywords": [],
+  "author": "Roger Steve Ruiz <roger.ruiz@skylight.digital",
+  "license": "MIT",
+  "devDependencies": {
+    "puppeteer": "^22.15.0"
+  }
+}
