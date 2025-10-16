@@ -50,8 +50,6 @@ export default function Demo() {
     resetState();
   }
 
-  console.log(errorMessage);
-
   return (
     <div className="flex px-10 md:px-20">
       <div className="flex flex-col gap-10 py-10">
