@@ -8,7 +8,7 @@ alias help := _default
 [group('azure')]
 demo-db-url:
     az container show \
-      --name dibbs-er-demo-aci \
-      --resource-group dibbs-er-demo \
-      --query "containers[0].environmentVariables[?name=='DB_URL']" \
-      -o table
+    --name dibbs-er-demo-aci \
+    --resource-group dibbs-er-demo \
+    --query "containers[0].environmentVariables[?name=='DB_URL'].value | [0]" \
+    -o tsv
