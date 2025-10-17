@@ -22,7 +22,11 @@ from fastapi import (
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
-from app.core.exceptions import FileProcessingError, ZipValidationError
+from app.core.exceptions import (
+    FileProcessingError,
+    XMLValidationError,
+    ZipValidationError,
+)
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
@@ -33,6 +37,7 @@ from app.services.format import normalize_xml, strip_comments
 from app.services.testing import inline_testing
 
 from ...api.auth.middleware import get_logged_in_user
+from ...api.v1.demo import XML_FILE_ERROR, ZIP_READING_ERROR
 from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
@@ -1017,7 +1022,7 @@ async def run_configuration_test(
         logger.error(msg="FileProcessingError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
+            detail=ZIP_READING_ERROR,
         )
 
     # get the user's jurisdiction_id to pass to inline_testing
@@ -1041,12 +1046,17 @@ async def run_configuration_test(
 
     # call the testing service
     # business logic around **how** inline testing works is in services/testing.py
-    result = await inline_testing(
-        xml_files=original_xml_files,
-        configuration=configuration,
-        primary_condition=primary_condition,
-        jurisdiction_id=jd,
-    )
+    try:
+        result = await inline_testing(
+            xml_files=original_xml_files,
+            configuration=configuration,
+            primary_condition=primary_condition,
+            jurisdiction_id=jd,
+        )
+    except XMLValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=XML_FILE_ERROR
+        )
 
     # STEP 3:
     # handle the service layer response

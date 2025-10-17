@@ -27,6 +27,11 @@
   label + select {
     @apply !mt-2;
   }
+
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
 }
 @layer utilities {
   .border-thin {
@@ -98,6 +103,7 @@
   --color-state-success: #00a91c;
   --color-state-success-dark: #216e1f;
   --color-state-error-lighter: #fff3f2;
+  --color-state-error-light: #fdb8ae;
   --color-state-error: #fb5a47;
   --color-state-error-dark: #b50909;
 
