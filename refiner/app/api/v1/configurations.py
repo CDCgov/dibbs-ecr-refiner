@@ -44,6 +44,7 @@ from ...db.conditions.db import (
     get_condition_codes_by_condition_id_db,
     get_conditions_db,
 )
+from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     SectionUpdate,
@@ -205,6 +206,7 @@ class GetConfigurationResponse:
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
+    loinc_codes: list[str]
 
 
 @dataclass(frozen=True)
@@ -240,10 +242,37 @@ async def get_configuration(
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
+
     if not config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    config_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+
+    ##TODO: Grab included_conditions after refactor
+
+    # Flatten all codes from snomed_codes, loinc_codes, icd10_codes, rxnorm_codes,
+    # plus custom_codes from the configuration
+    loinc_codes_set = set()  # deduplicate codes
+
+    for code_list in [
+        getattr(config_condition, "snomed_codes", []),
+        getattr(config_condition, "loinc_codes", []),
+        getattr(config_condition, "icd10_codes", []),
+        getattr(config_condition, "rxnorm_codes", []),
+        getattr(config, "custom_codes", []),  # list of DbConfigurationCustomCode
+    ]:
+        for coding in code_list:
+            if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
+                loinc_codes_set.add(coding.code)
+            elif isinstance(coding, DbConfigurationCustomCode) and hasattr(
+                coding, "code"
+            ):
+                loinc_codes_set.add(coding.code)
+
+    loinc_codes = sorted(loinc_codes_set)  # final flattened list of strings
+
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
@@ -266,6 +295,7 @@ async def get_configuration(
         )
         for cond in all_conditions
     ]
+
     return GetConfigurationResponse(
         id=config.id,
         display_name=config.name,
@@ -273,6 +303,7 @@ async def get_configuration(
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
+        loinc_codes=loinc_codes,
     )
 
 
