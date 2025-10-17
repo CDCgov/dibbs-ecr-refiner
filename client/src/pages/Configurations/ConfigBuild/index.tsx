@@ -127,21 +127,26 @@ function Builder({
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
+  const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
+    null
+  );
   const modalRef = useRef<ModalRef | null>(null);
 
-  function onCodesetClick(id: string) {
+  function onCodesetClick(name: string, id: string) {
+    setSelectedCodesetName(name);
     setSelectedCodesetId(id);
     setTableView('codeset');
   }
 
   function onCustomCodeClick() {
+    setSelectedCodesetName(null);
     setSelectedCodesetId(null);
     setTableView('custom');
   }
 
   useEffect(() => {
     if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].condition_id);
+      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
     }
   }, [code_sets, default_condition_name, tableView]);
 
@@ -178,7 +183,9 @@ function Builder({
                   <ConditionCodeSetButton
                     codeSetName={codeSet.display_name}
                     codeSetTotalCodes={codeSet.total_codes}
-                    onViewCodeSet={() => onCodesetClick(codeSet.condition_id)}
+                    onViewCodeSet={() =>
+                      onCodesetClick(codeSet.display_name, codeSet.condition_id)
+                    }
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
@@ -244,7 +251,7 @@ function Builder({
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
-                defaultCondition={default_condition_name}
+                defaultCondition={selectedCodesetName}
                 conditionId={selectedCodesetId}
               />
             </>
@@ -546,7 +553,7 @@ function TesLink() {
 
 interface ConditionCodeTableProps {
   conditionId: string;
-  defaultCondition: string;
+  defaultCondition: string | null;
 }
 
 function ConditionCodeTable({
