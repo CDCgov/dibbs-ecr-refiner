@@ -114,16 +114,21 @@ def create_split_condition_filename(condition_name: str, condition_code: str) ->
 
 def create_refined_ecr_zip_in_memory(
     *,
-    files: list[tuple[str, str]],
+    files: list[tuple[str, str | bytes]],
 ) -> tuple[str, io.BytesIO]:
     """
-    Create a zip archive containing all provided (filename, content) pairs.
+    Create a zip archive containing all provided (filename, content) pairs (content may be str or bytes).
 
     Args:
-        files (list[tuple[str, str]]): List of tuples [(filename, content)], content must be a string.
+        files (list[tuple[str, str | bytes]]): List of tuples [(filename, content)], content must be a string or bytes.
 
     Returns:
         (filename, buffer)
+
+    Notes:
+        - If content is bytes, it is written as-is.
+        - If content is str, it is encoded as UTF-8 before writing.
+        - Skips any empty files; robust against partial failures (e.g., missing HTML).
     """
     token = str(uuid4())
     zip_filename = f"{token}_refined_ecr.zip"
@@ -131,7 +136,15 @@ def create_refined_ecr_zip_in_memory(
 
     with ZipFile(zip_buffer, "w") as zf:
         for filename, content in files:
-            zf.writestr(filename, content)
+            if content is None or (isinstance(content, str) and not content):
+                continue
+            if isinstance(content, bytes):
+                zf.writestr(filename, content)
+            elif isinstance(content, str):
+                zf.writestr(filename, content.encode("utf-8"))
+            else:
+                # Unexpected content type; skip file
+                continue
 
     zip_buffer.seek(0)
     return zip_filename, zip_buffer
