@@ -33,7 +33,85 @@ CLINICAL_DATA_TABLE_HEADERS = [
 # =============================================================================
 
 
-def _process_section(
+def get_section_by_code(
+    structured_body: _Element,
+    loinc_code: str,
+    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
+) -> _Element | None:
+    """
+    Get a section from structuredBody by its LOINC code.
+
+    Args:
+        structured_body: The HL7 structuredBody element to search within.
+        loinc_code: The LOINC code of the section to retrieve.
+        namespaces: The namespaces to use for element search. Defaults to hl7.
+
+    Returns:
+        _Element: The section element or None if not found
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails
+    """
+
+    try:
+        xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
+        xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
+
+        if isinstance(xpath_result, list) and len(xpath_result) == 1:
+            section = cast(list[_Element], xpath_result)
+            return section[0]
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message=f"Failed to evaluate XPath for section code {loinc_code}",
+            details={"xpath_query": xpath_query, "error": str(e)},
+        )
+    return None
+
+
+def get_section_loinc_codes(
+    structured_body: _Element,
+    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
+) -> list[str]:
+    """
+    Parses an eICR's structuredBody to find all top-level section codes.
+
+    This function is used to discover which sections are actually present in a given
+    eICR document before applying any refinement logic. It borrows patterns for
+    error handling and namespace management from other functions in this module.
+
+    :param structured_body: The <structuredBody> XML element from an eICR.
+    :param namespaces: The XML namespaces to use for the XPath query.
+    :return: A list of LOINC codes for the sections found in the document.
+    """
+
+    if structured_body is None:
+        return []
+
+    # this xpath is designed to be specific and efficient:
+    # 1. It starts from the current element (structured_body)
+    # 2. It finds direct <section> children
+    # 3. It then finds the direct <code> child of that section
+    # 4. Finally, it extracts the 'code' attribute string
+    # This avoids finding codes in nested sections or other parts of the document
+    xpath_query = "./hl7:section/hl7:code/@code"
+
+    try:
+        xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
+
+        # the result of a query ending in /@attribute is a list of strings.
+        if isinstance(xpath_result, list):
+            # we can directly return the list of strings.
+            return cast(list[str], xpath_result)
+
+        return []
+    except etree.XPathError as e:
+        raise XMLParsingError(
+            message="Failed to evaluate XPath for discovering section LOINC codes.",
+            details={"xpath_query": xpath_query, "error": str(e)},
+        )
+
+
+def process_section(
     section: _Element,
     combined_xpath: str,
     namespaces: dict = {"hl7": "urn:hl7-org:v3"},
