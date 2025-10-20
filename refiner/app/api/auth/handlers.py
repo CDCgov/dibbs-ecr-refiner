@@ -177,6 +177,7 @@ class UserResponse(BaseModel):
 
     id: UUID
     username: str
+    jurisdiction_id: str
 
 
 @auth_router.get(
@@ -204,7 +205,9 @@ async def get_user(request: Request) -> UserResponse | None:
     if not user:
         return None
 
-    return UserResponse(id=user.id, username=user.username)
+    return UserResponse(
+        id=user.id, username=user.username, jurisdiction_id=user.jurisdiction_id
+    )
 
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
