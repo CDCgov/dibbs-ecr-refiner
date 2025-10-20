@@ -109,6 +109,7 @@ if __name__ == "__main__":
             {"RoutingCode": "APHL", "Jurisdiction": "APHL"},
             {"RoutingCode": "CDC", "Jurisdiction": "CDC"},
             {"RoutingCode": "TEST", "Jurisdiction": "Test Jurisdiction"},
+            {"RoutingCode": "SKL", "Jurisdiction": "Skylight"},
         ]
     )
 
