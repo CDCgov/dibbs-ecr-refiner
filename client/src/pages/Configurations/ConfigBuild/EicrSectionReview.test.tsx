@@ -53,13 +53,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
     const input = screen.getByLabelText('Include entire section Section X');
     expect(input).not.toBeChecked();
     // Find the <td> cell containing the input (cell handles click)
-    const cell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include entire section Section X"]'
-        )
-      );
+    const cell = within(screen.getByRole('table'))
+      .getByLabelText('Include entire section Section X')
+      .closest('td');
 
     await userEvent.click(cell!);
     expect(mockMutate).toHaveBeenCalledTimes(1);
@@ -84,13 +80,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
       />
     );
     // Find cell for 'Include entire section'
-    const cell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include entire section Section Y"]'
-        )
-      );
+    const cell = within(screen.getByRole('table'))
+      .getByLabelText('Include entire section Section Y')
+      .closest('td');
 
     cell!.focus();
     await userEvent.keyboard('{Enter}');
@@ -134,11 +126,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
       />
     );
     // Find target cell
-    const cell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        within(cell).queryByLabelText('Include entire section Section Z')
-      );
+    const cell = within(screen.getByRole('table'))
+      .getByLabelText('Include entire section Section Z')
+      .closest('td');
 
     await userEvent.click(cell!);
     // Assert optimistic UI: radio is checked (wait for optimistic update to appear)
