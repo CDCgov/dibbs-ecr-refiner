@@ -348,57 +348,59 @@ async def get_total_condition_code_counts_by_configuration_db(
     """
 
     query = """
-            WITH conds AS (
-                SELECT jsonb_array_elements(included_conditions) AS cond
-                FROM configurations
-                WHERE id = %s
-            ),
-            codes AS (
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
-                UNION
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
-                UNION
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
-                UNION
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
-            )
+        WITH conds AS (
+            SELECT jsonb_array_elements_text(included_conditions) AS cond_id
+            FROM configurations
+            WHERE id = %s
+        ),
+        codes AS (
             SELECT
                 c.id AS condition_id,
-                c.display_name,
-                COUNT(DISTINCT code) AS total_codes
-            FROM conditions c
-            JOIN codes cd ON c.id = cd.condition_id
-            GROUP BY c.id, c.display_name
-            ORDER BY c.display_name;
-            """
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
+
+            UNION
+
+            SELECT
+                c.id AS condition_id,
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
+
+            UNION
+
+            SELECT
+                c.id AS condition_id,
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
+
+            UNION
+
+            SELECT
+                c.id AS condition_id,
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+        )
+        SELECT
+            c.id AS condition_id,
+            c.display_name,
+            COUNT(DISTINCT code) AS total_codes
+        FROM conditions c
+        JOIN codes cd ON c.id = cd.condition_id
+        GROUP BY c.id, c.display_name
+        ORDER BY c.display_name;
+    """
 
     params = (config_id,)
     async with db.get_connection() as conn:
