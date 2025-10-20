@@ -150,7 +150,9 @@ async def demo_upload(
         conditions: list[Condition] = []
         refined_files_to_zip = []
         xslt_stylesheet_path = str(
-            Path(__file__).parent.parent.parent / "xslt" / "cda2html.xsl"
+            Path(__file__).parent.parent.parent
+            / "xslt"
+            / "CDA-phcaserpt-3.1.1-CDAR2_eCR_eICR.xsl"
         )
         html_files: list[str] = []
         for refined_document in refined_documents:
