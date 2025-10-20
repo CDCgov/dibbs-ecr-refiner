@@ -20,9 +20,11 @@ describe('Config activation page', () => {
     renderPage();
     expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
     expect(screen.getByText('Test', { selector: 'a' })).toBeInTheDocument();
-    expect(screen.getByText('Activate', { selector: 'a' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+
+    // TODO: Uncomment this when we want to show the Activate screen again
+    // expect(screen.getByText('Activate', { selector: 'a' })).toHaveAttribute(
+    //   'aria-current',
+    //   'page'
+    // );
   });
 });
