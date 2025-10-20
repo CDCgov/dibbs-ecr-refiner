@@ -60,7 +60,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
           'input[aria-label="Include entire section Section X"]'
         )
       );
-    expect(cell).toBeTruthy();
+
     await userEvent.click(cell!);
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate.mock.calls[0][0]).toMatchObject({
@@ -91,7 +91,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
           'input[aria-label="Include entire section Section Y"]'
         )
       );
-    expect(cell).toBeTruthy();
+
     cell!.focus();
     await userEvent.keyboard('{Enter}');
     expect(mockMutate).toHaveBeenCalledTimes(1);
@@ -108,7 +108,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
           'input[aria-label="Include and refine section Section Y"]'
         )
       );
-    expect(retainCell).toBeTruthy();
+
     retainCell!.focus();
     await userEvent.keyboard(' ');
     expect(mockMutate).toHaveBeenCalledTimes(1);
@@ -139,7 +139,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
       .find((cell) =>
         within(cell).queryByLabelText('Include entire section Section Z')
       );
-    expect(cell).toBeTruthy();
+
     await userEvent.click(cell!);
     // Assert optimistic UI: radio is checked (wait for optimistic update to appear)
     expect(
