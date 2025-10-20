@@ -243,24 +243,30 @@ async def get_configuration(
         config_id=config.id, db=db
     )
 
-    associated_conditions = {
-        (c.canonical_url, c.version)
-        for c in config.included_conditions
-        if c.canonical_url and c.version
-    }
+    print('IncludedCondition >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEFORE')
+    print(config.included_conditions)
 
+    # Create a set of associated condition IDs (UUIDs or strings)
+    associated_conditions = config.included_conditions or []
+
+    # Fetch all conditions from the database
     all_conditions = await get_conditions_db(db=db)
 
-    included_conditions = [
-        IncludedCondition(
-            id=cond.id,
-            display_name=cond.display_name,
-            canonical_url=cond.canonical_url,
-            version=cond.version,
-            associated=(cond.canonical_url, cond.version) in associated_conditions,
+    # Build IncludedCondition objects, marking which are associated
+    included_conditions = []
+    for cond in all_conditions:
+        is_associated = str(cond.id) in associated_conditions
+        included_conditions.append(
+            IncludedCondition(
+                id=cond.id,
+                display_name=cond.display_name,
+                canonical_url=cond.canonical_url,
+                version=cond.version,
+                associated=is_associated,
+            )
         )
-        for cond in all_conditions
-    ]
+
+    # Return the configuration response
     return GetConfigurationResponse(
         id=config.id,
         display_name=config.name,

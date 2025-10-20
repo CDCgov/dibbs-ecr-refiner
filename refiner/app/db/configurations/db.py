@@ -79,14 +79,7 @@ async def insert_configuration_db(
         # always set name to condition display name
         condition.display_name,
         # included_conditions: always start with primary
-        Jsonb(
-            [
-                {
-                    "canonical_url": condition.canonical_url,
-                    "version": condition.version,
-                }
-            ]
-        ),
+        Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
         # custom_codes
         EMPTY_JSONB,
         # local_codes
