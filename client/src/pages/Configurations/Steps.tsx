@@ -28,7 +28,7 @@ export function Steps({ configurationId }: StepsProps) {
       <li>
         <StepLink to={`/configurations/${configurationId}/test`}>Test</StepLink>
       </li>
-      {/* TODO: Uncomment this when we want to show the 'Activate' page again. */}
+      {/* TODO: Uncomment this when we want to show the 'Activate' screen again */}
       {/* <li>
         <StepLink to={`/configurations/${configurationId}/activate`}>
           Activate
