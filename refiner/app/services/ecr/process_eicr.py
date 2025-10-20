@@ -1,3 +1,4 @@
+import uuid
 from typing import Literal, cast
 
 from lxml import etree
@@ -40,64 +41,92 @@ def _process_section(
     version: Literal["1.1"] = "1.1",
 ) -> None:
     """
-    Process a section using a three-step filtering approach.
+    Process a section by filtering its entries based on provided condition codes.
 
-    STEP 1 (Context Filter): Find clinical elements matching SNOMED condition codes
-    STEP 2 (Trigger Identification): Among contextual matches, identify trigger codes
-    STEP 3 (Entry Processing): Preserve relevant entries and generate section summary
+    This function first neutralizes the section's direct `<text>` and `<code>`
+    children in-place. This prevents the search from matching the section's
+    defining code or its narrative block, ensuring that filtering is limited
+    to structured clinical data within `<entry>` elements.
 
-    This three-step process ensures we only preserve entries that are:
-    1. Relevant to the reportable condition (contextual filtering)
-    2. Properly marked if they triggered the original eICR (trigger identification)
-    3. Properly structured and summarized in the final output (entry processing)
+    The filtering logic then proceeds in three steps:
+    STEP 1 (Context Filter): Find clinical elements matching SNOMED condition codes.
+    STEP 2 (Trigger Identification): Among contextual matches, identify trigger codes.
+    STEP 3 (Entry Processing): Preserve relevant entries and generate section summary.
 
     The key principle: trigger code identification only happens within an already-filtered
     context, ensuring we don't keep random trigger codes unrelated to the condition.
+    The section's original `code` attribute is reliably restored after processing.
 
     Args:
-        section: The XML section element to process
-        combined_xpath: XPath query from ProcessedCondition codes
-        namespaces: XML namespaces for XPath evaluation
-        section_config: Configuration for this section from refiner_details.json
-        version: eICR version being processed
+        section: The XML section element to process.
+        combined_xpath: XPath query from ProcessedCondition codes.
+        namespaces: XML namespaces for XPath evaluation.
+        section_config: Configuration for this section from refiner_details.json.
+        version: eICR version being processed.
     """
 
-    if not combined_xpath:
-        # no condition codes provided - create minimal section
-        _create_minimal_section(section)
-        return
+    # NOTE: neutralize section's direct <code> and <text> children to exclude from search
+    # * this prevents matching the section's defining code or narrative text, ensuring
+    #   the search is limited to structured clinical entries
+    section_code_element = section.find("./hl7:code", namespaces=namespaces)
+    original_code_value = None
+    if section_code_element is not None:
+        original_code_value = section_code_element.get("code")
+        if original_code_value and "code" in section_code_element.attrib:
+            # swap the code value with a temporary non-matching one to prevent
+            # it from being found, while preserving attribute order
+            section_code_element.set("code", f"TEMP_SWAP_{uuid.uuid4()}")
+
+    text_element = section.find("./hl7:text", namespaces=namespaces)
+    if text_element is not None:
+        # clears all children and text content
+        text_element.clear()
 
     try:
-        # STEP 1: CONTEXT FILTERING
-        # find all clinical elements matching our SNOMED condition codes
-        # this is our primary filter - only contextually relevant elements proceed
-        contextual_matches = _find_condition_relevant_elements(
-            section, combined_xpath, namespaces
-        )
-
-        if not contextual_matches:
-            # no matching clinical elements found for our condition
+        if not combined_xpath:
+            # no condition codes provided -> create a minimal section and exit
             _create_minimal_section(section)
             return
 
-        # STEP 2: TRIGGER IDENTIFICATION WITHIN CONTEXT
-        # among our contextual matches, identify which are trigger codes
-        # this ensures trigger codes are only identified within relevant clinical context
-        trigger_analysis = _analyze_trigger_codes_in_context(
-            contextual_matches, section_config
-        )
+        # this block contains the core filtering logic. It's wrapped in a try/except
+        # to handle XPath errors specifically, while the outer try/finally ensures
+        # the section's code attribute is always restored
+        try:
+            # STEP 1: CONTEXT FILTERING
+            # * find all clinical elements matching our condition codes
+            # * this is our primary filter; only contextually relevant elements proceed
+            contextual_matches = _find_condition_relevant_elements(
+                section, combined_xpath, namespaces
+            )
 
-        # STEP 3: PROCESS ENTRIES AND GENERATE OUTPUT
-        # handle entry-level operations and create final section content
-        _preserve_relevant_entries_and_generate_summary(
-            section, contextual_matches, trigger_analysis, namespaces
-        )
+            if not contextual_matches:
+                # no matching clinical elements found for our condition
+                _create_minimal_section(section)
+                return
 
-    except etree.XPathEvalError as e:
-        raise XMLParsingError(
-            message="Invalid XPath expression",
-            details={"xpath": combined_xpath, "error": str(e)},
-        )
+            # STEP 2: TRIGGER IDENTIFICATION WITHIN CONTEXT
+            # * among our contextual matches, identify which are trigger codes
+            # * this ensures trigger codes are only identified within relevant clinical context
+            #   so that the updated <text> element can call out trigger code matches from coded matches
+            trigger_analysis = _analyze_trigger_codes_in_context(
+                contextual_matches, section_config
+            )
+
+            # STEP 3: PROCESS ENTRIES AND GENERATE OUTPUT
+            # * handle entry-level operations and create final section content
+            _preserve_relevant_entries_and_generate_summary(
+                section, contextual_matches, trigger_analysis, namespaces
+            )
+
+        except etree.XPathEvalError as e:
+            raise XMLParsingError(
+                message="Invalid XPath expression",
+                details={"xpath": combined_xpath, "error": str(e)},
+            )
+    finally:
+        # always restore the original code attribute to maintain spec compliance
+        if section_code_element is not None and original_code_value:
+            section_code_element.set("code", original_code_value)
 
 
 def _find_condition_relevant_elements(

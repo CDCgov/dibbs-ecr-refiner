@@ -88,6 +88,7 @@ export default function ConfigBuild() {
           custom_codes={response.data.custom_codes}
           section_processing={response.data.section_processing}
           display_name={response.data.display_name}
+          loinc_codes={response.data.loinc_codes}
         />
       </SectionContainer>
     </div>
@@ -119,6 +120,7 @@ function Builder({
   included_conditions,
   section_processing,
   display_name: default_condition_name,
+  loinc_codes,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -127,21 +129,26 @@ function Builder({
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
+  const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
+    null
+  );
   const modalRef = useRef<ModalRef | null>(null);
 
-  function onCodesetClick(id: string) {
+  function onCodesetClick(name: string, id: string) {
+    setSelectedCodesetName(name);
     setSelectedCodesetId(id);
     setTableView('codeset');
   }
 
   function onCustomCodeClick() {
+    setSelectedCodesetName(null);
     setSelectedCodesetId(null);
     setTableView('custom');
   }
 
   useEffect(() => {
     if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].condition_id);
+      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
     }
   }, [code_sets, default_condition_name, tableView]);
 
@@ -178,7 +185,9 @@ function Builder({
                   <ConditionCodeSetButton
                     codeSetName={codeSet.display_name}
                     codeSetTotalCodes={codeSet.total_codes}
-                    onViewCodeSet={() => onCodesetClick(codeSet.condition_id)}
+                    onViewCodeSet={() =>
+                      onCodesetClick(codeSet.display_name, codeSet.condition_id)
+                    }
                     aria-controls={
                       selectedCodesetId ? 'codeset-table' : undefined
                     }
@@ -244,7 +253,7 @@ function Builder({
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
-                defaultCondition={default_condition_name}
+                defaultCondition={selectedCodesetName}
                 conditionId={selectedCodesetId}
               />
             </>
@@ -264,6 +273,7 @@ function Builder({
                 configurationId={id}
                 modalRef={modalRef}
                 customCodes={custom_codes}
+                loincCodes={loinc_codes}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -420,12 +430,14 @@ interface CustomCodesDetailProps {
   configurationId: string;
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
+  loincCodes: string[];
 }
 
 function CustomCodesDetail({
   configurationId,
   modalRef,
   customCodes,
+  loincCodes,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -507,6 +519,7 @@ function CustomCodesDetail({
         initialCode={selectedCustomCode?.code}
         initialSystem={selectedCustomCode?.system}
         initialName={selectedCustomCode?.name}
+        loincCodes={loincCodes}
         modalRef={modalRef}
         onClose={toggleModal}
       />
@@ -546,7 +559,7 @@ function TesLink() {
 
 interface ConditionCodeTableProps {
   conditionId: string;
-  defaultCondition: string;
+  defaultCondition: string | null;
 }
 
 function ConditionCodeTable({
@@ -700,6 +713,7 @@ interface CustomCodeModalProps {
   initialCode?: string;
   initialSystem?: string;
   initialName?: string;
+  loincCodes: string[];
 }
 
 export function CustomCodeModal({
@@ -709,6 +723,7 @@ export function CustomCodeModal({
   initialCode,
   initialSystem,
   initialName,
+  loincCodes,
 }: CustomCodeModalProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
   const { mutate: editCode } = useEditCustomCodeFromConfiguration();
@@ -731,6 +746,8 @@ export function CustomCodeModal({
     system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
     name: initialName ?? '',
   });
+
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setForm({
@@ -847,9 +864,24 @@ export function CustomCodeModal({
             name="code"
             type="text"
             value={form.code}
-            onChange={handleChange('code')}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, code: e.target.value }));
+              if (error) setError(''); // clear error on change
+            }}
+            onBlur={() => {
+              if (loincCodes.includes(form.code)) {
+                setError(
+                  `The code "${form.code}" already exists in the condition code set.`
+                );
+              }
+            }}
             autoComplete="off"
           />
+          {error && (
+            <p className="font-merriweather mb-1 text-sm text-red-600">
+              {error}
+            </p>
+          )}
         </div>
 
         <div>
@@ -884,8 +916,8 @@ export function CustomCodeModal({
       <ModalFooter className="flex justify-end p-0">
         <Button
           onClick={handleSubmit}
-          disabled={!isButtonEnabled}
-          variant={isButtonEnabled ? 'primary' : 'disabled'}
+          disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
+          variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
           className="!m-0"
         >
           {isEditing ? 'Update' : 'Add custom code'}

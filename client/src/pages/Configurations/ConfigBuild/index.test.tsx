@@ -48,6 +48,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
             { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
             { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
           ],
+          loinc_codes: ['123456'],
         },
       },
     })),
@@ -175,6 +176,57 @@ describe('Config builder page', () => {
 
     const row = await screen.findByText(covidCode, { selector: 'mark' });
     expect(row).toBeInTheDocument();
+  });
+
+  it('should throw an error when adding an existing custom code', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+
+    (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+
+    (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+
+    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
+    expect(
+      screen.getByText(
+        'Add codes that are not included in the code sets from the'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Add code', { selector: 'button' })
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByText('Add code', { selector: 'button' }));
+    expect(
+      screen.getByText('Add custom code', { selector: 'h2' })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText('Add custom code', { selector: 'button' })
+    ).toBeDisabled();
+    await user.type(screen.getByLabelText('Code #'), '123456');
+    await userEvent.tab(); // triggers onBlur
+
+    expect(
+      await screen.findByText(
+        'The code "123456" already exists in the condition code set.',
+        { selector: 'p' }
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Add custom code', { selector: 'button' })
+    ).toBeDisabled();
   });
 
   it('should add a custom code', async () => {

@@ -1,11 +1,11 @@
 import { Success } from './Success';
-import { Error as ErrorScreen } from './Error';
 import { RunTest } from './RunTest';
 import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { Title } from '../../components/Title';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
+import FileUploadWarning from '../../components/FileUploadWarning';
 
 type Status =
   | 'run-test'
@@ -95,7 +95,7 @@ export default function Demo() {
           />
         )}
         {status === 'error' && (
-          <ErrorScreen message={errorMessage} onClick={reset} />
+          <FileUploadWarning errorMessage={errorMessage ?? ''} reset={reset} />
         )}
       </div>
     </div>
