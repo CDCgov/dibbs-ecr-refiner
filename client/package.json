@@ -43,7 +43,7 @@
     "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.1",
     "@tanstack/eslint-plugin-query": "^5.91.0",
-    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.2",
@@ -66,15 +66,15 @@
     "nodemon": "^3.1.10",
     "orval": "^7.14.0",
     "prettier": "^3.6.2",
-    "prettier-plugin-tailwindcss": "^0.6.11",
+    "prettier-plugin-tailwindcss": "^0.7.1",
     "rimraf": "^6.0.1",
     "sass-embedded": "1.93.2",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.46.0",
+    "typescript-eslint": "^8.46.1",
     "vite": "^7.1.11",
     "vitest": "^3.1.1"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.20.0"
   }
 }
