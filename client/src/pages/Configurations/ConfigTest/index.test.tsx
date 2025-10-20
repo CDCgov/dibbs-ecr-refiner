@@ -101,7 +101,8 @@ describe('Config testing page', () => {
       'aria-current',
       'page'
     );
-    expect(screen.getByText('Activate', { selector: 'a' })).toBeInTheDocument();
+    // TODO: Uncomment this when we want to show the Activate screen again
+    // expect(screen.getByText('Activate', { selector: 'a' })).toBeInTheDocument();
   });
 
   it('should warn the user that the expected condition was not found during inline testing', async () => {

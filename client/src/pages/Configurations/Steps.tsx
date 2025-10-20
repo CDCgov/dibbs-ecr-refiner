@@ -7,7 +7,7 @@ interface StepsContainer {
 
 export function StepsContainer({ children }: StepsContainer) {
   return (
-    <div className="flex min-h-14 flex-col items-start gap-4 rounded-lg py-4 sm:py-2 md:flex-row md:items-center md:justify-between">
+    <div className="flex min-h-14 items-center gap-4 rounded-lg py-4">
       {children}
     </div>
   );
@@ -28,11 +28,12 @@ export function Steps({ configurationId }: StepsProps) {
       <li>
         <StepLink to={`/configurations/${configurationId}/test`}>Test</StepLink>
       </li>
-      <li>
+      {/* TODO: Uncomment this when we want to show the 'Activate' screen again */}
+      {/* <li>
         <StepLink to={`/configurations/${configurationId}/activate`}>
           Activate
         </StepLink>
-      </li>
+      </li> */}
     </ol>
   );
 }
