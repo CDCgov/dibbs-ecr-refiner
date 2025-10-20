@@ -67,11 +67,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
       configurationId,
       data: { sections: [{ code: 'X01', action: 'retain' }] },
     });
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText('Include entire section Section X')
-      ).toBeChecked()
-    );
+    expect(
+      await screen.findByLabelText('Include entire section Section X')
+    ).toBeChecked();
   });
 
   it('supports keyboard activation (Enter/Space) on correct cell', async () => {
@@ -97,11 +95,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
     cell!.focus();
     await userEvent.keyboard('{Enter}');
     expect(mockMutate).toHaveBeenCalledTimes(1);
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText('Include entire section Section Y')
-      ).toBeChecked()
-    );
+    expect(
+      await screen.findByLabelText('Include entire section Section Y')
+    ).toBeChecked();
 
     // Reset back to retain
     mockMutate.mockReset();
@@ -116,11 +112,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
     retainCell!.focus();
     await userEvent.keyboard(' ');
     expect(mockMutate).toHaveBeenCalledTimes(1);
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText('Include and refine section Section Y')
-      ).toBeChecked()
-    );
+    expect(
+      await screen.findByLabelText('Include and refine section Section Y')
+    ).toBeChecked();
   });
 
   it('reverts optimistic UI and shows toast on API error', async () => {
