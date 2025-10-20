@@ -41,7 +41,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
   it('optimistically updates UI and calls mutate on radio activation via cell click', async () => {
     const configurationId = 'config-1';
     const sections: DbConfigurationSectionProcessing[] = [
-      { name: 'Section X', code: 'X01', action: 'retain' },
+      { name: 'Section X', code: 'X01', action: 'refine' },
     ];
     renderWithClient(
       <EicrSectionReview
@@ -65,7 +65,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate.mock.calls[0][0]).toMatchObject({
       configurationId,
-      data: { sections: [{ code: 'X01', action: 'refine' }] },
+      data: { sections: [{ code: 'X01', action: 'retain' }] },
     });
     await waitFor(() =>
       expect(
@@ -155,10 +155,10 @@ describe('EicrSectionReview accessibility & behavior', () => {
     await waitFor(() => {
       expect(
         screen.getByLabelText('Include entire section Section Z')
-      ).not.toBeChecked();
+      ).toBeChecked();
       expect(
         screen.getByLabelText('Include and refine section Section Z')
-      ).toBeChecked();
+      ).not.toBeChecked();
       expect(mockShowToast).toHaveBeenCalled();
       expect(mockFormatError).toHaveBeenCalled();
     });

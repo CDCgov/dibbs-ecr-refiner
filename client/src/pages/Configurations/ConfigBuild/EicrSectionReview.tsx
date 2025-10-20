@@ -141,10 +141,10 @@ export default function EicrSectionReview({
               Section name
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
-              Include <br /> entire section
+              Include &amp; <br /> refine section
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
-              Include &amp; <br /> refine section
+              Include <br /> entire section
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
               Remove section
@@ -161,16 +161,17 @@ export default function EicrSectionReview({
                 index={index}
                 action="refine"
                 checked={selectedActions[index] === 'refine'}
-                ariaLabel={`Include entire section ${section.name}`}
+                ariaLabel={`Include and refine section ${section.name}`}
                 applyAction={applyAction}
               />
               <RadioCell
                 index={index}
                 action="retain"
                 checked={selectedActions[index] === 'retain'}
-                ariaLabel={`Include and refine section ${section.name}`}
+                ariaLabel={`Include entire section ${section.name}`}
                 applyAction={applyAction}
               />
+
               <RadioCell
                 index={index}
                 action="remove"
