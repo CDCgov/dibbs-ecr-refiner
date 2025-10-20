@@ -113,12 +113,12 @@ export default function EicrSectionReview({
       <p className="!mb-2 leading-8">Options:</p>
       <ul className="!mb-4 list-inside list-disc pl-4">
         <li>
-          <span className="font-bold">Include entire section:</span> Includes
-          everything from this section, ignoring your configuration.
-        </li>
-        <li>
           <span className="font-bold">Include & refine section:</span> Includes
           only the coded data you've chosen to retain in your configuration.
+        </li>
+        <li>
+          <span className="font-bold">Include entire section:</span> Includes
+          everything from this section, ignoring your configuration.
         </li>
         <li>
           <span className="font-bold">Remove section:</span> Excludes this
@@ -141,10 +141,10 @@ export default function EicrSectionReview({
               Section name
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
-              Include <br /> entire section
+              Include &amp; <br /> refine section
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
-              Include &amp; <br /> refine section
+              Include <br /> entire section
             </th>
             <th scope="col" className="!text-gray-cool-60 text-center">
               Remove section
@@ -161,16 +161,17 @@ export default function EicrSectionReview({
                 index={index}
                 action="refine"
                 checked={selectedActions[index] === 'refine'}
-                ariaLabel={`Include entire section ${section.name}`}
+                ariaLabel={`Include and refine section ${section.name}`}
                 applyAction={applyAction}
               />
               <RadioCell
                 index={index}
                 action="retain"
                 checked={selectedActions[index] === 'retain'}
-                ariaLabel={`Include and refine section ${section.name}`}
+                ariaLabel={`Include entire section ${section.name}`}
                 applyAction={applyAction}
               />
+
               <RadioCell
                 index={index}
                 action="remove"

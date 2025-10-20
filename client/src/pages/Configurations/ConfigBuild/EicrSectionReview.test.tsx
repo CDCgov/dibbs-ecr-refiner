@@ -41,7 +41,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
   it('optimistically updates UI and calls mutate on radio activation via cell click', async () => {
     const configurationId = 'config-1';
     const sections: DbConfigurationSectionProcessing[] = [
-      { name: 'Section X', code: 'X01', action: 'retain' },
+      { name: 'Section X', code: 'X01', action: 'refine' },
     ];
     renderWithClient(
       <EicrSectionReview
@@ -53,25 +53,19 @@ describe('EicrSectionReview accessibility & behavior', () => {
     const input = screen.getByLabelText('Include entire section Section X');
     expect(input).not.toBeChecked();
     // Find the <td> cell containing the input (cell handles click)
-    const cell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include entire section Section X"]'
-        )
-      );
-    expect(cell).toBeTruthy();
+    const cell = within(screen.getByRole('table'))
+      .getByLabelText('Include entire section Section X')
+      .closest('td');
+
     await userEvent.click(cell!);
     expect(mockMutate).toHaveBeenCalledTimes(1);
     expect(mockMutate.mock.calls[0][0]).toMatchObject({
       configurationId,
-      data: { sections: [{ code: 'X01', action: 'refine' }] },
+      data: { sections: [{ code: 'X01', action: 'retain' }] },
     });
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText('Include entire section Section X')
-      ).toBeChecked()
-    );
+    expect(
+      await screen.findByLabelText('Include entire section Section X')
+    ).toBeChecked();
   });
 
   it('supports keyboard activation (Enter/Space) on correct cell', async () => {
@@ -86,41 +80,29 @@ describe('EicrSectionReview accessibility & behavior', () => {
       />
     );
     // Find cell for 'Include entire section'
-    const cell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include entire section Section Y"]'
-        )
-      );
-    expect(cell).toBeTruthy();
+    const cell = within(screen.getByRole('table'))
+      .getByLabelText('Include entire section Section Y')
+      .closest('td');
+
     cell!.focus();
     await userEvent.keyboard('{Enter}');
     expect(mockMutate).toHaveBeenCalledTimes(1);
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText('Include entire section Section Y')
-      ).toBeChecked()
-    );
+    expect(
+      await screen.findByLabelText('Include entire section Section Y')
+    ).toBeChecked();
 
     // Reset back to retain
     mockMutate.mockReset();
-    const retainCell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include and refine section Section Y"]'
-        )
-      );
-    expect(retainCell).toBeTruthy();
+    const retainCell = within(screen.getByRole('table'))
+      .getByLabelText('Include and refine section Section Y')
+      .closest('td');
+
     retainCell!.focus();
     await userEvent.keyboard(' ');
     expect(mockMutate).toHaveBeenCalledTimes(1);
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText('Include and refine section Section Y')
-      ).toBeChecked()
-    );
+    expect(
+      await screen.findByLabelText('Include and refine section Section Y')
+    ).toBeChecked();
   });
 
   it('reverts optimistic UI and shows toast on API error', async () => {
@@ -140,12 +122,10 @@ describe('EicrSectionReview accessibility & behavior', () => {
       />
     );
     // Find target cell
-    const cell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        within(cell).queryByLabelText('Include entire section Section Z')
-      );
-    expect(cell).toBeTruthy();
+    const cell = within(screen.getByRole('table'))
+      .getByLabelText('Include entire section Section Z')
+      .closest('td');
+
     await userEvent.click(cell!);
     // Assert optimistic UI: radio is checked (wait for optimistic update to appear)
     expect(
@@ -155,10 +135,10 @@ describe('EicrSectionReview accessibility & behavior', () => {
     await waitFor(() => {
       expect(
         screen.getByLabelText('Include entire section Section Z')
-      ).not.toBeChecked();
+      ).toBeChecked();
       expect(
         screen.getByLabelText('Include and refine section Section Z')
-      ).toBeChecked();
+      ).not.toBeChecked();
       expect(mockShowToast).toHaveBeenCalled();
       expect(mockFormatError).toHaveBeenCalled();
     });
