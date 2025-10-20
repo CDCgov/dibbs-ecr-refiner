@@ -83,8 +83,23 @@ async def auth_callback(
 
         idp_user_id = oidc_user.get("sub", None)
         idp_username = oidc_user.get("preferred_username", None)
-        idp_jurisdiction_id = oidc_user.get("jurisdiction_id", None)
         idp_email = oidc_user.get("email", None)
+
+        # Demo environment jurisdiction ID will come from the first value in the `roles` array
+        idp_roles = oidc_user.get("roles", None)
+
+        # Keycloak (and potentially other IdPs) will pass this value via a user attribute mapping
+        idp_jurisdiction_id = oidc_user.get("jurisdiction_id", None)
+
+        # Determine whether to grab the JD from the roles array, if it's present,
+        # or use the jurisdiction ID directly sent from the IdP
+        idp_jurisdiction_id = (
+            idp_roles[0]
+            if isinstance(idp_roles, list)
+            and len(idp_roles) > 0
+            and isinstance(idp_roles[0], str)
+            else idp_jurisdiction_id
+        )
 
         if not idp_user_id:
             logger.error(msg="Unable to get user ID from IdP.")
