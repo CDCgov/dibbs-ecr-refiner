@@ -106,9 +106,10 @@ describe('Config builder page', () => {
     expect(
       await screen.findByText('Test', { selector: 'a' })
     ).toBeInTheDocument();
-    expect(
-      await screen.findByText('Activate', { selector: 'a' })
-    ).toBeInTheDocument();
+    // TODO: Uncomment this when we want to show the Activate screen again
+    // expect(
+    //   await screen.findByText('Activate', { selector: 'a' })
+    // ).toBeInTheDocument();
   });
 
   it('should render code set buttons', async () => {
