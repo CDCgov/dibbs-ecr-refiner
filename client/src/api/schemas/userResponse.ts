@@ -12,4 +12,5 @@
 export interface UserResponse {
   id: string;
   username: string;
+  jurisdiction_id: string;
 }
