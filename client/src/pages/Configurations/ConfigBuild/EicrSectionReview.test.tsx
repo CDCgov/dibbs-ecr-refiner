@@ -93,13 +93,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
 
     // Reset back to retain
     mockMutate.mockReset();
-    const retainCell = screen
-      .getAllByRole('cell')
-      .find((cell) =>
-        cell.querySelector(
-          'input[aria-label="Include and refine section Section Y"]'
-        )
-      );
+    const retainCell = within(screen.getByRole('table'))
+      .getByLabelText('Include and refine section Section Y')
+      .closest('td');
 
     retainCell!.focus();
     await userEvent.keyboard(' ');
