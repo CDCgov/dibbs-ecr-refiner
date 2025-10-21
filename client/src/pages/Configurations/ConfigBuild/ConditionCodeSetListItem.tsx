@@ -15,14 +15,14 @@ interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
   configurationId: string;
   highlight?: React.ReactNode;
-  display_name: string;
+  reportable_condition_display_name: string;
 }
 
 export function ConditionCodeSetListItem({
   condition,
   configurationId,
   highlight,
-  display_name,
+  reportable_condition_display_name,
 }: ConditionCodeSetListItemProps) {
   const [showButton, setShowButton] = useState(false);
   const [isRefreshingConditionList, setIsRefreshingConditionList] =
@@ -146,7 +146,7 @@ export function ConditionCodeSetListItem({
       {isLoading ? (
         <Spinner />
       ) : showButton ? (
-        condition.display_name === display_name ? (
+        condition.display_name === reportable_condition_display_name ? (
           <span className="text-bold !mr-0 !w-[80px] text-black">Default</span>
         ) : condition.associated ? (
           <Button

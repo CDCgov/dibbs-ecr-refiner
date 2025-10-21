@@ -10,7 +10,7 @@ type AddConditionCodeSetsDrawerProps = {
   onClose: () => void;
   conditions: IncludedCondition[];
   configurationId: string;
-  display_name: string;
+  reportable_condition_display_name: string;
 };
 
 export function AddConditionCodeSetsDrawer({
@@ -18,7 +18,7 @@ export function AddConditionCodeSetsDrawer({
   onClose,
   configurationId,
   conditions,
-  display_name,
+  reportable_condition_display_name,
 }: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -87,7 +87,9 @@ export function AddConditionCodeSetsDrawer({
                 condition={condition}
                 configurationId={configurationId}
                 highlight={highlight}
-                display_name={display_name}
+                reportable_condition_display_name={
+                  reportable_condition_display_name
+                }
               />
             );
           })}
