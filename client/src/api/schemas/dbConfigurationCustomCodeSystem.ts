@@ -15,4 +15,5 @@ export const DbConfigurationCustomCodeSystem = {
   SNOMED: 'SNOMED',
   'ICD-10': 'ICD-10',
   RxNorm: 'RxNorm',
+  Other: 'Other',
 } as const;
