@@ -10,6 +10,7 @@ type AddConditionCodeSetsDrawerProps = {
   onClose: () => void;
   conditions: IncludedCondition[];
   configurationId: string;
+  display_name: string;
 };
 
 export function AddConditionCodeSetsDrawer({
@@ -17,8 +18,11 @@ export function AddConditionCodeSetsDrawer({
   onClose,
   configurationId,
   conditions,
+  display_name,
 }: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
+
+  console.log(display_name);
 
   // Search and highlight logic
   const filteredConditions = searchTerm
@@ -85,6 +89,7 @@ export function AddConditionCodeSetsDrawer({
                 condition={condition}
                 configurationId={configurationId}
                 highlight={highlight}
+                display_name={display_name}
               />
             );
           })}
