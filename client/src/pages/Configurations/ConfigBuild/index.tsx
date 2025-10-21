@@ -763,7 +763,8 @@ export function CustomCodeModal({
     setForm({ code: '', system: '', name: '' });
   }
 
-  const isButtonEnabled = form.code && form.system && (form.system !== '') && form.name;
+  const isButtonEnabled =
+    form.code && form.system && form.system !== '' && form.name;
 
   const handleChange =
     (field: keyof typeof form) =>
