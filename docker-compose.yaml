@@ -30,6 +30,7 @@ services:
       - AUTH_CLIENT_ID=refinerclient
       - AUTH_CLIENT_SECRET=5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
       - AUTH_ISSUER=http://localhost:8082/realms/refiner
+      - AUTH_ISSUER_INTERNAL=http://auth:8082/realms/refiner
       - AWS_ACCESS_KEY_ID=refiner
       - AWS_SECRET_ACCESS_KEY=refiner
       - AWS_REGION=us-east-1

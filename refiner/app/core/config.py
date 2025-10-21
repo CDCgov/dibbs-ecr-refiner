@@ -44,6 +44,7 @@ ENVIRONMENT: dict[str, str] = {
     "AUTH_CLIENT_ID": _get_env_variable("AUTH_CLIENT_ID"),
     "AUTH_CLIENT_SECRET": _get_env_variable("AUTH_CLIENT_SECRET"),
     "AUTH_ISSUER": _get_env_variable("AUTH_ISSUER"),
+    "AUTH_ISSUER_INTERNAL": _get_env_variable("AUTH_ISSUER_INTERNAL"),
     "AWS_ACCESS_KEY_ID": _get_env_variable("AWS_ACCESS_KEY_ID"),
     "AWS_SECRET_ACCESS_KEY": _get_env_variable("AWS_SECRET_ACCESS_KEY"),
     "AWS_REGION": _get_env_variable("AWS_REGION"),

@@ -9,7 +9,16 @@ _oauth.register(
     name=ENVIRONMENT["AUTH_PROVIDER"],
     client_id=ENVIRONMENT["AUTH_CLIENT_ID"],
     client_secret=ENVIRONMENT["AUTH_CLIENT_SECRET"],
-    server_metadata_url=f"{ENVIRONMENT['AUTH_ISSUER']}/.well-known/openid-configuration",
+    # FOR THE BROWSER:
+    # this is the url the user is redirected to for logging in
+    # It **must** be the public url
+    authorization_endpoint=f"{ENVIRONMENT['AUTH_ISSUER']}/protocol/openid-connect/auth",
+    # FOR THE BACKEND:
+    # these are for server-to-server communication
+    # they **must** be the internal urls
+    token_endpoint=f"{ENVIRONMENT['AUTH_ISSUER_INTERNAL']}/protocol/openid-connect/token",
+    userinfo_endpoint=f"{ENVIRONMENT['AUTH_ISSUER_INTERNAL']}/protocol/openid-connect/userinfo",
+    jwks_uri=f"{ENVIRONMENT['AUTH_ISSUER_INTERNAL']}/protocol/openid-connect/certs",
     client_kwargs={"scope": "openid email profile"},
 )
 
