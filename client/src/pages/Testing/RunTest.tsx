@@ -1,7 +1,6 @@
 import { Button } from '../../components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
-import ForwardSvg from '../../assets/forward.svg';
 import { ChangeEvent, useRef } from 'react';
 import { WarningIcon } from '../../components/WarningIcon';
 import { useGetEnv } from '../../hooks/useGetEnv';
@@ -36,10 +35,10 @@ export function RunTest({
   return (
     <>
       <div className="flex flex-col gap-6 xl:flex-row">
-        <Container className={`flex-1`} color="white">
-          <Content className={`flex items-center gap-6`}>
+        <Container className="flex-1" color="white">
+          <Content className="flex items-center gap-6">
             <img className="px-3 py-1" src={UploadSvg} alt="" />
-            <div className={`flex flex-col items-center gap-10`}>
+            <div className="flex flex-col items-center gap-10">
               <p className="flex flex-col items-center gap-2 text-black">
                 <span className="font-bold">
                   Want to refine your own eCR file?
@@ -153,7 +152,7 @@ function UploadFileWarning() {
           <WarningIcon aria-label="Warning" />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
-        <span className={`text-center font-bold`}>
+        <span className="text-center font-bold">
           Do not upload files that contain PHI/PII.
         </span>
       </p>
