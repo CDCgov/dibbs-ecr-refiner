@@ -155,99 +155,110 @@ function Builder({
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
-        <div className="flex flex-col py-2 pt-4 md:w-[20rem]">
-          <OptionsLabelContainer>
-            <OptionsLabel htmlFor="open-codesets">
-              CONDITION CODE SETS
-            </OptionsLabel>
-            <Button
-              variant="secondary"
-              className="text-blue-cool-60 !mr-0 flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
-              id="open-codesets"
-              aria-label="Add new code set to configuration"
-              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-            >
-              ADD
-            </Button>
-          </OptionsLabelContainer>
-          <OptionsListContainer>
-            <OptionsList>
-              {code_sets.map((codeSet, i) => (
-                <li
-                  key={codeSet.display_name}
-                  className={classNames(
-                    'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
-                    {
-                      'bg-white': selectedCodesetId === codeSet.condition_id,
-                    }
-                  )}
-                >
-                  <ConditionCodeSetButton
-                    codeSetName={codeSet.display_name}
-                    codeSetTotalCodes={codeSet.total_codes}
-                    onViewCodeSet={() =>
-                      onCodesetClick(codeSet.display_name, codeSet.condition_id)
-                    }
-                    aria-controls={
-                      selectedCodesetId ? 'codeset-table' : undefined
-                    }
-                  />
-                  {i === 0 ? (
-                    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
-                      Default
-                    </span>
-                  ) : (
-                    <DeleteCodeSetButton
-                      configurationId={id}
-                      conditionId={codeSet.condition_id}
-                      conditionName={codeSet.display_name}
+        <div className="flex flex-col md:gap-10 py-2 pt-4 md:w-[20rem]">
+          <div className="h-50 md:h-[35rem] overflow-scroll">
+            <OptionsLabelContainer>
+              <OptionsLabel htmlFor="open-codesets">
+                CONDITION CODE SETS
+              </OptionsLabel>
+              <Button
+                variant="secondary"
+                className="text-blue-cool-60 !mr-0 flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
+                id="open-codesets"
+                aria-label="Add new code set to configuration"
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+              >
+                ADD
+              </Button>
+            </OptionsLabelContainer>
+            <OptionsListContainer>
+              <OptionsList>
+                {code_sets.map((codeSet, i) => (
+                  <li
+                    key={codeSet.display_name}
+                    className={classNames(
+                      'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
+                      {
+                        'bg-white': selectedCodesetId === codeSet.condition_id,
+                      }
+                    )}
+                  >
+                    <ConditionCodeSetButton
+                      codeSetName={codeSet.display_name}
+                      codeSetTotalCodes={codeSet.total_codes}
+                      onViewCodeSet={() =>
+                        onCodesetClick(
+                          codeSet.display_name,
+                          codeSet.condition_id
+                        )
+                      }
+                      aria-controls={
+                        selectedCodesetId ? 'codeset-table' : undefined
+                      }
                     />
-                  )}
+                    {i === 0 ? (
+                      <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+                        Default
+                      </span>
+                    ) : (
+                      <DeleteCodeSetButton
+                        configurationId={id}
+                        conditionId={codeSet.condition_id}
+                        conditionName={codeSet.display_name}
+                      />
+                    )}
+                  </li>
+                ))}
+              </OptionsList>
+            </OptionsListContainer>
+          </div>
+          <div>
+            <OptionsLabelContainer>
+              <OptionsLabel>MORE OPTIONS</OptionsLabel>
+            </OptionsLabelContainer>
+            <OptionsListContainer>
+              <OptionsList>
+                <li key="custom-codes">
+                  <button
+                    className={classNames(
+                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                      {
+                        'bg-white': tableView === 'custom',
+                      }
+                    )}
+                    onClick={onCustomCodeClick}
+                    aria-controls={
+                      tableView === 'custom' ? 'custom-table' : undefined
+                    }
+                    aria-pressed={tableView === 'custom'}
+                  >
+                    <span>Custom codes</span>
+                    <span>{custom_codes.length}</span>
+                  </button>
                 </li>
-              ))}
-              <li className="pt-10">
-                <OptionsLabel>MORE OPTIONS</OptionsLabel>
-              </li>
-              <li key="custom-codes">
-                <button
-                  className={classNames(
-                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    {
-                      'bg-white': tableView === 'custom',
+                <li key="sections">
+                  <button
+                    className={classNames(
+                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                      {
+                        'bg-white': tableView === 'sections',
+                      }
+                    )}
+                    onClick={() => {
+                      setSelectedCodesetId(null);
+                      setTableView('sections');
+                    }}
+                    aria-controls={
+                      tableView === 'sections' ? 'sections-table' : undefined
                     }
-                  )}
-                  onClick={onCustomCodeClick}
-                  aria-controls={
-                    tableView === 'custom' ? 'custom-table' : undefined
-                  }
-                  aria-pressed={tableView === 'custom'}
-                >
-                  <span>Custom codes</span>
-                  <span>{custom_codes.length}</span>
-                </button>
-              </li>
-              <li key="sections">
-                <button
-                  className={classNames(
-                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    {
-                      'bg-white': tableView === 'sections',
-                    }
-                  )}
-                  onClick={() => {
-                    setSelectedCodesetId(null);
-                    setTableView('sections');
-                  }}
-                  aria-controls={
-                    tableView === 'sections' ? 'sections-table' : undefined
-                  }
-                  aria-pressed={tableView === 'sections'}
-                >
-                  <span>Sections</span>
-                </button>
-              </li>
-            </OptionsList>
-          </OptionsListContainer>
+                    aria-pressed={tableView === 'sections'}
+                  >
+                    <span>Sections</span>
+                  </button>
+                </li>
+              </OptionsList>
+            </OptionsListContainer>
+          </div>
         </div>
         <div className="flex !h-full !max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
