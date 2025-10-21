@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -133,6 +133,9 @@ function Builder({
     null
   );
   const modalRef = useRef<ModalRef | null>(null);
+  const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
+    {}
+  );
 
   function onCodesetClick(name: string, id: string) {
     setSelectedCodesetName(name);
@@ -146,6 +149,22 @@ function Builder({
     setTableView('custom');
   }
 
+  function setCodesetListItemFocus(deletedId: string) {
+    const deletedItemIndex = code_sets.findIndex(
+      (c) => c.condition_id === deletedId
+    );
+
+    /**
+     * This shouldn't happen since we can't delete the primary condition code set.
+     * Just in case 🙂
+     */
+    if (deletedItemIndex <= 0) return;
+
+    const previousCodeSetId = code_sets[deletedItemIndex - 1].condition_id;
+
+    codeSetButtonRefs.current[previousCodeSetId]?.click();
+  }
+
   useEffect(() => {
     if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
       onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
@@ -155,8 +174,8 @@ function Builder({
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
-        <div className="flex flex-col md:gap-10 py-2 pt-4 md:w-[20rem]">
-          <div className="h-50 md:h-[35rem] overflow-scroll">
+        <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
+          <div className="h-50 overflow-scroll md:h-[35rem]">
             <OptionsLabelContainer>
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
@@ -184,6 +203,9 @@ function Builder({
                     )}
                   >
                     <ConditionCodeSetButton
+                      ref={(btn) => {
+                        codeSetButtonRefs.current[codeSet.condition_id] = btn;
+                      }}
                       codeSetName={codeSet.display_name}
                       codeSetTotalCodes={codeSet.total_codes}
                       onViewCodeSet={() =>
@@ -205,6 +227,9 @@ function Builder({
                         configurationId={id}
                         conditionId={codeSet.condition_id}
                         conditionName={codeSet.display_name}
+                        onClick={() =>
+                          setCodesetListItemFocus(codeSet.condition_id)
+                        }
                       />
                     )}
                   </li>
@@ -313,41 +338,52 @@ type ConditionCodeSetButtonProps = {
   onViewCodeSet: () => void;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-function ConditionCodeSetButton({
-  codeSetName,
-  codeSetTotalCodes,
-  onViewCodeSet,
-  ...props
-}: ConditionCodeSetButtonProps) {
-  return (
-    <button
-      className={classNames(
-        'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
-      )}
-      onClick={onViewCodeSet}
-      {...props}
-    >
-      <span aria-hidden>{codeSetName}</span>
-      <span aria-hidden className="group-hover:hidden">
-        {codeSetTotalCodes}
-      </span>
-      <span className="sr-only">
-        {codeSetName}, {codeSetTotalCodes} codes in code set
-      </span>
-    </button>
-  );
-}
+const ConditionCodeSetButton = forwardRef<
+  HTMLButtonElement,
+  ConditionCodeSetButtonProps
+>(
+  (
+    {
+      codeSetName,
+      codeSetTotalCodes,
+      onViewCodeSet,
+      ...props
+    }: ConditionCodeSetButtonProps,
+    ref
+  ) => {
+    return (
+      <button
+        ref={ref}
+        className={classNames(
+          'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
+        )}
+        onClick={onViewCodeSet}
+        {...props}
+      >
+        <span aria-hidden>{codeSetName}</span>
+        <span aria-hidden className="group-hover:hidden">
+          {codeSetTotalCodes}
+        </span>
+        <span className="sr-only">
+          {codeSetName}, {codeSetTotalCodes} codes in code set
+        </span>
+      </button>
+    );
+  }
+);
 
 interface DeleteCodeSetButtonProps {
   configurationId: string;
   conditionId: string;
   conditionName: string;
+  onClick: () => void;
 }
 
 function DeleteCodeSetButton({
   configurationId,
   conditionId,
   conditionName,
+  onClick,
 }: DeleteCodeSetButtonProps) {
   const { mutate: disassociateMutation, isPending } =
     useDisassociateConditionWithConfiguration();
@@ -376,6 +412,7 @@ function DeleteCodeSetButton({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           setIsListInvalidating(false);
+          onClick(); // set focus to previous code set button
         },
         onError: (error) => {
           setIsListInvalidating(false);
