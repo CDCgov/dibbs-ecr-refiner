@@ -122,8 +122,6 @@ function Builder({
   display_name: default_condition_name,
   loinc_codes,
 }: BuilderProps) {
-  console.log(default_condition_name);
-
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
     'none' | 'codeset' | 'custom' | 'sections'

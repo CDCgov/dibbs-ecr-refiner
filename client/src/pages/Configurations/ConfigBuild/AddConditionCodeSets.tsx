@@ -22,8 +22,6 @@ export function AddConditionCodeSetsDrawer({
 }: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  console.log(display_name);
-
   // Search and highlight logic
   const filteredConditions = searchTerm
     ? conditions.filter((cond) =>
