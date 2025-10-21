@@ -85,22 +85,50 @@ async def auth_callback(
         idp_username = oidc_user.get("preferred_username", None)
         idp_email = oidc_user.get("email", None)
 
+        # Demo environment jurisdiction ID will come from the first value in the `roles` array
+        idp_roles = oidc_user.get("roles", None)
+
+        # Keycloak (and potentially other IdPs) will pass this value via a user attribute mapping
+        idp_jurisdiction_id = oidc_user.get("jurisdiction_id", None)
+
+        # Determine whether to grab the JD from the roles array, if it's present,
+        # or use the jurisdiction ID directly sent from the IdP
+        idp_jurisdiction_id = (
+            idp_roles[0]
+            if isinstance(idp_roles, list)
+            and len(idp_roles) > 0
+            and isinstance(idp_roles[0], str)
+            else idp_jurisdiction_id
+        )
+
         if not idp_user_id:
+            logger.error(msg="Unable to get user ID from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'user_id'",
             )
 
         if not idp_username:
+            logger.error(msg="Unable to get username from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'preferred_username'",
             )
 
         if not idp_email:
+            logger.error(msg="Unable to get email address from IdP.")
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="IdP response missing required field: 'email'",
+            )
+
+        # TODO: If the IdP does not send `jurisdiction_id` we fall back to "SDDH"
+        # Do we want to no longer allow this fallback eventually?
+        if not idp_jurisdiction_id:
+            idp_jurisdiction_id = "SDDH"
+            logger.warning(
+                msg="No value for `jurisdiction_id` was received from the IdP, defaulting to fallback value",
+                extra={"fallback_jurisdiction_id": idp_jurisdiction_id},
             )
 
         logger.info(
@@ -108,15 +136,18 @@ async def auth_callback(
             extra={
                 "user_id": idp_user_id,
                 "username": idp_username,
+                "jurisdiction_id": idp_jurisdiction_id,
                 "email": idp_email,
             },
         )
 
         # Upsert the user's jurisdiction if needed
-        # TODO: This should come from the IdP eventually
+        # TODO: Should we no longer collect name and state_code?
         jurisdiction_id = await upsert_jurisdiction_db(
             DbJurisdiction(
-                id="SDDH", name="Senate District Health Department", state_code="GC"
+                id=idp_jurisdiction_id,
+                name="Placeholder Jurisdiction",
+                state_code="PLACEHOLDER",
             ),
             db=db,
         )
@@ -161,6 +192,7 @@ class UserResponse(BaseModel):
 
     id: UUID
     username: str
+    jurisdiction_id: str
 
 
 @auth_router.get(
@@ -188,7 +220,9 @@ async def get_user(request: Request) -> UserResponse | None:
     if not user:
         return None
 
-    return UserResponse(id=user.id, username=user.username)
+    return UserResponse(
+        id=user.id, username=user.username, jurisdiction_id=user.jurisdiction_id
+    )
 
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)

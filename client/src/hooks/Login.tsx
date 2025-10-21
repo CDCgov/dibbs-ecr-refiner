@@ -1,13 +1,8 @@
 import { useEffect, useState } from 'react';
+import { UserResponse } from '../api/schemas';
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-}
-
-export function useLogin(): [User | null, boolean] {
-  const [user, setUser] = useState<User | null>(null);
+export function useLogin(): [UserResponse | null, boolean] {
+  const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -21,7 +16,7 @@ export function useLogin(): [User | null, boolean] {
           return;
         }
 
-        const data = (await resp.json()) as User | null;
+        const data = (await resp.json()) as UserResponse | null;
         if (data) {
           setUser(data);
           setIsLoading(false);
