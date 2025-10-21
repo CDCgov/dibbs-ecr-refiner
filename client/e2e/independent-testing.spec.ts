@@ -5,6 +5,12 @@ import path from 'path';
 import fs from 'fs';
 
 test.describe.serial('should be able to access independent testing', () => {
+  // Resolve the file path relative to the project root
+  const filePath = path.resolve(
+    process.cwd(),
+    'e2e/assets/mon-mothma-two-conditions.zip'
+  );
+
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
@@ -28,12 +34,6 @@ test.describe.serial('should be able to access independent testing', () => {
     ).toBeVisible();
 
     const fileInput = page.locator('input#zip-upload');
-
-    // Resolve the file path relative to the project root
-    const filePath = path.resolve(
-      process.cwd(),
-      'e2e/assets/mon-mothma-two-conditions.zip'
-    );
 
     // Upload the file directly
     await fileInput.setInputFiles(filePath);
@@ -250,5 +250,64 @@ test.describe.serial('should be able to access independent testing', () => {
         name: 'APHL_eCR_Refiner_COVID_Influenza_Sample_Files.zip',
       })
     ).toBeVisible();
+  });
+
+  test('refinement percentages between the two flows should match for COVID', async ({
+    page,
+  }) => {
+    await page.getByRole('link', { name: 'Testing' }).click();
+
+    const fileUpload = page.locator('input#zip-upload');
+    await fileUpload.setInputFiles(filePath);
+
+    await page.getByRole('button', { name: 'Refine .zip file' }).click();
+    await page.getByRole('button', { name: 'Refine eCR' }).click();
+
+    await page.selectOption('select#condition-select', { label: 'COVID-19' });
+    const independentFlowCovidResult = await page
+      .getByTestId('test-refinement-result')
+      .textContent();
+
+    await page.getByRole('link', { name: 'Configurations' }).click();
+    await page.getByText('COVID-19').click();
+    await page.getByRole('link', { name: 'Test' }).click();
+    await fileUpload.setInputFiles(filePath);
+
+    await page.getByRole('button', { name: 'Refine .zip file' }).click();
+    const inlineFlowCovidResult = await page
+      .getByTestId('test-refinement-result')
+      .textContent();
+
+    expect(inlineFlowCovidResult).toStrictEqual(independentFlowCovidResult);
+  });
+  test('refinement percentages between the two flows should match for Influenza', async ({
+    page,
+  }) => {
+    await page.getByRole('link', { name: 'Testing' }).click();
+
+    const fileUpload = page.locator('input#zip-upload');
+    await fileUpload.setInputFiles(filePath);
+
+    await page.getByRole('button', { name: 'Refine .zip file' }).click();
+    await page.getByRole('button', { name: 'Refine eCR' }).click();
+
+    await page.selectOption('select#condition-select', { label: 'Influenza' });
+    const independentFlowInfluenzaResult = await page
+      .getByTestId('test-refinement-result')
+      .textContent();
+
+    await page.getByRole('link', { name: 'Configurations' }).click();
+    await page.getByText('Influenza').click();
+    await page.getByRole('link', { name: 'Test' }).click();
+    await fileUpload.setInputFiles(filePath);
+
+    await page.getByRole('button', { name: 'Refine .zip file' }).click();
+    const inlineFlowInfluenzaResult = await page
+      .getByTestId('test-refinement-result')
+      .textContent();
+
+    expect(independentFlowInfluenzaResult).toStrictEqual(
+      inlineFlowInfluenzaResult
+    );
   });
 });
