@@ -113,7 +113,7 @@ def refine_eicr(
                 continue
             if action == "remove":
                 # we will just force a minimal section
-                create_minimal_section(section=section)
+                create_minimal_section(section=section, removal_reason="configured")
             elif action == "refine":
                 section_config = REFINER_DETAILS["sections"].get(section_code)
                 process_section(
