@@ -44,11 +44,9 @@ ENVIRONMENT: dict[str, str] = {
     "AUTH_CLIENT_ID": _get_env_variable("AUTH_CLIENT_ID"),
     "AUTH_CLIENT_SECRET": _get_env_variable("AUTH_CLIENT_SECRET"),
     "AUTH_ISSUER": _get_env_variable("AUTH_ISSUER"),
-    "AUTH_ISSUER_INTERNAL": _get_env_variable("AUTH_ISSUER_INTERNAL"),
     "AWS_ACCESS_KEY_ID": _get_env_variable("AWS_ACCESS_KEY_ID"),
     "AWS_SECRET_ACCESS_KEY": _get_env_variable("AWS_SECRET_ACCESS_KEY"),
     "AWS_REGION": _get_env_variable("AWS_REGION"),
     "S3_ENDPOINT_URL": _get_env_variable("S3_ENDPOINT_URL"),
-    "S3_ENDPOINT_URL_INTERNAL": _get_env_variable("S3_ENDPOINT_URL_INTERNAL"),
     "S3_UPLOADED_FILES_BUCKET_NAME": _get_env_variable("S3_UPLOADED_FILES_BUCKET_NAME"),
 }
