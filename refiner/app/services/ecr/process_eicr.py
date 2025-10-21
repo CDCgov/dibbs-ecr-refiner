@@ -93,7 +93,7 @@ def get_section_loinc_codes(
     # 3. It then finds the direct <code> child of that section
     # 4. Finally, it extracts the 'code' attribute string
     # This avoids finding codes in nested sections or other parts of the document
-    xpath_query = "./hl7:section/hl7:code/@code"
+    xpath_query = ".//hl7:section/hl7:code/@code"
 
     try:
         xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
