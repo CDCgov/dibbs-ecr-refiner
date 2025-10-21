@@ -83,7 +83,7 @@ function Tester({ config }: TesterProps) {
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-[12.75rem]">
       {status === 'idle' && (
         <RunTest
           onClickSampleFile={() => runTest(null)}
