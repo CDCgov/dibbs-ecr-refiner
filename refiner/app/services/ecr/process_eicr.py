@@ -22,7 +22,7 @@ REMOVE_SECTION_MESSAGE = (
     "Section details have been removed as requested by jurisdiction for this condition."
 )
 MINIMAL_SECTION_MESSAGE = (
-    "No clinical information matches the configured code sets for this Condition"
+    "No clinical information matches the configured code sets for this condition."
 )
 CLINICAL_DATA_TABLE_HEADERS = [
     "Display Text",
