@@ -7,12 +7,15 @@ import { Mock } from 'vitest';
 import { useGetEnv } from '../../hooks/useGetEnv.ts';
 import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 import { ERROR_UPLOAD_MESSAGE } from '../../components/FileUploadWarning/index.tsx';
+import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
 vi.mock('../../hooks/useGetEnv', () => ({
   useGetEnv: vi.fn(() => 'local'),
 }));
+
+const mockTestFile = new File(['test'], 'test.zip', { type: 'text/plain' });
 
 const mockUploadResponse: IndependentTestUploadResponse = {
   refined_conditions: [
@@ -77,10 +80,10 @@ describe('Demo', () => {
 
     // check that we start on the "run test" page
     expect(
-      screen.getByText('You can try out eCR Refiner with our test file.')
+      screen.getByText('Want to refine your own eCR file?')
     ).toBeInTheDocument();
 
-    await user.click(screen.getByText('Use test file'));
+    await uploadTestFile(user);
 
     expect(useUploadEcr).toHaveBeenCalled();
     expect(mockMutateAsync).toHaveBeenCalledOnce();
@@ -184,7 +187,7 @@ describe('Demo', () => {
 
     renderDemoView();
 
-    await user.click(screen.getByText('Use test file'));
+    await uploadTestFile(user);
 
     // check that we made it to the error view
     expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
@@ -195,7 +198,7 @@ describe('Demo', () => {
     // return to the start to try again
     await user.click(await screen.findByText('Try again'));
     expect(
-      await screen.findByText('Use test file', { selector: 'button' })
+      await screen.findByText('Refine .zip file', { selector: 'button' })
     ).toBeInTheDocument();
   });
 
@@ -261,8 +264,7 @@ describe('Demo', () => {
 
     renderDemoView();
 
-    await user.click(screen.getByText('Use test file'));
-
+    await uploadTestFile(user);
     // only start over button is available
     expect(await screen.findByText('Start over')).toBeInTheDocument();
     expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
@@ -290,8 +292,7 @@ describe('Demo', () => {
     });
 
     renderDemoView();
-
-    await user.click(screen.getByText('Use test file'));
+    await uploadTestFile(user);
 
     // only start over button is available
     expect(await screen.findByText('Start over')).toBeInTheDocument();
@@ -332,8 +333,7 @@ describe('Demo', () => {
     });
 
     renderDemoView();
-
-    await user.click(screen.getByText('Use test file'));
+    await uploadTestFile(user);
 
     // Both buttons should be available
     expect(screen.getByText('Start over')).toBeInTheDocument();
@@ -375,11 +375,14 @@ describe('Demo', () => {
 
     renderDemoView();
 
-    await user.click(screen.getByText('Use test file'));
+    const input = screen.getByTestId('zip-upload-input');
+    await user.upload(input, mockTestFile);
 
     // Both buttons should be available
-    expect(screen.getByText('Start over')).toBeInTheDocument();
-    expect(screen.getByText('Refine eCR')).toBeInTheDocument();
+    expect(screen.getByText('Change file')).toBeInTheDocument();
+    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Refine .zip file'));
 
     // Missing config warning should be present
     expect(
