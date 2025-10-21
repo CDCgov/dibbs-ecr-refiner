@@ -34,55 +34,45 @@ export function RunTest({
   }
 
   return (
-    <div className="flex flex-col gap-6 xl:flex-row">
-      <Container color="white">
-        <Content className="flex items-start gap-6">
-          <img className="px-3 py-1" src={UploadSvg} alt="" />
-          <div className="flex flex-col gap-10">
-            <p className="flex flex-col gap-2 text-black">
-              <span className="font-bold">
-                Want to refine your own eCR file?
-              </span>
-              <span>Please upload a single eICR/RR pair as a .zip file.</span>
-            </p>
-            {env === 'demo' || env === 'local' ? <UploadFileWarning /> : null}
-            <div>
-              <UploadZipFile
-                onClick={onClickCustomFile}
-                selectedFile={selectedFile}
-                onSelectedFileChange={onSelectedFileChange}
-              />
+    <>
+      <div className="flex flex-col gap-6 xl:flex-row">
+        <Container className={`flex-1`} color="white">
+          <Content className={`flex items-center gap-6`}>
+            <img className="px-3 py-1" src={UploadSvg} alt="" />
+            <div className={`flex flex-col items-center gap-10`}>
+              <p className="flex flex-col items-center gap-2 text-black">
+                <span className="font-bold">
+                  Want to refine your own eCR file?
+                </span>
+                <span>Please upload a single eICR/RR pair as a .zip file.</span>
+              </p>
+              {env !== 'prod' ? <UploadFileWarning /> : null}
+              <div>
+                <UploadZipFile
+                  onClick={onClickCustomFile}
+                  selectedFile={selectedFile}
+                  onSelectedFileChange={onSelectedFileChange}
+                  onClickSampleFile={onClickSampleFile}
+                />
+              </div>
             </div>
-          </div>
-        </Content>
-      </Container>
-      <Container color="blue">
-        <Content className="flex items-start gap-6">
-          <img className="px-3 py-5" src={ForwardSvg} alt="" />
-          <div className="flex flex-col gap-10">
-            <p className="flex flex-col gap-2 text-black">
-              <span className="font-bold">Don't have a file ready?</span>
-              <span>You can try out eCR Refiner with our test file.</span>
-            </p>
-            <div className="flex flex-col items-start gap-4 md:flex-row md:items-center">
-              <Button
-                variant="secondary"
-                onClick={() => void onClickSampleFile()}
-              >
-                Use test file
-              </Button>
-              <a
-                className="text-blue-cool-60 font-bold hover:underline"
-                href="/api/v1/demo/download"
-                download
-              >
-                Download test file
-              </a>
-            </div>
-          </div>
-        </Content>
-      </Container>
-    </div>
+          </Content>
+        </Container>
+      </div>
+
+      <div className="mt-6 text-center">
+        <span>
+          To download test files for some conditions you can
+          <a
+            className="text-blue-cool-50"
+            href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/sample-data/jurisdiction_sample_data"
+          >
+            {' '}
+            visit eCR Refiner's repository
+          </a>
+        </span>
+      </div>
+    </>
   );
 }
 
@@ -90,6 +80,7 @@ interface UploadZipFile {
   onClick: () => Promise<void>;
   selectedFile: RunTestProps['selectedFile'];
   onSelectedFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onClickSampleFile: () => Promise<void>;
 }
 
 const autoFocus = (element: HTMLElement | null) => element?.focus();
@@ -98,7 +89,10 @@ function UploadZipFile({
   onClick,
   selectedFile,
   onSelectedFileChange,
+  onClickSampleFile,
 }: UploadZipFile) {
+  const env = useGetEnv();
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const labelStyling = classNames({
@@ -139,6 +133,13 @@ function UploadZipFile({
             {selectedFile ? 'Change file' : 'Upload .zip file'}
           </label>
         </div>
+        {/* render an autoupload file for QoL in local dev */}
+        {env === 'local' ? (
+          <Button variant="secondary" onClick={() => void onClickSampleFile()}>
+            Use test file <br />
+            (local only)
+          </Button>
+        ) : null}
       </div>
     </div>
   );
@@ -152,7 +153,7 @@ function UploadFileWarning() {
           <WarningIcon aria-label="Warning" />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
-        <span className="font-bold">
+        <span className={`text-center font-bold`}>
           Do not upload files that contain PHI/PII.
         </span>
       </p>

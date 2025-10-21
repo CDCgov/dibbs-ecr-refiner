@@ -67,7 +67,7 @@ export default function ConfigBuild() {
   });
 
   return (
-    <div>
+    <div className="mb-8">
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
       </TitleContainer>

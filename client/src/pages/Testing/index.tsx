@@ -52,7 +52,7 @@ export default function Demo() {
 
   return (
     <div className="flex px-10 md:px-20">
-      <div className="flex flex-col gap-10 py-10">
+      <div className="flex flex-1 flex-col py-10">
         {status === 'run-test' && (
           <>
             <Title>Test Refiner</Title>
