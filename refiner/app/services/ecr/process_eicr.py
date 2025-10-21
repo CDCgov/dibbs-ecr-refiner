@@ -115,7 +115,7 @@ def process_section(
     section: _Element,
     combined_xpath: str,
     namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
-    section_config: dict[str, str] | None = None,
+    section_config: dict | None = None,
     version: Literal["1.1"] = "1.1",
 ) -> None:
     """
