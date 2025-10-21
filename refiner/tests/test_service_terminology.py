@@ -3,11 +3,8 @@ from uuid import uuid4
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
 from app.services.terminology import (
-    ConditionPayload,
     ConfigurationPayload,
-    ProcessedCondition,
     ProcessedConfiguration,
-    aggregate_codes_from_conditions,
 )
 
 
@@ -92,46 +89,7 @@ def test_processed_configuration_duplicate_codes():
     assert processed.codes == {"DUP"}
 
 
-def test_processed_condition_from_payload():
-    cond1: DbCondition = make_condition(
-        snomed_codes=[make_db_condition_coding("C1", "SNOMED")]
-    )
-    cond2: DbCondition = make_condition(
-        loinc_codes=[make_db_condition_coding("C2", "LOINC")]
-    )
-    payload = ConditionPayload(conditions=[cond1, cond2])
-    processed = ProcessedCondition.from_payload(payload)
-    assert processed.codes == {"C1", "C2"}
-    xpath = processed.build_xpath()
-    assert '@code="C1"' in xpath
-    assert '@code="C2"' in xpath
-
-
-def test_processed_condition_empty_codes():
-    payload = ConditionPayload(conditions=[])
-    processed = ProcessedCondition.from_payload(payload)
-    assert processed.codes == set()
-    assert processed.build_xpath() == ""
-
-
-def test_aggregate_codes_from_conditions_various():
-    cond1: DbCondition = make_condition(
-        snomed_codes=[make_db_condition_coding("A", "SNOMED")],
-        loinc_codes=[make_db_condition_coding("B", "LOINC")],
-        icd10_codes=[make_db_condition_coding("C", "ICD10")],
-        rxnorm_codes=[make_db_condition_coding("D", "RXNORM")],
-    )
-    cond2: DbCondition = make_condition(
-        snomed_codes=[make_db_condition_coding("E", "SNOMED")]
-    )
-    codes = aggregate_codes_from_conditions([cond1, cond2])
-    assert codes == {"A", "B", "C", "D", "E"}
-    assert aggregate_codes_from_conditions([]) == set()
-
-
 def test_payload_class_existence():
     # sanity checks for class existence
     assert ConfigurationPayload
-    assert ConditionPayload
     assert ProcessedConfiguration
-    assert ProcessedCondition

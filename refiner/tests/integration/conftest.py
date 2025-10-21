@@ -239,6 +239,20 @@ def setup(request):
     print(
         "📝 Inserting two test configurations for integration tests (app-aligned schema)..."
     )
+
+    # Define the default section processing that matches production behavior
+    section_processing_default = """[
+        {"code": "46240-8", "name": "History of encounters", "action": "refine"},
+        {"code": "10164-2", "name": "History of Present Illness", "action": "refine"},
+        {"code": "11369-6", "name": "History of Immunizations", "action": "refine"},
+        {"code": "29549-3", "name": "Medications Administered", "action": "refine"},
+        {"code": "18776-5", "name": "Plan of Treatment", "action": "refine"},
+        {"code": "11450-4", "name": "Problem List", "action": "refine"},
+        {"code": "29299-5", "name": "Reason For Visit", "action": "refine"},
+        {"code": "30954-2", "name": "Relevant diagnostic tests and/or laboratory data", "action": "refine"},
+        {"code": "29762-2", "name": "Social History", "action": "refine"}
+    ]"""
+
     config_insert = f"""
     DO $$
     BEGIN
@@ -252,7 +266,7 @@ def setup(request):
             '[{{"canonical_url": "{covid_canonical_url}", "version": "3.0.0"}}]'::jsonb,
             '[]'::jsonb,
             '{{}}'::jsonb,
-            '[]'::jsonb,
+            '{section_processing_default}'::jsonb,
             1
         )
         ON CONFLICT DO NOTHING;
@@ -267,7 +281,7 @@ def setup(request):
             '[{{"canonical_url": "{flu_canonical_url}", "version": "3.0.0"}}]'::jsonb,
             '[]'::jsonb,
             '{{}}'::jsonb,
-            '[]'::jsonb,
+            '{section_processing_default}'::jsonb,
             1
         )
         ON CONFLICT DO NOTHING;
