@@ -149,10 +149,12 @@ async def demo_upload(
         # build a refined XML and collect metadata. The code used is from the RR.
         conditions: list[Condition] = []
         refined_files_to_zip = []
+        # TODO: Check the version from the incoming eICR by checking the date
+        # of the OID. Currently, we are only working with version `1.1.1`.
         xslt_stylesheet_path = str(
             Path(__file__).parent.parent.parent
             / "xslt"
-            / "CDA-phcaserpt-3.1.1-CDAR2_eCR_eICR.xsl"
+            / "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl"
         )
         html_files: list[str] = []
         for refined_document in refined_documents:
