@@ -150,6 +150,9 @@ function Builder({
   }
 
   function setCodesetListItemFocus(deletedId: string) {
+    // No change needed if we're not viewing the code set
+    if (deletedId !== selectedCodesetId) return;
+
     const deletedItemIndex = code_sets.findIndex(
       (c) => c.condition_id === deletedId
     );
