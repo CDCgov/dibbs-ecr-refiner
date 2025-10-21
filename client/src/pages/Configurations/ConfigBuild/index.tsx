@@ -738,7 +738,7 @@ export function CustomCodeModal({
     { name: 'SNOMED', value: 'snomed' },
     { name: 'RxNorm', value: 'rxnorm' },
     { name: 'LOINC', value: 'loinc' },
-    { name: 'OTHER', value: 'other' },
+    { name: 'Other', value: 'other' },
   ];
 
   const isEditing = initialCode && initialSystem && initialName;
