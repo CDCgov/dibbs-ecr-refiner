@@ -175,7 +175,7 @@ function Builder({
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
-          <div className="h-50 overflow-scroll md:h-[35rem]">
+          <div>
             <OptionsLabelContainer>
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
@@ -467,7 +467,7 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 }
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
-  return <div className="max-h-[30rem] overflow-y-scroll pt-2">{children}</div>;
+  return <div className="max-h-[15rem] overflow-y-scroll pt-2">{children}</div>;
 }
 
 function OptionsList({ children }: { children: React.ReactNode }) {
