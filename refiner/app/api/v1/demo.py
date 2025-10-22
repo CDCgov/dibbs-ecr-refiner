@@ -103,142 +103,112 @@ async def demo_upload(
     else:
         file = create_sample_zip_file(sample_zip_path=demo_zip_path)
 
+    logger.info("Processing demo file", extra={"upload_file": file.filename})
+
+    # get jurisdiction_id from user
+    jd = user.jurisdiction_id
+
     try:
-        logger.info("Processing demo file", extra={"upload_file": file.filename})
-
-        # get jurisdiction_id from user
-        jd = user.jurisdiction_id
-
-        try:
-            original_xml_files = await file_io.read_xml_zip(file)
-        except ZipValidationError as e:
-            logger.error("ZipValidationError in read_xml_zip", extra={"error": str(e)})
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
-            )
-        except XMLValidationError as e:
-            logger.error("XMLValidationError in read_xml_zip", extra={"error": str(e)})
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="XML file(s) could not be processed.",
-            )
-        except FileProcessingError as e:
-            logger.error("FileProcessingError in read_xml_zip", extra={"error": str(e)})
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
-            )
-
-        # STEP 3:
-        # orchestrate refinement workflow via service layer
-        result = await independent_testing(
-            db=db,
-            xml_files=original_xml_files,
-            jurisdiction_id=jd,
-        )
-        refined_documents = result["refined_documents"]
-        conditions_without_matching_config_names = [
-            missing_condition["display_name"]
-            for missing_condition in result["no_matching_configuration_for_conditions"]
-        ]
-
-        # STEP 4:
-        # for each unique reportable condition code found in the RR (with a config),
-        # build a refined XML and collect metadata. The code used is from the RR.
-        conditions: list[Condition] = []
-        refined_files_to_zip = []
-        for refined_document in refined_documents:
-            condition_obj = refined_document.reportable_condition
-
-            stripped_original_ecr = format.strip_comments(original_xml_files.eicr)
-            normalized_stripped_original_ecr = format.normalize_xml(
-                stripped_original_ecr
-            )
-
-            stripped_refined_eicr = format.strip_comments(refined_document.refined_eicr)
-            condition_refined_eicr = format.normalize_xml(stripped_refined_eicr)
-
-            condition_code = condition_obj.code
-            condition_name = condition_obj.display_name
-
-            filename = file_io.create_split_condition_filename(
-                condition_name=condition_name, condition_code=condition_code
-            )
-
-            refined_files_to_zip.append((filename, condition_refined_eicr))
-
-            conditions.append(
-                Condition(
-                    code=condition_code,
-                    display_name=condition_name,
-                    refined_eicr=stripped_refined_eicr,
-                    stats=[
-                        f"eICR file size reduced by {
-                            get_file_size_reduction_percentage(
-                                unrefined_eicr=normalized_stripped_original_ecr,
-                                refined_eicr=condition_refined_eicr,
-                            )
-                        }%",
-                    ],
-                )
-            )
-
-        # STEP 5:
-        # add original eICR + RR files to ZIP
-        refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
-        refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
-
-        # STEP 6:
-        # package files into ZIP and upload to S3
-        output_file_name, output_zip_buffer = create_output_zip(
-            files=refined_files_to_zip,
-        )
-        presigned_s3_url = await run_in_threadpool(
-            upload_refined_files_to_s3,
-            user.id,
-            output_zip_buffer,
-            output_file_name,
-            logger,
-        )
-
-        # STEP 7:
-        # construct and return the response model
-        formatted_unrefined_eicr = format.strip_comments(
-            format.normalize_xml(original_xml_files.eicr)
-        )
-        return IndependentTestUploadResponse(
-            message="Successfully processed eICR with condition-specific refinement",
-            refined_conditions_found=len(conditions),
-            refined_conditions=conditions,
-            conditions_without_matching_configs=conditions_without_matching_config_names,
-            unrefined_eicr=formatted_unrefined_eicr,
-            refined_download_url=presigned_s3_url,
+        original_xml_files = await file_io.read_xml_zip(file)
+    except ZipValidationError as e:
+        logger.error("ZipValidationError in read_xml_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
         )
     except XMLValidationError as e:
-        logger.error("XMLValidationError", extra={"error": str(e)})
+        logger.error("XMLValidationError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=XML_FILE_ERROR,
-        )
-    except ZipValidationError as e:
-        logger.error("ZipValidationError", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ZIP_READING_ERROR,
+            detail="XML file(s) could not be processed.",
         )
     except FileProcessingError as e:
-        logger.error("FileProcessingError", extra={"error": str(e)})
+        logger.error("FileProcessingError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=FILE_PROCESSING_ERROR,
+            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
-    except Exception as e:
-        logger.error("Exception", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=GENERIC_SERVER_ERROR,
+
+    result = await independent_testing(
+        db=db,
+        xml_files=original_xml_files,
+        jurisdiction_id=jd,
+    )
+    refined_documents = result["refined_documents"]
+    conditions_without_matching_config_names = [
+        missing_condition["display_name"]
+        for missing_condition in result["no_matching_configuration_for_conditions"]
+    ]
+
+    # STEP 4:
+    # for each unique reportable condition code found in the RR (with a config),
+    # build a refined XML and collect metadata. The code used is from the RR.
+    conditions: list[Condition] = []
+    refined_files_to_zip = []
+    for refined_document in refined_documents:
+        condition_obj = refined_document.reportable_condition
+
+        stripped_original_ecr = format.strip_comments(original_xml_files.eicr)
+        normalized_stripped_original_ecr = format.normalize_xml(stripped_original_ecr)
+
+        stripped_refined_eicr = format.strip_comments(refined_document.refined_eicr)
+        condition_refined_eicr = format.normalize_xml(stripped_refined_eicr)
+
+        condition_code = condition_obj.code
+        condition_name = condition_obj.display_name
+
+        filename = file_io.create_split_condition_filename(
+            condition_name=condition_name, condition_code=condition_code
         )
+
+        refined_files_to_zip.append((filename, condition_refined_eicr))
+
+        conditions.append(
+            Condition(
+                code=condition_code,
+                display_name=condition_name,
+                refined_eicr=stripped_refined_eicr,
+                stats=[
+                    f"eICR file size reduced by {
+                        get_file_size_reduction_percentage(
+                            unrefined_eicr=normalized_stripped_original_ecr,
+                            refined_eicr=condition_refined_eicr,
+                        )
+                    }%",
+                ],
+            )
+        )
+    # STEP 5:
+    # add original eICR + RR files to ZIP
+    refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
+    refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
+
+    # STEP 6:
+    # package files into ZIP and upload to S3
+    output_file_name, output_zip_buffer = create_output_zip(
+        files=refined_files_to_zip,
+    )
+    presigned_s3_url = await run_in_threadpool(
+        upload_refined_files_to_s3,
+        user.id,
+        output_zip_buffer,
+        output_file_name,
+        logger,
+    )
+
+    # STEP 7:
+    # construct and return the response model
+    formatted_unrefined_eicr = format.strip_comments(
+        format.normalize_xml(original_xml_files.eicr)
+    )
+    return IndependentTestUploadResponse(
+        message="Successfully processed eICR with condition-specific refinement",
+        refined_conditions_found=len(conditions),
+        refined_conditions=conditions,
+        conditions_without_matching_configs=conditions_without_matching_config_names,
+        unrefined_eicr=formatted_unrefined_eicr,
+        refined_download_url=presigned_s3_url,
+    )
 
 
 @router.get("/download")
