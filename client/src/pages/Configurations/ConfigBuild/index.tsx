@@ -291,6 +291,7 @@ function Builder({
         onClose={() => setIsDrawerOpen(false)}
         conditions={included_conditions}
         configurationId={id}
+        reportable_condition_display_name={default_condition_name}
       />
     </div>
   );
@@ -733,17 +734,19 @@ export function CustomCodeModal({
   // TODO: this should come from the server.
   // Maybe get this info as part of the seed script?
   const systemValues = [
+    { name: 'Select system', value: '' },
     { name: 'ICD-10', value: 'icd-10' },
     { name: 'SNOMED', value: 'snomed' },
     { name: 'RxNorm', value: 'rxnorm' },
     { name: 'LOINC', value: 'loinc' },
+    { name: 'Other', value: 'other' },
   ];
 
   const isEditing = initialCode && initialSystem && initialName;
 
   const [form, setForm] = useState({
     code: initialCode ?? '',
-    system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
+    system: initialSystem ? normalizeSystem(initialSystem) : '',
     name: initialName ?? '',
   });
 
@@ -752,16 +755,17 @@ export function CustomCodeModal({
   useEffect(() => {
     setForm({
       code: initialCode ?? '',
-      system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
+      system: initialSystem ? normalizeSystem(initialSystem) : '',
       name: initialName ?? '',
     });
   }, [initialCode, initialSystem, initialName]);
 
   function resetForm() {
-    setForm({ code: '', system: 'icd-10', name: '' });
+    setForm({ code: '', system: '', name: '' });
   }
 
-  const isButtonEnabled = form.code && form.system && form.name;
+  const isButtonEnabled =
+    form.code && form.system && form.system !== '' && form.name;
 
   const handleChange =
     (field: keyof typeof form) =>
