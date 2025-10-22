@@ -26,7 +26,21 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(
       page.getByText('Want to refine your own eCR file?')
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Use test file' }).click();
+
+    const fileInput = page.locator('input#zip-upload');
+
+    // Resolve the file path relative to the project root
+    const filePath = path.resolve(
+      process.cwd(),
+      'e2e/assets/mon-mothma-two-conditions.zip'
+    );
+
+    // Upload the file directly
+    await fileInput.setInputFiles(filePath);
+
+    // Optionally, assert the file name shows up in the UI
+    await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
+    await page.getByText('Refine .zip file').click();
 
     // check for missing configs text
     await expect(
@@ -44,7 +58,7 @@ test.describe.serial('should be able to access independent testing', () => {
     );
 
     // go home
-    await page.getByRole('link', { name: 'eCR Refiner' }).click();
+    await page.getByRole('link', { name: 'DIBBs eCR Refiner' }).click();
     await expect(
       page.getByText('Your reportable condition configurations')
     ).toBeVisible();
@@ -60,7 +74,11 @@ test.describe.serial('should be able to access independent testing', () => {
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
-    await page.getByRole('button', { name: 'Use test file' }).click();
+
+    const independentFlowFileInput = page.locator('input#zip-upload');
+    await independentFlowFileInput.setInputFiles(filePath);
+
+    await page.getByRole('button', { name: 'Refine .zip file' }).click();
 
     // check for matching config text
     await expect(
@@ -90,10 +108,9 @@ test.describe.serial('should be able to access independent testing', () => {
 
     // click start over
     await page.getByRole('button', { name: 'Start over' }).click();
-    await expect(page.getByText("Don't have a file ready?")).toBeVisible();
 
     // go home
-    await page.getByRole('link', { name: 'eCR Refiner' }).click();
+    await page.getByRole('link', { name: 'DIBBs eCR Refiner' }).click();
     await expect(
       page.getByText('Your reportable condition configurations')
     ).toBeVisible();
@@ -111,7 +128,9 @@ test.describe.serial('should be able to access independent testing', () => {
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
-    await page.getByRole('button', { name: 'Use test file' }).click();
+
+    await independentFlowFileInput.setInputFiles(filePath);
+    await page.getByRole('button', { name: 'Refine .zip file' }).click();
 
     // check that only matching configs were found
     await expect(
@@ -137,47 +156,6 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeVisible();
-  });
-
-  test('should be able to refine with the test file', async ({ page }) => {
-    /// ==========================================================================
-    /// Test independent flow with test file
-    /// ==========================================================================
-
-    await page.getByRole('link', { name: /eCR Refiner/i }).click();
-
-    await page.getByRole('link', { name: 'Testing' }).click();
-
-    // Click the "Use test file" button
-    const useTestFileButton = page.getByRole('button', {
-      name: 'Use test file',
-    });
-    await expect(useTestFileButton).toBeVisible();
-    await useTestFileButton.click();
-
-    // Verify the expected reportable conditions are visible
-    await expect(
-      page.getByText(
-        'We found the following reportable condition(s) in the RR:',
-        { exact: false }
-      )
-    ).toBeVisible();
-
-    const covidLi = page.locator('li', { hasText: /^COVID-19$/ });
-    await expect(covidLi).toBeVisible();
-
-    const influenzaLi = page.locator('li', { hasText: /^Influenza$/ });
-    await expect(influenzaLi).toBeVisible();
-
-    // Click the "Refine eCR" button
-    const refineButton = page.getByRole('button', { name: 'Refine eCR' });
-    await expect(refineButton).toBeVisible();
-    await refineButton.click();
-
-    await expect(page.getByText('eCR refinement results')).toBeVisible();
-    await expect(page.getByText('eICR file size reduced by')).toBeVisible();
-    await expect(page.getByText('Original eICR')).toBeVisible();
-    await expect(page.getByText('Refined eICR')).toBeVisible();
   });
 
   test('should be able to upload a file, refine, and download results', async ({
@@ -251,5 +229,26 @@ test.describe.serial('should be able to access independent testing', () => {
 
     // Assert that the file exists
     expect(fs.existsSync(downloadPath)).toBeTruthy();
+  });
+
+  test('should be able to see the generated files for jurisdictions to test', async ({
+    page,
+  }) => {
+    await page.getByRole('link', { name: /eCR Refiner/i }).click();
+    await page.getByRole('link', { name: 'Testing' }).click();
+
+    // navigate to the place where we're linking to the sample files
+    const linkURL = await page
+      .getByRole('link', { name: "visit eCR Refiner's repository" })
+      .getAttribute('href');
+    expect(linkURL).not.toBeNull();
+    await page.goto(linkURL as string);
+
+    // Check that the default file is there
+    await expect(
+      page.getByRole('link', {
+        name: 'APHL_eCR_Refiner_COVID_Influenza_Sample_Files.zip',
+      })
+    ).toBeVisible();
   });
 });

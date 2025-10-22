@@ -8,7 +8,7 @@ import {
   DbTotalConditionCodeCount,
   HTTPValidationError,
 } from '../../../api/schemas';
-import userEvent from '@testing-library/user-event';
+import userEvent, { UserEvent } from '@testing-library/user-event';
 import { useRunInlineConfigurationTest } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 import { AxiosError } from 'axios';
@@ -78,6 +78,14 @@ vi.mock('../../../api/configurations/configurations', async () => {
   };
 });
 
+const mockTestFile = new File(['test'], 'test.zip', { type: 'text/plain' });
+
+export async function uploadTestFile(user: UserEvent) {
+  const input = screen.getByTestId('zip-upload-input');
+  await user.upload(input, mockTestFile);
+  await user.click(screen.getByText('Refine .zip file'));
+}
+
 describe('Config testing page', () => {
   function renderPage() {
     return render(
@@ -135,8 +143,8 @@ describe('Config testing page', () => {
     renderPage();
 
     // mock the upload
-    await user.click(screen.getByText('Use test file'));
 
+    await uploadTestFile(user);
     // find warning screen elements
     expect(await screen.findByText(warningMessage)).toBeInTheDocument();
     expect(await screen.findByText('Try again')).toBeInTheDocument();
@@ -152,13 +160,8 @@ describe('Config testing page', () => {
 
     renderPage();
 
-    expect(
-      screen.getByText('Want to refine your own eCR file?')
-    ).toBeInTheDocument();
-    expect(screen.getByText("Don't have a file ready?")).toBeInTheDocument();
-
     // mock the upload
-    await user.click(screen.getByText('Use test file'));
+    await uploadTestFile(user);
 
     // Check success page
     expect(
