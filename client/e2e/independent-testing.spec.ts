@@ -274,7 +274,7 @@ test.describe.serial('should be able to access independent testing', () => {
       .textContent();
 
     await page.getByRole('link', { name: 'Configurations' }).click();
-    await page.getByText('COVID-19').click();
+    await page.getByRole('cell', { name: 'COVID-19' }).click();
     await page.getByText('Test', { exact: true }).click();
     await fileUpload.setInputFiles(filePath);
 
@@ -286,7 +286,8 @@ test.describe.serial('should be able to access independent testing', () => {
     expect(inlineFlowCovidResult).toStrictEqual(independentFlowCovidResult);
 
     await page.getByRole('link', { name: 'Configurations' }).click();
-    await page.getByText('Influenza').click();
+    await page.getByRole('cell', { name: 'Influenza' }).click();
+
     await page.getByText('Test', { exact: true }).click();
     await fileUpload.setInputFiles(filePath);
 
