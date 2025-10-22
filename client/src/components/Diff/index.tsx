@@ -161,7 +161,9 @@ function SuccessItem({ children }: SuccessItemProps) {
   return (
     <div className="flex items-center gap-3 p-4">
       <span className="font-bold">Refiner results:</span>
-      <p className="leading-snug">{children}</p>
+      <p data-testid="test-refinement-result" className="leading-snug">
+        {children}
+      </p>
     </div>
   );
 }

@@ -150,7 +150,14 @@ async def demo_upload(
         refined_files_to_zip = []
         for refined_document in refined_documents:
             condition_obj = refined_document.reportable_condition
-            condition_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
+
+            stripped_original_ecr = format.strip_comments(original_xml_files.eicr)
+            normalized_stripped_original_ecr = format.normalize_xml(
+                stripped_original_ecr
+            )
+
+            stripped_refined_eicr = format.strip_comments(refined_document.refined_eicr)
+            condition_refined_eicr = format.normalize_xml(stripped_refined_eicr)
 
             condition_code = condition_obj.code
             condition_name = condition_obj.display_name
@@ -161,8 +168,6 @@ async def demo_upload(
 
             refined_files_to_zip.append((filename, condition_refined_eicr))
 
-            stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
-
             conditions.append(
                 Condition(
                     code=condition_code,
@@ -171,7 +176,7 @@ async def demo_upload(
                     stats=[
                         f"eICR file size reduced by {
                             get_file_size_reduction_percentage(
-                                unrefined_eicr=original_xml_files.eicr,
+                                unrefined_eicr=normalized_stripped_original_ecr,
                                 refined_eicr=condition_refined_eicr,
                             )
                         }%",
