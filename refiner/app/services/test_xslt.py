@@ -1,7 +1,8 @@
 import tempfile
 
 import pytest
-from refiner.app.services.xslt import XSLTTransformationError, transform_xml_to_html
+
+from .xslt import XSLTTransformationError, transform_xml_to_html
 
 BAD_CDA_XML = b"<ClinicalDocument><bad><xml></ClinicalDocument>"  # Malformed XML
 MINIMAL_XSLT = b"""<?xml version="1.0" encoding="UTF-8"?>

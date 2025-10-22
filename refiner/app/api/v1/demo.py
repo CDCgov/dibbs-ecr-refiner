@@ -176,7 +176,7 @@ async def demo_upload(
                 html_bytes = transform_xml_to_html(
                     condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path
                 )
-                refined_files_to_zip.append((filename_html, html_bytes))
+                refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
                 html_files.append(filename_html)
                 logger.info(
                     f"Successfully transformed XML to HTML for: {filename_xml}",
@@ -277,6 +277,8 @@ async def demo_upload(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=FILE_PROCESSING_ERROR,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Exception", extra={"error": str(e)})
         raise HTTPException(

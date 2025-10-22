@@ -74,9 +74,11 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
 
     response = client.post(f"{api_route_base}/upload")
 
-    assert response.status_code == 200
-    assert "refined_download_url" in response.json()
-    assert response.json()["refined_download_url"] == ""
+    # Expect a 502 Bad Gateway when S3 upload fails per current API design
+    assert response.status_code == 502
+    assert response.json()["detail"] == [
+        "Failed to upload ZIP to S3. Please try again later."
+    ]
 
     app.dependency_overrides.clear()
 

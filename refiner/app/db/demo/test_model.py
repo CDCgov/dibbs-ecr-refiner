@@ -1,4 +1,4 @@
-from refiner.app.db.demo.model import IndependentTestUploadResponse
+from .model import IndependentTestUploadResponse
 
 
 def test_response_html_files_field() -> None:

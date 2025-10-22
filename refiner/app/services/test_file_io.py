@@ -1,7 +1,8 @@
 import zipfile
 
 import pytest
-from refiner.app.services.file_io import create_refined_ecr_zip_in_memory
+
+from .file_io import create_refined_ecr_zip_in_memory
 
 
 @pytest.mark.integration
@@ -11,7 +12,7 @@ def test_zip_contains_only_xml_when_html_fails() -> None:
 
     Simulate by omitting HTML file for ConditionC and including for ConditionD.
     """
-    files = [
+    files: list[tuple[str, str | bytes]] = [
         ("ConditionC-321.xml", "<xml>TestC</xml>"),  # HTML intentionally omitted for C
         ("ConditionD-654.xml", "<xml>TestD</xml>"),
         ("ConditionD-654.html", b"<html><body>HTML D</body></html>"),
