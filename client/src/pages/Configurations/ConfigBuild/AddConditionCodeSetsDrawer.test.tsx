@@ -91,6 +91,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     onClose: vi.fn(),
     configurationId: 'my-config',
     conditions: mockConditions,
+    reportable_condition_display_name: 'COVID-19',
   };
 
   beforeEach(() => {
@@ -105,6 +106,7 @@ describe('AddConditionCodeSetsDrawer', () => {
           ...condition,
           canonical_url: '',
           version: '',
+          reportable_condition_display_name: '',
         }))}
       />
     );
@@ -125,6 +127,7 @@ describe('AddConditionCodeSetsDrawer', () => {
           ...condition,
           canonical_url: '',
           version: '',
+          reportable_condition_display_name: '',
         }))}
       />
     );
@@ -141,6 +144,7 @@ describe('AddConditionCodeSetsDrawer', () => {
           ...condition,
           canonical_url: '',
           version: '',
+          reportable_condition_display_name: '',
         }))}
       />
     );
@@ -160,6 +164,7 @@ describe('AddConditionCodeSetsDrawer', () => {
           ...condition,
           canonical_url: '',
           version: '',
+          reportable_condition_display_name: '',
         }))}
       />
     );
@@ -177,6 +182,7 @@ describe('AddConditionCodeSetsDrawer', () => {
           ...condition,
           canonical_url: '',
           version: '',
+          reportable_condition_display_name: '',
         }))}
       />
     );

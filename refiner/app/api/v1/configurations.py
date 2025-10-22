@@ -578,7 +578,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: Literal["loinc", "snomed", "icd-10", "rxnorm"]
+    system: Literal["loinc", "snomed", "icd-10", "rxnorm", "other"]
     name: str
 
     @field_validator("system", mode="before")
@@ -618,6 +618,8 @@ def _get_sanitized_system_name(system: str):
         return "ICD-10"
     elif lower_system == "rxnorm":
         return "RxNorm"
+    elif lower_system == "other":
+        return "Other"
 
     raise Exception(f"System name provided: {system} is invalid.")
 

@@ -15,12 +15,14 @@ interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
   configurationId: string;
   highlight?: React.ReactNode;
+  reportable_condition_display_name: string;
 }
 
 export function ConditionCodeSetListItem({
   condition,
   configurationId,
   highlight,
+  reportable_condition_display_name,
 }: ConditionCodeSetListItemProps) {
   const [showButton, setShowButton] = useState(false);
   const [isRefreshingConditionList, setIsRefreshingConditionList] =
@@ -144,23 +146,37 @@ export function ConditionCodeSetListItem({
       {isLoading ? (
         <Spinner />
       ) : showButton ? (
-        <Button
-          variant={condition.associated ? 'selected' : 'primary'}
-          aria-pressed={condition.associated}
-          aria-label={
-            condition.associated
-              ? `Remove ${condition.display_name}`
-              : `Add ${condition.display_name}`
-          }
-          className="!mr-0 !w-[80px]"
-          onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-            e.stopPropagation();
-            onClick(condition.associated);
-          }}
-          tabIndex={-1}
-        >
-          {condition.associated ? 'Added' : 'Add'}
-        </Button>
+        condition.display_name === reportable_condition_display_name ? (
+          <span className="text-bold !mr-0 !w-[80px] text-black">Default</span>
+        ) : condition.associated ? (
+          <Button
+            variant="secondary"
+            aria-pressed={true}
+            aria-label={`Remove ${condition.display_name}`}
+            className="!mr-0 !w-[80px]"
+            onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+              e.stopPropagation();
+              onClick(condition.associated);
+            }}
+            tabIndex={-1}
+          >
+            Remove
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            aria-pressed={false}
+            aria-label={`Add ${condition.display_name}`}
+            className="!mr-0 !w-[80px]"
+            onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+              e.stopPropagation();
+              onClick(condition.associated);
+            }}
+            tabIndex={-1}
+          >
+            Add
+          </Button>
+        )
       ) : null}
     </li>
   );
