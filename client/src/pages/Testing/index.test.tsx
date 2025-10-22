@@ -31,6 +31,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
   refined_download_url: 'http://s3-standard.com',
+  html_files: [],
 };
 
 const mockCustomUploadResponse: IndependentTestUploadResponse = {
@@ -47,6 +48,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
   refined_download_url: 'http://s3-custom.com',
+  html_files: [],
 };
 
 const renderDemoView = () =>
