@@ -291,6 +291,7 @@ function Builder({
         onClose={() => setIsDrawerOpen(false)}
         conditions={included_conditions}
         configurationId={id}
+        reportable_condition_display_name={default_condition_name}
       />
     </div>
   );
