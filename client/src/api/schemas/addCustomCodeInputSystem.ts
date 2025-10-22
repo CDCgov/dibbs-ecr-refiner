@@ -15,4 +15,5 @@ export const AddCustomCodeInputSystem = {
   snomed: 'snomed',
   'icd-10': 'icd-10',
   rxnorm: 'rxnorm',
+  other: 'other',
 } as const;
