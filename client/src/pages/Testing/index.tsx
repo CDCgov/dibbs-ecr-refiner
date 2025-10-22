@@ -6,6 +6,7 @@ import { Title } from '../../components/Title';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
 import FileUploadWarning from '../../components/FileUploadWarning';
+import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 type Status =
   | 'run-test'
@@ -104,6 +105,8 @@ export default function Demo() {
 
 function useZipUpload() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const formatError = useApiErrorFormatter();
   const {
     mutateAsync,
     data,
@@ -113,12 +116,7 @@ function useZipUpload() {
   } = useUploadEcr({
     mutation: {
       onError: (error) => {
-        const rawError = error.response?.data;
-
-        const message = Array.isArray(rawError?.detail)
-          ? rawError.detail.map((d) => d.msg).join(' ')
-          : rawError?.detail || 'Upload failed. Please try again.';
-        setErrorMessage(message);
+        setErrorMessage(formatError(error));
       },
     },
   });
