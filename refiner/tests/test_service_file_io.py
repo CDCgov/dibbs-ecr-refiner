@@ -12,7 +12,6 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.services import file_io
-from app.services.file_io import create_refined_ecr_zip_in_memory
 
 
 class MockFileUpload:
@@ -259,7 +258,7 @@ def test_zip_contains_only_xml_when_html_fails() -> None:
         ("ConditionD-654.xml", "<xml>TestD</xml>"),
         ("ConditionD-654.html", b"<html><body>HTML D</body></html>"),
     ]
-    zip_name, zip_buf = create_refined_ecr_zip_in_memory(files=files)
+    zip_name, zip_buf = file_io.create_refined_ecr_zip_in_memory(files=files)
     with zipfile.ZipFile(zip_buf, "r") as zf:
         namelist = zf.namelist()
         assert "ConditionC-321.xml" in namelist

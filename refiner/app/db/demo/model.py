@@ -11,15 +11,12 @@ class Condition:
     display_name: str
     refined_eicr: str
     stats: list[str]
-    # Optionally: html_files for per-condition HTML
 
 
 @dataclass(frozen=True)
 class IndependentTestUploadResponse:
     """
     Model for the response when uploading a document in the testing suite.
-
-    Now includes metadata for HTML output files as well as XML.
     """
 
     message: str
