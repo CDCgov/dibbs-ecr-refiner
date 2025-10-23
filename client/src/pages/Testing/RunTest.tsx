@@ -63,6 +63,7 @@ export function RunTest({
         <span>
           To download test files for some conditions you can
           <a
+            target="_blank"
             className="text-blue-cool-50"
             href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/sample-data/jurisdiction_sample_data"
           >

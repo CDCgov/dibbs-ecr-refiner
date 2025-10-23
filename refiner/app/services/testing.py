@@ -193,7 +193,7 @@ async def independent_testing(
         sections_to_include = None
 
         refined_eicr_str = refine_eicr(
-            xml_files=XMLFiles(xml_files.eicr, xml_files.rr),
+            xml_files=xml_files,
             processed_condition=None,
             processed_configuration=processed_configuration,
             sections_to_include=sections_to_include,
