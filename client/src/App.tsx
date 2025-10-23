@@ -30,7 +30,7 @@ function App() {
   }
 
   return (
-    <Layout username={user.username}>
+    <Layout displayName={`${user.username} (${user.jurisdiction_id})`}>
       <ToastContainer className="!w-full" />
       <Routes>
         {/* this is the home page for authenticated users */}

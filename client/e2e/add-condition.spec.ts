@@ -141,7 +141,11 @@ test.describe
     const acanthamoebaButton = conditionCodeSets.getByRole('button', {
       name: /Acanthamoeba, \d+ codes in code set/,
     });
+
     await expect(acanthamoebaButton).toBeVisible();
+
+    // User should see default code set once current code set has been deleted
+    await expect(page.getByText('Acanthamoeba code set')).toBeVisible();
 
     // Expect "Balamuthia mandrillaris Disease" code set to no longer be visible
     const balamuthiaButton = conditionCodeSets.getByRole('button', {
