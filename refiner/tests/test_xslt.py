@@ -1,3 +1,4 @@
+import logging
 import tempfile
 
 import pytest
@@ -24,7 +25,9 @@ def test_transform_xml_to_html_malformed_xml() -> None:
         xslt_file.write(MINIMAL_XSLT)
         xslt_file.flush()
         with pytest.raises(XSLTTransformationError):
-            transform_xml_to_html(BAD_CDA_XML, xslt_file.name)
+            transform_xml_to_html(
+                BAD_CDA_XML, xslt_file.name, logging.getLogger("xslt-test")
+            )
 
 
 def test_transform_xml_to_html_malformed_xslt() -> None:
@@ -40,4 +43,6 @@ def test_transform_xml_to_html_malformed_xslt() -> None:
         xslt_file.write(BAD_XSLT)
         xslt_file.flush()
         with pytest.raises(XSLTTransformationError):
-            transform_xml_to_html(VALID_CDA_XML, xslt_file.name)
+            transform_xml_to_html(
+                VALID_CDA_XML, xslt_file.name, logging.getLogger("xslt-test")
+            )

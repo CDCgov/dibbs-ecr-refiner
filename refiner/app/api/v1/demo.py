@@ -181,7 +181,7 @@ async def demo_upload(
         # Try to generate HTML using XSLT
         try:
             html_bytes = transform_xml_to_html(
-                condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path
+                condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
             )
             refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
             html_files.append(filename_html)
