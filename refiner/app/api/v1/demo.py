@@ -130,6 +130,8 @@ async def demo_upload(
         )
 
     try:
+        # STEP 3:
+        # orchestrate refinement workflow via service layer
         result = await independent_testing(
             db=db,
             xml_files=original_xml_files,
