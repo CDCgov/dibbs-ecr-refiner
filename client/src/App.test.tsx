@@ -9,7 +9,7 @@ vi.mock('./hooks/Login', async () => {
   return {
     ...actual,
     useLogin: vi.fn(() => [
-      { id: '1', username: 'test', email: 'test@example.com' },
+      { id: '1', username: 'test', jurisdiction_id: 'jd' },
       false,
     ]),
   };
@@ -53,5 +53,11 @@ describe('App', () => {
     renderApp();
 
     expect(screen.getByText(`Version code: test-hash`)).toBeInTheDocument();
+  });
+
+  it('Should show the username and their jurisdiction in the header', async () => {
+    renderApp();
+
+    expect(await screen.findByText('test (jd)')).toBeInTheDocument();
   });
 });
