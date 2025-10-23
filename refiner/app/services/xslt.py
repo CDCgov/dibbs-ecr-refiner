@@ -6,6 +6,7 @@ This module provides a secure, robust function for transforming CDA XML document
 
 from io import BytesIO
 from logging import Logger
+from pathlib import Path
 
 from lxml import etree
 
@@ -16,13 +17,13 @@ class XSLTTransformationError(Exception):
     pass
 
 
-def transform_xml_to_html(xml_bytes: bytes, xslt_path: str, logger: Logger) -> bytes:
+def transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> bytes:
     """
     Transforms CDA XML to HTML using the specified XSLT stylesheet.
 
     Args:
         xml_bytes (bytes): The raw XML document bytes.
-        xslt_path (str): Path to the XSLT stylesheet file.
+        xslt_path (Path): Path to the XSLT stylesheet file.
         logger (Logger): Logger for logging errors and debug information.
 
     Returns:
