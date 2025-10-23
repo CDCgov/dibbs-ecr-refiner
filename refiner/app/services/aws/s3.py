@@ -14,6 +14,9 @@ uploaded_artifact_bucket_name = ENVIRONMENT["S3_UPLOADED_FILES_BUCKET_NAME"]
 
 config = Config(signature_version="s3v4")
 
+# S3_ENDPOINT_URL is **only** used in local dev; so we grab that
+# via os.getenv rather than the ENVIRONMENT we import from core.config
+# this is so we can connect to localstack
 s3_client = boto3.client(
     "s3",
     region_name=ENVIRONMENT["AWS_REGION"],
