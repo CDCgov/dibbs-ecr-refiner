@@ -1150,23 +1150,23 @@ async def run_configuration_test(
 
     # STEP 5:
     # construct and return the final response
+    formatted_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+    formatted_refined_eicr = strip_comments(
+        normalize_xml(refined_document.refined_eicr)
+    )
 
     return ConfigurationTestResponse(
-        original_eicr=original_xml_files.eicr,
+        original_eicr=formatted_unrefined_eicr,
         refined_download_url=presigned_s3_url,
         condition=Condition(
             code=condition_obj.code,
             display_name=condition_obj.display_name,
-            refined_eicr=refined_document.refined_eicr,
+            refined_eicr=formatted_refined_eicr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        unrefined_eicr=normalize_xml(
-                            strip_comments(original_xml_files.eicr)
-                        ),
-                        refined_eicr=normalize_xml(
-                            strip_comments(refined_document.refined_eicr)
-                        ),
+                        unrefined_eicr=formatted_unrefined_eicr,
+                        refined_eicr=formatted_refined_eicr,
                     )
                 }%",
             ],

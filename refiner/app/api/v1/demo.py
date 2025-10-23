@@ -166,20 +166,22 @@ async def demo_upload(
 
         refined_files_to_zip.append((filename, refined_document.refined_eicr))
 
+        formatted_unrefined_eicr = format.strip_comments(
+            format.normalize_xml(original_xml_files.eicr)
+        )
+        formatted_refined_eicr = format.strip_comments(
+            format.normalize_xml(refined_document.refined_eicr)
+        )
         conditions.append(
             Condition(
                 code=condition_code,
                 display_name=condition_name,
-                refined_eicr=refined_document.refined_eicr,
+                refined_eicr=formatted_refined_eicr,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
-                            unrefined_eicr=format.normalize_xml(
-                                format.strip_comments(original_xml_files.eicr)
-                            ),
-                            refined_eicr=format.normalize_xml(
-                                format.strip_comments(refined_document.refined_eicr)
-                            ),
+                            unrefined_eicr=formatted_unrefined_eicr,
+                            refined_eicr=formatted_refined_eicr,
                         )
                     }%",
                 ],
