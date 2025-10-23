@@ -138,149 +138,6 @@ async def demo_upload(
             xml_files=original_xml_files,
             jurisdiction_id=jd,
         )
-        refined_documents = result["refined_documents"]
-        conditions_without_matching_config_names = [
-            missing_condition["display_name"]
-            for missing_condition in result["no_matching_configuration_for_conditions"]
-        ]
-
-        # STEP 4:
-        # for each unique reportable condition code found in the RR (with a config),
-        # build a refined XML and collect metadata. The code used is from the RR.
-        conditions: list[Condition] = []
-        refined_files_to_zip = []
-        # TODO: Check the version from the incoming eICR by checking the date
-        # of the OID. Currently, we are only working with version `1.1.1`.
-        xslt_stylesheet_path = str(
-            Path(__file__).parent.parent.parent
-            / "xslt"
-            / "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl"
-        )
-        html_files: list[str] = []
-        for refined_document in refined_documents:
-            condition_obj = refined_document.reportable_condition
-            condition_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
-
-            condition_code = condition_obj.code
-            condition_name = condition_obj.display_name
-
-            filename_xml = file_io.create_split_condition_filename(
-                condition_name=condition_name, condition_code=condition_code
-            )
-            filename_html = filename_xml.replace(".xml", ".html")
-
-            refined_files_to_zip.append((filename_xml, condition_refined_eicr))
-
-            # Try to generate HTML using XSLT
-            try:
-                html_bytes = transform_xml_to_html(
-                    condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path
-                )
-                refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
-                html_files.append(filename_html)
-                logger.info(
-                    f"Successfully transformed XML to HTML for: {filename_xml}",
-                    extra={
-                        "condition_code": condition_code,
-                        "condition_name": condition_name,
-                    },
-                )
-            except XSLTTransformationError as e:
-                logger.error(
-                    f"Failed to transform XML to HTML for: {filename_xml}",
-                    extra={
-                        "condition_code": condition_code,
-                        "condition_name": condition_name,
-                        "error": str(e),
-                    },
-                )
-                # Continue with XML only; do not include HTML file for this condition
-
-            stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
-
-            conditions.append(
-                Condition(
-                    code=condition_code,
-                    display_name=condition_name,
-                    refined_eicr=stripped_refined_eicr,
-                    stats=[
-                        f"eICR file size reduced by {
-                            get_file_size_reduction_percentage(
-                                unrefined_eicr=original_xml_files.eicr,
-                                refined_eicr=condition_refined_eicr,
-                            )
-                        }%",
-                    ],
-                )
-            )
-
-        # STEP 5:
-        # add original eICR + RR files to ZIP
-        refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
-        refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
-
-        # STEP 6:
-        # package files into ZIP and upload to S3
-        output_file_name, output_zip_buffer = create_output_zip(
-            files=refined_files_to_zip,
-        )
-        try:
-            presigned_s3_url = await run_in_threadpool(
-                upload_refined_files_to_s3,
-                user.id,
-                output_zip_buffer,
-                output_file_name,
-                logger,
-            )
-            if not presigned_s3_url:
-                logger.error("S3 upload failed: empty URL returned")
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=["Failed to upload ZIP to S3. Please try again later."],
-                )
-        except Exception as e:
-            logger.error("Exception during S3 upload", extra={"error": str(e)})
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=["Failed to upload ZIP to S3. Please try again later."],
-            )
-
-        # STEP 7:
-        # construct and return the response model
-        formatted_unrefined_eicr = format.strip_comments(
-            format.normalize_xml(original_xml_files.eicr)
-        )
-        return IndependentTestUploadResponse(
-            message="Successfully processed eICR with condition-specific refinement",
-            refined_conditions_found=len(conditions),
-            refined_conditions=conditions,
-            conditions_without_matching_configs=conditions_without_matching_config_names,
-            unrefined_eicr=formatted_unrefined_eicr,
-            refined_download_url=presigned_s3_url,
-            html_files=html_files if html_files else [],
-        )
-    except XMLValidationError as e:
-        logger.error("XMLValidationError", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=XML_FILE_ERROR,
-        )
-    except ZipValidationError as e:
-        logger.error("ZipValidationError", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ZIP_READING_ERROR,
-        )
-    except FileProcessingError as e:
-        logger.error("FileProcessingError", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=FILE_PROCESSING_ERROR,
-        )
-    except (
-        HTTPException
-    ):  # Returns the raw HTTPException without modification (502 from S3 upload)
-        raise
     except Exception as e:
         logger.error("Error in the independent testing flow", extra={"error": str(e)})
         raise HTTPException(
@@ -299,6 +156,14 @@ async def demo_upload(
     # build a refined XML and collect metadata. The code used is from the RR.
     conditions: list[Condition] = []
     refined_files_to_zip = []
+    # TODO: Check the version from the incoming eICR by checking the date
+    # of the OID. Currently, we are only working with version `1.1.1`.
+    xslt_stylesheet_path = str(
+        Path(__file__).parent.parent.parent
+        / "xslt"
+        / "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl"
+    )
+    html_files: list[str] = []
     for refined_document in refined_documents:
         condition_obj = refined_document.reportable_condition
         condition_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
@@ -306,11 +171,37 @@ async def demo_upload(
         condition_code = condition_obj.code
         condition_name = condition_obj.display_name
 
-        filename = file_io.create_split_condition_filename(
+        filename_xml = file_io.create_split_condition_filename(
             condition_name=condition_name, condition_code=condition_code
         )
+        filename_html = filename_xml.replace(".xml", ".html")
 
-        refined_files_to_zip.append((filename, condition_refined_eicr))
+        refined_files_to_zip.append((filename_xml, condition_refined_eicr))
+
+        # Try to generate HTML using XSLT
+        try:
+            html_bytes = transform_xml_to_html(
+                condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path
+            )
+            refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
+            html_files.append(filename_html)
+            logger.info(
+                f"Successfully transformed XML to HTML for: {filename_xml}",
+                extra={
+                    "condition_code": condition_code,
+                    "condition_name": condition_name,
+                },
+            )
+        except XSLTTransformationError as e:
+            logger.error(
+                f"Failed to transform XML to HTML for: {filename_xml}",
+                extra={
+                    "condition_code": condition_code,
+                    "condition_name": condition_name,
+                    "error": str(e),
+                },
+            )
+            # Continue with XML only; do not include HTML file for this condition
 
         stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
 
@@ -340,13 +231,26 @@ async def demo_upload(
     output_file_name, output_zip_buffer = create_output_zip(
         files=refined_files_to_zip,
     )
-    presigned_s3_url = await run_in_threadpool(
-        upload_refined_files_to_s3,
-        user.id,
-        output_zip_buffer,
-        output_file_name,
-        logger,
-    )
+    try:
+        presigned_s3_url = await run_in_threadpool(
+            upload_refined_files_to_s3,
+            user.id,
+            output_zip_buffer,
+            output_file_name,
+            logger,
+        )
+        if not presigned_s3_url:
+            logger.error("S3 upload failed: empty URL returned")
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=["Failed to upload ZIP to S3. Please try again later."],
+            )
+    except Exception as e:
+        logger.error("Exception during S3 upload", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=["Failed to upload ZIP to S3. Please try again later."],
+        )
 
     # STEP 7:
     # construct and return the response model
@@ -360,6 +264,7 @@ async def demo_upload(
         conditions_without_matching_configs=conditions_without_matching_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
         refined_download_url=presigned_s3_url,
+        html_files=html_files if html_files else [],
     )
 
 
