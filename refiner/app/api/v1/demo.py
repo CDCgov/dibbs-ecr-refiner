@@ -143,7 +143,6 @@ async def demo_upload(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=GENERIC_SERVER_ERROR,
         )
-
     refined_documents = result["refined_documents"]
     conditions_without_matching_config_names = [
         missing_condition["display_name"]
@@ -157,7 +156,6 @@ async def demo_upload(
     refined_files_to_zip = []
     for refined_document in refined_documents:
         condition_obj = refined_document.reportable_condition
-        condition_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
 
         condition_code = condition_obj.code
         condition_name = condition_obj.display_name
@@ -165,27 +163,29 @@ async def demo_upload(
         filename = file_io.create_split_condition_filename(
             condition_name=condition_name, condition_code=condition_code
         )
+        normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
 
-        refined_files_to_zip.append((filename, condition_refined_eicr))
+        refined_files_to_zip.append((filename, normalized_refined_eicr))
 
-        stripped_refined_eicr = format.strip_comments(condition_refined_eicr)
-
+        formatted_unrefined_eicr = format.strip_comments(
+            format.normalize_xml(original_xml_files.eicr)
+        )
+        formatted_refined_eicr = format.strip_comments(normalized_refined_eicr)
         conditions.append(
             Condition(
                 code=condition_code,
                 display_name=condition_name,
-                refined_eicr=stripped_refined_eicr,
+                refined_eicr=formatted_refined_eicr,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
-                            unrefined_eicr=original_xml_files.eicr,
-                            refined_eicr=condition_refined_eicr,
+                            unrefined_eicr=formatted_unrefined_eicr,
+                            refined_eicr=formatted_refined_eicr,
                         )
                     }%",
                 ],
             )
         )
-
     # STEP 5:
     # add original eICR + RR files to ZIP
     refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))

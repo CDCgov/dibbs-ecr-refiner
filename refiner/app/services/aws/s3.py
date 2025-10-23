@@ -32,7 +32,6 @@ s3_client_external = boto3.client(
     aws_access_key_id=ENVIRONMENT["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
     endpoint_url=os.getenv("S3_ENDPOINT_URL_EXTERNAL"),
-    config=config,
 )
 
 
@@ -67,8 +66,6 @@ def upload_refined_ecr(
             Params={"Bucket": uploaded_artifact_bucket_name, "Key": key},
             ExpiresIn=expires,
         )
-
-        # presigned_url = presigned_url.replace("localstack:4566", "localhost:4566")
 
         return presigned_url
 

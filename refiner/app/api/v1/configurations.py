@@ -1110,7 +1110,6 @@ async def run_configuration_test(
         )
 
     condition_obj = refined_document.reportable_condition
-    refined_eicr_str = refined_document.refined_eicr
 
     # STEP 4:
     # prepare files for zip and s3 upload
@@ -1122,7 +1121,7 @@ async def run_configuration_test(
         condition_name=condition_obj.display_name,
         condition_code=condition_obj.code,
     )
-    s3_file_package.append((filename, refined_eicr_str))
+    s3_file_package.append((filename, refined_document.refined_eicr))
 
     try:
         output_file_name, output_zip_buffer = create_output_zip(
@@ -1151,21 +1150,23 @@ async def run_configuration_test(
 
     # STEP 5:
     # construct and return the final response
-    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-    matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
+    formatted_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+    formatted_refined_eicr = strip_comments(
+        normalize_xml(refined_document.refined_eicr)
+    )
 
     return ConfigurationTestResponse(
-        original_eicr=original_unrefined_eicr,
+        original_eicr=formatted_unrefined_eicr,
         refined_download_url=presigned_s3_url,
         condition=Condition(
             code=condition_obj.code,
             display_name=condition_obj.display_name,
-            refined_eicr=matched_condition_refined_eicr,
+            refined_eicr=formatted_refined_eicr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        unrefined_eicr=original_unrefined_eicr,
-                        refined_eicr=matched_condition_refined_eicr,
+                        unrefined_eicr=formatted_unrefined_eicr,
+                        refined_eicr=formatted_refined_eicr,
                     )
                 }%",
             ],
