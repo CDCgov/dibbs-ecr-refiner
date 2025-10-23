@@ -129,11 +129,18 @@ async def demo_upload(
             detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
         )
 
-    result = await independent_testing(
-        db=db,
-        xml_files=original_xml_files,
-        jurisdiction_id=jd,
-    )
+    try:
+        result = await independent_testing(
+            db=db,
+            xml_files=original_xml_files,
+            jurisdiction_id=jd,
+        )
+    except Exception as e:
+        logger.error("Error in the independent testing flow", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=GENERIC_SERVER_ERROR,
+        )
     refined_documents = result["refined_documents"]
     conditions_without_matching_config_names = [
         missing_condition["display_name"]
@@ -148,12 +155,6 @@ async def demo_upload(
     for refined_document in refined_documents:
         condition_obj = refined_document.reportable_condition
 
-        stripped_original_ecr = format.strip_comments(original_xml_files.eicr)
-        normalized_stripped_original_ecr = format.normalize_xml(stripped_original_ecr)
-
-        stripped_refined_eicr = format.strip_comments(refined_document.refined_eicr)
-        condition_refined_eicr = format.normalize_xml(stripped_refined_eicr)
-
         condition_code = condition_obj.code
         condition_name = condition_obj.display_name
 
@@ -161,18 +162,22 @@ async def demo_upload(
             condition_name=condition_name, condition_code=condition_code
         )
 
-        refined_files_to_zip.append((filename, condition_refined_eicr))
+        refined_files_to_zip.append((filename, refined_document.refined_eicr))
 
         conditions.append(
             Condition(
                 code=condition_code,
                 display_name=condition_name,
-                refined_eicr=stripped_refined_eicr,
+                refined_eicr=refined_document.refined_eicr,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
-                            unrefined_eicr=normalized_stripped_original_ecr,
-                            refined_eicr=condition_refined_eicr,
+                            unrefined_eicr=format.normalize_xml(
+                                format.strip_comments(original_xml_files.eicr)
+                            ),
+                            refined_eicr=format.normalize_xml(
+                                format.strip_comments(refined_document.refined_eicr)
+                            ),
                         )
                     }%",
                 ],
