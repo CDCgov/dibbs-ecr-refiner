@@ -158,10 +158,9 @@ async def demo_upload(
     refined_files_to_zip = []
     # TODO: Check the version from the incoming eICR by checking the date
     # of the OID. Currently, we are only working with version `1.1.1`.
-    xslt_stylesheet_path = str(
-        Path(__file__).parent.parent.parent
-        / "xslt"
-        / "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl"
+    xslt_stylesheet_path = file_io.get_asset_path(
+        "xslt",
+        "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl",
     )
     html_files: list[str] = []
     for refined_document in refined_documents:
