@@ -84,3 +84,20 @@ check-configs-by-jurisdiction JURISDICTION_ID:
 [doc('Find configurations for a jurisdiction and condition name (e.g., `just db check-config-combo wa zika`)')]
 check-config-combo JURISDICTION_ID CONDITION_NAME:
     just db query "SELECT c.name, c.jurisdiction_id, cond.display_name FROM configurations c JOIN conditions cond ON c.condition_id = cond.id WHERE c.jurisdiction_id = '{{JURISDICTION_ID}}' AND cond.display_name ILIKE '%{{CONDITION_NAME}}%';"
+
+[group('db')]
+[doc('Find a specific code within a condition, version, and code system. Usage: just db check-code "COVID-19" "3.0.0" "rxnorm_codes" "2284960"')]
+check-code CONDITION VERSION SYSTEM CODE:
+    docker compose exec db psql -U postgres -d refiner -c "\
+        SELECT \
+            c.display_name, \
+            c.version, \
+            elem AS matching_code \
+        FROM \
+            conditions c, \
+            LATERAL jsonb_array_elements(c.{{SYSTEM}}) AS elem \
+        WHERE \
+            c.display_name = '{{CONDITION}}' \
+            AND c.version = '{{VERSION}}' \
+            AND elem->>'code' = '{{CODE}}'; \
+    "
