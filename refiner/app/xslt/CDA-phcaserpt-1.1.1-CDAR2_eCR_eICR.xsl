@@ -5124,7 +5124,6 @@ limitations under the License.
     </xsl:template>
     <xsl:template xmlns:xs="http://www.w3.org/2001/XMLSchema" name="lantana-js">
         <script type="text/javascript">
-        alert("Loading Lantana JS");
         $(document).ready(function () {
             $('#navbar-list-cda').height($(window).height() -100);
         });
@@ -5188,16 +5187,22 @@ limitations under the License.
             });
         });</script>
     </xsl:template>
-    <xsl:template name="jquery">
-      <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
+    <xsl:template xmlns:xs="http://www.w3.org/2001/XMLSchema" name="jquery">
+      <xsl:text disable-output-escaping="yes">
+        &lt;script type="text/javascript" src="https://code.jquery.com/jquery-1.12.1.min.js"&gt;&lt;/script&gt;
+      </xsl:text>
     </xsl:template>
-    <xsl:template name="jquery-ui">
-      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js"></script>
+    <xsl:template xmlns:xs="http://www.w3.org/2001/XMLSchema" name="jquery-ui">
+      <xsl:text disable-output-escaping="yes">
+        &lt;script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js"&gt;&lt;/script&gt;
+      </xsl:text>
     </xsl:template>
-    <xsl:template name="bootstrap-css">
+    <xsl:template xmlns:xs="http://www.w3.org/2001/XMLSchema" name="bootstrap-css">
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
     </xsl:template>
-    <xsl:template name="bootstrap-javascript">
-      <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <xsl:template xmlns:xs="http://www.w3.org/2001/XMLSchema" name="bootstrap-javascript">
+      <xsl:text disable-output-escaping="yes">
+        &lt;script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"&gt;&lt;/script&gt;
+      </xsl:text>
     </xsl:template>
 </xsl:stylesheet>
