@@ -11,7 +11,8 @@ const CONFIGURATION_TITLE_CONTENTS = {
   },
   test: {
     title: 'Test configuration',
-    subtitle: 'Check the results of your configuration before turning it on.',
+    subtitle:
+      'This module allows you to simulate how the Refiner would work in production for a zipped eICR/RR pair input based on the reportable conditions your jurisdiction has configured.',
   },
   activate: {
     title: 'Turn on configuration',
