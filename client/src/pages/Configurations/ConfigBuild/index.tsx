@@ -48,6 +48,7 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
 import { Spinner } from '../../../components/Spinner';
 import ErrorFallback from '../../ErrorFallback';
+import { ExternalLink } from '../../../components/ExternalLink';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -598,14 +599,9 @@ function CustomCodeGroupingParagraph() {
 
 function TesLink() {
   return (
-    <a
-      className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-      href="https://tes.tools.aimsplatform.org/auth/signin"
-      target="_blank"
-      rel="noopener"
-    >
+    <ExternalLink href="https://tes.tools.aimsplatform.org/auth/signin">
       TES (Terminology Exchange Service).
-    </a>
+    </ExternalLink>
   );
 }
 
