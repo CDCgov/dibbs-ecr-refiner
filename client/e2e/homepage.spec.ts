@@ -46,7 +46,7 @@ test.describe('Viewing the application when logged in', () => {
     await login(page);
 
     // 1️⃣ Locate the refiner button and click it
-    const refinerButton = page.locator('button', { hasText: 'refiner' });
+    const refinerButton = page.locator('button', { hasText: 'refiner (SDDH)' });
     await expect(refinerButton).toBeVisible();
     await refinerButton.click();
 
