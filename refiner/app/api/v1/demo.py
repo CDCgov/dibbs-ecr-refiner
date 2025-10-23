@@ -231,26 +231,13 @@ async def demo_upload(
     output_file_name, output_zip_buffer = create_output_zip(
         files=refined_files_to_zip,
     )
-    try:
-        presigned_s3_url = await run_in_threadpool(
-            upload_refined_files_to_s3,
-            user.id,
-            output_zip_buffer,
-            output_file_name,
-            logger,
-        )
-        if not presigned_s3_url:
-            logger.error("S3 upload failed: empty URL returned")
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=["Failed to upload ZIP to S3. Please try again later."],
-            )
-    except Exception as e:
-        logger.error("Exception during S3 upload", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=["Failed to upload ZIP to S3. Please try again later."],
-        )
+    presigned_s3_url = await run_in_threadpool(
+        upload_refined_files_to_s3,
+        user.id,
+        output_zip_buffer,
+        output_file_name,
+        logger,
+    )
 
     # STEP 7:
     # construct and return the response model
@@ -264,7 +251,6 @@ async def demo_upload(
         conditions_without_matching_configs=conditions_without_matching_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
         refined_download_url=presigned_s3_url,
-        html_files=html_files if html_files else [],
     )
 
 

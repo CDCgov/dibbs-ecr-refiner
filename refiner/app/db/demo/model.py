@@ -28,6 +28,3 @@ class IndependentTestUploadResponse:
     refined_conditions: list[Condition]
     unrefined_eicr: str
     refined_download_url: str
-    html_files: list[
-        str
-    ]  # List of HTML filenames included in the ZIP output, mirrors XML naming

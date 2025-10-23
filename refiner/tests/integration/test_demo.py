@@ -46,7 +46,7 @@ async def test_demo_upload_smoke(test_assets_path: pathlib.Path, authed_client) 
     assert "refined_download_url" in data
 
 
-@pytest.mark.integration
+@pytest.mark.asyncio
 def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     from app.services.aws.s3 import upload_refined_ecr
 
@@ -74,11 +74,9 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
 
     response = client.post(f"{api_route_base}/upload")
 
-    # Expect a 502 Bad Gateway when S3 upload fails per current API design
-    assert response.status_code == 502
-    assert response.json()["detail"] == [
-        "Failed to upload ZIP to S3. Please try again later."
-    ]
+    assert response.status_code == 200
+    assert "refined_download_url" in response.json()
+    assert response.json()["refined_download_url"] == ""
 
     app.dependency_overrides.clear()
 

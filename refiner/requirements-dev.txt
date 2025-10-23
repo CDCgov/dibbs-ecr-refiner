@@ -13,4 +13,3 @@ mypy==1.18.2
 lxml-stubs
 types-Authlib
 boto3-stubs
-moto

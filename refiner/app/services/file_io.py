@@ -136,15 +136,10 @@ def create_refined_ecr_zip_in_memory(
 
     with ZipFile(zip_buffer, "w") as zf:
         for filename, content in files:
-            if content is None or (isinstance(content, str) and not content):
+            if not content:
                 continue
-            if isinstance(content, bytes):
-                zf.writestr(filename, content)
-            elif isinstance(content, str):
-                zf.writestr(filename, content.encode("utf-8"))
-            else:
-                # Unexpected content type; skip file
-                continue
+            data = content if isinstance(content, bytes) else content.encode("utf-8")
+            zf.writestr(filename, data)
 
     zip_buffer.seek(0)
     return zip_filename, zip_buffer
