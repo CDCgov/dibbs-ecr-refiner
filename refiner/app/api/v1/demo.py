@@ -163,15 +163,14 @@ async def demo_upload(
         filename = file_io.create_split_condition_filename(
             condition_name=condition_name, condition_code=condition_code
         )
+        normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
 
-        refined_files_to_zip.append((filename, refined_document.refined_eicr))
+        refined_files_to_zip.append((filename, normalized_refined_eicr))
 
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)
         )
-        formatted_refined_eicr = format.strip_comments(
-            format.normalize_xml(refined_document.refined_eicr)
-        )
+        formatted_refined_eicr = format.strip_comments(normalized_refined_eicr)
         conditions.append(
             Condition(
                 code=condition_code,
