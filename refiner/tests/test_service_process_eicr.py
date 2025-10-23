@@ -14,15 +14,16 @@ from app.services.ecr.process_eicr import (
     CLINICAL_DATA_TABLE_HEADERS,
     MINIMAL_SECTION_MESSAGE,
     REFINER_OUTPUT_TITLE,
+    REMOVE_SECTION_MESSAGE,
     _analyze_trigger_codes_in_context,
     _create_or_update_text_element,
     _extract_clinical_data,
     _find_condition_relevant_elements,
     _find_path_to_entry,
-    _get_section_by_code,
     _preserve_relevant_entries_and_generate_summary,
-    _process_section,
     _prune_unwanted_siblings,
+    get_section_by_code,
+    process_section,
 )
 
 from .conftest import NAMESPACES
@@ -44,9 +45,9 @@ def xml_test_setup(read_test_xml) -> dict[str, Any | _Element | None]:
 
     return {
         "structured_body": structured_body,
-        "results_section": _get_section_by_code(structured_body, "30954-2"),
-        "encounters_section": _get_section_by_code(structured_body, "46240-8"),
-        "social_history_section": _get_section_by_code(structured_body, "29762-2"),
+        "results_section": get_section_by_code(structured_body, "30954-2"),
+        "encounters_section": get_section_by_code(structured_body, "46240-8"),
+        "social_history_section": get_section_by_code(structured_body, "29762-2"),
     }
 
 
@@ -137,7 +138,7 @@ def test_process_section_no_clinical_elements() -> None:
     """)
 
     # pass empty XPath since no condition codes provided
-    _process_section(
+    process_section(
         section=section,
         # empty XPath means no condition codes
         combined_xpath="",
@@ -178,7 +179,7 @@ def test_process_section_with_error():
     # use a valid XPath that won't match anything
     combined_xpath = './/hl7:observation[hl7:code[@code="nonexistent-code"]]'
 
-    _process_section(
+    process_section(
         section=section,
         combined_xpath=combined_xpath,
         namespaces=NAMESPACES,
@@ -223,7 +224,7 @@ def test_process_section_complete_workflow_with_matches(xml_test_setup) -> None:
     section: Any = xml_test_setup["results_section"]
     xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
 
-    _process_section(
+    process_section(
         section=section,
         combined_xpath=xpath,
         namespaces=NAMESPACES,
@@ -774,9 +775,16 @@ def test_text_constants() -> None:
 
     assert (
         REFINER_OUTPUT_TITLE
-        == "Output from CDC PRIME DIBBs eCR Refiner application by request of STLT"
+        == "Output from CDC eCR Refiner application by request of jurisdiction."
     )
-    assert MINIMAL_SECTION_MESSAGE == "Section details have been removed as requested"
+    assert (
+        REMOVE_SECTION_MESSAGE
+        == "Section details have been removed as requested by jurisdiction for this condition."
+    )
+    assert (
+        MINIMAL_SECTION_MESSAGE
+        == "No clinical information matches the configured code sets for this condition."
+    )
     assert CLINICAL_DATA_TABLE_HEADERS == [
         "Display Text",
         "Code",

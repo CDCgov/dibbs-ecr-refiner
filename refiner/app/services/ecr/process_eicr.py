@@ -16,9 +16,14 @@ from ...core.exceptions import (
 
 # <text> constants for refined sections
 REFINER_OUTPUT_TITLE = (
-    "Output from CDC PRIME DIBBs eCR Refiner application by request of STLT"
+    "Output from CDC eCR Refiner application by request of jurisdiction."
 )
-MINIMAL_SECTION_MESSAGE = "Section details have been removed as requested"
+REMOVE_SECTION_MESSAGE = (
+    "Section details have been removed as requested by jurisdiction for this condition."
+)
+MINIMAL_SECTION_MESSAGE = (
+    "No clinical information matches the configured code sets for this condition."
+)
 CLINICAL_DATA_TABLE_HEADERS = [
     "Display Text",
     "Code",
@@ -33,10 +38,88 @@ CLINICAL_DATA_TABLE_HEADERS = [
 # =============================================================================
 
 
-def _process_section(
+def get_section_by_code(
+    structured_body: _Element,
+    loinc_code: str,
+    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
+) -> _Element | None:
+    """
+    Get a section from structuredBody by its LOINC code.
+
+    Args:
+        structured_body: The HL7 structuredBody element to search within.
+        loinc_code: The LOINC code of the section to retrieve.
+        namespaces: The namespaces to use for element search. Defaults to hl7.
+
+    Returns:
+        _Element: The section element or None if not found
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails
+    """
+
+    try:
+        xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
+        xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
+
+        if isinstance(xpath_result, list) and len(xpath_result) == 1:
+            section = cast(list[_Element], xpath_result)
+            return section[0]
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message=f"Failed to evaluate XPath for section code {loinc_code}",
+            details={"xpath_query": xpath_query, "error": str(e)},
+        )
+    return None
+
+
+def get_section_loinc_codes(
+    structured_body: _Element,
+    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
+) -> list[str]:
+    """
+    Parses an eICR's structuredBody to find all top-level section codes.
+
+    This function is used to discover which sections are actually present in a given
+    eICR document before applying any refinement logic. It borrows patterns for
+    error handling and namespace management from other functions in this module.
+
+    :param structured_body: The <structuredBody> XML element from an eICR.
+    :param namespaces: The XML namespaces to use for the XPath query.
+    :return: A list of LOINC codes for the sections found in the document.
+    """
+
+    if structured_body is None:
+        return []
+
+    # this xpath is designed to be specific and efficient:
+    # 1. It starts from the current element (structured_body)
+    # 2. It finds direct <section> children
+    # 3. It then finds the direct <code> child of that section
+    # 4. Finally, it extracts the 'code' attribute string
+    # This avoids finding codes in nested sections or other parts of the document
+    xpath_query = ".//hl7:section/hl7:code/@code"
+
+    try:
+        xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
+
+        # the result of a query ending in /@attribute is a list of strings.
+        if isinstance(xpath_result, list):
+            # we can directly return the list of strings.
+            return cast(list[str], xpath_result)
+
+        return []
+    except etree.XPathError as e:
+        raise XMLParsingError(
+            message="Failed to evaluate XPath for discovering section LOINC codes.",
+            details={"xpath_query": xpath_query, "error": str(e)},
+        )
+
+
+def process_section(
     section: _Element,
     combined_xpath: str,
-    namespaces: dict = {"hl7": "urn:hl7-org:v3"},
+    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
     section_config: dict | None = None,
     version: Literal["1.1"] = "1.1",
 ) -> None:
@@ -85,7 +168,7 @@ def _process_section(
     try:
         if not combined_xpath:
             # no condition codes provided -> create a minimal section and exit
-            _create_minimal_section(section)
+            create_minimal_section(section=section, removal_reason="no_match")
             return
 
         # this block contains the core filtering logic. It's wrapped in a try/except
@@ -101,7 +184,7 @@ def _process_section(
 
             if not contextual_matches:
                 # no matching clinical elements found for our condition
-                _create_minimal_section(section)
+                create_minimal_section(section=section, removal_reason="no_match")
                 return
 
             # STEP 2: TRIGGER IDENTIFICATION WITHIN CONTEXT
@@ -270,41 +353,6 @@ def _preserve_relevant_entries_and_generate_summary(
     }
 
     _update_text_element(section, contextual_matches, trigger_code_elements)
-
-
-def _get_section_by_code(
-    structured_body: _Element,
-    loinc_code: str,
-    namespaces: dict = {"hl7": "urn:hl7-org:v3"},
-) -> _Element | None:
-    """
-    Get a section from structuredBody by its LOINC code.
-
-    Args:
-        structured_body: The HL7 structuredBody element to search within.
-        loinc_code: The LOINC code of the section to retrieve.
-        namespaces: The namespaces to use for element search. Defaults to hl7.
-
-    Returns:
-        _Element: The section element or None if not found
-
-    Raises:
-        XMLParsingError: If XPath evaluation fails
-    """
-
-    try:
-        xpath_query = f'.//hl7:section[hl7:code[@code="{loinc_code}"]]'
-        xpath_result = structured_body.xpath(xpath_query, namespaces=namespaces)
-
-        if isinstance(xpath_result, list) and len(xpath_result) == 1:
-            section = cast(list[_Element], xpath_result)
-            return section[0]
-    except etree.XPathEvalError as e:
-        raise XMLParsingError(
-            message=f"Failed to evaluate XPath for section code {loinc_code}",
-            details={"xpath_query": xpath_query, "error": str(e)},
-        )
-    return None
 
 
 # NOTE:
@@ -597,6 +645,64 @@ def _has_trigger_template_ancestor(
 # =============================================================================
 
 
+def create_minimal_section(
+    section: _Element, removal_reason: Literal["no_match", "configured"] = "no_match"
+) -> None:
+    """
+    Create a minimal section with updated text and nullFlavor.
+
+    Updates the text element, removes all entry elements, and adds
+    nullFlavor="NI" to the section element. The message displayed in the
+    section varies based on why it was made minimal.
+
+    Args:
+        section: The section element to update.
+        removal_reason: Designates why the section was made minimal:
+          - "no_match": No matching clinical information found during refinement.
+            Uses MINIMAL_SECTION_MESSAGE constant.
+          - "configured": Section was configured to be removed via section processing.
+            Uses REMOVE_SECTION_MESSAGE constant.
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails
+    """
+
+    MESSAGE_MAP = {
+        "no_match": MINIMAL_SECTION_MESSAGE,
+        "configured": REMOVE_SECTION_MESSAGE,
+    }
+
+    _section_message = MESSAGE_MAP[removal_reason]
+
+    namespaces = {"hl7": "urn:hl7-org:v3"}
+    text_element = section.find(".//hl7:text", namespaces=namespaces)
+
+    if text_element is None:
+        text_element = etree.Element("{urn:hl7-org:v3}text")
+        section.append(text_element)
+
+    # update the <text> element with the specific message
+    text_element.clear()
+    title_element = etree.SubElement(text_element, "title")
+    title_element.text = REFINER_OUTPUT_TITLE
+
+    table_element = etree.SubElement(text_element, "table", border="1")
+    thead_element = etree.SubElement(table_element, "thead")
+    tr_element = etree.SubElement(thead_element, "tr")
+    td_element = etree.SubElement(tr_element, "td")
+    td_element.text = _section_message
+
+    # remove all <entry> elements
+    for entry in section.findall(".//hl7:entry", namespaces=namespaces):
+        section.remove(entry)
+
+    # clean up all comments from processed sections
+    _remove_all_comments(section)
+
+    # add nullFlavor="NI" to the <section> element
+    section.attrib["nullFlavor"] = "NI"
+
+
 def _create_or_update_text_element(
     clinical_elements: list[_Element], trigger_code_elements: set[int]
 ) -> _Element:
@@ -732,49 +838,6 @@ def _update_text_element(
         section.replace(existing_text_element, new_text_element)
     else:
         section.insert(0, new_text_element)
-
-
-def _create_minimal_section(section: _Element) -> None:
-    """
-    Create a minimal section with updated text and nullFlavor.
-
-    Updates the text element, removes all entry elements, and adds
-    nullFlavor="NI" to the section element.
-
-    Args:
-        section: The section element to update.
-
-    Raises:
-        XMLParsingError: If XPath evaluation fails
-    """
-
-    namespaces = {"hl7": "urn:hl7-org:v3"}
-    text_element = section.find(".//hl7:text", namespaces=namespaces)
-
-    if text_element is None:
-        text_element = etree.Element("{urn:hl7-org:v3}text")
-        section.append(text_element)
-
-    # update the <text> element with the specific message
-    text_element.clear()
-    title_element = etree.SubElement(text_element, "title")
-    title_element.text = REFINER_OUTPUT_TITLE
-
-    table_element = etree.SubElement(text_element, "table", border="1")
-    thead_element = etree.SubElement(table_element, "thead")
-    tr_element = etree.SubElement(thead_element, "tr")
-    td_element = etree.SubElement(tr_element, "td")
-    td_element.text = MINIMAL_SECTION_MESSAGE
-
-    # remove all <entry> elements
-    for entry in section.findall(".//hl7:entry", namespaces=namespaces):
-        section.remove(entry)
-
-    # clean up all comments from processed sections
-    _remove_all_comments(section)
-
-    # add nullFlavor="NI" to the <section> element
-    section.attrib["nullFlavor"] = "NI"
 
 
 # NOTE:

@@ -14,14 +14,15 @@ uploaded_artifact_bucket_name = ENVIRONMENT["S3_UPLOADED_FILES_BUCKET_NAME"]
 
 config = Config(signature_version="s3v4")
 
+# S3_ENDPOINT_URL is **only** used in local dev; so we grab that
+# via os.getenv rather than the ENVIRONMENT we import from core.config
+# this is so we can connect to localstack
 s3_client = boto3.client(
     "s3",
     region_name=ENVIRONMENT["AWS_REGION"],
     aws_access_key_id=ENVIRONMENT["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
-    endpoint_url=os.getenv(
-        "S3_ENDPOINT_URL"
-    ),  # Only needed for local dev to connect to localstack
+    endpoint_url=os.getenv("S3_ENDPOINT_URL"),
     config=config,
 )
 
@@ -55,6 +56,12 @@ def upload_refined_ecr(
             Params={"Bucket": uploaded_artifact_bucket_name, "Key": key},
             ExpiresIn=expires,
         )
+
+        # for local dev, boto3 creates a URL with the internal hostname ('localstack')
+        # We must replace it with the public hostname ('localhost') before sending it
+        # to the browser
+        if ENVIRONMENT["ENV"] == "local":
+            presigned_url = presigned_url.replace("localstack:4566", "localhost:4566")
 
         return presigned_url
 

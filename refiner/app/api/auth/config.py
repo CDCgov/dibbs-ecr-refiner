@@ -1,3 +1,5 @@
+import os
+
 from authlib.integrations.starlette_client import OAuth, StarletteOAuth2App
 
 from ...core.config import ENVIRONMENT
@@ -5,13 +7,32 @@ from ...core.config import ENVIRONMENT
 _SESSION_SECRET_KEY = ENVIRONMENT["SESSION_SECRET_KEY"]
 
 _oauth = OAuth()
-_oauth.register(
-    name=ENVIRONMENT["AUTH_PROVIDER"],
-    client_id=ENVIRONMENT["AUTH_CLIENT_ID"],
-    client_secret=ENVIRONMENT["AUTH_CLIENT_SECRET"],
-    server_metadata_url=f"{ENVIRONMENT['AUTH_ISSUER']}/.well-known/openid-configuration",
-    client_kwargs={"scope": "openid email profile"},
-)
+
+if ENVIRONMENT["ENV"] == "local":
+    _oauth.register(
+        name=ENVIRONMENT["AUTH_PROVIDER"],
+        client_id=ENVIRONMENT["AUTH_CLIENT_ID"],
+        client_secret=ENVIRONMENT["AUTH_CLIENT_SECRET"],
+        # FOR THE BROWSER:
+        # this is the url the user is redirected to for logging in
+        # It **must** be the public url
+        authorization_endpoint=f"{ENVIRONMENT['AUTH_ISSUER']}/protocol/openid-connect/auth",
+        # FOR THE BACKEND:
+        # these are for server-to-server communication
+        # they **must** be the internal urls
+        token_endpoint=f"{os.getenv('AUTH_ISSUER_INTERNAL')}/protocol/openid-connect/token",
+        userinfo_endpoint=f"{os.getenv('AUTH_ISSUER_INTERNAL')}/protocol/openid-connect/userinfo",
+        jwks_uri=f"{os.getenv('AUTH_ISSUER_INTERNAL')}/protocol/openid-connect/certs",
+        client_kwargs={"scope": "openid email profile"},
+    )
+else:
+    _oauth.register(
+        name=ENVIRONMENT["AUTH_PROVIDER"],
+        client_id=ENVIRONMENT["AUTH_CLIENT_ID"],
+        client_secret=ENVIRONMENT["AUTH_CLIENT_SECRET"],
+        server_metadata_url=f"{ENVIRONMENT['AUTH_ISSUER']}/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
 
 _OAUTH_PROVIDER = getattr(_oauth, ENVIRONMENT["AUTH_PROVIDER"])
 
