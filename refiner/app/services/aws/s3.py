@@ -14,24 +14,13 @@ uploaded_artifact_bucket_name = ENVIRONMENT["S3_UPLOADED_FILES_BUCKET_NAME"]
 
 config = Config(signature_version="s3v4")
 
-# create separate clients for internal and external communication
-# that way the process will be entirely docker-compose driven
-# and we won't need any condition control flow here
-s3_client_internal = boto3.client(
+s3_client = boto3.client(
     "s3",
     region_name=ENVIRONMENT["AWS_REGION"],
     aws_access_key_id=ENVIRONMENT["AWS_ACCESS_KEY_ID"],
     aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
-    endpoint_url=os.getenv("S3_ENDPOINT_URL_INTERNAL"),
+    endpoint_url=os.getenv("S3_ENDPOINT_URL"),
     config=config,
-)
-
-s3_client_external = boto3.client(
-    "s3",
-    region_name=ENVIRONMENT["AWS_REGION"],
-    aws_access_key_id=ENVIRONMENT["AWS_ACCESS_KEY_ID"],
-    aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
-    endpoint_url=os.getenv("S3_ENDPOINT_URL_EXTERNAL"),
 )
 
 
@@ -57,15 +46,19 @@ def upload_refined_ecr(
         today = date.today().isoformat()  # YYYY-MM-DD
         key = f"refiner-test-suite/{today}/{user_id}/{filename}"
 
-        s3_client_internal.upload_fileobj(
-            file_buffer, uploaded_artifact_bucket_name, key
-        )
+        s3_client.upload_fileobj(file_buffer, uploaded_artifact_bucket_name, key)
 
-        presigned_url = s3_client_external.generate_presigned_url(
+        presigned_url = s3_client.generate_presigned_url(
             "get_object",
             Params={"Bucket": uploaded_artifact_bucket_name, "Key": key},
             ExpiresIn=expires,
         )
+
+        # for local dev, boto3 creates a URL with the internal hostname ('localstack')
+        # We must replace it with the public hostname ('localhost') before sending it
+        # to the browser
+        if ENVIRONMENT["ENV"] == "local":
+            presigned_url = presigned_url.replace("localstack:4566", "localhost:4566")
 
         return presigned_url
 

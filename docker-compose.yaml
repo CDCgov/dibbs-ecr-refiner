@@ -34,8 +34,7 @@ services:
       - AWS_ACCESS_KEY_ID=refiner
       - AWS_SECRET_ACCESS_KEY=refiner
       - AWS_REGION=us-east-1
-      - S3_ENDPOINT_URL_EXTERNAL=http://localhost:4566
-      - S3_ENDPOINT_URL_INTERNAL=http://localstack:4566
+      - S3_ENDPOINT_URL=http://localstack:4566
       - S3_UPLOADED_FILES_BUCKET_NAME=refiner-app
     logging:
       driver: "json-file"
