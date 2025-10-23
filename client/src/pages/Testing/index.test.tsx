@@ -8,6 +8,7 @@ import { useGetEnv } from '../../hooks/useGetEnv.ts';
 import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 import { ERROR_UPLOAD_MESSAGE } from '../../components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
+import { AxiosError } from 'axios';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
@@ -170,7 +171,7 @@ describe('Demo', () => {
       ({ mutation }: { mutation?: MutationParam }) => {
         return {
           mutateAsync: vi.fn().mockImplementation(() => {
-            const error = new Error('API call failed') as Error & {
+            const error = new AxiosError('API call failed') as Error & {
               response: { data: { detail: string } };
             };
 
