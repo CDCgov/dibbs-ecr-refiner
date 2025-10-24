@@ -5,6 +5,7 @@ import { ChangeEvent, useRef } from 'react';
 import { WarningIcon } from '../../components/WarningIcon';
 import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
+import { ExternalLink } from '../../components/ExternalLink';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -61,15 +62,10 @@ export function RunTest({
 
       <div className="mt-6 text-center">
         <span>
-          To download test files for some conditions you can
-          <a
-            target="_blank"
-            className="text-blue-cool-50"
-            href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/sample-data/jurisdiction_sample_data"
-          >
-            {' '}
+          To download test files for some conditions you can{' '}
+          <ExternalLink href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/sample-data/jurisdiction_sample_data">
             visit eCR Refiner's repository
-          </a>
+          </ExternalLink>
         </span>
       </div>
     </>
