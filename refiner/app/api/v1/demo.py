@@ -55,7 +55,6 @@ GENERIC_SERVER_ERROR = ("Server error occurred. Please check your file and try a
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(get_sample_zip_path),
-    xslt_stylesheet_path: Path = Depends(get_path_to_xslt_stylesheet),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
         lambda: file_io.create_refined_ecr_zip_in_memory
     ),
@@ -177,6 +176,7 @@ async def demo_upload(
 
         # Try to generate HTML using XSLT
         try:
+            xslt_stylesheet_path = get_path_to_xslt_stylesheet()
             html_bytes = transform_xml_to_html(
                 condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
             )
