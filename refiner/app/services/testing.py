@@ -6,6 +6,7 @@ from app.services.ecr.process_eicr import get_section_loinc_codes
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
+    get_conditions_by_canonical_urls_and_versions_db,
     get_conditions_by_child_rsg_snomed_codes,
 )
 from ..db.conditions.model import DbCondition
@@ -81,6 +82,7 @@ class InlineTestingTrace:
 
     configuration: DbConfiguration
     primary_condition: DbCondition
+    all_conditions: list[DbCondition] = field(default_factory=list)
     is_reportable_in_file: bool = False
     matched_code: str | None = None
     refined_document: RefinedDocument | None = None
@@ -147,14 +149,14 @@ async def independent_testing(
     # STEP 2:
     # group RR codes by their matched DbCondition (by .id)
     condition_map: dict[UUID, IndependentTestingTrace] = {}
-    for rc_code, condition in rc_to_condition.items():
-        if condition is None:
+    for rc_code, primary_condition in rc_to_condition.items():
+        if primary_condition is None:
             continue
-        if condition.id not in condition_map:
-            condition_map[condition.id] = IndependentTestingTrace(
-                matching_condition=condition
+        if primary_condition.id not in condition_map:
+            condition_map[primary_condition.id] = IndependentTestingTrace(
+                matching_condition=primary_condition
             )
-        trace = condition_map[condition.id]
+        trace = condition_map[primary_condition.id]
         trace.rc_snomed_codes.append(rc_code)
 
     # STEP 3:
@@ -185,10 +187,18 @@ async def independent_testing(
             )
             continue
 
-        condition = trace.matching_condition
+        primary_condition = trace.matching_condition
         configuration = trace.matching_configuration
+
+        # fetch all conditions (primary + included) for the payload
+        all_conditions_for_configuration = (
+            await get_conditions_by_canonical_urls_and_versions_db(
+                db=db, condition_refs=configuration.included_conditions
+            )
+        )
+
         payload = ConfigurationPayload(
-            configuration=configuration, conditions=[condition]
+            configuration=configuration, conditions=all_conditions_for_configuration
         )
         processed_configuration = ProcessedConfiguration.from_payload(payload)
         trace.refine_object = processed_configuration
@@ -210,7 +220,7 @@ async def independent_testing(
         trace.refined_document = RefinedDocument(
             reportable_condition=ReportableCondition(
                 code=rr_code_used,
-                display_name=condition.display_name,
+                display_name=primary_condition.display_name,
             ),
             refined_eicr=refined_eicr_str,
         )
@@ -233,6 +243,7 @@ async def inline_testing(
     xml_files: XMLFiles,
     configuration: DbConfiguration,
     primary_condition: DbCondition,
+    all_conditions: list[DbCondition],
     jurisdiction_id: str,
 ) -> InlineTestingResult:
     """
@@ -252,6 +263,8 @@ async def inline_testing(
         xml_files: XMLFiles object containing eICR and RR XML strings.
         configuration: The configuration to test (must not be None).
         primary_condition: The primary condition associated with the configuration (must not be None).
+        all_conditions: If the configuration has included additional conditions, this will be the list[DbCondition]
+          of the primary and secondary conditions.
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
 
     Returns:
@@ -265,7 +278,9 @@ async def inline_testing(
     # STEP 1:
     # start with already-fetched configuration and primary condition
     trace = InlineTestingTrace(
-        configuration=configuration, primary_condition=primary_condition
+        configuration=configuration,
+        primary_condition=primary_condition,
+        all_conditions=all_conditions,
     )
 
     # STEP 2:
@@ -303,7 +318,7 @@ async def inline_testing(
     # prepare and execute the refinement from payload -> processed_configuration -> refinement plan
     payload = ConfigurationPayload(
         configuration=trace.configuration,
-        conditions=[trace.primary_condition],
+        conditions=trace.all_conditions,
     )
     processed_configuration = ProcessedConfiguration.from_payload(payload)
     plan = _create_refinement_plan(
