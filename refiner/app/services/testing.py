@@ -193,7 +193,7 @@ async def independent_testing(
         # fetch all conditions (primary + included) for the payload
         all_conditions_for_configuration = (
             await get_conditions_by_canonical_urls_and_versions_db(
-                db=db, condition_refs=configuration.included_conditions
+                db=db, condition_references=configuration.included_conditions
             )
         )
 

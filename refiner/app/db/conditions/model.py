@@ -15,16 +15,6 @@ class DbConditionCoding:
     display: str
 
 
-@dataclass(frozen=True)
-class DbConditionRef:
-    """
-    A lightweight reference to a condition.
-    """
-
-    canonical_url: str
-    version: str
-
-
 @dataclass
 class DbCondition:
     """

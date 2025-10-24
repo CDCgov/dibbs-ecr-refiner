@@ -1085,7 +1085,7 @@ async def run_configuration_test(
     # get all conditions (primary and included) to pass to the service layer
     all_conditions_for_configuration = (
         await get_conditions_by_canonical_urls_and_versions_db(
-            db=db, condition_refs=configuration.included_conditions
+            db=db, condition_references=configuration.included_conditions
         )
     )
 
