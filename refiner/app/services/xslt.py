@@ -59,7 +59,10 @@ def transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> 
         base_xslt_dir = get_asset_path("xslt")
         resolved_xslt_path = xslt_path.resolve()
         base_xslt_dir_resolved = base_xslt_dir.resolve()
-        if not str(resolved_xslt_path).startswith(str(base_xslt_dir_resolved)):
+        try:
+            # This will throw ValueError if resolved_xslt_path is not inside base_xslt_dir_resolved
+            resolved_xslt_path.relative_to(base_xslt_dir_resolved)
+        except ValueError:
             logger.error(
                 f"Attempted access to stylesheet outside trusted directory: {resolved_xslt_path}"
             )
