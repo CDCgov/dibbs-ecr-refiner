@@ -46,7 +46,6 @@ async def test_demo_upload_smoke(test_assets_path: pathlib.Path, authed_client) 
     assert "refined_download_url" in data
 
 
-@pytest.mark.integration
 def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     from app.services.aws.s3 import upload_refined_ecr
 

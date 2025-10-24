@@ -71,6 +71,10 @@ from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
+from ...services.xslt import (
+    get_path_to_xslt_stylesheet,
+    transform_xml_to_html,
+)
 
 router = APIRouter(prefix="/configurations")
 
@@ -1122,6 +1126,42 @@ async def run_configuration_test(
         condition_code=condition_obj.code,
     )
     s3_file_package.append((filename, refined_document.refined_eicr))
+
+    # Generate HTML from refined XML
+    try:
+        xslt_stylesheet_path = get_path_to_xslt_stylesheet()
+        html_bytes = transform_xml_to_html(
+            refined_document.refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
+        )
+        filename_html = filename.replace(".xml", ".html")
+        s3_file_package.append((filename_html, html_bytes.decode("utf-8")))
+        logger.info(
+            f"Successfully transformed XML to HTML for: {filename}",
+            extra={
+                "condition_code": condition_obj.code,
+                "condition_name": condition_obj.display_name,
+            },
+        )
+    except Exception as e:
+        if "XSLTTransformationError" in str(type(e)):
+            logger.error(
+                f"Failed to transform XML to HTML for: {filename}",
+                extra={
+                    "condition_code": condition_obj.code,
+                    "condition_name": condition_obj.display_name,
+                    "error": str(e),
+                },
+            )
+        else:
+            logger.error(
+                f"Unexpected error during XML to HTML transformation for: {filename}",
+                extra={
+                    "condition_code": condition_obj.code,
+                    "condition_name": condition_obj.display_name,
+                    "error": str(e),
+                },
+            )
+        # Continue with XML only; do not include HTML file for this condition
 
     try:
         output_file_name, output_zip_buffer = create_output_zip(
