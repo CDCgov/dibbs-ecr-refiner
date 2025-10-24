@@ -160,7 +160,6 @@ async def demo_upload(
         "xslt",
         "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl",
     )
-    html_files: list[str] = []
     for refined_document in refined_documents:
         condition_obj = refined_document.reportable_condition
 
@@ -181,7 +180,6 @@ async def demo_upload(
                 condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
             )
             refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
-            html_files.append(filename_html)
             logger.info(
                 f"Successfully transformed XML to HTML for: {filename_xml}",
                 extra={
