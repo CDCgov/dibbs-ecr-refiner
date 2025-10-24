@@ -24,7 +24,11 @@ from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
-from ...services.xslt import XSLTTransformationError, transform_xml_to_html
+from ...services.xslt import (
+    XSLTTransformationError,
+    get_path_to_xslt_stylesheet,
+    transform_xml_to_html,
+)
 from ..validation.file_validation import validate_zip_file
 
 # create a router instance for this file
@@ -51,6 +55,7 @@ GENERIC_SERVER_ERROR = ("Server error occurred. Please check your file and try a
 async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(get_sample_zip_path),
+    xslt_stylesheet_path: Path = Depends(get_path_to_xslt_stylesheet),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
         lambda: file_io.create_refined_ecr_zip_in_memory
     ),
@@ -156,10 +161,6 @@ async def demo_upload(
     # build a refined XML and collect metadata. The code used is from the RR.
     conditions: list[Condition] = []
     refined_files_to_zip = []
-    xslt_stylesheet_path = file_io.get_asset_path(
-        "xslt",
-        "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl",
-    )
     for refined_document in refined_documents:
         condition_obj = refined_document.reportable_condition
 

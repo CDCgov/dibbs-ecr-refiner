@@ -10,6 +10,14 @@ from pathlib import Path
 
 from lxml import etree
 
+from ..services.file_io import get_asset_path
+
+
+def get_path_to_xslt_stylesheet() -> Path:
+    """Returns the path to the eICR XSLT stylesheet."""
+
+    return get_asset_path("xslt", "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl")
+
 
 class XSLTTransformationError(Exception):
     """Custom exception for XSLT transformation errors."""
