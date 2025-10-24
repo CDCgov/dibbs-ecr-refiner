@@ -54,10 +54,24 @@ def transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> 
         logger.error(f"Failed to parse XML input: {e}")
         raise XSLTTransformationError("Malformed XML input.") from e
     try:
-        with open(xslt_path, "rb") as xslt_file:
+        # Ensure xslt_path is within the trusted xslt asset directory to
+        # prevent directory traversal
+        base_xslt_dir = get_asset_path("xslt")
+        resolved_xslt_path = xslt_path.resolve()
+        base_xslt_dir_resolved = base_xslt_dir.resolve()
+        if not str(resolved_xslt_path).startswith(str(base_xslt_dir_resolved)):
+            logger.error(
+                f"Attempted access to stylesheet outside trusted directory: {resolved_xslt_path}"
+            )
+            raise XSLTTransformationError(
+                "Access to XSLT file outside trusted directory is not allowed."
+            )
+        with open(resolved_xslt_path, "rb") as xslt_file:
             xslt_doc = etree.parse(xslt_file, parser)
         xslt_transform = etree.XSLT(xslt_doc)
-        logger.debug(f"Loaded XSLT stylesheet from {xslt_path}.")
+        logger.debug(f"Loaded XSLT stylesheet from {resolved_xslt_path}.")
+    except XSLTTransformationError:
+        raise
     except (FileNotFoundError, etree.XMLSyntaxError, Exception) as e:
         logger.error(f"Failed to load/parse XSLT file: {e}")
         raise XSLTTransformationError("Malformed or missing XSLT file.") from e
