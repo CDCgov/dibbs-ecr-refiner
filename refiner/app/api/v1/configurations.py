@@ -1082,12 +1082,17 @@ async def run_configuration_test(
             status_code=404, detail="Primary condition not found for configuration."
         )
 
-    # get all conditions (primary and included) to pass to the service layer
-    all_conditions_for_configuration = (
-        await get_conditions_by_canonical_urls_and_versions_db(
-            db=db, condition_references=configuration.included_conditions
+    # if included_conditions is a list greater than 1, then fetch all conditions
+    # in the list (which includes the primary condition) for the payload and
+    # store the corresponding trace info
+    if len(configuration.included_conditions) > 1:
+        all_conditions_for_configuration = (
+            await get_conditions_by_canonical_urls_and_versions_db(
+                db=db, condition_references=configuration.included_conditions
+            )
         )
-    )
+    else:
+        all_conditions_for_configuration = [primary_condition]
 
     # call the testing service
     # business logic around **how** inline testing works is in services/testing.py
