@@ -141,6 +141,7 @@ async def demo_upload(
             db=db,
             xml_files=original_xml_files,
             jurisdiction_id=jd,
+            logger=logger,
         )
     except Exception as e:
         logger.error("Error in the independent testing flow", extra={"error": str(e)})

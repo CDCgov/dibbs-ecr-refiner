@@ -3,6 +3,8 @@ from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
 
+from app.db.configurations.model import DbConfigurationCondition
+
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition
 
@@ -210,6 +212,52 @@ async def get_conditions_by_child_rsg_snomed_codes(
         codes,
         CURRENT_VERSION,
     )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return [DbCondition.from_db_row(row) for row in rows]
+
+
+async def get_conditions_by_canonical_urls_and_versions_db(
+    db: AsyncDatabaseConnection, condition_references: list[DbConfigurationCondition]
+) -> list[DbCondition]:
+    """
+    Given a list of condition references (as DbConfigurationCondition objects), fetches the full DbCondition objects.
+
+    This will collect the primary condition and any additionally added conditions since the "included_conditions"
+    column stores the primary condition as well as additional conditions.
+    """
+
+    if not condition_references:
+        return []
+
+    # create two separate lists for urls and versions to unnest in the query
+    cannonical_urls = [reference.canonical_url for reference in condition_references]
+    versions = [reference.version for reference in condition_references]
+
+    query = """
+        SELECT
+            c.id,
+            c.display_name,
+            c.canonical_url,
+            c.version,
+            c.child_rsg_snomed_codes,
+            c.snomed_codes,
+            c.loinc_codes,
+            c.icd10_codes,
+            c.rxnorm_codes
+        FROM conditions c
+        JOIN ROWS FROM (
+            unnest(%s::text[]),
+            unnest(%s::text[])
+        ) AS refs(url, v)
+        ON c.canonical_url = refs.url AND c.version = refs.v
+    """
+
+    params = (cannonical_urls, versions)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

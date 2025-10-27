@@ -42,6 +42,7 @@ from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
+    get_conditions_by_canonical_urls_and_versions_db,
     get_conditions_db,
 )
 from ...db.conditions.model import DbConditionCoding
@@ -1081,6 +1082,18 @@ async def run_configuration_test(
             status_code=404, detail="Primary condition not found for configuration."
         )
 
+    # if included_conditions is a list greater than 1, then fetch all conditions
+    # in the list (which includes the primary condition) for the payload and
+    # store the corresponding trace info
+    if len(configuration.included_conditions) > 1:
+        all_conditions_for_configuration = (
+            await get_conditions_by_canonical_urls_and_versions_db(
+                db=db, condition_references=configuration.included_conditions
+            )
+        )
+    else:
+        all_conditions_for_configuration = [primary_condition]
+
     # call the testing service
     # business logic around **how** inline testing works is in services/testing.py
     try:
@@ -1088,7 +1101,9 @@ async def run_configuration_test(
             xml_files=original_xml_files,
             configuration=configuration,
             primary_condition=primary_condition,
+            all_conditions=all_conditions_for_configuration,
             jurisdiction_id=jd,
+            logger=logger,
         )
     except XMLValidationError:
         raise HTTPException(
