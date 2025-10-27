@@ -599,9 +599,12 @@ function CustomCodeGroupingParagraph() {
 
 function TesLink() {
   return (
-    <ExternalLink href="https://tes.tools.aimsplatform.org/auth/signin">
-      TES (Terminology Exchange Service).
-    </ExternalLink>
+    <span>
+      <ExternalLink href="https://tes.tools.aimsplatform.org/auth/signin">
+        TES (Terminology Exchange Service)
+      </ExternalLink>
+      .
+    </span>
   );
 }
 
