@@ -1,14 +1,18 @@
+import { Icon } from '@trussworks/react-uswds';
+
 type ExternalLinkProps = Omit<
   React.AnchorHTMLAttributes<HTMLAnchorElement>,
   'target'
 > & {
   href: string;
+  excludeIcon?: boolean;
 };
 
 export function ExternalLink({
   href,
   children,
   className,
+  excludeIcon,
   ...props
 }: ExternalLinkProps) {
   const defaultStyling =
@@ -21,6 +25,7 @@ export function ExternalLink({
       {...props}
     >
       {children}
+      {!excludeIcon ? <Icon.Launch /> : null}
     </a>
   );
 }
