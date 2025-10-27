@@ -1103,6 +1103,7 @@ async def run_configuration_test(
             primary_condition=primary_condition,
             all_conditions=all_conditions_for_configuration,
             jurisdiction_id=jd,
+            logger=logger,
         )
     except XMLValidationError:
         raise HTTPException(

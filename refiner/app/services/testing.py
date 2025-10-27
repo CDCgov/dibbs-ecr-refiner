@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from logging import Logger
 from typing import Literal, TypedDict, cast
 from uuid import UUID
 
@@ -24,9 +25,6 @@ from .ecr.models import (
 )
 from .ecr.refine import refine_eicr
 from .ecr.reportability import determine_reportability
-from .logger import get_logger
-
-logger = get_logger()
 
 # NOTE:
 # DATA STRUCTURES
@@ -42,7 +40,7 @@ class IndependentTestingTrace:
     matching_condition: DbCondition
     rc_snomed_codes: list[str] = field(default_factory=list)
     matching_configuration: DbConfiguration | None = None
-    n_included_conditions: int = 0
+    number_of_included_conditions: int = 0
     all_conditions_for_configuration: list[DbCondition] = field(default_factory=list)
     refine_object: ProcessedConfiguration | None = None
     refined_document: RefinedDocument | None = None
@@ -87,7 +85,7 @@ class InlineTestingTrace:
 
     configuration: DbConfiguration
     primary_condition: DbCondition
-    n_included_conditions: int = 0
+    number_of_included_conditions: int = 0
     all_conditions_for_configuration: list[DbCondition] = field(default_factory=list)
     is_reportable_in_file: bool = False
     matched_code: str | None = None
@@ -118,6 +116,7 @@ async def independent_testing(
     db: AsyncDatabaseConnection,
     xml_files: XMLFiles,
     jurisdiction_id: str,
+    logger: Logger,
 ) -> IndependentTestingResult:
     """
     Orchestrates the full independent testing workflow for eICR refinement.
@@ -137,6 +136,7 @@ async def independent_testing(
         db: AsyncDatabaseConnection
         xml_files: XMLFiles object containing eICR and RR XML strings
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
+        logger: we're passing the logger from the route to the service.
 
     Returns:
         A dictionary with a defined structure containing refined documents and a list of non-matches.
@@ -197,12 +197,12 @@ async def independent_testing(
         configuration = trace.matching_configuration
 
         # get a count for how many conditions are in the included_conditions array
-        trace.n_included_conditions = len(configuration.included_conditions)
+        trace.number_of_included_conditions = len(configuration.included_conditions)
 
         # if included_conditions is a list greater than 1, then fetch all conditions
         # in the list (which includes the primary condition) for the payload and
         # store the corresponding trace info
-        if trace.n_included_conditions > 1:
+        if trace.number_of_included_conditions > 1:
             all_conditions_for_configuration = (
                 await get_conditions_by_canonical_urls_and_versions_db(
                     db=db, condition_references=configuration.included_conditions
@@ -250,7 +250,7 @@ async def independent_testing(
                 "triggered_by_condition": trace.matching_condition.display_name,
                 "triggering_codes": trace.rc_snomed_codes,
                 "configuration_found": trace.matching_configuration.name,
-                "total_conditions_used": trace.n_included_conditions,
+                "total_conditions_used": trace.number_of_included_conditions,
                 "outcome": "Refinement successful",
             },
         )
@@ -275,6 +275,7 @@ async def inline_testing(
     primary_condition: DbCondition,
     all_conditions: list[DbCondition],
     jurisdiction_id: str,
+    logger: Logger,
 ) -> InlineTestingResult:
     """
     Orchestrates the full inline testing workflow for eICR refinement using an already-fetched configuration and primary condition.
@@ -296,6 +297,7 @@ async def inline_testing(
         all_conditions: If the configuration has included additional conditions, this will be the list[DbCondition]
           of the primary and secondary conditions.
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
+        logger: we're passing the logger from the route to the service.
 
     Returns:
         An InlineTestingResult dictionary containing either the refined document or a validation error.
@@ -307,7 +309,7 @@ async def inline_testing(
         configuration=configuration,
         primary_condition=primary_condition,
         all_conditions_for_configuration=all_conditions,
-        n_included_conditions=len(configuration.included_conditions),
+        number_of_included_conditions=len(configuration.included_conditions),
     )
 
     # STEP 2:
@@ -327,20 +329,19 @@ async def inline_testing(
 
     # if no matching codes, then the eICR/RR pair was not suitable for testing the configuration
     if not matched_codes:
-        result: InlineTestingResult = {
-            "refined_document": None,
-            "configuration_does_not_match_conditions": f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
-        }
         logger.warning(
             "Inline testing: Processed one configuration",
             extra={
                 "configuration_tested": trace.configuration.name,
                 "primary_condition": trace.primary_condition.display_name,
-                "total_conditions_used": trace.n_included_conditions,
+                "total_conditions_used": trace.number_of_included_conditions,
                 "outcome": "Validation failed: No matching reportable condition code found in file.",
             },
         )
-        return result
+        return {
+            "refined_document": None,
+            "configuration_does_not_match_conditions": f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
+        }
 
     # STEP 3:
     # use the first RR code that matched the condition for the RefinedDocument
@@ -381,7 +382,7 @@ async def inline_testing(
             "configuration_tested": trace.configuration.name,
             "primary_condition": trace.primary_condition.display_name,
             "matched_code_in_rr": trace.matched_code,
-            "total_conditions_used": trace.n_included_conditions,
+            "total_conditions_used": trace.number_of_included_conditions,
             "outcome": "Refinement successful",
         },
     )
