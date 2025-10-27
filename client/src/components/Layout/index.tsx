@@ -88,7 +88,7 @@ export function Footer() {
           <ExternalLink
             href="https://www.cdc.gov"
             className="inline-block"
-            excludeIcon
+            includeIcon={false}
           >
             <img src={CdcLogo} alt="" />
             <span className="sr-only">

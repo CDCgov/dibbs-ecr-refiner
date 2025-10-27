@@ -5,14 +5,14 @@ type ExternalLinkProps = Omit<
   'target'
 > & {
   href: string;
-  excludeIcon?: boolean;
+  includeIcon?: boolean;
 };
 
 export function ExternalLink({
   href,
   children,
   className,
-  excludeIcon,
+  includeIcon = true,
   ...props
 }: ExternalLinkProps) {
   const defaultStyling =
@@ -25,7 +25,7 @@ export function ExternalLink({
       {...props}
     >
       {children}
-      {!excludeIcon ? <Icon.Launch aria-hidden /> : null}
+      {includeIcon ? <Icon.Launch aria-hidden /> : null}
     </a>
   );
 }
