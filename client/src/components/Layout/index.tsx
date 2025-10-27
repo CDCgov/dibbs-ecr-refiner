@@ -6,6 +6,7 @@ import { ProvideFeedbackButton } from '../ProvideFeedbackButton';
 import NavigationBar from '../NavigationBar';
 import { Icon } from '@trussworks/react-uswds';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { ExternalLink } from '../ExternalLink';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -84,17 +85,16 @@ export function Footer() {
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
         <div>
-          <a
+          <ExternalLink
             href="https://www.cdc.gov"
-            target="_blank"
-            rel="noreferrer noopener"
             className="inline-block"
+            includeIcon={false}
           >
             <img src={CdcLogo} alt="" />
             <span className="sr-only">
               CDC - U.S. Centers for Disease Control and Prevention
             </span>
-          </a>
+          </ExternalLink>
         </div>
         <div className="flex flex-col gap-2 lg:items-end lg:gap-1">
           <p className="text-white">

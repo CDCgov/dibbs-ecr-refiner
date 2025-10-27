@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import Drawer from '../../../components/Drawer';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
-import { Link } from 'react-router';
 import { highlightMatches } from '../../../utils/highlight';
 import { IncludedCondition } from '../../../api/schemas';
+import { TesLink } from '../TesLink';
 
 type AddConditionCodeSetsDrawerProps = {
   isOpen: boolean;
@@ -35,14 +35,7 @@ export function AddConditionCodeSetsDrawer({
       subtitle={
         <p className="!pt-2">
           Codes relevant to each condition are grouped together. These code sets
-          are derived from the{' '}
-          <Link
-            to="https://tes.tools.aimsplatform.org"
-            className="text-blue-cool-60 font-bold"
-          >
-            TES (Terminology Exchange Service)
-          </Link>
-          .
+          are derived from the <TesLink />
         </p>
       }
       isOpen={isOpen}
