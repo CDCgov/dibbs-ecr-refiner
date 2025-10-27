@@ -36,7 +36,7 @@
     "react-router": "^7.9.4",
     "react-spinners": "^0.17.0",
     "react-toastify": "^11.0.5",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.1.16",
     "use-debounce": "^10.0.6"
   },
   "devDependencies": {
