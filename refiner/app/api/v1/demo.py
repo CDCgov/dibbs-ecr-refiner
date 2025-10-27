@@ -24,6 +24,11 @@ from ...services.aws.s3 import upload_refined_ecr
 from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
+from ...services.xslt import (
+    XSLTTransformationError,
+    get_path_to_xslt_stylesheet,
+    transform_xml_to_html,
+)
 from ..validation.file_validation import validate_zip_file
 
 # create a router instance for this file
@@ -78,7 +83,6 @@ async def demo_upload(
 
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
-
     # STEP 1:
     # obtain demo file (upload or local sample)
     if not demo_zip_path.exists():
@@ -94,7 +98,8 @@ async def demo_upload(
             file = await validate_zip_file(file=uploaded_file)
         except ZipValidationError as e:
             logger.error(
-                msg="ZipValidationError in validate_zip_file", extra={"error": str(e)}
+                msg="ZipValidationError in validate_zip_file",
+                extra={"error": str(e)},
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -144,6 +149,7 @@ async def demo_upload(
             detail=GENERIC_SERVER_ERROR,
         )
     refined_documents = result["refined_documents"]
+
     conditions_without_matching_config_names = [
         missing_condition["display_name"]
         for missing_condition in result["no_matching_configuration_for_conditions"]
@@ -160,12 +166,41 @@ async def demo_upload(
         condition_code = condition_obj.code
         condition_name = condition_obj.display_name
 
-        filename = file_io.create_split_condition_filename(
+        filename_xml = file_io.create_split_condition_filename(
             condition_name=condition_name, condition_code=condition_code
         )
-        normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
+        filename_html = filename_xml.replace(".xml", ".html")
 
-        refined_files_to_zip.append((filename, normalized_refined_eicr))
+        condition_refined_eicr = refined_document.refined_eicr
+        refined_files_to_zip.append((filename_xml, condition_refined_eicr))
+
+        # Try to generate HTML using XSLT
+        try:
+            xslt_stylesheet_path = get_path_to_xslt_stylesheet()
+            html_bytes = transform_xml_to_html(
+                condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
+            )
+            refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
+            logger.info(
+                f"Successfully transformed XML to HTML for: {filename_xml}",
+                extra={
+                    "condition_code": condition_code,
+                    "condition_name": condition_name,
+                },
+            )
+        except XSLTTransformationError as e:
+            logger.error(
+                f"Failed to transform XML to HTML for: {filename_xml}",
+                extra={
+                    "condition_code": condition_code,
+                    "condition_name": condition_name,
+                    "error": str(e),
+                },
+            )
+            # Continue with XML only; do not include HTML file for this condition
+
+        normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
+        refined_files_to_zip.append((filename_xml, normalized_refined_eicr))
 
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)

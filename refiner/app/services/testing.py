@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from typing import TypedDict
+from typing import Literal, TypedDict, cast
 from uuid import UUID
+
+from app.services.ecr.process_eicr import get_section_loinc_codes
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
@@ -13,7 +15,12 @@ from ..db.configurations.db import (
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
-from .ecr.models import ProcessedRR, RefinedDocument, ReportableCondition
+from .ecr.models import (
+    ProcessedRR,
+    RefinedDocument,
+    RefinementPlan,
+    ReportableCondition,
+)
 from .ecr.refine import refine_eicr
 from .ecr.reportability import determine_reportability
 
@@ -113,9 +120,10 @@ async def independent_testing(
     3. Map each RC code to a database condition (DbCondition).
     4. For each unique matched condition, collect all RR codes that mapped to it.
     5. For each condition, retrieve the jurisdiction-specific configuration (if any).
-    6. For each condition with a configuration, build a ProcessedConfiguration
-        and run the refinement logic to generate a per-condition refined eICR.
-    7. Build a trace list containing context and outcome for each processed condition.
+    6. For each condition with a configuration, build a ProcessedConfiguration.
+    7. Use the ProcessedConfiguration to create a final set of instructions for refinement
+       and execute the plan via refine_eicr.
+    8. Build a trace list containing context and outcome for each processed condition.
 
     Args:
         db: AsyncDatabaseConnection
@@ -185,19 +193,12 @@ async def independent_testing(
         processed_configuration = ProcessedConfiguration.from_payload(payload)
         trace.refine_object = processed_configuration
 
-        # TODO:
-        # add in section processing when we've hooked up
-        # all of the section processing instructions
-        # for this to work as expected
-        # for now; just give refine_eicr 'None'
-        sections_to_include = None
-
-        refined_eicr_str = refine_eicr(
-            xml_files=xml_files,
-            processed_condition=None,
-            processed_configuration=processed_configuration,
-            sections_to_include=sections_to_include,
+        # create the refinement plan as final set of instruction for refinement
+        plan = _create_refinement_plan(
+            processed_configuration=processed_configuration, xml_files=xml_files
         )
+
+        refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
 
         # use the first RR code that mapped to this condition for RefinedDocument
         # TODO: in the future we might want the ReportableCondition model to use
@@ -243,7 +244,8 @@ async def inline_testing(
     3. Validates that at least one of the primary condition's `child_rsg_snomed_codes`
        is present in the reportable codes from the RR; if not, returns an error.
     4. If valid, builds a ProcessedConfiguration object using the configuration and its primary condition.
-    5. Runs the refinement logic (`refine_eicr`) using the ProcessedConfiguration.
+    5. Use the ProcessedConfiguration to create a final set of instructions for refinement
+       and execute the plan via refine_eicr.
     6. Constructs and returns the InlineTestingResult, containing the refined document or an error message if validation failed.
 
     Args:
@@ -298,26 +300,16 @@ async def inline_testing(
     trace.matched_code = list(matched_codes)[0]
 
     # STEP 4:
-    # prepare and execute the refinement
+    # prepare and execute the refinement from payload -> processed_configuration -> refinement plan
     payload = ConfigurationPayload(
         configuration=trace.configuration,
         conditions=[trace.primary_condition],
     )
-    processed_config = ProcessedConfiguration.from_payload(payload)
-
-    # TODO:
-    # add in section processing when we've hooked up
-    # all of the section processing instructions
-    # for this to work as expected
-    # for now; just give refine_eicr 'None'
-    sections_to_include = None
-
-    refined_eicr_str = refine_eicr(
-        xml_files=xml_files,
-        processed_configuration=processed_config,
-        processed_condition=None,
-        sections_to_include=sections_to_include,
+    processed_configuration = ProcessedConfiguration.from_payload(payload)
+    plan = _create_refinement_plan(
+        processed_configuration=processed_configuration, xml_files=xml_files
     )
+    refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
 
     # STEP 5:
     # finalize and return the successful result
@@ -430,4 +422,54 @@ async def _map_conditions_to_configurations(
     condition_ids = [cond.id for cond in conditions]
     return await get_configurations_by_condition_ids_and_jurisdiction_db(
         db, condition_ids, jurisdiction_id
+    )
+
+
+def _create_refinement_plan(
+    processed_configuration: ProcessedConfiguration, xml_files: XMLFiles
+) -> RefinementPlan:
+    """
+    Create a RefinementPlan by combining configuration rules and the sections present in the eICR document.
+
+    This function lives in the orchestration layer (`testing.py`) because it
+    requires access to both the processed configuration data and the raw XML
+    file to create the final, actionable plan.
+
+    Args:
+        processed_configuration: The processed configuration containing terminology
+                                 and section processing rules.
+        xml_files: The XMLFiles object containing the eICR to be inspected.
+
+    Returns:
+        A RefinementPlan containing the exact instructions for `refine_eicr`.
+    """
+
+    # get eICR root and pull out the structuredBody
+    eicr_root = xml_files.parse_eicr()
+    structured_body = eicr_root.find(
+        ".//hl7:structuredBody", namespaces={"hl7": "urn:hl7-org:v3"}
+    )
+
+    # discover which sections are present in this specific eICR
+    if structured_body is None:
+        present_section_codes = []
+    else:
+        present_section_codes = get_section_loinc_codes(structured_body)
+
+    # create a map of the rules from the configuration for efficient lookup
+    rules_map: dict[str, str] = {
+        rule["code"]: rule["action"]
+        for rule in processed_configuration.section_processing
+    }
+
+    # build the final instruction set: for each section in the document,
+    # find its rule, defaulting to "remove" if no rule is specified
+    final_instructions: dict[str, Literal["retain", "refine", "remove"]] = {
+        code: cast(Literal["retain", "refine", "remove"], rules_map.get(code, "remove"))
+        for code in present_section_codes
+    }
+
+    return RefinementPlan(
+        xpath=processed_configuration.build_xpath(),
+        section_instructions=final_instructions,
     )
