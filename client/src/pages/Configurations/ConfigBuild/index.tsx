@@ -48,6 +48,7 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
 import { Spinner } from '../../../components/Spinner';
 import ErrorFallback from '../../ErrorFallback';
+import { TesLink } from '../TesLink';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -593,19 +594,6 @@ function CustomCodeGroupingParagraph() {
     <p>
       Add codes that are not included in the code sets from the <TesLink />
     </p>
-  );
-}
-
-function TesLink() {
-  return (
-    <a
-      className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-      href="https://tes.tools.aimsplatform.org/auth/signin"
-      target="_blank"
-      rel="noopener"
-    >
-      TES (Terminology Exchange Service).
-    </a>
   );
 }
 
