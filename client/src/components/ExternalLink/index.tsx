@@ -25,7 +25,7 @@ export function ExternalLink({
       {...props}
     >
       {children}
-      {!excludeIcon ? <Icon.Launch /> : null}
+      {!excludeIcon ? <Icon.Launch aria-hidden /> : null}
     </a>
   );
 }
