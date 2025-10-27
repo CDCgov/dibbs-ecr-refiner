@@ -85,7 +85,11 @@ export function Footer() {
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
         <div>
-          <ExternalLink href="https://www.cdc.gov" className="inline-block">
+          <ExternalLink
+            href="https://www.cdc.gov"
+            className="inline-block"
+            excludeIcon
+          >
             <img src={CdcLogo} alt="" />
             <span className="sr-only">
               CDC - U.S. Centers for Disease Control and Prevention
