@@ -525,6 +525,9 @@ async def remove_condition_codeset_from_configuration(
         config=config, condition=condition, db=db
     )
 
+    print("Updated Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    print(updated_config)
+
     if not updated_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -534,7 +537,7 @@ async def remove_condition_codeset_from_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(canonical_url=c.canonical_url, version=c.version)
+            ConditionEntry(c)
             for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,

@@ -288,13 +288,13 @@ async def disassociate_condition_codeset_with_configuration_db(
     query = """
         UPDATE configurations
         SET included_conditions = (
-            SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+            SELECT COALESCE(jsonb_agg(elem_text), '[]'::jsonb)
             FROM (
-                SELECT elem
-                FROM jsonb_array_elements(included_conditions) elem
-                WHERE NOT (
-                    elem->>'canonical_url' = %s AND elem->>'version' = %s
-                )
+                SELECT elem_text
+                FROM (
+                    SELECT jsonb_array_elements_text(COALESCE(included_conditions, '[]'::jsonb)) AS elem_text
+                ) t
+                WHERE elem_text <> %s
             ) filtered
         )
         WHERE id = %s
@@ -307,13 +307,10 @@ async def disassociate_condition_codeset_with_configuration_db(
             custom_codes,
             local_codes,
             section_processing,
-            version
+            version;
     """
-    params = (
-        condition.canonical_url,
-        condition.version,
-        config.id,
-    )
+
+    params = (str(condition.id), config.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
