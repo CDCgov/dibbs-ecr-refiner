@@ -794,6 +794,9 @@ export function CustomCodeModal({
     { name: 'Other', value: 'other' },
   ];
 
+  console.log("LOINC CODES")
+  console.log(loincCodes)
+
   const isEditing = initialCode && initialSystem && initialName;
 
   const [form, setForm] = useState({
@@ -921,14 +924,18 @@ export function CustomCodeModal({
             type="text"
             value={form.code}
             onChange={(e) => {
-              setForm((prev) => ({ ...prev, code: e.target.value }));
+              const value = e.target.value.trimStart(); // trim leading space only while typing
+              setForm((prev) => ({ ...prev, code: value }));
               if (error) setError(''); // clear error on change
             }}
             onBlur={() => {
-              if (loincCodes.includes(form.code)) {
+              const trimmedCode = form.code.trim(); // full trim (leading + trailing)
+              if (loincCodes.includes(trimmedCode)) {
                 setError(
-                  `The code "${form.code}" already exists in the condition code set.`
+                    `The code "${trimmedCode}" already exists in the condition code set.`
                 );
+              } else {
+                setForm((prev) => ({ ...prev, code: trimmedCode })); // ensure stored value is clean
               }
             }}
             autoComplete="off"

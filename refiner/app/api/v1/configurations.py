@@ -253,30 +253,34 @@ async def get_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    config_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+    # Fetch all included conditions
+    conditions = []
+    for cond_id in config.included_conditions or []:
+        condition = await get_condition_by_id_db(id=cond_id, db=db)
+        if condition:
+            conditions.append(condition)
 
-    ##TODO: Grab included_conditions after refactor
+    # Flatten all codes from all included conditions and custom codes
+    loinc_codes_set = set()
 
-    # Flatten all codes from snomed_codes, loinc_codes, icd10_codes, rxnorm_codes,
-    # plus custom_codes from the configuration
-    loinc_codes_set = set()  # deduplicate codes
+    for cond in conditions:
+        for code_list in [
+            getattr(cond, "snomed_codes", []),
+            getattr(cond, "loinc_codes", []),
+            getattr(cond, "icd10_codes", []),
+            getattr(cond, "rxnorm_codes", []),
+        ]:
+            for coding in code_list:
+                if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
+                    loinc_codes_set.add(coding.code)
 
-    for code_list in [
-        getattr(config_condition, "snomed_codes", []),
-        getattr(config_condition, "loinc_codes", []),
-        getattr(config_condition, "icd10_codes", []),
-        getattr(config_condition, "rxnorm_codes", []),
-        getattr(config, "custom_codes", []),  # list of DbConfigurationCustomCode
-    ]:
-        for coding in code_list:
-            if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
-                loinc_codes_set.add(coding.code)
-            elif isinstance(coding, DbConfigurationCustomCode) and hasattr(
-                coding, "code"
-            ):
-                loinc_codes_set.add(coding.code)
+    # Include custom codes from the configuration
+    for custom_code in getattr(config, "custom_codes", []):
+        if isinstance(custom_code, DbConfigurationCustomCode) and hasattr(custom_code, "code"):
+            loinc_codes_set.add(custom_code.code)
 
-    loinc_codes = sorted(loinc_codes_set)  # final flattened list of strings
+    # Final flattened, deduplicated list of codes
+    loinc_codes = sorted(loinc_codes_set)
 
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
