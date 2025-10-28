@@ -84,7 +84,7 @@ test.describe
 
     await expect(
       page.getByRole('row').filter({ hasText: 'Acanthamoeba' })
-    ).toContainText('Created configuration');
+    ).toContainText('Configuration created');
   });
 
   /// ==========================================================================
