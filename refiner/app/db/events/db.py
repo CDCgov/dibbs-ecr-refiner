@@ -5,7 +5,7 @@ from uuid import UUID
 from psycopg.rows import class_row
 
 from ..pool import AsyncDatabaseConnection
-from .model import DbEvent
+from .model import DbEvent, EventInput
 
 
 @dataclass
@@ -48,14 +48,12 @@ async def get_events_by_jd_db(
             return rows
 
 
-async def log_create_configuration_event_db(
-    user_id: UUID,
-    jurisdiction_id: UUID,
-    configuration_id: UUID,
+async def insert_event_db(
+    event: EventInput,
     db: AsyncDatabaseConnection,
 ) -> None:
     """
-    Adds a log to the events table when a configuration is created.
+    Inserts an event into the `events` table.
     """
     query = """
         INSERT INTO events (
@@ -69,14 +67,16 @@ async def log_create_configuration_event_db(
             %s,
             %s,
             %s,
-            'create_configuration',
-            'Created configuration'
+            %s,
+            %s
         )
     """
     params = (
-        user_id,
-        jurisdiction_id,
-        configuration_id,
+        event.user_id,
+        event.jurisdiction_id,
+        event.configuration_id,
+        event.event_type,
+        event.action_text,
     )
 
     async with db.get_connection() as conn:
