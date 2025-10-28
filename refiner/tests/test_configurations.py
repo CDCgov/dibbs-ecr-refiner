@@ -149,8 +149,7 @@ def mock_db_functions(monkeypatch):
 
     # mock associate_condition_codeset_with_configuration_db
     assoc_condition = DbConfigurationCondition(
-        canonical_url="url-1",
-        version="3.0.0",
+        UUID("22222222-2222-2222-2222-222222222222"),
     )
     updated_config_mock = DbConfiguration(
         id=UUID("33333333-3333-3333-3333-333333333333"),
@@ -263,7 +262,9 @@ async def test_associate_codeset_with_configuration(authed_client):
     assert response.status_code == 200
     data = response.json()
     assert len(data["included_conditions"]) == 1
-    assert data["included_conditions"][0]["canonical_url"] == "url-1"
+    assert (
+        data["included_conditions"][0]["id"] == "22222222-2222-2222-2222-222222222222"
+    )
 
 
 @pytest.mark.asyncio
@@ -279,7 +280,7 @@ async def test_disassociate_codeset_with_configuration(authed_client):
     included_conditions = data.get("included_conditions", [])
     assert isinstance(included_conditions, list)
     assert all(
-        c.get("canonical_url") != "url-1" or c.get("version") != "3.0.0"
+        c.get("id") != "22222222-2222-2222-2222-222222222222"
         for c in included_conditions
     )
 
