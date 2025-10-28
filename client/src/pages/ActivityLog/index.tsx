@@ -1,38 +1,20 @@
+import { useGetEvents } from '../../api/events/events';
+import { Spinner } from '../../components/Spinner';
 import Table from '../../components/Table';
 import { Title } from '../../components/Title';
-
-interface ActivityEntry {
-  id: string;
-  username: string;
-  configuration_name: string;
-  action_text: string;
-  created_at: string;
-}
-const stubbedData: ActivityEntry[] = [
-  {
-    id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
-    username: 'refiner',
-    configuration_name: 'Alpha-gal Syndrome',
-    action_text: 'Created configuration',
-    created_at: '2025-10-28T13:58:45.363325Z',
-  },
-  {
-    id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
-    username: 'refiner',
-    configuration_name: 'Acanthamoeba',
-    action_text: 'Created configuration',
-    created_at: '2025-10-28T13:57:55.627842Z',
-  },
-];
+import ErrorFallback from '../ErrorFallback';
 
 export function ActivityLog() {
   // will replace this with the actual API hook call once complete
-  const data = stubbedData;
+  const { data: response, isPending, isError, error } = useGetEvents();
   const timeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: 'numeric',
     hour12: true,
   });
+
+  if (isPending) return <Spinner variant="centered" />;
+  if (isError) return <ErrorFallback error={error} />;
 
   return (
     <section className="mx-auto">
@@ -61,12 +43,12 @@ export function ActivityLog() {
           </thead>
 
           <tbody>
-            {data
+            {response?.data
               .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
               .map((r) => {
                 const createdAtDate = new Date(r.created_at);
                 return (
-                  <tr>
+                  <tr key={r.id}>
                     <td className="!font-bold">{r.username}</td>
                     <td>{r.configuration_name}</td>
                     <td>{r.action_text}</td>
