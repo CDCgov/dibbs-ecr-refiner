@@ -24,6 +24,7 @@ export * from './dbConfigurationCustomCode';
 export * from './dbConfigurationCustomCodeSystem';
 export * from './dbConfigurationSectionProcessing';
 export * from './dbTotalConditionCodeCount';
+export * from './eventResponse';
 export * from './getConditionCode';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';
