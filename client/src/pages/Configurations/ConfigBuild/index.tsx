@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -48,6 +48,7 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
 import { Spinner } from '../../../components/Spinner';
 import ErrorFallback from '../../ErrorFallback';
+import { TesLink } from '../TesLink';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -80,7 +81,7 @@ export default function ConfigBuild() {
   }
 
   return (
-    <div>
+    <div className="mb-8">
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
       </TitleContainer>
@@ -101,6 +102,7 @@ export default function ConfigBuild() {
           custom_codes={response.data.custom_codes}
           section_processing={response.data.section_processing}
           display_name={response.data.display_name}
+          loinc_codes={response.data.loinc_codes}
         />
       </SectionContainer>
     </div>
@@ -132,6 +134,7 @@ function Builder({
   included_conditions,
   section_processing,
   display_name: default_condition_name,
+  loinc_codes,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -140,124 +143,170 @@ function Builder({
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
+  const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
+    null
+  );
   const modalRef = useRef<ModalRef | null>(null);
+  const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
+    {}
+  );
 
-  function onCodesetClick(id: string) {
+  function onCodesetClick(name: string, id: string) {
+    setSelectedCodesetName(name);
     setSelectedCodesetId(id);
     setTableView('codeset');
   }
 
   function onCustomCodeClick() {
+    setSelectedCodesetName(null);
     setSelectedCodesetId(null);
     setTableView('custom');
   }
 
+  function setCodesetListItemFocus(deletedId: string) {
+    // No change needed if we're not viewing the code set
+    if (deletedId !== selectedCodesetId) return;
+
+    const deletedItemIndex = code_sets.findIndex(
+      (c) => c.condition_id === deletedId
+    );
+
+    /**
+     * This shouldn't happen since we can't delete the primary condition code set.
+     * Just in case 🙂
+     */
+    if (deletedItemIndex <= 0) return;
+
+    const previousCodeSetId = code_sets[deletedItemIndex - 1].condition_id;
+
+    codeSetButtonRefs.current[previousCodeSetId]?.click();
+  }
+
   useEffect(() => {
     if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].condition_id);
+      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
     }
   }, [code_sets, default_condition_name, tableView]);
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
-        <div className="flex flex-col py-2 pt-4 md:w-[20rem]">
-          <OptionsLabelContainer>
-            <OptionsLabel htmlFor="open-codesets">
-              CONDITION CODE SETS
-            </OptionsLabel>
-            <Button
-              variant="secondary"
-              className="text-blue-cool-60 !mr-0 flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
-              id="open-codesets"
-              aria-label="Add new code set to configuration"
-              onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-            >
-              ADD
-            </Button>
-          </OptionsLabelContainer>
-          <OptionsListContainer>
-            <OptionsList>
-              {code_sets.map((codeSet, i) => (
-                <li
-                  key={codeSet.display_name}
-                  className={classNames(
-                    'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
-                    {
-                      'bg-white': selectedCodesetId === codeSet.condition_id,
-                    }
-                  )}
-                >
-                  <ConditionCodeSetButton
-                    codeSetName={codeSet.display_name}
-                    codeSetTotalCodes={codeSet.total_codes}
-                    onViewCodeSet={() => onCodesetClick(codeSet.condition_id)}
-                    aria-controls={
-                      selectedCodesetId ? 'codeset-table' : undefined
-                    }
-                  />
-                  {i === 0 ? (
-                    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
-                      Default
-                    </span>
-                  ) : (
-                    <DeleteCodeSetButton
-                      configurationId={id}
-                      conditionId={codeSet.condition_id}
-                      conditionName={codeSet.display_name}
+        <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
+          <div>
+            <OptionsLabelContainer>
+              <OptionsLabel htmlFor="open-codesets">
+                CONDITION CODE SETS
+              </OptionsLabel>
+              <Button
+                variant="secondary"
+                className="text-blue-cool-60 !mr-0 flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
+                id="open-codesets"
+                aria-label="Add new code set to configuration"
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+              >
+                ADD
+              </Button>
+            </OptionsLabelContainer>
+            <OptionsListContainer>
+              <OptionsList>
+                {code_sets.map((codeSet, i) => (
+                  <li
+                    key={codeSet.display_name}
+                    className={classNames(
+                      'group drop-shadow-base relative flex items-center overflow-visible rounded-sm hover:bg-stone-50',
+                      {
+                        'bg-white': selectedCodesetId === codeSet.condition_id,
+                      }
+                    )}
+                  >
+                    <ConditionCodeSetButton
+                      ref={(btn) => {
+                        codeSetButtonRefs.current[codeSet.condition_id] = btn;
+                      }}
+                      codeSetName={codeSet.display_name}
+                      codeSetTotalCodes={codeSet.total_codes}
+                      onViewCodeSet={() =>
+                        onCodesetClick(
+                          codeSet.display_name,
+                          codeSet.condition_id
+                        )
+                      }
+                      aria-controls={
+                        selectedCodesetId ? 'codeset-table' : undefined
+                      }
                     />
-                  )}
+                    {i === 0 ? (
+                      <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+                        Default
+                      </span>
+                    ) : (
+                      <DeleteCodeSetButton
+                        configurationId={id}
+                        conditionId={codeSet.condition_id}
+                        conditionName={codeSet.display_name}
+                        onClick={() =>
+                          setCodesetListItemFocus(codeSet.condition_id)
+                        }
+                      />
+                    )}
+                  </li>
+                ))}
+              </OptionsList>
+            </OptionsListContainer>
+          </div>
+          <div>
+            <OptionsLabelContainer>
+              <OptionsLabel>MORE OPTIONS</OptionsLabel>
+            </OptionsLabelContainer>
+            <OptionsListContainer>
+              <OptionsList>
+                <li key="custom-codes">
+                  <button
+                    className={classNames(
+                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                      {
+                        'bg-white': tableView === 'custom',
+                      }
+                    )}
+                    onClick={onCustomCodeClick}
+                    aria-controls={
+                      tableView === 'custom' ? 'custom-table' : undefined
+                    }
+                    aria-pressed={tableView === 'custom'}
+                  >
+                    <span>Custom codes</span>
+                    <span>{custom_codes.length}</span>
+                  </button>
                 </li>
-              ))}
-              <li className="pt-10">
-                <OptionsLabel>MORE OPTIONS</OptionsLabel>
-              </li>
-              <li key="custom-codes">
-                <button
-                  className={classNames(
-                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    {
-                      'bg-white': tableView === 'custom',
+                <li key="sections">
+                  <button
+                    className={classNames(
+                      'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
+                      {
+                        'bg-white': tableView === 'sections',
+                      }
+                    )}
+                    onClick={() => {
+                      setSelectedCodesetId(null);
+                      setTableView('sections');
+                    }}
+                    aria-controls={
+                      tableView === 'sections' ? 'sections-table' : undefined
                     }
-                  )}
-                  onClick={onCustomCodeClick}
-                  aria-controls={
-                    tableView === 'custom' ? 'custom-table' : undefined
-                  }
-                  aria-pressed={tableView === 'custom'}
-                >
-                  <span>Custom codes</span>
-                  <span>{custom_codes.length}</span>
-                </button>
-              </li>
-              <li key="sections">
-                <button
-                  className={classNames(
-                    'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
-                    {
-                      'bg-white': tableView === 'sections',
-                    }
-                  )}
-                  onClick={() => {
-                    setSelectedCodesetId(null);
-                    setTableView('sections');
-                  }}
-                  aria-controls={
-                    tableView === 'sections' ? 'sections-table' : undefined
-                  }
-                  aria-pressed={tableView === 'sections'}
-                >
-                  <span>Sections</span>
-                </button>
-              </li>
-            </OptionsList>
-          </OptionsListContainer>
+                    aria-pressed={tableView === 'sections'}
+                  >
+                    <span>Sections</span>
+                  </button>
+                </li>
+              </OptionsList>
+            </OptionsListContainer>
+          </div>
         </div>
         <div className="flex !h-full !max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
-                defaultCondition={default_condition_name}
+                defaultCondition={selectedCodesetName}
                 conditionId={selectedCodesetId}
               />
             </>
@@ -277,6 +326,7 @@ function Builder({
                 configurationId={id}
                 modalRef={modalRef}
                 customCodes={custom_codes}
+                loincCodes={loinc_codes}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -294,6 +344,7 @@ function Builder({
         onClose={() => setIsDrawerOpen(false)}
         conditions={included_conditions}
         configurationId={id}
+        reportable_condition_display_name={default_condition_name}
       />
     </div>
   );
@@ -305,41 +356,52 @@ type ConditionCodeSetButtonProps = {
   onViewCodeSet: () => void;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-function ConditionCodeSetButton({
-  codeSetName,
-  codeSetTotalCodes,
-  onViewCodeSet,
-  ...props
-}: ConditionCodeSetButtonProps) {
-  return (
-    <button
-      className={classNames(
-        'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
-      )}
-      onClick={onViewCodeSet}
-      {...props}
-    >
-      <span aria-hidden>{codeSetName}</span>
-      <span aria-hidden className="group-hover:hidden">
-        {codeSetTotalCodes}
-      </span>
-      <span className="sr-only">
-        {codeSetName}, {codeSetTotalCodes} codes in code set
-      </span>
-    </button>
-  );
-}
+const ConditionCodeSetButton = forwardRef<
+  HTMLButtonElement,
+  ConditionCodeSetButtonProps
+>(
+  (
+    {
+      codeSetName,
+      codeSetTotalCodes,
+      onViewCodeSet,
+      ...props
+    }: ConditionCodeSetButtonProps,
+    ref
+  ) => {
+    return (
+      <button
+        ref={ref}
+        className={classNames(
+          'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
+        )}
+        onClick={onViewCodeSet}
+        {...props}
+      >
+        <span aria-hidden>{codeSetName}</span>
+        <span aria-hidden className="group-hover:hidden">
+          {codeSetTotalCodes}
+        </span>
+        <span className="sr-only">
+          {codeSetName}, {codeSetTotalCodes} codes in code set
+        </span>
+      </button>
+    );
+  }
+);
 
 interface DeleteCodeSetButtonProps {
   configurationId: string;
   conditionId: string;
   conditionName: string;
+  onClick: () => void;
 }
 
 function DeleteCodeSetButton({
   configurationId,
   conditionId,
   conditionName,
+  onClick,
 }: DeleteCodeSetButtonProps) {
   const { mutate: disassociateMutation, isPending } =
     useDisassociateConditionWithConfiguration();
@@ -368,6 +430,7 @@ function DeleteCodeSetButton({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           setIsListInvalidating(false);
+          onClick(); // set focus to previous code set button
         },
         onError: (error) => {
           setIsListInvalidating(false);
@@ -422,7 +485,7 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 }
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
-  return <div className="max-h-[30rem] overflow-y-scroll pt-2">{children}</div>;
+  return <div className="max-h-[15rem] overflow-y-scroll pt-2">{children}</div>;
 }
 
 function OptionsList({ children }: { children: React.ReactNode }) {
@@ -433,12 +496,14 @@ interface CustomCodesDetailProps {
   configurationId: string;
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
+  loincCodes: string[];
 }
 
 function CustomCodesDetail({
   configurationId,
   modalRef,
   customCodes,
+  loincCodes,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -520,6 +585,7 @@ function CustomCodesDetail({
         initialCode={selectedCustomCode?.code}
         initialSystem={selectedCustomCode?.system}
         initialName={selectedCustomCode?.name}
+        loincCodes={loincCodes}
         modalRef={modalRef}
         onClose={toggleModal}
       />
@@ -544,22 +610,9 @@ function CustomCodeGroupingParagraph() {
   );
 }
 
-function TesLink() {
-  return (
-    <a
-      className="text-blue-cool-60 hover:text-blue-cool-50 underline"
-      href="https://tes.tools.aimsplatform.org/auth/signin"
-      target="_blank"
-      rel="noopener"
-    >
-      TES (Terminology Exchange Service).
-    </a>
-  );
-}
-
 interface ConditionCodeTableProps {
   conditionId: string;
-  defaultCondition: string;
+  defaultCondition: string | null;
 }
 
 function ConditionCodeTable({
@@ -713,6 +766,7 @@ interface CustomCodeModalProps {
   initialCode?: string;
   initialSystem?: string;
   initialName?: string;
+  loincCodes: string[];
 }
 
 export function CustomCodeModal({
@@ -722,6 +776,7 @@ export function CustomCodeModal({
   initialCode,
   initialSystem,
   initialName,
+  loincCodes,
 }: CustomCodeModalProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
   const { mutate: editCode } = useEditCustomCodeFromConfiguration();
@@ -731,33 +786,38 @@ export function CustomCodeModal({
   // TODO: this should come from the server.
   // Maybe get this info as part of the seed script?
   const systemValues = [
+    { name: 'Select system', value: '' },
     { name: 'ICD-10', value: 'icd-10' },
     { name: 'SNOMED', value: 'snomed' },
     { name: 'RxNorm', value: 'rxnorm' },
     { name: 'LOINC', value: 'loinc' },
+    { name: 'Other', value: 'other' },
   ];
 
   const isEditing = initialCode && initialSystem && initialName;
 
   const [form, setForm] = useState({
     code: initialCode ?? '',
-    system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
+    system: initialSystem ? normalizeSystem(initialSystem) : '',
     name: initialName ?? '',
   });
+
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setForm({
       code: initialCode ?? '',
-      system: initialSystem ? normalizeSystem(initialSystem) : 'icd-10',
+      system: initialSystem ? normalizeSystem(initialSystem) : '',
       name: initialName ?? '',
     });
   }, [initialCode, initialSystem, initialName]);
 
   function resetForm() {
-    setForm({ code: '', system: 'icd-10', name: '' });
+    setForm({ code: '', system: '', name: '' });
   }
 
-  const isButtonEnabled = form.code && form.system && form.name;
+  const isButtonEnabled =
+    form.code && form.system && form.system !== '' && form.name;
 
   const handleChange =
     (field: keyof typeof form) =>
@@ -860,9 +920,24 @@ export function CustomCodeModal({
             name="code"
             type="text"
             value={form.code}
-            onChange={handleChange('code')}
+            onChange={(e) => {
+              setForm((prev) => ({ ...prev, code: e.target.value }));
+              if (error) setError(''); // clear error on change
+            }}
+            onBlur={() => {
+              if (loincCodes.includes(form.code)) {
+                setError(
+                  `The code "${form.code}" already exists in the condition code set.`
+                );
+              }
+            }}
             autoComplete="off"
           />
+          {error && (
+            <p className="font-merriweather mb-1 text-sm text-red-600">
+              {error}
+            </p>
+          )}
         </div>
 
         <div>
@@ -897,8 +972,8 @@ export function CustomCodeModal({
       <ModalFooter className="flex justify-end p-0">
         <Button
           onClick={handleSubmit}
-          disabled={!isButtonEnabled}
-          variant={isButtonEnabled ? 'primary' : 'disabled'}
+          disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
+          variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
           className="!m-0"
         >
           {isEditing ? 'Update' : 'Add custom code'}

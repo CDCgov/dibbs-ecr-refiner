@@ -5,108 +5,13 @@ from ..db.configurations.model import DbConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
-# 1. A `Payload` class (e.g., ConditionPayload) holds raw DB models.
-# 2. A `Processed` class (e.g., ProcessedCondition) holds the final, ready-to-use data.
+# 1. A `Payload` class (e.g., ConfigurationPayload) holds raw DB models.
+# 2. A `Processed` class (e.g., ProcessedConfiguration) holds the final, ready-to-use data.
 # 3. The `Processed` class has a `.from_payload()` factory method that contains all
 #    the logic to transform the raw payload into the processed version.
 # 4. The `Processed` class has a `.build_xpath()` method for the refiner.
 # This separates data fetching, data processing, and data usage into clean, testable steps.
 # =============================================================================
-
-
-# NOTE:
-# CONDITION PROCESSING
-# =============================================================================
-
-
-@dataclass(frozen=True)
-class ConditionPayload:
-    """
-    Model representing the raw condition data needed for refinement.
-
-    A raw data container holding a list of DbCondition objects from the database.
-    This is the "payload" that will be transformed into a ProcessedCondition.
-    """
-
-    conditions: list[DbCondition]
-
-
-@dataclass(frozen=True)
-class ProcessedCondition:
-    """
-    Represents the processed set of codes from a condition, ready for refinement.
-
-    This model is purposely focused on just the essential data needed for independent
-    testing patterns:
-
-    - Independent testing: Reading XML, extracting unique RC SNOMED codes, finding
-      configurations via child_rsg_snomed_codes, then using condition_id to get
-      included_conditions.
-    """
-
-    codes: set[str]
-
-    @classmethod
-    def from_payload(cls, payload: ConditionPayload) -> "ProcessedCondition":
-        """
-        Processes a ConditionPayload to aggregate all unique codes from its conditions.
-
-        Args:
-            payload: The raw ConditionPayload containing DbCondition objects.
-
-        Returns:
-            A ProcessedCondition instance with the final set of codes.
-        """
-
-        all_codes: set[str] = set()
-        for condition in payload.conditions:
-            # extract codes from each JSONB array within the DbCondition
-            for code_list in [
-                condition.snomed_codes,
-                condition.loinc_codes,
-                condition.icd10_codes,
-                condition.rxnorm_codes,
-            ]:
-                all_codes.update(c.code for c in code_list)
-        return cls(codes=all_codes)
-
-    def build_xpath(self) -> str:
-        """
-        Builds a comprehensive XPath query to find any clinical data related to the processed codes.
-
-        This XPath search strategy is designed to be comprehensive and flexible because it looks for codes
-        in a variety of clinical contexts, including:
-
-          * <observation><code code="[code]">
-          * <observation><value code="[code]">
-          * <act><code code="[code]">
-          * <act><value code="[code]">
-          * <translation code="[code]">
-          * Any element containing a <code>, <value>, or <translation> child with a matching code
-
-        Specifically, this XPath will match:
-          - Any element (*), such as <observation> or <act>, that has a child <code>, <translation>, or <value> element with a matching code attribute.
-          - Any <code>, <translation>, or <value> element directly with a matching code attribute.
-
-        This allows the refiner to identify and retain clinical entries that reference the processed codes,
-        whether those codes appear as the main code, a value, or a translation within the CDA XML.
-
-        Returns:
-            str: XPath expression that finds elements containing matching codes in <code>, <value>, or <translation> elements.
-        """
-
-        if not self.codes:
-            return ""
-
-        code_conditions = " or ".join(f'@code="{code}"' for code in self.codes)
-
-        # xpath matches codes in <code>, <value>, and <translation> elements, in any context
-        return (
-            f".//hl7:*[hl7:code[{code_conditions}] or hl7:translation[{code_conditions}] or hl7:value[{code_conditions}]] | "
-            f".//hl7:code[{code_conditions}] | "
-            f".//hl7:translation[{code_conditions}] | "
-            f".//hl7:value[{code_conditions}]"
-        )
 
 
 # NOTE:
@@ -153,6 +58,7 @@ class ProcessedConfiguration:
     """
 
     codes: set[str]
+    section_processing: list[dict]
 
     @classmethod
     def from_payload(cls, payload: ConfigurationPayload) -> "ProcessedConfiguration":
@@ -169,7 +75,8 @@ class ProcessedConfiguration:
             ProcessedConfiguration: An object containing the final, combined set of codes.
         """
 
-        # 1. aggregate codes from all associated conditions
+        # STEP 1:
+        # aggregate codes from all associated conditions
         all_codes: set[str] = set()
         for condition in payload.conditions:
             for code_list in [
@@ -178,12 +85,30 @@ class ProcessedConfiguration:
                 condition.icd10_codes,
                 condition.rxnorm_codes,
             ]:
-                all_codes.update(c.code for c in code_list)
+                all_codes.update(code.code for code in code_list)
 
-        # 2. add custom codes defined directly on the configuration
-        all_codes.update(cc.code for cc in payload.configuration.custom_codes)
+        # STEP 2:
+        # add custom codes defined directly on the configuration
+        all_codes.update(
+            custom_code.code for custom_code in payload.configuration.custom_codes
+        )
 
-        return cls(codes=all_codes)
+        # STEP 3:
+        # convert the list of DbConfigurationSectionProcessing objects into
+        # a simple list of dictionaries
+        section_processing_as_dicts: list[dict[str, str]] = [
+            {
+                "code": section_process.code,
+                "name": section_process.name,
+                "action": section_process.action,
+            }
+            for section_process in payload.configuration.section_processing
+        ]
+
+        return cls(
+            codes=all_codes,
+            section_processing=section_processing_as_dicts,
+        )
 
     def build_xpath(self) -> str:
         """

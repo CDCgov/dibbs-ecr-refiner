@@ -22,7 +22,11 @@ from fastapi import (
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
-from app.core.exceptions import FileProcessingError, ZipValidationError
+from app.core.exceptions import (
+    FileProcessingError,
+    XMLValidationError,
+    ZipValidationError,
+)
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
@@ -33,12 +37,15 @@ from app.services.format import normalize_xml, strip_comments
 from app.services.testing import inline_testing
 
 from ...api.auth.middleware import get_logged_in_user
+from ...api.v1.demo import XML_FILE_ERROR, ZIP_READING_ERROR
 from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
+    get_conditions_by_canonical_urls_and_versions_db,
     get_conditions_db,
 )
+from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     SectionUpdate,
@@ -65,6 +72,10 @@ from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
+from ...services.xslt import (
+    get_path_to_xslt_stylesheet,
+    transform_xml_to_html,
+)
 
 router = APIRouter(prefix="/configurations")
 
@@ -200,6 +211,7 @@ class GetConfigurationResponse:
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
+    loinc_codes: list[str]
 
 
 @dataclass(frozen=True)
@@ -235,16 +247,40 @@ async def get_configuration(
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=jd, db=db
     )
+
     if not config:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    config_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+
+    ##TODO: Grab included_conditions after refactor
+
+    # Flatten all codes from snomed_codes, loinc_codes, icd10_codes, rxnorm_codes,
+    # plus custom_codes from the configuration
+    loinc_codes_set = set()  # deduplicate codes
+
+    for code_list in [
+        getattr(config_condition, "snomed_codes", []),
+        getattr(config_condition, "loinc_codes", []),
+        getattr(config_condition, "icd10_codes", []),
+        getattr(config_condition, "rxnorm_codes", []),
+        getattr(config, "custom_codes", []),  # list of DbConfigurationCustomCode
+    ]:
+        for coding in code_list:
+            if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
+                loinc_codes_set.add(coding.code)
+            elif isinstance(coding, DbConfigurationCustomCode) and hasattr(
+                coding, "code"
+            ):
+                loinc_codes_set.add(coding.code)
+
+    loinc_codes = sorted(loinc_codes_set)  # final flattened list of strings
+
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
-
-    print('IncludedCondition >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEFORE')
-    print(config.included_conditions)
 
     # Create a set of associated condition IDs (UUIDs or strings)
     associated_conditions = config.included_conditions or []
@@ -266,7 +302,6 @@ async def get_configuration(
             )
         )
 
-    # Return the configuration response
     return GetConfigurationResponse(
         id=config.id,
         display_name=config.name,
@@ -274,6 +309,7 @@ async def get_configuration(
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
+        loinc_codes=loinc_codes,
     )
 
 
@@ -550,7 +586,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: Literal["loinc", "snomed", "icd-10", "rxnorm"]
+    system: Literal["loinc", "snomed", "icd-10", "rxnorm", "other"]
     name: str
 
     @field_validator("system", mode="before")
@@ -590,6 +626,8 @@ def _get_sanitized_system_name(system: str):
         return "ICD-10"
     elif lower_system == "rxnorm":
         return "RxNorm"
+    elif lower_system == "other":
+        return "Other"
 
     raise Exception(f"System name provided: {system} is invalid.")
 
@@ -1025,7 +1063,7 @@ async def run_configuration_test(
         logger.error(msg="FileProcessingError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
+            detail=ZIP_READING_ERROR,
         )
 
     # get the user's jurisdiction_id to pass to inline_testing
@@ -1047,14 +1085,33 @@ async def run_configuration_test(
             status_code=404, detail="Primary condition not found for configuration."
         )
 
+    # if included_conditions is a list greater than 1, then fetch all conditions
+    # in the list (which includes the primary condition) for the payload and
+    # store the corresponding trace info
+    if len(configuration.included_conditions) > 1:
+        all_conditions_for_configuration = (
+            await get_conditions_by_canonical_urls_and_versions_db(
+                db=db, condition_references=configuration.included_conditions
+            )
+        )
+    else:
+        all_conditions_for_configuration = [primary_condition]
+
     # call the testing service
     # business logic around **how** inline testing works is in services/testing.py
-    result = await inline_testing(
-        xml_files=original_xml_files,
-        configuration=configuration,
-        primary_condition=primary_condition,
-        jurisdiction_id=jd,
-    )
+    try:
+        result = await inline_testing(
+            xml_files=original_xml_files,
+            configuration=configuration,
+            primary_condition=primary_condition,
+            all_conditions=all_conditions_for_configuration,
+            jurisdiction_id=jd,
+            logger=logger,
+        )
+    except XMLValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=XML_FILE_ERROR
+        )
 
     # STEP 3:
     # handle the service layer response
@@ -1075,7 +1132,6 @@ async def run_configuration_test(
         )
 
     condition_obj = refined_document.reportable_condition
-    refined_eicr_str = refined_document.refined_eicr
 
     # STEP 4:
     # prepare files for zip and s3 upload
@@ -1087,7 +1143,43 @@ async def run_configuration_test(
         condition_name=condition_obj.display_name,
         condition_code=condition_obj.code,
     )
-    s3_file_package.append((filename, refined_eicr_str))
+    s3_file_package.append((filename, refined_document.refined_eicr))
+
+    # Generate HTML from refined XML
+    try:
+        xslt_stylesheet_path = get_path_to_xslt_stylesheet()
+        html_bytes = transform_xml_to_html(
+            refined_document.refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
+        )
+        filename_html = filename.replace(".xml", ".html")
+        s3_file_package.append((filename_html, html_bytes.decode("utf-8")))
+        logger.info(
+            f"Successfully transformed XML to HTML for: {filename}",
+            extra={
+                "condition_code": condition_obj.code,
+                "condition_name": condition_obj.display_name,
+            },
+        )
+    except Exception as e:
+        if "XSLTTransformationError" in str(type(e)):
+            logger.error(
+                f"Failed to transform XML to HTML for: {filename}",
+                extra={
+                    "condition_code": condition_obj.code,
+                    "condition_name": condition_obj.display_name,
+                    "error": str(e),
+                },
+            )
+        else:
+            logger.error(
+                f"Unexpected error during XML to HTML transformation for: {filename}",
+                extra={
+                    "condition_code": condition_obj.code,
+                    "condition_name": condition_obj.display_name,
+                    "error": str(e),
+                },
+            )
+        # Continue with XML only; do not include HTML file for this condition
 
     try:
         output_file_name, output_zip_buffer = create_output_zip(
@@ -1116,21 +1208,23 @@ async def run_configuration_test(
 
     # STEP 5:
     # construct and return the final response
-    original_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-    matched_condition_refined_eicr = strip_comments(normalize_xml(refined_eicr_str))
+    formatted_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
+    formatted_refined_eicr = strip_comments(
+        normalize_xml(refined_document.refined_eicr)
+    )
 
     return ConfigurationTestResponse(
-        original_eicr=original_unrefined_eicr,
+        original_eicr=formatted_unrefined_eicr,
         refined_download_url=presigned_s3_url,
         condition=Condition(
             code=condition_obj.code,
             display_name=condition_obj.display_name,
-            refined_eicr=matched_condition_refined_eicr,
+            refined_eicr=formatted_refined_eicr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        unrefined_eicr=original_unrefined_eicr,
-                        refined_eicr=matched_condition_refined_eicr,
+                        unrefined_eicr=formatted_unrefined_eicr,
+                        refined_eicr=formatted_refined_eicr,
                     )
                 }%",
             ],

@@ -1,11 +1,12 @@
 import { Success } from './Success';
-import { Error as ErrorScreen } from './Error';
 import { RunTest } from './RunTest';
 import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { Title } from '../../components/Title';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
+import FileUploadWarning from '../../components/FileUploadWarning';
+import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 type Status =
   | 'run-test'
@@ -52,7 +53,7 @@ export default function Demo() {
 
   return (
     <div className="flex px-10 md:px-20">
-      <div className="flex flex-col gap-10 py-10">
+      <div className="flex flex-1 flex-col py-10">
         {status === 'run-test' && (
           <>
             <Title>Test Refiner</Title>
@@ -95,7 +96,7 @@ export default function Demo() {
           />
         )}
         {status === 'error' && (
-          <ErrorScreen message={errorMessage} onClick={reset} />
+          <FileUploadWarning errorMessage={errorMessage ?? ''} reset={reset} />
         )}
       </div>
     </div>
@@ -104,6 +105,8 @@ export default function Demo() {
 
 function useZipUpload() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const formatError = useApiErrorFormatter();
   const {
     mutateAsync,
     data,
@@ -113,12 +116,7 @@ function useZipUpload() {
   } = useUploadEcr({
     mutation: {
       onError: (error) => {
-        const rawError = error.response?.data;
-
-        const message = Array.isArray(rawError?.detail)
-          ? rawError.detail.map((d) => d.msg).join(' ')
-          : rawError?.detail || 'Upload failed. Please try again.';
-        setErrorMessage(message);
+        setErrorMessage(formatError(error));
       },
     },
   });

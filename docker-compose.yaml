@@ -1,6 +1,6 @@
 services:
   client:
-    image: node:20-alpine3.20
+    image: node:22-alpine3.22
     working_dir: /app
     volumes:
       - ./client:/app
@@ -30,10 +30,11 @@ services:
       - AUTH_CLIENT_ID=refinerclient
       - AUTH_CLIENT_SECRET=5yXLmlYFPYeQh4HOsO1MvqaLHlVj5aKv
       - AUTH_ISSUER=http://localhost:8082/realms/refiner
+      - AUTH_ISSUER_INTERNAL=http://auth:8082/realms/refiner
       - AWS_ACCESS_KEY_ID=refiner
       - AWS_SECRET_ACCESS_KEY=refiner
       - AWS_REGION=us-east-1
-      - S3_ENDPOINT_URL=http://localhost:4566
+      - S3_ENDPOINT_URL=http://localstack:4566
       - S3_UPLOADED_FILES_BUCKET_NAME=refiner-app
     logging:
       driver: "json-file"
@@ -42,7 +43,7 @@ services:
       - auth
       - localstack
   auth:
-    image: quay.io/keycloak/keycloak:26.4.0
+    image: quay.io/keycloak/keycloak:26.4.2
     command:
       - "start-dev"
       - "--import-realm"

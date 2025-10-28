@@ -77,6 +77,35 @@ test.describe
     ).toBeVisible();
   });
 
+  /// ==========================================================================
+  /// Test that a condition can be selected from configuration added in previous test
+  /// ==========================================================================
+  test('should be able to view configuration for Acanthamoeba', async ({
+    page,
+  }) => {
+    await page
+      .getByRole('row', { name: 'View configuration for Acanthamoeba' })
+      .click();
+    await expect(
+      page.getByRole('button', {
+        name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
+      })
+    ).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
+      })
+      .click();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Balamuthia mandrillaris Disease code set',
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Custom codes 1' })
+    ).toBeVisible();
+  });
+
   test('should be able to delete condition Balamuthia mandrillaris from Acanthamoeba config', async ({
     page,
   }) => {
@@ -112,7 +141,11 @@ test.describe
     const acanthamoebaButton = conditionCodeSets.getByRole('button', {
       name: /Acanthamoeba, \d+ codes in code set/,
     });
+
     await expect(acanthamoebaButton).toBeVisible();
+
+    // User should see default code set once current code set has been deleted
+    await expect(page.getByText('Acanthamoeba code set')).toBeVisible();
 
     // Expect "Balamuthia mandrillaris Disease" code set to no longer be visible
     const balamuthiaButton = conditionCodeSets.getByRole('button', {

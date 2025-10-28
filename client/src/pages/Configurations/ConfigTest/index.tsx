@@ -5,7 +5,6 @@ import {
 } from '../layout';
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
-import { Button } from '../../../components/Button';
 import { Title } from '../../../components/Title';
 import { RunTest } from '../../Testing/RunTest';
 import { useState } from 'react';
@@ -14,13 +13,13 @@ import {
   useRunInlineConfigurationTest,
 } from '../../../api/configurations/configurations';
 import { Diff } from '../../../components/Diff';
-import { Icon } from '@trussworks/react-uswds';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
 import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
 import ErrorFallback from '../../ErrorFallback';
+import FileUploadWarning from '../../../components/FileUploadWarning';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -84,7 +83,7 @@ function Tester({ config }: TesterProps) {
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-[12.75rem]">
       {status === 'idle' && (
         <RunTest
           onClickSampleFile={() => runTest(null)}
@@ -97,21 +96,7 @@ function Tester({ config }: TesterProps) {
       {status === 'pending' && <Uploading />}
 
       {status === 'error' && (
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-4">
-            <WarningMessage>{errorMessage}</WarningMessage>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <p className="max-w-[550px]">
-              Please ensure your file is valid and includes the reportable
-              condition matching the configuration being tested.
-            </p>
-            <div>
-              <Button onClick={reset}>Try again</Button>
-            </div>
-          </div>
-        </div>
+        <FileUploadWarning errorMessage={errorMessage ?? ''} reset={reset} />
       )}
 
       {status === 'success' && uploadResponseData?.data && (
@@ -157,23 +142,4 @@ function useZipUpload() {
     errorMessage,
     resetState,
   };
-}
-
-interface WarningMessageProps {
-  children: React.ReactNode;
-}
-function WarningMessage({ children }: WarningMessageProps) {
-  return (
-    <div className="bg-state-error-lighter w-fit rounded p-4">
-      <p className="text-state-error-dark flex flex-col gap-3">
-        <span className="flex items-center gap-2">
-          <Icon.Warning
-            className="[&_path]:fill-state-error shrink-0"
-            aria-label="Warning"
-          />
-          <span>{children}</span>
-        </span>
-      </p>
-    </div>
-  );
 }

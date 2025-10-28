@@ -6,19 +6,20 @@ import { ProvideFeedbackButton } from '../ProvideFeedbackButton';
 import NavigationBar from '../NavigationBar';
 import { Icon } from '@trussworks/react-uswds';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { ExternalLink } from '../ExternalLink';
 
 interface LayoutProps {
   children: React.ReactNode;
-  username: string;
+  displayName: string;
 }
 
-export function Layout({ username, children }: LayoutProps) {
+export function Layout({ displayName, children }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
-      <Header username={username} />
+      <Header displayName={displayName} />
       <main
         id="main-content"
         className="bg-primary-container flex grow flex-col"
@@ -32,17 +33,17 @@ export function Layout({ username, children }: LayoutProps) {
 }
 
 interface HeaderProps {
-  username?: string;
+  displayName?: string;
 }
 
-export function Header({ username }: HeaderProps) {
+export function Header({ displayName }: HeaderProps) {
   const loggedInHeaderContent = (
     <>
       <NavigationBar />
       <Menu>
         <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
           <Icon.Person size={3} aria-hidden />
-          {username}
+          {displayName}
         </MenuButton>
         <MenuItems
           anchor="bottom"
@@ -73,7 +74,7 @@ export function Header({ username }: HeaderProps) {
           </h1>
         </Link>
 
-        {username && loggedInHeaderContent}
+        {displayName && loggedInHeaderContent}
       </div>
     </header>
   );
@@ -84,17 +85,16 @@ export function Footer() {
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
         <div>
-          <a
+          <ExternalLink
             href="https://www.cdc.gov"
-            target="_blank"
-            rel="noreferrer noopener"
             className="inline-block"
+            includeIcon={false}
           >
             <img src={CdcLogo} alt="" />
             <span className="sr-only">
               CDC - U.S. Centers for Disease Control and Prevention
             </span>
-          </a>
+          </ExternalLink>
         </div>
         <div className="flex flex-col gap-2 lg:items-end lg:gap-1">
           <p className="text-white">
