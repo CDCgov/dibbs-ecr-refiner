@@ -9,7 +9,7 @@ export default function NavigationBar() {
     >
       <NavigationLink to="/configurations" title="Configurations" />
       <NavigationLink to="/testing" title="Testing" />
-      <NavigationLink to="/activityLog" title="Activity Log" />
+      <NavigationLink to="/activity" title="Activity Log" />
     </nav>
   );
 }
