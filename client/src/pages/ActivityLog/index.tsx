@@ -1,34 +1,37 @@
 import { Table } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
 
-export function ActivityLog() {
-  const data = [
-    {
-      message: 'some long description of the action',
-      user: 'Someone Interesting',
-      action: 'Something Interesting',
-      date: new Date(),
-    },
-    {
-      message: 'some long description of the action',
-      user: 'Someone Interesting',
-      action: 'Something Interesting',
-      date: new Date(),
-    },
-    {
-      message: 'some long description of the action',
-      user: 'Someone Interesting',
-      action: 'Something Interesting',
-      date: new Date(),
-    },
-    {
-      message: 'some long description of the action',
-      user: 'Someone Interesting',
-      action: 'Something Interesting',
-      date: new Date(),
-    },
-  ];
+const NOW = new Date();
+const stubbedData = [
+  {
+    message: 'some long description of the action',
+    user: 'Someone Interesting',
+    action: 'Something Interesting',
+    date: new Date(NOW.setMinutes(NOW.getMinutes() - Math.random() * 10)), // add some variation
+  },
+  {
+    message: 'some long description of the action',
+    user: 'Someone Interesting',
+    action: 'Something Interesting',
+    date: new Date(NOW.setMinutes(NOW.getMinutes() - Math.random() * 10)),
+  },
+  {
+    message: 'some long description of the action',
+    user: 'Someone Interesting',
+    action: 'Something Interesting',
+    date: new Date(NOW.setMinutes(NOW.getMinutes() - Math.random() * 10)),
+  },
+  {
+    message: 'some long description of the action',
+    user: 'Someone Interesting',
+    action: 'Something Interesting',
+    date: NOW,
+  },
+];
 
+export function ActivityLog() {
+  // will replace this with the actual API hook call once complete
+  const data = stubbedData;
   const timeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: 'numeric',
@@ -62,17 +65,19 @@ export function ActivityLog() {
           </thead>
 
           <tbody>
-            {data.map((r) => (
-              <tr>
-                <td className="!font-bold">{r.user}</td>
-                <td>{r.action}</td>
-                <td>{r.message}</td>
-                <td>
-                  {r.date.toLocaleDateString()} <br />
-                  {timeFormatter.format(r.date)}
-                </td>
-              </tr>
-            ))}
+            {data
+              .sort((a, b) => (a.date > b.date ? -1 : 1))
+              .map((r) => (
+                <tr>
+                  <td className="!font-bold">{r.user}</td>
+                  <td>{r.action}</td>
+                  <td>{r.message}</td>
+                  <td>
+                    {r.date.toLocaleDateString()} <br />
+                    {timeFormatter.format(r.date)}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </Table>
       </div>
