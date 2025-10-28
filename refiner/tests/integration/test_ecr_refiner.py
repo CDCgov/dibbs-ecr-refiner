@@ -15,7 +15,7 @@ from ..validation_utils import validate_xml_string
 # -> * .parent.parent.parent navigates up three levels:
 #   -> * integration -> tests -> refiner (assuming 'tests' is a direct child of 'refiner')
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-MON_MOTHMA_ZIP_PATH = BASE_DIR / "assets" / "demo" / "mon-mothma-two-conditions.zip"
+MON_MOTHMA_ZIP_PATH = BASE_DIR / "assets" / "demo" / "mon-mothma-covid-influenza.zip"
 
 # define the expected condition codes and their display names that the service
 # should identify and process from the MON_MOTHMA_ZIP_PATH file
@@ -77,7 +77,7 @@ async def test_health_check(setup, authed_client):
 @pytest.mark.asyncio
 async def test_zip_upload_mon_mothma_two_conditions(setup, authed_client):
     """
-    Integration test for the /api/v1/demo/upload endpoint using the 'mon-mothma-two-conditions.zip' demo file.
+    Integration test for the /api/v1/demo/upload endpoint using the 'mon-mothma-covid-influenza.zip' demo file.
 
     This test verifies:
     - The endpoint successfully processes a demo ZIP containing eICR and RR XML files.
