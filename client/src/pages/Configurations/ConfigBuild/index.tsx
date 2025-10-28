@@ -62,22 +62,10 @@ export default function ConfigBuild() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return <ErrorFallback error={error} />;
 
-  console.log('code sets');
-  console.log(response.data.code_sets);
-
   // sort so the default code set always displays first
   const sortedCodeSets = response.data.code_sets.sort((a) => {
     return a.display_name === response.data.display_name ? -1 : 1;
   });
-
-  console.log('sorted code sets');
-  console.log(sortedCodeSets);
-
-  for (const cond of response.data.included_conditions) {
-    if (cond.id === 'cc88ca12-d62f-4c3d-8397-514b73d51bf6') {
-      console.log(cond);
-    }
-  }
 
   return (
     <div className="mb-8">
@@ -792,9 +780,6 @@ export function CustomCodeModal({
     { name: 'LOINC', value: 'loinc' },
     { name: 'Other', value: 'other' },
   ];
-
-  console.log('LOINC CODES');
-  console.log(loincCodes);
 
   const isEditing = initialCode && initialSystem && initialName;
 

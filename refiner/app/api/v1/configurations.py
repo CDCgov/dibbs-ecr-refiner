@@ -556,9 +556,6 @@ async def remove_condition_codeset_from_configuration(
         config=config, condition=condition, db=db
     )
 
-    print("Updated Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    print(updated_config)
-
     if not updated_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -759,15 +756,9 @@ async def delete_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    print("CONFIG >>>>>>>>>>>")
-    print(config)
-
     updated_config = await delete_custom_code_from_configuration_db(
         config=config, system=system, code=code, db=db
     )
-
-    print("UPDATED CONFIG >>>>>>>>>>>")
-    print(updated_config)
 
     if not updated_config:
         raise HTTPException(
