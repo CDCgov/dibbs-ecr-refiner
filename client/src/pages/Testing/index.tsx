@@ -1,8 +1,9 @@
 import { Success } from './Success';
 import { RunTest } from './RunTest';
+import { TestRefinerDescription } from './TestRefinerDescription';
+
 import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
-import { Title } from '../../components/Title';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
 import FileUploadWarning from '../../components/FileUploadWarning';
@@ -56,7 +57,7 @@ export default function Demo() {
       <div className="flex flex-1 flex-col py-10">
         {status === 'run-test' && (
           <>
-            <Title>Test Refiner</Title>
+            <TestRefinerDescription />
             <RunTest
               onClickSampleFile={runTestWithSampleFile}
               onClickCustomFile={runTestWithCustomFile}
@@ -68,14 +69,14 @@ export default function Demo() {
 
         {status === 'pending' && (
           <>
-            <Title>Test Refiner</Title>
+            <TestRefinerDescription />
             <Uploading />
           </>
         )}
 
         {status === 'reportable-conditions' && response?.data && (
           <>
-            <Title>Test Refiner</Title>
+            <TestRefinerDescription />
             <ReportableConditionsResults
               matchedConditions={response.data.refined_conditions.map(
                 (c) => c.display_name
