@@ -1,11 +1,10 @@
 import { Title } from '../../components/Title';
-import React from 'react';
 
 /**
  * Renders the title and description for the Test Refiner module.
  * This is a reusable component for consistent module documentation.
  */
-export const TestRefinerDescription: React.FC = () => (
+export const TestRefinerDescription = () => (
   <div className="mb-6 flex justify-start">
     <div className="flex flex-col">
       <Title>Test Refiner</Title>
