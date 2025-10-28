@@ -1,4 +1,4 @@
-import { Table } from '@trussworks/react-uswds';
+import Table from '../../components/Table';
 import { Title } from '../../components/Title';
 
 interface ActivityEntry {
