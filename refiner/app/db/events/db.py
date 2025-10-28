@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
+from psycopg import AsyncCursor
 from psycopg.rows import class_row
 
 from ..pool import AsyncDatabaseConnection
-from .model import DbEvent, EventInput
+from .model import EventInput
 
 
 @dataclass
@@ -22,7 +24,7 @@ class EventResponse:
 
 
 async def get_events_by_jd_db(
-    jurisdiction_id: UUID, db: AsyncDatabaseConnection
+    jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> list[EventResponse]:
     """
     Fetches all events for a given jurisdiction ID.
@@ -50,7 +52,7 @@ async def get_events_by_jd_db(
 
 async def insert_event_db(
     event: EventInput,
-    db: AsyncDatabaseConnection,
+    cursor: AsyncCursor[Any],
 ) -> None:
     """
     Inserts an event into the `events` table.
@@ -79,6 +81,4 @@ async def insert_event_db(
         event.action_text,
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbEvent)) as cur:
-            await cur.execute(query, params)
+    await cursor.execute(query, params)

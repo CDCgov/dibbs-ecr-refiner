@@ -6,7 +6,7 @@ from uuid import UUID
 
 @dataclass(frozen=True)
 class _EventBase:
-    jurisdiction_id: UUID
+    jurisdiction_id: str
     user_id: UUID
     configuration_id: UUID
     event_type: Literal["create_configuration"]

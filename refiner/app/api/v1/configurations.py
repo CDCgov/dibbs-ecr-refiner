@@ -27,7 +27,6 @@ from app.core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from app.db.events.model import EventInput
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
@@ -68,7 +67,6 @@ from ...db.configurations.model import (
     DbConfigurationSectionProcessing,
 )
 from ...db.demo.model import Condition
-from ...db.events.db import insert_event_db
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
@@ -179,22 +177,11 @@ async def create_configuration(
         )
 
     config = await insert_configuration_db(
-        condition=condition, jurisdiction_id=jd, db=db
+        condition=condition, user_id=user.id, jurisdiction_id=jd, db=db
     )
 
     if config is None:
         raise HTTPException(status_code=500, detail="Unable to create configuration")
-
-    await insert_event_db(
-        event=EventInput(
-            jurisdiction_id=jd,
-            user_id=user.id,
-            configuration_id=config.id,
-            event_type="create_configuration",
-            action_text="Configuration created.",
-        ),
-        db=db,
-    )
 
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
