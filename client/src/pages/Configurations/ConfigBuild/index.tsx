@@ -62,17 +62,16 @@ export default function ConfigBuild() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return <ErrorFallback error={error} />;
 
-  console.log("code sets")
-  console.log(response.data.code_sets)
+  console.log('code sets');
+  console.log(response.data.code_sets);
 
   // sort so the default code set always displays first
   const sortedCodeSets = response.data.code_sets.sort((a) => {
     return a.display_name === response.data.display_name ? -1 : 1;
   });
 
-  console.log("sorted code sets")
-  console.log(sortedCodeSets)
-
+  console.log('sorted code sets');
+  console.log(sortedCodeSets);
 
   for (const cond of response.data.included_conditions) {
     if (cond.id === 'cc88ca12-d62f-4c3d-8397-514b73d51bf6') {
@@ -794,8 +793,8 @@ export function CustomCodeModal({
     { name: 'Other', value: 'other' },
   ];
 
-  console.log("LOINC CODES")
-  console.log(loincCodes)
+  console.log('LOINC CODES');
+  console.log(loincCodes);
 
   const isEditing = initialCode && initialSystem && initialName;
 
@@ -932,7 +931,7 @@ export function CustomCodeModal({
               const trimmedCode = form.code.trim(); // full trim (leading + trailing)
               if (loincCodes.includes(trimmedCode)) {
                 setError(
-                    `The code "${trimmedCode}" already exists in the condition code set.`
+                  `The code "${trimmedCode}" already exists in the condition code set.`
                 );
               } else {
                 setForm((prev) => ({ ...prev, code: trimmedCode })); // ensure stored value is clean
