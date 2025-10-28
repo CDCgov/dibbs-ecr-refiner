@@ -685,7 +685,7 @@ async def add_custom_code(
 
     # Create a custom code object
     custom_code = DbConfigurationCustomCode(
-        code=body.code,
+        code=body.code.strip(),
         system=sanitized_system_name,
         name=body.name,
     )
@@ -769,9 +769,15 @@ async def delete_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    print("CONFIG >>>>>>>>>>>")
+    print(config)
+
     updated_config = await delete_custom_code_from_configuration_db(
         config=config, system=system, code=code, db=db
     )
+
+    print("UPDATED CONFIG >>>>>>>>>>>")
+    print(updated_config)
 
     if not updated_config:
         raise HTTPException(

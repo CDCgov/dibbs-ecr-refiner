@@ -7,6 +7,5 @@
  */
 
 export interface ConditionEntry {
-  canonical_url: string;
-  version: string;
+  id: string;
 }
