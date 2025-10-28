@@ -236,8 +236,7 @@ async def associate_condition_codeset_with_configuration_db(
                 WHERE NOT EXISTS (
                 SELECT 1
                 FROM jsonb_array_elements(included_conditions) existing
-                WHERE existing->>'canonical_url' = elem->>'canonical_url'
-                    AND existing->>'version' = elem->>'version'
+                WHERE existing::text = elem::text
                 )
             ) s
             )
@@ -255,9 +254,7 @@ async def associate_condition_codeset_with_configuration_db(
             ;
             """
 
-    new_condition = Jsonb(
-        [{"canonical_url": condition.canonical_url, "version": condition.version}]
-    )
+    new_condition = Jsonb([str(condition.id)])
     params = (new_condition, config.id)
 
     async with db.get_connection() as conn:

@@ -380,8 +380,7 @@ class ConditionEntry:
     Condition model.
     """
 
-    canonical_url: str
-    version: str
+    id: UUID
 
 
 @dataclass(frozen=True)
@@ -459,7 +458,7 @@ async def associate_condition_codeset_with_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(canonical_url=c.canonical_url, version=c.version)
+            ConditionEntry(c)
             for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,

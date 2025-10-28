@@ -9,7 +9,7 @@ class DbConfigurationCondition:
     Condition associated with a Configuration.
     """
 
-    included_conditions_ids: list[UUID]
+    included_conditions_ids: UUID
 
 
 # TODO: Revisit this to see if we can figure out how to reduce overlap with other types.
