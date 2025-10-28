@@ -171,8 +171,8 @@
   @apply h-17;
 }
 
-.usa-table tbody td {
-  @apply cursor-pointer;
+.usa-table tbody td:not(:first-child) {
+  @apply text-sm;
 }
 
 .usa-table th,
