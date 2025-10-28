@@ -7,7 +7,7 @@ from app.services.ecr.process_eicr import get_section_loinc_codes
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
-    get_conditions_by_canonical_urls_and_versions_db,
+    get_included_conditions,
     get_conditions_by_child_rsg_snomed_codes,
 )
 from ..db.conditions.model import DbCondition
@@ -203,10 +203,8 @@ async def independent_testing(
         # in the list (which includes the primary condition) for the payload and
         # store the corresponding trace info
         if trace.number_of_included_conditions > 1:
-            all_conditions_for_configuration = (
-                await get_conditions_by_canonical_urls_and_versions_db(
-                    db=db, condition_references=configuration.included_conditions
-                )
+            all_conditions_for_configuration = await get_included_conditions(
+                included_conditions=configuration.included_conditions, db=db
             )
         else:
             all_conditions_for_configuration = [primary_condition]

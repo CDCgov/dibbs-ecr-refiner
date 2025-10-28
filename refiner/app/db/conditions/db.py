@@ -221,43 +221,35 @@ async def get_conditions_by_child_rsg_snomed_codes(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
-async def get_conditions_by_canonical_urls_and_versions_db(
-    db: AsyncDatabaseConnection, condition_references: list[DbConfigurationCondition]
+async def get_included_conditions(
+    included_conditions: list[DbConfigurationCondition], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     """
-    Given a list of condition references (as DbConfigurationCondition objects), fetches the full DbCondition objects.
+    Fetches all conditions given an id.
 
-    This will collect the primary condition and any additionally added conditions since the "included_conditions"
-    column stores the primary condition as well as additional conditions.
+    Useful for finding included_conditions
+    Args:
+        db (AsyncDatabaseConnection): Database connection.
+        included_conditions (list[DbConfigurationCondition]): List of condition ids to fetch.
+    Returns:
+        list[DbCondition]: List of conditions.
     """
 
-    if not condition_references:
-        return []
+    # Extract UUIDs (as strings) from the included_conditions list
+    condition_ids = [
+        str(cond.id) for cond in included_conditions if getattr(cond, "id", None)
+    ]
 
-    # create two separate lists for urls and versions to unnest in the query
-    cannonical_urls = [reference.canonical_url for reference in condition_references]
-    versions = [reference.version for reference in condition_references]
+    if not condition_ids:
+        return []  # nothing to fetch
 
     query = """
-        SELECT
-            c.id,
-            c.display_name,
-            c.canonical_url,
-            c.version,
-            c.child_rsg_snomed_codes,
-            c.snomed_codes,
-            c.loinc_codes,
-            c.icd10_codes,
-            c.rxnorm_codes
-        FROM conditions c
-        JOIN ROWS FROM (
-            unnest(%s::text[]),
-            unnest(%s::text[])
-        ) AS refs(url, v)
-        ON c.canonical_url = refs.url AND c.version = refs.v
+        SELECT *
+        FROM conditions
+        WHERE id = ANY($1::uuid[]);
     """
 
-    params = (cannonical_urls, versions)
+    params = (condition_ids,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

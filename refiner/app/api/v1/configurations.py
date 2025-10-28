@@ -42,7 +42,7 @@ from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
-    get_conditions_by_canonical_urls_and_versions_db,
+    get_included_conditions,
     get_conditions_db,
 )
 from ...db.conditions.model import DbConditionCoding
@@ -255,20 +255,20 @@ async def get_configuration(
 
     # Fetch all included conditions
     conditions = []
-    for cond_id in config.included_conditions or []:
-        condition = await get_condition_by_id_db(id=cond_id, db=db)
+    for cond in config.included_conditions or []:
+        condition = await get_condition_by_id_db(id=cond.id, db=db)
         if condition:
             conditions.append(condition)
 
     # Flatten all codes from all included conditions and custom codes
     loinc_codes_set = set()
 
-    for cond in conditions:
+    for c in conditions:
         for code_list in [
-            getattr(cond, "snomed_codes", []),
-            getattr(cond, "loinc_codes", []),
-            getattr(cond, "icd10_codes", []),
-            getattr(cond, "rxnorm_codes", []),
+            getattr(c, "snomed_codes", []),
+            getattr(c, "loinc_codes", []),
+            getattr(c, "icd10_codes", []),
+            getattr(c, "rxnorm_codes", []),
         ]:
             for coding in code_list:
                 if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
@@ -296,14 +296,14 @@ async def get_configuration(
 
     # Build IncludedCondition objects, marking which are associated
     included_conditions = []
-    for cond in all_conditions:
-        is_associated = str(cond.id) in associated_conditions
+    for condition in all_conditions:
+        is_associated = str(condition.id) in associated_conditions
         included_conditions.append(
             IncludedCondition(
-                id=cond.id,
-                display_name=cond.display_name,
-                canonical_url=cond.canonical_url,
-                version=cond.version,
+                id=condition.id,
+                display_name=condition.display_name,
+                canonical_url=condition.canonical_url,
+                version=condition.version,
                 associated=is_associated,
             )
         )
@@ -346,17 +346,9 @@ async def get_configuration_export(
         )
 
     # Determine included conditions
-    all_conditions = await get_conditions_db(db=db)
-    associated_conditions = {
-        (c.canonical_url, c.version)
-        for c in config.included_conditions
-        if c.canonical_url and c.version
-    }
-    included_conditions = [
-        cond
-        for cond in all_conditions
-        if (cond.canonical_url, cond.version) in associated_conditions
-    ]
+    included_conditions = await get_included_conditions(
+        included_conditions=config.included_conditions, db=db
+    )
 
     # Write CSV to StringIO (text)
     with StringIO() as csv_text:
@@ -500,7 +492,7 @@ async def associate_condition_codeset_with_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(c) for c in updated_config.included_conditions
+            ConditionEntry(c.id) for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,
     )
@@ -578,7 +570,7 @@ async def remove_condition_codeset_from_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(c) for c in updated_config.included_conditions
+            ConditionEntry(c.id) for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,
     )
@@ -1099,10 +1091,8 @@ async def run_configuration_test(
     # in the list (which includes the primary condition) for the payload and
     # store the corresponding trace info
     if len(configuration.included_conditions) > 1:
-        all_conditions_for_configuration = (
-            await get_conditions_by_canonical_urls_and_versions_db(
-                db=db, condition_references=configuration.included_conditions
-            )
+        all_conditions_for_configuration = await get_included_conditions(
+            included_conditions=configuration.included_conditions, db=db
         )
     else:
         all_conditions_for_configuration = [primary_condition]
