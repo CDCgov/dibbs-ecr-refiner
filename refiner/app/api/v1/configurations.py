@@ -67,7 +67,6 @@ from ...db.configurations.model import (
     DbConfigurationSectionProcessing,
 )
 from ...db.demo.model import Condition
-from ...db.events.db import log_create_configuration_event_db
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
@@ -178,15 +177,11 @@ async def create_configuration(
         )
 
     config = await insert_configuration_db(
-        condition=condition, jurisdiction_id=jd, db=db
+        condition=condition, user_id=user.id, jurisdiction_id=jd, db=db
     )
 
     if config is None:
         raise HTTPException(status_code=500, detail="Unable to create configuration")
-
-    await log_create_configuration_event_db(
-        user_id=user.id, jurisdiction_id=jd, configuration_id=config.id, db=db
-    )
 
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
