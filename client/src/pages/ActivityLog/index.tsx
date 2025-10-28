@@ -1,31 +1,27 @@
 import { Table } from '@trussworks/react-uswds';
 import { Title } from '../../components/Title';
 
-const NOW = new Date();
-const stubbedData = [
+interface ActivityEntry {
+  id: string;
+  username: string;
+  configuration_name: string;
+  action_text: string;
+  created_at: string;
+}
+const stubbedData: ActivityEntry[] = [
   {
-    message: 'some long description of the action',
-    user: 'Someone Interesting',
-    action: 'Something Interesting',
-    date: new Date(NOW.setMinutes(NOW.getMinutes() - Math.random() * 10)), // add some variation
+    id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
+    username: 'refiner',
+    configuration_name: 'Alpha-gal Syndrome',
+    action_text: 'Created configuration',
+    created_at: '2025-10-28T13:58:45.363325Z',
   },
   {
-    message: 'some long description of the action',
-    user: 'Someone Interesting',
-    action: 'Something Interesting',
-    date: new Date(NOW.setMinutes(NOW.getMinutes() - Math.random() * 10)),
-  },
-  {
-    message: 'some long description of the action',
-    user: 'Someone Interesting',
-    action: 'Something Interesting',
-    date: new Date(NOW.setMinutes(NOW.getMinutes() - Math.random() * 10)),
-  },
-  {
-    message: 'some long description of the action',
-    user: 'Someone Interesting',
-    action: 'Something Interesting',
-    date: NOW,
+    id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
+    username: 'refiner',
+    configuration_name: 'Acanthamoeba',
+    action_text: 'Created configuration',
+    created_at: '2025-10-28T13:57:55.627842Z',
   },
 ];
 
@@ -66,18 +62,21 @@ export function ActivityLog() {
 
           <tbody>
             {data
-              .sort((a, b) => (a.date > b.date ? -1 : 1))
-              .map((r) => (
-                <tr>
-                  <td className="!font-bold">{r.user}</td>
-                  <td>{r.action}</td>
-                  <td>{r.message}</td>
-                  <td>
-                    {r.date.toLocaleDateString()} <br />
-                    {timeFormatter.format(r.date)}
-                  </td>
-                </tr>
-              ))}
+              .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
+              .map((r) => {
+                const createdAtDate = new Date(r.created_at);
+                return (
+                  <tr>
+                    <td className="!font-bold">{r.username}</td>
+                    <td>{r.configuration_name}</td>
+                    <td>{r.action_text}</td>
+                    <td>
+                      {createdAtDate.toLocaleDateString()} <br />
+                      {timeFormatter.format(createdAtDate)}
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </Table>
       </div>
