@@ -229,7 +229,9 @@ async def get_included_conditions(
     """
 
     # Extract UUIDs (as strings) from the included_conditions list
-    condition_ids = [str(cond.id) for cond in included_conditions if getattr(cond, "id", None)]
+    condition_ids = [
+        str(cond.id) for cond in included_conditions if getattr(cond, "id", None)
+    ]
 
     if not condition_ids:
         return []  # nothing to fetch

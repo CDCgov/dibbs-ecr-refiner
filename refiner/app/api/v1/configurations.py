@@ -254,7 +254,9 @@ async def get_configuration(
         )
 
     # Fetch all included conditions
-    conditions = await get_included_conditions(included_conditions=config.included_conditions, db=db)
+    conditions = await get_included_conditions(
+        included_conditions=config.included_conditions, db=db
+    )
 
     # Flatten all codes from all included conditions and custom codes
     loinc_codes_set = set()
