@@ -36,7 +36,7 @@ function App() {
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
-        <Route path="/activityLog" element={<ActivityLog />} />
+        <Route path="/activity" element={<ActivityLog />} />
 
         <Route path="/configurations" element={<Configurations />} />
         <Route path="/configurations/:id/build" element={<ConfigBuild />} />
