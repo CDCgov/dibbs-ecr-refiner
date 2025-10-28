@@ -12,7 +12,7 @@ def get_sample_zip_path() -> Path:
     Get the path to the demo zip file provided by the application.
     """
 
-    return get_asset_path("demo", "mon-mothma-two-conditions.zip")
+    return get_asset_path("demo", "mon-mothma-covid-influenza.zip")
 
 
 def create_sample_zip_file(sample_zip_path: Path) -> UploadFile:
