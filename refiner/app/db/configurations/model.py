@@ -99,7 +99,7 @@ class DbConfiguration:
             name=row["name"],
             jurisdiction_id=row["jurisdiction_id"],
             condition_id=row["condition_id"],
-            included_conditions = row.get("included_conditions", []) or [],
+            included_conditions=row.get("included_conditions", []) or [],
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             section_processing=[

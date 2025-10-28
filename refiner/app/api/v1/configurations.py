@@ -276,7 +276,9 @@ async def get_configuration(
 
     # Include custom codes from the configuration
     for custom_code in getattr(config, "custom_codes", []):
-        if isinstance(custom_code, DbConfigurationCustomCode) and hasattr(custom_code, "code"):
+        if isinstance(custom_code, DbConfigurationCustomCode) and hasattr(
+            custom_code, "code"
+        ):
             loinc_codes_set.add(custom_code.code)
 
     # Final flattened, deduplicated list of codes
@@ -498,8 +500,7 @@ async def associate_condition_codeset_with_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(c)
-            for c in updated_config.included_conditions
+            ConditionEntry(c) for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,
     )
@@ -577,8 +578,7 @@ async def remove_condition_codeset_from_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(c)
-            for c in updated_config.included_conditions
+            ConditionEntry(c) for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,
     )
