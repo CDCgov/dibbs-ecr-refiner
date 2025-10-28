@@ -42,8 +42,8 @@ from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
-    get_included_conditions,
     get_conditions_db,
+    get_included_conditions,
 )
 from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
@@ -254,11 +254,7 @@ async def get_configuration(
         )
 
     # Fetch all included conditions
-    conditions = []
-    for cond in config.included_conditions or []:
-        condition = await get_condition_by_id_db(id=cond.id, db=db)
-        if condition:
-            conditions.append(condition)
+    conditions = await get_included_conditions(included_conditions=config.included_conditions, db=db)
 
     # Flatten all codes from all included conditions and custom codes
     loinc_codes_set = set()

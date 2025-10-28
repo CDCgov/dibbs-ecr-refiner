@@ -7,8 +7,8 @@ from app.services.ecr.process_eicr import get_section_loinc_codes
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
-    get_included_conditions,
     get_conditions_by_child_rsg_snomed_codes,
+    get_included_conditions,
 )
 from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (

@@ -226,19 +226,10 @@ async def get_included_conditions(
 ) -> list[DbCondition]:
     """
     Fetches all conditions given an id.
-
-    Useful for finding included_conditions
-    Args:
-        db (AsyncDatabaseConnection): Database connection.
-        included_conditions (list[DbConfigurationCondition]): List of condition ids to fetch.
-    Returns:
-        list[DbCondition]: List of conditions.
     """
 
     # Extract UUIDs (as strings) from the included_conditions list
-    condition_ids = [
-        str(cond.id) for cond in included_conditions if getattr(cond, "id", None)
-    ]
+    condition_ids = [str(cond.id) for cond in included_conditions if getattr(cond, "id", None)]
 
     if not condition_ids:
         return []  # nothing to fetch
@@ -246,7 +237,7 @@ async def get_included_conditions(
     query = """
         SELECT *
         FROM conditions
-        WHERE id = ANY($1::uuid[]);
+        WHERE id = ANY(%s::uuid[]);
     """
 
     params = (condition_ids,)
