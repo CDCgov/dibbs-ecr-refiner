@@ -2,7 +2,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 interface ActivityEntry {
   id: string;
