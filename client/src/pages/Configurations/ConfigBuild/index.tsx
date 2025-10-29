@@ -89,7 +89,7 @@ export default function ConfigBuild() {
           custom_codes={response.data.custom_codes}
           section_processing={response.data.section_processing}
           display_name={response.data.display_name}
-          loinc_codes={response.data.loinc_codes}
+          deduplicated_codes={response.data.deduplicated_codes}
         />
       </SectionContainer>
     </div>
@@ -121,7 +121,7 @@ function Builder({
   included_conditions,
   section_processing,
   display_name: default_condition_name,
-  loinc_codes,
+  deduplicated_codes,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -313,7 +313,7 @@ function Builder({
                 configurationId={id}
                 modalRef={modalRef}
                 customCodes={custom_codes}
-                loincCodes={loinc_codes}
+                deduplicated_codes={deduplicated_codes}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -483,14 +483,14 @@ interface CustomCodesDetailProps {
   configurationId: string;
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
-  loincCodes: string[];
+  deduplicated_codes: string[];
 }
 
 function CustomCodesDetail({
   configurationId,
   modalRef,
   customCodes,
-  loincCodes,
+  deduplicated_codes,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -572,7 +572,7 @@ function CustomCodesDetail({
         initialCode={selectedCustomCode?.code}
         initialSystem={selectedCustomCode?.system}
         initialName={selectedCustomCode?.name}
-        loincCodes={loincCodes}
+        deduplicated_codes={deduplicated_codes}
         modalRef={modalRef}
         onClose={toggleModal}
       />
@@ -753,7 +753,7 @@ interface CustomCodeModalProps {
   initialCode?: string;
   initialSystem?: string;
   initialName?: string;
-  loincCodes: string[];
+  deduplicated_codes: string[];
 }
 
 export function CustomCodeModal({
@@ -763,7 +763,7 @@ export function CustomCodeModal({
   initialCode,
   initialSystem,
   initialName,
-  loincCodes,
+  deduplicated_codes,
 }: CustomCodeModalProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
   const { mutate: editCode } = useEditCustomCodeFromConfiguration();
@@ -914,7 +914,7 @@ export function CustomCodeModal({
             }}
             onBlur={() => {
               const trimmedCode = form.code.trim(); // full trim (leading + trailing)
-              if (loincCodes.includes(trimmedCode)) {
+              if (deduplicated_codes.includes(trimmedCode)) {
                 setError(
                   `The code "${trimmedCode}" already exists in the condition code set.`
                 );

@@ -17,5 +17,5 @@ export interface GetConfigurationResponse {
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];
   section_processing: DbConfigurationSectionProcessing[];
-  loinc_codes: string[];
+  deduplicated_codes: string[];
 }

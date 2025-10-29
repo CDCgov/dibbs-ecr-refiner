@@ -211,7 +211,7 @@ class GetConfigurationResponse:
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
-    loinc_codes: list[str]
+    deduplicated_codes: list[str]
 
 
 @dataclass(frozen=True)
@@ -259,7 +259,7 @@ async def get_configuration(
     )
 
     # Flatten all codes from all included conditions and custom codes
-    loinc_codes_set = set()
+    all_codes = set()
 
     for c in conditions:
         for code_list in [
@@ -270,17 +270,17 @@ async def get_configuration(
         ]:
             for coding in code_list:
                 if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
-                    loinc_codes_set.add(coding.code)
+                    all_codes.add(coding.code)
 
     # Include custom codes from the configuration
     for custom_code in getattr(config, "custom_codes", []):
         if isinstance(custom_code, DbConfigurationCustomCode) and hasattr(
             custom_code, "code"
         ):
-            loinc_codes_set.add(custom_code.code)
+            all_codes.add(custom_code.code)
 
     # Final flattened, deduplicated list of codes
-    loinc_codes = sorted(loinc_codes_set)
+    deduplicated_codes = sorted(all_codes)
 
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
@@ -313,7 +313,7 @@ async def get_configuration(
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
-        loinc_codes=loinc_codes,
+        deduplicated_codes=deduplicated_codes,
     )
 
 
