@@ -35,7 +35,7 @@ class TestConfigurations:
         event = response.json()[0]
         assert event["username"] == test_username
         assert event["configuration_name"] == condition["display_name"]
-        assert event["action_text"] == "Created configuration."
+        assert event["action_text"] == "Created configuration"
 
         # Attempt to create the same config again (should fail)
         response = await authed_client.post("/api/v1/configurations/", json=payload)
