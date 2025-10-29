@@ -3,15 +3,9 @@ import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
+import { EventResponse } from '../../api/schemas';
 
-interface ActivityEntry {
-  id: string;
-  username: string;
-  configuration_name: string;
-  action_text: string;
-  created_at: string;
-}
-const configurationEvents: ActivityEntry[] = [
+const configurationEvents: EventResponse[] = [
   {
     id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
     username: 'refiner',
