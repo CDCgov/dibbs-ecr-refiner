@@ -5,7 +5,6 @@ import { Title } from '../../components/Title';
 import ErrorFallback from '../ErrorFallback';
 
 export function ActivityLog() {
-  // will replace this with the actual API hook call once complete
   const { data: response, isPending, isError, error } = useGetEvents();
   const timeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
