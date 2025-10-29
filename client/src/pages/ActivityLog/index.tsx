@@ -34,7 +34,7 @@ export function ActivityLog() {
           <colgroup>
             <col className="w-full sm:w-1/6" />
             <col className="w-2/6" />
-            <col className="w-3/6" />
+            <col className="w-2/6" />
             <col className="w-1/6" />
           </colgroup>
           <thead>
