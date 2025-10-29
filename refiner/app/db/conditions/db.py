@@ -221,7 +221,7 @@ async def get_conditions_by_child_rsg_snomed_codes(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
-async def get_included_conditions(
+async def get_included_conditions_db(
     included_conditions: list[DbConfigurationCondition], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     """

@@ -43,7 +43,7 @@ from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
     get_conditions_db,
-    get_included_conditions,
+    get_included_conditions_db,
 )
 from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
@@ -254,7 +254,7 @@ async def get_configuration(
         )
 
     # Fetch all included conditions
-    conditions = await get_included_conditions(
+    conditions = await get_included_conditions_db(
         included_conditions=config.included_conditions, db=db
     )
 
@@ -344,7 +344,7 @@ async def get_configuration_export(
         )
 
     # Determine included conditions
-    included_conditions = await get_included_conditions(
+    included_conditions = await get_included_conditions_db(
         included_conditions=config.included_conditions, db=db
     )
 
@@ -1080,7 +1080,7 @@ async def run_configuration_test(
     # in the list (which includes the primary condition) for the payload and
     # store the corresponding trace info
     if len(configuration.included_conditions) > 1:
-        all_conditions_for_configuration = await get_included_conditions(
+        all_conditions_for_configuration = await get_included_conditions_db(
             included_conditions=configuration.included_conditions, db=db
         )
     else:
