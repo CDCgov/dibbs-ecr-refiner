@@ -6,7 +6,17 @@ from pathlib import Path
 from typing import TypedDict
 
 JURISDICTION_CSV = "eCR_Jurisdictions.csv"
-SAMPLE_FILES = Path("../../../assets/demo/mon-mothma-two-conditions.zip")
+SAMPLE_FILES = [
+    # (input zip path, output file suffix)
+    (
+        Path("../../../assets/demo/mon-mothma-covid-influenza.zip"),
+        "eCR_Refiner_COVID_Influenza_Sample_Files",
+    ),
+    (
+        Path("../../../assets/demo/mon-mothma-hep-c-pertussis.zip"),
+        "eCR_Refiner_HepC_Pertussis_Sample_Files",
+    ),
+]
 OUTPUT_DIR = Path("jurisdiction_sample_data")
 RR_FILENAME = "CDA_RR.xml"
 EICR_FILENAME = "CDA_eICR.xml"
@@ -116,27 +126,20 @@ if __name__ == "__main__":
     # Get the git hash
     git_info = get_git_info()
 
-# Loop through all JD IDs in the doc
-for jurisdiction in jurisdictions:
-    # Get the current JD ID
-    routing_code = jurisdiction["RoutingCode"]
-    print(f"Processing for {routing_code}...")
+    # loop through all JDs and sample files
+    for jurisdiction in jurisdictions:
+        routing_code = jurisdiction["RoutingCode"]
+        for zip_path, output_suffix in SAMPLE_FILES:
+            print(f"Processing {zip_path.name} for {routing_code}...")
 
-    # Get the RR data
-    contents = extract_zip_to_memory(SAMPLE_FILES)
-    rr_data = contents.get(RR_FILENAME)
+            contents = extract_zip_to_memory(zip_path)
+            rr_data = contents.get(RR_FILENAME)
+            modified_rr = modify_rr(rr_data, ORIGINAL_TEST_JD, routing_code)
 
-    # Swap "SDDH" with the routing code in the RR
-    modified_rr = modify_rr(rr_data, ORIGINAL_TEST_JD, routing_code)
+            new_contents = contents.copy()
+            new_contents[RR_FILENAME] = modified_rr
 
-    # Replace RR with modified copy
-    new_contents = contents.copy()
-    new_contents[RR_FILENAME] = modified_rr
-
-    # Name and write zip file
-    output_zip = (
-        OUTPUT_DIR / f"{routing_code}_eCR_Refiner_COVID_Influenza_Sample_Files.zip"
-    )
-    metadata = create_metadata(git_info, jurisdiction)
-    create_output_zip(output_zip, new_contents, metadata)
-    print(f"✅ Created {output_zip.name}")
+            output_zip = OUTPUT_DIR / f"{routing_code}_{output_suffix}.zip"
+            metadata = create_metadata(git_info, jurisdiction)
+            create_output_zip(output_zip, new_contents, metadata)
+            print(f"✅ Created {output_zip.name}")

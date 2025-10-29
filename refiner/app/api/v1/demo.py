@@ -70,7 +70,7 @@ async def demo_upload(
 
     Steps:
     1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
-        refiner/assets/demo/mon-mothma-two-conditions.zip).
+        refiner/assets/demo/mon-mothma-covid-influenza.zip).
     2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
     3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
     4. For each unique reportable condition code found in the RR (and having a configuration),
