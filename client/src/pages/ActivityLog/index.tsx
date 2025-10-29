@@ -16,8 +16,13 @@ export function ActivityLog() {
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return <ErrorFallback error={error} />;
 
+  const nameHeader = 'Name';
+  const conditionHeader = 'Condition';
+  const actionHeader = 'Action';
+  const dateHeader = 'Date';
+
   return (
-    <section className="mx-auto">
+    <section className="mx-auto p-4">
       <div className="mt-10">
         <Title>Activity log</Title>
         <p className="mt-2">
@@ -28,17 +33,17 @@ export function ActivityLog() {
       <div className="mt-6">
         <Table striped>
           <colgroup>
-            <col className="w-[16.5%]" />
-            <col className="w-[23.5%]" />
-            <col className="w-[48.5%]" />
-            <col className="w-[11.5%]" />
+            <col className="w-full sm:w-1/4" />
+            <col className="w-1/8" />
+            <col className="w-1/2" />
+            <col className="w-1/8" />
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">Name </th>
-              <th scope="col">Condition </th>
-              <th scope="col">Action </th>
-              <th scope="col">Date</th>
+              <th scope="col">{nameHeader} </th>
+              <th scope="col">{conditionHeader} </th>
+              <th scope="col">{actionHeader}</th>
+              <th scope="col">{dateHeader}</th>
             </tr>
           </thead>
 
@@ -49,10 +54,12 @@ export function ActivityLog() {
                 const createdAtDate = new Date(r.created_at);
                 return (
                   <tr key={r.id}>
-                    <td className="!font-bold">{r.username}</td>
-                    <td>{r.configuration_name}</td>
-                    <td>{r.action_text}</td>
-                    <td>
+                    <td data-label={nameHeader} className="!font-bold">
+                      {r.username}
+                    </td>
+                    <td data-label={conditionHeader}>{r.configuration_name}</td>
+                    <td data-label={actionHeader}>{r.action_text}</td>
+                    <td data-label={dateHeader}>
                       {createdAtDate.toLocaleDateString()} <br />
                       {timeFormatter.format(createdAtDate)}
                     </td>
