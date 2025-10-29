@@ -32,10 +32,10 @@ export function ActivityLog() {
       <div className="mt-6">
         <Table striped>
           <colgroup>
-            <col className="w-full sm:w-1/4" />
-            <col className="w-1/8" />
-            <col className="w-1/2" />
-            <col className="w-1/8" />
+            <col className="w-full sm:w-1/6" />
+            <col className="w-2/6" />
+            <col className="w-3/6" />
+            <col className="w-1/6" />
           </colgroup>
           <thead>
             <tr>
