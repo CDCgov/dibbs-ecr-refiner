@@ -52,7 +52,7 @@ const renderPageView = () =>
     </TestQueryClientProvider>
   );
 
-describe('Configurations Page', () => {
+describe('Activity log page', () => {
   beforeEach(() => vi.resetAllMocks());
 
   it('should render the activity log with the test entries', () => {
