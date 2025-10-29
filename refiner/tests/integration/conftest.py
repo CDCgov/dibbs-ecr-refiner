@@ -154,7 +154,7 @@ def setup(request):
         ON CONFLICT DO NOTHING;
 
         INSERT INTO users (id, username, email, jurisdiction_id)
-        VALUES ('{TEST_USER_ID}', '{TEST_USER_ID}', 'test@example.com', '{TEST_JD_ID}')
+        VALUES ('{TEST_USER_ID}', '{TEST_USERNAME}', 'test@example.com', '{TEST_JD_ID}')
         ON CONFLICT DO NOTHING;
 
         INSERT INTO sessions (token_hash, user_id, expires_at)
