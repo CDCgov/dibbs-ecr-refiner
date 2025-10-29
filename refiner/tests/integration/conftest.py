@@ -1,9 +1,11 @@
 import os
 from pathlib import Path
 
+import psycopg
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+from psycopg.rows import dict_row
 from testcontainers.compose import DockerCompose
 
 # Ensure session secret is set before `app` imports
@@ -33,6 +35,17 @@ def test_user_id():
 @pytest.fixture
 def test_username():
     return TEST_USERNAME
+
+
+@pytest_asyncio.fixture(scope="session")
+async def db_conn():
+    conn = await psycopg.AsyncConnection.connect(
+        "postgresql://postgres:refiner@localhost:5432/refiner", row_factory=dict_row
+    )
+    try:
+        yield conn
+    finally:
+        await conn.close()
 
 
 @pytest.fixture
@@ -154,7 +167,7 @@ def setup(request):
         ON CONFLICT DO NOTHING;
 
         INSERT INTO users (id, username, email, jurisdiction_id)
-        VALUES ('{TEST_USER_ID}', '{TEST_USER_ID}', 'test@example.com', '{TEST_JD_ID}')
+        VALUES ('{TEST_USER_ID}', '{TEST_USERNAME}', 'test@example.com', '{TEST_JD_ID}')
         ON CONFLICT DO NOTHING;
 
         INSERT INTO sessions (token_hash, user_id, expires_at)

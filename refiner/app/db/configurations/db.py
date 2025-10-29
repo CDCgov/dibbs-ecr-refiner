@@ -115,7 +115,7 @@ async def insert_configuration_db(
                     user_id=user_id,
                     configuration_id=config.id,
                     event_type="create_configuration",
-                    action_text="Configuration created.",
+                    action_text="Created configuration.",
                 ),
                 cursor=cur,
             )
