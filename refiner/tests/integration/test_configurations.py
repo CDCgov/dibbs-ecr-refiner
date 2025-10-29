@@ -18,6 +18,7 @@ class TestConfigurations:
                 """
             )
             condition = await cur.fetchone()
+            assert condition is not None
 
         # Create config
         payload = {"condition_id": str(condition["id"])}
@@ -35,3 +36,12 @@ class TestConfigurations:
         assert event["username"] == test_username
         assert event["configuration_name"] == condition["display_name"]
         assert event["action_text"] == "Created configuration."
+
+        # Attempt to create the same config again (should fail)
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == 409
+
+        # Make sure no event was created during failure
+        response = await authed_client.get("/api/v1/events/")
+        assert response.status_code == 200
+        assert len(response.json()) == 1
