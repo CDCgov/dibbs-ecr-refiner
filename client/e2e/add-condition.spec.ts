@@ -1,4 +1,4 @@
-import { test, expect } from './axe-test';
+import { test, expect } from '@playwright/test';
 import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
@@ -22,7 +22,7 @@ test.describe
     /// ==========================================================================
     await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await page.getByTestId('combo-box-input').click();
     await page.getByTestId('combo-box-input').fill('Acanthamoeba');
@@ -35,7 +35,7 @@ test.describe
       page.getByRole('heading', { name: 'New configuration created' })
     ).toBeVisible();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     /// ==========================================================================
     /// Test that the drawer can open and add condition code sets
@@ -53,7 +53,7 @@ test.describe
     await page.getByText('Balamuthia mandrillaris Disease').click();
     await page.getByRole('heading', { name: 'Condition added' }).click();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await page.getByTestId('close-drawer').click();
     await expect(
@@ -68,7 +68,7 @@ test.describe
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await page.getByRole('textbox', { name: 'Code #' }).click();
     await page.getByRole('textbox', { name: 'Code #' }).fill('1234');
@@ -95,7 +95,7 @@ test.describe
     await page.getByText('Activity log').click();
     expect(page.getByRole('heading', { name: 'Activity log' }));
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await expect(
       page.getByRole('row').filter({ hasText: 'Acanthamoeba' })
@@ -115,7 +115,7 @@ test.describe
       .getByRole('row', { name: 'View configuration for Acanthamoeba' })
       .click();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await expect(
       page.getByRole('button', {
@@ -133,7 +133,7 @@ test.describe
       })
     ).toBeVisible();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await expect(
       page.getByRole('button', { name: 'Custom codes 1' })
@@ -167,7 +167,7 @@ test.describe
     // Hover over the row to reveal the delete button
     await balamuthiaRow.hover();
 
-    expect((await axeBuilder.analyze()).violations).toEqual([]);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Click the delete button inside this row
     await balamuthiaRow

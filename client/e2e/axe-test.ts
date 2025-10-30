@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 // See here: https://playwright.dev/docs/accessibility-testing#creating-a-fixture
 
-type AxeFixture = {
+export type AxeFixture = {
   makeAxeBuilder: () => AxeBuilder;
 };
 
