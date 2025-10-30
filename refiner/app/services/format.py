@@ -3,6 +3,7 @@ from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
+from refiner.app.services.ecr.refine import remove_element
 
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
@@ -16,9 +17,7 @@ def strip_comments(xml: str) -> str:
 
     # Remove comments
     for comment in cast(list[_Element], root.xpath("//comment()")):
-        parent = comment.getparent()
-        if parent is not None:
-            parent.remove(comment)
+        remove_element(comment)
 
     return etree.tostring(
         root,

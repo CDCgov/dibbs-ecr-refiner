@@ -1,6 +1,7 @@
-from typing import Literal
+from typing import Literal, cast
 
 from lxml import etree
+from lxml.etree import _Element
 
 from app.services.ecr.models import RefinementPlan
 
@@ -138,7 +139,7 @@ def refine_eicr(
         )
 
 
-def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan):
+def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan) -> str:
     """
     Refine a RR XML document from anything not reportable to the specified jurisdiction.
 
@@ -148,7 +149,9 @@ def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan):
         - It loops through all the condition observations in the reportability RC
             - Anything that isn't RRSVS1 reportable is filtered out
             - Of the remaining reportable observations, anything that isn't specified
-            in the refinement configurations are filtered out
+              in the refinement configurations are filtered out
+            - For anything remaining, any codes that aren't specified within the
+              in the configuration RSG or custom codes are filtered out.
 
     Args:
         jurisdiction_id: the ID of the jurisdiction we're currently processing information for
@@ -164,27 +167,127 @@ def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan):
     """
 
     # look for structured body
-    eicr_root = xml_files.parse_rr()
-    namespaces = {"hl7": "urn:hl7-org:v3"}
+    rr_root = xml_files.parse_rr()
+    namespaces = {
+        "hl7": "urn:hl7-org:v3",
+        "cda": "urn:hl7-org:v3",
+    }
 
-    structured_body = eicr_root.find(".//hl7:structuredBody", namespaces)
+    # author / custodian are the same always, so we can throw those out
+    custodian = rr_root.find(".//hl7:custodian", namespaces)
+
+    if custodian is not None:
+        rr_root.remove(custodian)
+
+    author = rr_root.find(".//hl7:author", namespaces)
+    if author is not None:
+        rr_root.remove(author)
+
+    # now, move on to processing the actual RR body
+    structured_body = rr_root.find(".//hl7:structuredBody", namespaces)
 
     if structured_body is None:
         raise StructureValidationError(
             message="No structured body found in RR",
             details={"document_type": "RR"},
         )
+    rr11_organizers = cast(
+        list[_Element],
+        structured_body.xpath(
+            ".//cda:section[cda:code/@code='55112-7']//cda:entry/cda:organizer[cda:code/@code='RR11']",
+            namespaces=namespaces,
+        ),
+    )
 
-    # author / custodian are the same always, so we can throw those out
-    # Remove anything that isn't for sure reportable
+    if not rr11_organizers and not rr11_organizers[0]:
+        raise StructureValidationError(
+            message="Missing required RR11 Coded Information Organizer",
+            details={
+                "document_type": "RR",
+                "error": "RR11 organizer not found in Summary Section",
+            },
+        )
 
-    # look for coded information organizater via RR7 / find the ID extension above it for jurisdiction.
-    # Use this to filter any trigger code output sections that aren't tied to the jurisdiction in question
+    rr_organizer = rr11_organizers[0]
 
-    # only preserve RRVS1 / reportable parts of the coded info organizer matching the jurisdiction
+    condition_observations = cast(
+        list[_Element],
+        rr_organizer.xpath(
+            ".//cda:component/cda:observation[cda:templateId/@root='2.16.840.1.113883.10.20.15.2.3.12']",
+            namespaces=namespaces,
+        ),
+    )
+    for condition_observation in condition_observations:
+        # For each entryRelationship / organizer...
+        organizers = cast(
+            list[_Element],
+            condition_observation.xpath(
+                ".//cda:entryRelationship/cda:organizer",
+                namespaces=namespaces,
+            ),
+        )
+
+        if not organizers:
+            continue
+
+        organizer = organizers[0]
+
+        # Check if component / observation has a tagged RRVS1 entry.
+        #  If there isn't it's not reportable, so throw out the whole thing
+        reportable_observation_tags = cast(
+            list[_Element],
+            organizer.xpath(
+                ".//cda:component/cda:observation[cda:value/@code='RRVS1']",
+                namespaces=namespaces,
+            ),
+        )
+
+        if len(reportable_observation_tags) == 0:
+            remove_element(condition_observation)
+            continue
+
+        # Next, look for the RR7 participant element to find the jurisdiction ID.
+        rr7_roles = cast(
+            list[_Element],
+            organizer.xpath(
+                ".//cda:participant/cda:participantRole[cda:code/@code='RR7']",
+                namespaces=namespaces,
+            ),
+        )
+
+        if not rr7_roles:
+            continue
+
+        for rr7_role in rr7_roles:
+            id_element = rr7_role.find("cda:id", namespaces)
+
+            if id_element is None:
+                continue
+
+            jurisdiction_code = id_element.get("extension")
+            if not jurisdiction_code:
+                continue
+
+            # and remove any that don't match the specified JID
+            if jurisdiction_code != jurisdiction_id:
+                remove_element(condition_observation)
+
+        # Use this to filter any trigger code output sections that aren't tied to the jurisdiction in question
+
+        # only preserve RRVS1 / reportable parts of the coded info organizer matching the jurisdiction
+
     # Second pass from refinement plan to get the child RSG to get codes that we want to filter
     # transform the list list[DbCondition] --> child codes that we want to keep, use that to filter anything here that remains
 
     # Verify RR is valid
 
-    return ""
+    print(etree.tostring(rr_root, encoding="unicode"))
+    return etree.tostring(rr_root, encoding="unicode")
+
+
+def remove_element(elem: _Element) -> None:
+    """Helper function for removal of elements from the XML tree."""
+
+    parent = elem.getparent()
+    if parent is not None:
+        parent.remove(elem)

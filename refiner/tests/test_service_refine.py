@@ -1,7 +1,7 @@
 from lxml import etree
 
 from app.services.ecr.models import RefinementPlan
-from app.services.ecr.refine import refine_eicr
+from app.services.ecr.refine import refine_eicr, refine_rr
 
 NAMESPACES = {"hl7": "urn:hl7-org:v3"}
 
@@ -161,3 +161,18 @@ def test_results_section_minimal_on_nonexistent_code(sample_xml_files):
     )[0]
     assert results_section.get("nullFlavor") == "NI"
     assert not results_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
+
+
+def test_refine_common_rr_sections(sample_xml_files):
+    plan = RefinementPlan(
+        xpath=build_xpath_for_codes(codes={"94310-0"}),
+        section_instructions={"30954-2": "refine"},
+    )
+
+    refined_xml = refine_rr(
+        jurisdiction_id="SDDH", xml_files=sample_xml_files, plan=plan
+    )
+
+    # # parse both original and refined XMLs
+    # doc_refined = etree.fromstring(refined_xml.encode("utf-8"))
+    # doc_original = etree.fromstring(sample_xml_files.eicr.encode("utf-8"))
