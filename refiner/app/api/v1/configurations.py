@@ -286,8 +286,8 @@ async def get_configuration(
         config_id=config.id, db=db
     )
 
-    # Create a set of associated condition IDs (UUIDs or strings)
-    associated_conditions = config.included_conditions or []
+    # precomputed set of included_conditions ids
+    included_ids = {c.id for c in config.included_conditions}
 
     # Fetch all conditions from the database
     all_conditions = await get_conditions_db(db=db)
@@ -295,7 +295,7 @@ async def get_configuration(
     # Build IncludedCondition objects, marking which are associated
     included_conditions = []
     for condition in all_conditions:
-        is_associated = str(condition.id) in associated_conditions
+        is_associated = condition.id in included_ids
         included_conditions.append(
             IncludedCondition(
                 id=condition.id,
