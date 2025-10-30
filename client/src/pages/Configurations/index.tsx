@@ -51,7 +51,6 @@ interface ConfigurationsTable {
 
 export function Configurations() {
   const { data: response, isPending, isError, error } = useGetConfigurations();
-
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
   const { searchText, setSearchText, results } = useSearch(configs, {
