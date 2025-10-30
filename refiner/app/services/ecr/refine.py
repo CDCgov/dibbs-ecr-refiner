@@ -136,3 +136,55 @@ def refine_eicr(
             message="Failed to evaluate XPath expression in eICR document",
             details={"error": str(e)},
         )
+
+
+def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan):
+    """
+    Refine a RR XML document from anything not reportable to the specified jurisdiction.
+
+    Processing behavior:
+        - It iterates through the RR and removes information common to all RR's.
+        - It removes anything not applicable to the specified jurisdiction
+        - It loops through all the condition observations in the reportability RC
+            - Anything that isn't RRSVS1 reportable is filtered out
+            - Of the remaining reportable observations, anything that isn't specified
+            in the refinement configurations are filtered out
+
+    Args:
+        jurisdiction_id: the ID of the jurisdiction we're currently processing information for
+        xml_files: The XMLFiles container with the eICR document to refine.
+        plan: The refinement plan for the corresponding eICR.
+
+    Returns:
+        str: The refined RR XML document as a string.
+
+    Raises:
+        XMLValidationError: If the XML is invalid.
+        StructureValidationError: If the document structure is invalid.
+    """
+
+    # look for structured body
+    eicr_root = xml_files.parse_rr()
+    namespaces = {"hl7": "urn:hl7-org:v3"}
+
+    structured_body = eicr_root.find(".//hl7:structuredBody", namespaces)
+
+    if structured_body is None:
+        raise StructureValidationError(
+            message="No structured body found in RR",
+            details={"document_type": "RR"},
+        )
+
+    # author / custodian are the same always, so we can throw those out
+    # Remove anything that isn't for sure reportable
+
+    # look for coded information organizater via RR7 / find the ID extension above it for jurisdiction.
+    # Use this to filter any trigger code output sections that aren't tied to the jurisdiction in question
+
+    # only preserve RRVS1 / reportable parts of the coded info organizer matching the jurisdiction
+    # Second pass from refinement plan to get the child RSG to get codes that we want to filter
+    # transform the list list[DbCondition] --> child codes that we want to keep, use that to filter anything here that remains
+
+    # Verify RR is valid
+
+    return ""
