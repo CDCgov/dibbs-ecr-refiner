@@ -177,7 +177,7 @@ async def create_configuration(
         )
 
     config = await insert_configuration_db(
-        condition=condition, jurisdiction_id=jd, db=db
+        condition=condition, user_id=user.id, jurisdiction_id=jd, db=db
     )
 
     if config is None:

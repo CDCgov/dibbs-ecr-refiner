@@ -75,6 +75,16 @@ test.describe
     await expect(
       page.getByRole('cell', { name: '1234', exact: true })
     ).toBeVisible();
+
+    /// ==========================================================================
+    /// Test that the condition creation shows up in the activity log
+    /// ==========================================================================
+    await page.getByText('Activity log').click();
+    expect(page.getByRole('heading', { name: 'Activity log' }));
+
+    await expect(
+      page.getByRole('row').filter({ hasText: 'Acanthamoeba' })
+    ).toContainText('Created configuration');
   });
 
   /// ==========================================================================
