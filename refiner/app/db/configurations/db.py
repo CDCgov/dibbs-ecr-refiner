@@ -4,6 +4,9 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
+from app.db.events.db import insert_event_db
+from app.db.events.model import EventInput
+
 from ...services.file_io import read_json_asset
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
@@ -18,6 +21,7 @@ REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 async def insert_configuration_db(
     condition: DbCondition,
+    user_id: UUID,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -101,11 +105,21 @@ async def insert_configuration_db(
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
+            if not row:
+                return None
 
-    if not row:
-        return None
-
-    return DbConfiguration.from_db_row(row)
+            config = DbConfiguration.from_db_row(row)
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=config.id,
+                    event_type="create_configuration",
+                    action_text="Created configuration",
+                ),
+                cursor=cur,
+            )
+            return config
 
 
 async def get_configurations_db(

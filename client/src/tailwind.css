@@ -83,6 +83,11 @@
   --color-gray-80: #2e2e2e;
   --color-gray-90: #1b1b1b;
 
+  --color-gray-cool-1: #fbfcfd;
+  --color-gray-cool-2: #f7f9fa;
+  --color-gray-cool-3: #f5f6f7;
+  --color-gray-cool-4: #f1f3f6;
+  --color-gray-cool-5: #edeff0;
   --color-gray-cool-10: #dfe1e2;
   --color-gray-cool-20: #c6cace;
   --color-gray-cool-30: #a9aeb1;
@@ -147,6 +152,13 @@
   border-bottom-right-radius: 7px;
 }
 
+.usa-table--striped tbody tr:nth-child(odd) td {
+  background-color: white !important;
+}
+.usa-table--striped tbody tr:nth-child(even) td {
+  @apply !bg-gray-cool-2;
+}
+
 .usa-table tr:last-child th:first-child {
   border-top-left-radius: 7px;
 }
@@ -159,8 +171,8 @@
   @apply h-17;
 }
 
-.usa-table tbody td {
-  @apply cursor-pointer;
+.usa-table tbody td:not(:first-child) {
+  @apply text-sm;
 }
 
 .usa-table th,
@@ -173,12 +185,8 @@
   @apply bg-gray-200;
 }
 
-.usa-table thead tr {
-  @apply bg-gray-cool-10;
-}
-
 .usa-table--borderless thead th {
-  @apply text-gray-cool-60 bg-gray-cool-10 py-3 leading-[26px];
+  @apply text-gray-cool-60 bg-gray-cool-5 py-3 leading-[26px];
 }
 
 .usa-table--stacked th[data-label]:before,

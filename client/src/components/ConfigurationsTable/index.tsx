@@ -52,6 +52,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                 }
               }}
               aria-label={`View configuration for ${name}`}
+              className="cursor-pointer"
             >
               <td
                 data-label={reportableConditionHeader}
