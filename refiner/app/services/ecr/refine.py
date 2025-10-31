@@ -162,7 +162,7 @@ def refine_rr(
     Args:
         jurisdiction_id: the ID of the jurisdiction we're currently processing information for
         xml_files: The XMLFiles container with the eICR document to refine.
-        plan: The refinement plan for the corresponding eICR.
+        payload: The ConfigurationPayload for the corresponding eICR.
 
     Returns:
         str: The refined RR XML document as a string.
@@ -178,16 +178,6 @@ def refine_rr(
         "hl7": "urn:hl7-org:v3",
         "cda": "urn:hl7-org:v3",
     }
-
-    # author / custodian are the same always, so we can throw those out
-    custodian = rr_root.find(".//hl7:custodian", namespaces)
-
-    if custodian is not None:
-        rr_root.remove(custodian)
-
-    author = rr_root.find(".//hl7:author", namespaces)
-    if author is not None:
-        rr_root.remove(author)
 
     # now, move on to processing the actual RR body
     structured_body = rr_root.find(".//hl7:structuredBody", namespaces)
@@ -298,7 +288,6 @@ def refine_rr(
             remove_element(component)
             continue
 
-    # # Verify RR is valid
+    # Verify RR is valid
 
-    print(etree.tostring(rr_root, encoding="unicode"))
     return etree.tostring(rr_root, encoding="unicode")

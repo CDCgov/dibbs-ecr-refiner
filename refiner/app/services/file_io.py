@@ -94,20 +94,23 @@ def parse_xml(xml_content: str | bytes) -> _Element:
         )
 
 
-def create_split_condition_filename(condition_name: str, condition_code: str) -> str:
+def create_split_condition_filename(
+    condition_name: str, condition_code: str, file_type: str
+) -> str:
     """
     Create a standard file name from a condition's name and code.
 
     Args:
         condition_name (str): Name of a condition
         condition_code (str): Code of a condition
+        file_type (str): Whether the file is an eICR or RR
 
     Returns:
         str: Standard XML file name
     """
 
     safe_name = condition_name.replace(" ", "_").replace("/", "_")
-    filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+    filename = f"CDA_{file_type}_{condition_code}_{safe_name}.xml"
 
     return filename
 

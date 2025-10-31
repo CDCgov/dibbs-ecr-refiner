@@ -33,11 +33,12 @@ class ProcessedRR(TypedDict):
 @dataclass
 class RefinedDocument:
     """
-    Object to hold a reportable condition and its refined eICR XML string.
+    Object to hold a reportable condition and its refined eICR and RR XML strings.
     """
 
     reportable_condition: ReportableCondition
     refined_eicr: str
+    refined_rr: str
 
 
 @dataclass
