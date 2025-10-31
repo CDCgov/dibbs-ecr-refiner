@@ -83,14 +83,7 @@ async def insert_configuration_db(
         # always set name to condition display name
         condition.display_name,
         # included_conditions: always start with primary
-        Jsonb(
-            [
-                {
-                    "canonical_url": condition.canonical_url,
-                    "version": condition.version,
-                }
-            ]
-        ),
+        Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
         # custom_codes
         EMPTY_JSONB,
         # local_codes
@@ -257,8 +250,7 @@ async def associate_condition_codeset_with_configuration_db(
                 WHERE NOT EXISTS (
                 SELECT 1
                 FROM jsonb_array_elements(included_conditions) existing
-                WHERE existing->>'canonical_url' = elem->>'canonical_url'
-                    AND existing->>'version' = elem->>'version'
+                WHERE existing::text = elem::text
                 )
             ) s
             )
@@ -276,9 +268,7 @@ async def associate_condition_codeset_with_configuration_db(
             ;
             """
 
-    new_condition = Jsonb(
-        [{"canonical_url": condition.canonical_url, "version": condition.version}]
-    )
+    new_condition = Jsonb([str(condition.id)])
     params = (new_condition, config.id)
 
     async with db.get_connection() as conn:
@@ -312,13 +302,13 @@ async def disassociate_condition_codeset_with_configuration_db(
     query = """
         UPDATE configurations
         SET included_conditions = (
-            SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+            SELECT COALESCE(jsonb_agg(elem_text), '[]'::jsonb)
             FROM (
-                SELECT elem
-                FROM jsonb_array_elements(included_conditions) elem
-                WHERE NOT (
-                    elem->>'canonical_url' = %s AND elem->>'version' = %s
-                )
+                SELECT elem_text
+                FROM (
+                    SELECT jsonb_array_elements_text(COALESCE(included_conditions, '[]'::jsonb)) AS elem_text
+                ) t
+                WHERE elem_text <> %s
             ) filtered
         )
         WHERE id = %s
@@ -331,13 +321,10 @@ async def disassociate_condition_codeset_with_configuration_db(
             custom_codes,
             local_codes,
             section_processing,
-            version
+            version;
     """
-    params = (
-        condition.canonical_url,
-        condition.version,
-        config.id,
-    )
+
+    params = (str(condition.id), config.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -369,57 +356,59 @@ async def get_total_condition_code_counts_by_configuration_db(
     """
 
     query = """
-            WITH conds AS (
-                SELECT jsonb_array_elements(included_conditions) AS cond
-                FROM configurations
-                WHERE id = %s
-            ),
-            codes AS (
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
-                UNION
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
-                UNION
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
-                UNION
-                SELECT
-                    c.id AS condition_id,
-                    code_elem->>'code' AS code
-                FROM conds
-                JOIN conditions c
-                    ON c.canonical_url = cond->>'canonical_url'
-                    AND c.version = cond->>'version'
-                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
-            )
+        WITH conds AS (
+            SELECT jsonb_array_elements_text(included_conditions) AS cond_id
+            FROM configurations
+            WHERE id = %s
+        ),
+        codes AS (
             SELECT
                 c.id AS condition_id,
-                c.display_name,
-                COUNT(DISTINCT code) AS total_codes
-            FROM conditions c
-            JOIN codes cd ON c.id = cd.condition_id
-            GROUP BY c.id, c.display_name
-            ORDER BY c.display_name;
-            """
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
+
+            UNION
+
+            SELECT
+                c.id AS condition_id,
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
+
+            UNION
+
+            SELECT
+                c.id AS condition_id,
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
+
+            UNION
+
+            SELECT
+                c.id AS condition_id,
+                code_elem->>'code' AS code
+            FROM conds
+            JOIN conditions c
+                ON c.id::text = cond_id
+            CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+        )
+        SELECT
+            c.id AS condition_id,
+            c.display_name,
+            COUNT(DISTINCT code) AS total_codes
+        FROM conditions c
+        JOIN codes cd ON c.id = cd.condition_id
+        GROUP BY c.id, c.display_name
+        ORDER BY c.display_name;
+    """
 
     params = (config_id,)
     async with db.get_connection() as conn:

@@ -42,8 +42,8 @@ from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
-    get_conditions_by_canonical_urls_and_versions_db,
     get_conditions_db,
+    get_included_conditions_db,
 )
 from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
@@ -211,7 +211,7 @@ class GetConfigurationResponse:
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
-    loinc_codes: list[str]
+    deduplicated_codes: list[str]
 
 
 @dataclass(frozen=True)
@@ -253,53 +253,58 @@ async def get_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    config_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+    # Fetch all included conditions
+    conditions = await get_included_conditions_db(
+        included_conditions=config.included_conditions, db=db
+    )
 
-    ##TODO: Grab included_conditions after refactor
+    # Flatten all codes from all included conditions and custom codes
+    all_codes = set()
 
-    # Flatten all codes from snomed_codes, loinc_codes, icd10_codes, rxnorm_codes,
-    # plus custom_codes from the configuration
-    loinc_codes_set = set()  # deduplicate codes
+    for c in conditions:
+        for code_list in [
+            getattr(c, "snomed_codes", []),
+            getattr(c, "loinc_codes", []),
+            getattr(c, "icd10_codes", []),
+            getattr(c, "rxnorm_codes", []),
+        ]:
+            for coding in code_list:
+                if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
+                    all_codes.add(coding.code)
 
-    for code_list in [
-        getattr(config_condition, "snomed_codes", []),
-        getattr(config_condition, "loinc_codes", []),
-        getattr(config_condition, "icd10_codes", []),
-        getattr(config_condition, "rxnorm_codes", []),
-        getattr(config, "custom_codes", []),  # list of DbConfigurationCustomCode
-    ]:
-        for coding in code_list:
-            if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
-                loinc_codes_set.add(coding.code)
-            elif isinstance(coding, DbConfigurationCustomCode) and hasattr(
-                coding, "code"
-            ):
-                loinc_codes_set.add(coding.code)
+    # Include custom codes from the configuration
+    for custom_code in getattr(config, "custom_codes", []):
+        if isinstance(custom_code, DbConfigurationCustomCode) and hasattr(
+            custom_code, "code"
+        ):
+            all_codes.add(custom_code.code)
 
-    loinc_codes = sorted(loinc_codes_set)  # final flattened list of strings
+    # Final flattened, deduplicated list of codes
+    deduplicated_codes = sorted(all_codes)
 
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
 
-    associated_conditions = {
-        (c.canonical_url, c.version)
-        for c in config.included_conditions
-        if c.canonical_url and c.version
-    }
+    # precomputed set of included_conditions ids
+    included_ids = {c.id for c in config.included_conditions}
 
+    # Fetch all conditions from the database
     all_conditions = await get_conditions_db(db=db)
 
-    included_conditions = [
-        IncludedCondition(
-            id=cond.id,
-            display_name=cond.display_name,
-            canonical_url=cond.canonical_url,
-            version=cond.version,
-            associated=(cond.canonical_url, cond.version) in associated_conditions,
+    # Build IncludedCondition objects, marking which are associated
+    included_conditions = []
+    for condition in all_conditions:
+        is_associated = condition.id in included_ids
+        included_conditions.append(
+            IncludedCondition(
+                id=condition.id,
+                display_name=condition.display_name,
+                canonical_url=condition.canonical_url,
+                version=condition.version,
+                associated=is_associated,
+            )
         )
-        for cond in all_conditions
-    ]
 
     return GetConfigurationResponse(
         id=config.id,
@@ -308,7 +313,7 @@ async def get_configuration(
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
-        loinc_codes=loinc_codes,
+        deduplicated_codes=deduplicated_codes,
     )
 
 
@@ -339,17 +344,9 @@ async def get_configuration_export(
         )
 
     # Determine included conditions
-    all_conditions = await get_conditions_db(db=db)
-    associated_conditions = {
-        (c.canonical_url, c.version)
-        for c in config.included_conditions
-        if c.canonical_url and c.version
-    }
-    included_conditions = [
-        cond
-        for cond in all_conditions
-        if (cond.canonical_url, cond.version) in associated_conditions
-    ]
+    included_conditions = await get_included_conditions_db(
+        included_conditions=config.included_conditions, db=db
+    )
 
     # Write CSV to StringIO (text)
     with StringIO() as csv_text:
@@ -415,8 +412,7 @@ class ConditionEntry:
     Condition model.
     """
 
-    canonical_url: str
-    version: str
+    id: UUID
 
 
 @dataclass(frozen=True)
@@ -494,8 +490,7 @@ async def associate_condition_codeset_with_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(canonical_url=c.canonical_url, version=c.version)
-            for c in updated_config.included_conditions
+            ConditionEntry(c.id) for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,
     )
@@ -570,8 +565,7 @@ async def remove_condition_codeset_from_configuration(
     return AssociateCodesetResponse(
         id=updated_config.id,
         included_conditions=[
-            ConditionEntry(canonical_url=c.canonical_url, version=c.version)
-            for c in updated_config.included_conditions
+            ConditionEntry(c.id) for c in updated_config.included_conditions
         ],
         condition_name=condition.display_name,
     )
@@ -678,7 +672,7 @@ async def add_custom_code(
 
     # Create a custom code object
     custom_code = DbConfigurationCustomCode(
-        code=body.code,
+        code=body.code.strip(),
         system=sanitized_system_name,
         name=body.name,
     )
@@ -1086,10 +1080,8 @@ async def run_configuration_test(
     # in the list (which includes the primary condition) for the payload and
     # store the corresponding trace info
     if len(configuration.included_conditions) > 1:
-        all_conditions_for_configuration = (
-            await get_conditions_by_canonical_urls_and_versions_db(
-                db=db, condition_references=configuration.included_conditions
-            )
+        all_conditions_for_configuration = await get_included_conditions_db(
+            included_conditions=configuration.included_conditions, db=db
         )
     else:
         all_conditions_for_configuration = [primary_condition]
