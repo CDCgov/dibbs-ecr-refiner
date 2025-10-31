@@ -4,6 +4,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.models import RefinementPlan
+from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
 
 from ...core.exceptions import (
     StructureValidationError,
@@ -16,6 +17,7 @@ from .process_eicr import (
     get_section_by_code,
     process_section,
 )
+from .utils import remove_element
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -139,7 +141,11 @@ def refine_eicr(
         )
 
 
-def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan) -> str:
+def refine_rr(
+    jurisdiction_id: str,
+    xml_files: XMLFiles,
+    payload: ConfigurationPayload,
+) -> str:
     """
     Refine a RR XML document from anything not reportable to the specified jurisdiction.
 
@@ -210,18 +216,39 @@ def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan) -
 
     rr_organizer = rr11_organizers[0]
 
-    condition_observations = cast(
+    # Compile the set of conditions the jurisdiction has a configuration
+    # for as represented by the child_rsg_snomed codes that exist in the payload
+    codes_to_keep = set()
+    for condition in payload.conditions:
+        codes_to_keep.update(condition.child_rsg_snomed_codes)
+
+    components_to_check = cast(
         list[_Element],
         rr_organizer.xpath(
-            ".//cda:component/cda:observation[cda:templateId/@root='2.16.840.1.113883.10.20.15.2.3.12']",
+            ".//cda:component[cda:observation[cda:templateId/@root='2.16.840.1.113883.10.20.15.2.3.12']]",
             namespaces=namespaces,
         ),
     )
-    for condition_observation in condition_observations:
-        # For each entryRelationship / organizer...
+
+    for component in components_to_check:
+        observation = component.find("cda:observation", namespaces)
+        if observation is None:
+            continue
+
+        value = observation.find("cda:value", namespaces)
+        if value is None:
+            continue
+
+        value_to_check = value.get("code")
+        if value_to_check not in codes_to_keep:
+            # if the payload in question doesn't have that condition in the config,
+            # remove that observation
+            remove_element(component)
+            continue
+
         organizers = cast(
             list[_Element],
-            condition_observation.xpath(
+            observation.xpath(
                 ".//cda:entryRelationship/cda:organizer",
                 namespaces=namespaces,
             ),
@@ -232,21 +259,6 @@ def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan) -
 
         organizer = organizers[0]
 
-        # Check if component / observation has a tagged RRVS1 entry.
-        #  If there isn't it's not reportable, so throw out the whole thing
-        reportable_observation_tags = cast(
-            list[_Element],
-            organizer.xpath(
-                ".//cda:component/cda:observation[cda:value/@code='RRVS1']",
-                namespaces=namespaces,
-            ),
-        )
-
-        if len(reportable_observation_tags) == 0:
-            remove_element(condition_observation)
-            continue
-
-        # Next, look for the RR7 participant element to find the jurisdiction ID.
         rr7_roles = cast(
             list[_Element],
             organizer.xpath(
@@ -268,26 +280,25 @@ def refine_rr(jurisdiction_id: str, xml_files: XMLFiles, plan: RefinementPlan) -
             if not jurisdiction_code:
                 continue
 
-            # and remove any that don't match the specified JID
+            # remove any that don't match the specified JID
             if jurisdiction_code != jurisdiction_id:
-                remove_element(condition_observation)
+                remove_element(component)
 
-        # Use this to filter any trigger code output sections that aren't tied to the jurisdiction in question
+        # Similarly, if component / observation doesn't have a tagged RRVS1 entry,
+        # it's not reportable, so throw out the whole thing
+        reportable_observation_tags = cast(
+            list[_Element],
+            organizer.xpath(
+                ".//cda:component/cda:observation[cda:value/@code='RRVS1']",
+                namespaces=namespaces,
+            ),
+        )
 
-        # only preserve RRVS1 / reportable parts of the coded info organizer matching the jurisdiction
+        if len(reportable_observation_tags) == 0:
+            remove_element(component)
+            continue
 
-    # Second pass from refinement plan to get the child RSG to get codes that we want to filter
-    # transform the list list[DbCondition] --> child codes that we want to keep, use that to filter anything here that remains
-
-    # Verify RR is valid
+    # # Verify RR is valid
 
     print(etree.tostring(rr_root, encoding="unicode"))
     return etree.tostring(rr_root, encoding="unicode")
-
-
-def remove_element(elem: _Element) -> None:
-    """Helper function for removal of elements from the XML tree."""
-
-    parent = elem.getparent()
-    if parent is not None:
-        parent.remove(elem)

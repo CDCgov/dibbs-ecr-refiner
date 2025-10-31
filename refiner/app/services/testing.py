@@ -23,7 +23,7 @@ from .ecr.models import (
     RefinementPlan,
     ReportableCondition,
 )
-from .ecr.refine import refine_eicr
+from .ecr.refine import refine_eicr, refine_rr
 from .ecr.reportability import determine_reportability
 
 # NOTE:
@@ -363,6 +363,8 @@ async def inline_testing(
         processed_configuration=processed_configuration, xml_files=xml_files
     )
     refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
+
+    refined_rr_string = refine_rr(jurisdiction_id, xml_files, payload)
 
     # STEP 5:
     # finalize and return the successful result

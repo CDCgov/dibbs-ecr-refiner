@@ -4,12 +4,11 @@ from typing import Literal, cast
 from lxml import etree
 from lxml.etree import _Element
 
-from refiner.app.services.ecr.refine import remove_element
-
 from ...core.exceptions import (
     StructureValidationError,
     XMLParsingError,
 )
+from .utils import remove_element
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION

@@ -3,7 +3,8 @@ from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
-from refiner.app.services.ecr.refine import remove_element
+
+from app.services.ecr.utils import remove_element
 
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
