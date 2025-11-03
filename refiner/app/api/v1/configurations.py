@@ -1136,17 +1136,9 @@ async def run_configuration_test(
     s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
     s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
 
-    eicr_filename = create_split_condition_filename(
+    eicr_filename, rr_filename = create_split_condition_filename(
         condition_name=condition_obj.display_name,
         condition_code=condition_obj.code,
-        file_type="eICR",
-    )
-    s3_file_package.append((eicr_filename, refined_document.refined_eicr))
-
-    rr_filename = create_split_condition_filename(
-        condition_name=condition_obj.display_name,
-        condition_code=condition_obj.code,
-        file_type="RR",
     )
 
     s3_file_package.append((rr_filename, refined_document.refined_rr))
@@ -1217,6 +1209,7 @@ async def run_configuration_test(
     formatted_refined_eicr = strip_comments(
         normalize_xml(refined_document.refined_eicr)
     )
+    formatted_refined_rr = strip_comments(normalize_xml(refined_document.refined_rr))
 
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
@@ -1225,6 +1218,7 @@ async def run_configuration_test(
             code=condition_obj.code,
             display_name=condition_obj.display_name,
             refined_eicr=formatted_refined_eicr,
+            refined_rr=formatted_refined_rr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

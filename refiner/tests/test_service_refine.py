@@ -1,7 +1,18 @@
 from lxml import etree
 
+from app.db.conditions.model import DbCondition
+from app.db.configurations.model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+)
 from app.services.ecr.models import RefinementPlan
 from app.services.ecr.refine import refine_eicr, refine_rr
+from app.services.terminology import ConfigurationPayload
+from tests.test_service_process_eicr import (
+    make_condition,
+    make_db_condition_coding,
+)
+from tests.test_service_terminology import make_dbconfiguration
 
 NAMESPACES = {"hl7": "urn:hl7-org:v3"}
 
@@ -164,15 +175,35 @@ def test_results_section_minimal_on_nonexistent_code(sample_xml_files):
 
 
 def test_refine_common_rr_sections(sample_xml_files):
-    plan = RefinementPlan(
-        xpath=build_xpath_for_codes(codes={"94310-0"}),
-        section_instructions={"30954-2": "refine"},
+    mockCovidConfiguration: DbCondition = make_condition(
+        child_rsg_snomed_codes=["840539006"]
     )
-
+    config: DbConfiguration = make_dbconfiguration()
+    payload = ConfigurationPayload(
+        conditions=[mockCovidConfiguration], configuration=config
+    )
     refined_xml = refine_rr(
-        jurisdiction_id="SDDH", xml_files=sample_xml_files, plan=plan
+        jurisdiction_id="SDDH", xml_files=sample_xml_files, payload=payload
+    )
+    # searching for entry with SNOMED 840539006 (COVID as tagged in sample files)
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+
+    results_observation = doc.xpath(
+        ".//hl7:entry//hl7:organizer//hl7:observation[hl7:value/@code='840539006']",
+        namespaces=NAMESPACES,
     )
 
-    # # parse both original and refined XMLs
-    # doc_refined = etree.fromstring(refined_xml.encode("utf-8"))
-    # doc_original = etree.fromstring(sample_xml_files.eicr.encode("utf-8"))
+    assert len(results_observation) == 1
+    reportable_response = results_observation[0].xpath(
+        ".//hl7:component/hl7:observation[hl7:value/@code='RRVS1']",
+        namespaces=NAMESPACES,
+    )
+    # should give us exactly one reportable response observation based on the sample file
+    assert len(reportable_response) == 1
+
+    non_reportable_responses = results_observation[0].xpath(
+        ".//hl7:component/hl7:observation[hl7:value/@code='!RRVS1']",
+        namespaces=NAMESPACES,
+    )
+    # and zero non-reportable responses, since those should have gotten filtered out
+    assert len(non_reportable_responses) == 0
