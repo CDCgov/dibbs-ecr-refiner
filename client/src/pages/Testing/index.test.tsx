@@ -24,6 +24,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
       code: 'mock-code',
       display_name: 'mock condition name',
       refined_eicr: '<data>less data</data>',
+      refined_rr: '<data>less data</data>',
       stats: ['eICR reduced by 59%'],
     },
   ],
