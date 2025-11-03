@@ -4,7 +4,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.models import RefinementPlan
-from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
+from app.services.terminology import ConfigurationPayload
 
 from ...core.exceptions import (
     StructureValidationError,

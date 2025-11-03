@@ -3,14 +3,12 @@ from lxml import etree
 from app.db.conditions.model import DbCondition
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCustomCode,
 )
 from app.services.ecr.models import RefinementPlan
 from app.services.ecr.refine import refine_eicr, refine_rr
 from app.services.terminology import ConfigurationPayload
 from tests.test_service_process_eicr import (
     make_condition,
-    make_db_condition_coding,
 )
 from tests.test_service_terminology import make_dbconfiguration
 
