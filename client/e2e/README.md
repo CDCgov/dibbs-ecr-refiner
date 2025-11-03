@@ -25,7 +25,7 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end (E2E) bro
 - Example test:
 
 ```ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/fixtures';
 
 test('homepage loads', async ({ page }) => {
   await page.goto('http://localhost:8081');
@@ -44,6 +44,33 @@ test('homepage loads', async ({ page }) => {
 - Run tests across all major browsers (Chromium, Firefox, WebKit) for full coverage.
 - Keep Playwright and browser binaries up-to-date: `npm install -D @playwright/test@latest` and `npx playwright install --with-deps`
 - Use ESLint and TypeScript for linting and type safety.
+
+## Accessibility Checks
+
+In order to perform automated Axe accessibility checks, we are able to make use of the `toHaveNoAxeViolations()` custom matcher. This matcher should be used any time the view changes for the user. This ensures that we are able to capture potential a11y issues on the various different states of a page.
+
+> [!IMPORTANT]
+> When writing tests, we must make sure that we are using `test` and `expect` from the `fixtures` directory. If we use `test` and `expect` from `@playwright/test` directly, it will not know about the custom matchers.
+
+Here is an example of adding a11y checks to a test:
+
+```typescript
+import { test, expect } from './fixtures/fixtures';
+
+test('checking for a11y issues on a page', async ({
+   page,
+   makeAxeBuilder,
+}) => {
+   // go to page and perform an a11y check
+   await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
+   await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+   ... // perform an action to open a modal, show a new component, etc. (new page state)
+
+   // run an updated check on new elements
+   await expect(makeAxeBuilder).toHaveNoAxeViolations();
+});
+```
 
 ## Continuous Integration (CI)
 

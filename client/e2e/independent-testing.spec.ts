@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/fixtures';
 import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import path from 'path';
@@ -21,6 +21,7 @@ test.describe.serial('should be able to access independent testing', () => {
 
   test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
     page,
+    makeAxeBuilder,
   }) => {
     // start on home screen
     await expect(
@@ -33,10 +34,14 @@ test.describe.serial('should be able to access independent testing', () => {
       page.getByText('Want to refine your own eCR file?')
     ).toBeVisible();
 
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     const fileInput = page.locator('input#zip-upload');
 
     // Upload the file directly
     await fileInput.setInputFiles(filePath);
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Optionally, assert the file name shows up in the UI
     await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
@@ -48,6 +53,8 @@ test.describe.serial('should be able to access independent testing', () => {
     ).toBeVisible();
     await expect(page.getByText('COVID-19')).toBeVisible();
     await expect(page.getByText('Influenza')).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Refine ecr is unavailable
     await expect(
@@ -62,6 +69,8 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(
       page.getByText('Your reportable condition configurations')
     ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // configure covid-19
     await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
@@ -105,6 +114,8 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // click start over
     await page.getByRole('button', { name: 'Start over' }).click();
@@ -156,10 +167,13 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
 
   test('should be able to upload a file, refine, and download results', async ({
     page,
+    makeAxeBuilder,
   }) => {
     /// ==========================================================================
     /// Test independent test flow: upload, refine, download
@@ -213,6 +227,8 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(page.getByText('eICR file size reduced by')).toBeVisible();
     await expect(page.getByText('Original eICR')).toBeVisible();
     await expect(page.getByText('Refined eICR')).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // --- Click "Download results" and verify file download ---
     const [download] = await Promise.all([
