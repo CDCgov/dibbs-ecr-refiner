@@ -1,4 +1,4 @@
-import { test, expect } from './utils/custom-matchers';
+import { test, expect } from './fixtures/fixtures';
 import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
