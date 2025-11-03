@@ -437,7 +437,11 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
     assert response.json()["condition"]["display_name"] == "COVID-19"
     assert (
         response.json()["condition"]["refined_eicr"].strip()
-        == "<xml>COVID-19 refined doc</xml>"
+        == "<xml>COVID-19 refined eICR doc</xml>"
+    )
+    assert (
+        response.json()["condition"]["refined_rr"].strip()
+        == "<xml>COVID-19 refined RR doc</xml>"
     )
 
     app.dependency_overrides.clear()

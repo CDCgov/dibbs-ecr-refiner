@@ -172,7 +172,7 @@ def test_results_section_minimal_on_nonexistent_code(sample_xml_files):
     assert not results_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
 
 
-def test_refine_common_rr_sections(sample_xml_files):
+def test_refine_rr_by_condition(sample_xml_files):
     mockCovidConfiguration: DbCondition = make_condition(
         child_rsg_snomed_codes=["840539006"]
     )
@@ -205,3 +205,25 @@ def test_refine_common_rr_sections(sample_xml_files):
     )
     # and zero non-reportable responses, since those should have gotten filtered out
     assert len(non_reportable_responses) == 0
+
+
+def test_refine_rr_by_jurisdiction(sample_xml_files):
+    mockCovidConfiguration: DbCondition = make_condition(
+        child_rsg_snomed_codes=["840539006"]
+    )
+    config: DbConfiguration = make_dbconfiguration()
+    payload = ConfigurationPayload(
+        conditions=[mockCovidConfiguration], configuration=config
+    )
+    refined_xml = refine_rr(
+        jurisdiction_id="SOME_RANDOM_JD", xml_files=sample_xml_files, payload=payload
+    )
+    # searching for entry with SNOMED 840539006 (COVID as tagged in sample files)
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+
+    results_observation = doc.xpath(
+        ".//hl7:entry//hl7:organizer//hl7:observation[hl7:value/@code='840539006']",
+        namespaces=NAMESPACES,
+    )
+    # should filter out the observation since the jurisdiction ID doesn't match
+    assert len(results_observation) == 0
