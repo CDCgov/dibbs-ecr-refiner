@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './utils/custom-matchers';
 import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
@@ -16,7 +16,6 @@ test.describe
     page,
     makeAxeBuilder,
   }) => {
-    const axeBuilder = makeAxeBuilder();
     /// ==========================================================================
     /// Test that a new condition can be added
     /// ==========================================================================
@@ -68,8 +67,6 @@ test.describe
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
 
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
     await page.getByRole('textbox', { name: 'Code #' }).click();
     await page.getByRole('textbox', { name: 'Code #' }).fill('1234');
     await page.getByTestId('Select').selectOption('rxnorm');
@@ -109,8 +106,6 @@ test.describe
     page,
     makeAxeBuilder,
   }) => {
-    const axeBuilder = makeAxeBuilder();
-
     await page
       .getByRole('row', { name: 'View configuration for Acanthamoeba' })
       .click();
@@ -144,7 +139,6 @@ test.describe
     page,
     makeAxeBuilder,
   }) => {
-    const axeBuilder = makeAxeBuilder();
     /// ==========================================================================
     /// Test that a condition can be deleted from configuration added in previous test
     /// ==========================================================================

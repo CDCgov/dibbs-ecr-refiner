@@ -1,16 +1,37 @@
-import { expect as baseExpect } from '@playwright/test';
-import type { AxeBuilder } from '@axe-core/playwright';
+import { expect as baseExpect, test as baseTest } from '@playwright/test';
+import { AxeBuilder } from '@axe-core/playwright';
 
-export { test } from '@playwright/test';
+// See here: https://playwright.dev/docs/accessibility-testing#creating-a-fixture
 
-export const expect = baseExpect.extend({
+export type AxeFixture = {
+  makeAxeBuilder: () => AxeBuilder;
+};
+
+const test = baseTest.extend<AxeFixture>({
+  makeAxeBuilder: async ({ page }, use) => {
+    const makeAxeBuilder = () =>
+      new AxeBuilder({ page }).withTags(['wcag21aa']);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(makeAxeBuilder);
+  },
+});
+
+const expect = baseExpect.extend({
   async toHaveNoAxeViolations(makeAxeBuilder: () => AxeBuilder) {
     const assertionName = 'toHaveNoAxeViolations';
     const axe = makeAxeBuilder();
-    const results = await axe.analyze();
+    let pass: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let results: any;
+    try {
+      results = await axe.analyze();
+    } catch {
+      pass = false;
+    }
     const violations = results.violations ?? [];
 
-    const pass = violations.length === 0;
+    pass = violations.length === 0;
 
     const message = pass
       ? () =>
@@ -36,3 +57,5 @@ export const expect = baseExpect.extend({
     };
   },
 });
+
+export { test, expect };
