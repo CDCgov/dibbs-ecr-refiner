@@ -288,6 +288,4 @@ def refine_rr(
             remove_element(component)
             continue
 
-    # Verify RR is valid
-
     return etree.tostring(rr_root, encoding="unicode")
