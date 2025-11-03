@@ -41,6 +41,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
       code: 'mock-custom-file',
       display_name: 'custom condition',
       refined_eicr: '<data>refined custom data</data>',
+      refined_rr: '<data>refined custom data</data>',
       stats: ['eICR reduced by 77%'],
     },
   ],
