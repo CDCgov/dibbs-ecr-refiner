@@ -9,8 +9,7 @@ class DbConfigurationCondition:
     Condition associated with a Configuration.
     """
 
-    canonical_url: str
-    version: str
+    id: UUID
 
 
 # TODO: Revisit this to see if we can figure out how to reduce overlap with other types.
@@ -101,7 +100,8 @@ class DbConfiguration:
             jurisdiction_id=row["jurisdiction_id"],
             condition_id=row["condition_id"],
             included_conditions=[
-                DbConfigurationCondition(**c) for c in row["included_conditions"]
+                DbConfigurationCondition(**{"id": UUID(cond)})
+                for cond in row.get("included_conditions", []) or []
             ],
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
