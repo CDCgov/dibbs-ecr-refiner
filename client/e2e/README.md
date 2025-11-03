@@ -72,7 +72,6 @@ test('checking for a11y issues on a page', async ({
 });
 ```
 
-
 ## Continuous Integration (CI)
 
 - E2E tests are run on every pull request and push (see `.github/workflows/playwright.yml`).
