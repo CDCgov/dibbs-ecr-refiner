@@ -132,7 +132,7 @@ async def test_zip_upload_mon_mothma_two_conditions(setup, authed_client):
         item_label = f"eICR item #{index + 1}"
 
         assert "refined_rr" in eicr_item, (
-            f"[{current_test_name}] Expected key 'refined_eicr' in {item_label}, got keys {list(eicr_item.keys())}. Item: {eicr_item}"
+            f"[{current_test_name}] Expected key 'refined_rr' in {item_label}, got keys {list(eicr_item.keys())}. Item: {eicr_item}"
         )
         refined_rr_xml_string = eicr_item["refined_rr"]
         assert refined_rr_xml_string and isinstance(refined_rr_xml_string, str), (

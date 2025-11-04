@@ -224,7 +224,9 @@ async def independent_testing(
         )
 
         refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
-        refined_rr_str = refine_rr(jurisdiction_id, xml_files, payload)
+        refined_rr_str = refine_rr(
+            jurisdiction_id=jurisdiction_id, xml_files=xml_files, payload=payload
+        )
 
         # use the first RR code that mapped to this condition for RefinedDocument
         # TODO: in the future we might want the ReportableCondition model to use
@@ -364,7 +366,9 @@ async def inline_testing(
     )
     refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
 
-    refined_rr_string = refine_rr(jurisdiction_id, xml_files, payload)
+    refined_rr_string = refine_rr(
+        jurisdiction_id=jurisdiction_id, xml_files=xml_files, payload=payload
+    )
 
     # STEP 5:
     # finalize and return the successful result

@@ -4,8 +4,6 @@ from typing import cast
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.ecr.utils import remove_element
-
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
 
@@ -69,3 +67,11 @@ def normalize_xml(xml: str) -> str:
         with_tail=False,
         method="xml",
     )
+
+
+def remove_element(elem: _Element) -> None:
+    """Helper function for removal of elements from the XML tree."""
+
+    parent = elem.getparent()
+    if parent is not None:
+        parent.remove(elem)

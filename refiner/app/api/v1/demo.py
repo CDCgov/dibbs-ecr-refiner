@@ -212,15 +212,12 @@ async def demo_upload(
             format.normalize_xml(original_xml_files.eicr)
         )
         formatted_refined_eicr = format.strip_comments(normalized_refined_eicr)
-        formatted_refined_rr = format.strip_comments(
-            format.normalize_xml(original_xml_files.rr)
-        )
+
         conditions.append(
             Condition(
                 code=condition_code,
                 display_name=condition_name,
                 refined_eicr=formatted_refined_eicr,
-                refined_rr=formatted_refined_rr,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(

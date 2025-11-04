@@ -12,12 +12,12 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ..file_io import read_json_asset
+from ..format import remove_element
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
     process_section,
 )
-from .utils import remove_element
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION

@@ -8,7 +8,7 @@ from ...core.exceptions import (
     StructureValidationError,
     XMLParsingError,
 )
-from .utils import remove_element
+from ..format import remove_element
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION

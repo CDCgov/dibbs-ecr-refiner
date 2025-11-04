@@ -28,7 +28,6 @@ const mockMatchedCondition: Condition = {
   code: '840539006',
   display_name: 'COVID-19',
   refined_eicr: '<xml>refined covid</xml>',
-  refined_rr: '<xml>refined covid</xml>',
   stats: ['eICR file reduced by 71%'],
 };
 

@@ -109,7 +109,7 @@ def create_split_condition_filename(
     """
 
     safe_name = condition_name.replace(" ", "_").replace("/", "_")
-    ecr_filename = f"CDA_eCR_{condition_code}_{safe_name}.xml"
+    ecr_filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
     rr_filename = f"CDA_RR_{condition_code}_{safe_name}.xml"
 
     return (ecr_filename, rr_filename)
