@@ -1201,6 +1201,7 @@ async def run_configuration_test(
     formatted_refined_eicr = strip_comments(
         normalize_xml(refined_document.refined_eicr)
     )
+    formatted_refined_rr = strip_comments(normalize_xml(refined_document.refined_rr))
 
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
@@ -1209,6 +1210,7 @@ async def run_configuration_test(
             code=condition_obj.code,
             display_name=condition_obj.display_name,
             refined_eicr=formatted_refined_eicr,
+            refined_rr=formatted_refined_rr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
