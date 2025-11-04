@@ -137,7 +137,7 @@ _new title type folder:
 
     const nextFilePath = path.join(
         resolvedPath,
-        `${nextNumberString}-${fileTitle}.md`
+        `${nextNumberString}_${today}_${fileTitle}.md`
     );
 
     console.info(`📊 Attempting to save {{ type }} #${nextNumberString} to ${nextFilePath}`);
