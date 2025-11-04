@@ -167,13 +167,16 @@ async def demo_upload(
         condition_code = condition_obj.code
         condition_name = condition_obj.display_name
 
-        filename_xml = file_io.create_split_condition_filename(
-            condition_name=condition_name, condition_code=condition_code
+        eicr_filename_xml, rr_filename_xml = file_io.create_split_condition_filename(
+            condition_name=condition_name,
+            condition_code=condition_code,
         )
-        filename_html = filename_xml.replace(".xml", ".html")
+        eicr_filename_html = eicr_filename_xml.replace(".xml", ".html")
 
         condition_refined_eicr = refined_document.refined_eicr
-        refined_files_to_zip.append((filename_xml, condition_refined_eicr))
+        condition_refined_rr = refined_document.refined_rr
+        refined_files_to_zip.append((eicr_filename_xml, condition_refined_eicr))
+        refined_files_to_zip.append((rr_filename_xml, condition_refined_rr))
 
         # Try to generate HTML using XSLT
         try:
@@ -181,9 +184,11 @@ async def demo_upload(
             html_bytes = transform_xml_to_html(
                 condition_refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
             )
-            refined_files_to_zip.append((filename_html, html_bytes.decode("utf-8")))
+            refined_files_to_zip.append(
+                (eicr_filename_html, html_bytes.decode("utf-8"))
+            )
             logger.info(
-                f"Successfully transformed XML to HTML for: {filename_xml}",
+                f"Successfully transformed XML to HTML for: {eicr_filename_xml}",
                 extra={
                     "condition_code": condition_code,
                     "condition_name": condition_name,
@@ -191,7 +196,7 @@ async def demo_upload(
             )
         except XSLTTransformationError as e:
             logger.error(
-                f"Failed to transform XML to HTML for: {filename_xml}",
+                f"Failed to transform XML to HTML for: {eicr_filename_xml}",
                 extra={
                     "condition_code": condition_code,
                     "condition_name": condition_name,
@@ -201,17 +206,21 @@ async def demo_upload(
             # Continue with XML only; do not include HTML file for this condition
 
         normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
-        refined_files_to_zip.append((filename_xml, normalized_refined_eicr))
+        refined_files_to_zip.append((eicr_filename_xml, normalized_refined_eicr))
 
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)
         )
         formatted_refined_eicr = format.strip_comments(normalized_refined_eicr)
+        formatted_refined_rr = format.strip_comments(
+            format.normalize_xml(original_xml_files.rr)
+        )
         conditions.append(
             Condition(
                 code=condition_code,
                 display_name=condition_name,
                 refined_eicr=formatted_refined_eicr,
+                refined_rr=formatted_refined_rr,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(

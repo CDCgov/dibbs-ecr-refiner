@@ -8,6 +8,7 @@ from ...core.exceptions import (
     StructureValidationError,
     XMLParsingError,
 )
+from ..format import remove_element
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -415,9 +416,7 @@ def _prune_unwanted_siblings(
     # remove entries not in our keep list
     for entry in all_entries:
         if entry not in entry_paths:
-            parent = entry.getparent()
-            if parent is not None:
-                parent.remove(entry)
+            remove_element(entry)
 
 
 def _deduplicate_entry_paths(entry_paths: list[_Element]) -> list[_Element]:
@@ -864,6 +863,4 @@ def _remove_all_comments(section: _Element) -> None:
     if isinstance(xpath_result, list):
         for comment in xpath_result:
             if isinstance(comment, etree._Element):
-                parent = comment.getparent()
-                if parent is not None:
-                    parent.remove(comment)
+                remove_element(comment)

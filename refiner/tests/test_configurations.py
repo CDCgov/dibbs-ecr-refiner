@@ -366,9 +366,11 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
     mock_result = InlineTestingResult(
         refined_document=RefinedDocument(
             reportable_condition=ReportableCondition(
-                code="12345", display_name="Condition A"
+                code="12345",
+                display_name="Condition A",
             ),
             refined_eicr="<xml>refined eicr for Condition A</xml>",
+            refined_rr="<xml>refined rr for Condition A</xml>",
         ),
         configuration_does_not_match_conditions=None,
     )
@@ -410,7 +412,8 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
             reportable_condition=ReportableCondition(
                 code="840539006", display_name="COVID-19"
             ),
-            refined_eicr="<xml>COVID-19 refined doc</xml>",
+            refined_eicr="<xml>COVID-19 refined eICR doc</xml>",
+            refined_rr="<xml>COVID-19 refined RR doc</xml>",
         ),
         configuration_does_not_match_conditions=None,
     )
@@ -434,7 +437,11 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
     assert response.json()["condition"]["display_name"] == "COVID-19"
     assert (
         response.json()["condition"]["refined_eicr"].strip()
-        == "<xml>COVID-19 refined doc</xml>"
+        == "<xml>COVID-19 refined eICR doc</xml>"
+    )
+    assert (
+        response.json()["condition"]["refined_rr"].strip()
+        == "<xml>COVID-19 refined RR doc</xml>"
     )
 
     app.dependency_overrides.clear()

@@ -23,7 +23,7 @@ from .ecr.models import (
     RefinementPlan,
     ReportableCondition,
 )
-from .ecr.refine import refine_eicr
+from .ecr.refine import refine_eicr, refine_rr
 from .ecr.reportability import determine_reportability
 
 # NOTE:
@@ -224,6 +224,9 @@ async def independent_testing(
         )
 
         refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
+        refined_rr_str = refine_rr(
+            jurisdiction_id=jurisdiction_id, xml_files=xml_files, payload=payload
+        )
 
         # use the first RR code that mapped to this condition for RefinedDocument
         # TODO: in the future we might want the ReportableCondition model to use
@@ -238,6 +241,7 @@ async def independent_testing(
                 display_name=primary_condition.display_name,
             ),
             refined_eicr=refined_eicr_str,
+            refined_rr=refined_rr_str,
         )
 
         # log high level details of the refinement flow for this
@@ -362,6 +366,10 @@ async def inline_testing(
     )
     refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
 
+    refined_rr_string = refine_rr(
+        jurisdiction_id=jurisdiction_id, xml_files=xml_files, payload=payload
+    )
+
     # STEP 5:
     # finalize and return the successful result
     trace.refined_document = RefinedDocument(
@@ -370,6 +378,7 @@ async def inline_testing(
             display_name=trace.primary_condition.display_name,
         ),
         refined_eicr=refined_eicr_str,
+        refined_rr=refined_rr_string,
     )
 
     # log high level details of the refinement flow for this

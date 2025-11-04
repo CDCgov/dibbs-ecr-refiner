@@ -16,9 +16,7 @@ def strip_comments(xml: str) -> str:
 
     # Remove comments
     for comment in cast(list[_Element], root.xpath("//comment()")):
-        parent = comment.getparent()
-        if parent is not None:
-            parent.remove(comment)
+        remove_element(comment)
 
     return etree.tostring(
         root,
@@ -69,3 +67,11 @@ def normalize_xml(xml: str) -> str:
         with_tail=False,
         method="xml",
     )
+
+
+def remove_element(elem: _Element) -> None:
+    """Helper function for removal of elements from the XML tree."""
+
+    parent = elem.getparent()
+    if parent is not None:
+        parent.remove(elem)

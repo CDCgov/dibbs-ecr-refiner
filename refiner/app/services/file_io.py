@@ -94,7 +94,9 @@ def parse_xml(xml_content: str | bytes) -> _Element:
         )
 
 
-def create_split_condition_filename(condition_name: str, condition_code: str) -> str:
+def create_split_condition_filename(
+    condition_name: str, condition_code: str
+) -> tuple[str, str]:
     """
     Create a standard file name from a condition's name and code.
 
@@ -107,9 +109,10 @@ def create_split_condition_filename(condition_name: str, condition_code: str) ->
     """
 
     safe_name = condition_name.replace(" ", "_").replace("/", "_")
-    filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+    ecr_filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
+    rr_filename = f"CDA_RR_{condition_code}_{safe_name}.xml"
 
-    return filename
+    return (ecr_filename, rr_filename)
 
 
 def create_refined_ecr_zip_in_memory(

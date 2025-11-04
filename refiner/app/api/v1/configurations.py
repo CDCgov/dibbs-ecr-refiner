@@ -1128,22 +1128,22 @@ async def run_configuration_test(
     s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
     s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
 
-    filename = create_split_condition_filename(
+    eicr_filename, rr_filename = create_split_condition_filename(
         condition_name=condition_obj.display_name,
         condition_code=condition_obj.code,
     )
-    s3_file_package.append((filename, refined_document.refined_eicr))
 
+    s3_file_package.append((rr_filename, refined_document.refined_rr))
     # Generate HTML from refined XML
     try:
         xslt_stylesheet_path = get_path_to_xslt_stylesheet()
         html_bytes = transform_xml_to_html(
             refined_document.refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
         )
-        filename_html = filename.replace(".xml", ".html")
+        filename_html = eicr_filename.replace(".xml", ".html")
         s3_file_package.append((filename_html, html_bytes.decode("utf-8")))
         logger.info(
-            f"Successfully transformed XML to HTML for: {filename}",
+            f"Successfully transformed XML to HTML for: {eicr_filename}",
             extra={
                 "condition_code": condition_obj.code,
                 "condition_name": condition_obj.display_name,
@@ -1152,7 +1152,7 @@ async def run_configuration_test(
     except Exception as e:
         if "XSLTTransformationError" in str(type(e)):
             logger.error(
-                f"Failed to transform XML to HTML for: {filename}",
+                f"Failed to transform XML to HTML for: {eicr_filename}",
                 extra={
                     "condition_code": condition_obj.code,
                     "condition_name": condition_obj.display_name,
@@ -1161,7 +1161,7 @@ async def run_configuration_test(
             )
         else:
             logger.error(
-                f"Unexpected error during XML to HTML transformation for: {filename}",
+                f"Unexpected error during XML to HTML transformation for: {eicr_filename}",
                 extra={
                     "condition_code": condition_obj.code,
                     "condition_name": condition_obj.display_name,
@@ -1201,6 +1201,7 @@ async def run_configuration_test(
     formatted_refined_eicr = strip_comments(
         normalize_xml(refined_document.refined_eicr)
     )
+    formatted_refined_rr = strip_comments(normalize_xml(refined_document.refined_rr))
 
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
@@ -1209,6 +1210,7 @@ async def run_configuration_test(
             code=condition_obj.code,
             display_name=condition_obj.display_name,
             refined_eicr=formatted_refined_eicr,
+            refined_rr=formatted_refined_rr,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

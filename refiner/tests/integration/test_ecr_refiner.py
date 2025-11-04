@@ -127,9 +127,33 @@ async def test_zip_upload_mon_mothma_two_conditions(setup, authed_client):
     )
 
     # STEP 2
-    # validate refined eICR for each condition
+    # validate refined eICR and RR for each condition
     for index, eicr_item in enumerate(conditions):
         item_label = f"eICR item #{index + 1}"
+
+        assert "refined_rr" in eicr_item, (
+            f"[{current_test_name}] Expected key 'refined_rr' in {item_label}, got keys {list(eicr_item.keys())}. Item: {eicr_item}"
+        )
+        refined_rr_xml_string = eicr_item["refined_rr"]
+        assert refined_rr_xml_string and isinstance(refined_rr_xml_string, str), (
+            f"[{current_test_name}] Expected non-empty string for {item_label} 'refined_eicr', got {type(refined_rr_xml_string)} with value: {refined_rr_xml_string!r}"
+        )
+        validation_summary = validate_xml_string(
+            refined_rr_xml_string, doc_type_hint="rr"
+        )
+        if validation_summary["errors"] > 0:
+            pytest.fail(
+                f"[{current_test_name}] Expected 0 Schematron errors for {item_label} (Condition: {eicr_item['code']}), got {validation_summary['errors']}."
+            )
+        try:
+            root = etree.fromstring(refined_rr_xml_string.encode("utf-8"))
+            assert root.tag == "{urn:hl7-org:v3}ClinicalDocument", (
+                f"[{current_test_name}] Expected root tag '{{urn:hl7-org:v3}}ClinicalDocument' for {item_label}, got {root.tag}"
+            )
+        except etree.XMLSyntaxError as e:
+            pytest.fail(
+                f"[{current_test_name}] Expected well-formed XML for {item_label} (Condition: {eicr_item['code']}), got XMLSyntaxError: {e}. Content (first 500 chars): {refined_rr_xml_string[:500]}"
+            )
 
         assert "refined_eicr" in eicr_item, (
             f"[{current_test_name}] Expected key 'refined_eicr' in {item_label}, got keys {list(eicr_item.keys())}. Item: {eicr_item}"
