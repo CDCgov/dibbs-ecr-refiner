@@ -1,0 +1,77 @@
+CREATE TYPE configuration_status AS ENUM ('active', 'inactive', 'draft');
+
+ALTER TABLE configurations
+ADD COLUMN status configuration_status DEFAULT 'draft',
+ADD COLUMN last_activated_at TIMESTAMPTZ,
+ADD COLUMN activated_by UUID,
+ADD COLUMN s3_url TEXT,
+ADD CONSTRAINT configurations_activated_by_fkey
+  FOREIGN KEY (activated_by) REFERENCES users (id);
+
+-- update existing rows to have 'draft' as the status
+UPDATE configurations SET status = 'draft' WHERE status IS NULL;
+
+-- make column NOT NULL after current data is updated
+ALTER TABLE configurations
+ALTER COLUMN status SET NOT NULL;
+
+-- one active config at a time
+CREATE UNIQUE INDEX configurations_one_active_per_pair_idx
+  ON configurations (condition_id, jurisdiction_id)
+  WHERE status = 'active';
+
+-- one draft config at a time
+CREATE UNIQUE INDEX configurations_one_draft_per_pair_idx
+  ON configurations (condition_id, jurisdiction_id)
+  WHERE status = 'draft';
+
+-- auto update last_activated_at
+CREATE FUNCTION configurations_set_last_activated_at_on_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- when going from any status to "active" we updated `last_activated_at`
+  IF NEW.status = 'active' AND OLD.status IS DISTINCT FROM 'active' THEN
+    NEW.last_activated_at := NOW();
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER configurations_set_last_activated_at_on_status_change_trigger
+BEFORE UPDATE OF status ON configurations
+FOR EACH ROW
+EXECUTE FUNCTION configurations_set_last_activated_at_on_status_change();
+
+-- set version number on insert
+CREATE FUNCTION configurations_set_version_on_insert()
+RETURNS TRIGGER AS $$
+DECLARE
+  max_version INTEGER;
+BEGIN
+  -- Find the highest version for the condition/jurisdiction pair
+  SELECT MAX(version)
+  INTO max_version
+  FROM configurations
+  WHERE condition_id = NEW.condition_id
+    AND jurisdiction_id = NEW.jurisdiction_id;
+
+  -- If none exist yet, start at 1 otherwise increment previous max
+  IF max_version IS NULL THEN
+    NEW.version := 1;
+  ELSE
+    NEW.version := max_version + 1;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER configurations_set_version_on_insert_trigger
+BEFORE INSERT ON configurations
+FOR EACH ROW
+EXECUTE FUNCTION configurations_set_version_on_insert();
+
+ALTER TABLE configurations
+ADD CONSTRAINT configurations_unique_version_per_pair
+  UNIQUE (condition_id, jurisdiction_id, version);
