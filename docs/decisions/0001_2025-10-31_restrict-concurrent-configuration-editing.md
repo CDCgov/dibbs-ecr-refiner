@@ -34,13 +34,12 @@ configuration.
 We will implement a single-editor lock system for configuration editing:
 
 1. When a user opens a configuration for editing, a lock is acquired in the
-   backend (DB table `configuration_edit_locks`).
+   backend (DB table `configurations_drafts_locks`).
 1. Other users accessing the same configuration are placed in view-only mode,
    with a banner indicating who is editing.
 1. The lock is released when the user navigates away, logs out, or after a
    session timeout (default: 30 minutes, configurable).
-1. Lock status is checked via API (`GET /lock`), acquired (`POST /lock`), and
-   released (`DELETE /lock`).
+1. Lock status is checked via API (`GET /lock`), released (`DELETE /lock`).
 1. Frontend disables edit controls and displays clear notifications.
    Accessibility is ensured via ARIA-live banners and keyboard navigation.
 1. Edge cases (browser close, disconnect, multiple tabs, impersonation) are
@@ -53,11 +52,36 @@ We will implement a single-editor lock system for configuration editing:
 
 ### Backend
 
-- Add `configuration_edit_locks` table with migration
-- FastAPI endpoints for lock acquire/release/status
+- Add `configurations_drafts_locks` table with migration
+- FastAPI endpoints for lock status/release
 - Lock tied to user session; auto-release after timeout
 - Audit trail for troubleshooting
-- Configurable timeout via environment variable
+- Configurable timeout via env var
+- Lock released backend when user navigates away (browser unload, route change, logout)
+- Expiry time set when lock acquired. Starts at time user opens config for edit.
+- Expiry resets on each user action (save, field change, other edit). Timeout always relative to latest activity.
+- Backend only allows config edit/update if userId matches lock.userId.
+
+#### Table: `configurations_drafts_locks`
+
+Required columns:
+
+- configuration_id (UUID, FK) // configId
+- user_id (UUID, FK) // userId
+- expires_at (TIMESTAMP) // expiryTime
+
+Example (PostgreSQL):
+
+```sql
+CREATE TABLE configurations_drafts_locks (
+  configuration_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  PRIMARY KEY (configuration_id),
+  FOREIGN KEY (configuration_id) REFERENCES configurations(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
 
 ### Frontend
 
@@ -82,7 +106,7 @@ We will implement a single-editor lock system for configuration editing:
 
 - DB migration for new table
 - Backend endpoints deployed
-- Frontend changes rolled out with feature flag
+- Frontend changes deployed
 - Monitor for issues and iterate
 
 ### Testing
@@ -90,6 +114,7 @@ We will implement a single-editor lock system for configuration editing:
 - Unit tests for backend API and DB lock logic
 - Integration tests for frontend lock UX and view-only restrictions
 - Accessibility tests for banner and controls
+- Playwright tests require multiple users in local app to test locking
 
 ## Consequences
 
