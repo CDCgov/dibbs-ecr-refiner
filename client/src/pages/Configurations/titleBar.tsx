@@ -31,19 +31,19 @@ function sleep(ms: number) {
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
 export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
-  const [shouldShowIsSpinning, setShouldShowIsSpinning] = useState(false);
+  const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
   const numSavingActions = useIsMutating();
 
   useEffect(() => {
     async function showSavingStateWithDelay() {
       const start = performance.now();
-      setShouldShowIsSpinning(true);
+      setShouldShowSpinner(true);
       const end = performance.now();
       const duration = start - end;
       if (duration < TWO_SECONDS_IN_MILLISECONDS) {
         await sleep(TWO_SECONDS_IN_MILLISECONDS - duration);
       }
-      setShouldShowIsSpinning(false);
+      setShouldShowSpinner(false);
     }
     if (numSavingActions > 0) {
       void showSavingStateWithDelay();
@@ -59,7 +59,7 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
           </h2>
           <div className="text-gray-cool-60 h-4 items-center italic">
             <div className="flex items-center">
-              {shouldShowIsSpinning ? (
+              {shouldShowSpinner ? (
                 <>
                   <Icon.Autorenew
                     aria-label="icon indicating saving in progress"
