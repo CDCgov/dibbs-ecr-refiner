@@ -156,11 +156,11 @@ All processing of documents and sections routes through these helpers and TypedD
 
 **Implementation:**
 
-- #
+- _add link to tickets created from this decision._
 
 **Spike:**
 
-- #563
+- [#563](https://github.com/CDCgov/dibbs-ecr-refiner/issues/563)
 
 ### Sources for more information
 
