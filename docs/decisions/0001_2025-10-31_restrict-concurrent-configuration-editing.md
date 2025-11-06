@@ -34,12 +34,14 @@ configuration.
 We will implement a single-editor lock system for configuration editing:
 
 1. When a user opens a configuration for editing, a lock is acquired in the
-   backend (DB table `configurations_drafts_locks`).
+   backend (DB table `configurations_locks`).
 1. Other users accessing the same configuration are placed in view-only mode,
    with a banner indicating who is editing.
 1. The lock is released when the user navigates away, logs out, or after a
    session timeout (default: 30 minutes, configurable).
-1. Lock status is checked via API (`GET /lock`), released (`DELETE /lock`).
+1. Lock status is released via API (`DELETE /lock`). Lock status is presented to
+   the frontend whenever a configuration is requested. So there's no need for an
+   API endpoint for (`GET /lock`).
 1. Frontend disables edit controls and displays clear notifications.
    Accessibility is ensured via ARIA-live banners and keyboard navigation.
 1. Edge cases (browser close, disconnect, multiple tabs, impersonation) are
@@ -52,7 +54,7 @@ We will implement a single-editor lock system for configuration editing:
 
 ### Backend
 
-- Add `configurations_drafts_locks` table with migration
+- Add `configurations_locks` table with migration
 - FastAPI endpoints for lock status/release
 - Lock tied to user session; auto-release after timeout
 - Audit trail for troubleshooting
@@ -64,7 +66,7 @@ We will implement a single-editor lock system for configuration editing:
 - Backend only allows configuration edit/update if `userId` matches
   `lock.userId`.
 
-#### Table: `configurations_drafts_locks`
+#### Table: `configurations_locks`
 
 Required columns:
 
@@ -75,7 +77,7 @@ Required columns:
 Example (PostgreSQL):
 
 ```sql
-CREATE TABLE configurations_drafts_locks (
+CREATE TABLE configurations_locks (
   configuration_id UUID NOT NULL,
   user_id UUID NOT NULL,
   expires_at TIMESTAMP NOT NULL,
@@ -97,6 +99,7 @@ CREATE TABLE configurations_drafts_locks (
 - Browser close/disconnect: lock auto-released after timeout
 - Multiple tabs: same user/session can edit in parallel
 - Impersonation: backend always returns correct username
+- User inactivity: lock auto-released after timeout
 
 ### Security & Accessibility
 
