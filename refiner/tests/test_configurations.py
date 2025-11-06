@@ -213,7 +213,7 @@ def mock_db_functions(monkeypatch):
         config_by_id_mock,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="edited-code", name="test-name", system="SNOMED"
+                code="edited-code", name="updated-name", system="SNOMED"
             )
         ],
     )
