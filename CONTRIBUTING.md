@@ -35,7 +35,7 @@ The web application (`refiner`) and AWS Lambda (`lambda`) Docker image builds ar
 
 ## Requests for Comment
 
-For larger scale architectural changes that may need buy-in and / or comments from the rest of the eng team, we have [a standard template](/docs/decisions/.template) and processed diagramed below. You can invoke the process with the command `just rfc new "Title of decision record"`. Below are some meta-rules that the team has adopted that are good to keep in mind as you go.
+For larger scale architectural changes that need buy-in and / or comments from the rest of the eng team, we have [a standard template](/docs/decisions/.template) and processed diagramed below. You can invoke the process with the command `just rfc new "Title of decision record"`. Below are some meta-rules that the team has adopted that are good to keep in mind as you go.
 
 - RFC authors are responsible both for the architecture and splitting implementation into tickets. We’re assuming the author has the most context and thus the most ability to scope work to the appropriate size.
   - The PR’s content of the ADR should only include architecture decisions/implementation details. Any ticket writing / project management work should get handled in GitHub comments. This is to separate the “stateful” implementation information from the “stateless” project changing over time.
