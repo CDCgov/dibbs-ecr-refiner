@@ -25,7 +25,7 @@ DROP INDEX configurations_one_draft_per_pair_idx;
 ALTER TABLE configurations
 DROP COLUMN status,
 DROP COLUMN last_activated_at,
-DROP COLUMN activated_by,
+DROP COLUMN last_activated_by,
 DROP COLUMN s3_url,
 DROP COLUMN condition_canonical_url;
 

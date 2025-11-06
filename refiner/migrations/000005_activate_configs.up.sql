@@ -3,13 +3,13 @@ CREATE TYPE configuration_status AS ENUM ('active', 'inactive', 'draft');
 ALTER TABLE configurations
 ADD COLUMN status configuration_status DEFAULT 'draft',
 ADD COLUMN last_activated_at TIMESTAMPTZ,
-ADD COLUMN activated_by UUID,
+ADD COLUMN last_activated_by UUID,
 ADD COLUMN s3_url TEXT,
 ADD COLUMN condition_canonical_url TEXT;
 
 ALTER TABLE configurations
-ADD CONSTRAINT configurations_activated_by_fkey
-  FOREIGN KEY (activated_by) REFERENCES users (id);
+ADD CONSTRAINT configurations_last_activated_by_fkey
+  FOREIGN KEY (last_activated_by) REFERENCES users (id);
 
 -- update existing rows with canonical url
 UPDATE configurations c
