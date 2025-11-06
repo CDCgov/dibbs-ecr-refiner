@@ -63,7 +63,7 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
                 <>
                   <Icon.Autorenew
                     aria-label="icon indicating saving in progress"
-                    className="text-blue-cool-50 rotate-circle h-6! w-6!"
+                    className="text-blue-cool-50 h-6! w-6! animate-spin"
                   ></Icon.Autorenew>
                   Saving
                 </>
