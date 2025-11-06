@@ -830,15 +830,17 @@ def _get_modified_custom_codes(
     # use the old values as fallbacks.
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
+        name=updateInput.new_name or existing_code.name,
         system=_get_sanitized_system_name(updateInput.new_system)
         if updateInput.new_system
         else existing_code.system,
-        name=updateInput.new_name or existing_code.name,
     )
 
     # check for duplicates
     if any(
-        cc.code == updated_code.code and cc.system == updated_code.system
+        cc.code == updated_code.code
+        and cc.system == updated_code.system
+        and cc.name == updated_code.name
         for cc in custom_codes
     ):
         # put the original code back so the list is unchanged
