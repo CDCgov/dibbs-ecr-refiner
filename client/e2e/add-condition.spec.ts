@@ -87,7 +87,7 @@ test.describe
     ).toBeVisible();
 
     /// ==========================================================================
-    /// Test that the condition creation shows up in the activity log
+    /// Test that the condition and configuration creation shows up in the activity log
     /// ==========================================================================
     await page.getByText('Activity log').click();
     expect(page.getByRole('heading', { name: 'Activity log' }));
@@ -315,7 +315,7 @@ test.describe
     ).toBeVisible();
 
     /// ==========================================================================
-    /// Test that the condition deletion shows up in the activity log
+    /// Test that the custom code updates show up in the activity log
     /// ==========================================================================
     await page.getByText('Activity log').click();
     expect(page.getByRole('heading', { name: 'Activity log' }));
