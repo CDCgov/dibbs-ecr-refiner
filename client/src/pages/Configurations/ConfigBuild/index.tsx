@@ -492,8 +492,7 @@ function CustomCodesDetail({
   customCodes,
   deduplicated_codes,
 }: CustomCodesDetailProps) {
-  const { mutate: deleteCode, isPending: isDeletePending } =
-    useDeleteCustomCodeFromConfiguration();
+  const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
     useState<DbConfigurationCustomCode | null>(null);
   const queryClient = useQueryClient();
@@ -506,7 +505,6 @@ function CustomCodesDetail({
 
   return (
     <>
-      {isDeletePending && <>this should appear and disappear </>}
       <table id="custom-table" className="!mt-6 w-full border-separate">
         <thead className="sr-only">
           <tr>

@@ -1,3 +1,6 @@
+import { useIsMutating } from '@tanstack/react-query';
+import { Icon } from '@trussworks/react-uswds';
+
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
 type ConfigurationTitleBarProps = {
@@ -21,12 +24,30 @@ const CONFIGURATION_TITLE_CONTENTS = {
 };
 
 export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
+  const numSavingActions = useIsMutating();
+
   return (
     <div className="mt-8 mb-6 flex justify-start">
       <div className="flex flex-col">
-        <h2 className="text-gray-cool-90 pb-2 text-[1.75rem] font-bold">
-          {CONFIGURATION_TITLE_CONTENTS[step].title}
-        </h2>
+        <div className="mb-2 flex items-center">
+          <h2 className="text-gray-cool-90 mr-4 text-[1.75rem] font-bold">
+            {CONFIGURATION_TITLE_CONTENTS[step].title}
+          </h2>
+          <span className="text-gray-cool-60 h-4 items-center italic">
+            <div className="flex">
+              {numSavingActions > 0 ? (
+                <>
+                  <Icon.Autorenew className="text-blue-cool-50 rotate-circle"></Icon.Autorenew>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Icon.Check className="text-state-success"></Icon.Check> Saved
+                </>
+              )}
+            </div>
+          </span>
+        </div>
         <p> {CONFIGURATION_TITLE_CONTENTS[step].subtitle}</p>
       </div>
     </div>
