@@ -43,8 +43,8 @@ For larger scale architectural changes that may need buy-in and / or comments fr
   - Ticket writing doesn’t have to begin until after the RFC PR is merged in.
 - In general, pseudocode / implementation sketches are welcome! Err on the side of more fidelity rather than less when in doubt.
   - Examples of increasing levels of “fidelity” include
-    - A description of our approach in English, w/o code
-    - A pseudo code / implementation sketch in GitHub comments
+    - A description of our approach in English, without code
+    - A pseudo-code / implementation sketch in GitHub comments
     - A toy implementation in a test PR - We can employ these relative to the amount of risk / ambiguity / disagreement over a part of the RCF. For example
   - You’re wanting to work through your own thoughts between two options: the level of ambiguity is medium. You can sketch out an implementation using psuedo-code.
     - There’s disagreement about the best way to do something between team members: the level of ambiguity is high. A semi-working prototype would be appropriate.
