@@ -37,12 +37,21 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
             <div className="flex">
               {numSavingActions > 0 ? (
                 <>
-                  <Icon.Autorenew className="text-blue-cool-50 rotate-circle"></Icon.Autorenew>
-                  Saving...
+                  <Icon.Autorenew
+                    height="1.5rem"
+                    width="1.5rem"
+                    className="text-blue-cool-50 rotate-circle"
+                  ></Icon.Autorenew>
+                  Saving
                 </>
               ) : (
                 <>
-                  <Icon.Check className="text-state-success"></Icon.Check> Saved
+                  <Icon.Check
+                    height="1.5rem"
+                    width="1.5rem"
+                    className="text-state-success"
+                  ></Icon.Check>{' '}
+                  Saved
                 </>
               )}
             </div>
