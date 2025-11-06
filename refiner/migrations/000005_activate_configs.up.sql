@@ -31,12 +31,12 @@ ALTER COLUMN status SET NOT NULL;
 
 -- one active config at a time
 CREATE UNIQUE INDEX configurations_one_active_per_pair_idx
-  ON configurations (condition_id, jurisdiction_id)
+  ON configurations (condition_canonical_url, jurisdiction_id)
   WHERE status = 'active';
 
 -- one draft config at a time
 CREATE UNIQUE INDEX configurations_one_draft_per_pair_idx
-  ON configurations (condition_id, jurisdiction_id)
+  ON configurations (condition_canonical_url, jurisdiction_id)
   WHERE status = 'draft';
 
 -- auto update last_activated_at
@@ -67,7 +67,7 @@ BEGIN
   SELECT MAX(version)
   INTO max_version
   FROM configurations
-  WHERE condition_id = NEW.condition_id
+  WHERE condition_canonical_url = NEW.condition_canonical_url
     AND jurisdiction_id = NEW.jurisdiction_id;
 
   -- If none exist yet, start at 1 otherwise increment previous max
@@ -88,7 +88,7 @@ EXECUTE FUNCTION configurations_set_version_on_insert();
 
 ALTER TABLE configurations
 ADD CONSTRAINT configurations_unique_version_per_pair
-  UNIQUE (condition_id, jurisdiction_id, version);
+  UNIQUE (condition_canonical_url, jurisdiction_id, version);
 
 -- auto set canonical url on insert
 CREATE FUNCTION configurations_set_condition_canonical_url_on_insert()
@@ -98,7 +98,8 @@ BEGIN
   SELECT canonical_url
   INTO NEW.condition_canonical_url
   FROM conditions
-  WHERE id = NEW.condition_id;
+  WHERE id = NEW.condition_id
+  LIMIT 1;
 
   RETURN NEW;
 END;
