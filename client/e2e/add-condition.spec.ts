@@ -108,7 +108,7 @@ test.describe
         .filter({ hasText: 'refiner' })
         .filter({ hasText: 'Acanthamoeba' })
         .filter({
-          hasText: 'Associated Balamuthia mandrillaris Disease code set',
+          hasText: "Associated 'Balamuthia mandrillaris Disease' code set",
         })
     ).toBeVisible();
 
@@ -117,7 +117,7 @@ test.describe
         .getByRole('row')
         .filter({ hasText: 'refiner' })
         .filter({ hasText: 'Acanthamoeba' })
-        .filter({ hasText: 'Added custom code 1234' })
+        .filter({ hasText: "Added custom code '1234'" })
     ).toBeVisible();
   });
 
@@ -220,7 +220,9 @@ test.describe
         .getByRole('row')
         .filter({ hasText: 'refiner' })
         .filter({ hasText: 'Acanthamoeba' })
-        .filter({ hasText: 'Removed Balamuthia mandrillaris Disease code set' })
+        .filter({
+          hasText: "Removed 'Balamuthia mandrillaris Disease' code set",
+        })
     ).toBeVisible();
   });
 
@@ -325,7 +327,7 @@ test.describe
         .getByRole('row')
         .filter({ hasText: 'refiner' })
         .filter({ hasText: 'Acanthamoeba' })
-        .filter({ hasText: 'Updated custom code 1234 to 5678' })
+        .filter({ hasText: "Updated custom code from '1234' to '5678'" })
     ).toBeVisible();
 
     await expect(
@@ -333,7 +335,29 @@ test.describe
         .getByRole('row')
         .filter({ hasText: 'refiner' })
         .filter({ hasText: 'Acanthamoeba' })
-        .filter({ hasText: 'Removed custom code 5678' })
+        .filter({
+          hasText:
+            "Updated name for custom code '1234' from 'qwert' to 'test-edit'",
+        })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({
+          hasText:
+            "Updated system for custom code '1234' from 'rxnorm' to 'loinc'",
+        })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: "Removed custom code '5678'" })
     ).toBeVisible();
   });
 });

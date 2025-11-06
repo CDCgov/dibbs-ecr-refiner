@@ -786,6 +786,7 @@ class UpdateCustomCodeInput(BaseModel):
 
     system: str
     code: str
+    name: str
     new_code: str | None
     new_system: str | None
     new_name: str | None
@@ -804,6 +805,7 @@ def _get_modified_custom_codes(
         for cc in custom_codes
         if cc.system == _get_sanitized_system_name(updateInput.system)
         and cc.code == updateInput.code
+        and cc.name == updateInput.name
     ]
 
     # We expect exactly 1 code
@@ -922,7 +924,11 @@ async def edit_custom_code(
         updated_custom_codes=custom_codes,
         user_id=user.id,
         prev_code=body.code,
+        prev_system=body.system,
+        prev_name=body.name,
         new_code=body.new_code,
+        new_system=body.new_system,
+        new_name=body.new_name,
         db=db,
     )
 

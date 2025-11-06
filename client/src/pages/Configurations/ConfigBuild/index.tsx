@@ -821,6 +821,7 @@ export function CustomCodeModal({
           data: {
             code: initialCode,
             system: normalizeSystem(initialSystem),
+            name: initialName,
             new_code: form.code,
             new_system: normalizeSystem(form.system),
             new_name: form.name,
