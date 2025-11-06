@@ -33,7 +33,7 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
           <h2 className="text-gray-cool-90 mr-4 text-[1.75rem] font-bold">
             {CONFIGURATION_TITLE_CONTENTS[step].title}
           </h2>
-          <div className="text-gray-cool-60 h-6 items-center italic">
+          <div className="text-gray-cool-60 h-4 items-center italic">
             <div className="flex items-center">
               {numSavingActions > 0 ? (
                 <>
