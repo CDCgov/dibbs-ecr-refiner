@@ -33,29 +33,21 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
           <h2 className="text-gray-cool-90 mr-4 text-[1.75rem] font-bold">
             {CONFIGURATION_TITLE_CONTENTS[step].title}
           </h2>
-          <span className="text-gray-cool-60 h-4 items-center italic">
-            <div className="flex">
+          <div className="text-gray-cool-60 h-6 items-center italic">
+            <div className="flex items-center">
               {numSavingActions > 0 ? (
                 <>
-                  <Icon.Autorenew
-                    height="1.5rem"
-                    width="1.5rem"
-                    className="text-blue-cool-50 rotate-circle"
-                  ></Icon.Autorenew>
+                  <Icon.Autorenew className="text-blue-cool-50 rotate-circle h-6! w-6!"></Icon.Autorenew>
                   Saving
                 </>
               ) : (
                 <>
-                  <Icon.Check
-                    height="1.5rem"
-                    width="1.5rem"
-                    className="text-state-success"
-                  ></Icon.Check>{' '}
+                  <Icon.Check className="text-state-success h-6! w-6!"></Icon.Check>{' '}
                   Saved
                 </>
               )}
             </div>
-          </span>
+          </div>
         </div>
         <p> {CONFIGURATION_TITLE_CONTENTS[step].subtitle}</p>
       </div>
