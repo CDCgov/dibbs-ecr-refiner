@@ -1,5 +1,7 @@
 CREATE type event_type_enum as ENUM (
-    'create_configuration'
+    'create_configuration',
+    'add_code',
+    'delete_code'
 );
 
 CREATE TABLE events (

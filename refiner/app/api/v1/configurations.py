@@ -478,7 +478,7 @@ async def associate_condition_codeset_with_configuration(
         )
 
     updated_config = await associate_condition_codeset_with_configuration_db(
-        config=config, condition=condition, db=db
+        config=config, condition=condition, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -553,7 +553,7 @@ async def remove_condition_codeset_from_configuration(
         )
 
     updated_config = await disassociate_condition_codeset_with_configuration_db(
-        config=config, condition=condition, db=db
+        config=config, condition=condition, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -678,7 +678,7 @@ async def add_custom_code(
     )
 
     updated_config = await add_custom_code_to_configuration_db(
-        config=config, custom_code=custom_code, db=db
+        config=config, custom_code=custom_code, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -757,7 +757,7 @@ async def delete_custom_code(
         )
 
     updated_config = await delete_custom_code_from_configuration_db(
-        config=config, system=system, code=code, db=db
+        config=config, system=system, code=code, user_id=user.id, db=db
     )
 
     if not updated_config:
