@@ -5,9 +5,13 @@ ON configurations;
 DROP TRIGGER configurations_set_version_on_insert_trigger
 ON configurations;
 
+DROP TRIGGER configurations_set_condition_canonical_url_trigger
+ON configurations;
+
 -- trigger functions
 DROP FUNCTION configurations_set_last_activated_at_on_status_change();
 DROP FUNCTION configurations_set_version_on_insert();
+DROP FUNCTION configurations_set_condition_canonical_url_on_insert();
 
 -- unique constraints
 ALTER TABLE configurations
@@ -22,7 +26,8 @@ ALTER TABLE configurations
 DROP COLUMN status,
 DROP COLUMN last_activated_at,
 DROP COLUMN activated_by,
-DROP COLUMN s3_url;
+DROP COLUMN s3_url,
+DROP COLUMN condition_canonical_url;
 
 -- status enum
 DROP TYPE configuration_status;

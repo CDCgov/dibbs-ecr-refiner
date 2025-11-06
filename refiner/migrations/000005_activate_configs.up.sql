@@ -5,8 +5,22 @@ ADD COLUMN status configuration_status DEFAULT 'draft',
 ADD COLUMN last_activated_at TIMESTAMPTZ,
 ADD COLUMN activated_by UUID,
 ADD COLUMN s3_url TEXT,
+ADD COLUMN condition_canonical_url TEXT;
+
+ALTER TABLE configurations
 ADD CONSTRAINT configurations_activated_by_fkey
   FOREIGN KEY (activated_by) REFERENCES users (id);
+
+-- update existing rows with canonical url
+UPDATE configurations c
+SET condition_canonical_url = cond.canonical_url
+FROM conditions cond
+WHERE c.condition_id = cond.id;
+
+-- every row must now have a canonical_url
+ALTER TABLE configurations
+ALTER COLUMN condition_canonical_url SET NOT NULL;
+
 
 -- update existing rows to have 'draft' as the status
 UPDATE configurations SET status = 'draft' WHERE status IS NULL;
@@ -75,3 +89,23 @@ EXECUTE FUNCTION configurations_set_version_on_insert();
 ALTER TABLE configurations
 ADD CONSTRAINT configurations_unique_version_per_pair
   UNIQUE (condition_id, jurisdiction_id, version);
+
+-- auto set canonical url on insert
+CREATE FUNCTION configurations_set_condition_canonical_url_on_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Look up canonical_url from conditions when inserting or updating condition_id
+  SELECT canonical_url
+  INTO NEW.condition_canonical_url
+  FROM conditions
+  WHERE id = NEW.condition_id;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- run before insert or when condition_id changes
+CREATE TRIGGER configurations_set_condition_canonical_url_trigger
+BEFORE INSERT OR UPDATE OF condition_id ON configurations
+FOR EACH ROW
+EXECUTE FUNCTION configurations_set_condition_canonical_url_on_insert();
