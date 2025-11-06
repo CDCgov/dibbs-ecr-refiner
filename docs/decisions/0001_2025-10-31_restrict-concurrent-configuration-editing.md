@@ -59,10 +59,12 @@ We will implement a single-editor lock system for configuration editing:
 - Lock tied to user session; auto-release after timeout
 - Audit trail for troubleshooting
 - Configurable timeout via environment variable
-- Lock released backend when user navigates away (browser unload, route change, logout)
+- Lock released backend when user navigates away (browser unload, route change,
+  logout)
 - Expiry time set when lock acquired. Starts at time user opens a configuration
   for edit.
-- Expiry resets on each user action (save, field change, other edit). Timeout always relative to latest activity.
+- Expiry resets on each user action (save, field change, other edit). Timeout
+  always relative to latest activity.
 - Backend only allows configuration edit/update if `userId` matches
   `lock.userId`.
 
