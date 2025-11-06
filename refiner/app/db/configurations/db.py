@@ -572,7 +572,7 @@ async def delete_custom_code_from_configuration_db(
                     user_id=user_id,
                     configuration_id=updated_config.id,
                     event_type="delete_code",
-                    action_text=f"Added custom code {code}",
+                    action_text=f"Removed custom code {code}",
                 ),
                 cursor=cur,
             )
@@ -583,6 +583,9 @@ async def delete_custom_code_from_configuration_db(
 async def edit_custom_code_from_configuration_db(
     config: DbConfiguration,
     updated_custom_codes: list[DbConfigurationCustomCode],
+    user_id: UUID,
+    prev_code: str,
+    new_code: str,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -618,10 +621,23 @@ async def edit_custom_code_from_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=updated_config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=updated_config.id,
+                    event_type="edit_code",
+                    action_text=f"Updated custom code {prev_code} to {new_code}",
+                ),
+                cursor=cur,
+            )
+
+            return updated_config
 
 
 @dataclass(frozen=True)

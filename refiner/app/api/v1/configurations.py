@@ -920,6 +920,9 @@ async def edit_custom_code(
     updated_config = await edit_custom_code_from_configuration_db(
         config=config,
         updated_custom_codes=custom_codes,
+        user_id=user.id,
+        prev_code=body.code,
+        new_code=body.new_code,
         db=db,
     )
 
