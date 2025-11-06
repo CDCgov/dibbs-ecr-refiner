@@ -26,7 +26,6 @@ ALTER TABLE configurations
 DROP COLUMN status,
 DROP COLUMN last_activated_at,
 DROP COLUMN last_activated_by,
-DROP COLUMN s3_url,
 DROP COLUMN condition_canonical_url;
 
 -- status enum

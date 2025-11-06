@@ -6,7 +6,6 @@ ALTER TABLE configurations
 ADD COLUMN status configuration_status DEFAULT 'draft',
 ADD COLUMN last_activated_at TIMESTAMPTZ,
 ADD COLUMN last_activated_by UUID,
-ADD COLUMN s3_url TEXT,
 ADD COLUMN condition_canonical_url TEXT;
 
 -- add fk reference
