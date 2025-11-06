@@ -1,18 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import ConfigActivate from '.';
+import { TestQueryClientProvider } from '../../../test-utils';
 
 describe('Config activation page', () => {
   function renderPage() {
     return render(
-      <MemoryRouter initialEntries={['/configurations/config-id/activate']}>
-        <Routes>
-          <Route
-            path="/configurations/:id/activate"
-            element={<ConfigActivate />}
-          />
-        </Routes>
-      </MemoryRouter>
+      <TestQueryClientProvider>
+        <MemoryRouter initialEntries={['/configurations/config-id/activate']}>
+          <Routes>
+            <Route
+              path="/configurations/:id/activate"
+              element={<ConfigActivate />}
+            />
+          </Routes>
+        </MemoryRouter>
+      </TestQueryClientProvider>
     );
   }
 
