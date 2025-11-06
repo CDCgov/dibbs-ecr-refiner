@@ -1,5 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
+import { useEffect, useState } from 'react';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -23,8 +24,31 @@ const CONFIGURATION_TITLE_CONTENTS = {
   },
 };
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const TWO_SECONDS_IN_MILLISECONDS = 2000;
+
 export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
+  const [shouldShowIsSpinning, setShouldShowIsSpinning] = useState(false);
   const numSavingActions = useIsMutating();
+
+  useEffect(() => {
+    async function showSavingStateWithDelay() {
+      const start = performance.now();
+      setShouldShowIsSpinning(true);
+      const end = performance.now();
+      const duration = start - end;
+      if (duration < TWO_SECONDS_IN_MILLISECONDS) {
+        await sleep(TWO_SECONDS_IN_MILLISECONDS - duration);
+      }
+      setShouldShowIsSpinning(false);
+    }
+    if (numSavingActions > 0) {
+      void showSavingStateWithDelay();
+    }
+  }, [numSavingActions]);
 
   return (
     <div className="mt-8 mb-6 flex justify-start">
@@ -35,14 +59,20 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
           </h2>
           <div className="text-gray-cool-60 h-4 items-center italic">
             <div className="flex items-center">
-              {numSavingActions > 0 ? (
+              {shouldShowIsSpinning ? (
                 <>
-                  <Icon.Autorenew className="text-blue-cool-50 rotate-circle h-6! w-6!"></Icon.Autorenew>
+                  <Icon.Autorenew
+                    aria-label="icon indicating saving in progress"
+                    className="text-blue-cool-50 rotate-circle h-6! w-6!"
+                  ></Icon.Autorenew>
                   Saving
                 </>
               ) : (
                 <>
-                  <Icon.Check className="text-state-success h-6! w-6!"></Icon.Check>{' '}
+                  <Icon.Check
+                    aria-label="icon indicating saving completed"
+                    className="text-state-success h-6! w-6!"
+                  ></Icon.Check>{' '}
                   Saved
                 </>
               )}
