@@ -1,6 +1,7 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { sleep } from '../../utils';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -24,30 +25,32 @@ const CONFIGURATION_TITLE_CONTENTS = {
   },
 };
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
 export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
   const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
+  const spinnerStart = useRef<number>(0);
   const numSavingActions = useIsMutating();
 
   useEffect(() => {
-    async function showSavingStateWithDelay() {
-      const start = performance.now();
-      setShouldShowSpinner(true);
-      const end = performance.now();
-      const duration = start - end;
-      if (duration < TWO_SECONDS_IN_MILLISECONDS) {
-        await sleep(TWO_SECONDS_IN_MILLISECONDS - duration);
+    async function resolveSpinnerDisplay() {
+      if (numSavingActions > 0) {
+        spinnerStart.current = performance.now();
+        setShouldShowSpinner(true);
       }
-      setShouldShowSpinner(false);
+      if (numSavingActions === 0 && spinnerStart.current) {
+        const spinnerEnd = performance.now();
+        const spinnerDuration = spinnerEnd - spinnerStart.current;
+
+        if (spinnerDuration < TWO_SECONDS_IN_MILLISECONDS) {
+          await sleep(TWO_SECONDS_IN_MILLISECONDS - spinnerDuration);
+        }
+        setShouldShowSpinner(false);
+        spinnerStart.current = 0;
+      }
     }
-    if (numSavingActions > 0) {
-      void showSavingStateWithDelay();
-    }
+
+    void resolveSpinnerDisplay();
   }, [numSavingActions]);
 
   return (
