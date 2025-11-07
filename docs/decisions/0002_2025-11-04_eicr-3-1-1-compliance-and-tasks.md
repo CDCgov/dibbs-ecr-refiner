@@ -16,10 +16,11 @@ HL7 has introduced Electronic Initial Case Report (eICR) version 3.1.1, and publ
 
 Key principles:
 
-- **Strongly-typed configuration as code:** All configuration (supported documents, versions, sections, entries, and relationships) is represented as Python TypedDicts in `refiner_config.py`. The TypedDict module is source of truth for what is supported; there are no flat JSON config files in the repo.
+- **Strongly-typed configuration as code:** All configuration (supported documents, versions, sections, entries, and relationships) is represented as Python TypedDicts or objects in `refiner_config.py` (see implementation). The in-code config is the source of truth; there are no flat JSON config files in the repo.
+- **Object-Oriented, Centralized Config**: Configuration will be loaded/analyzed once at application start as a single config object (or per-document/section objects as needed), avoiding the need to pass dicts around and improving discoverability. Helper methods (e.g., for finding required sections, trigger OIDs) will be instance methods attached to these objects.
 - **Future extensibility:** This models document, section, and entry structure directly in Python. It lays groundwork for per-section/entry specialization in document handling and validation.
 
-Validation and automation target HL7’s official Schematron and sample files published in [HL7/CDA-phcaserpt](https://github.com/HL7/CDA-phcaserpt), which explicitly references 3.1.1 in its README and assets. Subsequent incremental spec updates (e.g., v3.1.2) will be handled as Python code updates in the TypedDict config.
+Validation and automation targets HL7’s official Schematron and sample files published in [HL7/CDA-phcaserpt](https://github.com/HL7/CDA-phcaserpt), which explicitly references 3.1.1 in its README and assets. Subsequent incremental spec updates (e.g., v3.1.2) will be handled as Python code updates in the config models.
 
 > [!NOTE]
 > **HL7 Repository Versioning Note:**  
@@ -37,110 +38,133 @@ Validation and automation target HL7’s official Schematron and sample files pu
 
 ### Configuration Storage Format
 
-| Option               | Pros                                             | Cons                                                  |
-| -------------------- | ------------------------------------------------ | ----------------------------------------------------- |
-| Flat JSON            | Portable, S3/Lambda-friendly, language-agnostic  | No type safety, no relationships, no comments         |
-| YAML                 | Comments, more readable                          | Parsing overhead, less direct for Python, unnecessary |
-| **Python TypedDict** | Maximizes type safety, docstrings, relationships | Python only, config changes are code reviews/PRs      |
-| Pydantic Model       | Runtime validation, error reporting              | Extra overhead, slower, still Python-centric          |
-| Database/API         | Dynamic updates, online editing                  | Overkill for static config                            |
+| Option                          | Pros                                                                      | Cons                                                  |
+| ------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Flat JSON                       | Portable, S3/Lambda-friendly, language-agnostic                           | No type safety, no relationships, no comments         |
+| YAML                            | Comments, more readable                                                   | Parsing overhead, less direct for Python, unnecessary |
+| **Python TypedDict** or Classes | Maximizes type safety, docstrings, relationships, enables static analysis | Python only, config changes are code reviews/PRs      |
+| Pydantic Model                  | Runtime validation, error reporting                                       | Extra overhead, still Python-centric                  |
+| Database/API                    | Dynamic updates, online editing                                           | Overkill for static config                            |
 
 **Chosen Approach:**  
-All configuration is defined as Python TypedDicts in code (`refiner_config.py`). There are no JSON configuration files. Any new version, document, section, or entry is added as a Python code change, type-checked via mypy, and reviewed in PR. This TypedDict hierarchy encodes all relationships, supported document types/versions, and enables focused, documented updates as standards evolve.
+All configuration is defined as Python TypedDicts and/or dataclasses in code (`refiner_config.py` or related modules). There are no JSON configuration files. Any new version, document, section, or entry is added as a Python code change, type-checked via mypy, and reviewed in PR. This hierarchy encodes all relationships, supported document types/versions, and enables focused, documented updates as standards evolve.
+
+> [!NOTE]
+> This file should live somewhere in `refiner/app/core/`
 
 ## Implementation Details
 
-### Configuration and Helper Refactor
+### Object-Oriented Config Structure
 
-- Completely remove legacy config (e.g. `refiner_config.json`, `refiner_details.json`) from the repository (except for archival comparison, not runtime).
-- All configuration is defined and maintained in Python in `refiner_config.py` as TypedDicts:
-  - Documents (eICR, RR, with all supported versions and substructure)
-  - Sections (mapped to documents/versions, with required/optional metadata)
-  - Entries/clinical elements—nested into section structures as needed.
-- Creation or update of any config is a PR (reviewable Python code).
-- Type-checked via mypy/gated by CI.
-- All helper functions and refiner logic operate directly on these TypedDict data structures.
-
-### Helper Function Development
-
-Implement and document the following helpers, with tests to ensure version/type-awareness:
+- All configuration is defined and maintained as Python dataclasses or TypedDicts; the config hierarchy is instantiated as one or more objects at app startup (e.g., a `RefinerConfig` or per-version document objects). A minimal example of the new pattern:
 
 ```python
-from typing import Dict, List, Optional, Set, Tuple
-from lxml.etree import _Element
+class Section:
+    def __init__(self, config):
+        self.code = config['code']
+        self.trigger_oids = config.get('trigger_oids', [])
+        # ...other attributes and nesting...
 
-def get_required_sections(config: dict, doc_type: str, version: str) -> list[str]:
-    ...
+    def get_loinc(self) -> str:
+        return self.code
 
-def get_trigger_code_template_oids(config: dict, doc_type: str, version: str) -> set[str]:
-    ...
+    def get_trigger_oids(self) -> list[str]:
+        return self.trigger_oids
 
-def get_section_display_name(config: dict, doc_type: str, version: str, loinc_code: str) -> str | None:
-    ...
+class Document:
+    def __init__(self, config):
+        self.sections = [Section(sec) for sec in config['sections']]
 
-def get_section_trigger_code_oids(config: dict, doc_type: str, version: str, loinc_code: str) -> list[str]:
-    ...
+    def get_all_section_loincs(self) -> list[str]:
+        return [s.get_loinc() for s in self.sections]
 
-def detect_document_version(xml_root: _Element) -> tuple[str, str]:
-    ...
+    def get_all_trigger_code_oids(self) -> list[str]:
+        oids = []
+        for section in self.sections:
+            oids.extend(section.get_trigger_oids())
+        return oids
+
+# example instantiation
+config = ... # (hardcoded data)
+doc = Document(config)
 ```
 
-All processing of documents and sections routes through these helpers and TypedDicts. Any new section or version handling is strictly typed (enforced by static analysis).
+- This avoids passing around `config: dict` everywhere, and co-locates helper logic with the relevant data.
+- All logic that manipulates or queries documents, sections, or entries now "lives" alongside the data they pertain to, instead of as loose functions.
+
+#### Namespaces and XPath Handling
+
+- A central `NAMESPACES` dictionary is defined at the config or class level, and passed/used internally for all XPath queries across document/section/entry helpers.
+- This avoids repetition, reduces risk of lxml gotchas (esp. around disconnected \_Element trees), and ensures every XPath uses the same, authoritative prefix mapping.
+
+```python
+class RefinerConfig:
+    NAMESPACES = {
+        "cda": "urn:hl7-org:v3",
+        # ... other namespaces ...
+    }
+```
+
+> [!NOTE]
+> Some exploration is still required to ensure we can successfully move from the current implementation of namespaces to a centralized one.
+
+### Refactor: Location/Discovery
+
+- All config objects and their logic will be moved to/refactored under a clear "core" namespace, e.g. `refiner/app/core/config.py`, making it obvious where the source of truth for config lives. This replaces scattered or legacy config.
+
+### Testing and Validation Philosophy
+
+- **Schematron as the Ground Truth**: The main integration testing for output structure/correctness is based on Schematron validation (HL7 official). This is the authoritative pass/fail check in CI.
+- Additional tests, such as expected OID/section presence or "container" checks via XPath, may be added for integration test coverage or future deeper validation (and are iceboxed for follow-up if we ever find Schematron is not sufficient).
+- New config/code must pass static analysis (`mypy`, pre-commit, and CI workflows).
+
+### Helper Method Development
+
+Update and implement helpers as instance methods rather than top-level functions. For example:
+
+```python
+class Document:
+    ...
+    def get_required_sections(self) -> list[str]:
+        ...
+    def get_trigger_code_template_oids(self) -> set[str]:
+        ...
+    def get_section_display_name(self, loinc_code: str) -> str | None:
+        ...
+    def get_section_trigger_code_oids(self, loinc_code: str) -> list[str]:
+        ...
+```
 
 ### Document Processing & Version Detection
 
-- Centralize version and type detection using CDA `<templateId root="..."/>` and its `extension` in the document XML header.
-- All codepaths route document handling and section/OID/entry logic based on these detected values. No use of hardcoded version literals.
-- If a version/type is unrecognized, log a clear diagnostic, emit metrics, skip refinement, and quarantine for review.
+- Centralize version/type detection (from CDA `<templateId>` and header extension) as a utility or config-bound function.
+- All codepaths route document handling logic using detected values, never hardcoded literals.
 
 ### Trigger Code Template Discovery
 
-- Discovery logic for trigger codes is entirely config-driven, using information from `refiner_config.py`.
-- Update/generate XPath queries to search all supported CDA element types for template IDs and trigger codes:
-  - `<observation>`, `<act>`, `<procedure>`, `<organizer>`, `<manufacturedProduct>`, and direct `<templateId/@root>`.
-- Ensure all newly introduced or modified section templates in 3.1.1 are backed by typed config and logic.
-
-| Element Type            | Covered by Current Logic? | Extra XPath for Trigger Templates? |
-| ----------------------- | :-----------------------: | :--------------------------------: |
-| `<observation>`         |            Yes            |     Possibly (for templateId)      |
-| `<act>`                 |            Yes            |     Possibly (for templateId)      |
-| `<translation>`         |            Yes            |                 No                 |
-| `<value>`               |            Yes            |                 No                 |
-| `<procedure>`           |    Yes (if child code)    |     Possibly (for templateId)      |
-| `<organizer>`           |    Yes (if child code)    |     Possibly (for templateId)      |
-| `<manufacturedProduct>` |    Yes (if child code)    |     Possibly (for templateId)      |
-| `<templateId/@root>`    |            No             |            Yes (needed)            |
-| code on parent element  |            No             |               Maybe                |
-
-### Validation, Testing, and Automation
-
-- Archive and maintain a ZIP bundle containing:
-  - Representative eICR 3.1.1 and 1.1 XML files testing all major code paths/sections/templates.
-  - RR 1.1 XML sample.
-- Expand pytest/unit test coverage for helpers, config structure, doc type/version detection, and section/entry mapping logic.
-- Automate integration of test fixtures into CI to ensure every change passes:
-  - mypy/type checks on config
-  - Schematron validation (using HL7 assets for 3.1.1, 1.1, and any future releases)
-  - Section/OID/entry lookup and extraction tests
-- All validation is run on every PR/merge as part of CI.
+- Discovery logic for trigger codes uses only the config object, never hardcoded values.
+- All new or modified section templates for 3.1.1+ must be represented in central config and accessed via the model.
+- See mapping for XPath element coverage above.
 
 ### Integration & QA
 
-- Review logs and metrics for skipped/unknown versions/types (proactive error detection).
-- Document and iterate on edge case handling/bugfixes surfaced in test runs or from partner feedback.
+- Continue proactive error metrics/logging for unknown types/versions.
+- Document, revisit, and iterate on edge cases surfaced in integration tests or feedback.
 
 ## Decision Outcome
 
-- **TypedDict-powered config in Python** (`refiner_config.py`) is the single source of truth. No primary use of JSON config; legacy JSON remains only as an archive.
-- All helper functions and doc/version processing work directly with these TypedDict models.
-- Refiner can easily accommodate per-section/per-entry specialization, additional versions, and new HL7 requirements.
-- All processing, validation, and tests are driven by code—not external or desynchronized flat config files.
+- **Python class and/or TypedDict-powered config** becomes the developer source of truth.
+- The config object pattern ensures all helper methods and logic are naturally co-located with their data.
+- The system is easily extensible—add a document version, section, or OID by extending code+tests, not patching loose files.
+- All correctness and regression validation is enforced at both static analysis time and through Schematron as ground truth in integration tests.
 
 ## Consequences
 
 **Positive:**
 
 - Maximal developer safety and productivity: type checks, code review for every config change, and docstring-driven onboarding.
+- Helper logic is always close to its associated data; easier maintenance and onboarding.
+- Centralized definitions for things like XPath namespaces that reduce cross-file bugs and confusion.
 - Clear, well-reviewed logic for every supported document, section, and version.
 - Easy to extend and maintain for future HL7 changes.
 - No risk of config drift between JSON and code.
@@ -149,14 +173,11 @@ All processing of documents and sections routes through these helpers and TypedD
 
 - Slightly higher bar for non-Pythonic contributors (but clarity/review value outweighs).
 - All config changes require Python PR and CI cycle.
+- Additional up-front work to migrate config helpers into class/object methods (but this pays dividends for code quality).
 
 ## Appendix
 
 ### Related tickets
-
-**Implementation:**
-
-- _add link to tickets created from this decision._
 
 **Spike:**
 
@@ -165,6 +186,11 @@ All processing of documents and sections routes through these helpers and TypedD
 ### Sources for more information
 
 - [eCR-CDA-Notes.md](https://github.com/CDCgov/dibbs-ecr-refiner/blob/main/refiner/eCR-CDA-Notes.md) — CDA implementation details
-- [refiner_config.py] (proposed) — single source of config, maintained in code as TypedDicts
+- [refiner_config.py] (proposed) — single source of config, maintained in code as TypedDicts or classes
 - [refiner_config.json](https://github.com/CDCgov/dibbs-ecr-refiner/blob/main/refiner/assets/refiner_config.json) — legacy config, for comparison only
 - [HL7/CDA-phcaserpt](https://github.com/HL7/CDA-phcaserpt) — HL7 Implementation Guide and Schematron for eICR/RR (including 3.1.1)
+
+### Needs future discussion / icebox
+
+- Add more granular config-driven “container” (section/entry/OID) structure checks as needed, but prioritize HL7 Schematron validation as proxy for output correctness until shown necessary.
+- Revisit namespace-handling edge cases specific to lxml/XPath if/when custom container traversal logic expands.
