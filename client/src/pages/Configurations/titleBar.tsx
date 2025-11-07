@@ -43,6 +43,8 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
         const spinnerDuration = spinnerEnd - spinnerStart.current;
 
         if (spinnerDuration < TWO_SECONDS_IN_MILLISECONDS) {
+          // show the saving confirmation for at least two seconds so the
+          // UI change registers to the user
           await sleep(TWO_SECONDS_IN_MILLISECONDS - spinnerDuration);
         }
         setShouldShowSpinner(false);
