@@ -40,8 +40,7 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        section_processing,
-        version
+        section_processing
     )
     VALUES (
         %s,
@@ -50,19 +49,22 @@ async def insert_configuration_db(
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
-        %s::jsonb,
-        %s
+        %s::jsonb
     )
     RETURNING
         id,
         name,
+        status,
         jurisdiction_id,
         condition_id,
         included_conditions,
         custom_codes,
         local_codes,
         section_processing,
-        version
+        version,
+        last_activated_at,
+        last_activated_by,
+        condition_canonical_url
     """
 
     section_details = REFINER_DETAILS["sections"]
@@ -76,7 +78,7 @@ async def insert_configuration_db(
         for code, details in section_details.items()
     ]
 
-    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb, int] = (
+    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb] = (
         jurisdiction_id,
         # always link a configuration to a primary condition
         condition.id,
@@ -90,8 +92,6 @@ async def insert_configuration_db(
         EMPTY_JSONB,
         # section_processing
         Jsonb(section_processing_defaults),
-        # version (start at 1 for new configs)
-        1,
     )
 
     async with db.get_connection() as conn:
@@ -126,13 +126,17 @@ async def get_configurations_db(
         SELECT
             id,
             name,
+			status,
             jurisdiction_id,
             condition_id,
             included_conditions,
             custom_codes,
             local_codes,
             section_processing,
-            version
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
         ORDER BY name asc;
@@ -158,13 +162,17 @@ async def get_configuration_by_id_db(
         SELECT
             id,
             name,
+			status,
             jurisdiction_id,
             condition_id,
             included_conditions,
             custom_codes,
             local_codes,
             section_processing,
-            version
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url
         FROM configurations
         WHERE id = %s
         AND jurisdiction_id = %s

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -74,6 +75,7 @@ class DbConfiguration:
 
     id: UUID
     name: str
+    status: Literal["draft", "inactive", "active"]
     jurisdiction_id: str
     condition_id: UUID
     included_conditions: list[DbConfigurationCondition]
@@ -81,6 +83,9 @@ class DbConfiguration:
     local_codes: list[DbConfigurationLocalCode]
     section_processing: list[DbConfigurationSectionProcessing]
     version: int
+    last_activated_at: datetime | None
+    last_activated_by: UUID | None
+    condition_canonical_url: str
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
@@ -97,6 +102,7 @@ class DbConfiguration:
         return cls(
             id=row["id"],
             name=row["name"],
+            status=row["status"],
             jurisdiction_id=row["jurisdiction_id"],
             condition_id=row["condition_id"],
             included_conditions=[
@@ -110,4 +116,7 @@ class DbConfiguration:
                 for sp in row["section_processing"]
             ],
             version=row["version"],
+            last_activated_at=row["last_activated_at"],
+            last_activated_by=row["last_activated_by"],
+            condition_canonical_url=row["condition_canonical_url"],
         )

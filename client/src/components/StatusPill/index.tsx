@@ -1,9 +1,11 @@
+import { GetConfigurationsResponse } from '../../api/schemas';
+
 interface StatusPillProps {
-  status: 'on' | 'off';
+  status: GetConfigurationsResponse['status'];
 }
 
 export function StatusPill({ status }: StatusPillProps) {
-  if (status === 'on') {
+  if (status === 'active') {
     return (
       <span className="text-success-dark">
         <span className="text-color-success pr-1">⏺︎</span>Active
@@ -11,5 +13,5 @@ export function StatusPill({ status }: StatusPillProps) {
     );
   }
 
-  return <span>Refiner off</span>;
+  return <span>Inactive</span>;
 }

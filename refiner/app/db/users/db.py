@@ -57,6 +57,25 @@ async def upsert_user_db(
     return str(row["id"])
 
 
+async def get_users_by_jd_id(
+    jurisdiction_id: UUID, db: AsyncDatabaseConnection
+) -> list[DbUser]:
+    """
+    Gets all users within a specific jurisdiction.
+    """
+    query = """
+            SELECT *
+            FROM users
+            WHERE jurisdiction_id = %s
+            """
+    params = (jurisdiction_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+            return rows
+
+
 async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
     """
     Gets a user from the database with the provided ID.
