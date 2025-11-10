@@ -11,13 +11,7 @@ const uswdsIncludePaths = [
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    // prevent Vitest from running Playwright tests or dependency's tests.
-    exclude: ['e2e', 'e2e/**/*', 'node_modules'],
-    setupFiles: 'tests/setup.ts',
-  },
+
   css: {
     preprocessorOptions: {
       scss: {
