@@ -87,7 +87,7 @@ test.describe
     ).toBeVisible();
 
     /// ==========================================================================
-    /// Test that the condition creation shows up in the activity log
+    /// Test that the condition and configuration creation shows up in the activity log
     /// ==========================================================================
     await page.getByText('Activity log').click();
     expect(page.getByRole('heading', { name: 'Activity log' }));
@@ -95,8 +95,30 @@ test.describe
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await expect(
-      page.getByRole('row').filter({ hasText: 'Acanthamoeba' })
-    ).toContainText('Created configuration');
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: 'Created configuration' })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({
+          hasText: "Associated 'Balamuthia mandrillaris Disease' code set",
+        })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: "Added custom code '1234'" })
+    ).toBeVisible();
   });
 
   /// ==========================================================================
@@ -184,6 +206,24 @@ test.describe
       name: /Balamuthia mandrillaris Disease, \d+ codes in code set/,
     });
     await expect(balamuthiaButton).not.toBeVisible();
+
+    /// ==========================================================================
+    /// Test that the condition deletion shows up in the activity log
+    /// ==========================================================================
+    await page.getByText('Activity log').click();
+    expect(page.getByRole('heading', { name: 'Activity log' }));
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({
+          hasText: "Removed 'Balamuthia mandrillaris Disease' code set",
+        })
+    ).toBeVisible();
   });
 
   test('should be able export Acanthamoeba config', async ({ page }) => {
@@ -209,7 +249,10 @@ test.describe
     expect(path).toBeTruthy();
   });
 
-  test('should be able edit and delete custom code', async ({ page }) => {
+  test('should be able edit and delete custom code', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
     /// ==========================================================================
     /// Test that custom codes can be edited and deleted
     /// ==========================================================================
@@ -269,6 +312,52 @@ test.describe
     // Verify that the "Custom codes" count updates to 0
     await expect(
       page.getByRole('button', { name: /Custom codes 0/i })
+    ).toBeVisible();
+
+    /// ==========================================================================
+    /// Test that the custom code updates show up in the activity log
+    /// ==========================================================================
+    await page.getByText('Activity log').click();
+    expect(page.getByRole('heading', { name: 'Activity log' }));
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: "Updated custom code from '1234' to '5678'" })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({
+          hasText:
+            "Updated name for custom code '1234' from 'qwert' to 'test-edit'",
+        })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({
+          hasText:
+            "Updated system for custom code '1234' from 'rxnorm' to 'loinc'",
+        })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: "Removed custom code '5678'" })
     ).toBeVisible();
   });
 });

@@ -15,6 +15,7 @@ import type { UpdateCustomCodeInputNewName } from './updateCustomCodeInputNewNam
 export interface UpdateCustomCodeInput {
   system: string;
   code: string;
+  name: string;
   new_code: UpdateCustomCodeInputNewCode;
   new_system: UpdateCustomCodeInputNewSystem;
   new_name: UpdateCustomCodeInputNewName;
