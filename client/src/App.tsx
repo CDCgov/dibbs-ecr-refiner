@@ -32,7 +32,7 @@ function App() {
 
   return (
     <Layout displayName={`${user.username} (${user.jurisdiction_id})`}>
-      <ToastContainer className="!w-full" />
+      <ToastContainer />
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
