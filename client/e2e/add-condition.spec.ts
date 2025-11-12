@@ -50,11 +50,11 @@ test.describe
       .getByRole('searchbox', { name: 'Search by condition name' })
       .fill('disease');
     await page.getByText('Balamuthia mandrillaris Disease').click();
+    await page.getByTestId('close-drawer').click();
     await page.getByRole('heading', { name: 'Condition added' }).click();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    await page.getByTestId('close-drawer').click();
     await expect(
       page.getByRole('button', {
         name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
