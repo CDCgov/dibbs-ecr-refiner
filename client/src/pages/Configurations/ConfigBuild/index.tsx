@@ -42,7 +42,7 @@ import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
 import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
-import { highlightMatches } from '../../../utils/highlight';
+import { highlightMatches } from '../../../utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
