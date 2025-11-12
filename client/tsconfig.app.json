@@ -23,10 +23,5 @@
     "noUncheckedSideEffectImports": false,
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": [
-    "src",
-    "orval.config.ts",
-    "playwright.config.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["src"]
 }
