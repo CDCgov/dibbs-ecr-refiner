@@ -18,4 +18,5 @@ export interface GetConfigurationResponse {
   custom_codes: DbConfigurationCustomCode[];
   section_processing: DbConfigurationSectionProcessing[];
   deduplicated_codes: string[];
+  version: number;
 }

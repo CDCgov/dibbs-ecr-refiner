@@ -129,11 +129,16 @@ async def get_configurations(
         c.condition_canonical_url: c for c in all_configs if c.status == "draft"
     }
 
+    inactive_configs_map = {
+        c.condition_canonical_url: c for c in all_configs if c.status == "inactive"
+    }
+
     unique_urls = {c.condition_canonical_url for c in all_configs}
     result = []
     for key in unique_urls:
         has_active = key in active_configs_map
         has_draft = key in draft_configs_map
+        has_inactive = key in inactive_configs_map
 
         # check if there is both an active and draft
         if has_active and has_draft:
@@ -178,8 +183,22 @@ async def get_configurations(
                     status=draft_configs_map[key].status,
                 )
             )
+        # only inactive
+        elif has_inactive:
+            result.append(
+                GetConfigurationsResponse(
+                    link_to_config_id=inactive_configs_map[key].id,
+                    version=inactive_configs_map[key].version,
+                    last_activated_time=inactive_configs_map[key].last_activated_at,
+                    last_activated_by_user=inactive_configs_map[key].last_activated_by,
+                    show_has_draft=False,
+                    name=inactive_configs_map[key].name,
+                    status=inactive_configs_map[key].status,
+                )
+            )
 
-    return result
+    # TODO: What should the order be?
+    return sorted(result, key=lambda r: r.name.lower())
 
 
 class CreateConfigInput(BaseModel):
@@ -271,6 +290,10 @@ class GetConfigurationResponse:
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
     deduplicated_codes: list[str]
+
+    ##### TODO: REMOVE BEFORE MERGE #####
+    version: int
+    #######
 
 
 @dataclass(frozen=True)
@@ -373,6 +396,7 @@ async def get_configuration(
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
         deduplicated_codes=deduplicated_codes,
+        version=config.version,
     )
 
 
