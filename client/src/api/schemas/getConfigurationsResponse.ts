@@ -8,11 +8,8 @@
 import type { GetConfigurationsResponseStatus } from './getConfigurationsResponseStatus';
 
 export interface GetConfigurationsResponse {
-  link_to_config_id: string;
-  version: number;
-  last_activated_time: string;
-  last_activated_by_user: string;
-  show_has_draft: boolean;
+  id: string;
   name: string;
+  version: number;
   status: GetConfigurationsResponseStatus;
 }

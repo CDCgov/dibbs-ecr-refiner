@@ -27,7 +27,6 @@ from app.core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
-from app.db.users.db import get_users_by_jd_id
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
@@ -87,12 +86,9 @@ class GetConfigurationsResponse:
     Model for a user-defined configuration.
     """
 
-    link_to_config_id: UUID
-    version: int
-    last_activated_time: datetime
-    last_activated_by_user: str
-    show_has_draft: bool
+    id: UUID
     name: str
+    version: int
     status: Literal["draft", "active", "inactive"]
 
 
@@ -117,9 +113,6 @@ async def get_configurations(
     jd = user.jurisdiction_id
 
     all_configs = await get_configurations_db(jurisdiction_id=jd, db=db)
-    all_jd_users = await get_users_by_jd_id(jurisdiction_id=jd, db=db)
-
-    users_id_to_name_map = {u.id: u.username for u in all_jd_users}
 
     active_configs_map = {
         c.condition_canonical_url: c for c in all_configs if c.status == "active"
@@ -134,66 +127,41 @@ async def get_configurations(
     }
 
     unique_urls = {c.condition_canonical_url for c in all_configs}
+    print(unique_urls)
     result = []
     for key in unique_urls:
         has_active = key in active_configs_map
         has_draft = key in draft_configs_map
         has_inactive = key in inactive_configs_map
 
-        # check if there is both an active and draft
-        if has_active and has_draft:
+        # Active
+        if has_active:
             result.append(
                 GetConfigurationsResponse(
-                    link_to_config_id=draft_configs_map[key].id,
-                    version=active_configs_map[key].version,
-                    last_activated_time=active_configs_map[key].last_activated_at,
-                    last_activated_by_user=users_id_to_name_map[
-                        active_configs_map[key].last_activated_by
-                    ],
-                    show_has_draft=True,
+                    id=active_configs_map[key].id,
                     name=active_configs_map[key].name,
+                    version=active_configs_map[key].version,
                     status=active_configs_map[key].status,
                 )
             )
-        # only active
-        elif has_active:
-            result.append(
-                GetConfigurationsResponse(
-                    link_to_config_id=active_configs_map[key].id,
-                    version=active_configs_map[key].version,
-                    last_activated_time=active_configs_map[key].last_activated_at,
-                    last_activated_by_user=users_id_to_name_map[
-                        active_configs_map[key].last_activated_by
-                    ],
-                    show_has_draft=False,
-                    name=active_configs_map[key].name,
-                    status=active_configs_map[key].status,
-                )
-            )
-        # only draft
-        elif has_draft:
-            result.append(
-                GetConfigurationsResponse(
-                    link_to_config_id=draft_configs_map[key].id,
-                    version=draft_configs_map[key].version,
-                    last_activated_time=None,
-                    last_activated_by_user=None,
-                    show_has_draft=False,
-                    name=draft_configs_map[key].name,
-                    status=draft_configs_map[key].status,
-                )
-            )
-        # only inactive
+        # Inactive
         elif has_inactive:
             result.append(
                 GetConfigurationsResponse(
-                    link_to_config_id=inactive_configs_map[key].id,
-                    version=inactive_configs_map[key].version,
-                    last_activated_time=inactive_configs_map[key].last_activated_at,
-                    last_activated_by_user=inactive_configs_map[key].last_activated_by,
-                    show_has_draft=False,
+                    id=inactive_configs_map[key].id,
                     name=inactive_configs_map[key].name,
+                    version=inactive_configs_map[key].version,
                     status=inactive_configs_map[key].status,
+                )
+            )
+        # Draft
+        elif has_draft:
+            result.append(
+                GetConfigurationsResponse(
+                    id=draft_configs_map[key].id,
+                    name=draft_configs_map[key].name,
+                    version=draft_configs_map[key].version,
+                    status=draft_configs_map[key].status,
                 )
             )
 
