@@ -42,7 +42,7 @@ import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
 import { FuseResultMatch } from 'fuse.js';
 import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
-import { highlightMatches } from '../../../utils/highlight';
+import { highlightMatches } from '../../../utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
@@ -824,6 +824,7 @@ export function CustomCodeModal({
           data: {
             code: initialCode,
             system: normalizeSystem(initialSystem),
+            name: initialName,
             new_code: form.code,
             new_system: normalizeSystem(form.system),
             new_name: form.name,

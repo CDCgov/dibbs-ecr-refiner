@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Drawer from '../../../components/Drawer';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
-import { highlightMatches } from '../../../utils/highlight';
+import { highlightMatches } from '../../../utils';
 import { IncludedCondition } from '../../../api/schemas';
 import { TesLink } from '../TesLink';
 

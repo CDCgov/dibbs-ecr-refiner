@@ -225,7 +225,10 @@ async def is_config_valid_to_insert_db(
 
 
 async def associate_condition_codeset_with_configuration_db(
-    config: DbConfiguration, condition: DbCondition, db: AsyncDatabaseConnection
+    config: DbConfiguration,
+    condition: DbCondition,
+    user_id: UUID,
+    db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
     Given a condition, associate its set of codes with the specified configuration. Prevents the addition of duplicate conditions.
@@ -235,6 +238,7 @@ async def associate_condition_codeset_with_configuration_db(
     Args:
         config (DbConfiguration): The configuration
         condition (DbCondition): The condition
+        user_id (UUID): The user performing the action
         db (AsyncDatabaseConnection): Database connection
 
     Returns:
@@ -284,14 +288,30 @@ async def associate_condition_codeset_with_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=updated_config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=updated_config.id,
+                    event_type="add_code",
+                    action_text=f"Associated '{condition.display_name}' code set",
+                ),
+                cursor=cur,
+            )
+
+            return updated_config
 
 
 async def disassociate_condition_codeset_with_configuration_db(
-    config: DbConfiguration, condition: DbCondition, db: AsyncDatabaseConnection
+    config: DbConfiguration,
+    condition: DbCondition,
+    user_id: UUID,
+    db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
     Given a condition, remove its codeset from the specified configuration.
@@ -301,6 +321,7 @@ async def disassociate_condition_codeset_with_configuration_db(
     Args:
         config (DbConfiguration): The configuration
         condition (DbCondition): The condition to remove
+        user_id (UUID): The user performing the action
         db (AsyncDatabaseConnection): Database connection
 
     Returns:
@@ -339,10 +360,23 @@ async def disassociate_condition_codeset_with_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=updated_config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=updated_config.id,
+                    event_type="delete_code",
+                    action_text=f"Removed '{condition.display_name}' code set",
+                ),
+                cursor=cur,
+            )
+
+            return updated_config
 
 
 @dataclass(frozen=True)
@@ -430,6 +464,7 @@ async def get_total_condition_code_counts_by_configuration_db(
 async def add_custom_code_to_configuration_db(
     config: DbConfiguration,
     custom_code: DbConfigurationCustomCode,
+    user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -474,16 +509,30 @@ async def add_custom_code_to_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=updated_config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=updated_config.id,
+                    event_type="add_code",
+                    action_text=f"Added custom code '{custom_code.code}'",
+                ),
+                cursor=cur,
+            )
+
+            return updated_config
 
 
 async def delete_custom_code_from_configuration_db(
     config: DbConfiguration,
     system: str,
     code: str,
+    user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -520,15 +569,35 @@ async def delete_custom_code_from_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=updated_config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=updated_config.id,
+                    event_type="delete_code",
+                    action_text=f"Removed custom code '{code}'",
+                ),
+                cursor=cur,
+            )
+
+            return updated_config
 
 
 async def edit_custom_code_from_configuration_db(
     config: DbConfiguration,
     updated_custom_codes: list[DbConfigurationCustomCode],
+    user_id: UUID,
+    prev_code: str,
+    prev_system: str,
+    prev_name: str,
+    new_code: str | None,
+    new_system: str | None,
+    new_name: str | None,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -564,10 +633,55 @@ async def edit_custom_code_from_configuration_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            # Collect all event messages
+            events_to_insert = []
+
+            # 1. Code changed
+            if new_code is not None and new_code != prev_code:
+                events_to_insert.append(
+                    EventInput(
+                        jurisdiction_id=updated_config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=updated_config.id,
+                        event_type="edit_code",
+                        action_text=f"Updated custom code from '{prev_code}' to '{new_code}'",
+                    )
+                )
+
+            # 2. Name changed
+            if new_name is not None and new_name != prev_name:
+                events_to_insert.append(
+                    EventInput(
+                        jurisdiction_id=updated_config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=updated_config.id,
+                        event_type="edit_code",
+                        action_text=f"Updated name for custom code '{prev_code}' from '{prev_name}' to '{new_name}'",
+                    )
+                )
+
+            # 3. System changed
+            if new_system is not None and new_system != prev_system:
+                events_to_insert.append(
+                    EventInput(
+                        jurisdiction_id=updated_config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=updated_config.id,
+                        event_type="edit_code",
+                        action_text=f"Updated system for custom code '{prev_code}' from '{prev_system}' to '{new_system}'",
+                    )
+                )
+
+            # Insert all generated events
+            for event in events_to_insert:
+                await insert_event_db(event=event, cursor=cur)
+
+            return updated_config
 
 
 @dataclass(frozen=True)

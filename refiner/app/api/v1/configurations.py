@@ -561,7 +561,7 @@ async def associate_condition_codeset_with_configuration(
         )
 
     updated_config = await associate_condition_codeset_with_configuration_db(
-        config=config, condition=condition, db=db
+        config=config, condition=condition, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -636,7 +636,7 @@ async def remove_condition_codeset_from_configuration(
         )
 
     updated_config = await disassociate_condition_codeset_with_configuration_db(
-        config=config, condition=condition, db=db
+        config=config, condition=condition, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -761,7 +761,7 @@ async def add_custom_code(
     )
 
     updated_config = await add_custom_code_to_configuration_db(
-        config=config, custom_code=custom_code, db=db
+        config=config, custom_code=custom_code, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -840,7 +840,7 @@ async def delete_custom_code(
         )
 
     updated_config = await delete_custom_code_from_configuration_db(
-        config=config, system=system, code=code, db=db
+        config=config, system=system, code=code, user_id=user.id, db=db
     )
 
     if not updated_config:
@@ -869,6 +869,7 @@ class UpdateCustomCodeInput(BaseModel):
 
     system: str
     code: str
+    name: str
     new_code: str | None
     new_system: str | None
     new_name: str | None
@@ -887,6 +888,7 @@ def _get_modified_custom_codes(
         for cc in custom_codes
         if cc.system == _get_sanitized_system_name(updateInput.system)
         and cc.code == updateInput.code
+        and cc.name == updateInput.name
     ]
 
     # We expect exactly 1 code
@@ -911,15 +913,17 @@ def _get_modified_custom_codes(
     # use the old values as fallbacks.
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
+        name=updateInput.new_name or existing_code.name,
         system=_get_sanitized_system_name(updateInput.new_system)
         if updateInput.new_system
         else existing_code.system,
-        name=updateInput.new_name or existing_code.name,
     )
 
     # check for duplicates
     if any(
-        cc.code == updated_code.code and cc.system == updated_code.system
+        cc.code == updated_code.code
+        and cc.system == updated_code.system
+        and cc.name == updated_code.name
         for cc in custom_codes
     ):
         # put the original code back so the list is unchanged
@@ -1003,6 +1007,13 @@ async def edit_custom_code(
     updated_config = await edit_custom_code_from_configuration_db(
         config=config,
         updated_custom_codes=custom_codes,
+        user_id=user.id,
+        prev_code=body.code,
+        prev_system=body.system,
+        prev_name=body.name,
+        new_code=body.new_code,
+        new_system=body.new_system,
+        new_name=body.new_name,
         db=db,
     )
 

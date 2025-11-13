@@ -213,7 +213,7 @@ def mock_db_functions(monkeypatch):
         config_by_id_mock,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="edited-code", name="test-name", system="SNOMED"
+                code="edited-code", name="updated-name", system="SNOMED"
             )
         ],
     )
@@ -340,9 +340,10 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
     payload = {
         "code": "test-code",
         "system": "loinc",
+        "name": "test-name",
         "new_code": "edited-code",
         "new_system": "snomed",
-        "new_name": "test-name",
+        "new_name": "updated-name",
     }
 
     response = await authed_client.put(
@@ -353,6 +354,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
     assert len(data["custom_codes"]) == 1
     assert data["custom_codes"][0]["code"] == "edited-code"
     assert data["custom_codes"][0]["system"] == "SNOMED"
+    assert data["custom_codes"][0]["name"] == "updated-name"
 
 
 @pytest.mark.asyncio
