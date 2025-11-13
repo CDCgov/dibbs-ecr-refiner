@@ -112,6 +112,7 @@ async def get_configurations(
     # get user jurisdiction
     jd = user.jurisdiction_id
 
+    # get all configs in a JD
     all_configs = await get_configurations_db(jurisdiction_id=jd, db=db)
 
     active_configs_map = {
@@ -122,17 +123,23 @@ async def get_configurations(
         c.condition_canonical_url: c for c in all_configs if c.status == "draft"
     }
 
-    inactive_configs_map = {
-        c.condition_canonical_url: c for c in all_configs if c.status == "inactive"
-    }
+    highest_version_inactive_configs_map = {}
+
+    for c in all_configs:
+        if c.status == "inactive":
+            key = c.condition_canonical_url
+            if (
+                key not in highest_version_inactive_configs_map
+                or c.version > highest_version_inactive_configs_map[key].version
+            ):
+                highest_version_inactive_configs_map[key] = c
 
     unique_urls = {c.condition_canonical_url for c in all_configs}
-    print(unique_urls)
     result = []
     for key in unique_urls:
         has_active = key in active_configs_map
         has_draft = key in draft_configs_map
-        has_inactive = key in inactive_configs_map
+        has_inactive = key in highest_version_inactive_configs_map
 
         # Active
         if has_active:
@@ -148,10 +155,10 @@ async def get_configurations(
         elif has_inactive:
             result.append(
                 GetConfigurationsResponse(
-                    id=inactive_configs_map[key].id,
-                    name=inactive_configs_map[key].name,
-                    version=inactive_configs_map[key].version,
-                    status=inactive_configs_map[key].status,
+                    id=highest_version_inactive_configs_map[key].id,
+                    name=highest_version_inactive_configs_map[key].name,
+                    version=highest_version_inactive_configs_map[key].version,
+                    status=highest_version_inactive_configs_map[key].status,
                 )
             )
         # Draft
