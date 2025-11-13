@@ -10,6 +10,5 @@ import type { GetConfigurationsResponseStatus } from './getConfigurationsRespons
 export interface GetConfigurationsResponse {
   id: string;
   name: string;
-  version: number;
   status: GetConfigurationsResponseStatus;
 }

@@ -1,6 +1,8 @@
-import { StatusPill } from '../StatusPill';
 import { useNavigate } from 'react-router';
-import { GetConfigurationsResponse } from '../../api/schemas';
+import {
+  GetConfigurationsResponse,
+  GetConfigurationsResponseStatus,
+} from '../../api/schemas';
 import Table from '../Table';
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
@@ -11,7 +13,6 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
 
   const reportableConditionHeader = 'Reportable condition';
   const statusHeader = 'Status';
-  const versionHeader = 'Version';
 
   if (!data.length) {
     return (
@@ -38,11 +39,10 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
         <tr>
           <th scope="col">{reportableConditionHeader}</th>
           <th scope="col">{statusHeader}</th>
-          <th scope="col">{versionHeader}</th>
         </tr>
       </thead>
       <tbody>
-        {data.map(({ id, name, status, version }) => {
+        {data.map(({ id, name, status }) => {
           return (
             <tr
               key={id}
@@ -53,7 +53,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   void navigate(`/configurations/${id}/build`);
                 }
               }}
-              aria-label={`View configuration for ${name}`}
+              aria-label={`View ${status === GetConfigurationsResponseStatus.draft || status === GetConfigurationsResponseStatus.inactive ? 'inactive' : 'active'} configuration for ${name}`}
               className="cursor-pointer"
             >
               <td
@@ -64,10 +64,16 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                 {name}
               </td>
               <td data-label={statusHeader}>
-                <StatusPill status={status} />
-              </td>
-              <td data-label={versionHeader}>
-                <span>Version {version}</span>
+                {status === GetConfigurationsResponseStatus.active ? (
+                  <span className="text-success-dark">
+                    <span className="text-color-success not-sr-only pr-1">
+                      ⏺︎
+                    </span>
+                    Active
+                  </span>
+                ) : (
+                  <span>Inactive</span>
+                )}
               </td>
             </tr>
           );

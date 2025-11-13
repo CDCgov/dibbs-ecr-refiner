@@ -91,7 +91,6 @@ class GetConfigurationsResponse:
 
     id: UUID
     name: str
-    version: int
     status: Literal["draft", "active", "inactive"]
 
 
@@ -146,7 +145,6 @@ async def get_configurations(
                 GetConfigurationsResponse(
                     id=active_configs_map[key].id,
                     name=active_configs_map[key].name,
-                    version=active_configs_map[key].version,
                     status=active_configs_map[key].status,
                 )
             )
@@ -156,7 +154,6 @@ async def get_configurations(
                 GetConfigurationsResponse(
                     id=highest_version_inactive_configs_map[key].id,
                     name=highest_version_inactive_configs_map[key].name,
-                    version=highest_version_inactive_configs_map[key].version,
                     status=highest_version_inactive_configs_map[key].status,
                 )
             )
@@ -166,7 +163,6 @@ async def get_configurations(
                 GetConfigurationsResponse(
                     id=draft_configs_map[key].id,
                     name=draft_configs_map[key].name,
-                    version=draft_configs_map[key].version,
                     status=draft_configs_map[key].status,
                 )
             )
