@@ -12,3 +12,8 @@ demo-db-url:
     --resource-group dibbs-er-demo \
     --query "containers[0].environmentVariables[?name=='DB_URL'].value | [0]" \
     -o tsv
+
+[doc('Retrieve a list of jurisdictions who have authored conditions in the demo application')]
+[group('azure')]
+demo-jurisdiction-authored:
+    psql $(just cloud demo-db-url) -c "SELECT c.jurisdiction_id, c.name FROM configurations AS c ORDER BY c.jurisdiction_id;"
