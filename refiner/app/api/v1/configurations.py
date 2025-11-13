@@ -80,6 +80,32 @@ from ...services.xslt import (
 router = APIRouter(prefix="/configurations")
 
 
+def get_canonical_url_to_highest_inactive_version_map(
+    configs: list[DbConfiguration],
+) -> dict[str, DbConfiguration]:
+    """
+    Creates a dictionary that maps a condition URL to the highest inactive version configuration.
+
+    Args:
+        configs (list[DbConfiguration]): List of DbConfigurations
+
+    Returns:
+    a dictionary with the structure:
+        key = Condition canonical URL
+        value = Inactive configuration with highest version number
+    """
+    highest_version_inactive_configs_map: dict[str, DbConfiguration] = {}
+    for c in configs:
+        if c.status == "inactive":
+            key = c.condition_canonical_url
+            if (
+                key not in highest_version_inactive_configs_map
+                or c.version > highest_version_inactive_configs_map[key].version
+            ):
+                highest_version_inactive_configs_map[key] = c
+    return highest_version_inactive_configs_map
+
+
 @dataclass(frozen=True)
 class GetConfigurationsResponse:
     """
@@ -115,24 +141,20 @@ async def get_configurations(
     # get all configs in a JD
     all_configs = await get_configurations_db(jurisdiction_id=jd, db=db)
 
+    # active config by condition
     active_configs_map = {
         c.condition_canonical_url: c for c in all_configs if c.status == "active"
     }
 
+    # draft config by condition
     draft_configs_map = {
         c.condition_canonical_url: c for c in all_configs if c.status == "draft"
     }
 
-    highest_version_inactive_configs_map = {}
-
-    for c in all_configs:
-        if c.status == "inactive":
-            key = c.condition_canonical_url
-            if (
-                key not in highest_version_inactive_configs_map
-                or c.version > highest_version_inactive_configs_map[key].version
-            ):
-                highest_version_inactive_configs_map[key] = c
+    # inactive config with the highest version by condition
+    highest_version_inactive_configs_map: dict[str, DbConfiguration] = (
+        get_canonical_url_to_highest_inactive_version_map(all_configs)
+    )
 
     unique_urls = {c.condition_canonical_url for c in all_configs}
     result = []
