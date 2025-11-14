@@ -63,6 +63,10 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         local_codes=[],
         section_processing=existing_sections,
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
 
     # Updated config returned by DB helper
@@ -80,6 +84,10 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         local_codes=initial_config.local_codes,
         section_processing=updated_sections,
         version=2,
+        status=initial_config.status,
+        last_activated_at=initial_config.last_activated_at,
+        last_activated_by=initial_config.last_activated_by,
+        condition_canonical_url=initial_config.condition_canonical_url,
     )
 
     # Monkeypatch DB calls
@@ -132,6 +140,10 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
         local_codes=[],
         section_processing=existing_sections,
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
 
     # Monkeypatch DB calls: update returns None to simulate failure

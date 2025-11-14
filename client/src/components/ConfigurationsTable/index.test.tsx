@@ -1,7 +1,8 @@
-import { getByText, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 import userEvent from '@testing-library/user-event';
+import { GetConfigurationsResponseStatus } from '../../api/schemas';
 
 const mockNavigate = vi.fn();
 
@@ -14,17 +15,22 @@ vi.mock('react-router', async () => {
   };
 });
 
-const testCfg = {
+const tableData = {
   data: [
     {
-      name: 'Chlamydia trachomatis infection',
-      is_active: true,
       id: 'chlamydia-config-id',
+      name: 'Chlamydia trachomatis infection',
+      status: GetConfigurationsResponseStatus.active,
     },
     {
-      name: 'Disease caused by Enterovirus',
-      is_active: false,
       id: 'asdf-zxcv-qwer-hjkl',
+      name: 'Disease caused by Enterovirus',
+      status: GetConfigurationsResponseStatus.inactive,
+    },
+    {
+      id: '1234-5678-9101-1121',
+      name: 'Acanthamoeba',
+      status: GetConfigurationsResponseStatus.draft,
     },
   ],
 };
@@ -37,16 +43,27 @@ describe('Configurations Table component', () => {
   it('should render a table when supplied with data', () => {
     render(
       <BrowserRouter>
-        <ConfigurationsTable data={testCfg.data} />
+        <ConfigurationsTable data={tableData.data} />
       </BrowserRouter>
     );
 
-    testCfg.data.forEach(({ name, is_active }) => {
-      const row = getByText(screen.getByTestId('table'), name).parentElement;
-      expect(row).toHaveTextContent(name);
-      expect(row).toHaveTextContent(`${is_active ? 'Active' : 'Refiner off'}`);
-    });
+    expect(
+      screen.getByRole('row', {
+        name: /active configuration for chlamydia trachomatis infection/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('row', {
+        name: /inactive configuration for disease caused by enterovirus/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('row', {
+        name: /inactive configuration for acanthamoeba/i,
+      })
+    ).toBeInTheDocument();
   });
+
   it('should render an error message if no data is supplied', () => {
     render(
       <BrowserRouter>
@@ -63,13 +80,13 @@ describe('Configurations Table component', () => {
 
     render(
       <BrowserRouter>
-        <ConfigurationsTable data={testCfg.data} />
+        <ConfigurationsTable data={tableData.data} />
       </BrowserRouter>
     );
 
     // This ensures the aria-label is correct
     const row = screen.getByRole('row', {
-      name: 'View configuration for Chlamydia trachomatis infection',
+      name: 'View active configuration for Chlamydia trachomatis infection',
     });
 
     await user.click(row);
@@ -84,12 +101,12 @@ describe('Configurations Table component', () => {
 
     render(
       <BrowserRouter>
-        <ConfigurationsTable data={testCfg.data} />
+        <ConfigurationsTable data={tableData.data} />
       </BrowserRouter>
     );
 
     const row = screen.getByRole('row', {
-      name: 'View configuration for Chlamydia trachomatis infection',
+      name: 'View active configuration for Chlamydia trachomatis infection',
     });
 
     row.focus();

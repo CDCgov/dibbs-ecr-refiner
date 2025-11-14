@@ -39,6 +39,10 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "local_codes": [],
         "section_processing": [],
         "version": 1,
+        "status": "draft",
+        "last_activated_at": None,
+        "last_activated_by": None,
+        "condition_canonical_url": "https://test.com",
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)

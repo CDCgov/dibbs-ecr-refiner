@@ -68,17 +68,6 @@ def mock_db_functions(monkeypatch):
     Mock return values of the `_db` functions called by the routes.
     """
 
-    # Mock get_configurations_db
-    config_mock = GetConfigurationsResponse(
-        id=UUID("b3096f08-8cf4-4276-a1e9-03634c9f618b"),
-        name="Config A",
-        is_active=False,
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_configurations_db",
-        AsyncMock(return_value=[config_mock]),
-    )
-
     # prepare a fake condition with codes
     condition_mock = DbCondition(
         id=UUID("22222222-2222-2222-2222-222222222222"),
@@ -124,10 +113,20 @@ def mock_db_functions(monkeypatch):
         local_codes=[],
         section_processing=[],
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="url-1",
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
         AsyncMock(return_value=config_by_id_mock),
+    )
+
+    # Mock get_configurations_db
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configurations_db",
+        AsyncMock(return_value=[config_by_id_mock]),
     )
 
     # Mock is_config_valid_to_insert_db
@@ -140,7 +139,7 @@ def mock_db_functions(monkeypatch):
     new_config_mock = GetConfigurationsResponse(
         id=UUID("33333333-3333-3333-3333-333333333333"),
         name="New Config",
-        is_active=False,
+        status="draft",
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.insert_configuration_db",
@@ -161,6 +160,10 @@ def mock_db_functions(monkeypatch):
         local_codes=[],
         section_processing=[],
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
 
     monkeypatch.setattr(
@@ -231,7 +234,7 @@ async def test_get_configurations_returns_list(authed_client):
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
-    assert data[0]["name"] == "Config A"
+    assert data[0]["name"] == "test config"
 
 
 @pytest.mark.asyncio
@@ -331,6 +334,10 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         local_codes=[],
         section_processing=[],
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
