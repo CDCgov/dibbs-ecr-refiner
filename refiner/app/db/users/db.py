@@ -57,7 +57,7 @@ async def upsert_user_db(
     return str(row["id"])
 
 
-async def get_users_by_jd_id(
+async def get_users_by_jd_id_db(
     jurisdiction_id: UUID, db: AsyncDatabaseConnection
 ) -> list[DbUser]:
     """
