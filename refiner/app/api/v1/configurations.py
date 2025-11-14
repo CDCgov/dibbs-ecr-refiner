@@ -133,7 +133,7 @@ async def get_configurations(
     )
 
     unique_urls = {c.condition_canonical_url for c in all_configs}
-    result = []
+    response = []
     for key in unique_urls:
         has_active = key in active_configs_map
         has_draft = key in draft_configs_map
@@ -141,7 +141,7 @@ async def get_configurations(
 
         # Active
         if has_active:
-            result.append(
+            response.append(
                 GetConfigurationsResponse(
                     id=active_configs_map[key].id,
                     name=active_configs_map[key].name,
@@ -150,7 +150,7 @@ async def get_configurations(
             )
         # Inactive
         elif has_inactive:
-            result.append(
+            response.append(
                 GetConfigurationsResponse(
                     id=highest_version_inactive_configs_map[key].id,
                     name=highest_version_inactive_configs_map[key].name,
@@ -159,7 +159,7 @@ async def get_configurations(
             )
         # Draft
         elif has_draft:
-            result.append(
+            response.append(
                 GetConfigurationsResponse(
                     id=draft_configs_map[key].id,
                     name=draft_configs_map[key].name,
@@ -168,7 +168,7 @@ async def get_configurations(
             )
 
     # TODO: What should the order be?
-    return sorted(result, key=lambda r: r.name.lower())
+    return sorted(response, key=lambda r: r.name.lower())
 
 
 class CreateConfigInput(BaseModel):
