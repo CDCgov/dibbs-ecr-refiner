@@ -261,10 +261,6 @@ class GetConfigurationResponse:
     section_processing: list[DbConfigurationSectionProcessing]
     deduplicated_codes: list[str]
 
-    ##### TODO: REMOVE BEFORE MERGE #####
-    version: int
-    #######
-
 
 @dataclass(frozen=True)
 class ConfigurationCustomCodeResponse:
@@ -366,7 +362,6 @@ async def get_configuration(
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
         deduplicated_codes=deduplicated_codes,
-        version=config.version,
     )
 
 

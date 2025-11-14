@@ -90,7 +90,6 @@ export default function ConfigBuild() {
           section_processing={response.data.section_processing}
           display_name={response.data.display_name}
           deduplicated_codes={response.data.deduplicated_codes}
-          version={response.data.version}
         />
       </SectionContainer>
     </div>
@@ -123,7 +122,6 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
-  version,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -182,7 +180,6 @@ function Builder({
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
-            <p>VERSION: {version}</p>
             <OptionsLabelContainer>
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
