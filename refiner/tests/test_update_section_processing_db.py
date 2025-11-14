@@ -78,6 +78,10 @@ async def test_update_section_processing_valid():
             ),
         ],
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
 
     # The DB should return the updated row; build that row dict
@@ -96,6 +100,10 @@ async def test_update_section_processing_valid():
         "local_codes": [],
         "section_processing": updated_sections,
         "version": 2,
+        "status": mock_config.status,
+        "last_activated_at": mock_config.last_activated_at,
+        "last_activated_by": mock_config.last_activated_by,
+        "condition_canonical_url": mock_config.condition_canonical_url,
     }
 
     fake_db = _FakeDB(row=row)
@@ -142,6 +150,10 @@ async def test_update_section_processing_invalid_action():
             ),
         ],
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
 
     # Invalid payload
@@ -179,6 +191,10 @@ async def test_update_section_processing_unknown_code():
             ),
         ],
         version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        condition_canonical_url="https://test.com",
     )
 
     # The DB should return the same existing sections because unknown update codes are ignored.
@@ -196,6 +212,10 @@ async def test_update_section_processing_unknown_code():
         "local_codes": [],
         "section_processing": existing_sections,
         "version": 1,
+        "status": mock_config.status,
+        "last_activated_at": mock_config.last_activated_at,
+        "last_activated_by": mock_config.last_activated_by,
+        "condition_canonical_url": mock_config.condition_canonical_url,
     }
 
     fake_db = _FakeDB(row=row)
