@@ -270,14 +270,17 @@ async def associate_condition_codeset_with_configuration_db(
             RETURNING
                 id,
                 name,
+                status,
                 jurisdiction_id,
                 condition_id,
                 included_conditions,
                 custom_codes,
                 local_codes,
                 section_processing,
-                version
-            ;
+                version,
+                last_activated_at,
+                last_activated_by,
+                condition_canonical_url;
             """
 
     new_condition = Jsonb([str(condition.id)])
@@ -344,13 +347,17 @@ async def disassociate_condition_codeset_with_configuration_db(
         RETURNING
             id,
             name,
+            status,
             jurisdiction_id,
             condition_id,
             included_conditions,
             custom_codes,
             local_codes,
             section_processing,
-            version;
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url;
     """
 
     params = (str(condition.id), config.id)
@@ -478,14 +485,17 @@ async def add_custom_code_to_configuration_db(
             RETURNING
                 id,
                 name,
+                status,
                 jurisdiction_id,
                 condition_id,
                 included_conditions,
                 custom_codes,
                 local_codes,
                 section_processing,
-                version
-            ;
+                version,
+                last_activated_at,
+                last_activated_by,
+                condition_canonical_url;
             """
 
     custom_codes = config.custom_codes
@@ -546,14 +556,17 @@ async def delete_custom_code_from_configuration_db(
             RETURNING
                 id,
                 name,
+                status,
                 jurisdiction_id,
                 condition_id,
                 included_conditions,
                 custom_codes,
                 local_codes,
                 section_processing,
-                version
-            ;
+                version,
+                last_activated_at,
+                last_activated_by,
+                condition_canonical_url;
             """
 
     updated_custom_codes = [
@@ -611,14 +624,17 @@ async def edit_custom_code_from_configuration_db(
             RETURNING
                 id,
                 name,
+                status,
                 jurisdiction_id,
                 condition_id,
                 included_conditions,
                 custom_codes,
                 local_codes,
                 section_processing,
-                version
-            ;
+                version,
+                last_activated_at,
+                last_activated_by,
+                condition_canonical_url;
             """
 
     json_codes = [
@@ -749,14 +765,17 @@ async def update_section_processing_db(
             RETURNING
                 id,
                 name,
+                status,
                 jurisdiction_id,
                 condition_id,
                 included_conditions,
                 custom_codes,
                 local_codes,
                 section_processing,
-                version
-            ;
+                version,
+                last_activated_at,
+                last_activated_by,
+                condition_canonical_url;
             """
 
     params = (Jsonb(updated_sections), config.id)
@@ -790,13 +809,17 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
         SELECT
             id,
             name,
+            status,
             jurisdiction_id,
             condition_id,
             included_conditions,
             custom_codes,
             local_codes,
             section_processing,
-            version
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
           AND condition_id = ANY(%s::uuid[])
