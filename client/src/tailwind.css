@@ -107,6 +107,8 @@
   --color-state-success-lighter: #ecf3ec;
   --color-state-success: #00a91c;
   --color-state-success-dark: #216e1f;
+  --color-state-warning-lighter: #fff5c2;
+  --color-state-warning-darker: #5c4809;
   --color-state-error-lighter: #fff3f2;
   --color-state-error-light: #fdb8ae;
   --color-state-error: #fb5a47;

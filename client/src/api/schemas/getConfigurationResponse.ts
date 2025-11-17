@@ -5,17 +5,28 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { GetConfigurationResponseDraftId } from './getConfigurationResponseDraftId';
+import type { GetConfigurationResponseStatus } from './getConfigurationResponseStatus';
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 import type { IncludedCondition } from './includedCondition';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
+import type { GetConfigurationResponseVersion } from './getConfigurationResponseVersion';
+import type { GetConfigurationResponseActiveVersion } from './getConfigurationResponseActiveVersion';
 
 export interface GetConfigurationResponse {
   id: string;
+  draft_id: GetConfigurationResponseDraftId;
+  is_draft: boolean;
+  condition_id: string;
   display_name: string;
+  status: GetConfigurationResponseStatus;
   code_sets: DbTotalConditionCodeCount[];
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];
   section_processing: DbConfigurationSectionProcessing[];
   deduplicated_codes: string[];
+  all_versions: GetConfigurationResponseVersion[];
+  version: number;
+  active_version: GetConfigurationResponseActiveVersion;
 }

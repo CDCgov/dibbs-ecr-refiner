@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -195,33 +196,31 @@ async def get_configuration_by_id_db(
 
 
 async def is_config_valid_to_insert_db(
-    condition_id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
+    condition_canonical_url: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> bool:
     """
     Query the database to check if a configuration can be created. If a config for a condition already exists, returns False.
     """
 
     query = """
-        SELECT id
-        from configurations
-        WHERE condition_id = %s
-        AND jurisdiction_id = %s
+    SELECT id
+    from configurations
+    WHERE condition_canonical_url = %s
+    AND jurisdiction_id = %s
+    and status = 'draft'
         """
 
     params = (
-        condition_id,
+        condition_canonical_url,
         jurisdiction_id,
     )
 
     async with db.get_connection() as conn:
         async with conn.cursor() as cur:
             await cur.execute(query, params)
-            row = await cur.fetchall()
+            rows = await cur.fetchall()
 
-    if not row:
-        return True
-
-    return False
+    return len(rows) == 0
 
 
 async def associate_condition_codeset_with_configuration_db(
@@ -842,3 +841,39 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
         result[cond_id] = configs_by_condition_id.get(cond_id)
 
     return result
+
+
+@dataclass(frozen=True)
+class GetConfigurationResponseVersion:
+    """
+    Model representing a version of a configuration.
+    """
+
+    id: UUID
+    version: int
+    status: Literal["draft", "inactive", "active"]
+
+
+async def get_configuration_versions_db(
+    configuration: DbConfiguration, db: AsyncDatabaseConnection
+) -> list[GetConfigurationResponseVersion]:
+    """
+    Given a configuration, finds all related configuration versions.
+    """
+    query = """
+        SELECT id, version, status
+        FROM configurations
+        WHERE jurisdiction_id = %s
+        AND condition_canonical_url = %s
+        ORDER BY version DESC;
+    """
+
+    params = (configuration.jurisdiction_id, configuration.condition_canonical_url)
+    async with db.get_connection() as conn:
+        async with conn.cursor(
+            row_factory=class_row(GetConfigurationResponseVersion)
+        ) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return rows

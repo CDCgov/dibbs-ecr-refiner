@@ -7,7 +7,7 @@ import {
   TitleContainer,
 } from '../layout';
 import { StepsContainer, Steps } from '../Steps';
-import { ConfigurationTitleBar } from '../titleBar';
+import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 
 export default function ConfigActivate() {
   const { id } = useParams<{ id: string }>();

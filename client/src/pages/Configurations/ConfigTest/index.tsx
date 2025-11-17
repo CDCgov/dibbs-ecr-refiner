@@ -15,7 +15,7 @@ import {
 import { Diff } from '../../../components/Diff';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { ConfigurationTitleBar } from '../titleBar';
+import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
 import ErrorFallback from '../../ErrorFallback';

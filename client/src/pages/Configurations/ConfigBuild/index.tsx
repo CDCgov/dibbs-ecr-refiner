@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import EicrSectionReview from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
@@ -27,6 +27,7 @@ import { useSearch } from '../../../hooks/useSearch';
 import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
+  useCreateConfiguration,
   useDeleteCustomCodeFromConfiguration,
   useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
@@ -37,6 +38,8 @@ import {
   DbConfigurationCustomCode,
   DbConfigurationCustomCodeSystem,
   GetConfigurationResponse,
+  GetConfigurationResponseVersion,
+  GetConfigurationsResponseStatus,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
@@ -45,10 +48,11 @@ import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { ConfigurationTitleBar } from '../titleBar';
+import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
 import ErrorFallback from '../../ErrorFallback';
 import { TesLink } from '../TesLink';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -71,19 +75,34 @@ export default function ConfigBuild() {
     <div className="mb-8">
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
+        <ConfigStatus version={response.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
+        <VersionMenu
+          id={response.data.id}
+          currentVersion={response.data.version}
+          status={response.data.status}
+          versions={response.data.all_versions}
+          step="build"
+        />
         <StepsContainer>
           <Steps configurationId={response.data.id} />
         </StepsContainer>
       </NavigationContainer>
+      {!response.data.is_draft ? (
+        <ConfigurationBanner
+          draftId={response.data.draft_id}
+          conditionId={response.data.condition_id}
+          step="build"
+        />
+      ) : null}
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
           <ConfigurationTitleBar step="build" />
-          <Export id={id} />
+          <Export id={response.data.id} />
         </div>
         <Builder
-          id={id}
+          id={response.data.id}
           code_sets={sortedCodeSets}
           included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
@@ -92,6 +111,129 @@ export default function ConfigBuild() {
           deduplicated_codes={response.data.deduplicated_codes}
         />
       </SectionContainer>
+    </div>
+  );
+}
+
+interface ConfigurationBannerProps {
+  draftId: string | null;
+  conditionId: string;
+  step: 'build' | 'test' | 'activate';
+}
+
+function ConfigurationBanner({
+  draftId,
+  conditionId,
+  step,
+}: ConfigurationBannerProps) {
+  const { mutate: createConfig } = useCreateConfiguration();
+  const showToast = useToast();
+  const navigate = useNavigate();
+  const formatError = useApiErrorFormatter();
+
+  const newDraftText =
+    'Previous versions cannot be modified. You must draft a new version to make changes.';
+  const editDraftText =
+    'Previous versions cannot be modified. You can edit the existing draft.';
+  return (
+    <div className="bg-state-warning-lighter mx-auto flex w-full flex-col gap-4 md:flex-row md:justify-between md:py-2">
+      <div className="flex items-center gap-2">
+        <Icon.Info aria-hidden className="shrink-0" />
+        <p className="text-state-warning-darker font-bold">
+          {draftId ? editDraftText : newDraftText}
+        </p>
+      </div>
+      {draftId ? (
+        <Button
+          to={`/configurations/${draftId}/${step}`}
+          className="self-start"
+        >
+          Go to draft
+        </Button>
+      ) : (
+        <Button
+          className="self-start"
+          onClick={() =>
+            createConfig(
+              { data: { condition_id: conditionId } },
+              {
+                onSuccess: async (resp) => {
+                  await navigate(`/configurations/${resp.data.id}/build`);
+                  showToast({
+                    heading: 'New configuration created',
+                    body: resp.data.name ?? '',
+                  });
+                },
+                onError: (e) => {
+                  showToast({
+                    heading: 'Configuration could not be created',
+                    variant: 'error',
+                    body: formatError(e),
+                  });
+                },
+              }
+            )
+          }
+        >
+          Draft a new version {conditionId}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+interface ConfigStatusProps {
+  version: number | null;
+}
+function ConfigStatus({ version }: ConfigStatusProps) {
+  if (version) {
+    return (
+      <p className="text-state-success-dark font-bold">
+        Status: Version {version} active
+      </p>
+    );
+  }
+
+  return <p className="text-gray-cool-60 font-bold">Status: Inactive</p>;
+}
+
+interface VersionMenuProps {
+  id: string;
+  currentVersion: number;
+  status: GetConfigurationsResponseStatus;
+  versions: GetConfigurationResponseVersion[];
+  step: 'build' | 'test' | 'activate';
+}
+
+function VersionMenu({
+  currentVersion,
+  status,
+  versions,
+  step,
+}: VersionMenuProps) {
+  return (
+    <div>
+      <Menu>
+        <MenuButton>
+          <div className="cursor-pointer">
+            {status === 'draft' ? 'Editing' : 'Viewing'}: Version{' '}
+            {currentVersion}
+            <Icon.ArrowDropDown aria-hidden />
+          </div>
+        </MenuButton>
+        <MenuItems className="absolute flex flex-col rounded-lg">
+          {versions.map((v) => (
+            <MenuItem key={v.id}>
+              <Link
+                className="hover:bg-gray-10 cursor-pointer bg-white p-4 font-bold"
+                to={`/configurations/${v.id}/${step}`}
+              >
+                Version {v.version}
+              </Link>
+            </MenuItem>
+          ))}
+        </MenuItems>
+      </Menu>
     </div>
   );
 }
@@ -112,7 +254,16 @@ export function Export({ id }: ExportBuilderProps) {
   );
 }
 
-type BuilderProps = GetConfigurationResponse;
+type BuilderProps = Pick<
+  GetConfigurationResponse,
+  | 'id'
+  | 'code_sets'
+  | 'custom_codes'
+  | 'included_conditions'
+  | 'section_processing'
+  | 'display_name'
+  | 'deduplicated_codes'
+>;
 
 function Builder({
   id,

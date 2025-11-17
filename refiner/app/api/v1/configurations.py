@@ -51,6 +51,7 @@ from ...db.conditions.db import (
 from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
+    GetConfigurationResponseVersion,
     SectionUpdate,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
@@ -58,6 +59,7 @@ from ...db.configurations.db import (
     disassociate_condition_codeset_with_configuration_db,
     edit_custom_code_from_configuration_db,
     get_configuration_by_id_db,
+    get_configuration_versions_db,
     get_configurations_db,
     get_total_condition_code_counts_by_configuration_db,
     insert_configuration_db,
@@ -215,13 +217,13 @@ async def create_configuration(
     # get user jurisdiction
     jd = user.jurisdiction_id
 
-    # check that there isn't already a config for the condition + JD
+    # check that there isn't already a draft config for the condition + JD
     if not await is_config_valid_to_insert_db(
-        condition_id=condition.id, jurisdiction_id=jd, db=db
+        condition_canonical_url=condition.canonical_url, jurisdiction_id=jd, db=db
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Can't create configuration because configuration for condition already exists.",
+            detail="Can't create configuration because a draft configuration for the condition already exists.",
         )
 
     config = await insert_configuration_db(
@@ -254,12 +256,19 @@ class GetConfigurationResponse:
     """
 
     id: UUID
+    draft_id: UUID | None
+    is_draft: bool
+    condition_id: UUID
     display_name: str
+    status: Literal["draft", "inactive", "active"]
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
     deduplicated_codes: list[str]
+    all_versions: list[GetConfigurationResponseVersion]
+    version: int
+    active_version: int | None
 
 
 @dataclass(frozen=True)
@@ -300,6 +309,11 @@ async def get_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    all_versions = await get_configuration_versions_db(configuration=config, db=db)
+
+    active_config = next((v for v in all_versions if v.status == "active"), None)
+    draft_config = next((v for v in all_versions if v.status == "draft"), None)
 
     # Fetch all included conditions
     conditions = await get_included_conditions_db(
@@ -354,14 +368,25 @@ async def get_configuration(
             )
         )
 
+    draft_id = draft_config.id if draft_config is not None else None
+    is_draft = draft_id == config.id
+    active_version = active_config.version if active_config is not None else None
+
     return GetConfigurationResponse(
         id=config.id,
+        draft_id=draft_id,
+        is_draft=is_draft,
+        condition_id=config.condition_id,
         display_name=config.name,
+        status=config.status,
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
         deduplicated_codes=deduplicated_codes,
+        all_versions=all_versions,
+        version=config.version,
+        active_version=active_version,
     )
 
 
