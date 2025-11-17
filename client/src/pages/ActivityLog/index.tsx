@@ -16,19 +16,15 @@ export function ActivityLog() {
   );
 
   useEffect(() => {
-    if (
-      filteredLogEntries === undefined ||
-      conditionFilter === ALL_CONDITIONS_LITERAL
-    ) {
+    if (conditionFilter === ALL_CONDITIONS_LITERAL) {
       setFilteredLogEntries(eventResponse?.data);
     } else {
       const matchingActivityEntries = eventResponse?.data.filter((e) => {
         return e.configuration_name === conditionFilter;
       });
-      console.log(matchingActivityEntries);
       setFilteredLogEntries(matchingActivityEntries);
     }
-  }, [conditionFilter, filteredLogEntries, eventResponse]);
+  }, [conditionFilter, eventResponse]);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return <ErrorFallback error={error} />;
