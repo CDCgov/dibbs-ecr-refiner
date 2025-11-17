@@ -25,6 +25,7 @@ export function ActivityLog() {
       const matchingActivityEntries = eventResponse?.data.filter((e) => {
         return e.configuration_name === conditionFilter;
       });
+      console.log(matchingActivityEntries);
       setFilteredLogEntries(matchingActivityEntries);
     }
   }, [conditionFilter, filteredLogEntries, eventResponse]);

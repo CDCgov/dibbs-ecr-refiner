@@ -41,8 +41,8 @@ export function ActivityLogEntries({
           .map((r) => {
             const createdAtDate = new Date(r.created_at);
             return (
-              <tr key={r.id}>
-                <td data-label={nameHeader} className="!font-bold">
+              <tr key={r.id} aria-label="Log entry">
+                <td data-label={nameHeader} className="font-bold!">
                   {r.username}
                 </td>
                 <td data-label={conditionHeader}>{r.configuration_name}</td>

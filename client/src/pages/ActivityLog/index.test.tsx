@@ -4,6 +4,7 @@ import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
 import { EventResponse } from '../../api/schemas';
+import userEvent from '@testing-library/user-event';
 
 const configurationEvents: EventResponse[] = [
   {
@@ -34,6 +35,26 @@ vi.mock('../../api/events/events', async () => {
   };
 });
 
+function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
+  const eventsToCheck = conditionFilter
+    ? configurationEvents.filter(
+        (e) => e.configuration_name === conditionFilter
+      )
+    : configurationEvents;
+
+  eventsToCheck.forEach((r) => {
+    const matchingRow = screen
+      .getByRole('cell', { name: r.configuration_name })
+      .closest('tr');
+    expect(matchingRow).toBeInTheDocument();
+    expect(matchingRow).toHaveTextContent(r.action_text);
+    expect(matchingRow).toHaveTextContent(r.username);
+    expect(matchingRow).toHaveTextContent(
+      new Date(r.created_at).toLocaleDateString()
+    );
+  });
+}
+
 const renderPageView = () =>
   render(
     <TestQueryClientProvider>
@@ -59,16 +80,45 @@ describe('Activity log page', () => {
       )
     ).toBeInTheDocument();
 
-    configurationEvents.forEach((r) => {
-      const matchingRow = screen
-        .getByRole('cell', { name: r.configuration_name })
-        .closest('tr');
-      expect(matchingRow).toBeInTheDocument();
-      expect(matchingRow).toHaveTextContent(r.action_text);
-      expect(matchingRow).toHaveTextContent(r.username);
-      expect(matchingRow).toHaveTextContent(
-        new Date(r.created_at).toLocaleDateString()
-      );
+    checkActivityLogAgainstMockEvents();
+  });
+  it('should filter the activity log when conditions are changed', async () => {
+    const user = userEvent.setup();
+
+    renderPageView();
+
+    expect(screen.getByText('Activity log')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Review activity in eCR Refiner from yourself and others on the team.'
+      )
+    ).toBeInTheDocument();
+
+    const logEntries = screen.getAllByRole('row', { name: 'Log entry' });
+    expect(logEntries).toHaveLength(configurationEvents.length);
+
+    const conditionFilter = screen.getByLabelText('Condition');
+    const conditionFilterToTest = 'Alpha-gal Syndrome';
+
+    expect(conditionFilter).toBeInTheDocument();
+
+    // the test was hanging when using the .selectOptions API bc our dropdown
+    // isn't a native select, so we're doing the option selection manually using
+    // .click
+    await user.click(conditionFilter);
+    const option = await screen.findByRole('option', {
+      name: conditionFilterToTest,
     });
+    await user.click(option);
+
+    checkActivityLogAgainstMockEvents(conditionFilterToTest);
+
+    await user.click(conditionFilter);
+    const resetOption = await screen.findByRole('option', {
+      name: 'All conditions',
+    });
+    await user.click(resetOption);
+
+    checkActivityLogAgainstMockEvents();
   });
 });
