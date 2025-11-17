@@ -25,9 +25,10 @@ async def insert_configuration_db(
     user_id: UUID,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
+    config_to_clone: DbConfiguration | None = None,
 ) -> DbConfiguration | None:
     """
-    Inserts a configuration into the database.
+    Inserts a configuration into the database. If a `config_to_clone` is passed in, it'll base the new config's values off of that config.
 
     The `name` field is always set to the display_name of the associated condition at creation time,
     for easier display and searching. The authoritative clinical context is still given by `condition_id`.
@@ -79,21 +80,55 @@ async def insert_configuration_db(
         for code, details in section_details.items()
     ]
 
-    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb] = (
-        jurisdiction_id,
-        # always link a configuration to a primary condition
-        condition.id,
-        # always set name to condition display name
-        condition.display_name,
-        # included_conditions: always start with primary
-        Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
-        # custom_codes
-        EMPTY_JSONB,
-        # local_codes
-        EMPTY_JSONB,
-        # section_processing
-        Jsonb(section_processing_defaults),
-    )
+    if config_to_clone:
+        params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb] = (
+            jurisdiction_id,
+            # always link a configuration to a primary condition
+            condition.id,
+            # always set name to condition display name
+            config_to_clone.name,
+            # included_conditions: always start with primary
+            Jsonb(
+                [str(c.id) for c in config_to_clone.included_conditions]
+            ),  # <- changed to flat list of strings (UUIDs)
+            # custom_codes
+            Jsonb(
+                [
+                    {"name": c.name, "code": c.code, "system": c.system}
+                    for c in config_to_clone.custom_codes
+                ]
+            ),
+            # local_codes
+            Jsonb(
+                [
+                    {"name": c.name, "code": c.code, "system": c.system}
+                    for c in config_to_clone.local_codes
+                ]
+            ),
+            # section_processing
+            Jsonb(
+                [
+                    {"name": c.name, "code": c.code, "action": c.action}
+                    for c in config_to_clone.section_processing
+                ]
+            ),
+        )
+    else:
+        params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb] = (
+            jurisdiction_id,
+            # always link a configuration to a primary condition
+            condition.id,
+            # always set name to condition display name
+            condition.display_name,
+            # included_conditions: always start with primary
+            Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
+            # custom_codes
+            EMPTY_JSONB,
+            # local_codes
+            EMPTY_JSONB,
+            # section_processing
+            Jsonb(section_processing_defaults),
+        )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -854,8 +889,49 @@ class GetConfigurationResponseVersion:
     status: Literal["draft", "inactive", "active"]
 
 
+async def get_latest_config_db(
+    jurisdiction_id: UUID, condition_canonical_url: str, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Given a jurisdiction ID and condition canonical URL, find the latest configuration version.
+    """
+    query = """
+        SELECT
+            id,
+            name,
+			status,
+            jurisdiction_id,
+            condition_id,
+            included_conditions,
+            custom_codes,
+            local_codes,
+            section_processing,
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url
+        FROM configurations
+        WHERE jurisdiction_id = %s
+        AND condition_canonical_url = %s
+		ORDER BY version DESC
+		LIMIT 1
+    """
+    params = (jurisdiction_id, condition_canonical_url)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    configs = [DbConfiguration.from_db_row(row) for row in rows]
+
+    if len(configs) < 1:
+        return None
+
+    return configs[0]
+
+
 async def get_configuration_versions_db(
-    configuration: DbConfiguration, db: AsyncDatabaseConnection
+    jurisdiction_id: UUID, condition_canonical_url: str, db: AsyncDatabaseConnection
 ) -> list[GetConfigurationResponseVersion]:
     """
     Given a configuration, finds all related configuration versions.
@@ -868,7 +944,7 @@ async def get_configuration_versions_db(
         ORDER BY version DESC;
     """
 
-    params = (configuration.jurisdiction_id, configuration.condition_canonical_url)
+    params = (jurisdiction_id, condition_canonical_url)
     async with db.get_connection() as conn:
         async with conn.cursor(
             row_factory=class_row(GetConfigurationResponseVersion)

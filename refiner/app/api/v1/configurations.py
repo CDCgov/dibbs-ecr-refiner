@@ -61,6 +61,7 @@ from ...db.configurations.db import (
     get_configuration_by_id_db,
     get_configuration_versions_db,
     get_configurations_db,
+    get_latest_config_db,
     get_total_condition_code_counts_by_configuration_db,
     insert_configuration_db,
     is_config_valid_to_insert_db,
@@ -201,6 +202,7 @@ async def create_configuration(
     body: CreateConfigInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
 ) -> CreateConfigurationResponse:
     """
     Create a new configuration for a jurisdiction.
@@ -226,8 +228,34 @@ async def create_configuration(
             detail="Can't create configuration because a draft configuration for the condition already exists.",
         )
 
+    latest_config = await get_latest_config_db(
+        jurisdiction_id=jd, condition_canonical_url=condition.canonical_url, db=db
+    )
+
+    if not latest_config:
+        logger.info(
+            "Creating fresh draft config",
+            extra={
+                "condition": condition.display_name,
+                "canonical_url": condition.canonical_url,
+            },
+        )
+    else:
+        logger.info(
+            "Creating cloned draft config",
+            extra={
+                "condition": condition.display_name,
+                "canonical_url": condition.canonical_url,
+                "cloned_configuration_id": latest_config.id,
+            },
+        )
+
     config = await insert_configuration_db(
-        condition=condition, user_id=user.id, jurisdiction_id=jd, db=db
+        condition=condition,
+        user_id=user.id,
+        jurisdiction_id=jd,
+        config_to_clone=latest_config,
+        db=db,
     )
 
     if config is None:
@@ -313,7 +341,11 @@ async def get_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    all_versions = await get_configuration_versions_db(configuration=config, db=db)
+    all_versions = await get_configuration_versions_db(
+        jurisdiction_id=jd,
+        condition_canonical_url=config.condition_canonical_url,
+        db=db,
+    )
 
     active_config = next((v for v in all_versions if v.status == "active"), None)
     draft_config = next((v for v in all_versions if v.status == "draft"), None)
