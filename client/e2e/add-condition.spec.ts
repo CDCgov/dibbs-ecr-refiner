@@ -129,7 +129,9 @@ test.describe
     makeAxeBuilder,
   }) => {
     await page
-      .getByRole('row', { name: 'View configuration for Acanthamoeba' })
+      .getByRole('row', {
+        name: 'View inactive configuration for Acanthamoeba',
+      })
       .click();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -165,7 +167,9 @@ test.describe
     /// Test that a condition can be deleted from configuration added in previous test
     /// ==========================================================================
     await page
-      .getByRole('row', { name: 'View configuration for Acanthamoeba' })
+      .getByRole('row', {
+        name: 'View inactive configuration for Acanthamoeba',
+      })
       .click();
 
     // --- Locate the CONDITION CODE SETS container ---
@@ -231,7 +235,9 @@ test.describe
     /// Test that a configuration can be exported
     /// ==========================================================================
     await page
-      .getByRole('row', { name: 'View configuration for Acanthamoeba' })
+      .getByRole('row', {
+        name: 'View inactive configuration for Acanthamoeba',
+      })
       .click();
 
     // Wait for the download event and trigger it
@@ -257,7 +263,9 @@ test.describe
     /// Test that custom codes can be edited and deleted
     /// ==========================================================================
     await page
-      .getByRole('row', { name: 'View configuration for Acanthamoeba' })
+      .getByRole('row', {
+        name: 'View inactive configuration for Acanthamoeba',
+      })
       .click();
 
     // Open the "Custom codes" section

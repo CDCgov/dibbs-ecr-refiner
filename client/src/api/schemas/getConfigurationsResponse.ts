@@ -5,9 +5,10 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { GetConfigurationsResponseStatus } from './getConfigurationsResponseStatus';
 
 export interface GetConfigurationsResponse {
   id: string;
   name: string;
-  is_active: boolean;
+  status: GetConfigurationsResponseStatus;
 }
