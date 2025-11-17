@@ -231,7 +231,10 @@ async def create_configuration(
     )
 
     if config is None:
-        raise HTTPException(status_code=500, detail="Unable to create configuration")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to create configuration",
+        )
 
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
