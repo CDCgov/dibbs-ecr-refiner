@@ -934,7 +934,7 @@ async def get_configuration_versions_db(
     jurisdiction_id: UUID, condition_canonical_url: str, db: AsyncDatabaseConnection
 ) -> list[GetConfigurationResponseVersion]:
     """
-    Given a configuration, finds all related configuration versions.
+    Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
     query = """
         SELECT id, version, status
