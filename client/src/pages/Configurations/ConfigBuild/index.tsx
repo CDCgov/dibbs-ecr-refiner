@@ -49,9 +49,9 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
 import ErrorFallback from '../../ErrorFallback';
 import { TesLink } from '../TesLink';
-import { VersionMenu } from '../VersionMenu';
-import { DraftBanner } from '../DraftBanner';
-import { ConfigStatus } from '../Status';
+import { VersionMenu } from './VersionMenu';
+import { DraftBanner } from './DraftBanner';
+import { ConfigStatus } from './Status';
 
 export default function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -71,7 +71,7 @@ export default function ConfigBuild() {
   });
 
   return (
-    <div className="mb-8">
+    <div>
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
         <ConfigStatus version={response.data.active_version} />

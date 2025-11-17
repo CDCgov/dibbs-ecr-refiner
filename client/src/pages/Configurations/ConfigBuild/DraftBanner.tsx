@@ -1,9 +1,9 @@
 import { Icon } from '@trussworks/react-uswds';
 import { useNavigate } from 'react-router';
-import { useCreateConfiguration } from '../../api/configurations/configurations';
-import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
-import { useToast } from '../../hooks/useToast';
-import { Button } from '../../components/Button';
+import { useCreateConfiguration } from '../../../api/configurations/configurations';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { useToast } from '../../../hooks/useToast';
+import { Button } from '../../../components/Button';
 
 interface DraftBannerProps {
   draftId: string | null;
@@ -22,7 +22,7 @@ export function DraftBanner({ draftId, conditionId, step }: DraftBannerProps) {
   const editDraftText =
     'Previous versions cannot be modified. You can edit the existing draft.';
   return (
-    <div className="bg-state-warning-lighter flex w-full flex-col gap-4 px-8 py-2 md:flex-row md:justify-between lg:px-20">
+    <div className="bg-state-warning-lighter flex w-full flex-col gap-4 px-8 py-2 shadow-lg md:flex-row md:justify-between lg:px-20">
       <div className="flex items-center gap-2">
         <Icon.Info
           aria-hidden
