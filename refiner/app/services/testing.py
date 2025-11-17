@@ -7,7 +7,7 @@ from app.services.ecr.process_eicr import get_section_loinc_codes
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
-    get_conditions_by_child_rsg_snomed_codes,
+    get_conditions_by_child_rsg_snomed_codes_db,
     get_included_conditions_db,
 )
 from ..db.conditions.model import DbCondition
@@ -459,7 +459,7 @@ async def _map_rc_codes_to_conditions(
 
     # STEP 1:
     # get all conditions associated with the RC SNOMED codes
-    possible_conditions = await get_conditions_by_child_rsg_snomed_codes(
+    possible_conditions = await get_conditions_by_child_rsg_snomed_codes_db(
         db=db, codes=rc_codes
     )
 

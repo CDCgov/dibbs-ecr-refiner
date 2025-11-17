@@ -27,6 +27,9 @@ from app.core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
+from app.services.configurations import (
+    get_canonical_url_to_highest_inactive_version_map,
+)
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
@@ -88,7 +91,7 @@ class GetConfigurationsResponse:
 
     id: UUID
     name: str
-    is_active: bool
+    status: Literal["draft", "active", "inactive"]
 
 
 @router.get(
@@ -111,16 +114,61 @@ async def get_configurations(
     # get user jurisdiction
     jd = user.jurisdiction_id
 
-    configs = await get_configurations_db(jurisdiction_id=jd, db=db)
+    # get all configs in a JD
+    all_configs = await get_configurations_db(jurisdiction_id=jd, db=db)
 
-    return [
-        GetConfigurationsResponse(
-            id=cfg.id,
-            name=cfg.name,
-            is_active=False,
-        )
-        for cfg in configs
-    ]
+    # active config by condition
+    active_configs_map = {
+        c.condition_canonical_url: c for c in all_configs if c.status == "active"
+    }
+
+    # draft config by condition
+    draft_configs_map = {
+        c.condition_canonical_url: c for c in all_configs if c.status == "draft"
+    }
+
+    # inactive config with the highest version by condition
+    highest_version_inactive_configs_map: dict[str, DbConfiguration] = (
+        get_canonical_url_to_highest_inactive_version_map(all_configs)
+    )
+
+    unique_urls = {c.condition_canonical_url for c in all_configs}
+    response = []
+    for key in unique_urls:
+        has_active = key in active_configs_map
+        has_draft = key in draft_configs_map
+        has_inactive = key in highest_version_inactive_configs_map
+
+        # Active
+        if has_active:
+            response.append(
+                GetConfigurationsResponse(
+                    id=active_configs_map[key].id,
+                    name=active_configs_map[key].name,
+                    status=active_configs_map[key].status,
+                )
+            )
+        # Inactive
+        elif has_inactive:
+            response.append(
+                GetConfigurationsResponse(
+                    id=highest_version_inactive_configs_map[key].id,
+                    name=highest_version_inactive_configs_map[key].name,
+                    status=highest_version_inactive_configs_map[key].status,
+                )
+            )
+        # Draft
+        elif has_draft:
+            response.append(
+                GetConfigurationsResponse(
+                    id=draft_configs_map[key].id,
+                    name=draft_configs_map[key].name,
+                    status=draft_configs_map[key].status,
+                )
+            )
+
+    # TODO: What should the order be?
+    return sorted(response, key=lambda r: r.name.lower())
 
 
 class CreateConfigInput(BaseModel):
