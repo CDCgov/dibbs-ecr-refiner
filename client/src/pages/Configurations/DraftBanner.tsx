@@ -24,7 +24,11 @@ export function DraftBanner({ draftId, conditionId, step }: DraftBannerProps) {
   return (
     <div className="bg-state-warning-lighter flex w-full flex-col gap-4 px-8 py-2 md:flex-row md:justify-between lg:px-20">
       <div className="flex items-center gap-2">
-        <Icon.Info aria-hidden className="shrink-0" size={3} />
+        <Icon.Info
+          aria-hidden
+          className="fill-state-warning-darker! shrink-0"
+          size={3}
+        />
         <p className="text-state-warning-darker font-bold">
           {draftId ? editDraftText : newDraftText}
         </p>
