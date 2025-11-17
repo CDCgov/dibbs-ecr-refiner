@@ -31,16 +31,21 @@ export function VersionMenu({
           <Icon.ArrowDropDown aria-hidden />
         </div>
       </MenuButton>
-      <MenuItems className="absolute mt-1 ml-4 flex flex-col rounded-lg bg-white p-4 shadow-lg">
-        {versions.map((v) => (
-          <MenuItem key={v.id}>
-            <Link
-              className="data-focus:bg-gray-10 block p-4 font-bold"
-              to={`/configurations/${v.id}/${step}`}
-            >
-              Version {v.version}
-            </Link>
-          </MenuItem>
+      <MenuItems className="absolute mt-1 ml-4 flex flex-col rounded-lg bg-white px-4 py-2 shadow-lg">
+        {versions.map((v, i) => (
+          <>
+            <MenuItem key={v.id}>
+              <Link
+                className="data-focus:bg-gray-10 block p-4 font-bold"
+                to={`/configurations/${v.id}/${step}`}
+              >
+                Version {v.version}
+              </Link>
+            </MenuItem>
+            {versions.length - 1 !== i && (
+              <div aria-hidden className="bg-gray-cool-10 my-1 h-px" />
+            )}
+          </>
         ))}
       </MenuItems>
     </Menu>
