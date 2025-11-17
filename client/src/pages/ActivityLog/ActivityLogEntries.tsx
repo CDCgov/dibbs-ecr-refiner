@@ -7,11 +7,11 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
   hour12: true,
 });
 interface ActivityLogEntriesProps {
-  displayResponses: EventResponse[];
+  filteredLogEntries: EventResponse[];
 }
 
 export function ActivityLogEntries({
-  displayResponses,
+  filteredLogEntries,
 }: ActivityLogEntriesProps) {
   const nameHeader = 'Name';
   const conditionHeader = 'Condition';
@@ -36,7 +36,7 @@ export function ActivityLogEntries({
       </thead>
 
       <tbody>
-        {displayResponses
+        {filteredLogEntries
           .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
           .map((r) => {
             const createdAtDate = new Date(r.created_at);

@@ -9,24 +9,25 @@ import { ActivityLogEntries } from './ActivityLogEntries';
 
 export function ActivityLog() {
   const { data: eventResponse, isPending, isError, error } = useGetEvents();
-  const [displayResponses, setDisplayResponses] = useState<EventResponse[]>();
-  const [conditionEventFilter, setConditionEventFilter] = useState<string>(
-    DEFAULT_CONDITION_FILTER_STATE
+  const [filteredLogEntries, setFilteredLogEntries] =
+    useState<EventResponse[]>();
+  const [conditionFilter, setConditionFilter] = useState<string>(
+    ALL_CONDITIONS_LITERAL
   );
 
   useEffect(() => {
     if (
-      displayResponses === undefined ||
-      conditionEventFilter === DEFAULT_CONDITION_FILTER_STATE
+      filteredLogEntries === undefined ||
+      conditionFilter === ALL_CONDITIONS_LITERAL
     ) {
-      setDisplayResponses(eventResponse?.data);
+      setFilteredLogEntries(eventResponse?.data);
     } else {
       const matchingActivityEntries = eventResponse?.data.filter((e) => {
-        return e.configuration_name === conditionEventFilter;
+        return e.configuration_name === conditionFilter;
       });
-      setDisplayResponses(matchingActivityEntries);
+      setFilteredLogEntries(matchingActivityEntries);
     }
-  }, [conditionEventFilter, displayResponses, eventResponse]);
+  }, [conditionFilter, filteredLogEntries, eventResponse]);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return <ErrorFallback error={error} />;
@@ -50,10 +51,10 @@ export function ActivityLog() {
           <Select
             id="condition-filter"
             name="condition-filter"
-            value={conditionEventFilter}
-            onChange={(e) => setConditionEventFilter(e.target.value)}
+            value={conditionFilter}
+            onChange={(e) => setConditionFilter(e.target.value)}
           >
-            <option>{DEFAULT_CONDITION_FILTER_STATE}</option>
+            <option>{ALL_CONDITIONS_LITERAL}</option>
             {Array.from(conditionOptions).map((c) => {
               return <option key={c}>{c}</option>;
             })}
@@ -62,12 +63,12 @@ export function ActivityLog() {
       </div>
 
       <div className="mt-6">
-        {displayResponses && (
-          <ActivityLogEntries displayResponses={displayResponses} />
+        {filteredLogEntries && (
+          <ActivityLogEntries filteredLogEntries={filteredLogEntries} />
         )}
       </div>
     </section>
   );
 }
 
-const DEFAULT_CONDITION_FILTER_STATE = 'All conditions';
+const ALL_CONDITIONS_LITERAL = 'All conditions';
