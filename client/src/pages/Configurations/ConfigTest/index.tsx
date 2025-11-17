@@ -20,6 +20,7 @@ import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
 import ErrorFallback from '../../ErrorFallback';
 import FileUploadWarning from '../../../components/FileUploadWarning';
+import { Status } from '../ConfigBuild/Status';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +38,7 @@ export default function ConfigTest() {
     <div>
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
+        <Status version={response.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
         <StepsContainer>

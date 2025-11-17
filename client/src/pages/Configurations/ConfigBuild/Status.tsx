@@ -1,7 +1,7 @@
-interface ConfigStatusProps {
+interface StatusProps {
   version: number | null;
 }
-export function ConfigStatus({ version }: ConfigStatusProps) {
+export function Status({ version }: StatusProps) {
   if (version) {
     return (
       <p className="text-state-success-dark font-bold">

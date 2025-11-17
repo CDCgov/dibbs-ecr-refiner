@@ -18,6 +18,7 @@ export default function ConfigActivate() {
     <div>
       <TitleContainer>
         <Title>Condition name</Title>
+        {/* <Status version={response.data.active_version} /> */}
       </TitleContainer>
       <NavigationContainer>
         <StepsContainer>
