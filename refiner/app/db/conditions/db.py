@@ -170,7 +170,7 @@ async def get_condition_codes_by_condition_id_db(
     return list(rows)
 
 
-async def get_conditions_by_child_rsg_snomed_codes(
+async def get_conditions_by_child_rsg_snomed_codes_db(
     db: AsyncDatabaseConnection, codes: list[str]
 ) -> list[DbCondition]:
     """

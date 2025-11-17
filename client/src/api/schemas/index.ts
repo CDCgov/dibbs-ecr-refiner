@@ -30,6 +30,7 @@ export * from './getConditionResponse';
 export * from './getConditionsResponse';
 export * from './getConfigurationResponse';
 export * from './getConfigurationsResponse';
+export * from './getConfigurationsResponseStatus';
 export * from './getUser200';
 export * from './hTTPValidationError';
 export * from './includedCondition';
