@@ -55,6 +55,9 @@ test.describe
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
+    await expect(page.getByText('Status: Inactive')).toBeVisible();
+    await expect(page.getByText('Editing: Version 1')).toBeVisible();
+
     await expect(
       page.getByRole('button', {
         name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
