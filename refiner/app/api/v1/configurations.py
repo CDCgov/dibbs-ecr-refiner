@@ -71,6 +71,7 @@ from ...db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
+    DbConfigurationStatus,
 )
 from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
@@ -94,7 +95,7 @@ class GetConfigurationsResponse:
 
     id: UUID
     name: str
-    status: Literal["draft", "active", "inactive"]
+    status: DbConfigurationStatus
 
 
 @router.get(
@@ -291,7 +292,7 @@ class GetConfigurationResponse:
     is_draft: bool
     condition_id: UUID
     display_name: str
-    status: Literal["draft", "inactive", "active"]
+    status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]

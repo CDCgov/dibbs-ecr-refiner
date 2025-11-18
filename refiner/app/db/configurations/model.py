@@ -57,6 +57,9 @@ class DbConfigurationSectionProcessing:
     action: str
 
 
+DbConfigurationStatus = Literal["draft", "inactive", "active"]
+
+
 @dataclass(frozen=True)
 class DbConfiguration:
     """
@@ -75,7 +78,7 @@ class DbConfiguration:
 
     id: UUID
     name: str
-    status: Literal["draft", "inactive", "active"]
+    status: DbConfigurationStatus
     jurisdiction_id: str
     condition_id: UUID
     included_conditions: list[DbConfigurationCondition]

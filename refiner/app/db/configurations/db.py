@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Literal
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -11,10 +10,7 @@ from app.db.events.model import EventInput
 from ...services.file_io import read_json_asset
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import (
-    DbConfiguration,
-    DbConfigurationCustomCode,
-)
+from .model import DbConfiguration, DbConfigurationCustomCode, DbConfigurationStatus
 
 EMPTY_JSONB = Jsonb([])
 REFINER_DETAILS = read_json_asset("refiner_details.json")
@@ -887,7 +883,7 @@ class GetConfigurationResponseVersion:
 
     id: UUID
     version: int
-    status: Literal["draft", "inactive", "active"]
+    status: DbConfigurationStatus
 
 
 async def get_latest_config_db(
