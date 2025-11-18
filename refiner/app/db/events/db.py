@@ -45,16 +45,16 @@ async def get_events_by_jd_db(
         LEFT JOIN configurations c ON e.configuration_id = c.id
         WHERE e.jurisdiction_id = %s
     """
-    params = [
+    params_lst = [
         jurisdiction_id,
     ]
 
     if condition_filter is not None:
         query += "AND c.id = %s"
-        params.append(condition_filter)
+        params_lst.append(condition_filter)
 
     query += " ORDER BY e.created_at DESC;"
-    params = tuple(params)
+    params = tuple(params_lst)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(EventResponse)) as cur:
             await cur.execute(query, params)
