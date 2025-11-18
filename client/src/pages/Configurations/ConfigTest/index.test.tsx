@@ -62,6 +62,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
             { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
             { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
           ],
+          all_versions: [{ version: 1 }],
         },
       },
     })),
