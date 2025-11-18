@@ -12,6 +12,6 @@ export type GetConfigurationsResponseStatus = typeof GetConfigurationsResponseSt
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetConfigurationsResponseStatus = {
   draft: 'draft',
-  active: 'active',
   inactive: 'inactive',
+  active: 'active',
 } as const;
