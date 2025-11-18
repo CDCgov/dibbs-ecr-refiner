@@ -61,7 +61,9 @@ export function ActivityLog() {
             value={conditionFilter}
             onChange={(e) => setConditionFilter(e.target.value)}
           >
-            <option>{ALL_CONDITIONS_LITERAL}</option>
+            <option value={ALL_CONDITIONS_LITERAL}>
+              {ALL_CONDITIONS_LITERAL}
+            </option>
             {configurationsResponse.data.map((c) => {
               return (
                 <option value={c.id} key={c.id}>
