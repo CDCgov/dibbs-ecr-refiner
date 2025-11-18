@@ -21,6 +21,7 @@ import { Uploading } from '../../Testing/Uploading';
 import ErrorFallback from '../../ErrorFallback';
 import FileUploadWarning from '../../../components/FileUploadWarning';
 import { Status } from '../ConfigBuild/Status';
+import { VersionMenu } from '../ConfigBuild/VersionMenu';
 
 export default function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +42,13 @@ export default function ConfigTest() {
         <Status version={response.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
+        <VersionMenu
+          id={response.data.id}
+          currentVersion={response.data.version}
+          status={response.data.status}
+          versions={response.data.all_versions}
+          step="test"
+        />
         <StepsContainer>
           <Steps configurationId={id} />
         </StepsContainer>

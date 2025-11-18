@@ -21,6 +21,13 @@ export default function ConfigActivate() {
         {/* <Status version={response.data.active_version} /> */}
       </TitleContainer>
       <NavigationContainer>
+        {/* <VersionMenu
+          id={response.data.id}
+          currentVersion={response.data.version}
+          status={response.data.status}
+          versions={response.data.all_versions}
+          step="test"
+        /> */}
         <StepsContainer>
           <Steps configurationId={id} />
         </StepsContainer>
