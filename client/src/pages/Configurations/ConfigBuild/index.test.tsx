@@ -7,11 +7,14 @@ import { TestQueryClientProvider } from '../../../test-utils';
 import {
   DbConfigurationCustomCode,
   DbTotalConditionCodeCount,
+  GetConfigurationResponse,
+  GetConfigurationResponseVersion,
 } from '../../../api/schemas';
 import {
   useAddCustomCodeToConfiguration,
   useEditCustomCodeFromConfiguration,
   useDeleteCustomCodeFromConfiguration,
+  useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import { Mock } from 'vitest';
 
@@ -26,6 +29,29 @@ const mockCustomCodes: DbConfigurationCustomCode[] = [
   { code: 'custom-code1', name: 'test-custom-code1', system: 'ICD-10' },
 ];
 
+const mockVersions: GetConfigurationResponseVersion[] = [
+  { id: 'config-id', version: 2, status: 'draft' },
+  { id: 'prev-id', version: 1, status: 'inactive' },
+];
+
+const baseMockConfig: GetConfigurationResponse = {
+  id: 'config-id',
+  condition_id: 'covid-19',
+  draft_id: 'config-id',
+  is_draft: true,
+  display_name: 'COVID-19',
+  status: 'draft',
+  code_sets: mockCodeSets,
+  custom_codes: mockCustomCodes,
+  section_processing: [],
+  included_conditions: [],
+  deduplicated_codes: ['123456'],
+  all_versions: mockVersions,
+  version: 2,
+  active_version: null,
+  latest_version: 2,
+};
+
 // Mock configurations request
 vi.mock('../../../api/configurations/configurations', async () => {
   const actual = await vi.importActual(
@@ -38,26 +64,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
     useEditCustomCodeFromConfiguration: vi.fn(),
     useGetConfiguration: vi.fn(() => ({
       data: {
-        data: {
-          id: 'config-id',
-          draft_id: 'config-id',
-          is_draft: true,
-          display_name: 'COVID-19',
-          status: 'draft',
-          code_sets: mockCodeSets,
-          custom_codes: mockCustomCodes,
-          section_processing: [],
-          included_conditions: [
-            { id: 'covid-1', display_name: 'COVID-19', associated: true },
-            { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
-            { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
-          ],
-          deduplicated_codes: ['123456'],
-          all_versions: [],
-          version: 1,
-          active_version: null,
-          latest_version: 1,
-        },
+        data: baseMockConfig,
       },
     })),
   };
@@ -118,6 +125,81 @@ describe('Config builder page', () => {
     // expect(
     //   await screen.findByText('Activate', { selector: 'a' })
     // ).toBeInTheDocument();
+  });
+
+  it('should render a version menu with previous versions', async () => {
+    const expectedMenuText = 'Editing: Version 2';
+    const user = userEvent.setup();
+    renderPage();
+    expect(await screen.findByText(expectedMenuText)).toBeInTheDocument();
+    await user.click(await screen.findByText(expectedMenuText));
+    expect(await screen.findAllByRole('menuitem')).toHaveLength(2);
+  });
+
+  it("should render the configuration's inactive status", async () => {
+    renderPage();
+    expect(await screen.findByText('Status: Inactive')).toBeInTheDocument();
+  });
+
+  it("should render the configuration's active status", async () => {
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          status: 'active',
+          active_version: 1,
+          version: 1,
+        },
+      },
+    });
+    renderPage();
+    expect(
+      await screen.findByText('Status: Version 1 active')
+    ).toBeInTheDocument();
+  });
+
+  it('should render banner to make a new draft configuration', async () => {
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          status: 'active',
+          active_version: 1,
+          version: 1,
+          is_draft: false,
+          draft_id: null,
+        },
+      },
+    });
+    renderPage();
+    expect(
+      await screen.findByText(/You must draft a new version to make changes/i)
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: 'Draft a new version' })
+    ).toBeInTheDocument();
+  });
+
+  it('should render banner to go to existing draft configuration', async () => {
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          status: 'active',
+          active_version: 1,
+          version: 1,
+          is_draft: false,
+          draft_id: 'test-id',
+        },
+      },
+    });
+    renderPage();
+    expect(
+      await screen.findByText(/You can edit the existing draft/i)
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Go to draft' })
+    ).toBeInTheDocument();
   });
 
   it('should render code set buttons', async () => {
