@@ -6,34 +6,44 @@ import ErrorFallback from '../ErrorFallback';
 import { useEffect, useState } from 'react';
 import { EventResponse } from '../../api/schemas';
 import { ActivityLogEntries } from './ActivityLogEntries';
+import { useGetConfigurations } from '../../api/configurations/configurations';
 
 export function ActivityLog() {
-  const { data: eventResponse, isPending, isError, error } = useGetEvents();
   const [filteredLogEntries, setFilteredLogEntries] =
     useState<EventResponse[]>();
   const [conditionFilter, setConditionFilter] = useState<string>(
     ALL_CONDITIONS_LITERAL
   );
 
+  const {
+    data: eventResponse,
+    isPending: isEventsPending,
+    isError: isEventsError,
+    error: eventsError,
+  } = useGetEvents({
+    condition_filter:
+      conditionFilter === ALL_CONDITIONS_LITERAL ? undefined : conditionFilter,
+  });
+
+  const {
+    data: configurationsResponse,
+    isPending: isConfigurationsPending,
+    isError: isConfigurationsError,
+    error: configurationsError,
+  } = useGetConfigurations();
+
   useEffect(() => {
-    if (conditionFilter === ALL_CONDITIONS_LITERAL) {
-      setFilteredLogEntries(eventResponse?.data);
-    } else {
-      const matchingActivityEntries = eventResponse?.data.filter((e) => {
-        return e.configuration_name === conditionFilter;
-      });
-      setFilteredLogEntries(matchingActivityEntries);
-    }
+    setFilteredLogEntries(eventResponse?.data);
   }, [conditionFilter, eventResponse]);
 
-  if (isPending) return <Spinner variant="centered" />;
-  if (isError) return <ErrorFallback error={error} />;
-
-  const conditionOptions: Set<string> = new Set();
-
-  eventResponse?.data.forEach((e) => {
-    conditionOptions.add(e.configuration_name);
-  });
+  if (isEventsPending || isConfigurationsPending) {
+    return <Spinner variant="centered" />;
+  }
+  if (isEventsError || isConfigurationsError) {
+    return (
+      <ErrorFallback error={eventsError ? eventsError : configurationsError} />
+    );
+  }
 
   return (
     <section className="mx-auto p-4">
@@ -52,8 +62,12 @@ export function ActivityLog() {
             onChange={(e) => setConditionFilter(e.target.value)}
           >
             <option>{ALL_CONDITIONS_LITERAL}</option>
-            {Array.from(conditionOptions).map((c) => {
-              return <option key={c}>{c}</option>;
+            {configurationsResponse.data.map((c) => {
+              return (
+                <option value={c.id} key={c.id}>
+                  {c.name}
+                </option>
+              );
             })}
           </Select>
         </div>

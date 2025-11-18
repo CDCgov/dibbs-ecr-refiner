@@ -19,12 +19,15 @@ class EventResponse:
     id: UUID
     username: str
     configuration_name: str
+    condition_id: str
     action_text: str
     created_at: datetime
 
 
 async def get_events_by_jd_db(
-    jurisdiction_id: str, db: AsyncDatabaseConnection
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+    condition_filter: str | None = None,
 ) -> list[EventResponse]:
     """
     Fetches all events for a given jurisdiction ID.
@@ -34,15 +37,24 @@ async def get_events_by_jd_db(
         e.id,
         u.username,
         c.name AS configuration_name,
+        c.id AS condition_id,
         e.action_text,
         e.created_at
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
         WHERE e.jurisdiction_id = %s
-        ORDER BY e.created_at DESC;
     """
-    params = (jurisdiction_id,)
+    params = [
+        jurisdiction_id,
+    ]
+
+    if condition_filter is not None:
+        query += "AND c.id = %s"
+        params.append(condition_filter)
+
+    query += " ORDER BY e.created_at DESC;"
+    params = tuple(params)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(EventResponse)) as cur:
             await cur.execute(query, params)

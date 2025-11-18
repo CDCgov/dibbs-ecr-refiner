@@ -10,6 +10,7 @@ export interface EventResponse {
   id: string;
   username: string;
   configuration_name: string;
+  condition_id: string;
   action_text: string;
   created_at: string;
 }

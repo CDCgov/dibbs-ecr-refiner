@@ -18,6 +18,7 @@ router = APIRouter(prefix="/events")
 async def get_events(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    condition_filter: str | None = None,
 ) -> list[EventResponse]:
     """
     Returns a list of all events for a jurisdiction, ordered from newest to oldest.
@@ -25,9 +26,12 @@ async def get_events(
     Args:
         user (DbUser): The user making the request.
         db (AsyncDatabaseConnection): Database connection.
+        condition_filter (str | None): An optional filter on the name of the configuration.
 
     Returns:
         list[EventResponse]: A list of all events for the jurisdiction.
     """
 
-    return await get_events_by_jd_db(jurisdiction_id=user.jurisdiction_id, db=db)
+    return await get_events_by_jd_db(
+        jurisdiction_id=user.jurisdiction_id, db=db, condition_filter=condition_filter
+    )
