@@ -40,15 +40,23 @@ vi.mock('../../../api/configurations/configurations', async () => {
       data: {
         data: {
           id: 'config-id',
+          draft_id: 'config-id',
+          is_draft: true,
           display_name: 'COVID-19',
+          status: 'draft',
           code_sets: mockCodeSets,
           custom_codes: mockCustomCodes,
+          section_processing: [],
           included_conditions: [
             { id: 'covid-1', display_name: 'COVID-19', associated: true },
             { id: 'chlamydia-1', display_name: 'Chlamydia', associated: false },
             { id: 'gonorrhea-1', display_name: 'Gonorrhea', associated: false },
           ],
           deduplicated_codes: ['123456'],
+          all_versions: [],
+          version: 1,
+          active_version: null,
+          latest_version: 1,
         },
       },
     })),
