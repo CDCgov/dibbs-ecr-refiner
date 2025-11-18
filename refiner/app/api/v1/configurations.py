@@ -300,6 +300,7 @@ class GetConfigurationResponse:
     all_versions: list[GetConfigurationResponseVersion]
     version: int
     active_version: int | None
+    latest_version: int
 
 
 @dataclass(frozen=True)
@@ -389,6 +390,12 @@ async def get_configuration(
     # Fetch all conditions from the database
     all_conditions = await get_conditions_db(db=db)
 
+    latest_config = await get_latest_config_db(
+        jurisdiction_id=jd,
+        condition_canonical_url=config.condition_canonical_url,
+        db=db,
+    )
+
     # Build IncludedCondition objects, marking which are associated
     included_conditions = []
     for condition in all_conditions:
@@ -422,6 +429,7 @@ async def get_configuration(
         all_versions=all_versions,
         version=config.version,
         active_version=active_version,
+        latest_version=latest_config.version,
     )
 
 

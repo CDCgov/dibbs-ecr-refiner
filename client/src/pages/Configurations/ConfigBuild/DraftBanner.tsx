@@ -1,21 +1,33 @@
-import { Icon } from '@trussworks/react-uswds';
+import {
+  Icon,
+  Modal,
+  ModalFooter,
+  ModalHeading,
+  ModalRef,
+  ModalToggleButton,
+} from '@trussworks/react-uswds';
 import { useNavigate } from 'react-router';
 import { useCreateConfiguration } from '../../../api/configurations/configurations';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
-import { Button } from '../../../components/Button';
+import { Button, PRIMARY_BUTTON_STYLES } from '../../../components/Button';
+import { useRef } from 'react';
+import classNames from 'classnames';
 
 interface DraftBannerProps {
   draftId: string | null;
   conditionId: string;
+  latestVersion: number;
   step: 'build' | 'test' | 'activate';
 }
 
-export function DraftBanner({ draftId, conditionId, step }: DraftBannerProps) {
-  const { mutate: createConfig } = useCreateConfiguration();
-  const showToast = useToast();
-  const navigate = useNavigate();
-  const formatError = useApiErrorFormatter();
+export function DraftBanner({
+  draftId,
+  conditionId,
+  latestVersion,
+  step,
+}: DraftBannerProps) {
+  const modalRef = useRef<ModalRef>(null);
 
   const newDraftText =
     'Previous versions cannot be modified. You must draft a new version to make changes.';
@@ -41,8 +53,52 @@ export function DraftBanner({ draftId, conditionId, step }: DraftBannerProps) {
           Go to draft
         </Button>
       ) : (
+        <ModalToggleButton
+          modalRef={modalRef}
+          opener
+          className={classNames('self-start', PRIMARY_BUTTON_STYLES)}
+        >
+          Draft a new version
+        </ModalToggleButton>
+      )}
+      <NewDraftModal
+        modalRef={modalRef}
+        conditionId={conditionId}
+        version={latestVersion}
+      />
+    </div>
+  );
+}
+
+interface NewDraftModalProps {
+  modalRef: React.Ref<ModalRef | null>;
+  conditionId: string;
+  version: number;
+}
+function NewDraftModal({ modalRef, conditionId, version }: NewDraftModalProps) {
+  const { mutate: createConfig } = useCreateConfiguration();
+  const showToast = useToast();
+  const navigate = useNavigate();
+  const formatError = useApiErrorFormatter();
+
+  const newVersion = version + 1;
+
+  return (
+    <Modal
+      id="draft-modal"
+      className="p-10 align-top!"
+      ref={modalRef}
+      aria-labelledby="draft-modal-heading"
+      aria-describedby="draft-modal-text"
+    >
+      <ModalHeading id="draft-modal-heading">Draft a new version?</ModalHeading>
+      <p id="draft-modal-text" className="my-6">
+        Are you sure you want to draft a new version? This will clone the latest
+        version (Version {version}) as the basis for a new draft version
+        (Version {newVersion}).
+      </p>
+      <ModalFooter className="flex justify-end">
         <Button
-          className="self-start"
           onClick={() =>
             createConfig(
               { data: { condition_id: conditionId } },
@@ -50,13 +106,13 @@ export function DraftBanner({ draftId, conditionId, step }: DraftBannerProps) {
                 onSuccess: async (resp) => {
                   await navigate(`/configurations/${resp.data.id}/build`);
                   showToast({
-                    heading: 'New configuration created',
-                    body: resp.data.name ?? '',
+                    heading: 'New draft created',
+                    body: `Version ${newVersion}`,
                   });
                 },
                 onError: (e) => {
                   showToast({
-                    heading: 'Configuration could not be created',
+                    heading: 'Draft could not be created',
                     variant: 'error',
                     body: formatError(e),
                   });
@@ -65,9 +121,9 @@ export function DraftBanner({ draftId, conditionId, step }: DraftBannerProps) {
             )
           }
         >
-          Draft a new version
+          Yes, draft a new version
         </Button>
-      )}
-    </div>
+      </ModalFooter>
+    </Modal>
   );
 }

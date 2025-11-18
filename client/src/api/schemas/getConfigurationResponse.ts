@@ -29,4 +29,5 @@ export interface GetConfigurationResponse {
   all_versions: GetConfigurationResponseVersion[];
   version: number;
   active_version: GetConfigurationResponseActiveVersion;
+  latest_version: number;
 }

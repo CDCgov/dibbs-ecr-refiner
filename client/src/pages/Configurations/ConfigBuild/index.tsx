@@ -92,6 +92,7 @@ export default function ConfigBuild() {
         <DraftBanner
           draftId={response.data.draft_id}
           conditionId={response.data.condition_id}
+          latestVersion={response.data.latest_version}
           step="build"
         />
       ) : null}
