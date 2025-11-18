@@ -272,7 +272,7 @@ test.describe
     await page.locator('button', { hasText: 'Custom codes' }).click();
 
     // Click the Edit button for the existing custom code
-    await page.locator('button', { hasText: 'Edit' }).click();
+    await page.getByText('Edit', { exact: true }).click();
 
     // Wait for the "Edit custom code" modal to appear
     const modal = page.locator('.usa-modal__main', {
