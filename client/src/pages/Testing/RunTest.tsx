@@ -63,7 +63,7 @@ export function RunTest({
       <div className="mt-6 text-center">
         <span>
           To download test files for some conditions you can{' '}
-          <ExternalLink href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/sample-data/jurisdiction_sample_data">
+          <ExternalLink href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/jurisdiction-packages/jurisdiction_sample_data">
             visit eCR Refiner's repository
           </ExternalLink>
         </span>
