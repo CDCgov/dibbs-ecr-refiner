@@ -80,8 +80,9 @@ async def insert_configuration_db(
         for code, details in section_details.items()
     ]
 
+    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb]
     if config_to_clone:
-        params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb] = (
+        params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
             condition.id,
@@ -114,7 +115,7 @@ async def insert_configuration_db(
             ),
         )
     else:
-        params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb] = (
+        params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
             condition.id,
@@ -231,7 +232,7 @@ async def get_configuration_by_id_db(
 
 
 async def is_config_valid_to_insert_db(
-    condition_canonical_url: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
+    condition_canonical_url: str, jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> bool:
     """
     Query the database to check if a configuration can be created. If a config for a condition already exists, returns False.
@@ -890,7 +891,7 @@ class GetConfigurationResponseVersion:
 
 
 async def get_latest_config_db(
-    jurisdiction_id: UUID, condition_canonical_url: str, db: AsyncDatabaseConnection
+    jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
 ) -> DbConfiguration | None:
     """
     Given a jurisdiction ID and condition canonical URL, find the latest configuration version.
@@ -931,7 +932,7 @@ async def get_latest_config_db(
 
 
 async def get_configuration_versions_db(
-    jurisdiction_id: UUID, condition_canonical_url: str, db: AsyncDatabaseConnection
+    jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
 ) -> list[GetConfigurationResponseVersion]:
     """
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.

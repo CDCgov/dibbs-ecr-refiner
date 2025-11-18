@@ -413,6 +413,7 @@ async def get_configuration(
     draft_id = draft_config.id if draft_config is not None else None
     is_draft = draft_id == config.id
     active_version = active_config.version if active_config is not None else None
+    latest_version = latest_config.version if latest_config is not None else 0
 
     return GetConfigurationResponse(
         id=config.id,
@@ -429,7 +430,7 @@ async def get_configuration(
         all_versions=all_versions,
         version=config.version,
         active_version=active_version,
-        latest_version=latest_config.version,
+        latest_version=latest_version,
     )
 
 
