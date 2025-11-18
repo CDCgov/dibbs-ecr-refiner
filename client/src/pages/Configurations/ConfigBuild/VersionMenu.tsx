@@ -5,6 +5,7 @@ import {
   GetConfigurationsResponseStatus,
   GetConfigurationResponseVersion,
 } from '../../../api/schemas';
+import { Fragment } from 'react';
 
 interface VersionMenuProps {
   id: string;
@@ -34,8 +35,8 @@ export function VersionMenu({
         </MenuButton>
         <MenuItems className="absolute mt-1 ml-4 flex flex-col rounded-lg bg-white px-4 py-2 shadow-lg">
           {versions.map((v, i) => (
-            <>
-              <MenuItem key={v.id}>
+            <Fragment key={v.id}>
+              <MenuItem>
                 <Link
                   className="data-focus:bg-gray-10 block p-4 font-bold"
                   to={`/configurations/${v.id}/${step}`}
@@ -50,7 +51,7 @@ export function VersionMenu({
                   className="bg-gray-cool-10 my-1 h-px"
                 ></div>
               )}
-            </>
+            </Fragment>
           ))}
         </MenuItems>
       </Menu>
