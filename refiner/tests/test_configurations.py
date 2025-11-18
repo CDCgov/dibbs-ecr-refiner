@@ -11,6 +11,7 @@ from httpx import ASGITransport, AsyncClient
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations import GetConfigurationsResponse, _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.db import GetConfigurationResponseVersion
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
@@ -121,6 +122,22 @@ def mock_db_functions(monkeypatch):
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
         AsyncMock(return_value=config_by_id_mock),
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_latest_config_db",
+        AsyncMock(return_value=config_by_id_mock),
+    )
+
+    versions_mock = [
+        GetConfigurationResponseVersion(
+            id=UUID("11111111-1111-1111-1111-111111111111"), status="draft", version=1
+        )
+    ]
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_versions_db",
+        AsyncMock(return_value=versions_mock),
     )
 
     # Mock get_configurations_db
