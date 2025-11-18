@@ -3,7 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
-import { EventResponse } from '../../api/schemas';
+import { EventResponse, GetConfigurationsResponse } from '../../api/schemas';
 import userEvent from '@testing-library/user-event';
 
 const configurationEvents: EventResponse[] = [
@@ -11,25 +11,54 @@ const configurationEvents: EventResponse[] = [
     id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
     username: 'refiner',
     configuration_name: 'Alpha-gal Syndrome',
+    condition_id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:58:45.363325Z',
   },
   {
     id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
     username: 'refiner',
+    condition_id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
     configuration_name: 'Acanthamoeba',
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:57:55.627842Z',
   },
 ];
+const configurations: GetConfigurationsResponse[] = [
+  {
+    name: 'Alpha-gal Syndrome',
+    id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
+    status: 'inactive',
+  },
+  {
+    name: 'Acanthamoeba',
+    id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
+    status: 'inactive',
+  },
+];
 
 vi.mock('../../api/events/events', async () => {
-  const actual = await vi.importActual('../../api/events/events');
+  const actualEventsRouter = await vi.importActual('../../api/events/events');
   return {
-    ...actual,
+    ...actualEventsRouter,
+
     useGetEvents: vi.fn(() => ({
       data: {
         data: configurationEvents,
+      },
+    })),
+  };
+});
+
+vi.mock('../../api/configurations/configurations', async () => {
+  const actualConfigurationRouter = await vi.importActual(
+    '../../api/configurations/configurations'
+  );
+  return {
+    ...actualConfigurationRouter,
+    useGetConfigurations: vi.fn(() => ({
+      data: {
+        data: configurations,
       },
     })),
   };
