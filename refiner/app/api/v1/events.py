@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 
 from app.api.auth.middleware import get_logged_in_user
@@ -18,7 +20,7 @@ router = APIRouter(prefix="/events")
 async def get_events(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-    condition_filter: str | None = None,
+    condition_filter: UUID | None = None,
 ) -> list[EventResponse]:
     """
     Returns a list of all events for a jurisdiction, ordered from newest to oldest.
@@ -26,7 +28,7 @@ async def get_events(
     Args:
         user (DbUser): The user making the request.
         db (AsyncDatabaseConnection): Database connection.
-        condition_filter (str | None): An optional filter on the condition ID.
+        condition_filter (UUID | None): An optional filter on the condition.
 
     Returns:
         list[EventResponse]: A list of all events for the jurisdiction.

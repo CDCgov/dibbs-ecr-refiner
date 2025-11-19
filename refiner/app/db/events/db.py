@@ -19,7 +19,7 @@ class EventResponse:
     id: UUID
     username: str
     configuration_name: str
-    condition_id: str
+    condition_id: UUID
     action_text: str
     created_at: datetime
 
@@ -51,7 +51,7 @@ async def get_events_by_jd_db(
 
     if condition_filter is not None:
         query += "AND c.id = %s"
-        params_lst.append(condition_filter)
+        params_lst.append(str(condition_filter))
 
     query += " ORDER BY e.created_at DESC;"
     params = tuple(params_lst)
