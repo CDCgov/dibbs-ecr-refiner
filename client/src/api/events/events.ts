@@ -28,7 +28,9 @@ import type {
 } from 'axios';
 
 import type {
-  EventResponse
+  EventResponse,
+  GetEventsParams,
+  HTTPValidationError
 } from '.././schemas';
 
 
@@ -41,41 +43,46 @@ import type {
 Args:
     user (DbUser): The user making the request.
     db (AsyncDatabaseConnection): Database connection.
+    condition_filter (UUID | None): An optional filter on the condition.
 
 Returns:
-    list[EventResponse]: A list of all events for the jurisdiction.
+    EventResponse: A bundle with
+        - The list of AuditEvents relevant for the (optional) filter.
+        - The list of condition information with potentially filter-able data
  * @summary Get Events
  */
 export const getEvents = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EventResponse[]>> => {
+    params?: GetEventsParams, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<EventResponse>> => {
     
     
     return axios.default.get(
-      `/api/v1/events/`,options
+      `/api/v1/events/`,{
+    ...options,
+        params: {...params, ...options?.params},}
     );
   }
 
 
 
 
-export const getGetEventsQueryKey = () => {
+export const getGetEventsQueryKey = (params?: GetEventsParams,) => {
     return [
-    `/api/v1/events/`
+    `/api/v1/events/`, ...(params ? [params]: [])
     ] as const;
     }
 
     
-export const getGetEventsQueryOptions = <TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getGetEventsQueryOptions = <TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetEventsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetEventsQueryKey(params);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvents>>> = ({ signal }) => getEvents({ signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEvents>>> = ({ signal }) => getEvents(params, { signal, ...axiosOptions });
 
       
 
@@ -85,11 +92,11 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 }
 
 export type GetEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getEvents>>>
-export type GetEventsQueryError = AxiosError<unknown>
+export type GetEventsQueryError = AxiosError<HTTPValidationError>
 
 
-export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<unknown>>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>> & Pick<
+export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
+ params: undefined |  GetEventsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getEvents>>,
           TError,
@@ -98,8 +105,8 @@ export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TErr
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>> & Pick<
+export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
+ params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getEvents>>,
           TError,
@@ -108,20 +115,20 @@ export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TErr
       >, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
+export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
+ params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Get Events
  */
 
-export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
+export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TError = AxiosError<HTTPValidationError>>(
+ params?: GetEventsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetEventsQueryOptions(options)
+  const queryOptions = getGetEventsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
