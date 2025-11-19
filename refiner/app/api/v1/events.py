@@ -45,11 +45,11 @@ async def get_events(
         jurisdiction_id=user.jurisdiction_id, db=db, condition_filter=condition_filter
     )
 
-    configurations = await get_configurations_db(
+    jd_configurations = await get_configurations_db(
         jurisdiction_id=user.jurisdiction_id, db=db
     )
     configuration_options = [
-        ConfigurationTrace(name=c.name, id=c.id) for c in configurations
+        ConfigurationTrace(name=c.name, id=c.id) for c in jd_configurations
     ]
 
     return EventResponse(
