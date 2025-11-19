@@ -27,7 +27,7 @@ class EventResponse:
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
-    condition_filter: str | None = None,
+    condition_filter: UUID | None = None,
 ) -> list[EventResponse]:
     """
     Fetches all events for a given jurisdiction ID.
