@@ -44,17 +44,16 @@ async def get_events_by_jd_db(
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
         WHERE e.jurisdiction_id = %s
+        AND (%s::uuid is NULL or c.id = %s::uuid)
+        ORDER BY e.created_at DESC;
     """
-    params_lst = [
+    params = (
         jurisdiction_id,
-    ]
+        condition_filter,
+        condition_filter,
+    )
 
-    if condition_filter is not None:
-        query += "AND c.id = %s"
-        params_lst.append(str(condition_filter))
-
-    query += " ORDER BY e.created_at DESC;"
-    params = tuple(params_lst)
+    params = tuple(params)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(EventResponse)) as cur:
             await cur.execute(query, params)
