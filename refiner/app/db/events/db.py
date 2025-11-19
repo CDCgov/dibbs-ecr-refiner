@@ -11,7 +11,7 @@ from .model import EventInput
 
 
 @dataclass
-class EventResponse:
+class AuditEvent:
     """
     An event returned by the DB function.
     """
@@ -24,14 +24,35 @@ class EventResponse:
     created_at: datetime
 
 
+@dataclass
+class ConfigurationOption:
+    """
+    A selectable option to filter audit events by condition.
+    """
+
+    id: UUID
+    name: str
+
+
+@dataclass
+class EventResponse:
+    """
+    Response needed for the audit log page.
+    """
+
+    audit_events: list[AuditEvent]
+    configuration_options: list[ConfigurationOption]
+
+
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     condition_filter: UUID | None = None,
-) -> list[EventResponse]:
+) -> list[AuditEvent]:
     """
     Fetches all events for a given jurisdiction ID.
     """
+
     query = """
         SELECT
         e.id,
@@ -55,7 +76,34 @@ async def get_events_by_jd_db(
 
     params = tuple(params_lst)
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(EventResponse)) as cur:
+        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
+            await cur.execute(query, params)
+            events_rows = await cur.fetchall()
+            return events_rows
+
+
+async def get_condition_options_by_jd_db(
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+) -> list[ConfigurationOption]:
+    """
+    Fetches all configuration options that have corresponding audit events for a given jurisdiction ID.
+    """
+
+    query = """
+        SELECT
+        c.id,
+        c.name
+        FROM configurations c
+        WHERE c.jurisdiction_id = %s
+        ORDER BY c.jurisdiction_id;
+    """
+
+    params = (jurisdiction_id,)
+
+    params = tuple(params)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(ConfigurationOption)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
             return rows

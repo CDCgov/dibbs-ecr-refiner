@@ -1,11 +1,10 @@
 import { Label, Select } from '@trussworks/react-uswds';
-import { useGetEvents } from '../../api/events/events';
 import { Spinner } from '../../components/Spinner';
 import { Title } from '../../components/Title';
 import ErrorFallback from '../ErrorFallback';
 import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
-import { useGetConfigurations } from '../../api/configurations/configurations';
+import { useGetEvents } from '../../api/events/events';
 
 export function ActivityLog() {
   const [conditionFilter, setConditionFilter] = useState<string>(
@@ -14,28 +13,19 @@ export function ActivityLog() {
 
   const {
     data: eventResponse,
-    isPending: isEventsPending,
-    isError: isEventsError,
-    error: eventsError,
+    isPending: isPending,
+    isError: isError,
+    error: error,
   } = useGetEvents({
     condition_filter:
       conditionFilter === ALL_CONDITIONS_LITERAL ? undefined : conditionFilter,
   });
 
-  const {
-    data: configurationsResponse,
-    isPending: isConfigurationsPending,
-    isError: isConfigurationsError,
-    error: configurationsError,
-  } = useGetConfigurations();
-
-  if (isEventsPending || isConfigurationsPending) {
+  if (isPending) {
     return <Spinner variant="centered" />;
   }
-  if (isEventsError || isConfigurationsError) {
-    return (
-      <ErrorFallback error={eventsError ? eventsError : configurationsError} />
-    );
+  if (isError) {
+    return <ErrorFallback error={error} />;
   }
 
   return (
@@ -57,7 +47,7 @@ export function ActivityLog() {
             <option value={ALL_CONDITIONS_LITERAL}>
               {ALL_CONDITIONS_LITERAL}
             </option>
-            {configurationsResponse.data.map((c) => {
+            {eventResponse.data.configuration_options.map((c) => {
               return (
                 <option value={c.id} key={c.id}>
                   {c.name}
@@ -69,7 +59,9 @@ export function ActivityLog() {
       </div>
 
       <div className="mt-6">
-        <ActivityLogEntries filteredLogEntries={eventResponse.data} />
+        <ActivityLogEntries
+          filteredLogEntries={eventResponse.data.audit_events}
+        />
       </div>
     </section>
   );

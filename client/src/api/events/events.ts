@@ -46,12 +46,14 @@ Args:
     condition_filter (UUID | None): An optional filter on the condition.
 
 Returns:
-    list[EventResponse]: A list of all events for the jurisdiction.
+    EventResponse: A bundle with
+        - The list of AuditEvents relevant for the (optional) filter.
+        - The list of condition information with potentially filter-able data
  * @summary Get Events
  */
 export const getEvents = (
     params?: GetEventsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EventResponse[]>> => {
+ ): Promise<AxiosResponse<EventResponse>> => {
     
     
     return axios.default.get(

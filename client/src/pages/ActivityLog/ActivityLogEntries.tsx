@@ -1,4 +1,4 @@
-import { EventResponse } from '../../api/schemas';
+import { AuditEvent } from '../../api/schemas';
 import Table from '../../components/Table';
 
 const timeFormatter = new Intl.DateTimeFormat('en-US', {
@@ -7,7 +7,7 @@ const timeFormatter = new Intl.DateTimeFormat('en-US', {
   hour12: true,
 });
 interface ActivityLogEntriesProps {
-  filteredLogEntries: EventResponse[];
+  filteredLogEntries: AuditEvent[];
 }
 
 export function ActivityLogEntries({
