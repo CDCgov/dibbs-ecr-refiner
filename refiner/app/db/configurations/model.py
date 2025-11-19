@@ -13,6 +13,15 @@ class DbConfigurationCondition:
     id: UUID
 
 
+@dataclass(frozen=True)
+class ConfigurationTrace(DbConfigurationCondition):
+    """
+    A configuration with name / id for use in application code.
+    """
+
+    name: str
+
+
 # TODO: Revisit this to see if we can figure out how to reduce overlap with other types.
 # This is a "custom_code" column on the configuration row in the configurations table.
 # This is one object in the `custom_codes` list and we have many objects that are Similar

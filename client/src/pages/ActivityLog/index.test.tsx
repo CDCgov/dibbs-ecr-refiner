@@ -3,7 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
-import { AuditEvent, ConfigurationOption } from '../../api/schemas';
+import { AuditEvent, ConfigurationTrace } from '../../api/schemas';
 import userEvent from '@testing-library/user-event';
 
 const auditEvents: AuditEvent[] = [
@@ -24,7 +24,7 @@ const auditEvents: AuditEvent[] = [
     created_at: '2025-10-28T13:57:55.627842Z',
   },
 ];
-const configurations: ConfigurationOption[] = [
+const configurations: ConfigurationTrace[] = [
   {
     name: 'Alpha-gal Syndrome',
     id: '873bfce9-2a81-4edc-8e93-8c19adf493af',

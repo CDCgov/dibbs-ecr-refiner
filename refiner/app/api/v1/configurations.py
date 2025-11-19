@@ -65,6 +65,7 @@ from ...db.configurations.db import (
     update_section_processing_db,
 )
 from ...db.configurations.model import (
+    ConfigurationTrace,
     DbConfiguration,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
@@ -84,13 +85,11 @@ router = APIRouter(prefix="/configurations")
 
 
 @dataclass(frozen=True)
-class GetConfigurationsResponse:
+class GetConfigurationsResponse(ConfigurationTrace):
     """
     Model for a user-defined configuration.
     """
 
-    id: UUID
-    name: str
     status: Literal["draft", "active", "inactive"]
 
 

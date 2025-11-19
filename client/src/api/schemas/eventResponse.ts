@@ -6,9 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { AuditEvent } from './auditEvent';
-import type { ConfigurationOption } from './configurationOption';
+import type { ConfigurationTrace } from './configurationTrace';
 
 export interface EventResponse {
   audit_events: AuditEvent[];
-  configuration_options: ConfigurationOption[];
+  configuration_options: ConfigurationTrace[];
 }
