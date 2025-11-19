@@ -68,13 +68,12 @@ async def get_events_by_jd_db(
         AND (%s::uuid is NULL or c.id = %s::uuid)
         ORDER BY e.created_at DESC;
     """
-    params_lst = (
+    params = (
         jurisdiction_id,
         condition_filter,
         condition_filter,
     )
 
-    params = tuple(params_lst)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
             await cur.execute(query, params)
