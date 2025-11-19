@@ -31,8 +31,9 @@ class TestConfigurations:
         # Assert that associated config creation event was logged
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == 200
-        assert len(response.json()) == 1
-        event = response.json()[0]
+        audit_events = response.json()["audit_events"]
+        assert len(audit_events) == 1
+        event = audit_events[0]
         assert event["username"] == test_username
         assert event["configuration_name"] == condition["display_name"]
         assert event["action_text"] == "Created configuration"
@@ -44,4 +45,5 @@ class TestConfigurations:
         # Make sure no event was created during failure
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == 200
-        assert len(response.json()) == 1
+        failure_audit_events = response.json()["audit_events"]
+        assert len(failure_audit_events) == 1
