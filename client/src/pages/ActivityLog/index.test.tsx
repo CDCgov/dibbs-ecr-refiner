@@ -3,10 +3,10 @@ import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
-import { EventResponse, GetConfigurationsResponse } from '../../api/schemas';
+import { AuditEvent, ConfigurationOption } from '../../api/schemas';
 import userEvent from '@testing-library/user-event';
 
-const configurationEvents: EventResponse[] = [
+const auditEvents: AuditEvent[] = [
   {
     id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
     username: 'refiner',
@@ -24,16 +24,14 @@ const configurationEvents: EventResponse[] = [
     created_at: '2025-10-28T13:57:55.627842Z',
   },
 ];
-const configurations: GetConfigurationsResponse[] = [
+const configurations: ConfigurationOption[] = [
   {
     name: 'Alpha-gal Syndrome',
     id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
-    status: 'inactive',
   },
   {
     name: 'Acanthamoeba',
     id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
-    status: 'inactive',
   },
 ];
 
@@ -44,21 +42,10 @@ vi.mock('../../api/events/events', async () => {
 
     useGetEvents: vi.fn(() => ({
       data: {
-        data: configurationEvents,
-      },
-    })),
-  };
-});
-
-vi.mock('../../api/configurations/configurations', async () => {
-  const actualConfigurationRouter = await vi.importActual(
-    '../../api/configurations/configurations'
-  );
-  return {
-    ...actualConfigurationRouter,
-    useGetConfigurations: vi.fn(() => ({
-      data: {
-        data: configurations,
+        data: {
+          audit_events: auditEvents,
+          configuration_options: configurations,
+        },
       },
     })),
   };
@@ -66,10 +53,8 @@ vi.mock('../../api/configurations/configurations', async () => {
 
 function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
   const eventsToCheck = conditionFilter
-    ? configurationEvents.filter(
-        (e) => e.configuration_name === conditionFilter
-      )
-    : configurationEvents;
+    ? auditEvents.filter((e) => e.id === conditionFilter)
+    : auditEvents;
 
   eventsToCheck.forEach((r) => {
     const matchingRow = screen
@@ -124,7 +109,7 @@ describe('Activity log page', () => {
     ).toBeInTheDocument();
 
     const logEntries = screen.getAllByRole('row', { name: 'Log entry' });
-    expect(logEntries).toHaveLength(configurationEvents.length);
+    expect(logEntries).toHaveLength(auditEvents.length);
 
     const conditionFilter = screen.getByLabelText('Condition');
     const conditionFilterToTest = 'Alpha-gal Syndrome';
