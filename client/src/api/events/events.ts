@@ -43,7 +43,7 @@ import type {
 Args:
     user (DbUser): The user making the request.
     db (AsyncDatabaseConnection): Database connection.
-    condition_filter (str | None): An optional filter on the name of the configuration.
+    condition_filter (str | None): An optional filter on the condition ID.
 
 Returns:
     list[EventResponse]: A list of all events for the jurisdiction.
