@@ -16,7 +16,7 @@ class DbConfigurationCondition:
 @dataclass(frozen=True)
 class ConfigurationTrace(DbConfigurationCondition):
     """
-    A configuration with name / id for use in application code.
+    The basic identifying information for a Configuration.
     """
 
     name: str
