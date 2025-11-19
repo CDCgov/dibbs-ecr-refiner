@@ -3,12 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 
 from ...db.events.db import (
+    ConfigurationTrace,
     EventResponse,
-    get_condition_options_by_jd_db,
     get_events_by_jd_db,
 )
 
@@ -44,9 +45,12 @@ async def get_events(
         jurisdiction_id=user.jurisdiction_id, db=db, condition_filter=condition_filter
     )
 
-    configuration_options = await get_condition_options_by_jd_db(
+    configurations = await get_configurations_db(
         jurisdiction_id=user.jurisdiction_id, db=db
     )
+    configuration_options = [
+        ConfigurationTrace(name=c.name, id=c.id) for c in configurations
+    ]
 
     return EventResponse(
         audit_events=audit_events, configuration_options=configuration_options

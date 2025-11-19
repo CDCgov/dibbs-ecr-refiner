@@ -925,11 +925,7 @@ export function CustomCodeModal({
             }}
             autoComplete="off"
           />
-          {error && (
-            <p className="font-merriweather mb-1 text-sm text-red-600">
-              {error}
-            </p>
-          )}
+          {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
         </div>
 
         <div>

@@ -6,8 +6,6 @@ from uuid import UUID
 from psycopg import AsyncCursor
 from psycopg.rows import class_row
 
-from app.db.configurations.model import ConfigurationTrace
-
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
 
@@ -24,6 +22,16 @@ class AuditEvent:
     condition_id: UUID
     action_text: str
     created_at: datetime
+
+
+@dataclass(frozen=True)
+class ConfigurationTrace:
+    """
+    The basic identifying information for a Configuration.
+    """
+
+    id: UUID
+    name: str
 
 
 @dataclass
@@ -72,32 +80,6 @@ async def get_events_by_jd_db(
             await cur.execute(query, params)
             events_rows = await cur.fetchall()
             return events_rows
-
-
-async def get_condition_options_by_jd_db(
-    jurisdiction_id: str,
-    db: AsyncDatabaseConnection,
-) -> list[ConfigurationTrace]:
-    """
-    Fetches all configuration options that have corresponding audit events for a given jurisdiction ID.
-    """
-
-    query = """
-        SELECT
-        c.id,
-        c.name
-        FROM configurations c
-        WHERE c.jurisdiction_id = %s
-        ORDER BY c.jurisdiction_id;
-    """
-
-    params = (jurisdiction_id,)
-
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(ConfigurationTrace)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return rows
 
 
 async def insert_event_db(
