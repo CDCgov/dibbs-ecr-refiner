@@ -101,7 +101,6 @@ async def get_condition_options_by_jd_db(
 
     params = (jurisdiction_id,)
 
-    params = tuple(params)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(ConfigurationOption)) as cur:
             await cur.execute(query, params)
