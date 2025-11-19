@@ -3,14 +3,11 @@ import { useGetEvents } from '../../api/events/events';
 import { Spinner } from '../../components/Spinner';
 import { Title } from '../../components/Title';
 import ErrorFallback from '../ErrorFallback';
-import { useEffect, useState } from 'react';
-import { EventResponse } from '../../api/schemas';
+import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
 import { useGetConfigurations } from '../../api/configurations/configurations';
 
 export function ActivityLog() {
-  const [filteredLogEntries, setFilteredLogEntries] =
-    useState<EventResponse[]>();
   const [conditionFilter, setConditionFilter] = useState<string>(
     ALL_CONDITIONS_LITERAL
   );
@@ -31,10 +28,6 @@ export function ActivityLog() {
     isError: isConfigurationsError,
     error: configurationsError,
   } = useGetConfigurations();
-
-  useEffect(() => {
-    setFilteredLogEntries(eventResponse?.data);
-  }, [conditionFilter, eventResponse]);
 
   if (isEventsPending || isConfigurationsPending) {
     return <Spinner variant="centered" />;
@@ -76,9 +69,7 @@ export function ActivityLog() {
       </div>
 
       <div className="mt-6">
-        {filteredLogEntries && (
-          <ActivityLogEntries filteredLogEntries={filteredLogEntries} />
-        )}
+        <ActivityLogEntries filteredLogEntries={eventResponse.data} />
       </div>
     </section>
   );
