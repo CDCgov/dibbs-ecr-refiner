@@ -88,6 +88,12 @@ export default defineConfig(
     },
   },
   {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'import/no-default-export': 'error',
+    },
+  },
+  {
     // provide some flexibility for test files
     files: ['**/*.test.{ts,tsx}', '**/tests/**/*.ts'],
     rules: {

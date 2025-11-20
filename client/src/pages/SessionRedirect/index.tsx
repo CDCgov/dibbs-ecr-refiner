@@ -6,7 +6,7 @@ import { Footer, Header } from '../../components/Layout';
 interface SessionRedirectProps {
   displayHeaderAndFooter?: boolean;
 }
-export default function SessionRedirect({
+export function SessionRedirect({
   displayHeaderAndFooter = false,
 }: SessionRedirectProps) {
   return (
@@ -36,7 +36,6 @@ export default function SessionRedirect({
           </div>
         </div>
       </main>
-
       {displayHeaderAndFooter && <Footer />}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
-import NotFound from '../../NotFound';
+import { NotFound } from '../../NotFound';
 import {
   NavigationContainer,
   SectionContainer,
@@ -9,7 +9,7 @@ import {
 import { StepsContainer, Steps } from '../Steps';
 import { ConfigurationTitleBar } from '../titleBar';
 
-export default function ConfigActivate() {
+export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
 
   if (!id) return <NotFound />;

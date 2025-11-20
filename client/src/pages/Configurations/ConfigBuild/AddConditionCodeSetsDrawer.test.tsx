@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 
 // Mocks for child components and hooks
 vi.mock('../../../components/Drawer', () => ({
-  default: ({
+  Drawer: ({
     children,
     title,
     onClose,
@@ -32,7 +32,7 @@ vi.mock('../../../components/Drawer', () => ({
 }));
 
 vi.mock('./ConditionCodeSet', () => ({
-  default: ({
+  ConditionCodeSet: ({
     conditionName,
     onAssociate,
     onDisassociate,

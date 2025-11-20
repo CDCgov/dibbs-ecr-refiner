@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import ConfigActivate from '.';
+import { ConfigTest } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
   Condition,
@@ -93,10 +93,7 @@ describe('Config testing page', () => {
       <TestQueryClientProvider>
         <MemoryRouter initialEntries={['/configurations/config-id/test']}>
           <Routes>
-            <Route
-              path="/configurations/:id/test"
-              element={<ConfigActivate />}
-            />
+            <Route path="/configurations/:id/test" element={<ConfigTest />} />
           </Routes>
         </MemoryRouter>
       </TestQueryClientProvider>

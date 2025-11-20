@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { NavLink, NavLinkProps } from 'react-router';
 
-export default function NavigationBar() {
+export function NavigationBar() {
   return (
     <nav
       aria-label="Primary navigation"

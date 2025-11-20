@@ -18,10 +18,10 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../titleBar';
 import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
-import ErrorFallback from '../../ErrorFallback';
-import FileUploadWarning from '../../../components/FileUploadWarning';
+import { ErrorFallback } from '../../ErrorFallback';
+import { FileUploadWarning } from '../../../components/FileUploadWarning';
 
-export default function ConfigTest() {
+export function ConfigTest() {
   const { id } = useParams<{ id: string }>();
   const {
     data: response,
