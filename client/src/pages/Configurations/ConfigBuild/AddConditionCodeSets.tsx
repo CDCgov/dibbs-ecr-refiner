@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Drawer from '../../../components/Drawer';
+import { Drawer } from '../../../components/Drawer';
 import { ConditionCodeSetListItem } from './ConditionCodeSetListItem';
 import { highlightMatches } from '../../../utils';
 import { IncludedCondition } from '../../../api/schemas';

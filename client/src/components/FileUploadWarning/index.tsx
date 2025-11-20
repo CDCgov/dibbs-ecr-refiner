@@ -7,7 +7,7 @@ interface FileUploadWarningProps {
   errorMessage: string;
   reset: () => void;
 }
-export default function FileUploadWarning({
+export function FileUploadWarning({
   errorMessage,
   reset,
 }: FileUploadWarningProps) {

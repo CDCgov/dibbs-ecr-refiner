@@ -1,6 +1,6 @@
 import { describe, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import Drawer from './index';
+import { Drawer } from '.';
 import userEvent from '@testing-library/user-event';
 import { ClassAttributes, InputHTMLAttributes } from 'react';
 import { JSX } from 'react/jsx-runtime';
