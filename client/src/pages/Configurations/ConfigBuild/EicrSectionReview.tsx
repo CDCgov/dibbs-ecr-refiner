@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Table from '../../../components/Table';
+import { Table } from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useUpdateConfigurationSectionProcessing } from '../../../api/configurations/configurations';
 import { useToast } from '../../../hooks/useToast';
@@ -18,7 +18,7 @@ import { RadioCell } from '../../../components/Button/RadioCell';
  * Radio inputs are fully accessible and can be selected by clicking anywhere
  * in the containing table cell (td), supporting keyboard navigation as well.
  */
-export default function EicrSectionReview({
+export function EicrSectionReview({
   configurationId,
   sectionProcessing,
 }: EicrSectionReviewProps) {

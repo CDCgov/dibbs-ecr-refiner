@@ -1,20 +1,20 @@
 import { Routes, Route, Navigate } from 'react-router';
 import { Configurations } from './pages/Configurations';
-import Testing from './pages/Testing';
-import NotFound from './pages/NotFound';
+import {Testing} from './pages/Testing';
+import {NotFound} from './pages/NotFound';
 import { Layout } from './components/Layout';
 import { useLogin } from './hooks/Login';
 import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
-import ConfigBuild from './pages/Configurations/ConfigBuild';
-import ConfigTest from './pages/Configurations/ConfigTest';
-import ConfigActivate from './pages/Configurations/ConfigActivate';
+import {ConfigBuild} from './pages/Configurations/ConfigBuild';
+import {ConfigTest} from './pages/Configurations/ConfigTest';
+import {ConfigActivate} from './pages/Configurations/ConfigActivate';
 import 'react-toastify/dist/ReactToastify.css';
 import { Spinner } from './components/Spinner';
-import SessionRedirect from './pages/SessionRedirect';
+import {SessionRedirect} from './pages/SessionRedirect';
 import { ActivityLog } from './pages/ActivityLog';
 
-function App() {
+export function App() {
   const [user, isLoading] = useLogin();
 
   if (isLoading) {
@@ -52,5 +52,3 @@ function App() {
     </Layout>
   );
 }
-
-export default App;
