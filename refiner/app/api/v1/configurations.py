@@ -343,15 +343,6 @@ async def get_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    all_versions = await get_configuration_versions_db(
-        jurisdiction_id=jd,
-        condition_canonical_url=config.condition_canonical_url,
-        db=db,
-    )
-
-    active_config = next((v for v in all_versions if v.status == "active"), None)
-    draft_config = next((v for v in all_versions if v.status == "draft"), None)
-
     # Fetch all included conditions
     conditions = await get_included_conditions_db(
         included_conditions=config.included_conditions, db=db
@@ -410,6 +401,15 @@ async def get_configuration(
                 associated=is_associated,
             )
         )
+
+    all_versions = await get_configuration_versions_db(
+        jurisdiction_id=jd,
+        condition_canonical_url=config.condition_canonical_url,
+        db=db,
+    )
+
+    active_config = next((v for v in all_versions if v.status == "active"), None)
+    draft_config = next((v for v in all_versions if v.status == "draft"), None)
 
     draft_id = draft_config.id if draft_config is not None else None
     is_draft = draft_id == config.id
