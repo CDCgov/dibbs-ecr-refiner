@@ -28,10 +28,14 @@ const configurations: ConfigurationTrace[] = [
   {
     name: 'Alpha-gal Syndrome',
     id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
+    cannonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
   },
   {
     name: 'Acanthamoeba',
     id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
+    cannonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
   },
 ];
 
