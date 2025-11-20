@@ -17,7 +17,7 @@ export function ActivityLog() {
     isError: isError,
     error: error,
   } = useGetEvents({
-    condition_filter:
+    cannonical_url:
       conditionFilter === ALL_CONDITIONS_LITERAL ? undefined : conditionFilter,
   });
 
@@ -49,7 +49,7 @@ export function ActivityLog() {
             </option>
             {eventResponse.data.configuration_options.map((c) => {
               return (
-                <option value={c.id} key={c.id}>
+                <option value={c.cannonical_url} key={c.cannonical_url}>
                   {c.name}
                 </option>
               );

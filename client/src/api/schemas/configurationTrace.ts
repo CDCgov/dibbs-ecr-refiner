@@ -9,4 +9,5 @@
 export interface ConfigurationTrace {
   id: string;
   name: string;
+  cannonical_url: string;
 }

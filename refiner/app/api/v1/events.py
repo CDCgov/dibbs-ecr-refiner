@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends
 
 from app.api.auth.middleware import get_logged_in_user
@@ -25,7 +23,7 @@ router = APIRouter(prefix="/events")
 async def get_events(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-    condition_filter: UUID | None = None,
+    cannonical_url: str | None = None,
 ) -> EventResponse:
     """
     Returns a list of all events for a jurisdiction, ordered from newest to oldest.
@@ -33,7 +31,7 @@ async def get_events(
     Args:
         user (DbUser): The user making the request.
         db (AsyncDatabaseConnection): Database connection.
-        condition_filter (UUID | None): An optional filter on the condition.
+        cannonical_url (str | None): An optional filter on the condition.
 
     Returns:
         EventResponse: A bundle with
@@ -42,15 +40,23 @@ async def get_events(
     """
 
     audit_events = await get_events_by_jd_db(
-        jurisdiction_id=user.jurisdiction_id, db=db, condition_filter=condition_filter
+        jurisdiction_id=user.jurisdiction_id, db=db, cannonical_url=cannonical_url
     )
 
     jd_configurations = await get_configurations_db(
         jurisdiction_id=user.jurisdiction_id, db=db
     )
-    configuration_options = [
-        ConfigurationTrace(name=c.name, id=c.id) for c in jd_configurations
-    ]
+
+    seen_urls = set()
+    configuration_options = []
+
+    for c in jd_configurations:
+        if c.condition_canonical_url not in seen_urls:
+            trace = ConfigurationTrace(
+                name=c.name, id=c.id, cannonical_url=c.condition_canonical_url
+            )
+            configuration_options.append(trace)
+            seen_urls.add(c.condition_canonical_url)
 
     return EventResponse(
         audit_events=audit_events, configuration_options=configuration_options
