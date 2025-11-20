@@ -7,5 +7,5 @@
  */
 
 export type GetEventsParams = {
-condition_filter?: string | null;
+cannonical_url?: string | null;
 };

@@ -32,6 +32,7 @@ class ConfigurationTrace:
 
     id: UUID
     name: str
+    cannonical_url: str
 
 
 @dataclass
@@ -47,7 +48,7 @@ class EventResponse:
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
-    condition_filter: UUID | None = None,
+    cannonical_url: str | None = None,
 ) -> list[AuditEvent]:
     """
     Fetches all events for a given jurisdiction ID.
@@ -65,13 +66,13 @@ async def get_events_by_jd_db(
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
         WHERE e.jurisdiction_id = %s
-        AND (%s::uuid is NULL or c.id = %s::uuid)
+        AND (%s::TEXT is NULL or c.condition_canonical_url = %s)
         ORDER BY e.created_at DESC;
     """
     params = (
         jurisdiction_id,
-        condition_filter,
-        condition_filter,
+        cannonical_url,
+        cannonical_url,
     )
 
     async with db.get_connection() as conn:

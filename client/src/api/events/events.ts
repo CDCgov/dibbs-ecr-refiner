@@ -43,7 +43,7 @@ import type {
 Args:
     user (DbUser): The user making the request.
     db (AsyncDatabaseConnection): Database connection.
-    condition_filter (UUID | None): An optional filter on the condition.
+    cannonical_url (str | None): An optional filter on the condition.
 
 Returns:
     EventResponse: A bundle with
