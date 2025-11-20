@@ -55,6 +55,9 @@ test.describe
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
+    await expect(page.getByText('Status: Inactive')).toBeVisible();
+    await expect(page.getByText('Editing: Version 1')).toBeVisible();
+
     await expect(
       page.getByRole('button', {
         name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
@@ -272,7 +275,7 @@ test.describe
     await page.locator('button', { hasText: 'Custom codes' }).click();
 
     // Click the Edit button for the existing custom code
-    await page.locator('button', { hasText: 'Edit' }).click();
+    await page.getByText('Edit', { exact: true }).click();
 
     // Wait for the "Edit custom code" modal to appear
     const modal = page.locator('.usa-modal__main', {

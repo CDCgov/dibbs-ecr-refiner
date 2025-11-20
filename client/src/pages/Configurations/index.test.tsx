@@ -45,6 +45,7 @@ vi.mock('../../api/configurations/configurations', async () => {
               associated: false,
             },
           ],
+          all_versions: [],
         },
       },
     })),

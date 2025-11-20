@@ -7,19 +7,43 @@ import {
   TitleContainer,
 } from '../layout';
 import { StepsContainer, Steps } from '../Steps';
-import { ConfigurationTitleBar } from '../titleBar';
+import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
+// import { useGetConfiguration } from '../../../api/configurations/configurations';
+// import { Spinner } from '../../../components/Spinner';
+// import ErrorFallback from '../../ErrorFallback';
 
 export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
 
+  // const {
+  //   data: response,
+  //   isPending,
+  //   isError,
+  //   error,
+  // } = useGetConfiguration(id ?? '');
+
+  // if (isPending) return <Spinner variant="centered" />;
+  // if (!id || isError) return <ErrorFallback error={error} />;
+
+  /**
+   * Delete this and uncomment everything else.
+   */
   if (!id) return <NotFound />;
 
   return (
     <div>
       <TitleContainer>
         <Title>Condition name</Title>
+        {/* <Status version={response.data.active_version} /> */}
       </TitleContainer>
       <NavigationContainer>
+        {/* <VersionMenu
+          id={response.data.id}
+          currentVersion={response.data.version}
+          status={response.data.status}
+          versions={response.data.all_versions}
+          step="activate"
+        /> */}
         <StepsContainer>
           <Steps configurationId={id} />
         </StepsContainer>

@@ -15,9 +15,11 @@ import {
 import { Diff } from '../../../components/Diff';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { ConfigurationTitleBar } from '../titleBar';
+import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
+import { Status } from '../ConfigBuild/Status';
+import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { ErrorFallback } from '../../ErrorFallback';
 import { FileUploadWarning } from '../../../components/FileUploadWarning';
 
@@ -37,8 +39,16 @@ export function ConfigTest() {
     <div>
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
+        <Status version={response.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
+        <VersionMenu
+          id={response.data.id}
+          currentVersion={response.data.version}
+          status={response.data.status}
+          versions={response.data.all_versions}
+          step="test"
+        />
         <StepsContainer>
           <Steps configurationId={id} />
         </StepsContainer>
