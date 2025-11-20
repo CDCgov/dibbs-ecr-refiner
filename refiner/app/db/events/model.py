@@ -9,7 +9,7 @@ class _EventBase:
     jurisdiction_id: str
     user_id: UUID
     configuration_id: UUID
-    event_type: Literal["create_configuration", "add_code", "delete_code", "edit_code"]
+    event_type: Literal["create_configuration", "add_code", "delete_code", "edit_code", "section_update"]
     action_text: str
 
 

@@ -108,7 +108,7 @@ test.describe
         .filter({ hasText: 'refiner' })
         .filter({ hasText: 'Acanthamoeba' })
         .filter({
-          hasText: "Associated 'Balamuthia mandrillaris Disease' code set",
+          hasText: "Added 'Balamuthia mandrillaris Disease' code set",
         })
     ).toBeVisible();
 
