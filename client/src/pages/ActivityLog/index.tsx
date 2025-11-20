@@ -1,24 +1,32 @@
-import { useGetEvents } from '../../api/events/events';
+import { Label, Select } from '@trussworks/react-uswds';
 import { Spinner } from '../../components/Spinner';
-import Table from '../../components/Table';
 import { Title } from '../../components/Title';
 import ErrorFallback from '../ErrorFallback';
+import { useState } from 'react';
+import { ActivityLogEntries } from './ActivityLogEntries';
+import { useGetEvents } from '../../api/events/events';
 
 export function ActivityLog() {
-  const { data: response, isPending, isError, error } = useGetEvents();
-  const timeFormatter = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric',
-    minute: 'numeric',
-    hour12: true,
+  const [conditionFilter, setConditionFilter] = useState<string>(
+    ALL_CONDITIONS_LITERAL
+  );
+
+  const {
+    data: eventResponse,
+    isPending: isPending,
+    isError: isError,
+    error: error,
+  } = useGetEvents({
+    condition_filter:
+      conditionFilter === ALL_CONDITIONS_LITERAL ? undefined : conditionFilter,
   });
 
-  if (isPending) return <Spinner variant="centered" />;
-  if (isError) return <ErrorFallback error={error} />;
-
-  const nameHeader = 'Name';
-  const conditionHeader = 'Condition';
-  const actionHeader = 'Action';
-  const dateHeader = 'Date';
+  if (isPending) {
+    return <Spinner variant="centered" />;
+  }
+  if (isError) {
+    return <ErrorFallback error={error} />;
+  }
 
   return (
     <section className="mx-auto p-4">
@@ -27,47 +35,36 @@ export function ActivityLog() {
         <p className="mt-2">
           Review activity in eCR Refiner from yourself and others on the team.
         </p>
+
+        <div className="mt-6">
+          <Label htmlFor="condition-filter">Condition</Label>
+          <Select
+            id="condition-filter"
+            name="condition-filter"
+            value={conditionFilter}
+            onChange={(e) => setConditionFilter(e.target.value)}
+          >
+            <option value={ALL_CONDITIONS_LITERAL}>
+              {ALL_CONDITIONS_LITERAL}
+            </option>
+            {eventResponse.data.configuration_options.map((c) => {
+              return (
+                <option value={c.id} key={c.id}>
+                  {c.name}
+                </option>
+              );
+            })}
+          </Select>
+        </div>
       </div>
 
       <div className="mt-6">
-        <Table striped>
-          <colgroup>
-            <col className="w-full sm:w-1/6" />
-            <col className="w-2/6" />
-            <col className="w-2/6" />
-            <col className="w-1/6" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">{nameHeader} </th>
-              <th scope="col">{conditionHeader} </th>
-              <th scope="col">{actionHeader}</th>
-              <th scope="col">{dateHeader}</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {response?.data
-              .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
-              .map((r) => {
-                const createdAtDate = new Date(r.created_at);
-                return (
-                  <tr key={r.id}>
-                    <td data-label={nameHeader} className="!font-bold">
-                      {r.username}
-                    </td>
-                    <td data-label={conditionHeader}>{r.configuration_name}</td>
-                    <td data-label={actionHeader}>{r.action_text}</td>
-                    <td data-label={dateHeader}>
-                      {createdAtDate.toLocaleDateString()} <br />
-                      {timeFormatter.format(createdAtDate)}
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </Table>
+        <ActivityLogEntries
+          filteredLogEntries={eventResponse.data.audit_events}
+        />
       </div>
     </section>
   );
 }
+
+const ALL_CONDITIONS_LITERAL = 'All conditions';

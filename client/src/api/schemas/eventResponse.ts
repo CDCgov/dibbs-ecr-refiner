@@ -5,11 +5,10 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { AuditEvent } from './auditEvent';
+import type { ConfigurationTrace } from './configurationTrace';
 
 export interface EventResponse {
-  id: string;
-  username: string;
-  configuration_name: string;
-  action_text: string;
-  created_at: string;
+  audit_events: AuditEvent[];
+  configuration_options: ConfigurationTrace[];
 }
