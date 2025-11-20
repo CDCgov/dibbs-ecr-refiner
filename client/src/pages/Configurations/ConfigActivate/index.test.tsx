@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import ConfigActivate from '.';
+import { ConfigActivate } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
 
 describe('Config activation page', () => {

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { Title } from '../../../components/Title';
-import NotFound from '../../NotFound';
+import { NotFound } from '../../NotFound';
 import {
   NavigationContainer,
   SectionContainer,
@@ -12,7 +12,7 @@ import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 // import { Spinner } from '../../../components/Spinner';
 // import ErrorFallback from '../../ErrorFallback';
 
-export default function ConfigActivate() {
+export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
 
   // const {

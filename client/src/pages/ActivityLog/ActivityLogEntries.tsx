@@ -1,5 +1,5 @@
 import { AuditEvent } from '../../api/schemas';
-import Table from '../../components/Table';
+import { Table } from '../../components/Table';
 
 const timeFormatter = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',

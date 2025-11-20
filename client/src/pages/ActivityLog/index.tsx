@@ -1,7 +1,7 @@
 import { Label, Select } from '@trussworks/react-uswds';
 import { Spinner } from '../../components/Spinner';
 import { Title } from '../../components/Title';
-import ErrorFallback from '../ErrorFallback';
+import { ErrorFallback } from '../ErrorFallback';
 import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
 import { useGetEvents } from '../../api/events/events';

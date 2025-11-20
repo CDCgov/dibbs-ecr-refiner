@@ -14,7 +14,7 @@ type TableProps = Pick<
   | 'fullWidth'
 >;
 
-const Table = ({
+export function Table({
   children,
   bordered,
   className,
@@ -22,7 +22,7 @@ const Table = ({
   fullWidth,
   scrollable,
   stackedStyle = 'default',
-}: TableProps) => {
+}: TableProps) {
   return (
     <UswdsTable
       bordered={bordered}
@@ -35,6 +35,4 @@ const Table = ({
       {children}
     </UswdsTable>
   );
-};
-
-export default Table;
+}

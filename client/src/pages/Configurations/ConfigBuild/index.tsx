@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import EicrSectionReview from './EicrSectionReview';
+import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -47,13 +47,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
-import ErrorFallback from '../../ErrorFallback';
+import { ErrorFallback } from '../../ErrorFallback';
 import { TesLink } from '../TesLink';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { Status } from './Status';
 
-export default function ConfigBuild() {
+export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
   const {
     data: response,
@@ -955,7 +955,6 @@ export function CustomCodeModal({
           />
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
         </div>
-
         <div>
           <Label htmlFor="system">Code system</Label>
           <Select
