@@ -96,7 +96,7 @@ async def get_logged_in_user(
     expires_at = user.expires_at
 
     # Renew session if it's close to expiring
-    update_session_expiry_time(
+    await update_session_expiry_time(
         expires_at=expires_at, token_hash=token_hash, logger=logger
     )
 
