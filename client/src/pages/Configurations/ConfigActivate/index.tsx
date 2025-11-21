@@ -10,7 +10,6 @@ import { StepsContainer, Steps } from '../Steps';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 // import { useGetConfiguration } from '../../../api/configurations/configurations';
 // import { Spinner } from '../../../components/Spinner';
-// import ErrorFallback from '../../ErrorFallback';
 
 export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
@@ -18,12 +17,11 @@ export function ConfigActivate() {
   // const {
   //   data: response,
   //   isPending,
-  //   isError,
-  //   error,
+  //   isError
   // } = useGetConfiguration(id ?? '');
 
   // if (isPending) return <Spinner variant="centered" />;
-  // if (!id || isError) return <ErrorFallback error={error} />;
+  // if (!id || isError) return 'Error!';
 
   /**
    * Delete this and uncomment everything else.
