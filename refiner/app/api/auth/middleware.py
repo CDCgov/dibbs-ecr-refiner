@@ -121,20 +121,20 @@ async def update_session_expiry_time(
     now = dt.now(UTC)
     if expires_at - now < RENEW_THRESHOLD:
         new_expiration = now + SESSION_TTL
-    try:
-        async with db.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
-                    (new_expiration, token_hash),
-                )
+        try:
+            async with db.get_connection() as conn:
+                async with conn.cursor(row_factory=dict_row) as cur:
+                    await cur.execute(
+                        "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
+                        (new_expiration, token_hash),
+                    )
 
-    except (DatabaseConnectionError, DatabaseQueryError) as db_err:
-        logger.error(
-            "Database error occurred while getting user information",
-            extra={"error": str(db_err), "error_details": db_err.details},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal database error.",
-        )
+        except (DatabaseConnectionError, DatabaseQueryError) as db_err:
+            logger.error(
+                "Database error occurred while getting user information",
+                extra={"error": str(db_err), "error_details": db_err.details},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal database error.",
+            )
