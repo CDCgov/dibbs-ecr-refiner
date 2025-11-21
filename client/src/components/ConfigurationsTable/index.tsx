@@ -3,7 +3,7 @@ import {
   GetConfigurationsResponse,
   GetConfigurationsResponseStatus,
 } from '../../api/schemas';
-import Table from '../Table';
+import { Table } from '../Table';
 interface ConfigurationsTableProps {
   data: GetConfigurationsResponse[];
 }

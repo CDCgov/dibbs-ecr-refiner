@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse } from '../../api/schemas';
-import ConfigBuild from './ConfigBuild';
+import { ConfigBuild } from './ConfigBuild';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 
 // Mock all API requests.
@@ -45,6 +45,7 @@ vi.mock('../../api/configurations/configurations', async () => {
               associated: false,
             },
           ],
+          all_versions: [],
         },
       },
     })),

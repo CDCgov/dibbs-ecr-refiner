@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 
-export default function NotFound() {
+export function NotFound() {
   return (
     <main>
       <p>Page not found</p>

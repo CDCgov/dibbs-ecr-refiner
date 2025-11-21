@@ -28,7 +28,7 @@ type DrawerProps = {
  * Drawer component used as a sidebar overlay for displaying grouped content.
  * Supports a title, subtitle, search filter, and custom children.
  */
-const Drawer = ({
+export function Drawer({
   title,
   subtitle,
   searchPlaceholder,
@@ -37,7 +37,7 @@ const Drawer = ({
   onClose,
   onSearch,
   drawerWidth,
-}: DrawerProps): React.ReactElement<DrawerProps> => {
+}: DrawerProps): React.ReactElement<DrawerProps> {
   const [searchFilter, setSearchFilter] = useState('');
 
   useEffect(() => {
@@ -120,6 +120,4 @@ const Drawer = ({
       </div>
     </FocusTrap>
   );
-};
-
-export default Drawer;
+}

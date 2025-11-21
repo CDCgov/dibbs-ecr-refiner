@@ -2,8 +2,7 @@ import { Link } from 'react-router';
 import DibbsLogo from '../../assets/dibbs-logo.svg';
 import CdcLogo from '../../assets/cdc-logo.svg';
 import { ProvideFeedbackButton } from '../ProvideFeedbackButton';
-
-import NavigationBar from '../NavigationBar';
+import { NavigationBar } from '../NavigationBar';
 import { Icon } from '@trussworks/react-uswds';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ExternalLink } from '../ExternalLink';

@@ -3,36 +3,75 @@ import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
-import { EventResponse } from '../../api/schemas';
+import { AuditEvent, ConfigurationTrace } from '../../api/schemas';
+import userEvent from '@testing-library/user-event';
 
-const configurationEvents: EventResponse[] = [
+const auditEvents: AuditEvent[] = [
   {
     id: 'fa74c1b3-a4e3-42eb-a350-c606083b5c5f',
     username: 'refiner',
     configuration_name: 'Alpha-gal Syndrome',
+    condition_id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:58:45.363325Z',
   },
   {
     id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
     username: 'refiner',
+    condition_id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
     configuration_name: 'Acanthamoeba',
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:57:55.627842Z',
   },
 ];
+const configurations: ConfigurationTrace[] = [
+  {
+    name: 'Alpha-gal Syndrome',
+    id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
+    cannonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
+  },
+  {
+    name: 'Acanthamoeba',
+    id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
+    cannonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
+  },
+];
 
 vi.mock('../../api/events/events', async () => {
-  const actual = await vi.importActual('../../api/events/events');
+  const actualEventsRouter = await vi.importActual('../../api/events/events');
   return {
-    ...actual,
+    ...actualEventsRouter,
+
     useGetEvents: vi.fn(() => ({
       data: {
-        data: configurationEvents,
+        data: {
+          audit_events: auditEvents,
+          configuration_options: configurations,
+        },
       },
     })),
   };
 });
+
+function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
+  const eventsToCheck = conditionFilter
+    ? auditEvents.filter((e) => e.id === conditionFilter)
+    : auditEvents;
+
+  eventsToCheck.forEach((r) => {
+    const matchingRow = screen
+      .getByRole('cell', { name: r.configuration_name })
+      .closest('tr');
+    expect(matchingRow).toBeInTheDocument();
+    expect(matchingRow).toHaveTextContent(r.action_text);
+    expect(matchingRow).toHaveTextContent(r.username);
+    expect(matchingRow).toHaveTextContent(
+      new Date(r.created_at).toLocaleDateString()
+    );
+  });
+}
 
 const renderPageView = () =>
   render(
@@ -59,16 +98,45 @@ describe('Activity log page', () => {
       )
     ).toBeInTheDocument();
 
-    configurationEvents.forEach((r) => {
-      const matchingRow = screen
-        .getByRole('cell', { name: r.configuration_name })
-        .closest('tr');
-      expect(matchingRow).toBeInTheDocument();
-      expect(matchingRow).toHaveTextContent(r.action_text);
-      expect(matchingRow).toHaveTextContent(r.username);
-      expect(matchingRow).toHaveTextContent(
-        new Date(r.created_at).toLocaleDateString()
-      );
+    checkActivityLogAgainstMockEvents();
+  });
+  it('should filter the activity log when conditions are changed', async () => {
+    const user = userEvent.setup();
+
+    renderPageView();
+
+    expect(screen.getByText('Activity log')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Review activity in eCR Refiner from yourself and others on the team.'
+      )
+    ).toBeInTheDocument();
+
+    const logEntries = screen.getAllByRole('row', { name: 'Log entry' });
+    expect(logEntries).toHaveLength(auditEvents.length);
+
+    const conditionFilter = screen.getByLabelText('Condition');
+    const conditionFilterToTest = 'Alpha-gal Syndrome';
+
+    expect(conditionFilter).toBeInTheDocument();
+
+    // the test was hanging when using the .selectOptions API bc our dropdown
+    // isn't a native select, so we're doing the option selection manually using
+    // .click
+    await user.click(conditionFilter);
+    const option = await screen.findByRole('option', {
+      name: conditionFilterToTest,
     });
+    await user.click(option);
+
+    checkActivityLogAgainstMockEvents(conditionFilterToTest);
+
+    await user.click(conditionFilter);
+    const resetOption = await screen.findByRole('option', {
+      name: 'All conditions',
+    });
+    await user.click(resetOption);
+
+    checkActivityLogAgainstMockEvents();
   });
 });

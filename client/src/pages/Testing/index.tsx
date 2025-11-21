@@ -1,12 +1,11 @@
 import { Success } from './Success';
 import { RunTest } from './RunTest';
 import { TestRefinerDescription } from './TestRefinerDescription';
-
 import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
-import FileUploadWarning from '../../components/FileUploadWarning';
+import { FileUploadWarning } from '../../components/FileUploadWarning';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 type Status =
@@ -16,7 +15,7 @@ type Status =
   | 'error'
   | 'pending';
 
-export default function Demo() {
+export function Testing() {
   const [status, setStatus] = useState<Status>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 

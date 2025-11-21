@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import EicrSectionReview from './EicrSectionReview';
+import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -45,12 +45,15 @@ import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { ConfigurationTitleBar } from '../titleBar';
+import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
-import ErrorFallback from '../../ErrorFallback';
+import { ErrorFallback } from '../../ErrorFallback';
 import { TesLink } from '../TesLink';
+import { VersionMenu } from './VersionMenu';
+import { DraftBanner } from './DraftBanner';
+import { Status } from './Status';
 
-export default function ConfigBuild() {
+export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
   const {
     data: response,
@@ -68,22 +71,38 @@ export default function ConfigBuild() {
   });
 
   return (
-    <div className="mb-8">
+    <div>
       <TitleContainer>
         <Title>{response.data.display_name}</Title>
+        <Status version={response.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
+        <VersionMenu
+          id={response.data.id}
+          currentVersion={response.data.version}
+          status={response.data.status}
+          versions={response.data.all_versions}
+          step="build"
+        />
         <StepsContainer>
           <Steps configurationId={response.data.id} />
         </StepsContainer>
       </NavigationContainer>
+      {!response.data.is_draft ? (
+        <DraftBanner
+          draftId={response.data.draft_id}
+          conditionId={response.data.condition_id}
+          latestVersion={response.data.latest_version}
+          step="build"
+        />
+      ) : null}
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
           <ConfigurationTitleBar step="build" />
-          <Export id={id} />
+          <Export id={response.data.id} />
         </div>
         <Builder
-          id={id}
+          id={response.data.id}
           code_sets={sortedCodeSets}
           included_conditions={response.data.included_conditions}
           custom_codes={response.data.custom_codes}
@@ -112,7 +131,16 @@ export function Export({ id }: ExportBuilderProps) {
   );
 }
 
-type BuilderProps = GetConfigurationResponse;
+type BuilderProps = Pick<
+  GetConfigurationResponse,
+  | 'id'
+  | 'code_sets'
+  | 'custom_codes'
+  | 'included_conditions'
+  | 'section_processing'
+  | 'display_name'
+  | 'deduplicated_codes'
+>;
 
 function Builder({
   id,
@@ -925,13 +953,8 @@ export function CustomCodeModal({
             }}
             autoComplete="off"
           />
-          {error && (
-            <p className="font-merriweather mb-1 text-sm text-red-600">
-              {error}
-            </p>
-          )}
+          {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
         </div>
-
         <div>
           <Label htmlFor="system">Code system</Label>
           <Select

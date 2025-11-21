@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Demo from '.';
+import { Testing } from '.';
 import { BrowserRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
@@ -52,19 +52,19 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
   refined_download_url: 'http://s3-custom.com',
 };
 
-const renderDemoView = () =>
+const renderView = () =>
   render(
     <BrowserRouter>
-      <Demo />
+      <Testing />
     </BrowserRouter>
   );
 
-describe('Demo', () => {
+describe('Testing', () => {
   afterEach(() => {
     vi.resetAllMocks();
   });
 
-  it('should navigate the demo flow using the sample file', async () => {
+  it('should navigate the testing flow using the sample file', async () => {
     const user = userEvent.setup();
 
     const mockMutateAsync = vi.fn().mockResolvedValue({
@@ -79,7 +79,7 @@ describe('Demo', () => {
       reset: vi.fn(),
     });
 
-    renderDemoView();
+    renderView();
 
     // check that we start on the "run test" page
     expect(
@@ -105,7 +105,7 @@ describe('Demo', () => {
     expect(screen.getByText('eICR reduced by 59%')).toBeInTheDocument();
   });
 
-  it('should navigate the demo flow using an uploaded zip file', async () => {
+  it('should navigate the testing flow using an uploaded zip file', async () => {
     const user = userEvent.setup();
 
     const mockMutateAsync = vi.fn().mockResolvedValue({
@@ -120,7 +120,7 @@ describe('Demo', () => {
       reset: vi.fn(),
     });
 
-    renderDemoView();
+    renderView();
 
     // check that we start on the "run test" page
     expect(screen.getByText('Upload .zip file')).toBeInTheDocument();
@@ -188,7 +188,7 @@ describe('Demo', () => {
       }
     );
 
-    renderDemoView();
+    renderView();
 
     await uploadTestFile(user);
 
@@ -216,7 +216,7 @@ describe('Demo', () => {
     const bannerText = 'This environment is not approved to handle PHI/PII.';
     (useGetEnv as unknown as Mock).mockReturnValue('local');
 
-    renderDemoView();
+    renderView();
     expect(screen.getByText(bannerText)).toBeInTheDocument();
   });
 
@@ -231,7 +231,7 @@ describe('Demo', () => {
     const bannerText = 'This environment is not approved to handle PHI/PII.';
     (useGetEnv as unknown as Mock).mockReturnValue('demo');
 
-    renderDemoView();
+    renderView();
     expect(screen.getByText(bannerText)).toBeInTheDocument();
   });
 
@@ -246,7 +246,7 @@ describe('Demo', () => {
     const bannerText = 'This environment is not approved to handle PHI/PII.';
     (useGetEnv as unknown as Mock).mockReturnValue('prod');
 
-    renderDemoView();
+    renderView();
     expect(screen.queryByText(bannerText)).not.toBeInTheDocument();
   });
 
@@ -265,7 +265,7 @@ describe('Demo', () => {
       };
     });
 
-    renderDemoView();
+    renderView();
 
     await uploadTestFile(user);
     // only start over button is available
@@ -294,7 +294,7 @@ describe('Demo', () => {
       };
     });
 
-    renderDemoView();
+    renderView();
     await uploadTestFile(user);
 
     // only start over button is available
@@ -335,7 +335,7 @@ describe('Demo', () => {
       };
     });
 
-    renderDemoView();
+    renderView();
     await uploadTestFile(user);
 
     // Both buttons should be available
@@ -376,7 +376,7 @@ describe('Demo', () => {
       };
     });
 
-    renderDemoView();
+    renderView();
 
     const input = screen.getByTestId('zip-upload-input');
     await user.upload(input, mockTestFile);

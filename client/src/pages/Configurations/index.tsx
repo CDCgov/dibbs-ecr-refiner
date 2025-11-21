@@ -26,7 +26,7 @@ import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 import { Spinner } from '../../components/Spinner';
-import ErrorFallback from '../ErrorFallback';
+import { ErrorFallback } from '../ErrorFallback';
 import classNames from 'classnames';
 
 enum ConfigurationStatus {
