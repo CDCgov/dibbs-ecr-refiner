@@ -6,7 +6,6 @@ from rich.panel import Panel
 from rich.table import Table
 from saxonche import PySaxonProcessor
 
-# --- Configuration ---
 BASE_DIR = Path(__file__).parent
 SCHXSLT_PIPELINE_PATH = BASE_DIR / "schxslt" / "pipeline-for-svrl.xsl"
 
@@ -14,8 +13,10 @@ SCHXSLT_PIPELINE_PATH = BASE_DIR / "schxslt" / "pipeline-for-svrl.xsl"
 def generate_xslt_from_schematron(saxon_processor, sch_path, xslt_path):
     """
     Transforms a single Schematron .sch file to an .xslt file.
+
     Returns a dictionary with the status and any error message.
     """
+
     try:
         xslt_processor = saxon_processor.new_xslt30_processor()
         schxslt_executable = xslt_processor.compile_stylesheet(
@@ -35,9 +36,12 @@ def generate_xslt_from_schematron(saxon_processor, sch_path, xslt_path):
 
 def main():
     """
+    Convert all of the .sch to .xslt.
+
     Finds all .sch files in the validation subdirectories and generates
     the corresponding .xslt artifacts, displaying results in a rich table.
     """
+
     console = Console()
     start_time = time.time()
 
@@ -90,7 +94,7 @@ def main():
 
     console.print(results_table)
 
-    # --- Summary Panel ---
+    # summary panel
     end_time = time.time()
     success_count = sum(1 for r in all_results if r["status"] == "Success")
     failure_count = len(all_results) - success_count
