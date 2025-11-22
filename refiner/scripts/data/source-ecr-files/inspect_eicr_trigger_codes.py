@@ -72,7 +72,7 @@ def get_eicr_version(root: _Element, ns: dict) -> str | None:
     return None
 
 
-def get_section_summary(section: _Element, ns: dict) -> tuple[str, str]:
+def get_section_summary(section: _Element, ns: dict) -> tuple[str | None, str]:
     """
     Extract the LOINC code and title from a section element.
     """
@@ -111,6 +111,10 @@ def get_trigger_element(
 
 
 def main():
+    """
+    Entry point for inspect_eicr_trigger_codes script.
+    """
+
     console = Console()
     xml_path = pick_xml_file()
     if not xml_path:
