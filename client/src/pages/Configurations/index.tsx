@@ -26,7 +26,6 @@ import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 import { Spinner } from '../../components/Spinner';
-import { ErrorFallback } from '../ErrorFallback';
 import classNames from 'classnames';
 
 enum ConfigurationStatus {
@@ -50,7 +49,7 @@ interface ConfigurationsTable {
 }
 
 export function Configurations() {
-  const { data: response, isPending, isError, error } = useGetConfigurations();
+  const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
   const { searchText, setSearchText, results } = useSearch(configs, {
@@ -60,7 +59,7 @@ export function Configurations() {
   const modalRef = useRef<ModalRef>(null);
 
   if (isPending) return <Spinner variant="centered" />;
-  if (isError) return <ErrorFallback error={error} />;
+  if (isError) return 'Error!';
 
   const hasMultipleConfigs = configs.length > 0;
 

@@ -1,7 +1,6 @@
 import { Label, Select } from '@trussworks/react-uswds';
 import { Spinner } from '../../components/Spinner';
 import { Title } from '../../components/Title';
-import { ErrorFallback } from '../ErrorFallback';
 import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
 import { useGetEvents } from '../../api/events/events';
@@ -13,20 +12,16 @@ export function ActivityLog() {
 
   const {
     data: eventResponse,
-    isPending: isPending,
-    isError: isError,
-    error: error,
+    isPending,
+    isError,
   } = useGetEvents({
     cannonical_url:
       conditionFilter === ALL_CONDITIONS_LITERAL ? undefined : conditionFilter,
   });
 
-  if (isPending) {
-    return <Spinner variant="centered" />;
-  }
-  if (isError) {
-    return <ErrorFallback error={error} />;
-  }
+  if (isPending) return <Spinner variant="centered" />;
+
+  if (isError) return 'Error!';
 
   return (
     <section className="mx-auto p-4">

@@ -47,7 +47,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '../../../components/Spinner';
-import { ErrorFallback } from '../../ErrorFallback';
 import { TesLink } from '../TesLink';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
@@ -55,15 +54,10 @@ import { Status } from './Status';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const {
-    data: response,
-    isPending,
-    isError,
-    error,
-  } = useGetConfiguration(id ?? '');
+  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
 
   if (isPending) return <Spinner variant="centered" />;
-  if (!id || isError) return <ErrorFallback error={error} />;
+  if (!id || isError) return 'Error!';
 
   // sort so the default code set always displays first
   const sortedCodeSets = response.data.code_sets.sort((a) => {
@@ -636,12 +630,7 @@ function ConditionCodeTable({
 }: ConditionCodeTableProps) {
   const DEBOUNCE_TIME_MS = 300;
 
-  const {
-    data: response,
-    isPending,
-    isError,
-    error,
-  } = useGetCondition(conditionId);
+  const { data: response, isPending, isError } = useGetCondition(conditionId);
   const [selectedCodeSystem, setSelectedCodeSystem] = useState<string>('all');
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -687,7 +676,7 @@ function ConditionCodeTable({
         <Spinner />
       </div>
     );
-  if (isError) return <ErrorFallback error={error} />;
+  if (isError) return 'Error!';
 
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);
