@@ -21,6 +21,11 @@ export function RunTest({
 }: RunTestProps) {
   const env = useGetEnv();
 
+  // get branch from environment variable, default to 'main'
+  // then use the branch to dynamically generate url for test data
+  const branch = import.meta.env.VITE_GIT_BRANCH || 'main';
+  const repoUrl = `https://github.com/CDCgov/dibbs-ecr-refiner/tree/${branch}/refiner/scripts/data/jurisdiction-packages/jurisdiction_sample_data`;
+
   function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
       const file = e.target.files[0];
@@ -63,7 +68,7 @@ export function RunTest({
       <div className="mt-6 text-center">
         <span>
           To download test files for some conditions you can{' '}
-          <ExternalLink href="https://github.com/CDCgov/dibbs-ecr-refiner/tree/main/refiner/scripts/data/jurisdiction-packages/jurisdiction_sample_data">
+          <ExternalLink href={repoUrl}>
             visit eCR Refiner's repository
           </ExternalLink>
         </span>

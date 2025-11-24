@@ -76,6 +76,11 @@ jobs:
         run: npm test
   run-e2e-tests:
     runs-on: ubuntu-latest
+    env:
+      # set VITE_GIT_BRANCH using the correct context variable
+      # * for PRs, github>head_ref is the source branch
+      # * for merge to main, it's github.ref_name
+      VITE_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -104,6 +109,8 @@ jobs:
         run: npx playwright install --with-deps
         working-directory: client
       - name: Start Application
+        # the 'just dev up' command will now run in a context where
+        # VITE_GIT_BRANCH is set, and the vite dev server will pick it up
         run: just dev up --detach
       - name: Migrate Database
         run: |
