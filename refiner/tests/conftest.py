@@ -15,7 +15,9 @@ os.environ["AWS_REGION"] = "us-east-1"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 os.environ["S3_UPLOADED_FILES_BUCKET_NAME"] = "mock-bucket"
 
+from datetime import datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from zipfile import ZipFile
 
 import pytest
@@ -134,3 +136,15 @@ def normalize_xml(xml: str) -> str:
     return etree.tostring(
         etree.fromstring(xml), pretty_print=True, encoding="unicode"
     ).strip()
+
+
+@pytest.fixture
+def make_lock_stub():
+    def _make_lock_stub(user_id, username: str = "tester", minutes: int = 30):
+        return SimpleNamespace(
+            user_id=user_id,
+            username=username,
+            expires_at=datetime.now() + timedelta(minutes=minutes),
+        )
+
+    return _make_lock_stub

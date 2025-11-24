@@ -1,0 +1,3 @@
+-- Enum value removals are not supported directly.
+-- This down migration intentionally left as a no-op.
+-- To fully revert, a manual process recreating the type without the added values is required.

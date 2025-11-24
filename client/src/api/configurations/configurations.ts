@@ -37,6 +37,7 @@ import type {
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
   ConfigurationCustomCodeResponse,
+  ConfigurationLockInfo,
   ConfigurationTestResponse,
   CreateConfigInput,
   CreateConfigurationResponse,
@@ -946,6 +947,130 @@ export const useUpdateConfigurationSectionProcessing = <TError = AxiosError<HTTP
       > => {
 
       const mutationOptions = getUpdateConfigurationSectionProcessingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Acquire or refresh an edit lock for a configuration.
+
+Returns current lock info when successful. If another user holds the lock, returns 409 with their lock details.
+ * @summary Acquire Configuration Lock
+ */
+export const acquireConfigurationLock = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ConfigurationLockInfo>> => {
+    
+    
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/lock`,undefined,options
+    );
+  }
+
+
+
+export const getAcquireConfigurationLockMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acquireConfigurationLock>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof acquireConfigurationLock>>, TError,{configurationId: string}, TContext> => {
+
+const mutationKey = ['acquireConfigurationLock'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acquireConfigurationLock>>, {configurationId: string}> = (props) => {
+          const {configurationId} = props ?? {};
+
+          return  acquireConfigurationLock(configurationId,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcquireConfigurationLockMutationResult = NonNullable<Awaited<ReturnType<typeof acquireConfigurationLock>>>
+    
+    export type AcquireConfigurationLockMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Acquire Configuration Lock
+ */
+export const useAcquireConfigurationLock = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acquireConfigurationLock>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof acquireConfigurationLock>>,
+        TError,
+        {configurationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getAcquireConfigurationLockMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Release the edit lock if held by the current user. Always returns 204.
+ * @summary Release Configuration Lock
+ */
+export const releaseConfigurationLock = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    
+    
+    return axios.default.delete(
+      `/api/v1/configurations/${configurationId}/lock`,options
+    );
+  }
+
+
+
+export const getReleaseConfigurationLockMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseConfigurationLock>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof releaseConfigurationLock>>, TError,{configurationId: string}, TContext> => {
+
+const mutationKey = ['releaseConfigurationLock'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof releaseConfigurationLock>>, {configurationId: string}> = (props) => {
+          const {configurationId} = props ?? {};
+
+          return  releaseConfigurationLock(configurationId,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReleaseConfigurationLockMutationResult = NonNullable<Awaited<ReturnType<typeof releaseConfigurationLock>>>
+    
+    export type ReleaseConfigurationLockMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Release Configuration Lock
+ */
+export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseConfigurationLock>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof releaseConfigurationLock>>,
+        TError,
+        {configurationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getReleaseConfigurationLockMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

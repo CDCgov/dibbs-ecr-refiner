@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -817,8 +818,8 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
             local_codes,
             section_processing,
             version,
-			last_activated_at,
-			last_activated_by,
+            last_activated_at,
+            last_activated_by,
             condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -842,3 +843,143 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
         result[cond_id] = configs_by_condition_id.get(cond_id)
 
     return result
+
+
+@dataclass(frozen=True)
+class DbConfigurationLock:
+    """Active lock for config. Holds config id, user id, username, expiry."""
+
+    configuration_id: UUID
+    user_id: UUID
+    username: str
+    expires_at: datetime
+
+
+async def get_configuration_lock_db(
+    config_id: UUID, db: AsyncDatabaseConnection
+) -> DbConfigurationLock | None:
+    """Return active lock for a configuration or None. Expired lock rows are cleaned."""
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            # delete expired lock for this configuration
+            await cur.execute(
+                "DELETE FROM configuration_locks WHERE configuration_id = %s AND expires_at < NOW()",
+                (config_id,),
+            )
+            # select active lock if exists
+            await cur.execute(
+                """
+                SELECT cl.configuration_id, cl.user_id, u.username, cl.expires_at
+                FROM configuration_locks cl
+                JOIN users u ON cl.user_id = u.id
+                WHERE cl.configuration_id = %s
+                """,
+                (config_id,),
+            )
+            row = await cur.fetchone()
+            if not row:
+                return None
+            return DbConfigurationLock(
+                configuration_id=row["configuration_id"],
+                user_id=row["user_id"],
+                username=row["username"],
+                expires_at=row["expires_at"],
+            )
+
+
+async def acquire_or_refresh_lock_db(
+    config_id: UUID,
+    user_id: UUID,
+    ttl_minutes: int,
+    db: AsyncDatabaseConnection,
+) -> tuple[DbConfigurationLock | None, bool]:
+    """Attempt to acquire or refresh the configuration lock.
+
+    Returns (lock, acquired_new). If lock is None, another user holds it.
+    acquired_new True means the lock was newly acquired. False means it was refreshed.
+    """
+    expiry = datetime.now(UTC) + timedelta(minutes=ttl_minutes)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            # pre-check existing lock holder
+            await cur.execute(
+                "SELECT user_id FROM configuration_locks WHERE configuration_id = %s AND expires_at > NOW()",
+                (config_id,),
+            )
+            existing = await cur.fetchone()
+            # attempt insert or conditional update
+            await cur.execute(
+                """
+                INSERT INTO configuration_locks (configuration_id, user_id, expires_at)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (configuration_id) DO UPDATE
+                SET expires_at = EXCLUDED.expires_at, updated_at = NOW()
+                WHERE configuration_locks.user_id = EXCLUDED.user_id
+                RETURNING configuration_id, user_id, expires_at
+                """,
+                (config_id, user_id, expiry),
+            )
+            row = await cur.fetchone()
+            if not row:
+                # conflict held by different user; fetch holder for response
+                await cur.execute(
+                    """
+                    SELECT cl.configuration_id, cl.user_id, u.username, cl.expires_at
+                    FROM configuration_locks cl
+                    JOIN users u ON cl.user_id = u.id
+                    WHERE cl.configuration_id = %s AND cl.expires_at > NOW()
+                    """,
+                    (config_id,),
+                )
+                holder = await cur.fetchone()
+                if not holder:
+                    return None, False
+                return None, False
+            # build lock object
+            await cur.execute(
+                "SELECT username FROM users WHERE id = %s",
+                (row["user_id"],),
+            )
+            user_row = await cur.fetchone()
+            lock = DbConfigurationLock(
+                configuration_id=row["configuration_id"],
+                user_id=row["user_id"],
+                username=user_row["username"],
+                expires_at=row["expires_at"],
+            )
+            acquired_new = existing is None or existing["user_id"] != user_id
+            # Event emission for new lock acquisition is handled in the API layer where jurisdiction_id context exists.
+            return lock, acquired_new
+
+
+async def release_lock_db(
+    config_id: UUID, user_id: UUID, db: AsyncDatabaseConnection
+) -> bool:
+    """Release lock if held by user. Returns True if released."""
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                "DELETE FROM configuration_locks WHERE configuration_id = %s AND user_id = %s RETURNING configuration_id",
+                (config_id, user_id),
+            )
+            row = await cur.fetchone()
+            if not row:
+                return False
+            # event requires jurisdiction; fetch configuration for audit context
+            await cur.execute(
+                "SELECT jurisdiction_id FROM configurations WHERE id = %s",
+                (config_id,),
+            )
+            cfg = await cur.fetchone()
+            if cfg:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=cfg["jurisdiction_id"],
+                        user_id=user_id,
+                        configuration_id=config_id,
+                        event_type="release_lock",
+                        action_text="Released edit lock",
+                    ),
+                    cursor=cur,
+                )
+            return True

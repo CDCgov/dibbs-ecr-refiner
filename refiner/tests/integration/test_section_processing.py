@@ -20,7 +20,7 @@ TEST_SESSION_TOKEN = "test-token"
 
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=UUID("5deb43c2-6a82-4052-9918-616e01d255c7"),
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -45,7 +45,9 @@ async def authed_client():
 
 
 @pytest.mark.asyncio
-async def test_update_section_processing_success(authed_client, monkeypatch):
+async def test_update_section_processing_success(
+    authed_client, monkeypatch, make_lock_stub
+):
     # Arrange: existing configuration with two section_processing entries
     config_id = UUID(str(uuid4()))
     existing_sections = [
@@ -107,6 +109,16 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         "app.api.v1.configurations.get_conditions_db",
         AsyncMock(return_value=[]),
     )
+    # Lock enforcement: pretend current user holds lock & skip refresh side effects
+    lock_stub = make_lock_stub(mock_user().id, "tester")
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_lock_db",
+        AsyncMock(return_value=lock_stub),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.acquire_or_refresh_lock_db",
+        AsyncMock(return_value=(lock_stub, False)),
+    )
 
     payload = {"sections": [{"code": "A", "action": "remove"}]}
 
@@ -123,7 +135,9 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_update_section_processing_db_returns_none(authed_client, monkeypatch):
+async def test_update_section_processing_db_returns_none(
+    authed_client, monkeypatch, make_lock_stub
+):
     # Arrange: existing configuration
     config_id = UUID(str(uuid4()))
     existing_sections = [
@@ -154,6 +168,16 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
     monkeypatch.setattr(
         "app.api.v1.configurations.update_section_processing_db",
         AsyncMock(return_value=None),
+    )
+    # Lock enforcement stubs
+    lock_stub = make_lock_stub(mock_user().id, "tester")
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_lock_db",
+        AsyncMock(return_value=lock_stub),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.acquire_or_refresh_lock_db",
+        AsyncMock(return_value=(lock_stub, False)),
     )
 
     payload = {"sections": [{"code": "A", "action": "remove"}]}

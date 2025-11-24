@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -11,6 +11,7 @@ from httpx import ASGITransport, AsyncClient
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations import GetConfigurationsResponse, _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.db import DbConfigurationLock
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
@@ -25,13 +26,28 @@ from app.services.testing import InlineTestingResult
 TEST_SESSION_TOKEN = "test-token"
 
 
+@pytest.fixture
+def make_db_lock():
+    def _make_db_lock(
+        configuration_id, user_id, username: str = "tester", minutes: int = 30
+    ):
+        return DbConfigurationLock(
+            configuration_id=configuration_id,
+            user_id=user_id,
+            username=username,
+            expires_at=datetime.now() + timedelta(minutes=minutes),
+        )
+
+    return _make_db_lock
+
+
 def make_db_condition_coding(code, display):
     return DbConditionCoding(code=code, display=display)
 
 
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=UUID("5deb43c2-6a82-4052-9918-616e01d255c7"),
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -63,7 +79,7 @@ def mock_logged_in_user():
 
 
 @pytest.fixture(autouse=True)
-def mock_db_functions(monkeypatch):
+def mock_db_functions(monkeypatch, make_db_lock):
     """
     Mock return values of the `_db` functions called by the routes.
     """
@@ -144,6 +160,22 @@ def mock_db_functions(monkeypatch):
     monkeypatch.setattr(
         "app.api.v1.configurations.insert_configuration_db",
         AsyncMock(return_value=new_config_mock),
+    )
+
+    # Mock active lock for configuration mutations
+    active_lock = make_db_lock(
+        configuration_id=UUID("33333333-3333-3333-3333-333333333333"),
+        user_id=UUID("5deb43c2-6a82-4052-9918-616e01d255c7"),
+        username="tester",
+        minutes=30,
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_configuration_lock_db",
+        AsyncMock(return_value=active_lock),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.acquire_or_refresh_lock_db",
+        AsyncMock(return_value=(active_lock, False)),
     )
 
     # mock associate_condition_codeset_with_configuration_db

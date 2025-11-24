@@ -9,6 +9,7 @@ import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 import type { IncludedCondition } from './includedCondition';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
+import type { GetConfigurationResponseLock } from './getConfigurationResponseLock';
 
 export interface GetConfigurationResponse {
   id: string;
@@ -18,4 +19,5 @@ export interface GetConfigurationResponse {
   custom_codes: DbConfigurationCustomCode[];
   section_processing: DbConfigurationSectionProcessing[];
   deduplicated_codes: string[];
+  lock?: GetConfigurationResponseLock;
 }

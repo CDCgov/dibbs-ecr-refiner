@@ -1,12 +1,13 @@
 import csv
 import io
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from io import StringIO
 from logging import Logger
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from fastapi import (
@@ -23,6 +24,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
 from app.core.exceptions import (
+    DatabaseConnectionError,
     FileProcessingError,
     XMLValidationError,
     ZipValidationError,
@@ -52,16 +54,19 @@ from ...db.conditions.model import DbConditionCoding
 from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     SectionUpdate,
+    acquire_or_refresh_lock_db,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
     delete_custom_code_from_configuration_db,
     disassociate_condition_codeset_with_configuration_db,
     edit_custom_code_from_configuration_db,
     get_configuration_by_id_db,
+    get_configuration_lock_db,
     get_configurations_db,
     get_total_condition_code_counts_by_configuration_db,
     insert_configuration_db,
     is_config_valid_to_insert_db,
+    release_lock_db,
     update_section_processing_db,
 )
 from ...db.configurations.model import (
@@ -70,6 +75,8 @@ from ...db.configurations.model import (
     DbConfigurationSectionProcessing,
 )
 from ...db.demo.model import Condition
+from ...db.events.db import insert_event_db
+from ...db.events.model import EventInput
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
@@ -248,6 +255,15 @@ class IncludedCondition:
 
 
 @dataclass(frozen=True)
+class ConfigurationLockInfo:
+    """Lock info returned with configuration responses if an active lock exists."""
+
+    locked: bool
+    username: str | None
+    expires_at: datetime | None
+
+
+@dataclass(frozen=True)
 class GetConfigurationResponse:
     """
     Information about a specific configuration to return to the client.
@@ -260,6 +276,7 @@ class GetConfigurationResponse:
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
     deduplicated_codes: list[str]
+    lock: ConfigurationLockInfo | None = None
 
 
 @dataclass(frozen=True)
@@ -354,6 +371,18 @@ async def get_configuration(
             )
         )
 
+    lock_info = None
+    try:
+        lock_row = await get_configuration_lock_db(config.id, db=db)
+        if lock_row:
+            lock_info = ConfigurationLockInfo(
+                locked=True,
+                username=lock_row.username,
+                expires_at=lock_row.expires_at,
+            )
+    except DatabaseConnectionError:
+        # In test contexts the pool may not be initialized; ignore lock retrieval.
+        pass
     return GetConfigurationResponse(
         id=config.id,
         display_name=config.name,
@@ -362,6 +391,7 @@ async def get_configuration(
         custom_codes=config.custom_codes,
         section_processing=config.section_processing,
         deduplicated_codes=deduplicated_codes,
+        lock=lock_info,
     )
 
 
@@ -518,6 +548,8 @@ async def associate_condition_codeset_with_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    await enforce_lock(configuration_id=config.id, user=user, db=db)
+
     condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
     if not condition:
@@ -586,6 +618,8 @@ async def remove_condition_codeset_from_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    await enforce_lock(configuration_id=config.id, user=user, db=db)
 
     condition = await get_condition_by_id_db(id=condition_id, db=db)
 
@@ -718,10 +752,14 @@ async def add_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    await enforce_lock(configuration_id=config.id, user=user, db=db)
+
     # Create a custom code object
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=sanitized_system_name,
+        system=cast(
+            Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"], sanitized_system_name
+        ),
         name=body.name,
     )
 
@@ -804,6 +842,8 @@ async def delete_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    await enforce_lock(configuration_id=config.id, user=user, db=db)
+
     updated_config = await delete_custom_code_from_configuration_db(
         config=config, system=system, code=code, user_id=user.id, db=db
     )
@@ -876,12 +916,17 @@ def _get_modified_custom_codes(
 
     # create a new code using the changes provided by the user.
     # use the old values as fallbacks.
+    updated_code_system = (
+        _get_sanitized_system_name(updateInput.new_system)
+        if updateInput.new_system
+        else existing_code.system
+    )
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
-        system=_get_sanitized_system_name(updateInput.new_system)
-        if updateInput.new_system
-        else existing_code.system,
+        system=cast(
+            Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"], updated_code_system
+        ),
     )
 
     # check for duplicates
@@ -963,6 +1008,8 @@ async def edit_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    await enforce_lock(configuration_id=config.id, user=user, db=db)
 
     custom_codes = _get_modified_custom_codes(
         config=config,
@@ -1350,6 +1397,8 @@ async def update_section_processing(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    await enforce_lock(configuration_id=config.id, user=user, db=db)
+
     # convert payload to DB-friendly format (SectionUpdate dataclasses)
     section_updates = [
         SectionUpdate(code=s.code, action=s.action) for s in payload.sections
@@ -1370,3 +1419,130 @@ async def update_section_processing(
         )
 
     return UpdateSectionProcessingResponse(message="Section processed successfully.")
+
+
+def _get_lock_ttl_minutes() -> int:
+    try:
+        return int(os.getenv("CONFIG_LOCK_TTL_MINUTES", "30"))
+    except ValueError:
+        return 30
+
+
+async def enforce_lock(
+    configuration_id: UUID, user: DbUser, db: AsyncDatabaseConnection
+) -> None:
+    """Ensure the current user holds an active edit lock for the configuration.
+
+    Behavior:
+      - If no active lock exists: 409 {"locked": False, "message": "Edit lock required for modification."}
+      - If another user holds the active lock: 409 with their lock metadata
+      - If current user holds the lock: refresh TTL and continue
+    """
+    active_lock = await get_configuration_lock_db(configuration_id, db=db)
+    if not active_lock:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "locked": False,
+                "message": "Edit lock required for modification.",
+            },
+        )
+    if active_lock.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "locked": True,
+                "username": active_lock.username,
+                "expires_at": active_lock.expires_at.isoformat(),
+            },
+        )
+    ttl = _get_lock_ttl_minutes()
+    await acquire_or_refresh_lock_db(configuration_id, user.id, ttl, db=db)
+
+
+@router.post(
+    "/{configuration_id}/lock",
+    response_model=ConfigurationLockInfo,
+    tags=["configurations"],
+    operation_id="acquireConfigurationLock",
+)
+async def acquire_configuration_lock(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> ConfigurationLockInfo:
+    """Acquire or refresh an edit lock for a configuration.
+
+    Returns current lock info when successful. If another user holds the lock, returns 409 with their lock details.
+    """
+    jd = user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    ttl = _get_lock_ttl_minutes()
+    lock, acquired_new = await acquire_or_refresh_lock_db(
+        config.id, user.id, ttl, db=db
+    )
+    if not lock:
+        # someone else holds the lock
+        holder = await get_configuration_lock_db(config.id, db=db)
+        if holder:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "locked": True,
+                    "username": holder.username,
+                    "expires_at": holder.expires_at.isoformat(),
+                },
+            )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail={"locked": True}
+        )
+
+    # Emit acquire_lock event only when a NEW lock was obtained (not a refresh)
+    if acquired_new:
+        async with db.get_connection() as conn:
+            async with conn.cursor() as cur:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=config.jurisdiction_id,
+                        user_id=user.id,
+                        configuration_id=config.id,
+                        event_type="acquire_lock",
+                        action_text="Acquired edit lock",
+                    ),
+                    cursor=cur,
+                )
+
+    return ConfigurationLockInfo(
+        locked=True, username=lock.username, expires_at=lock.expires_at
+    )
+
+
+@router.delete(
+    "/{configuration_id}/lock",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["configurations"],
+    operation_id="releaseConfigurationLock",
+)
+async def release_configuration_lock(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """Release the edit lock if held by the current user. Always returns 204."""
+    jd = user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+    await release_lock_db(config.id, user.id, db=db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
