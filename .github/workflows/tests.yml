@@ -114,7 +114,7 @@ jobs:
         run: just dev up --detach
       - name: Migrate Database
         run: |
-          sleep 10
+          sleep 30
           just migrate local
       - name: Seed Database
         run: just db seed
