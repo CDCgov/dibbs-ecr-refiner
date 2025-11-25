@@ -706,9 +706,9 @@ async def update_section_processing_db(
     """
     # Map internal action → display label
     ACTION_LABELS = {
-        "refine": "include & refine",
-        "retain": "include entire",
-        "remove": "remove",
+        "refine": "Include & refine",
+        "retain": "Include entire",
+        "remove": "Remove",
     }
 
     # Validate input actions
@@ -748,7 +748,7 @@ async def update_section_processing_db(
                         configuration_id=config.id,
                         event_type="section_update",
                         action_text=(
-                            f"Updated section '{sec['name']}' from '{old_label}' to '{new_label}'."
+                            f"Updated section '{sec['name']}' from '{old_label}' to '{new_label}'"
                         ),
                     )
                 )
