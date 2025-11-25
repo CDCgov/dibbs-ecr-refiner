@@ -56,7 +56,7 @@ import { Status } from './Status';
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
   const {
-    data: response,
+    data: configuration,
     isPending,
     isError,
     error,
@@ -66,49 +66,52 @@ export function ConfigBuild() {
   if (!id || isError) return <ErrorFallback error={error} />;
 
   // sort so the default code set always displays first
-  const sortedCodeSets = response.data.code_sets.sort((a) => {
-    return a.display_name === response.data.display_name ? -1 : 1;
+  const sortedCodeSets = configuration.data.code_sets.sort((a) => {
+    return a.display_name === configuration.data.display_name ? -1 : 1;
   });
 
   return (
     <div>
       <TitleContainer>
-        <Title>{response.data.display_name}</Title>
-        <Status version={response.data.active_version} />
+        <Title>{configuration.data.display_name}</Title>
+        <Status version={configuration.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
         <VersionMenu
-          id={response.data.id}
-          currentVersion={response.data.version}
-          status={response.data.status}
-          versions={response.data.all_versions}
+          id={configuration.data.id}
+          currentVersion={configuration.data.version}
+          status={configuration.data.status}
+          versions={configuration.data.all_versions}
           step="build"
         />
         <StepsContainer>
-          <Steps configurationId={response.data.id} />
+          <Steps configurationId={configuration.data.id} />
         </StepsContainer>
       </NavigationContainer>
-      {!response.data.is_draft ? (
+      {!configuration.data.is_draft ? (
         <DraftBanner
-          draftId={response.data.draft_id}
-          conditionId={response.data.condition_id}
-          latestVersion={response.data.latest_version}
+          draftId={configuration.data.draft_id}
+          conditionId={configuration.data.condition_id}
+          latestVersion={configuration.data.latest_version}
           step="build"
         />
       ) : null}
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
-          <ConfigurationTitleBar step="build" />
-          <Export id={response.data.id} />
+          <ConfigurationTitleBar
+            step="build"
+            condition={configuration.data.display_name}
+          />
+          <Export id={configuration.data.id} />
         </div>
         <Builder
-          id={response.data.id}
+          id={configuration.data.id}
           code_sets={sortedCodeSets}
-          included_conditions={response.data.included_conditions}
-          custom_codes={response.data.custom_codes}
-          section_processing={response.data.section_processing}
-          display_name={response.data.display_name}
-          deduplicated_codes={response.data.deduplicated_codes}
+          included_conditions={configuration.data.included_conditions}
+          custom_codes={configuration.data.custom_codes}
+          section_processing={configuration.data.section_processing}
+          display_name={configuration.data.display_name}
+          deduplicated_codes={configuration.data.deduplicated_codes}
         />
       </SectionContainer>
     </div>
