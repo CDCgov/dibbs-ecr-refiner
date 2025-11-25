@@ -74,6 +74,14 @@ class StructureValidationError(BaseApplicationException):
     pass
 
 
+class ConfigurationActivationConflictError(BaseApplicationException):
+    """
+    Raised when there's an attempt to make more than one configuration corresponding to a configuration active, which violates a table constraint.
+    """
+
+    pass
+
+
 # processing Exceptions
 class ProcessingError(BaseApplicationException):
     """
