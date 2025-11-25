@@ -21,20 +21,13 @@ export function RunTest({
 }: RunTestProps) {
   const env = useGetEnv();
 
-  console.log(
-    'DEBUG: Value of import.meta.env.VITE_GIT_BRANCH is:',
-    import.meta.env.VITE_GIT_BRANCH
-  );
-
-  // if we are in ci, use the dynamic branch name
+  // if we are in ci, use the dynamic branch name from .env step of the workflow
   // if we are local, this will be undefined
   const dynamicBranch = import.meta.env.VITE_GIT_BRANCH;
 
-  // if we're in a local environment, ALWAYS use 'main'
-  // -> if you change something like a directory name in this path, expect e2e to fail
-  //    locally until those changes are merged to 'main'
-  // otherwise (in ci), use the dynamic branch name
-  const branch = env === 'local' ? 'main' : dynamicBranch || 'main';
+  // if we have VITE_GIT_BRANCH available, we'll dynamically change the url;
+  // otherwise, point to 'main'
+  const branch = dynamicBranch || 'main';
   const repoUrl = `https://github.com/CDCgov/dibbs-ecr-refiner/tree/${branch}/refiner/scripts/data/jurisdiction-packages/jurisdiction_sample_data`;
 
   function onSelectedFileChange(e: ChangeEvent<HTMLInputElement>) {

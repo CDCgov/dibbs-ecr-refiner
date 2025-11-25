@@ -8,6 +8,9 @@ services:
     command: sh -c "npm i && npm run dev"
     ports:
       - "8081:8081"
+    environment:
+      - VITE_ENV
+      - VITE_GIT_BRANCH
     depends_on:
       - refiner-service
   refiner-service:
