@@ -76,6 +76,8 @@ jobs:
         run: npm test
   run-e2e-tests:
     runs-on: ubuntu-latest
+    env:
+      VITE_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -103,11 +105,6 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
         working-directory: client
-      - name: Create .env file for docker compose
-        run: |
-          echo "VITE_ENV=prod" > .env
-          echo "VITE_GIT_BRANCH=${{ github.head_ref || github.ref_name }}" >> .env
-          echo "ENV=prod" >> .env
       - name: Start Application
         run: just dev up --detach
       - name: Migrate Database
