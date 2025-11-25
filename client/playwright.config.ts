@@ -26,7 +26,8 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:8081',
-    reuseExistingServer: !process.env.CI,
+    // always reuse the server if it's already running
+    reuseExistingServer: true,
     env: {
       // if VITE_ENV is undefined, default to an empty string ''
       VITE_ENV: process.env.VITE_ENV ?? '',
