@@ -698,6 +698,7 @@ async def update_section_processing_db(
     Args:
         config: The configuration to update
         section_updates: List of section updates with code and action
+        user_id: ID of the user
         db: Database connection
 
     Returns:
