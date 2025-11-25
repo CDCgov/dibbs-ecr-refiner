@@ -781,6 +781,16 @@ async def update_section_processing_db(
         for sp in config.section_processing
     ]
 
+    # Deduplicate existing sections by code (keep the first occurrence)
+    seen = set()
+    deduped_sections = []
+    for sec in existing_sections:
+        if sec["code"] not in seen:
+            deduped_sections.append(sec)
+            seen.add(sec["code"])
+
+    existing_sections = deduped_sections
+
     updated_sections = []
     section_events = []
 
@@ -828,13 +838,17 @@ async def update_section_processing_db(
             RETURNING
                 id,
                 name,
+                status,
                 jurisdiction_id,
                 condition_id,
                 included_conditions,
                 custom_codes,
                 local_codes,
                 section_processing,
-                version
+                version,
+                last_activated_at,
+                last_activated_by,
+                condition_canonical_url
             ;
             """
 
