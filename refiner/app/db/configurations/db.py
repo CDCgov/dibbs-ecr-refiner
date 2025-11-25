@@ -785,9 +785,9 @@ async def update_section_processing_db(
     seen = set()
     deduped_sections = []
     for sec in existing_sections:
-        if sec["code"] not in seen:
+        if sec["name"] not in seen:
             deduped_sections.append(sec)
-            seen.add(sec["code"])
+            seen.add(sec["name"])
 
     existing_sections = deduped_sections
 
@@ -848,8 +848,7 @@ async def update_section_processing_db(
                 version,
                 last_activated_at,
                 last_activated_by,
-                condition_canonical_url
-            ;
+                condition_canonical_url;
             """
 
     params = (Jsonb(updated_sections), config.id)
