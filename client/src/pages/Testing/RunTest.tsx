@@ -21,6 +21,11 @@ export function RunTest({
 }: RunTestProps) {
   const env = useGetEnv();
 
+  console.log(
+    'DEBUG: Value of import.meta.env.VITE_GIT_BRANCH is:',
+    import.meta.env.VITE_GIT_BRANCH
+  );
+
   // if we are in ci, use the dynamic branch name
   // if we are local, this will be undefined
   const dynamicBranch = import.meta.env.VITE_GIT_BRANCH;

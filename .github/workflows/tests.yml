@@ -110,8 +110,6 @@ jobs:
         run: npx playwright install --with-deps
         working-directory: client
       - name: Start Application
-        # the 'just dev up' command will now run in a context where
-        # VITE_GIT_BRANCH is set, and the vite dev server will pick it up
         run: just dev up --detach
       - name: Migrate Database
         run: |
@@ -120,10 +118,7 @@ jobs:
       - name: Seed Database
         run: just db seed
       - name: Run Playwright E2E Tests
-        run: |
-          echo "CI runner sees VITE_GIT_BRANCH as: [${{ env.VITE_GIT_BRANCH }}]"
-          echo "CI runner sees VITE_ENV as: [${{ env.VITE_ENV }}]"
-          just client run e2e
+        run: just client run e2e
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
