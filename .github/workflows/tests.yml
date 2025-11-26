@@ -76,6 +76,8 @@ jobs:
         run: npm test
   run-e2e-tests:
     runs-on: ubuntu-latest
+    env:
+      VITE_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
