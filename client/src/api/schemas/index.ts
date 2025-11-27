@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './activateConfigurationParams';
 export * from './addCustomCodeInput';
 export * from './addCustomCodeInputSystem';
 export * from './associateCodesetInput';
@@ -18,6 +19,7 @@ export * from './bodyUploadEcrUploadedFile';
 export * from './condition';
 export * from './conditionEntry';
 export * from './configurationCustomCodeResponse';
+export * from './configurationStatusUpdateResponse';
 export * from './configurationTestResponse';
 export * from './configurationTrace';
 export * from './createConfigInput';
