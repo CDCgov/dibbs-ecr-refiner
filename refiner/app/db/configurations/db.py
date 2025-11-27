@@ -1,9 +1,14 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from psycopg.errors import UniqueViolation
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
+from app.core.exceptions import (
+    ConfigurationActivationConflictError,
+    ResourceNotFoundError,
+)
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 
@@ -883,6 +888,7 @@ class GetConfigurationResponseVersion:
 
     id: UUID
     version: int
+    canonical_url: str
     status: DbConfigurationStatus
 
 
@@ -927,6 +933,46 @@ async def get_latest_config_db(
     return configs[0]
 
 
+async def get_active_config_db(
+    jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Given a jurisdiction ID and condition canonical URL, find the active configuration version, if any.
+    """
+    query = """
+        SELECT
+            id,
+            name,
+			status,
+            jurisdiction_id,
+            condition_id,
+            included_conditions,
+            custom_codes,
+            local_codes,
+            section_processing,
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url
+        FROM configurations
+        WHERE jurisdiction_id = %s
+        AND condition_canonical_url = %s
+        AND status = 'active';
+    """
+    params = (jurisdiction_id, condition_canonical_url)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    configs = [DbConfiguration.from_db_row(row) for row in rows]
+
+    if len(configs) < 1:
+        return None
+
+    return configs[0]
+
+
 async def get_configuration_versions_db(
     jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
 ) -> list[GetConfigurationResponseVersion]:
@@ -934,7 +980,7 @@ async def get_configuration_versions_db(
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
     query = """
-        SELECT id, version, status
+        SELECT id, version, status, condition_canonical_url AS "canonical_url"
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -950,3 +996,82 @@ async def get_configuration_versions_db(
             rows = await cur.fetchall()
 
     return rows
+
+
+async def activate_configuration_db(
+    configuration_id: UUID, db: AsyncDatabaseConnection
+) -> GetConfigurationResponseVersion:
+    """
+    Activate the specified configuration and return relevant status info.
+    """
+    query = """
+        UPDATE configurations
+        SET status = 'active'
+        WHERE id = %s
+        RETURNING
+            id,
+            version,
+            status,
+            condition_canonical_url AS "canonical_url";
+    """
+
+    params = (configuration_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(
+            row_factory=class_row(GetConfigurationResponseVersion)
+        ) as cur:
+            try:
+                await cur.execute(query, params)
+                row = await cur.fetchone()
+
+                if not row:
+                    raise ResourceNotFoundError(
+                        "No configuration found with specified ID"
+                    )
+            except UniqueViolation:
+                raise ConfigurationActivationConflictError(
+                    "Trying to activate a configuration when one is already active within that canonical url family"
+                )
+
+    return GetConfigurationResponseVersion(
+        id=row.id,
+        version=row.version,
+        status=row.status,
+        canonical_url=row.canonical_url,
+    )
+
+
+async def deactivate_configuration_db(
+    configuration_id: UUID, db: AsyncDatabaseConnection
+) -> GetConfigurationResponseVersion:
+    """
+    Deactivate the specified configuration and return relevant status info.
+    """
+    query = """
+        UPDATE configurations
+        SET status = 'inactive'
+        WHERE id = %s
+        RETURNING
+            id,
+            version,
+            status,
+            condition_canonical_url AS "canonical_url";
+    """
+
+    params = (configuration_id,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(
+            row_factory=class_row(GetConfigurationResponseVersion)
+        ) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+            if not row:
+                raise ResourceNotFoundError("No configuration found with specified ID")
+
+    return GetConfigurationResponseVersion(
+        id=row.id,
+        version=row.version,
+        status=row.status,
+        canonical_url=row.canonical_url,
+    )

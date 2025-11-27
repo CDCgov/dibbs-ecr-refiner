@@ -32,7 +32,7 @@ def make_db_condition_coding(code, display):
 
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=UUID("5deb43c2-6a82-4052-9918-616e01d255c7"),
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -131,7 +131,10 @@ def mock_db_functions(monkeypatch):
 
     versions_mock = [
         GetConfigurationResponseVersion(
-            id=UUID("11111111-1111-1111-1111-111111111111"), status="draft", version=1
+            id=UUID("11111111-1111-1111-1111-111111111111"),
+            status="draft",
+            version=1,
+            canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         )
     ]
 

@@ -23,7 +23,9 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
 from app.core.exceptions import (
+    ConfigurationActivationConflictError,
     FileProcessingError,
+    ResourceNotFoundError,
     XMLValidationError,
     ZipValidationError,
 )
@@ -53,11 +55,14 @@ from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
     SectionUpdate,
+    activate_configuration_db,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
+    deactivate_configuration_db,
     delete_custom_code_from_configuration_db,
     disassociate_condition_codeset_with_configuration_db,
     edit_custom_code_from_configuration_db,
+    get_active_config_db,
     get_configuration_by_id_db,
     get_configuration_versions_db,
     get_configurations_db,
@@ -291,6 +296,7 @@ class GetConfigurationResponse:
     draft_id: UUID | None
     is_draft: bool
     condition_id: UUID
+    canonical_url: str
     display_name: str
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
@@ -421,6 +427,7 @@ async def get_configuration(
         draft_id=draft_id,
         is_draft=is_draft,
         condition_id=config.condition_id,
+        canonical_url=config.condition_canonical_url,
         display_name=config.name,
         status=config.status,
         code_sets=config_condition_info,
@@ -1440,3 +1447,126 @@ async def update_section_processing(
         )
 
     return UpdateSectionProcessingResponse(message="Section processed successfully.")
+
+
+@dataclass(frozen=True)
+class ConfigurationStatusUpdateResponse:
+    """
+    Response model for activating a configuration.
+    """
+
+    configuration_id: UUID
+    version: int
+    canonical_url: str
+
+
+@router.patch(
+    "/{configuration_id}/activate-configuration",
+    response_model=ConfigurationStatusUpdateResponse,
+    tags=["configurations"],
+    operation_id="activateConfiguration",
+)
+async def activate_configuration(
+    configuration_id: UUID,
+    canonical_url: str,
+    db: AsyncDatabaseConnection = Depends(get_db),
+    user: DbUser = Depends(get_logged_in_user),
+) -> ConfigurationStatusUpdateResponse:
+    """
+    Activate the specified configuration.
+
+    Args:
+        configuration_id (UUID): ID of the configuration to update
+        canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): Database connection
+
+    Raises:
+        HTTPException: 500 if configuration can't be activated
+
+    Returns:
+        ActivateConfigurationResponse: Metadata about the activated condition for confirmation
+    """
+    active_configuration = await get_active_config_db(
+        jurisdiction_id=user.jurisdiction_id,
+        condition_canonical_url=canonical_url,
+        db=db,
+    )
+    try:
+        if active_configuration and active_configuration.id is not configuration_id:
+            await deactivate_configuration_db(
+                configuration_id=active_configuration.id, db=db
+            )
+
+        active_config = await activate_configuration_db(
+            configuration_id=configuration_id, db=db
+        )
+        if not active_config:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Condition can't be activated.",
+            )
+
+    except ResourceNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Condition can't be found.",
+        )
+    except ConfigurationActivationConflictError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Condition can't be activated because another one for that condition is already active.",
+        )
+
+    return ConfigurationStatusUpdateResponse(
+        configuration_id=active_config.id,
+        version=active_config.version,
+        canonical_url=active_config.canonical_url,
+    )
+
+
+@router.patch(
+    "/{configuration_id}/deactivate-configuration",
+    response_model=ConfigurationStatusUpdateResponse,
+    tags=["configurations"],
+    operation_id="deactivateConfiguration",
+)
+async def deactivate_configuration(
+    configuration_id: UUID,
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> ConfigurationStatusUpdateResponse:
+    """
+        Deactivate the specified configuration.
+
+    Args:
+        configuration_id (UUID): ID of the configuration to update
+        canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): Database connection
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 500 if configuration can't be deactivated
+
+    Returns:
+        ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
+    """
+    try:
+        deactivated_config = await deactivate_configuration_db(
+            configuration_id=configuration_id, db=db
+        )
+    except ResourceNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Condition can't be found.",
+        )
+    if not deactivated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Condition can't be deactivated.",
+        )
+    return ConfigurationStatusUpdateResponse(
+        configuration_id=deactivated_config.id,
+        version=deactivated_config.version,
+        canonical_url=deactivated_config.canonical_url,
+    )
