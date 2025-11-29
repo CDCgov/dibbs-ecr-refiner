@@ -117,7 +117,10 @@ async def test_update_section_processing_valid():
     ]
 
     updated_config = await update_section_processing_db(
-        config=mock_config, section_updates=section_updates, db=fake_db
+        config=mock_config,
+        section_updates=section_updates,
+        user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
+        db=fake_db,
     )
 
     # Assert updates were applied
@@ -168,7 +171,10 @@ async def test_update_section_processing_invalid_action():
         ValueError, match="Invalid action 'invalid_action' for section update."
     ):
         await update_section_processing_db(
-            config=mock_config, section_updates=section_updates, db=_FakeDB(row=None)
+            config=mock_config,
+            section_updates=section_updates,
+            user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
+            db=_FakeDB(row=None),
         )
 
 
@@ -228,7 +234,10 @@ async def test_update_section_processing_unknown_code():
     ]
 
     updated_config = await update_section_processing_db(
-        config=mock_config, section_updates=section_updates, db=fake_db
+        config=mock_config,
+        section_updates=section_updates,
+        user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
+        db=fake_db,
     )
 
     # Assert existing entries remain unchanged
