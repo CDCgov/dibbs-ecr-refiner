@@ -1,54 +1,49 @@
 # Refiner Scripts
 
-This directory now contains all scripts and resources for managing the DIBBS eCR Refiner database seeding, TES data pipeline operations, maintenance checks, and exports. The organization is designed to provide a complete, self-contained environment for building, running, and maintaining the PostgreSQL database used by the Refiner application.
+This directory contains all scripts and resources for managing the DIBBS eCR Refiner database seeding, maintenance, validation workflows, and exports. The organization is shaped to keep app-facing data, foundational test sources, validation logic, and pipeline operations clearly separated.
 
-Below you'll find an overview of the high-level structure, directory purposes, and a guide to getting started.
+Below is an overview of the high-level directory structure and a guide to getting started with local development and validation.
 
 ## Directory Structure
 
-**Current file tree:**
-
 ```
 .
-├── data
-│   ├── seeding
-│   │   └── sample_configuration_seed_data.json
-│   └── tes
-│       ├── additional_context_grouper_2.0.0.json
-│       ├── additional_context_grouper_3.0.0.json
-│       ├── condition_grouper_1.0.0.json
-│       ├── condition_grouper_2.0.0.json
-│       ├── condition_grouper_3.0.0.json
-│       ├── manifest.json
-│       ├── reporting_spec_grouper_20241008.json
-│       ├── reporting_spec_grouper_20250328.json
-│       └── reporting_spec_grouper_20250829.json
-├── exports
-│   ├── export_groupers.py
-│   └── tes-export-groupers-2025-09-24.csv
-├── maintenance
-│   ├── check_seeded_db.py
-│   └── validate_parsing.py
-├── pipeline
-│   ├── detect_changes.py
-│   ├── fetch_api_data.py
-│   └── __init__.py
-├── README.md
-└── seeding
-    └── seed_db.py
+├── data/
+│   ├── source-ecr-files/
+│   ├── source-tes-groupers/
+│   ├── jurisdiction-packages/
+│   └── sample-configurations/
+├── exports/
+│   ├── export_groupers.py
+│   └── tes-export-groupers-*.csv
+├── maintenance/
+│   ├── check_seeded_db.py
+│   └── validate_parsing.py
+├── pipeline/
+│   ├── detect_changes.py
+│   ├── fetch_api_data.py
+│   └── __init__.py
+├── seeding/
+│   └── seed_db.py
+├── validation/
+│   ├── generate_xslt_from_sch.py
+│   ├── validate_source_data.py
+│   └── [validation artifacts, schematron, etc.]
+└── README.md
 ```
 
-## Directory Purpose Table
+### Directory Purposes
 
-| directory      | purpose                                                                                                               | contains                                                              |
-| -------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `data`         | Data required to seed the db (e.g., `conditions` table) and test data for app actions (e.g., `configurations`)        | `tes` and `seeding`                                                   |
-| `data/seeding` | Flat files for seeding realistic test data (configurations, users, jurisdictions) matching test files used by the app | Sample configuration seed data, sample user or jurisdiction seed data |
-| `data/tes`     | Flat files for each CG, RSG, and ACG by version, plus `manifest.json` with checksums to track updates from TES API    | `manifest.json`, TES API-downloaded JSON files                        |
-| `exports`      | Ephemeral scripts and data for internal/client engagements to help illustrate or explain database relationships       | Scripts to understand CG-RSG relationships, CSV outputs               |
-| `maintenance`  | Sanity/preflight checks (not quite unit/integration tests) to validate data structure and post-seeding relationships  | Scripts for data structure validation, seeded DB relationship checks  |
-| `pipeline`     | Scripts to check for TES updates, download new files, and compute hashes to detect changes                            | Scripts for update detection, TES downloads                           |
-| `seeding`      | Database seeding script and related resources (SQL, Python), including gitignored data                                | Seeding script, seed-data SQL                                         |
+| Directory      | Purpose / Contents                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `data/`        | All data used by scripts. Includes raw source eICR/RR files, TES groupers, config samples, and generated packages. |
+| `exports/`     | Scripts and ephemeral output for internal/client engagement (e.g., CSVs, CG-RSG relationships, etc).               |
+| `maintenance/` | Sanity and integrity checks for DB/data (structure, relationship validation, etc).                                 |
+| `pipeline/`    | Update-detection, download, and hash scripts for TES and related artifacts.                                        |
+| `seeding/`     | Main logic and scripts for database seeding, typically called through orchestration/just commands.                 |
+| `validation/`  | HL7 eICR/RR document validation engine, including Schematron, XSLT, and automation scripts.                        |
+
+---
 
 ## Local Development Workflow
 
@@ -56,6 +51,7 @@ Below you'll find an overview of the high-level structure, directory purposes, a
 
 - Docker and Docker Compose
 - Python 3.13 & `pip`
+- (Recommended) `just` command runner for scripted workflows/helpers
 
 ### Step 1: Install Dependencies
 
@@ -129,7 +125,7 @@ just db check-seeding
 
 The script `validate_parsing.py` is designed to run **after** you've run the TES pipeline and there are changes to the `manifest.json` file. This script will check that the structure is unchanged.
 
-#### Additional `just` utility commands:
+#### Additional `just` utility commands
 
 ```bash
 # schema for all tables and an individual table

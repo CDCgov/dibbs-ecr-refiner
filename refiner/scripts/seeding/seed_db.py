@@ -18,7 +18,7 @@ logging.basicConfig(
 SEEDING_DIR = Path(__file__).parent
 SCRIPTS_DIR = SEEDING_DIR.parent
 DATA_DIR = SCRIPTS_DIR / "data"
-TES_DATA_DIR = DATA_DIR / "tes"
+TES_DATA_DIR = DATA_DIR / "source-tes-groupers"
 SEEDING_DATA_DIR = DATA_DIR / "seeding"
 ENV_PATH = SCRIPTS_DIR / ".env"
 

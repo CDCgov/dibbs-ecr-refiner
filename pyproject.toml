@@ -1,7 +1,14 @@
 [tool.ruff]
 # core configuration
 # - skip checking these directories/files
-exclude = [".git", ".pytest_cache", "__pycache__", "docs", "examples/", "refiner/openapi.json"]
+exclude = [
+  ".git",
+  ".pytest_cache",
+  "__pycache__",
+  "docs",
+  "examples/",
+  "refiner/openapi.json",
+]
 # - match black's default line length
 line-length = 88
 indent-width = 4
@@ -89,12 +96,7 @@ keep-runtime-typing = true
 
 # mypy type checking
 [tool.mypy]
-files = [
-  "app/**/*.py",
-  # turn these on after we've moved the database out of refiner/
-  # "database/pipeline/**/*.py",
-  # "database/scripts/**/*.py"
-]
+files = ["app/**/*.py"]
 
 # centralize all pytest configration
 # * where python unit tests are located
