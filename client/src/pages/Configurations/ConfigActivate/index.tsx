@@ -54,8 +54,8 @@ export function ConfigActivate() {
     activate(
       {
         configurationId: configuration.data.id,
-        params: {
-          canonical_url: configuration.data.canonical_url,
+        data: {
+          condition_canonical_url: configuration.data.canonical_url,
         },
       },
       {
