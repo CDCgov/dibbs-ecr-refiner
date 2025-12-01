@@ -30,8 +30,20 @@ const mockCustomCodes: DbConfigurationCustomCode[] = [
 ];
 
 const mockVersions: GetConfigurationResponseVersion[] = [
-  { id: 'config-id', version: 2, status: 'draft' },
-  { id: 'prev-id', version: 1, status: 'inactive' },
+  {
+    id: 'config-id',
+    version: 2,
+    status: 'draft',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  },
+  {
+    id: 'prev-id',
+    version: 1,
+    status: 'inactive',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  },
 ];
 
 const baseMockConfig: GetConfigurationResponse = {
@@ -50,6 +62,7 @@ const baseMockConfig: GetConfigurationResponse = {
   version: 2,
   active_version: null,
   latest_version: 2,
+  canonical_url: 'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
 };
 
 // Mock configurations request
