@@ -1498,12 +1498,12 @@ async def activate_configuration(
     Returns:
         ActivateConfigurationResponse: Metadata about the activated condition for confirmation
     """
-
     active_configuration = await get_active_config_db(
         jurisdiction_id=user.jurisdiction_id,
         condition_canonical_url=body.condition_canonical_url,
         db=db,
     )
+
     try:
         if active_configuration and active_configuration.id is not configuration_id:
             await deactivate_configuration_db(
