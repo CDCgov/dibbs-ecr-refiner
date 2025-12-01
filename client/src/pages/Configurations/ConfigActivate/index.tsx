@@ -19,8 +19,8 @@ import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { Status } from '../ConfigBuild/Status';
 import { useToast } from '../../../hooks/useToast';
 import { GetConfigurationResponse } from '../../../api/schemas';
-import { ActivationButtons } from './ActivationButtons';
 import { QueryClient, useQueryClient } from '@tanstack/react-query';
+import { ActivationButtons } from './ActivationButtons';
 
 export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
