@@ -888,7 +888,7 @@ class GetConfigurationResponseVersion:
 
     id: UUID
     version: int
-    canonical_url: str
+    condition_canonical_url: str
     status: DbConfigurationStatus
 
 
@@ -1012,7 +1012,7 @@ async def activate_configuration_db(
             id,
             version,
             status,
-            condition_canonical_url AS "canonical_url";
+            condition_canonical_url";
     """
 
     params = (configuration_id,)
@@ -1037,7 +1037,7 @@ async def activate_configuration_db(
         id=row.id,
         version=row.version,
         status=row.status,
-        canonical_url=row.canonical_url,
+        condition_canonical_url=row.condition_canonical_url,
     )
 
 
@@ -1055,7 +1055,7 @@ async def deactivate_configuration_db(
             id,
             version,
             status,
-            condition_canonical_url AS "canonical_url";
+            condition_canonical_url;
     """
 
     params = (configuration_id,)
@@ -1073,5 +1073,5 @@ async def deactivate_configuration_db(
         id=row.id,
         version=row.version,
         status=row.status,
-        canonical_url=row.canonical_url,
+        condition_canonical_url=row.condition_canonical_url,
     )

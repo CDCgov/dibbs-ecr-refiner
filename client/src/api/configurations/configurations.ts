@@ -36,7 +36,9 @@ import type {
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  ConfigurationActivationInput,
   ConfigurationCustomCodeResponse,
+  ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
   CreateConfigInput,
   CreateConfigurationResponse,
@@ -946,6 +948,156 @@ export const useUpdateConfigurationSectionProcessing = <TError = AxiosError<HTTP
       > => {
 
       const mutationOptions = getUpdateConfigurationSectionProcessingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Activate the specified configuration.
+
+Args:
+    configuration_id (UUID): ID of the configuration to update
+    body (ConfigurationActivationInput): Input for the activation, which includes
+        condition_canonical_url: used to deconflict / deactivate any sibling configurations
+    user (DbUser): The logged-in user
+    db (AsyncDatabaseConnection): Database connection
+
+Raises:
+    HTTPException: 500 if configuration can't be activated
+
+Returns:
+    ActivateConfigurationResponse: Metadata about the activated condition for confirmation
+ * @summary Activate Configuration
+ */
+export const activateConfiguration = (
+    configurationId: string,
+    configurationActivationInput: ConfigurationActivationInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ConfigurationStatusUpdateResponse>> => {
+    
+    
+    return axios.default.patch(
+      `/api/v1/configurations/${configurationId}/activate-configuration`,
+      configurationActivationInput,options
+    );
+  }
+
+
+
+export const getActivateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string;data: ConfigurationActivationInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string;data: ConfigurationActivationInput}, TContext> => {
+
+const mutationKey = ['activateConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateConfiguration>>, {configurationId: string;data: ConfigurationActivationInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  activateConfiguration(configurationId,data,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof activateConfiguration>>>
+    export type ActivateConfigurationMutationBody = ConfigurationActivationInput
+    export type ActivateConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Activate Configuration
+ */
+export const useActivateConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string;data: ConfigurationActivationInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof activateConfiguration>>,
+        TError,
+        {configurationId: string;data: ConfigurationActivationInput},
+        TContext
+      > => {
+
+      const mutationOptions = getActivateConfigurationMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Deactivate the specified configuration.
+
+Args:
+    configuration_id (UUID): ID of the configuration to update
+    canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
+    user (DbUser): The logged-in user
+    db (AsyncDatabaseConnection): Database connection
+
+Raises:
+    HTTPException: 404 if configuration can't be found
+    HTTPException: 500 if configuration can't be deactivated
+
+Returns:
+    ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
+ * @summary Deactivate Configuration
+ */
+export const deactivateConfiguration = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ConfigurationStatusUpdateResponse>> => {
+    
+    
+    return axios.default.patch(
+      `/api/v1/configurations/${configurationId}/deactivate-configuration`,undefined,options
+    );
+  }
+
+
+
+export const getDeactivateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext> => {
+
+const mutationKey = ['deactivateConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateConfiguration>>, {configurationId: string}> = (props) => {
+          const {configurationId} = props ?? {};
+
+          return  deactivateConfiguration(configurationId,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateConfiguration>>>
+    
+    export type DeactivateConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Deactivate Configuration
+ */
+export const useDeactivateConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateConfiguration>>,
+        TError,
+        {configurationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeactivateConfigurationMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }
