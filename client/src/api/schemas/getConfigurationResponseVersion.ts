@@ -10,6 +10,6 @@ import type { GetConfigurationResponseVersionStatus } from './getConfigurationRe
 export interface GetConfigurationResponseVersion {
   id: string;
   version: number;
-  canonical_url: string;
+  condition_canonical_url: string;
   status: GetConfigurationResponseVersionStatus;
 }

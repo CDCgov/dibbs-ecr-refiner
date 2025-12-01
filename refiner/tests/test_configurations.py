@@ -24,6 +24,7 @@ from app.services.testing import InlineTestingResult
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
+MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
 
 
 def make_db_condition_coding(code, display):
@@ -32,7 +33,7 @@ def make_db_condition_coding(code, display):
 
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=MOCK_LOGGED_IN_USER_ID,
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -131,7 +132,10 @@ def mock_db_functions(monkeypatch):
 
     versions_mock = [
         GetConfigurationResponseVersion(
-            id=UUID("11111111-1111-1111-1111-111111111111"), status="draft", version=1
+            id=UUID("11111111-1111-1111-1111-111111111111"),
+            status="draft",
+            version=1,
+            condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         )
     ]
 
@@ -164,6 +168,48 @@ def mock_db_functions(monkeypatch):
     )
 
     # mock associate_condition_codeset_with_configuration_db
+    active_configuration = DbConfiguration(
+        id=UUID("44444444-4444-4444-4444-444444444444"),
+        name="Activated Config",
+        jurisdiction_id="JD-1",
+        condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+        included_conditions=[],
+        custom_codes=[],
+        local_codes=[],
+        section_processing=[],
+        version=1,
+        status="active",
+        last_activated_at=datetime.now(),
+        last_activated_by=MOCK_LOGGED_IN_USER_ID,
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.activate_configuration_db",
+        AsyncMock(return_value=active_configuration),
+    )
+
+    inactive_configuration = DbConfiguration(
+        id=UUID("44444444-4444-4444-4444-444444444444"),
+        name="Activated Config",
+        jurisdiction_id="JD-1",
+        condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+        included_conditions=[],
+        custom_codes=[],
+        local_codes=[],
+        section_processing=[],
+        version=1,
+        status="inactive",
+        last_activated_at=datetime.now(),
+        last_activated_by=MOCK_LOGGED_IN_USER_ID,
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.deactivate_configuration_db",
+        AsyncMock(return_value=inactive_configuration),
+    )
+
+    # mock associate_condition_codeset_with_configuration_db
     assoc_condition = DbConfigurationCondition(
         UUID("22222222-2222-2222-2222-222222222222"),
     )
@@ -180,7 +226,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        condition_canonical_url="https://test.com",
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
 
     monkeypatch.setattr(
@@ -354,7 +400,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        condition_canonical_url="https://test.com",
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
@@ -471,3 +517,74 @@ async def test_inline_allow_custom_zip(test_assets_path, authed_client, monkeypa
     )
 
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_activate_config_no_other_active_config(authed_client, monkeypatch):
+    config_id = "11111111-1111-1111-1111-111111111111"
+    payload = {
+        "condition_canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+    }
+
+    # set the get for active config to none so we just test the activate
+    # flow fallthrough
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_active_config_db",
+        AsyncMock(return_value=None),
+    )
+
+    response = await authed_client.patch(
+        f"/api/v1/configurations/{config_id}/activate-configuration", json=payload
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["status"] == "active"
+
+
+@pytest.mark.asyncio
+async def test_activate_config_other_active_config(authed_client, monkeypatch):
+    config_id = "44444444-4444-4444-4444-444444444444"
+    payload = {
+        "condition_canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+    }
+
+    other_active_configuration = DbConfiguration(
+        id=UUID("11111111-1111-1111-1111-111111111111"),
+        name="Other Active Config",
+        jurisdiction_id="JD-1",
+        condition_id=UUID("22222222-2222-2222-2222-222222222222"),
+        included_conditions=[],
+        custom_codes=[],
+        local_codes=[],
+        section_processing=[],
+        version=1,
+        status="active",
+        last_activated_at=datetime.now(),
+        last_activated_by=MOCK_LOGGED_IN_USER_ID,
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_active_config_db",
+        AsyncMock(return_value=other_active_configuration),
+    )
+
+    response = await authed_client.patch(
+        f"/api/v1/configurations/{config_id}/activate-configuration", json=payload
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["status"] == "active"
+    assert data["configuration_id"] == config_id
+
+
+@pytest.mark.asyncio
+async def test_deactivate_config(authed_client):
+    config_id = "11111111-1111-1111-1111-111111111111"
+
+    response = await authed_client.patch(
+        f"/api/v1/configurations/{config_id}/deactivate-configuration"
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["status"] == "inactive"

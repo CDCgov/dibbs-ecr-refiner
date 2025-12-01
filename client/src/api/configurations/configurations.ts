@@ -5,10 +5,7 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import {
-  useMutation,
-  useQuery
-} from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
@@ -21,22 +18,18 @@ import type {
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
-  UseQueryResult
+  UseQueryResult,
 } from '@tanstack/react-query';
 
 import * as axios from 'axios';
-import type {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import type {
-  ActivateConfigurationParams,
   AddCustomCodeInput,
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
+  ConfigurationActivationInput,
   ConfigurationCustomCodeResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
@@ -47,12 +40,8 @@ import type {
   HTTPValidationError,
   UpdateCustomCodeInput,
   UpdateSectionProcessingPayload,
-  UpdateSectionProcessingResponse
+  UpdateSectionProcessingResponse,
 } from '.././schemas';
-
-
-
-
 
 /**
  * Returns a list of configurations based on the logged-in user.
@@ -62,335 +51,582 @@ Returns:
  * @summary Get Configurations
  */
 export const getConfigurations = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConfigurationsResponse[]>> => {
-    
-    
-    return axios.default.get(
-      `/api/v1/configurations/`,options
-    );
-  }
-
-
-
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<GetConfigurationsResponse[]>> => {
+  return axios.default.get(`/api/v1/configurations/`, options);
+};
 
 export const getGetConfigurationsQueryKey = () => {
-    return [
-    `/api/v1/configurations/`
-    ] as const;
-    }
+  return [`/api/v1/configurations/`] as const;
+};
 
-    
-export const getGetConfigurationsQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
+export const getGetConfigurationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getConfigurations>>,
+  TError = AxiosError<unknown>,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getConfigurations>>,
+      TError,
+      TData
+    >
+  >;
+  axios?: AxiosRequestConfig;
+}) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetConfigurationsQueryKey();
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationsQueryKey();
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getConfigurations>>
+  > = ({ signal }) => getConfigurations({ signal, ...axiosOptions });
 
-  
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getConfigurations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurations>>> = ({ signal }) => getConfigurations({ signal, ...axiosOptions });
+export type GetConfigurationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getConfigurations>>
+>;
+export type GetConfigurationsQueryError = AxiosError<unknown>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetConfigurationsQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurations>>>
-export type GetConfigurationsQueryError = AxiosError<unknown>
-
-
-export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>> & Pick<
+export function useGetConfigurations<
+  TData = Awaited<ReturnType<typeof getConfigurations>>,
+  TError = AxiosError<unknown>,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfigurations>>,
           TError,
           Awaited<ReturnType<typeof getConfigurations>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetConfigurations<
+  TData = Awaited<ReturnType<typeof getConfigurations>>,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfigurations>>,
           TError,
           Awaited<ReturnType<typeof getConfigurations>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetConfigurations<
+  TData = Awaited<ReturnType<typeof getConfigurations>>,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurations>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get Configurations
  */
 
-export function useGetConfigurations<TData = Awaited<ReturnType<typeof getConfigurations>>, TError = AxiosError<unknown>>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurations>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetConfigurations<
+  TData = Awaited<ReturnType<typeof getConfigurations>>,
+  TError = AxiosError<unknown>,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurations>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetConfigurationsQueryOptions(options);
 
-  const queryOptions = getGetConfigurationsQueryOptions(options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
-
-
-
 
 /**
  * Create a new configuration for a jurisdiction.
  * @summary Create Configuration
  */
 export const createConfiguration = (
-    createConfigInput: CreateConfigInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CreateConfigurationResponse>> => {
-    
-    
-    return axios.default.post(
-      `/api/v1/configurations/`,
-      createConfigInput,options
-    );
-  }
+  createConfigInput: CreateConfigInput,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<CreateConfigurationResponse>> => {
+  return axios.default.post(
+    `/api/v1/configurations/`,
+    createConfigInput,
+    options
+  );
+};
 
+export const getCreateConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createConfiguration>>,
+    TError,
+    { data: CreateConfigInput },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createConfiguration>>,
+  TError,
+  { data: CreateConfigInput },
+  TContext
+> => {
+  const mutationKey = ['createConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createConfiguration>>,
+    { data: CreateConfigInput }
+  > = (props) => {
+    const { data } = props ?? {};
 
-export const getCreateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConfiguration>>, TError,{data: CreateConfigInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof createConfiguration>>, TError,{data: CreateConfigInput}, TContext> => {
+    return createConfiguration(data, axiosOptions);
+  };
 
-const mutationKey = ['createConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type CreateConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createConfiguration>>
+>;
+export type CreateConfigurationMutationBody = CreateConfigInput;
+export type CreateConfigurationMutationError = AxiosError<HTTPValidationError>;
 
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createConfiguration>>, {data: CreateConfigInput}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createConfiguration(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreateConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof createConfiguration>>>
-    export type CreateConfigurationMutationBody = CreateConfigInput
-    export type CreateConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Create Configuration
  */
-export const useCreateConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createConfiguration>>, TError,{data: CreateConfigInput}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof createConfiguration>>,
-        TError,
-        {data: CreateConfigInput},
-        TContext
-      > => {
+export const useCreateConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createConfiguration>>,
+      TError,
+      { data: CreateConfigInput },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof createConfiguration>>,
+  TError,
+  { data: CreateConfigInput },
+  TContext
+> => {
+  const mutationOptions = getCreateConfigurationMutationOptions(options);
 
-      const mutationOptions = getCreateConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Get a single configuration by its ID including all associated conditions.
  * @summary Get Configuration
  */
 export const getConfiguration = (
-    configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetConfigurationResponse>> => {
-    
-    
-    return axios.default.get(
-      `/api/v1/configurations/${configurationId}`,options
-    );
+  configurationId: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<GetConfigurationResponse>> => {
+  return axios.default.get(
+    `/api/v1/configurations/${configurationId}`,
+    options
+  );
+};
+
+export const getGetConfigurationQueryKey = (configurationId?: string) => {
+  return [`/api/v1/configurations/${configurationId}`] as const;
+};
+
+export const getGetConfigurationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getConfiguration>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfiguration>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
   }
-
-
-
-
-export const getGetConfigurationQueryKey = (configurationId?: string,) => {
-    return [
-    `/api/v1/configurations/${configurationId}`
-    ] as const;
-    }
-
-    
-export const getGetConfigurationQueryOptions = <TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey =
+    queryOptions?.queryKey ?? getGetConfigurationQueryKey(configurationId);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationQueryKey(configurationId);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getConfiguration>>
+  > = ({ signal }) =>
+    getConfiguration(configurationId, { signal, ...axiosOptions });
 
-  
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!configurationId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getConfiguration>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfiguration>>> = ({ signal }) => getConfiguration(configurationId, { signal, ...axiosOptions });
+export type GetConfigurationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getConfiguration>>
+>;
+export type GetConfigurationQueryError = AxiosError<HTTPValidationError>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof getConfiguration>>>
-export type GetConfigurationQueryError = AxiosError<HTTPValidationError>
-
-
-export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>> & Pick<
+export function useGetConfiguration<
+  TData = Awaited<ReturnType<typeof getConfiguration>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfiguration>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfiguration>>,
           TError,
           Awaited<ReturnType<typeof getConfiguration>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetConfiguration<
+  TData = Awaited<ReturnType<typeof getConfiguration>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfiguration>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfiguration>>,
           TError,
           Awaited<ReturnType<typeof getConfiguration>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetConfiguration<
+  TData = Awaited<ReturnType<typeof getConfiguration>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfiguration>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get Configuration
  */
 
-export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfiguration>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetConfiguration<
+  TData = Awaited<ReturnType<typeof getConfiguration>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfiguration>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetConfigurationQueryOptions(
+    configurationId,
+    options
+  );
 
-  const queryOptions = getGetConfigurationQueryOptions(configurationId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
-
-
-
 
 /**
  * Create a CSV export of a configuration and all associated codes.
  * @summary Get Configuration Export
  */
 export const getConfigurationExport = (
-    configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.default.get(
-      `/api/v1/configurations/${configurationId}/export`,options
-    );
+  configurationId: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<void>> => {
+  return axios.default.get(
+    `/api/v1/configurations/${configurationId}/export`,
+    options
+  );
+};
+
+export const getGetConfigurationExportQueryKey = (configurationId?: string) => {
+  return [`/api/v1/configurations/${configurationId}/export`] as const;
+};
+
+export const getGetConfigurationExportQueryOptions = <
+  TData = Awaited<ReturnType<typeof getConfigurationExport>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurationExport>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
   }
-
-
-
-
-export const getGetConfigurationExportQueryKey = (configurationId?: string,) => {
-    return [
-    `/api/v1/configurations/${configurationId}/export`
-    ] as const;
-    }
-
-    
-export const getGetConfigurationExportQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
+  const { query: queryOptions, axios: axiosOptions } = options ?? {};
 
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetConfigurationExportQueryKey(configurationId);
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationExportQueryKey(configurationId);
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getConfigurationExport>>
+  > = ({ signal }) =>
+    getConfigurationExport(configurationId, { signal, ...axiosOptions });
 
-  
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!configurationId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getConfigurationExport>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationExport>>> = ({ signal }) => getConfigurationExport(configurationId, { signal, ...axiosOptions });
+export type GetConfigurationExportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getConfigurationExport>>
+>;
+export type GetConfigurationExportQueryError = AxiosError<HTTPValidationError>;
 
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetConfigurationExportQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationExport>>>
-export type GetConfigurationExportQueryError = AxiosError<HTTPValidationError>
-
-
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
+export function useGetConfigurationExport<
+  TData = Awaited<ReturnType<typeof getConfigurationExport>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurationExport>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfigurationExport>>,
           TError,
           Awaited<ReturnType<typeof getConfigurationExport>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
+        >,
+        'initialData'
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetConfigurationExport<
+  TData = Awaited<ReturnType<typeof getConfigurationExport>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurationExport>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getConfigurationExport>>,
           TError,
           Awaited<ReturnType<typeof getConfigurationExport>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+        >,
+        'initialData'
+      >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetConfigurationExport<
+  TData = Awaited<ReturnType<typeof getConfigurationExport>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurationExport>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
 /**
  * @summary Get Configuration Export
  */
 
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+export function useGetConfigurationExport<
+  TData = Awaited<ReturnType<typeof getConfigurationExport>>,
+  TError = AxiosError<HTTPValidationError>,
+>(
+  configurationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getConfigurationExport>>,
+        TError,
+        TData
+      >
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetConfigurationExportQueryOptions(
+    configurationId,
+    options
+  );
 
-  const queryOptions = getGetConfigurationExportQueryOptions(configurationId,options)
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
 
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey ;
+  query.queryKey = queryOptions.queryKey;
 
   return query;
 }
-
-
-
 
 /**
  * Associate a specified code set with the given configuration.
@@ -412,65 +648,96 @@ Returns:
  * @summary Associate Condition Codeset With Configuration
  */
 export const associateConditionWithConfiguration = (
-    configurationId: string,
-    associateCodesetInput: AssociateCodesetInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AssociateCodesetResponse>> => {
-    
-    
-    return axios.default.put(
-      `/api/v1/configurations/${configurationId}/code-sets`,
-      associateCodesetInput,options
+  configurationId: string,
+  associateCodesetInput: AssociateCodesetInput,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<AssociateCodesetResponse>> => {
+  return axios.default.put(
+    `/api/v1/configurations/${configurationId}/code-sets`,
+    associateCodesetInput,
+    options
+  );
+};
+
+export const getAssociateConditionWithConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
+    TError,
+    { configurationId: string; data: AssociateCodesetInput },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
+  TError,
+  { configurationId: string; data: AssociateCodesetInput },
+  TContext
+> => {
+  const mutationKey = ['associateConditionWithConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
+    { configurationId: string; data: AssociateCodesetInput }
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
+
+    return associateConditionWithConfiguration(
+      configurationId,
+      data,
+      axiosOptions
     );
-  }
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type AssociateConditionWithConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof associateConditionWithConfiguration>>
+>;
+export type AssociateConditionWithConfigurationMutationBody =
+  AssociateCodesetInput;
+export type AssociateConditionWithConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-export const getAssociateConditionWithConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext> => {
-
-const mutationKey = ['associateConditionWithConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, {configurationId: string;data: AssociateCodesetInput}> = (props) => {
-          const {configurationId,data} = props ?? {};
-
-          return  associateConditionWithConfiguration(configurationId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AssociateConditionWithConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof associateConditionWithConfiguration>>>
-    export type AssociateConditionWithConfigurationMutationBody = AssociateCodesetInput
-    export type AssociateConditionWithConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Associate Condition Codeset With Configuration
  */
-export const useAssociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof associateConditionWithConfiguration>>, TError,{configurationId: string;data: AssociateCodesetInput}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
-        TError,
-        {configurationId: string;data: AssociateCodesetInput},
-        TContext
-      > => {
+export const useAssociateConditionWithConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
+      TError,
+      { configurationId: string; data: AssociateCodesetInput },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof associateConditionWithConfiguration>>,
+  TError,
+  { configurationId: string; data: AssociateCodesetInput },
+  TContext
+> => {
+  const mutationOptions =
+    getAssociateConditionWithConfigurationMutationOptions(options);
 
-      const mutationOptions = getAssociateConditionWithConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Remove a specified code set from the given configuration.
 
 Args:
@@ -491,64 +758,94 @@ Returns:
  * @summary Remove Condition Codeset From Configuration
  */
 export const disassociateConditionWithConfiguration = (
-    configurationId: string,
-    conditionId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AssociateCodesetResponse>> => {
-    
-    
-    return axios.default.delete(
-      `/api/v1/configurations/${configurationId}/code-sets/${conditionId}`,options
+  configurationId: string,
+  conditionId: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<AssociateCodesetResponse>> => {
+  return axios.default.delete(
+    `/api/v1/configurations/${configurationId}/code-sets/${conditionId}`,
+    options
+  );
+};
+
+export const getDisassociateConditionWithConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
+    TError,
+    { configurationId: string; conditionId: string },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
+  TError,
+  { configurationId: string; conditionId: string },
+  TContext
+> => {
+  const mutationKey = ['disassociateConditionWithConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
+    { configurationId: string; conditionId: string }
+  > = (props) => {
+    const { configurationId, conditionId } = props ?? {};
+
+    return disassociateConditionWithConfiguration(
+      configurationId,
+      conditionId,
+      axiosOptions
     );
-  }
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type DisassociateConditionWithConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>
+>;
 
-export const getDisassociateConditionWithConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext> => {
+export type DisassociateConditionWithConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-const mutationKey = ['disassociateConditionWithConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, {configurationId: string;conditionId: string}> = (props) => {
-          const {configurationId,conditionId} = props ?? {};
-
-          return  disassociateConditionWithConfiguration(configurationId,conditionId,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DisassociateConditionWithConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>>
-    
-    export type DisassociateConditionWithConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Remove Condition Codeset From Configuration
  */
-export const useDisassociateConditionWithConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>, TError,{configurationId: string;conditionId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
-        TError,
-        {configurationId: string;conditionId: string},
-        TContext
-      > => {
+export const useDisassociateConditionWithConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
+      TError,
+      { configurationId: string; conditionId: string },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof disassociateConditionWithConfiguration>>,
+  TError,
+  { configurationId: string; conditionId: string },
+  TContext
+> => {
+  const mutationOptions =
+    getDisassociateConditionWithConfigurationMutationOptions(options);
 
-      const mutationOptions = getDisassociateConditionWithConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Add a user-defined custom code to a configuration.
 
 Args:
@@ -566,65 +863,91 @@ Returns:
  * @summary Add Custom Code
  */
 export const addCustomCodeToConfiguration = (
-    configurationId: string,
-    addCustomCodeInput: AddCustomCodeInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
-    
-    
-    return axios.default.post(
-      `/api/v1/configurations/${configurationId}/custom-codes`,
-      addCustomCodeInput,options
-    );
-  }
+  configurationId: string,
+  addCustomCodeInput: AddCustomCodeInput,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
+  return axios.default.post(
+    `/api/v1/configurations/${configurationId}/custom-codes`,
+    addCustomCodeInput,
+    options
+  );
+};
 
+export const getAddCustomCodeToConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
+    TError,
+    { configurationId: string; data: AddCustomCodeInput },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
+  TError,
+  { configurationId: string; data: AddCustomCodeInput },
+  TContext
+> => {
+  const mutationKey = ['addCustomCodeToConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
+    { configurationId: string; data: AddCustomCodeInput }
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
 
-export const getAddCustomCodeToConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, TError,{configurationId: string;data: AddCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, TError,{configurationId: string;data: AddCustomCodeInput}, TContext> => {
+    return addCustomCodeToConfiguration(configurationId, data, axiosOptions);
+  };
 
-const mutationKey = ['addCustomCodeToConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type AddCustomCodeToConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addCustomCodeToConfiguration>>
+>;
+export type AddCustomCodeToConfigurationMutationBody = AddCustomCodeInput;
+export type AddCustomCodeToConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, {configurationId: string;data: AddCustomCodeInput}> = (props) => {
-          const {configurationId,data} = props ?? {};
-
-          return  addCustomCodeToConfiguration(configurationId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AddCustomCodeToConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>>
-    export type AddCustomCodeToConfigurationMutationBody = AddCustomCodeInput
-    export type AddCustomCodeToConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Add Custom Code
  */
-export const useAddCustomCodeToConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomCodeToConfiguration>>, TError,{configurationId: string;data: AddCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
-        TError,
-        {configurationId: string;data: AddCustomCodeInput},
-        TContext
-      > => {
+export const useAddCustomCodeToConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
+      TError,
+      { configurationId: string; data: AddCustomCodeInput },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof addCustomCodeToConfiguration>>,
+  TError,
+  { configurationId: string; data: AddCustomCodeInput },
+  TContext
+> => {
+  const mutationOptions =
+    getAddCustomCodeToConfigurationMutationOptions(options);
 
-      const mutationOptions = getAddCustomCodeToConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Modify a configuration's custom code based on system/code pair.
 
 Args:
@@ -644,65 +967,91 @@ Returns:
  * @summary Edit Custom Code
  */
 export const editCustomCodeFromConfiguration = (
-    configurationId: string,
-    updateCustomCodeInput: UpdateCustomCodeInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
-    
-    
-    return axios.default.put(
-      `/api/v1/configurations/${configurationId}/custom-codes`,
-      updateCustomCodeInput,options
-    );
-  }
+  configurationId: string,
+  updateCustomCodeInput: UpdateCustomCodeInput,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
+  return axios.default.put(
+    `/api/v1/configurations/${configurationId}/custom-codes`,
+    updateCustomCodeInput,
+    options
+  );
+};
 
+export const getEditCustomCodeFromConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
+    TError,
+    { configurationId: string; data: UpdateCustomCodeInput },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
+  TError,
+  { configurationId: string; data: UpdateCustomCodeInput },
+  TContext
+> => {
+  const mutationKey = ['editCustomCodeFromConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
+    { configurationId: string; data: UpdateCustomCodeInput }
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
 
-export const getEditCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext> => {
+    return editCustomCodeFromConfiguration(configurationId, data, axiosOptions);
+  };
 
-const mutationKey = ['editCustomCodeFromConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type EditCustomCodeFromConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>
+>;
+export type EditCustomCodeFromConfigurationMutationBody = UpdateCustomCodeInput;
+export type EditCustomCodeFromConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, {configurationId: string;data: UpdateCustomCodeInput}> = (props) => {
-          const {configurationId,data} = props ?? {};
-
-          return  editCustomCodeFromConfiguration(configurationId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type EditCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>>
-    export type EditCustomCodeFromConfigurationMutationBody = UpdateCustomCodeInput
-    export type EditCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Edit Custom Code
  */
-export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>, TError,{configurationId: string;data: UpdateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
-        TError,
-        {configurationId: string;data: UpdateCustomCodeInput},
-        TContext
-      > => {
+export const useEditCustomCodeFromConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
+      TError,
+      { configurationId: string; data: UpdateCustomCodeInput },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof editCustomCodeFromConfiguration>>,
+  TError,
+  { configurationId: string; data: UpdateCustomCodeInput },
+  TContext
+> => {
+  const mutationOptions =
+    getEditCustomCodeFromConfigurationMutationOptions(options);
 
-      const mutationOptions = getEditCustomCodeFromConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Delete a custom code from a configuration.
 
 Args:
@@ -723,65 +1072,96 @@ Returns:
  * @summary Delete Custom Code
  */
 export const deleteCustomCodeFromConfiguration = (
-    configurationId: string,
-    system: string,
-    code: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
-    
-    
-    return axios.default.delete(
-      `/api/v1/configurations/${configurationId}/custom-codes/${system}/${code}`,options
+  configurationId: string,
+  system: string,
+  code: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<ConfigurationCustomCodeResponse>> => {
+  return axios.default.delete(
+    `/api/v1/configurations/${configurationId}/custom-codes/${system}/${code}`,
+    options
+  );
+};
+
+export const getDeleteCustomCodeFromConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+    TError,
+    { configurationId: string; system: string; code: string },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+  TError,
+  { configurationId: string; system: string; code: string },
+  TContext
+> => {
+  const mutationKey = ['deleteCustomCodeFromConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+    { configurationId: string; system: string; code: string }
+  > = (props) => {
+    const { configurationId, system, code } = props ?? {};
+
+    return deleteCustomCodeFromConfiguration(
+      configurationId,
+      system,
+      code,
+      axiosOptions
     );
-  }
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type DeleteCustomCodeFromConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>
+>;
 
-export const getDeleteCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext> => {
+export type DeleteCustomCodeFromConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-const mutationKey = ['deleteCustomCodeFromConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, {configurationId: string;system: string;code: string}> = (props) => {
-          const {configurationId,system,code} = props ?? {};
-
-          return  deleteCustomCodeFromConfiguration(configurationId,system,code,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>>
-    
-    export type DeleteCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Delete Custom Code
  */
-export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>, TError,{configurationId: string;system: string;code: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
-        TError,
-        {configurationId: string;system: string;code: string},
-        TContext
-      > => {
+export const useDeleteCustomCodeFromConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+      TError,
+      { configurationId: string; system: string; code: string },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteCustomCodeFromConfiguration>>,
+  TError,
+  { configurationId: string; system: string; code: string },
+  TContext
+> => {
+  const mutationOptions =
+    getDeleteCustomCodeFromConfigurationMutationOptions(options);
 
-      const mutationOptions = getDeleteCustomCodeFromConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Runs an inline test of a given configuration against an eICR/RR pair.
 
 This endpoint orchestrates the validation and refinement process by:
@@ -813,69 +1193,98 @@ Returns:
  * @summary Run Configuration Test
  */
 export const runInlineConfigurationTest = (
-    bodyRunInlineConfigurationTest: BodyRunInlineConfigurationTest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationTestResponse>> => {
-    
-    const formData = new FormData();
-formData.append(`id`, bodyRunInlineConfigurationTest.id)
-if(bodyRunInlineConfigurationTest.uploaded_file !== undefined && bodyRunInlineConfigurationTest.uploaded_file !== null) {
- formData.append(`uploaded_file`, bodyRunInlineConfigurationTest.uploaded_file)
- }
-
-    return axios.default.post(
-      `/api/v1/configurations/test`,
-      formData,options
+  bodyRunInlineConfigurationTest: BodyRunInlineConfigurationTest,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<ConfigurationTestResponse>> => {
+  const formData = new FormData();
+  formData.append(`id`, bodyRunInlineConfigurationTest.id);
+  if (
+    bodyRunInlineConfigurationTest.uploaded_file !== undefined &&
+    bodyRunInlineConfigurationTest.uploaded_file !== null
+  ) {
+    formData.append(
+      `uploaded_file`,
+      bodyRunInlineConfigurationTest.uploaded_file
     );
   }
 
+  return axios.default.post(`/api/v1/configurations/test`, formData, options);
+};
 
+export const getRunInlineConfigurationTestMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+    TError,
+    { data: BodyRunInlineConfigurationTest },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+  TError,
+  { data: BodyRunInlineConfigurationTest },
+  TContext
+> => {
+  const mutationKey = ['runInlineConfigurationTest'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
-export const getRunInlineConfigurationTestMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext> => {
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+    { data: BodyRunInlineConfigurationTest }
+  > = (props) => {
+    const { data } = props ?? {};
 
-const mutationKey = ['runInlineConfigurationTest'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+    return runInlineConfigurationTest(data, axiosOptions);
+  };
 
-      
+  return { mutationFn, ...mutationOptions };
+};
 
+export type RunInlineConfigurationTestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runInlineConfigurationTest>>
+>;
+export type RunInlineConfigurationTestMutationBody =
+  BodyRunInlineConfigurationTest;
+export type RunInlineConfigurationTestMutationError =
+  AxiosError<HTTPValidationError>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runInlineConfigurationTest>>, {data: BodyRunInlineConfigurationTest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  runInlineConfigurationTest(data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type RunInlineConfigurationTestMutationResult = NonNullable<Awaited<ReturnType<typeof runInlineConfigurationTest>>>
-    export type RunInlineConfigurationTestMutationBody = BodyRunInlineConfigurationTest
-    export type RunInlineConfigurationTestMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Run Configuration Test
  */
-export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runInlineConfigurationTest>>, TError,{data: BodyRunInlineConfigurationTest}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof runInlineConfigurationTest>>,
-        TError,
-        {data: BodyRunInlineConfigurationTest},
-        TContext
-      > => {
+export const useRunInlineConfigurationTest = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+      TError,
+      { data: BodyRunInlineConfigurationTest },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof runInlineConfigurationTest>>,
+  TError,
+  { data: BodyRunInlineConfigurationTest },
+  TContext
+> => {
+  const mutationOptions = getRunInlineConfigurationTestMutationOptions(options);
 
-      const mutationOptions = getRunInlineConfigurationTestMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Update one or more section_processing entries for a configuration.
 
 Args:
@@ -893,70 +1302,102 @@ Returns:
  * @summary Update Section Processing
  */
 export const updateConfigurationSectionProcessing = (
-    configurationId: string,
-    updateSectionProcessingPayload: UpdateSectionProcessingPayload, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UpdateSectionProcessingResponse>> => {
-    
-    
-    return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/section-processing`,
-      updateSectionProcessingPayload,options
+  configurationId: string,
+  updateSectionProcessingPayload: UpdateSectionProcessingPayload,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<UpdateSectionProcessingResponse>> => {
+  return axios.default.patch(
+    `/api/v1/configurations/${configurationId}/section-processing`,
+    updateSectionProcessingPayload,
+    options
+  );
+};
+
+export const getUpdateConfigurationSectionProcessingMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
+    TError,
+    { configurationId: string; data: UpdateSectionProcessingPayload },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
+  TError,
+  { configurationId: string; data: UpdateSectionProcessingPayload },
+  TContext
+> => {
+  const mutationKey = ['updateConfigurationSectionProcessing'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
+    { configurationId: string; data: UpdateSectionProcessingPayload }
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
+
+    return updateConfigurationSectionProcessing(
+      configurationId,
+      data,
+      axiosOptions
     );
-  }
+  };
 
+  return { mutationFn, ...mutationOptions };
+};
 
+export type UpdateConfigurationSectionProcessingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>
+>;
+export type UpdateConfigurationSectionProcessingMutationBody =
+  UpdateSectionProcessingPayload;
+export type UpdateConfigurationSectionProcessingMutationError =
+  AxiosError<HTTPValidationError>;
 
-export const getUpdateConfigurationSectionProcessingMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: UpdateSectionProcessingPayload}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: UpdateSectionProcessingPayload}, TContext> => {
-
-const mutationKey = ['updateConfigurationSectionProcessing'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-      
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, {configurationId: string;data: UpdateSectionProcessingPayload}> = (props) => {
-          const {configurationId,data} = props ?? {};
-
-          return  updateConfigurationSectionProcessing(configurationId,data,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type UpdateConfigurationSectionProcessingMutationResult = NonNullable<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>>
-    export type UpdateConfigurationSectionProcessingMutationBody = UpdateSectionProcessingPayload
-    export type UpdateConfigurationSectionProcessingMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Update Section Processing
  */
-export const useUpdateConfigurationSectionProcessing = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: UpdateSectionProcessingPayload}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
-        TError,
-        {configurationId: string;data: UpdateSectionProcessingPayload},
-        TContext
-      > => {
+export const useUpdateConfigurationSectionProcessing = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
+      TError,
+      { configurationId: string; data: UpdateSectionProcessingPayload },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
+  TError,
+  { configurationId: string; data: UpdateSectionProcessingPayload },
+  TContext
+> => {
+  const mutationOptions =
+    getUpdateConfigurationSectionProcessingMutationOptions(options);
 
-      const mutationOptions = getUpdateConfigurationSectionProcessingMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Activate the specified configuration.
 
 Args:
     configuration_id (UUID): ID of the configuration to update
-    canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
+    body (ConfigurationActivationInput): Input for the activation, which includes
+        condition_canonical_url: used to deconflict / deactivate any sibling configurations
     user (DbUser): The logged-in user
     db (AsyncDatabaseConnection): Database connection
 
@@ -968,66 +1409,90 @@ Returns:
  * @summary Activate Configuration
  */
 export const activateConfiguration = (
-    configurationId: string,
-    params: ActivateConfigurationParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationStatusUpdateResponse>> => {
-    
-    
-    return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/activate-configuration`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+  configurationId: string,
+  configurationActivationInput: ConfigurationActivationInput,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<ConfigurationStatusUpdateResponse>> => {
+  return axios.default.patch(
+    `/api/v1/configurations/${configurationId}/activate-configuration`,
+    configurationActivationInput,
+    options
+  );
+};
 
+export const getActivateConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof activateConfiguration>>,
+    TError,
+    { configurationId: string; data: ConfigurationActivationInput },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof activateConfiguration>>,
+  TError,
+  { configurationId: string; data: ConfigurationActivationInput },
+  TContext
+> => {
+  const mutationKey = ['activateConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof activateConfiguration>>,
+    { configurationId: string; data: ConfigurationActivationInput }
+  > = (props) => {
+    const { configurationId, data } = props ?? {};
 
-export const getActivateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string;params: ActivateConfigurationParams}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string;params: ActivateConfigurationParams}, TContext> => {
+    return activateConfiguration(configurationId, data, axiosOptions);
+  };
 
-const mutationKey = ['activateConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type ActivateConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof activateConfiguration>>
+>;
+export type ActivateConfigurationMutationBody = ConfigurationActivationInput;
+export type ActivateConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateConfiguration>>, {configurationId: string;params: ActivateConfigurationParams}> = (props) => {
-          const {configurationId,params} = props ?? {};
-
-          return  activateConfiguration(configurationId,params,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ActivateConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof activateConfiguration>>>
-    
-    export type ActivateConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Activate Configuration
  */
-export const useActivateConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateConfiguration>>, TError,{configurationId: string;params: ActivateConfigurationParams}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof activateConfiguration>>,
-        TError,
-        {configurationId: string;params: ActivateConfigurationParams},
-        TContext
-      > => {
+export const useActivateConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof activateConfiguration>>,
+      TError,
+      { configurationId: string; data: ConfigurationActivationInput },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof activateConfiguration>>,
+  TError,
+  { configurationId: string; data: ConfigurationActivationInput },
+  TContext
+> => {
+  const mutationOptions = getActivateConfigurationMutationOptions(options);
 
-      const mutationOptions = getActivateConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    /**
+  return useMutation(mutationOptions, queryClient);
+};
+/**
  * Deactivate the specified configuration.
 
 Args:
@@ -1045,60 +1510,85 @@ Returns:
  * @summary Deactivate Configuration
  */
 export const deactivateConfiguration = (
-    configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ConfigurationStatusUpdateResponse>> => {
-    
-    
-    return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/deactivate-configuration`,undefined,options
-    );
-  }
+  configurationId: string,
+  options?: AxiosRequestConfig
+): Promise<AxiosResponse<ConfigurationStatusUpdateResponse>> => {
+  return axios.default.patch(
+    `/api/v1/configurations/${configurationId}/deactivate-configuration`,
+    undefined,
+    options
+  );
+};
 
+export const getDeactivateConfigurationMutationOptions = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateConfiguration>>,
+    TError,
+    { configurationId: string },
+    TContext
+  >;
+  axios?: AxiosRequestConfig;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivateConfiguration>>,
+  TError,
+  { configurationId: string },
+  TContext
+> => {
+  const mutationKey = ['deactivateConfiguration'];
+  const { mutation: mutationOptions, axios: axiosOptions } = options
+    ? options.mutation &&
+      'mutationKey' in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, axios: undefined };
 
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivateConfiguration>>,
+    { configurationId: string }
+  > = (props) => {
+    const { configurationId } = props ?? {};
 
-export const getDeactivateConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext> => {
+    return deactivateConfiguration(configurationId, axiosOptions);
+  };
 
-const mutationKey = ['deactivateConfiguration'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
+  return { mutationFn, ...mutationOptions };
+};
 
-      
+export type DeactivateConfigurationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivateConfiguration>>
+>;
 
+export type DeactivateConfigurationMutationError =
+  AxiosError<HTTPValidationError>;
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateConfiguration>>, {configurationId: string}> = (props) => {
-          const {configurationId} = props ?? {};
-
-          return  deactivateConfiguration(configurationId,axiosOptions)
-        }
-
-        
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeactivateConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateConfiguration>>>
-    
-    export type DeactivateConfigurationMutationError = AxiosError<HTTPValidationError>
-
-    /**
+/**
  * @summary Deactivate Configuration
  */
-export const useDeactivateConfiguration = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateConfiguration>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deactivateConfiguration>>,
-        TError,
-        {configurationId: string},
-        TContext
-      > => {
+export const useDeactivateConfiguration = <
+  TError = AxiosError<HTTPValidationError>,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deactivateConfiguration>>,
+      TError,
+      { configurationId: string },
+      TContext
+    >;
+    axios?: AxiosRequestConfig;
+  },
+  queryClient?: QueryClient
+): UseMutationResult<
+  Awaited<ReturnType<typeof deactivateConfiguration>>,
+  TError,
+  { configurationId: string },
+  TContext
+> => {
+  const mutationOptions = getDeactivateConfigurationMutationOptions(options);
 
-      const mutationOptions = getDeactivateConfigurationMutationOptions(options);
-
-      return useMutation(mutationOptions, queryClient);
-    }
-    
+  return useMutation(mutationOptions, queryClient);
+};

@@ -34,13 +34,15 @@ const mockVersions: GetConfigurationResponseVersion[] = [
     id: 'config-id',
     version: 2,
     status: 'draft',
-    canonical_url: 'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
   },
   {
     id: 'prev-id',
     version: 1,
     status: 'inactive',
-    canonical_url: 'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/456',
+    condition_canonical_url:
+      'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
   },
 ];
 
@@ -56,11 +58,11 @@ const baseMockConfig: GetConfigurationResponse = {
   section_processing: [],
   included_conditions: [],
   deduplicated_codes: ['123456'],
-  canonical_url: 'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
   all_versions: mockVersions,
   version: 2,
   active_version: null,
   latest_version: 2,
+  canonical_url: 'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
 };
 
 // Mock configurations request

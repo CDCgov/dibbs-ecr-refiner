@@ -888,7 +888,7 @@ class GetConfigurationResponseVersion:
 
     id: UUID
     version: int
-    canonical_url: str
+    condition_canonical_url: str
     status: DbConfigurationStatus
 
 
@@ -980,7 +980,7 @@ async def get_configuration_versions_db(
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
     query = """
-        SELECT id, version, status, condition_canonical_url AS "canonical_url"
+        SELECT id, version, status, condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -1012,7 +1012,7 @@ async def activate_configuration_db(
             id,
             version,
             status,
-            condition_canonical_url AS "canonical_url";
+            condition_canonical_url;
     """
 
     params = (configuration_id,)
@@ -1037,7 +1037,7 @@ async def activate_configuration_db(
         id=row.id,
         version=row.version,
         status=row.status,
-        canonical_url=row.canonical_url,
+        condition_canonical_url=row.condition_canonical_url,
     )
 
 
@@ -1047,18 +1047,26 @@ async def deactivate_configuration_db(
     """
     Deactivate the specified configuration and return relevant status info.
     """
+
+    # Set configuration to inactive if active, otherwise fallback and return the unupdated configuration
     query = """
-        UPDATE configurations
-        SET status = 'inactive'
+         WITH updated AS (
+            UPDATE configurations
+            SET status = 'inactive'
+            WHERE id = %s
+              AND status = 'active'
+            RETURNING id, version, status, condition_canonical_url
+        )
+        SELECT id, version, status, condition_canonical_url
+        FROM updated
+        UNION ALL
+        SELECT id, version, status, condition_canonical_url
+        FROM configurations
         WHERE id = %s
-        RETURNING
-            id,
-            version,
-            status,
-            condition_canonical_url AS "canonical_url";
+          AND NOT EXISTS (SELECT 1 FROM updated);
     """
 
-    params = (configuration_id,)
+    params = (configuration_id, configuration_id)
     async with db.get_connection() as conn:
         async with conn.cursor(
             row_factory=class_row(GetConfigurationResponseVersion)
@@ -1073,5 +1081,5 @@ async def deactivate_configuration_db(
         id=row.id,
         version=row.version,
         status=row.status,
-        canonical_url=row.canonical_url,
+        condition_canonical_url=row.condition_canonical_url,
     )

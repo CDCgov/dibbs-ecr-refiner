@@ -1452,12 +1452,22 @@ async def update_section_processing(
 @dataclass(frozen=True)
 class ConfigurationStatusUpdateResponse:
     """
-    Response model for activating a configuration.
+    Response model for updating the status a configuration.
     """
 
     configuration_id: UUID
     version: int
-    canonical_url: str
+    condition_canonical_url: str
+    status: DbConfigurationStatus
+
+
+@dataclass(frozen=True)
+class ConfigurationActivationInput(BaseModel):
+    """
+    Input for updating the status a configuration.
+    """
+
+    condition_canonical_url: str
 
 
 @router.patch(
@@ -1468,7 +1478,7 @@ class ConfigurationStatusUpdateResponse:
 )
 async def activate_configuration(
     configuration_id: UUID,
-    canonical_url: str,
+    body: ConfigurationActivationInput,
     db: AsyncDatabaseConnection = Depends(get_db),
     user: DbUser = Depends(get_logged_in_user),
 ) -> ConfigurationStatusUpdateResponse:
@@ -1477,7 +1487,8 @@ async def activate_configuration(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
+        body (ConfigurationActivationInput): Input for the activation, which includes
+            condition_canonical_url: used to deconflict / deactivate any sibling configurations
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
@@ -1489,9 +1500,10 @@ async def activate_configuration(
     """
     active_configuration = await get_active_config_db(
         jurisdiction_id=user.jurisdiction_id,
-        condition_canonical_url=canonical_url,
+        condition_canonical_url=body.condition_canonical_url,
         db=db,
     )
+
     try:
         if active_configuration and active_configuration.id is not configuration_id:
             await deactivate_configuration_db(
@@ -1521,7 +1533,8 @@ async def activate_configuration(
     return ConfigurationStatusUpdateResponse(
         configuration_id=active_config.id,
         version=active_config.version,
-        canonical_url=active_config.canonical_url,
+        condition_canonical_url=active_config.condition_canonical_url,
+        status="active",
     )
 
 
@@ -1568,5 +1581,6 @@ async def deactivate_configuration(
     return ConfigurationStatusUpdateResponse(
         configuration_id=deactivated_config.id,
         version=deactivated_config.version,
-        canonical_url=deactivated_config.canonical_url,
+        condition_canonical_url=deactivated_config.condition_canonical_url,
+        status="inactive",
     )
