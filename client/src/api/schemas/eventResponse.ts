@@ -6,13 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { AuditEvent } from './auditEvent';
-import type { ConfigurationTrace } from './configurationTrace';
+import type { EventFilterOption } from './eventFilterOption';
 
 export interface EventResponse {
   audit_events: AuditEvent[];
-  configuration_options: ConfigurationTrace[];
-  current_page: number;
+  configuration_options: EventFilterOption[];
   total_pages: number;
-  total_count: number;
-  page_size: number;
 }

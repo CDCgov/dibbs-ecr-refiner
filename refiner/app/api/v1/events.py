@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from logging import Logger
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -11,12 +12,22 @@ from app.services.logger import get_logger
 
 from ...db.events.db import (
     AuditEvent,
-    ConfigurationTrace,
     get_event_count_by_condition_db,
     get_events_by_jd_db,
 )
 
 router = APIRouter(prefix="/events")
+
+
+@dataclass
+class EventFilterOption:
+    """
+    Conditions returned to the user to be used for filtering events.
+    """
+
+    id: UUID
+    name: str
+    canonical_url: str
 
 
 @dataclass
@@ -26,12 +37,8 @@ class EventResponse:
     """
 
     audit_events: list[AuditEvent]
-    configuration_options: list[ConfigurationTrace]
-
-    current_page: int
+    configuration_options: list[EventFilterOption]
     total_pages: int
-    total_count: int
-    page_size: int
 
 
 @router.get(
@@ -76,8 +83,8 @@ async def get_events(
             msg="Could not retrieve total event count.",
             extra={
                 "user_id": user.id,
-                "canonical_url": canonical_url,
                 "jurisdiction_id": jd,
+                "canonical_url": canonical_url,
             },
         )
         raise HTTPException(
@@ -98,17 +105,14 @@ async def get_events(
 
     for c in jd_configurations:
         if c.condition_canonical_url not in seen_urls:
-            trace = ConfigurationTrace(
-                name=c.name, id=c.id, cannonical_url=c.condition_canonical_url
+            option = EventFilterOption(
+                name=c.name, id=c.id, canonical_url=c.condition_canonical_url
             )
-            configuration_options.append(trace)
+            configuration_options.append(option)
             seen_urls.add(c.condition_canonical_url)
 
     return EventResponse(
-        current_page=page,
-        page_size=10,
         total_pages=total_pages,
-        total_count=total_event_count,
         audit_events=audit_events,
         configuration_options=configuration_options,
     )

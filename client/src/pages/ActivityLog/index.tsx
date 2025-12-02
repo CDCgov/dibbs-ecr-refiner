@@ -23,10 +23,9 @@ export function ActivityLog() {
   });
 
   if (isPending) return <Spinner variant="centered" />;
-
   if (isError) return 'Error!';
 
-  const { total_pages } = eventResponse.data;
+  const { total_pages, configuration_options } = eventResponse.data;
 
   return (
     <section className="mx-auto p-4">
@@ -49,10 +48,10 @@ export function ActivityLog() {
             <option value={ALL_CONDITIONS_LITERAL}>
               {ALL_CONDITIONS_LITERAL}
             </option>
-            {eventResponse.data.configuration_options.map((c) => {
+            {configuration_options.map(({ canonical_url, name }) => {
               return (
-                <option value={c.cannonical_url} key={c.cannonical_url}>
-                  {c.name}
+                <option value={canonical_url} key={canonical_url}>
+                  {name}
                 </option>
               );
             })}

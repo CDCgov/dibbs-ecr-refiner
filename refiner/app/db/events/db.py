@@ -24,17 +24,6 @@ class AuditEvent:
     created_at: datetime
 
 
-@dataclass(frozen=True)
-class ConfigurationTrace:
-    """
-    The basic identifying information for a Configuration.
-    """
-
-    id: UUID
-    name: str
-    cannonical_url: str
-
-
 async def get_event_count_by_condition_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
