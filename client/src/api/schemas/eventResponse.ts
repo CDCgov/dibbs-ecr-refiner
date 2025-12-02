@@ -11,4 +11,8 @@ import type { ConfigurationTrace } from './configurationTrace';
 export interface EventResponse {
   audit_events: AuditEvent[];
   configuration_options: ConfigurationTrace[];
+  current_page: number;
+  total_pages: number;
+  total_count: number;
+  page_size: number;
 }

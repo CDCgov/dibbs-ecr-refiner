@@ -1,17 +1,37 @@
-from fastapi import APIRouter, Depends
+from dataclasses import dataclass
+from logging import Logger
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.logger import get_logger
 
 from ...db.events.db import (
+    AuditEvent,
     ConfigurationTrace,
-    EventResponse,
+    get_event_count_by_condition_db,
     get_events_by_jd_db,
 )
 
 router = APIRouter(prefix="/events")
+
+
+@dataclass
+class EventResponse:
+    """
+    Response needed for the audit log page.
+    """
+
+    audit_events: list[AuditEvent]
+    configuration_options: list[ConfigurationTrace]
+
+    current_page: int
+    total_pages: int
+    total_count: int
+    page_size: int
 
 
 @router.get(
@@ -23,7 +43,9 @@ router = APIRouter(prefix="/events")
 async def get_events(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-    cannonical_url: str | None = None,
+    logger: Logger = Depends(get_logger),
+    page: int = 1,
+    canonical_url: str | None = None,
 ) -> EventResponse:
     """
     Returns a list of all events for a jurisdiction, ordered from newest to oldest.
@@ -31,7 +53,9 @@ async def get_events(
     Args:
         user (DbUser): The user making the request.
         db (AsyncDatabaseConnection): Database connection.
-        cannonical_url (str | None): An optional filter on the condition.
+        logger (Logger): Standard logger.
+        page (int): page of events to return to the client.
+        canonical_url (str | None): An optional filter on the condition.
 
     Returns:
         EventResponse: A bundle with
@@ -39,13 +63,35 @@ async def get_events(
             - The list of condition information with potentially filter-able data
     """
 
-    audit_events = await get_events_by_jd_db(
-        jurisdiction_id=user.jurisdiction_id, db=db, cannonical_url=cannonical_url
+    PAGE_SIZE = 10
+
+    jd = user.jurisdiction_id
+
+    total_event_count = await get_event_count_by_condition_db(
+        jurisdiction_id=jd, canonical_url=canonical_url, db=db
     )
 
-    jd_configurations = await get_configurations_db(
-        jurisdiction_id=user.jurisdiction_id, db=db
+    if not total_event_count:
+        logger.error(
+            msg="Could not retrieve total event count.",
+            extra={
+                "user_id": user.id,
+                "canonical_url": canonical_url,
+                "jurisdiction_id": jd,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to retrieve audit logs.",
+        )
+
+    total_pages = max((total_event_count + PAGE_SIZE - 1) // PAGE_SIZE, 1)
+
+    audit_events = await get_events_by_jd_db(
+        jurisdiction_id=jd, page=page, db=db, canonical_url=canonical_url
     )
+
+    jd_configurations = await get_configurations_db(jurisdiction_id=jd, db=db)
 
     seen_urls = set()
     configuration_options = []
@@ -59,5 +105,10 @@ async def get_events(
             seen_urls.add(c.condition_canonical_url)
 
     return EventResponse(
-        audit_events=audit_events, configuration_options=configuration_options
+        current_page=page,
+        page_size=10,
+        total_pages=total_pages,
+        total_count=total_event_count,
+        audit_events=audit_events,
+        configuration_options=configuration_options,
     )

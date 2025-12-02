@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import AsyncCursor
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
@@ -35,24 +35,44 @@ class ConfigurationTrace:
     cannonical_url: str
 
 
-@dataclass
-class EventResponse:
+async def get_event_count_by_condition_db(
+    jurisdiction_id: str,
+    db: AsyncDatabaseConnection,
+    canonical_url: str | None = None,
+) -> int | None:
     """
-    Response needed for the audit log page.
+    Gets a count of all events within a jurisdiction by condition.
     """
 
-    audit_events: list[AuditEvent]
-    configuration_options: list[ConfigurationTrace]
+    query = """
+        SELECT COUNT(*) AS total_count
+        FROM events e
+        LEFT JOIN configurations c ON e.configuration_id = c.id
+        WHERE e.jurisdiction_id = %s
+        AND (%s::TEXT is NULL or c.condition_canonical_url = %s);
+    """
+    params = (jurisdiction_id, canonical_url, canonical_url)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
+            return int(row["total_count"])
 
 
 async def get_events_by_jd_db(
     jurisdiction_id: str,
+    page: int,
     db: AsyncDatabaseConnection,
-    cannonical_url: str | None = None,
+    canonical_url: str | None = None,
 ) -> list[AuditEvent]:
     """
-    Fetches all events for a given jurisdiction ID.
+    Fetches all events for a given jurisdiction and condition.
     """
+
+    PAGE_SIZE = 10
+    offset = (page - 1) * PAGE_SIZE
 
     query = """
         SELECT
@@ -67,13 +87,10 @@ async def get_events_by_jd_db(
         LEFT JOIN configurations c ON e.configuration_id = c.id
         WHERE e.jurisdiction_id = %s
         AND (%s::TEXT is NULL or c.condition_canonical_url = %s)
-        ORDER BY e.created_at DESC;
+        ORDER BY e.created_at DESC
+        LIMIT %s OFFSET %s;
     """
-    params = (
-        jurisdiction_id,
-        cannonical_url,
-        cannonical_url,
-    )
+    params = (jurisdiction_id, canonical_url, canonical_url, PAGE_SIZE, offset)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
