@@ -28,7 +28,6 @@ export function ActivityLog() {
 
   const { total_pages } = eventResponse.data;
 
-  console.log(eventResponse.data);
   return (
     <section className="mx-auto p-4">
       <div className="mt-10">
