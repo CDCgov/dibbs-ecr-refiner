@@ -86,7 +86,7 @@ export function ConditionCodeSetListItem({
       {
         onSuccess: async (resp) => {
           showToast({
-            heading: 'Condition removed',
+            heading: 'Condition code set removed',
             body: resp.data.condition_name,
           });
           setIsRefreshingConditionList(true);
