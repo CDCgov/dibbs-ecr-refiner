@@ -2,7 +2,8 @@ CREATE type event_type_enum as ENUM (
     'create_configuration',
     'add_code',
     'delete_code',
-    'edit_code'
+    'edit_code',
+    'section_update'
 );
 
 CREATE TABLE events (

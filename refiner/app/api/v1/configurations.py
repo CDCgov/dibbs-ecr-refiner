@@ -1427,7 +1427,7 @@ async def update_section_processing(
 
     try:
         updated_config = await update_section_processing_db(
-            config=config, section_updates=section_updates, db=db
+            config=config, section_updates=section_updates, user_id=user.id, db=db
         )
     except ValueError as e:
         # DB layer validation error -> bad request
