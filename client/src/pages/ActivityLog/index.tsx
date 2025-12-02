@@ -59,7 +59,7 @@ export function ActivityLog() {
           </Select>
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col">
         <ActivityLogEntries
           filteredLogEntries={eventResponse.data.audit_events}
         />
