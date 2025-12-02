@@ -53,7 +53,7 @@ export function ConditionCodeSetListItem({
       {
         onSuccess: async (resp) => {
           showToast({
-            heading: 'Condition added',
+            heading: 'Condition code set added',
             body: resp.data.condition_name,
           });
 
