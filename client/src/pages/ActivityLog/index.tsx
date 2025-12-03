@@ -63,7 +63,6 @@ export function ActivityLog() {
           filteredLogEntries={eventResponse.data.audit_events}
         />
         <Pagination
-          className="bg-transparent"
           pathname="/events"
           currentPage={selectedPage}
           maxSlots={6}
