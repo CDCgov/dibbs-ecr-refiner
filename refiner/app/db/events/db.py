@@ -53,15 +53,14 @@ async def get_event_count_by_condition_db(
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     page: int,
+    page_size: int,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
 ) -> list[AuditEvent]:
     """
     Fetches all events for a given jurisdiction and condition.
     """
-
-    PAGE_SIZE = 10
-    offset = (page - 1) * PAGE_SIZE
+    offset = (page - 1) * page_size
 
     query = """
         SELECT
@@ -79,7 +78,7 @@ async def get_events_by_jd_db(
         ORDER BY e.created_at DESC
         LIMIT %s OFFSET %s;
     """
-    params = (jurisdiction_id, canonical_url, canonical_url, PAGE_SIZE, offset)
+    params = (jurisdiction_id, canonical_url, canonical_url, page_size, offset)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:

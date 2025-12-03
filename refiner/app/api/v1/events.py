@@ -71,7 +71,6 @@ async def get_events(
     """
 
     PAGE_SIZE = 10
-
     jd = user.jurisdiction_id
 
     total_event_count = await get_event_count_by_condition_db(
@@ -94,8 +93,18 @@ async def get_events(
 
     total_pages = max((total_event_count + PAGE_SIZE - 1) // PAGE_SIZE, 1)
 
+    if page < 1 or page > total_pages:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"'page' must be a number between 1 and {total_pages}.",
+        )
+
     audit_events = await get_events_by_jd_db(
-        jurisdiction_id=jd, page=page, db=db, canonical_url=canonical_url
+        jurisdiction_id=jd,
+        page=page,
+        page_size=PAGE_SIZE,
+        canonical_url=canonical_url,
+        db=db,
     )
 
     jd_configurations = await get_configurations_db(jurisdiction_id=jd, db=db)
