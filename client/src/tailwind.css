@@ -200,16 +200,18 @@
   @apply bg-transparent!;
 }
 
-.usa-pagination__next-page, .usa-pagination__previous-page {
+.usa-pagination__next-page,
+.usa-pagination__previous-page {
   @apply underline! underline-offset-4!;
 }
 
-.usa-pagination__link-text, .usa-pagination__button {
-  @apply text-blue-cool-60!
+.usa-pagination__link-text,
+.usa-pagination__button {
+  @apply text-blue-cool-60!;
 }
 
 .usa-pagination .usa-current {
-  @apply bg-blue-cool-80! text-white!
+  @apply bg-blue-cool-80! text-white!;
 }
 
 .Toastify__toast div {
