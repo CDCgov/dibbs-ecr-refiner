@@ -53,7 +53,7 @@ export function ConfigActivate() {
       {
         configurationId: configuration.data.id,
         data: {
-          condition_canonical_url: configuration.data.canonical_url,
+          condition_canonical_url: configuration.data.condition_canonical_url,
         },
       },
       {
