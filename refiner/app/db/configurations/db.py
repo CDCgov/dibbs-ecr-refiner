@@ -1036,7 +1036,7 @@ async def get_configuration_versions_db(
 
 async def activate_configuration_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
-) -> GetConfigurationResponseVersion:
+) -> GetConfigurationResponseVersion | None:
     """
     Activate the specified configuration and return relevant status info.
     """
@@ -1061,9 +1061,8 @@ async def activate_configuration_db(
                 row = await cur.fetchone()
 
                 if not row:
-                    raise ResourceNotFoundError(
-                        "No configuration found with specified ID"
-                    )
+                    return None
+
             except UniqueViolation:
                 raise ConfigurationActivationConflictError(
                     "Trying to activate a configuration when one is already active within that canonical url family"
@@ -1079,7 +1078,7 @@ async def activate_configuration_db(
 
 async def deactivate_configuration_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
-) -> GetConfigurationResponseVersion:
+) -> GetConfigurationResponseVersion | None:
     """
     Deactivate the specified configuration and return relevant status info.
     """
@@ -1111,7 +1110,7 @@ async def deactivate_configuration_db(
             row = await cur.fetchone()
 
             if not row:
-                raise ResourceNotFoundError("No configuration found with specified ID")
+                return None
 
     return GetConfigurationResponseVersion(
         id=row.id,

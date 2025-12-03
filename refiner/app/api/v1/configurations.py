@@ -23,9 +23,7 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
 
 from app.core.exceptions import (
-    ConfigurationActivationConflictError,
     FileProcessingError,
-    ResourceNotFoundError,
     XMLValidationError,
     ZipValidationError,
 )
@@ -1471,7 +1469,7 @@ class ConfigurationActivationInput(BaseModel):
 
 
 @router.patch(
-    "/{configuration_id}/activate-configuration",
+    "/{configuration_id}/activate",
     response_model=ConfigurationStatusUpdateResponse,
     tags=["configurations"],
     operation_id="activateConfiguration",
@@ -1498,36 +1496,40 @@ async def activate_configuration(
     Returns:
         ActivateConfigurationResponse: Metadata about the activated condition for confirmation
     """
-    active_configuration = await get_active_config_db(
+    current_active_config = await get_active_config_db(
         jurisdiction_id=user.jurisdiction_id,
         condition_canonical_url=body.condition_canonical_url,
         db=db,
     )
 
-    try:
-        if active_configuration and active_configuration.id is not configuration_id:
-            await deactivate_configuration_db(
-                configuration_id=active_configuration.id, db=db
-            )
-
-        active_config = await activate_configuration_db(
-            configuration_id=configuration_id, db=db
+    if current_active_config and current_active_config.id != configuration_id:
+        deactivated_config = await deactivate_configuration_db(
+            configuration_id=current_active_config.id, db=db
         )
-        if not active_config:
+        if not deactivated_config:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Condition can't be activated.",
+                detail="Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
             )
 
-    except ResourceNotFoundError:
+    config_to_activate = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+    if not config_to_activate:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Condition can't be found.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Configuration is not found or isn't editable by the specified user jurisdiction permissions.",
         )
-    except ConfigurationActivationConflictError:
+
+    active_config = await activate_configuration_db(
+        configuration_id=config_to_activate.id, db=db
+    )
+    if not active_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Condition can't be activated because another one for that condition is already active.",
+            detail="Configuration can't be activated.",
         )
 
     return ConfigurationStatusUpdateResponse(
@@ -1539,13 +1541,14 @@ async def activate_configuration(
 
 
 @router.patch(
-    "/{configuration_id}/deactivate-configuration",
+    "/{configuration_id}/deactivate",
     response_model=ConfigurationStatusUpdateResponse,
     tags=["configurations"],
     operation_id="deactivateConfiguration",
 )
 async def deactivate_configuration(
     configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationStatusUpdateResponse:
     """
@@ -1564,19 +1567,23 @@ async def deactivate_configuration(
     Returns:
         ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
     """
-    try:
-        deactivated_config = await deactivate_configuration_db(
-            configuration_id=configuration_id, db=db
-        )
-    except ResourceNotFoundError:
+    config_to_deactivate = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+    if not config_to_deactivate:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Condition can't be found.",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Configuration to deactivate can't be found or isn't editable by the current user jurisdiction permissions.",
         )
+    deactivated_config = await deactivate_configuration_db(
+        configuration_id=config_to_deactivate.id, db=db
+    )
     if not deactivated_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Condition can't be deactivated.",
+            detail="Configuration can't be deactivated.",
         )
     return ConfigurationStatusUpdateResponse(
         configuration_id=deactivated_config.id,
