@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from psycopg.errors import UniqueViolation
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.core.exceptions import (
-    ConfigurationActivationConflictError,
-)
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 
