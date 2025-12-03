@@ -1001,14 +1001,12 @@ async def get_active_config_db(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            rows = await cur.fetchall()
+            row = await cur.fetchone()
 
-    configs = [DbConfiguration.from_db_row(row) for row in rows]
-
-    if len(configs) < 1:
+    if not row:
         return None
 
-    return configs[0]
+    return DbConfiguration.from_db_row(row)
 
 
 async def get_configuration_versions_db(
