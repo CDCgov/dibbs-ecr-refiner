@@ -438,7 +438,7 @@ function DeleteCodeSetButton({
       {
         onSuccess: async (resp) => {
           showToast({
-            heading: 'Condition removed',
+            heading: 'Condition code set removed',
             body: resp.data.condition_name,
           });
           setIsListInvalidating(true);
