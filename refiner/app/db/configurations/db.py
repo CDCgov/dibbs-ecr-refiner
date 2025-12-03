@@ -7,7 +7,6 @@ from psycopg.types.json import Jsonb
 
 from app.core.exceptions import (
     ConfigurationActivationConflictError,
-    ResourceNotFoundError,
 )
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
