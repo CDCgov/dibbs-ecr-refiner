@@ -294,7 +294,7 @@ class GetConfigurationResponse:
     draft_id: UUID | None
     is_draft: bool
     condition_id: UUID
-    canonical_url: str
+    condition_canonical_url: str
     display_name: str
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
@@ -425,7 +425,7 @@ async def get_configuration(
         draft_id=draft_id,
         is_draft=is_draft,
         condition_id=config.condition_id,
-        canonical_url=config.condition_canonical_url,
+        condition_canonical_url=config.condition_canonical_url,
         display_name=config.name,
         status=config.status,
         code_sets=config_condition_info,

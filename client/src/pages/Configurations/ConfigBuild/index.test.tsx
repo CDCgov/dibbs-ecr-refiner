@@ -62,7 +62,8 @@ const baseMockConfig: GetConfigurationResponse = {
   version: 2,
   active_version: null,
   latest_version: 2,
-  canonical_url: 'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  condition_canonical_url:
+    'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
 };
 
 // Mock configurations request
