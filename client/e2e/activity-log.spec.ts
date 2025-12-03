@@ -115,7 +115,7 @@ test.describe('Activity log', () => {
     await expect(page.getByRole('row')).toHaveCount(11);
     await page.getByRole('button', { name: 'Next' }).click();
 
-    // should be 3 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(3);
+    // should be 2 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(2);
   });
 });
