@@ -3,7 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
 import { render, screen } from '@testing-library/react';
-import { AuditEvent, ConfigurationTrace } from '../../api/schemas';
+import { AuditEvent, EventFilterOption } from '../../api/schemas';
 import userEvent from '@testing-library/user-event';
 
 const auditEvents: AuditEvent[] = [
@@ -24,17 +24,17 @@ const auditEvents: AuditEvent[] = [
     created_at: '2025-10-28T13:57:55.627842Z',
   },
 ];
-const configurations: ConfigurationTrace[] = [
+const configurations: EventFilterOption[] = [
   {
     name: 'Alpha-gal Syndrome',
     id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
-    cannonical_url:
+    canonical_url:
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
   },
   {
     name: 'Acanthamoeba',
     id: 'ee9aab4b-f71b-45f5-9dd2-831e10c8c1c2',
-    cannonical_url:
+    canonical_url:
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64',
   },
 ];
