@@ -1,1 +1,6 @@
 src/api
+coverage
+dist
+playwright-report
+shared
+test-results
