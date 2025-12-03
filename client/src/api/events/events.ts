@@ -49,7 +49,8 @@ Args:
 
 Returns:
     EventResponse: A bundle with
-        - The list of AuditEvents relevant for the (optional) filter.
+        - Total page count
+        - The list of AuditEvents relevant for the (optional) filter
         - The list of condition information with potentially filter-able data
  * @summary Get Events
  */
