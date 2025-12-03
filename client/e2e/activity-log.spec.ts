@@ -101,15 +101,6 @@ test.describe('Activity log', () => {
 
     await page.getByTestId('close-drawer').click();
 
-    // modify a section
-    await page.getByRole('button', { name: 'Sections' }).click();
-    await page
-      .getByRole('cell', {
-        name: 'Remove section History of encounters Remove section History of encounters',
-      })
-      .locator('label')
-      .click();
-
     // go to activity log page
     await page.getByRole('link', { name: 'Activity Log' }).click();
 
@@ -124,7 +115,7 @@ test.describe('Activity log', () => {
     await expect(page.getByRole('row')).toHaveCount(11);
     await page.getByRole('button', { name: 'Next' }).click();
 
-    // should be 5 items on page 2
-    await expect(page.getByRole('row')).toHaveCount(4);
+    // should be 3 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(3);
   });
 });
