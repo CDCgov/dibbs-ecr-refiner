@@ -1055,17 +1055,11 @@ async def activate_configuration_db(
         async with conn.cursor(
             row_factory=class_row(GetConfigurationResponseVersion)
         ) as cur:
-            try:
-                await cur.execute(query, params)
-                row = await cur.fetchone()
+            await cur.execute(query, params)
+            row = await cur.fetchone()
 
-                if not row:
-                    return None
-
-            except UniqueViolation:
-                raise ConfigurationActivationConflictError(
-                    "Trying to activate a configuration when one is already active within that canonical url family"
-                )
+            if not row:
+                return None
 
     return GetConfigurationResponseVersion(
         id=row.id,
