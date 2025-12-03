@@ -7,7 +7,6 @@ from psycopg.types.json import Jsonb
 
 from app.core.exceptions import (
     ConfigurationActivationConflictError,
-    ResourceNotFoundError,
 )
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
@@ -749,6 +748,7 @@ class SectionUpdate:
 async def update_section_processing_db(
     config: DbConfiguration,
     section_updates: list[SectionUpdate],
+    user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -757,11 +757,18 @@ async def update_section_processing_db(
     Args:
         config: The configuration to update
         section_updates: List of section updates with code and action
+        user_id: ID of the user
         db: Database connection
 
     Returns:
         Updated DbConfiguration or None if the update fails
     """
+    # Map internal action → display label
+    ACTION_LABELS = {
+        "refine": "Include & refine",
+        "retain": "Include entire",
+        "remove": "Remove",
+    }
 
     # Validate input actions
     valid_actions = {"retain", "refine", "remove"}
@@ -778,15 +785,39 @@ async def update_section_processing_db(
         for sp in config.section_processing
     ]
 
-    # Apply updates in memory
     updated_sections = []
+    section_events = []
+
     for sec in existing_sections:
-        if sec["code"] in update_map:
+        code = sec["code"]
+        old_action = sec["action"]
+
+        if code in update_map:
+            new_action = update_map[code]
+
+            # If action changed, record event
+            if new_action != old_action:
+                old_label = ACTION_LABELS.get(old_action, old_action)
+                new_label = ACTION_LABELS.get(new_action, new_action)
+
+                section_events.append(
+                    EventInput(
+                        jurisdiction_id=config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=config.id,
+                        event_type="section_update",
+                        action_text=(
+                            f"Updated section '{sec['name']}' from '{old_label}' to '{new_label}'"
+                        ),
+                    )
+                )
+
+            # Append updated section
             updated_sections.append(
                 {
                     "name": sec["name"],
                     "code": sec["code"],
-                    "action": update_map[sec["code"]],
+                    "action": new_action,
                 }
             )
         else:
@@ -821,10 +852,16 @@ async def update_section_processing_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
 
-    if not row:
-        return None
+            if not row:
+                return None
 
-    return DbConfiguration.from_db_row(row)
+            updated_config = DbConfiguration.from_db_row(row)
+
+            # Insert all generated section events
+            for event in section_events:
+                await insert_event_db(event=event, cursor=cur)
+
+            return updated_config
 
 
 async def get_configurations_by_condition_ids_and_jurisdiction_db(
@@ -963,14 +1000,12 @@ async def get_active_config_db(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            rows = await cur.fetchall()
+            row = await cur.fetchone()
 
-    configs = [DbConfiguration.from_db_row(row) for row in rows]
-
-    if len(configs) < 1:
+    if not row:
         return None
 
-    return configs[0]
+    return DbConfiguration.from_db_row(row)
 
 
 async def get_configuration_versions_db(
@@ -1000,7 +1035,7 @@ async def get_configuration_versions_db(
 
 async def activate_configuration_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
-) -> GetConfigurationResponseVersion:
+) -> GetConfigurationResponseVersion | None:
     """
     Activate the specified configuration and return relevant status info.
     """
@@ -1025,9 +1060,8 @@ async def activate_configuration_db(
                 row = await cur.fetchone()
 
                 if not row:
-                    raise ResourceNotFoundError(
-                        "No configuration found with specified ID"
-                    )
+                    return None
+
             except UniqueViolation:
                 raise ConfigurationActivationConflictError(
                     "Trying to activate a configuration when one is already active within that canonical url family"
@@ -1043,7 +1077,7 @@ async def activate_configuration_db(
 
 async def deactivate_configuration_db(
     configuration_id: UUID, db: AsyncDatabaseConnection
-) -> GetConfigurationResponseVersion:
+) -> GetConfigurationResponseVersion | None:
     """
     Deactivate the specified configuration and return relevant status info.
     """
@@ -1075,7 +1109,7 @@ async def deactivate_configuration_db(
             row = await cur.fetchone()
 
             if not row:
-                raise ResourceNotFoundError("No configuration found with specified ID")
+                return None
 
     return GetConfigurationResponseVersion(
         id=row.id,

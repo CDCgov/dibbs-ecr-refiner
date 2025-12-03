@@ -14,7 +14,6 @@ import {
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
 import { Spinner } from '../../../components/Spinner';
-import { ErrorFallback } from '../../ErrorFallback';
 import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { Status } from '../ConfigBuild/Status';
 import { useToast } from '../../../hooks/useToast';
@@ -30,7 +29,6 @@ export function ConfigActivate() {
     isPending,
     isError,
     isSuccess,
-    error,
   } = useGetConfiguration(id ?? '');
   const showToast = useToast();
 
@@ -40,7 +38,7 @@ export function ConfigActivate() {
   const queryClient = useQueryClient();
 
   if (isPending) return <Spinner variant="centered" />;
-  if (!id || isError) return <ErrorFallback error={error} />;
+  if (!id || isError) return 'Error!';
 
   function handleActivation() {
     if (!configuration || !configuration.data) {

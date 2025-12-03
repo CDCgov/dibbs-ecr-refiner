@@ -975,7 +975,7 @@ export const activateConfiguration = (
     
     
     return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/activate-configuration`,
+      `/api/v1/configurations/${configurationId}/activate`,
       configurationActivationInput,options
     );
   }
@@ -1050,7 +1050,7 @@ export const deactivateConfiguration = (
     
     
     return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/deactivate-configuration`,undefined,options
+      `/api/v1/configurations/${configurationId}/deactivate`,undefined,options
     );
   }
 

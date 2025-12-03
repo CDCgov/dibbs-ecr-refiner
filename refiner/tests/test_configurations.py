@@ -534,7 +534,7 @@ async def test_activate_config_no_other_active_config(authed_client, monkeypatch
     )
 
     response = await authed_client.patch(
-        f"/api/v1/configurations/{config_id}/activate-configuration", json=payload
+        f"/api/v1/configurations/{config_id}/activate", json=payload
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -570,7 +570,7 @@ async def test_activate_config_other_active_config(authed_client, monkeypatch):
     )
 
     response = await authed_client.patch(
-        f"/api/v1/configurations/{config_id}/activate-configuration", json=payload
+        f"/api/v1/configurations/{config_id}/activate", json=payload
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -583,7 +583,7 @@ async def test_deactivate_config(authed_client):
     config_id = "11111111-1111-1111-1111-111111111111"
 
     response = await authed_client.patch(
-        f"/api/v1/configurations/{config_id}/deactivate-configuration"
+        f"/api/v1/configurations/{config_id}/deactivate"
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

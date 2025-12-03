@@ -68,7 +68,7 @@ class TestConfigurations:
         # Activate config
         payload = {"condition_canonical_url": canonical_url}
         response = await authed_client.patch(
-            f"/api/v1/configurations/{initial_configuration_id}/activate-configuration",
+            f"/api/v1/configurations/{initial_configuration_id}/activate",
             json=payload,
         )
         assert response.status_code == 200
@@ -89,7 +89,7 @@ class TestConfigurations:
         new_draft_response_id = new_draft_response_data["id"]
         payload = {"condition_canonical_url": canonical_url}
         new_draft_activation_response = await authed_client.patch(
-            f"/api/v1/configurations/{new_draft_response_id}/activate-configuration",
+            f"/api/v1/configurations/{new_draft_response_id}/activate",
             json=payload,
         )
         assert new_draft_activation_response.status_code == 200
@@ -105,3 +105,27 @@ class TestConfigurations:
         validation_response_data = validation_response.json()
         assert validation_response_data["id"] == initial_configuration_id
         assert validation_response_data["status"] == "inactive"
+
+    async def test_deactivate_configuration(self, setup, authed_client, db_conn):
+        # Get the activated configuration from the previous tests
+        async with db_conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT id, condition_canonical_url, condition_id
+                FROM configurations
+                WHERE name = 'Drowning and Submersion' AND status = 'active';
+                """
+            )
+            configuration = await cur.fetchone()
+            assert configuration is not None
+
+        initial_configuration_id = str(configuration["id"])
+
+        # Deactivate config
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{initial_configuration_id}/deactivate",
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["configuration_id"] == initial_configuration_id
+        assert data["status"] == "inactive"

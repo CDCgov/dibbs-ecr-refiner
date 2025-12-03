@@ -20,7 +20,6 @@ import { Spinner } from '../../../components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
 import { Status } from '../ConfigBuild/Status';
 import { VersionMenu } from '../ConfigBuild/VersionMenu';
-import { ErrorFallback } from '../../ErrorFallback';
 import { FileUploadWarning } from '../../../components/FileUploadWarning';
 
 export function ConfigTest() {
@@ -29,11 +28,10 @@ export function ConfigTest() {
     data: configuration,
     isPending,
     isError,
-    error,
   } = useGetConfiguration(id ?? '');
 
   if (isPending) return <Spinner variant="centered" />;
-  if (!id || isError) return <ErrorFallback error={error} />;
+  if (!id || isError) return 'Error!';
 
   return (
     <div>
