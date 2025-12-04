@@ -51,7 +51,9 @@ test.describe
       .fill('disease');
     await page.getByText('Balamuthia mandrillaris Disease').click();
     await page.getByTestId('close-drawer').click();
-    await page.getByRole('heading', { name: 'Condition added' }).click();
+    await page
+      .getByRole('heading', { name: 'Condition code set added' })
+      .click();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
