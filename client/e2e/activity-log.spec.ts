@@ -98,8 +98,13 @@ test.describe('Activity log', () => {
       page.getByRole('button', { name: 'Remove Anaplasmosis' })
     ).toBeVisible();
     await page.getByRole('button', { name: 'Remove Anaplasmosis' }).click();
-
     await page.getByTestId('close-drawer').click();
+
+    // wait for toasts to go away
+    await page.waitForSelector(
+      '[role="alert"]:has-text("Condition code set added"), [role="alert"]:has-text("Condition code set removed")',
+      { state: 'detached' }
+    );
 
     // go to activity log page
     await page.getByRole('link', { name: 'Activity Log' }).click();
