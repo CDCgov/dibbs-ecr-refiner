@@ -78,7 +78,7 @@ async def get_events(
         jurisdiction_id=jd, canonical_url=canonical_url, db=db
     )
 
-    if not total_event_count:
+    if total_event_count is None:
         logger.error(
             msg="Could not retrieve total event count.",
             extra={
