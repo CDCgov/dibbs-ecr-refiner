@@ -123,13 +123,6 @@ test.describe
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    // filter by Acanthamoeba
-    await page
-      .getByLabel('Condition')
-      .selectOption(
-        'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/ceef5555-ce1a-42ff-a124-6508eec46658'
-      );
-
     await expect(
       page
         .getByRole('row')
@@ -403,6 +396,13 @@ test.describe
         .filter({ hasText: 'Acanthamoeba' })
         .filter({ hasText: "Removed custom code '5678'" })
     ).toBeVisible();
+
+    // filter by Acanthamoeba
+    await page
+      .getByLabel('Condition')
+      .selectOption(
+        'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/ceef5555-ce1a-42ff-a124-6508eec46658'
+      );
 
     // should be 11 items on page 1 (including header)
     await expect(page.getByRole('row')).toHaveCount(11);
