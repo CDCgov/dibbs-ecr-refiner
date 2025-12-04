@@ -43,6 +43,29 @@ test.describe
     await expect(
       page.getByRole('heading', { name: 'Add condition code sets' })
     ).toBeVisible();
+
+    // Add a few code sets and check that remove button shows up properly
+    await page.getByText('Acute Flaccid Myelitis (AFM)').click();
+    await expect(
+      page.getByRole('button', { name: 'Remove Acute Flaccid Myelitis (AFM)' })
+    ).toBeVisible();
+
+    await page
+      .getByText('Agricultural Chemicals (Fertilizer) Poisoning')
+      .click();
+    await expect(
+      page.getByRole('button', {
+        name: 'Remove Agricultural Chemicals (Fertilizer) Poisoning',
+      })
+    ).toBeVisible();
+
+    await page.getByText('Alpha-gal Syndrome').click();
+    await expect(
+      page.getByRole('button', {
+        name: 'Remove Alpha-gal Syndrome',
+      })
+    ).toBeVisible();
+
     await page
       .getByRole('searchbox', { name: 'Search by condition name' })
       .click();
@@ -51,9 +74,10 @@ test.describe
       .fill('disease');
     await page.getByText('Balamuthia mandrillaris Disease').click();
     await page.getByTestId('close-drawer').click();
-    await page
-      .getByRole('heading', { name: 'Condition code set added' })
-      .click();
+    await page.waitForSelector(
+      '[role="alert"]:has-text("Condition code set added")',
+      { state: 'detached' }
+    );
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -98,6 +122,13 @@ test.describe
     expect(page.getByRole('heading', { name: 'Activity log' }));
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // filter by Acanthamoeba
+    await page
+      .getByLabel('Condition')
+      .selectOption(
+        'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/ceef5555-ce1a-42ff-a124-6508eec46658'
+      );
 
     await expect(
       page
@@ -372,5 +403,12 @@ test.describe
         .filter({ hasText: 'Acanthamoeba' })
         .filter({ hasText: "Removed custom code '5678'" })
     ).toBeVisible();
+
+    // should be 11 items on page 1 (including header)
+    await expect(page.getByRole('row')).toHaveCount(11);
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    // should be 2 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(2);
   });
 });
