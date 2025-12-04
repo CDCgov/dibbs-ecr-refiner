@@ -27,6 +27,10 @@ from app.core.exceptions import (
     XMLValidationError,
     ZipValidationError,
 )
+from app.db.configurations.activations.db import (
+    deactivate_configuration_db,
+    update_configuration_activation_db,
+)
 from app.services.configurations import (
     get_canonical_url_to_highest_inactive_version_map,
 )
@@ -53,14 +57,11 @@ from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
     SectionUpdate,
-    activate_configuration_db,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
-    deactivate_configuration_db,
     delete_custom_code_from_configuration_db,
     disassociate_condition_codeset_with_configuration_db,
     edit_custom_code_from_configuration_db,
-    get_active_config_db,
     get_configuration_by_id_db,
     get_configuration_versions_db,
     get_configurations_db,
@@ -572,8 +573,8 @@ async def associate_condition_codeset_with_configuration(
 
     Raises:
         HTTPException: 404 if configuration is not found in JD
-        HTTPException: 404 if condition is not found
-        HTTPException: 500 if configuration is cannot be updated
+        HTTPException: 404 if configuration is not found
+        HTTPException: 500 if configuration cannot be updated
 
     Returns:
         AssociateCodesetResponse: ID of updated configuration, the full list of included conditions,
@@ -1490,47 +1491,16 @@ async def activate_configuration(
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
-    Raises:
-        HTTPException: 500 if configuration can't be activated
-
     Returns:
         ActivateConfigurationResponse: Metadata about the activated condition for confirmation
     """
-    current_active_config = await get_active_config_db(
-        jurisdiction_id=user.jurisdiction_id,
-        condition_canonical_url=body.condition_canonical_url,
+
+    active_config = await update_configuration_activation_db(
+        canonical_url=body.condition_canonical_url,
+        configuration_id=configuration_id,
+        user_jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
-
-    if current_active_config and current_active_config.id != configuration_id:
-        deactivated_config = await deactivate_configuration_db(
-            configuration_id=current_active_config.id, db=db
-        )
-        if not deactivated_config:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
-            )
-
-    config_to_activate = await get_configuration_by_id_db(
-        id=configuration_id,
-        jurisdiction_id=user.jurisdiction_id,
-        db=db,
-    )
-    if not config_to_activate:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Configuration is not found or isn't editable by the specified user jurisdiction permissions.",
-        )
-
-    active_config = await activate_configuration_db(
-        configuration_id=config_to_activate.id, db=db
-    )
-    if not active_config:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Configuration can't be activated.",
-        )
 
     return ConfigurationStatusUpdateResponse(
         configuration_id=active_config.id,
@@ -1561,6 +1531,7 @@ async def deactivate_configuration(
         db (AsyncDatabaseConnection): Database connection
 
     Raises:
+        HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
         HTTPException: 404 if configuration can't be found
         HTTPException: 500 if configuration can't be deactivated
 

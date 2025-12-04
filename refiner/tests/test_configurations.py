@@ -185,7 +185,7 @@ def mock_db_functions(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.activate_configuration_db",
+        "app.db.configurations.activations.db.activate_configuration_db",
         AsyncMock(return_value=active_configuration),
     )
 
@@ -205,7 +205,7 @@ def mock_db_functions(monkeypatch):
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.deactivate_configuration_db",
+        "app.db.configurations.activations.db.deactivate_configuration_db",
         AsyncMock(return_value=inactive_configuration),
     )
 
@@ -529,7 +529,7 @@ async def test_activate_config_no_other_active_config(authed_client, monkeypatch
     # set the get for active config to none so we just test the activate
     # flow fallthrough
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_active_config_db",
+        "app.db.configurations.activations.db.get_active_config_db",
         AsyncMock(return_value=None),
     )
 
@@ -565,7 +565,7 @@ async def test_activate_config_other_active_config(authed_client, monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_active_config_db",
+        "app.db.configurations.activations.db.get_active_config_db",
         AsyncMock(return_value=other_active_configuration),
     )
 
