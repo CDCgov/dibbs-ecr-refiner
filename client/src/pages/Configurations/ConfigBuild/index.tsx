@@ -215,7 +215,7 @@ function Builder({
               </OptionsLabel>
               <Button
                 variant="secondary"
-                className="text-blue-cool-60 !mr-0 flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
+                className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
                 id="open-codesets"
                 aria-label="Add new code set to configuration"
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
