@@ -7,27 +7,38 @@ type ConfigurationSteps = 'build' | 'test' | 'activate';
 
 type ConfigurationTitleBarProps = {
   step: ConfigurationSteps;
+  condition: string;
 };
 
-const CONFIGURATION_TITLE_CONTENTS = {
-  build: {
-    title: 'Build configuration',
-    subtitle: 'Review and select the data to retain in the eCRs you receive.',
-  },
-  test: {
-    title: 'Test configuration',
-    subtitle: 'Check the results of your configuration before turning it on.',
-  },
-  activate: {
-    title: 'Turn on configuration',
-    subtitle:
-      'Refiner will immediately start to refine eCRs with gonorrhea as a reportable condition, in accordance with this configuration.',
-  },
+type ConfigurationTitleContent = {
+  title: string;
+  subtitle: string;
+  boldedWords?: string;
 };
 
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
-export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
+export function ConfigurationTitleBar({
+  step,
+  condition,
+}: ConfigurationTitleBarProps) {
+  const CONFIGURATION_TITLE_CONTENTS: {
+    [step: string]: ConfigurationTitleContent;
+  } = {
+    build: {
+      title: 'Build configuration',
+      subtitle: 'Review and select the data to retain in the eCRs you receive.',
+    },
+    test: {
+      title: 'Test configuration',
+      subtitle: 'Check the results of your configuration before turning it on.',
+    },
+    activate: {
+      title: 'Turn on configuration',
+      subtitle: `Refiner will immediately start to refine eCRs with ${condition} as a reportable condition, in accordance with this configuration.`,
+      boldedWords: 'immediately',
+    },
+  };
   const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
   const spinnerStart = useRef<number>(0);
   const numSavingActions = useIsMutating();
@@ -84,8 +95,25 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
             </div>
           </div>
         </div>
-        <p> {CONFIGURATION_TITLE_CONTENTS[step].subtitle}</p>
+        <p>
+          {boldWord(
+            CONFIGURATION_TITLE_CONTENTS[step].subtitle,
+            CONFIGURATION_TITLE_CONTENTS[step]?.boldedWords ?? undefined
+          )}
+        </p>
       </div>
     </div>
+  );
+}
+
+function boldWord(text: string, word: string | undefined) {
+  if (!word) return <>{text}</>;
+  const [before, after] = text.split(word);
+  return (
+    <>
+      {before}
+      <strong>{word}</strong>
+      {after}
+    </>
   );
 }
