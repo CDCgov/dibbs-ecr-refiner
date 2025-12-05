@@ -1544,18 +1544,10 @@ async def deactivate_configuration(
     Returns:
         ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
     """
-    config_to_deactivate = await get_configuration_by_id_db(
-        id=configuration_id,
-        jurisdiction_id=user.jurisdiction_id,
-        db=db,
-    )
-    if not config_to_deactivate:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Configuration to deactivate can't be found or isn't editable by the current user jurisdiction permissions.",
-        )
     deactivated_config = await deactivate_configuration_db(
-        configuration_id=config_to_deactivate.id, db=db
+        configuration_id=configuration_id,
+        user_jurisdiction_id=user.jurisdiction_id,
+        db=db,
     )
     if not deactivated_config:
         raise HTTPException(

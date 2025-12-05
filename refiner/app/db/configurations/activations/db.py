@@ -150,10 +150,21 @@ async def activate_configuration_db(
 async def deactivate_configuration_db(
     configuration_id: UUID,
     db: AsyncDatabaseConnection,
+    user_jurisdiction_id: str,
 ) -> GetConfigurationResponseVersion | None:
     """
     Deactivate the specified configuration and return relevant status info.
     """
+    config_to_deactivate = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user_jurisdiction_id,
+        db=db,
+    )
+    if not config_to_deactivate:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Configuration to deactivate can't be found or isn't editable by the current user jurisdiction permissions.",
+        )
 
     async with db.get_connection() as conn:
         async with conn.cursor(
