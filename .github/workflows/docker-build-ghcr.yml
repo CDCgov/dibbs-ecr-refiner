@@ -93,7 +93,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.app
-          push: false # TODO: UPDATE THIS
+          push: true
           tags: ${{ steps.vars.outputs.app_tags }}
 
       - name: Build and push Refiner Lambda image
@@ -101,5 +101,5 @@ jobs:
         with:
           context: .
           file: Dockerfile.lambda
-          push: false # TODO: UPDATE THIS
+          push: true
           tags: ${{ steps.vars.outputs.lambda_tags }}
