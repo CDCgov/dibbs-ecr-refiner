@@ -1,4 +1,4 @@
-name: Build and push Refiner images to GHCR
+name: Build and push Refiner images to GHCR and AWS ECR
 
 on:
   push:
@@ -40,6 +40,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Configure AIMS dev AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AIMS_DEV_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AIMS_DEV_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to AIMS dev ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Make repo owner lowercase
         id: repo
         run: |
@@ -51,6 +62,7 @@ jobs:
           # Get the branch/ref and version tag
           REF_NAME="${{ github.event.inputs.ref || github.ref_name }}"
           VERSION_TAG="${{ github.event.inputs.version_tag }}"
+          ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
 
           # Sanitize ref so it's a valid image tag
           if [ -z "$VERSION_TAG" ]; then
@@ -59,13 +71,21 @@ jobs:
             TAG="$VERSION_TAG"
           fi
 
+          # GHCR URLs
+          GHCR_APP="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner"
+          GHCR_LAMBDA="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda"
+
+          # ECR URLs
+          ECR_APP="$ECR_REGISTRY/dibbs-dev-refiner/refiner"
+          ECR_LAMBDA="$ECR_REGISTRY/dibbs-dev-refiner/lambda"
+
           # If building `main`, include a `latest` tag
           if [ "$REF_NAME" = "main" ]; then
-            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:latest" >> $GITHUB_OUTPUT
-            echo "lambda_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:$TAG,ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:latest" >> $GITHUB_OUTPUT
+            echo "app_tags=$GHCR_APP:$TAG,$GHCR_APP:latest,$ECR_APP:$TAG,$ECR_APP:latest" >> $GITHUB_OUTPUT
+            echo "lambda_tags=$GHCR_LAMBDA:$TAG,$GHCR_LAMBDA:latest,$ECR_LAMBDA:$TAG,$ECR_LAMBDA:latest" >> $GITHUB_OUTPUT
           else
-            echo "app_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner:$TAG" >> $GITHUB_OUTPUT
-            echo "lambda_tags=ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda:$TAG" >> $GITHUB_OUTPUT
+            echo "app_tags=$GHCR_APP:$TAG,$ECR_APP:$TAG" >> $GITHUB_OUTPUT
+            echo "lambda_tags=$GHCR_LAMBDA:$TAG,$ECR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push Refiner app image
@@ -73,7 +93,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.app
-          push: true
+          push: false # TODO: UPDATE THIS
           tags: ${{ steps.vars.outputs.app_tags }}
 
       - name: Build and push Refiner Lambda image
@@ -81,5 +101,5 @@ jobs:
         with:
           context: .
           file: Dockerfile.lambda
-          push: true
+          push: false # TODO: UPDATE THIS
           tags: ${{ steps.vars.outputs.lambda_tags }}
