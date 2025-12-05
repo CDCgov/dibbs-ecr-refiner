@@ -35,7 +35,7 @@ async def activate_configuration_db(
     """
     if db is None and cur is None:
         raise ValueError("Provide either a db connection or a cur")
-    if db is not None:
+    elif db is not None:
         async with db.get_connection() as conn:
             async with conn.cursor(
                 row_factory=class_row(GetConfigurationResponseVersion)
@@ -43,7 +43,9 @@ async def activate_configuration_db(
                 return await activate_configuration_db(
                     configuration_id, cur=internal_cur
                 )
-    elif cur is not None:
+    else:
+        # this is here so mypy doesn't complain, even though it's logically guarenteed
+        assert cur is not None
         query = """
             UPDATE configurations
             SET status = 'active'
@@ -97,7 +99,7 @@ async def deactivate_configuration_db(
     if db is None and cur is None:
         raise ValueError("Provide either a db connection or a cur")
 
-    if db is not None:
+    elif db is not None:
         async with db.get_connection() as conn:
             async with conn.cursor(
                 row_factory=class_row(GetConfigurationResponseVersion)
@@ -106,7 +108,9 @@ async def deactivate_configuration_db(
                     configuration_id, cur=internal_cur
                 )
 
-    elif cur is not None:
+    else:
+        # this is here so mypy doesn't complain, even though it's logically guarenteed
+        assert cur is not None
         query = """
             WITH updated AS (
                 UPDATE configurations
