@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Table } from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
-import { useUpdateConfigurationSectionProcessing } from '../../../api/configurations/configurations';
+import {
+  getGetConfigurationQueryKey,
+  useUpdateConfigurationSectionProcessing,
+} from '../../../api/configurations/configurations';
 import { useToast } from '../../../hooks/useToast';
 import { UpdateSectionProcessingEntryAction } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { RadioCell } from '../../../components/Button/RadioCell';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
 }
 
-import { RadioCell } from '../../../components/Button/RadioCell';
 /**
  * EicrSectionReview displays an overview or review of eICR sections and allows
  * users to choose an action for each section (retain, refine, remove).
@@ -30,6 +34,7 @@ export function EicrSectionReview({
 
   const { mutate: updateSectionProcessing } =
     useUpdateConfigurationSectionProcessing();
+  const queryClient = useQueryClient();
 
   // Initialize state based on the sectionProcessing prop. Only initialize
   // when local state is empty or the number of sections changes so we don't
@@ -74,6 +79,11 @@ export function EicrSectionReview({
         },
       },
       {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
         onError: (error) => {
           // Revert the optimistic UI change only if the UI still shows the
           // attempted (failed) action. This prevents clobbering newer user
