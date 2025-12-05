@@ -7,5 +7,6 @@
  */
 
 export type GetEventsParams = {
-cannonical_url?: string | null;
+page?: number;
+canonical_url?: string | null;
 };

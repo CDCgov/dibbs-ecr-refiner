@@ -43,11 +43,14 @@ import type {
 Args:
     user (DbUser): The user making the request.
     db (AsyncDatabaseConnection): Database connection.
-    cannonical_url (str | None): An optional filter on the condition.
+    logger (Logger): Standard logger.
+    page (int): page of events to return to the client.
+    canonical_url (str | None): An optional filter on the condition.
 
 Returns:
     EventResponse: A bundle with
-        - The list of AuditEvents relevant for the (optional) filter.
+        - Total page count
+        - The list of AuditEvents relevant for the (optional) filter
         - The list of condition information with potentially filter-able data
  * @summary Get Events
  */
