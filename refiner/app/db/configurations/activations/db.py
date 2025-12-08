@@ -106,31 +106,24 @@ async def activate_configuration_db(
         ) as cur:
             if not current_active_config:
                 # just activate the configuration without deactivating
-                return await _activate_configuration_db(configuration_id, cur=cur)
+                return await _activate_configuration_db(
+                    configuration_id=configuration_id, cur=cur
+                )
             else:
-                # set up the deactivation and activation in a transaction
-                try:
-                    # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
-                    deactivated_config = await _deactivate_configuration_db(
-                        configuration_id=current_active_config.id, cur=cur
+                # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
+                deactivated_config = await _deactivate_configuration_db(
+                    configuration_id=current_active_config.id, cur=cur
+                )
+                if not deactivated_config:
+                    raise Exception(
+                        "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
                     )
-                    if not deactivated_config:
-                        raise Exception(
-                            "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
-                        )
 
-                    active_config = await _activate_configuration_db(
-                        configuration_id=config_to_activate.id, cur=cur
-                    )
-                    await conn.commit()
-                    return active_config
-                except Exception:
-                    await conn.rollback()
-                    return None
+                active_config = await _activate_configuration_db(
+                    configuration_id=config_to_activate.id, cur=cur
+                )
 
-                finally:
-                    await cur.close()
-                    await conn.close()
+                return active_config
 
 
 async def deactivate_configuration_db(
