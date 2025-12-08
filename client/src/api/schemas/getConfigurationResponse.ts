@@ -19,6 +19,7 @@ export interface GetConfigurationResponse {
   draft_id: GetConfigurationResponseDraftId;
   is_draft: boolean;
   condition_id: string;
+  condition_canonical_url: string;
   display_name: string;
   status: GetConfigurationResponseStatus;
   code_sets: DbTotalConditionCodeCount[];

@@ -921,6 +921,7 @@ class GetConfigurationResponseVersion:
 
     id: UUID
     version: int
+    condition_canonical_url: str
     status: DbConfigurationStatus
 
 
@@ -965,6 +966,44 @@ async def get_latest_config_db(
     return configs[0]
 
 
+async def get_active_config_db(
+    jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Given a jurisdiction ID and condition canonical URL, find the active configuration version, if any.
+    """
+    query = """
+        SELECT
+            id,
+            name,
+			status,
+            jurisdiction_id,
+            condition_id,
+            included_conditions,
+            custom_codes,
+            local_codes,
+            section_processing,
+            version,
+			last_activated_at,
+			last_activated_by,
+            condition_canonical_url
+        FROM configurations
+        WHERE jurisdiction_id = %s
+        AND condition_canonical_url = %s
+        AND status = 'active';
+    """
+    params = (jurisdiction_id, condition_canonical_url)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+    if not row:
+        return None
+
+    return DbConfiguration.from_db_row(row)
+
+
 async def get_configuration_versions_db(
     jurisdiction_id: str, condition_canonical_url: str, db: AsyncDatabaseConnection
 ) -> list[GetConfigurationResponseVersion]:
@@ -972,7 +1011,7 @@ async def get_configuration_versions_db(
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
     query = """
-        SELECT id, version, status
+        SELECT id, version, status, condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
