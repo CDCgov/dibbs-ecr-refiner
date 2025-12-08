@@ -47,7 +47,6 @@ async def _deactivate_configuration_db(
     *,
     cur: AsyncCursor[GetConfigurationResponseVersion],
 ) -> GetConfigurationResponseVersion | None:
-    print("the real function's being invoked")
     query = """
             WITH updated AS (
                 UPDATE configurations
