@@ -1,4 +1,4 @@
-name: Build and push Refiner images to GHCR and AWS ECR
+name: Build and push Refiner Docker images to GHCR and AWS ECR
 
 on:
   push:
