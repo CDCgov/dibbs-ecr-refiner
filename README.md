@@ -64,7 +64,7 @@ A production-ready Docker image is created automatically every time code is merg
 
 ### Manually creating a production build
 
-A production build of the application can be created using the [`Build and push Refiner image to GHCR`](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/docker-build-ghcr.yml) GitHub Actions workflow. This will build the image and will store it in the Refiner's GitHub Container Registry.
+A production build of the application can be created using the [`Build and push Refiner image to GHCR`](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/docker-image-push.yml) GitHub Actions workflow. This will build the image and will store it in the Refiner's GitHub Container Registry.
 
 ## Running the linter
 
