@@ -82,7 +82,7 @@ class TestConfigurations:
         assert data["status"] == "active"
 
         # Create another configuration draft and try to activate it. Assert that the confirmation
-        # returned matches the new draft ID
+        # returned matches the new draft ID.
         payload = {"condition_id": condition_id_to_test}
         new_draft_response = await authed_client.post(
             "/api/v1/configurations/", json=payload
@@ -126,7 +126,8 @@ class TestConfigurations:
         canonical_url = str(configuration["condition_canonical_url"])
 
         # create a new test client with a mocked deactivate function that throws
-        # an error to test the rollback
+        # an error to test the rollback. The existing fixture has the real function bundled in it
+        # that doesn't allow us to hotswap it at runtime
         with patch(
             "app.db.configurations.activations.db._deactivate_configuration_db",
             new_callable=AsyncMock,
@@ -145,6 +146,18 @@ class TestConfigurations:
                     f"/api/v1/configurations/{initial_configuration_id}/activate",
                     json=payload,
                 )
+
+                async with db_conn.cursor() as cur:
+                    query = """
+                            SELECT id, condition_canonical_url, condition_id, status
+                            FROM configurations
+                            WHERE id = %s;
+                        """
+
+                    await cur.execute(query, (initial_configuration_id,))
+                    configuration = await cur.fetchone()
+                    assert configuration is not None
+                    assert configuration["status"] == "inactive"
 
                 assert response.status_code == 500
 
