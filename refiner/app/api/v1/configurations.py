@@ -1491,14 +1491,30 @@ async def activate_configuration(
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
+    Raises:
+        HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
+        HTTPException: 500 if configuration can't be activated
+
     Returns:
         ActivateConfigurationResponse: Metadata about the activated condition for confirmation
     """
 
+    config_to_activate = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+    if not config_to_activate:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Configuration is not found or isn't editable by the specified user jurisdiction permissions.",
+        )
+
     active_config = await activate_configuration_db(
+        config_to_activate=config_to_activate,
         canonical_url=body.condition_canonical_url,
+        jurisdiction_id=user.jurisdiction_id,
         configuration_id=configuration_id,
-        user_jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
 
@@ -1538,15 +1554,24 @@ async def deactivate_configuration(
 
     Raises:
         HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
-        HTTPException: 404 if configuration can't be found
         HTTPException: 500 if configuration can't be deactivated
 
     Returns:
         ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
     """
+    config_to_deactivate = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+    if not config_to_deactivate:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Configuration to deactivate can't be found or isn't editable by the current user jurisdiction permissions.",
+        )
+
     deactivated_config = await deactivate_configuration_db(
-        configuration_id=configuration_id,
-        user_jurisdiction_id=user.jurisdiction_id,
+        configuration_id=config_to_deactivate.id,
         db=db,
     )
     if not deactivated_config:
