@@ -1,3 +1,4 @@
+import { Page } from '@playwright/test';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import { test, expect } from './fixtures/fixtures';
 import { login, logout } from './utils';
@@ -5,13 +6,15 @@ import { login, logout } from './utils';
 test.describe
   .serial('Activation for new draft configurations works as expected', () => {
   test.describe.configure({ retries: 1 });
+  let page: Page;
 
-  test.beforeAll(async ({ page }) => {
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+
     await login(page);
-    await page.goto('/');
   });
 
-  test.afterAll(async ({ page }) => {
+  test.afterAll(async () => {
     await logout(page);
   });
 

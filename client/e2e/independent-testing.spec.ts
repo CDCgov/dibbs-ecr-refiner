@@ -3,6 +3,7 @@ import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import path from 'path';
 import fs from 'fs';
+import { Page } from '@playwright/test';
 
 test.describe.serial('should be able to access independent testing', () => {
   // Resolve the file path relative to the project root
@@ -10,12 +11,14 @@ test.describe.serial('should be able to access independent testing', () => {
     process.cwd(),
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
+  let page: Page;
 
-  test.beforeAll(async ({ page }) => {
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
     await login(page);
   });
 
-  test.afterAll(async ({ page }) => {
+  test.afterAll(async () => {
     await logout(page);
   });
 

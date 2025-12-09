@@ -1,16 +1,19 @@
 import { test, expect } from './fixtures/fixtures';
 import { login, logout } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
+import { Page } from '@playwright/test';
 
 test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
   test.describe.configure({ retries: 1 });
+  let page: Page;
 
-  test.beforeAll(async ({ page }) => {
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
     await login(page);
   });
 
-  test.afterAll(async ({ page }) => {
+  test.afterAll(async () => {
     await logout(page);
   });
 
