@@ -114,6 +114,34 @@ test.describe
     await expect(
       page.getByRole('cell', { name: '1234', exact: true })
     ).toBeVisible();
+    await page.getByText('Custom code added').click();
+
+    /// ==========================================================================
+    /// Test that section modification works as expected
+    /// ==========================================================================
+    await page.getByRole('button', { name: 'Sections' }).click();
+    await expect(
+      page.getByLabel('Include and refine section History of encounters')
+    ).toBeChecked();
+
+    const radio = page.getByLabel(
+      'Include entire section History of encounters'
+    );
+    const parent = radio.locator('..');
+    await parent.click();
+
+    // Wait for saving to show up
+    await page.getByText('Saving').waitFor({ state: 'visible' });
+
+    // Wait for saving to go away (refetch finished)
+    await page.getByText('Saving').waitFor({ state: 'detached' });
+
+    await page.getByRole('button', { name: 'Acanthamoeba' }).click();
+
+    await page.getByRole('button', { name: 'Sections' }).click();
+    await expect(
+      page.getByLabel('Include entire section History of encounters')
+    ).toBeChecked();
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
@@ -408,7 +436,7 @@ test.describe
     await expect(page.getByRole('row')).toHaveCount(11);
     await page.getByRole('button', { name: 'Next' }).click();
 
-    // should be 2 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(2);
+    // should be 3 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(3);
   });
 });
