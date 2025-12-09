@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Literal, TypedDict
 
+type NamespaceMap = dict[str, str]
+type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
+
 
 @dataclass
 class ReportableCondition:

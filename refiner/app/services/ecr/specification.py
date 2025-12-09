@@ -2,7 +2,13 @@ from typing import Final, TypedDict
 
 from lxml.etree import _Element
 
-from .models import EICRSpecification, SectionSpecification, TriggerCode
+from .models import (
+    EICRSpecification,
+    EicrVersion,
+    NamespaceMap,
+    SectionSpecification,
+    TriggerCode,
+)
 
 # NOTE:
 # TYPE DEFINITIONS FOR RAW DATA
@@ -31,15 +37,13 @@ class RawSectionData(TypedDict):
 # map of version -> map of loinc -> section data
 type EicrSpecsData = dict[str, dict[str, RawSectionData]]
 
-# map of prefix -> uri
-type NamespaceMap = dict[str, str]
 
 # NOTE:
 # CONSTANTS
 # =============================================================================
 
 # map of templateId extensions to their semantic version strings
-EICR_VERSION_MAP: Final[dict[str, str]] = {
+EICR_VERSION_MAP: Final[dict[str, EicrVersion]] = {
     "2016-12-01": "1.1",
     "2021-01-01": "3.1",
     "2022-05-01": "3.1.1",
@@ -502,12 +506,14 @@ EICR_SPECS_DATA: Final[EicrSpecsData] = {
 # =============================================================================
 
 
-def detect_eicr_version(xml_root: _Element) -> str:
+def detect_eicr_version(xml_root: _Element) -> EicrVersion:
     """
     Inspects the XML header to determine the eICR version (e.g. "1.1", "3.1").
+
     Defaults to "1.1" if detection fails.
     """
-    # Search for the specific templateId that indicates the version
+
+    # search for the specific templateId that indicates the version
     template_id = xml_root.find(
         'cda:templateId[@root="2.16.840.1.113883.10.20.15.2"]',
         namespaces=NAMESPACES,
@@ -523,21 +529,24 @@ def detect_eicr_version(xml_root: _Element) -> str:
 
 def load_spec(version: str) -> EICRSpecification:
     """
-    Loads the static configuration for a specific eICR version
-    and converts it into a strongly-typed EICRSpecification.
+    Loads the static configuration for a specific eICR version.
+
+    Loads and converts the configuration data into a strongly-typed
+    EICRSpecification.
     """
+
     raw_data = EICR_SPECS_DATA.get(version)
 
     if not raw_data:
-        # Fallback to 1.1 if the requested version isn't found in our lookups
-        # This prevents crashes for unknown versions while we expand support
+        # fallback to 1.1 if the requested version isn't found in our lookups
+        # this prevents crashes for unknown versions while we expand support
         raw_data = EICR_SPECS_DATA["1.1"]
         version = "1.1"
 
     sections: dict[str, SectionSpecification] = {}
 
     for loinc, section_data in raw_data.items():
-        # 1. Build the list of TriggerCode objects
+        # 1. build the list of TriggerCode objects
         trigger_codes = []
         raw_triggers = section_data.get("trigger_codes", {})
 
@@ -550,7 +559,7 @@ def load_spec(version: str) -> EICRSpecification:
                 )
             )
 
-        # 2. Build the SectionSpecification
+        # 2. build the SectionSpecification
         spec = SectionSpecification(
             loinc_code=loinc,
             display_name=section_data.get("display", "Unknown Section"),
