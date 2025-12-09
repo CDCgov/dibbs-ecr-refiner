@@ -35,12 +35,14 @@ async def insert_configuration_db(
         jurisdiction_id,
         condition_id,
         name,
+        created_by,
         included_conditions,
         custom_codes,
         local_codes,
         section_processing
     )
     VALUES (
+        %s,
         %s,
         %s,
         %s,
@@ -84,6 +86,8 @@ async def insert_configuration_db(
             condition.id,
             # always set name to condition display name
             config_to_clone.name,
+            # cloned by this user
+            user_id,
             # included_conditions: always start with primary
             Jsonb(
                 [str(c.id) for c in config_to_clone.included_conditions]
@@ -117,6 +121,8 @@ async def insert_configuration_db(
             condition.id,
             # always set name to condition display name
             condition.display_name,
+            # created by this user
+            user_id,
             # included_conditions: always start with primary
             Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
             # custom_codes
