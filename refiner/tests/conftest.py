@@ -1,9 +1,4 @@
 import os
-from datetime import datetime
-from uuid import UUID
-
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 
 # These variables need to go before `app` imports
 os.environ["ENV"] = "mock-env"
@@ -26,10 +21,7 @@ from zipfile import ZipFile
 import pytest
 from lxml import etree
 
-from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
-from app.db.users.model import DbUser
-from app.main import app
 
 NAMESPACES: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
 
@@ -142,40 +134,3 @@ def normalize_xml(xml: str) -> str:
     return etree.tostring(
         etree.fromstring(xml), pretty_print=True, encoding="unicode"
     ).strip()
-
-
-TEST_SESSION_TOKEN = "test-token"
-MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
-
-
-def mock_user():
-    return DbUser(
-        id=MOCK_LOGGED_IN_USER_ID,
-        username="tester",
-        email="tester@test.com",
-        jurisdiction_id="JD-1",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    )
-
-
-@pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user, mock_db_functions):
-    """
-    Mock an authenticated client.
-    """
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
-        yield client
-
-
-@pytest.fixture(autouse=True)
-def mock_logged_in_user():
-    """
-    Mock the logged-in user dependency
-    """
-
-    app.dependency_overrides[get_logged_in_user] = mock_user
-    yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
