@@ -295,7 +295,7 @@ def _analyze_trigger_codes_in_context(
         return {id(elem): False for elem in contextual_matches}
 
     trigger_analysis = {}
-    template_cache = {}
+    template_cache: dict[int, bool] = {}
 
     for clinical_element in contextual_matches:
         element_id = id(clinical_element)
@@ -633,7 +633,10 @@ def _has_trigger_template_ancestor(element: _Element, trigger_oids: set[str]) ->
 
         if isinstance(template_elements, list):
             for template in template_elements:
-                # check root only
+                # make sure the `.get()` is only performed on an _Element
+                if not isinstance(template, _Element):
+                    continue
+                # now we can just check the root
                 if (root := template.get("root")) and root in trigger_oids:
                     return True
 
