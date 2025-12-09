@@ -6,12 +6,12 @@ test.describe
   .serial('Activation for new draft configurations works as expected', () => {
   test.describe.configure({ retries: 1 });
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeAll(async ({ page }) => {
     await login(page);
     await page.goto('/');
   });
 
-  test.afterEach(async ({ page }) => {
+  test.afterAll(async ({ page }) => {
     await logout(page);
   });
 

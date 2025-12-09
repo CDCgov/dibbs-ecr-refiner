@@ -6,11 +6,11 @@ test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
   test.describe.configure({ retries: 1 });
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeAll(async ({ page }) => {
     await login(page);
   });
 
-  test.afterEach(async ({ page }) => {
+  test.afterAll(async ({ page }) => {
     await logout(page);
   });
 

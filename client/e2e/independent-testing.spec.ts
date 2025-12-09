@@ -11,11 +11,11 @@ test.describe.serial('should be able to access independent testing', () => {
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeAll(async ({ page }) => {
     await login(page);
   });
 
-  test.afterEach(async ({ page }) => {
+  test.afterAll(async ({ page }) => {
     await logout(page);
   });
 
