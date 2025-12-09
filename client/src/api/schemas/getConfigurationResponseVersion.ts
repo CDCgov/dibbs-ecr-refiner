@@ -12,4 +12,7 @@ export interface GetConfigurationResponseVersion {
   version: number;
   condition_canonical_url: string;
   status: GetConfigurationResponseVersionStatus;
+  created_at: string;
+  last_activated_at: string;
+  created_by: string;
 }

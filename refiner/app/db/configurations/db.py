@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -929,6 +930,9 @@ class GetConfigurationResponseVersion:
     version: int
     condition_canonical_url: str
     status: DbConfigurationStatus
+    created_at: datetime
+    last_activated_at: datetime
+    created_by: str
 
 
 async def get_latest_config_db(
@@ -1017,11 +1021,19 @@ async def get_configuration_versions_db(
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
     query = """
-        SELECT id, version, status, condition_canonical_url
-        FROM configurations
-        WHERE jurisdiction_id = %s
-        AND condition_canonical_url = %s
-        ORDER BY version DESC;
+    SELECT
+        c.id,
+        c.version,
+        c.status,
+        c.condition_canonical_url,
+        c.last_activated_at,
+        c.created_at,
+        u.username as created_by
+    FROM configurations c
+    JOIN users u ON u.id = c.created_by
+    WHERE c.jurisdiction_id = %s
+    AND c.condition_canonical_url = %s
+    ORDER BY version DESC;
     """
 
     params = (jurisdiction_id, condition_canonical_url)
