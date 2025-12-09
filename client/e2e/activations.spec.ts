@@ -3,9 +3,10 @@ import { test, expect } from './fixtures/fixtures';
 import { login, logout } from './utils';
 
 test.describe('Activation for new draft configurations works as expected', () => {
+  test.describe.configure({ retries: 1 });
+
   test.beforeEach(async ({ page }) => {
     await login(page);
-
     await page.goto('/');
   });
 

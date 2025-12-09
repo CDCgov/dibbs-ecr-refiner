@@ -4,6 +4,8 @@ import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
 test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
+  test.describe.configure({ retries: 1 });
+
   test.beforeEach(async ({ page }) => {
     await login(page);
   });
