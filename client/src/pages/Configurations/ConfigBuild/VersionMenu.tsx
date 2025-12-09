@@ -38,10 +38,18 @@ export function VersionMenu({
             <Fragment key={v.id}>
               <MenuItem>
                 <Link
-                  className="data-focus:bg-gray-10 block p-4 font-bold"
+                  className="data-focus:bg-gray-10 block p-2"
                   to={`/configurations/${v.id}/${step}`}
                 >
-                  Version {v.version}
+                  <div className="flex flex-col">
+                    <span className="font-bold">Version {v.version}</span>
+                    <MenuItemDetail
+                      className="text-gray-50"
+                      created_at={v.created_at}
+                      last_activated_at={v.last_activated_at}
+                      created_by={v.created_by}
+                    />
+                  </div>
                 </Link>
               </MenuItem>
               {versions.length - 1 !== i && (
@@ -60,5 +68,33 @@ export function VersionMenu({
         className="border-gray-cool-20 mx-1 hidden h-10 border-l md:block"
       ></div>
     </>
+  );
+}
+
+type MenuItemDetailProps = Pick<
+  GetConfigurationResponseVersion,
+  'created_at' | 'last_activated_at' | 'created_by'
+> & {
+  className?: string;
+};
+function MenuItemDetail({
+  created_at,
+  last_activated_at,
+  created_by,
+  className,
+}: MenuItemDetailProps) {
+  if (last_activated_at) {
+    return (
+      <span className={className}>
+        Last activated {new Date(last_activated_at).toLocaleString()} by{' '}
+        {created_by}
+      </span>
+    );
+  }
+
+  return (
+    <span className={className}>
+      Draft created {new Date(created_at).toLocaleString()} by {created_by}
+    </span>
   );
 }
