@@ -6,6 +6,7 @@ import {
   GetConfigurationResponseVersion,
 } from '../../../api/schemas';
 import { Fragment } from 'react';
+import { useDatetimeFormatter } from '../../../hooks/UseDatetimeFormatter';
 
 interface VersionMenuProps {
   id: string;
@@ -42,9 +43,12 @@ export function VersionMenu({
                   to={`/configurations/${v.id}/${step}`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-bold">Version {v.version}</span>
+                    <VersionText
+                      versionNumber={v.version}
+                      isActive={v.status === 'active'}
+                    />
                     <MenuItemDetail
-                      className="text-gray-50"
+                      className="text-gray-60"
                       created_at={v.created_at}
                       last_activated_at={v.last_activated_at}
                       created_by={v.created_by}
@@ -71,6 +75,23 @@ export function VersionMenu({
   );
 }
 
+interface VersionTextProps {
+  versionNumber: number;
+  isActive: boolean;
+}
+
+function VersionText({ versionNumber, isActive }: VersionTextProps) {
+  const versionText = `Version ${versionNumber}`;
+  return (
+    <span className="text-gray-cool-90 font-bold">
+      {versionText}{' '}
+      {isActive ? (
+        <span className="text-state-success-dark">(Active)</span>
+      ) : null}
+    </span>
+  );
+}
+
 type MenuItemDetailProps = Pick<
   GetConfigurationResponseVersion,
   'created_at' | 'last_activated_at' | 'created_by'
@@ -83,18 +104,22 @@ function MenuItemDetail({
   created_by,
   className,
 }: MenuItemDetailProps) {
+  const formatDatetime = useDatetimeFormatter();
+
   if (last_activated_at) {
+    const { date, time } = formatDatetime(last_activated_at);
     return (
       <span className={className}>
-        Last activated {new Date(last_activated_at).toLocaleString()} by{' '}
-        {created_by}
+        Last activated {date}, {time} by {created_by}
       </span>
     );
   }
 
+  const { date, time } = formatDatetime(created_at);
+
   return (
     <span className={className}>
-      Draft created {new Date(created_at).toLocaleString()} by {created_by}
+      Draft created {date}, {time} by {created_by}
     </span>
   );
 }
