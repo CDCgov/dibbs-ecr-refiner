@@ -1,6 +1,6 @@
 -- add new column
 ALTER TABLE configurations
-ADD COLUMN created_by UUID; -- TODO: should I make this not null?
+ADD COLUMN created_by UUID NOT NULL;
 
 -- add fk reference
 ALTER TABLE configurations
