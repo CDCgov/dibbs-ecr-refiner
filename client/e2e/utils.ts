@@ -23,7 +23,6 @@ export function refreshDatabase(): string {
 export async function login(page: Page) {
   await page.goto('/');
   await page.getByText('Log in').click();
-  await page.getByRole('textbox', { name: 'Username or email' }).click();
   await page
     .getByRole('textbox', { name: 'Username or email' })
     .fill('refiner');
