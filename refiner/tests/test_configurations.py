@@ -140,6 +140,7 @@ def mock_db_functions(monkeypatch):
             created_by=MOCK_LOGGED_IN_USER_ID,
             created_at=datetime.now(),
             last_activated_at=None,
+            last_activated_by=None,
         )
     ]
 
