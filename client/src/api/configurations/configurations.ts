@@ -955,14 +955,13 @@ export const useUpdateConfigurationSectionProcessing = <TError = AxiosError<HTTP
 
 Args:
     configuration_id (UUID): ID of the configuration to update
-    body (ConfigurationActivationInput): Input for the activation, which includes
-        condition_canonical_url: used to deconflict / deactivate any sibling configurations
     user (DbUser): The logged-in user
     db (AsyncDatabaseConnection): Database connection
 
 Raises:
-    HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
-    HTTPException: 500 if configuration can't be activated
+    HTTPException: 400 if configuration can't be deactivated because of its current state
+    HTTPException: 404 if configuration can't be found
+    HTTPException: 500 if configuration can't be deactivated by the server
 
 Returns:
     ActivateConfigurationResponse: Metadata about the activated condition for confirmation
@@ -1030,13 +1029,13 @@ export const useActivateConfiguration = <TError = AxiosError<HTTPValidationError
 
 Args:
     configuration_id (UUID): ID of the configuration to update
-    canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
     user (DbUser): The logged-in user
     db (AsyncDatabaseConnection): Database connection
 
 Raises:
-    HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
-    HTTPException: 500 if configuration can't be deactivated
+    HTTPException: 400 if configuration can't be deactivated because of its current state
+    HTTPException: 404 if configuration can't be found
+    HTTPException: 500 if configuration can't be deactivated by the server
 
 Returns:
     ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
