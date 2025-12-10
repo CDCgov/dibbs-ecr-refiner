@@ -34,7 +34,6 @@ export function ActivityLogEntries({
           <th scope="col">{dateHeader}</th>
         </tr>
       </thead>
-
       <tbody>
         {filteredLogEntries
           .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))

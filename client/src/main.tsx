@@ -7,9 +7,33 @@ import '@fontsource-variable/public-sans';
 import '@trussworks/react-uswds/lib/index.css';
 import './tailwind.css';
 import './styles/index.scss';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 
-const queryClient = new QueryClient();
+function handleSessionExpiry(error: Error) {
+  if (isAxiosError(error) && error.response?.status === 401) {
+    window.location.href = '/expired';
+  }
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+    },
+  },
+  queryCache: new QueryCache({
+    onError: handleSessionExpiry,
+  }),
+  mutationCache: new MutationCache({
+    onError: handleSessionExpiry,
+  }),
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

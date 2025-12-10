@@ -43,6 +43,29 @@ test.describe
     await expect(
       page.getByRole('heading', { name: 'Add condition code sets' })
     ).toBeVisible();
+
+    // Add a few code sets and check that remove button shows up properly
+    await page.getByText('Acute Flaccid Myelitis (AFM)').click();
+    await expect(
+      page.getByRole('button', { name: 'Remove Acute Flaccid Myelitis (AFM)' })
+    ).toBeVisible();
+
+    await page
+      .getByText('Agricultural Chemicals (Fertilizer) Poisoning')
+      .click();
+    await expect(
+      page.getByRole('button', {
+        name: 'Remove Agricultural Chemicals (Fertilizer) Poisoning',
+      })
+    ).toBeVisible();
+
+    await page.getByText('Alpha-gal Syndrome').click();
+    await expect(
+      page.getByRole('button', {
+        name: 'Remove Alpha-gal Syndrome',
+      })
+    ).toBeVisible();
+
     await page
       .getByRole('searchbox', { name: 'Search by condition name' })
       .click();
@@ -51,7 +74,10 @@ test.describe
       .fill('disease');
     await page.getByText('Balamuthia mandrillaris Disease').click();
     await page.getByTestId('close-drawer').click();
-    await page.getByRole('heading', { name: 'Condition added' }).click();
+    await page.waitForSelector(
+      '[role="alert"]:has-text("Condition code set added")',
+      { state: 'detached' }
+    );
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -88,6 +114,34 @@ test.describe
     await expect(
       page.getByRole('cell', { name: '1234', exact: true })
     ).toBeVisible();
+    await page.getByText('Custom code added').click();
+
+    /// ==========================================================================
+    /// Test that section modification works as expected
+    /// ==========================================================================
+    await page.getByRole('button', { name: 'Sections' }).click();
+    await expect(
+      page.getByLabel('Include and refine section History of encounters')
+    ).toBeChecked();
+
+    const radio = page.getByLabel(
+      'Include entire section History of encounters'
+    );
+    const parent = radio.locator('..');
+    await parent.click();
+
+    // Wait for saving to show up
+    await page.getByText('Saving').waitFor({ state: 'visible' });
+
+    // Wait for saving to go away (refetch finished)
+    await page.getByText('Saving').waitFor({ state: 'detached' });
+
+    await page.getByRole('button', { name: 'Acanthamoeba' }).click();
+
+    await page.getByRole('button', { name: 'Sections' }).click();
+    await expect(
+      page.getByLabel('Include entire section History of encounters')
+    ).toBeChecked();
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
@@ -370,5 +424,19 @@ test.describe
         .filter({ hasText: 'Acanthamoeba' })
         .filter({ hasText: "Removed custom code '5678'" })
     ).toBeVisible();
+
+    // filter by Acanthamoeba
+    await page
+      .getByLabel('Condition')
+      .selectOption(
+        'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/ceef5555-ce1a-42ff-a124-6508eec46658'
+      );
+
+    // should be 11 items on page 1 (including header)
+    await expect(page.getByRole('row')).toHaveCount(11);
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    // should be 3 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(3);
   });
 });

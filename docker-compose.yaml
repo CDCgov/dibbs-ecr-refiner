@@ -45,7 +45,7 @@ services:
       - auth
       - localstack
   auth:
-    image: quay.io/keycloak/keycloak:26.4.5
+    image: quay.io/keycloak/keycloak:26.4.7
     command:
       - "start-dev"
       - "--import-realm"
@@ -93,7 +93,7 @@ services:
       - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
 
   migrate:
-    image: migrate/migrate:v4.19.0
+    image: migrate/migrate:v4.19.1
     working_dir: /app
     entrypoint: ["tail", "-f", "/dev/null"]
     depends_on:

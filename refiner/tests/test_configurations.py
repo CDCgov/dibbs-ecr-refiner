@@ -25,7 +25,7 @@ from app.services.testing import InlineTestingResult
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
-MOCK_LOGGED_IN_USER = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
+MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
 MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
 MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
 MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
@@ -37,7 +37,7 @@ def make_db_condition_coding(code, display):
 
 def mock_user():
     return DbUser(
-        id=MOCK_LOGGED_IN_USER,
+        id=MOCK_LOGGED_IN_USER_ID,
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -137,7 +137,10 @@ def mock_db_functions(monkeypatch):
 
     versions_mock = [
         GetConfigurationResponseVersion(
-            id=MOCK_CONFIGURATION_ID, status="draft", version=1
+            id=MOCK_CONFIGURATION_ID,
+            status="draft",
+            version=1,
+            condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         )
     ]
 
@@ -186,7 +189,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        condition_canonical_url="https://test.com",
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
 
     monkeypatch.setattr(
@@ -355,7 +358,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        condition_canonical_url="https://test.com",
+        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",

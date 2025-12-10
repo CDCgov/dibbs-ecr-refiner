@@ -60,9 +60,9 @@ async def get_logged_in_user(
             detail="Missing session token",
         )
 
+    token_hash = get_hashed_token(session_token)
+    db_user = None
     try:
-        token_hash = get_hashed_token(session_token)
-
         async with db.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
                 now = dt.now(UTC)
@@ -75,29 +75,7 @@ async def get_logged_in_user(
                     """,
                     (token_hash, now),
                 )
-
-                row = await cur.fetchone()
-
-                if not row:
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Invalid or expired session token",
-                    )
-
-                user = DbUserWithSessionExpiryTime(**row)
-                expires_at = user.expires_at
-
-                # Renew session if it's close to expiring
-                if expires_at - now < RENEW_THRESHOLD:
-                    new_expiration = now + SESSION_TTL
-                    await cur.execute(
-                        "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
-                        (new_expiration, token_hash),
-                    )
-
-            # Create a DbUser from the DbUserWithSessionExpiryTime to return
-            return user.to_db_user()
-
+                db_user = await cur.fetchone()
     except (DatabaseConnectionError, DatabaseQueryError) as db_err:
         logger.error(
             "Database error occurred while getting user information",
@@ -107,12 +85,56 @@ async def get_logged_in_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal database error.",
         )
-    except Exception as e:
-        logger.error(
-            "Error occurred when fetching logged-in user",
-            extra={"error": str(e)},
-        )
+
+    if not db_user:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unexpected server error.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired session token",
         )
+
+    user = DbUserWithSessionExpiryTime(**db_user)
+    expires_at = user.expires_at
+
+    # Renew session if it's close to expiring
+    await update_session_expiry_time(
+        expires_at=expires_at, token_hash=token_hash, logger=logger
+    )
+
+    # Create a DbUser from the DbUserWithSessionExpiryTime to return
+    return user.to_db_user()
+
+
+async def update_session_expiry_time(
+    expires_at: datetime, token_hash: str, logger: Logger
+) -> None:
+    """
+    Updates a user's session expiration if it is set to expire soon.
+
+    Args:
+        expires_at (datetime): Current expiration time
+        token_hash (str): Hashed session token
+        logger (Logger): Standard logger
+
+    Raises:
+        HTTPException: 500 if there is an error while updating the session
+    """
+    now = dt.now(UTC)
+    if expires_at - now < RENEW_THRESHOLD:
+        new_expiration = now + SESSION_TTL
+        try:
+            async with db.get_connection() as conn:
+                async with conn.cursor(row_factory=dict_row) as cur:
+                    await cur.execute(
+                        "UPDATE sessions SET expires_at = %s WHERE token_hash = %s",
+                        (new_expiration, token_hash),
+                    )
+
+        except (DatabaseConnectionError, DatabaseQueryError) as db_err:
+            logger.error(
+                "Database error occurred while getting user information",
+                extra={"error": str(db_err), "error_details": db_err.details},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Internal database error.",
+            )

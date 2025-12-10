@@ -25,6 +25,7 @@ export function App() {
     return (
       <Routes>
         <Route path="/" index element={<Home />} />
+        <Route path="/expired" element={<SessionRedirect />} />
         <Route path="*" element={<SessionRedirect />} />
       </Routes>
     );
