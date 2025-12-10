@@ -15,12 +15,15 @@ type CursorType = dict[str, Any]
 
 async def _activate_configuration_db(
     configuration_id: UUID,
+    activated_by_user_id: UUID,
     *,
     cur: AsyncCursor[CursorType],
 ) -> DbConfiguration | None:
     query = """
             UPDATE configurations
-            SET status = 'active'
+            SET
+                status = 'active',
+                last_activated_by = %s
             WHERE id = %s
                 RETURNING
                 id,
@@ -39,7 +42,10 @@ async def _activate_configuration_db(
                 condition_canonical_url;
         """
 
-    params = (configuration_id,)
+    params = (
+        activated_by_user_id,
+        configuration_id,
+    )
     await cur.execute(query, params)
     row = await cur.fetchone()
 
@@ -113,6 +119,7 @@ async def _deactivate_configuration_db(
 
 async def activate_configuration_db(
     configuration_id: UUID,
+    activated_by_user_id: UUID,
     canonical_url: str,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
@@ -136,7 +143,9 @@ async def activate_configuration_db(
             if not current_active_config:
                 # just activate the configuration without deactivating
                 activated_config = await _activate_configuration_db(
-                    configuration_id=configuration_id, cur=cur
+                    configuration_id=configuration_id,
+                    activated_by_user_id=activated_by_user_id,
+                    cur=cur,
                 )
                 if activated_config:
                     return activated_config
@@ -151,7 +160,9 @@ async def activate_configuration_db(
                     )
 
                 activated_config = await _activate_configuration_db(
-                    configuration_id=configuration_id, cur=cur
+                    configuration_id=configuration_id,
+                    activated_by_user_id=activated_by_user_id,
+                    cur=cur,
                 )
                 if activated_config:
                     return activated_config

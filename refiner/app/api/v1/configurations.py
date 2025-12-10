@@ -1500,6 +1500,7 @@ async def activate_configuration(
 
     active_config = await activate_configuration_db(
         configuration_id=config_to_activate.id,
+        activated_by_user_id=user.id,
         canonical_url=config_to_activate.condition_canonical_url,
         jurisdiction_id=user.jurisdiction_id,
         db=db,
