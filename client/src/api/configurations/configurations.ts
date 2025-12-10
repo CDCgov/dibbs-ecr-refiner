@@ -959,9 +959,9 @@ Args:
     db (AsyncDatabaseConnection): Database connection
 
 Raises:
-    HTTPException: 400 if configuration can't be deactivated because of its current state
+    HTTPException: 400 if configuration can't be activated because of its current state
     HTTPException: 404 if configuration can't be found
-    HTTPException: 500 if configuration can't be deactivated by the server
+    HTTPException: 500 if configuration can't be activated by the server
 
 Returns:
     ActivateConfigurationResponse: Metadata about the activated condition for confirmation
