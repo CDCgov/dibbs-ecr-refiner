@@ -250,7 +250,7 @@ describe('Config builder page', () => {
       /^Version 2 Draft created (\d{2}\/\d{2}\/\d{4}), (\d{1,2}:\d{2} (AM|PM)) by mock-user-1$/;
     expect(draft).toHaveTextContent(expectedDraftTextFormat);
 
-    // check that draft config displays info in the expected format
+    // check that active config displays info in the expected format
     const active = menuItems[1];
     const expectedActiveTextFormat =
       /^Version 1 \(Active\)Last activated (\d{2}\/\d{2}\/\d{4}), (\d{1,2}:\d{2} (AM|PM)) by mock-user-2$/;
