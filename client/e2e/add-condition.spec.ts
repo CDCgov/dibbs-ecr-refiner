@@ -3,8 +3,6 @@ import { createNewConfiguration } from './utils';
 
 test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
-  test.describe.configure({ retries: 1 });
-
   test('should be able to create a configuration for Acanthamoeba', async ({
     page,
     makeAxeBuilder,
