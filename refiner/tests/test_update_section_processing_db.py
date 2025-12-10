@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 
 from app.db.configurations.db import update_section_processing_db
@@ -81,6 +83,7 @@ async def test_update_section_processing_valid():
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=uuid4(),
         condition_canonical_url="https://test.com",
     )
 
@@ -103,6 +106,7 @@ async def test_update_section_processing_valid():
         "status": mock_config.status,
         "last_activated_at": mock_config.last_activated_at,
         "last_activated_by": mock_config.last_activated_by,
+        "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
     }
 
@@ -156,6 +160,7 @@ async def test_update_section_processing_invalid_action():
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=uuid4(),
         condition_canonical_url="https://test.com",
     )
 
@@ -200,6 +205,7 @@ async def test_update_section_processing_unknown_code():
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=uuid4(),
         condition_canonical_url="https://test.com",
     )
 
@@ -221,6 +227,7 @@ async def test_update_section_processing_unknown_code():
         "status": mock_config.status,
         "last_activated_at": mock_config.last_activated_at,
         "last_activated_by": mock_config.last_activated_by,
+        "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
     }
 

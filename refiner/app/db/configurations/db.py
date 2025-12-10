@@ -65,6 +65,7 @@ async def insert_configuration_db(
         version,
         last_activated_at,
         last_activated_by,
+        created_by,
         condition_canonical_url
     """
 
@@ -79,7 +80,7 @@ async def insert_configuration_db(
         for code, details in section_details.items()
     ]
 
-    params: tuple[str, UUID, str, Jsonb, Jsonb, Jsonb, Jsonb]
+    params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
     if config_to_clone:
         params = (
             jurisdiction_id,
@@ -176,6 +177,7 @@ async def get_configurations_db(
             version,
 			last_activated_at,
 			last_activated_by,
+            created_by,
             condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -212,6 +214,7 @@ async def get_configuration_by_id_db(
             version,
 			last_activated_at,
 			last_activated_by,
+            created_by,
             condition_canonical_url
         FROM configurations
         WHERE id = %s
@@ -318,6 +321,7 @@ async def associate_condition_codeset_with_configuration_db(
                 version,
                 last_activated_at,
                 last_activated_by,
+                created_by,
                 condition_canonical_url;
             """
 
@@ -395,6 +399,7 @@ async def disassociate_condition_codeset_with_configuration_db(
             version,
 			last_activated_at,
 			last_activated_by,
+            created_by,
             condition_canonical_url;
     """
 
@@ -533,6 +538,7 @@ async def add_custom_code_to_configuration_db(
                 version,
                 last_activated_at,
                 last_activated_by,
+                created_by,
                 condition_canonical_url;
             """
 
@@ -604,6 +610,7 @@ async def delete_custom_code_from_configuration_db(
                 version,
                 last_activated_at,
                 last_activated_by,
+                created_by,
                 condition_canonical_url;
             """
 
@@ -672,6 +679,7 @@ async def edit_custom_code_from_configuration_db(
                 version,
                 last_activated_at,
                 last_activated_by,
+                created_by,
                 condition_canonical_url;
             """
 
@@ -845,6 +853,7 @@ async def update_section_processing_db(
                 version,
                 last_activated_at,
                 last_activated_by,
+                created_by,
                 condition_canonical_url;
             """
 
@@ -895,6 +904,7 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
             version,
 			last_activated_at,
 			last_activated_by,
+            created_by,
             condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -931,7 +941,7 @@ class GetConfigurationResponseVersion:
     condition_canonical_url: str
     status: DbConfigurationStatus
     created_at: datetime
-    last_activated_at: datetime
+    last_activated_at: datetime | None
     created_by: str
 
 
@@ -955,6 +965,7 @@ async def get_latest_config_db(
             version,
 			last_activated_at,
 			last_activated_by,
+            created_by,
             condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -996,6 +1007,7 @@ async def get_active_config_db(
             version,
 			last_activated_at,
 			last_activated_by,
+            created_by,
             condition_canonical_url
         FROM configurations
         WHERE jurisdiction_id = %s

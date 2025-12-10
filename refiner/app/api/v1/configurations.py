@@ -1455,18 +1455,7 @@ class ConfigurationStatusUpdateResponse:
     """
 
     configuration_id: UUID
-    version: int
-    condition_canonical_url: str
     status: DbConfigurationStatus
-
-
-@dataclass(frozen=True)
-class ConfigurationActivationInput(BaseModel):
-    """
-    Input for updating the status a configuration.
-    """
-
-    condition_canonical_url: str
 
 
 @router.patch(
@@ -1477,7 +1466,6 @@ class ConfigurationActivationInput(BaseModel):
 )
 async def activate_configuration(
     configuration_id: UUID,
-    body: ConfigurationActivationInput,
     db: AsyncDatabaseConnection = Depends(get_db),
     user: DbUser = Depends(get_logged_in_user),
 ) -> ConfigurationStatusUpdateResponse:
@@ -1511,10 +1499,9 @@ async def activate_configuration(
         )
 
     active_config = await activate_configuration_db(
-        config_to_activate=config_to_activate,
-        canonical_url=body.condition_canonical_url,
+        configuration_id=config_to_activate.id,
+        canonical_url=config_to_activate.condition_canonical_url,
         jurisdiction_id=user.jurisdiction_id,
-        configuration_id=configuration_id,
         db=db,
     )
 
@@ -1525,10 +1512,7 @@ async def activate_configuration(
         )
 
     return ConfigurationStatusUpdateResponse(
-        configuration_id=active_config.id,
-        version=active_config.version,
-        condition_canonical_url=active_config.condition_canonical_url,
-        status="active",
+        configuration_id=active_config.id, status=active_config.status
     )
 
 
@@ -1579,9 +1563,7 @@ async def deactivate_configuration(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuration can't be deactivated.",
         )
+
     return ConfigurationStatusUpdateResponse(
-        configuration_id=deactivated_config.id,
-        version=deactivated_config.version,
-        condition_canonical_url=deactivated_config.condition_canonical_url,
-        status="inactive",
+        configuration_id=deactivated_config.id, status=deactivated_config.status
     )

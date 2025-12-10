@@ -24,7 +24,7 @@ from app.services.testing import InlineTestingResult
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
-MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
+MOCK_LOGGED_IN_USER_ID = "5deb43c2-6a82-4052-9918-616e01d255c7"
 
 
 def make_db_condition_coding(code, display):
@@ -118,6 +118,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="url-1",
     )
     monkeypatch.setattr(
@@ -136,6 +137,9 @@ def mock_db_functions(monkeypatch):
             status="draft",
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+            created_by=MOCK_LOGGED_IN_USER_ID,
+            created_at=datetime.now(),
+            last_activated_at=None,
         )
     ]
 
@@ -184,6 +188,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
 
@@ -358,6 +363,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
     monkeypatch.setattr(
