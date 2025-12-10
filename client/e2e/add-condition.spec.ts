@@ -1,21 +1,10 @@
 import { test, expect } from './fixtures/fixtures';
-import { login, logout } from './utils';
+import { createNewConfiguration } from './utils';
 import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
-import { Page } from '@playwright/test';
 
 test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
   test.describe.configure({ retries: 1 });
-  let page: Page;
-
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
-  });
-
-  test.afterAll(async () => {
-    await logout(page);
-  });
 
   test('should be able to create a configuration for Acanthamoeba', async ({
     page,
@@ -28,16 +17,7 @@ test.describe
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    await page.getByTestId('combo-box-input').click();
-    await page.getByTestId('combo-box-input').fill('Acanthamoeba');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page.getByRole('option', { name: 'Acanthamoeba' }).press('Enter');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page.getByTestId('combo-box-clear-button').press('Tab');
-    await page.getByTestId('modalFooter').getByTestId('button').click();
-    await expect(
-      page.getByRole('heading', { name: 'New configuration created' })
-    ).toBeVisible();
+    await createNewConfiguration('Acanthamoeba', page);
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 

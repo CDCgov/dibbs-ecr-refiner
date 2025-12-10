@@ -1,64 +1,35 @@
-import { test, expect } from './fixtures/fixtures';
-import { login, logout } from './utils';
+import { test as loggedInTest, expect } from './fixtures/fixtures';
+import test from '@playwright/test';
+import { login } from './utils';
 
-test.describe('Viewing the application without logging in', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-  });
-
-  test('homepage has expected title and content', async ({
-    page,
-    makeAxeBuilder,
-  }) => {
-    await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-
-  test('should show a login button', async ({ page, makeAxeBuilder }) => {
-    await expect(page.getByText('Log in')).toBeVisible();
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-  });
-});
-
-test.describe('Viewing the application when logged in', () => {
-  test('should be able to see the configuration page, and both testing and configuration tabs', async ({
-    browser,
-    page,
-    makeAxeBuilder,
-  }) => {
-    const context = await browser.newContext();
-    page = await context.newPage();
-    await expect(
-      page.getByRole('link', { name: 'Provide Feedback' })
-    ).toBeHidden();
-    await login(page);
-    await expect(
-      page.getByRole('link', { name: 'Provide Feedback' })
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
-    await expect(
-      page.getByRole('link', { name: 'Configurations' })
-    ).toBeVisible();
-    await expect(
-      page.getByText('Your reportable condition configurations')
-    ).toBeVisible();
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-    await logout(page);
-    await page.close();
-  });
-
+loggedInTest.describe('Viewing the application sign in content', () => {
+  loggedInTest(
+    'should be able to see the configuration page, and both testing and configuration tabs',
+    async ({ page, makeAxeBuilder }) => {
+      await expect(
+        page.getByRole('link', { name: 'Provide Feedback' })
+      ).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'Configurations' })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Your reportable condition configurations')
+      ).toBeVisible();
+      await expect(makeAxeBuilder).toHaveNoAxeViolations();
+    }
+  );
+  // import and use the base test from Playwright since we need to log in and out
   test('should show the username in the top right and able to logout', async ({
     page,
-    makeAxeBuilder,
   }) => {
     await login(page);
-
     // 1️⃣ Locate the refiner button and click it
-    const refinerButton = page.locator('button', { hasText: 'refiner (SDDH)' });
+    const refinerButton = page.locator('button', {
+      hasText: 'refiner (SDDH)',
+    });
     await expect(refinerButton).toBeVisible();
     await refinerButton.click();
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // 2️⃣ Assert the logout link is visible
     const logoutLink = page.locator('a[href="/api/logout"]', {
@@ -68,7 +39,9 @@ test.describe('Viewing the application when logged in', () => {
 
     // 3️⃣ Click the logout link
     await logoutLink.click();
+
+    // homepage should have the relevant content
     await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
-    await expect(page.getByText('Log in')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
   });
 });

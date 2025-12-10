@@ -1,9 +1,7 @@
 import { test, expect } from './fixtures/fixtures';
-import { login, logout } from './utils';
-import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import path from 'path';
 import fs from 'fs';
-import { Page } from '@playwright/test';
+import { createNewConfiguration } from './utils';
 
 test.describe.serial('should be able to access independent testing', () => {
   // Resolve the file path relative to the project root
@@ -11,16 +9,6 @@ test.describe.serial('should be able to access independent testing', () => {
     process.cwd(),
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
-  let page: Page;
-
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-    await login(page);
-  });
-
-  test.afterAll(async () => {
-    await logout(page);
-  });
 
   test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
     page,
@@ -76,13 +64,7 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // configure covid-19
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-    await page.getByTestId('combo-box-input').click();
-    await page.getByTestId('combo-box-input').fill('COVID-19');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page.getByRole('option', { name: 'COVID-19' }).press('Enter');
-    await page.getByRole('button', { name: 'Set up configuration' }).click();
-    await expect(page.getByText('Build configuration')).toBeVisible();
+    await createNewConfiguration('COVID-19', page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
@@ -130,15 +112,7 @@ test.describe.serial('should be able to access independent testing', () => {
     ).toBeVisible();
 
     // configure influenza
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-    await page.getByTestId('combo-box-input').click();
-    await page.getByTestId('combo-box-input').fill('Influenza');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page
-      .getByRole('option', { name: 'Influenza', exact: true })
-      .press('Enter');
-    await page.getByRole('button', { name: 'Set up configuration' }).click();
-    await expect(page.getByText('Build configuration')).toBeVisible();
+    await createNewConfiguration('Influenza', page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();

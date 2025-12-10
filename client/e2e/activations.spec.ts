@@ -1,46 +1,18 @@
-import { Page } from '@playwright/test';
-import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import { test, expect } from './fixtures/fixtures';
-import { login, logout } from './utils';
+import { createNewConfiguration } from './utils';
 
 test.describe
   .serial('Activation for new draft configurations works as expected', () => {
   test.describe.configure({ retries: 1 });
-  let page: Page;
-
-  test.beforeAll(async ({ browser }) => {
-    page = await browser.newPage();
-
-    await login(page);
-  });
-
-  test.afterAll(async () => {
-    await logout(page);
-  });
 
   test('activations flow shows the correct options with different versions', async ({
     page,
     makeAxeBuilder,
   }) => {
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    await page.getByTestId('combo-box-input').click();
-    await page
-      .getByTestId('combo-box-input')
-      .fill('Hepatitis A Virus infection');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page
-      .getByRole('option', { name: 'Hepatitis A Virus infection' })
-      .press('Enter');
-
-    await page.getByText('Set up configuration').click();
-    await expect(
-      page.getByRole('heading', { name: 'New configuration created' })
-    ).toBeVisible();
+    await createNewConfiguration('Hepatitis A Virus infection', page);
 
     // activate the newly created config
-
     await expect(page.getByText('Build configuration')).toBeVisible();
     await page.getByRole('link', { name: 'Activate' }).click();
 
