@@ -7,6 +7,7 @@
  */
 import type { GetConfigurationResponseVersionStatus } from './getConfigurationResponseVersionStatus';
 import type { GetConfigurationResponseVersionLastActivatedAt } from './getConfigurationResponseVersionLastActivatedAt';
+import type { GetConfigurationResponseVersionLastActivatedBy } from './getConfigurationResponseVersionLastActivatedBy';
 
 export interface GetConfigurationResponseVersion {
   id: string;
@@ -14,6 +15,7 @@ export interface GetConfigurationResponseVersion {
   condition_canonical_url: string;
   status: GetConfigurationResponseVersionStatus;
   created_at: string;
-  last_activated_at: GetConfigurationResponseVersionLastActivatedAt;
   created_by: string;
+  last_activated_at: GetConfigurationResponseVersionLastActivatedAt;
+  last_activated_by: GetConfigurationResponseVersionLastActivatedBy;
 }

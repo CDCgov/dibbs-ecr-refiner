@@ -35,23 +35,24 @@ export function VersionMenu({
           </div>
         </MenuButton>
         <MenuItems className="absolute mt-1 ml-4 flex flex-col rounded-lg bg-white px-4 py-2 shadow-lg">
-          {versions.map((v, i) => (
-            <Fragment key={v.id}>
+          {versions.map((config, i) => (
+            <Fragment key={config.id}>
               <MenuItem>
                 <Link
                   className="data-focus:bg-gray-10 block p-2"
-                  to={`/configurations/${v.id}/${step}`}
+                  to={`/configurations/${config.id}/${step}`}
                 >
                   <div className="flex flex-col">
                     <VersionText
-                      versionNumber={v.version}
-                      isActive={v.status === 'active'}
+                      versionNumber={config.version}
+                      isActive={config.status === 'active'}
                     />
                     <MenuItemDetail
                       className="text-gray-60"
-                      created_at={v.created_at}
-                      last_activated_at={v.last_activated_at}
-                      created_by={v.created_by}
+                      created_at={config.created_at}
+                      created_by={config.created_by}
+                      last_activated_at={config.last_activated_at}
+                      last_activated_by={config.last_activated_by}
                     />
                   </div>
                 </Link>
@@ -59,7 +60,7 @@ export function VersionMenu({
               {versions.length - 1 !== i && (
                 <div
                   aria-hidden
-                  key={`${v.id}-divider`}
+                  key={`${config.id}-divider`}
                   className="bg-gray-cool-10 my-1 h-px"
                 ></div>
               )}
@@ -94,23 +95,24 @@ function VersionText({ versionNumber, isActive }: VersionTextProps) {
 
 type MenuItemDetailProps = Pick<
   GetConfigurationResponseVersion,
-  'created_at' | 'last_activated_at' | 'created_by'
+  'created_at' | 'created_by' | 'last_activated_at' | 'last_activated_by'
 > & {
   className?: string;
 };
 function MenuItemDetail({
   created_at,
-  last_activated_at,
   created_by,
+  last_activated_at,
+  last_activated_by,
   className,
 }: MenuItemDetailProps) {
   const formatDatetime = useDatetimeFormatter();
 
-  if (last_activated_at) {
+  if (last_activated_at && last_activated_by) {
     const { date, time } = formatDatetime(last_activated_at);
     return (
       <span className={className}>
-        Last activated {date}, {time} by {created_by}
+        Last activated {date}, {time} by {last_activated_by}
       </span>
     );
   }

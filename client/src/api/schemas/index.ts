@@ -38,6 +38,7 @@ export * from './getConfigurationResponseDraftId';
 export * from './getConfigurationResponseStatus';
 export * from './getConfigurationResponseVersion';
 export * from './getConfigurationResponseVersionLastActivatedAt';
+export * from './getConfigurationResponseVersionLastActivatedBy';
 export * from './getConfigurationResponseVersionStatus';
 export * from './getConfigurationsResponse';
 export * from './getConfigurationsResponseStatus';

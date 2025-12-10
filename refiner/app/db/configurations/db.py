@@ -941,8 +941,9 @@ class GetConfigurationResponseVersion:
     condition_canonical_url: str
     status: DbConfigurationStatus
     created_at: datetime
-    last_activated_at: datetime | None
     created_by: str
+    last_activated_at: datetime | None
+    last_activated_by: str | None
 
 
 async def get_latest_config_db(
@@ -1033,19 +1034,23 @@ async def get_configuration_versions_db(
     Given a jurisdiction ID and condition canonical URL, finds all related configuration versions.
     """
     query = """
-    SELECT
-        c.id,
-        c.version,
-        c.status,
-        c.condition_canonical_url,
-        c.last_activated_at,
-        c.created_at,
-        u.username as created_by
-    FROM configurations c
-    JOIN users u ON u.id = c.created_by
-    WHERE c.jurisdiction_id = %s
-    AND c.condition_canonical_url = %s
-    ORDER BY version DESC;
+        SELECT
+            c.id,
+            c.version,
+            c.status,
+            c.condition_canonical_url,
+            c.last_activated_at,
+            la.username AS last_activated_by,
+            c.created_at,
+            u.username AS created_by
+        FROM configurations c
+        JOIN users u
+            ON u.id = c.created_by
+        LEFT JOIN users la
+            ON la.id = c.last_activated_by
+        WHERE c.jurisdiction_id = %s
+        AND c.condition_canonical_url = %s
+        ORDER BY c.version DESC;
     """
 
     params = (jurisdiction_id, condition_canonical_url)

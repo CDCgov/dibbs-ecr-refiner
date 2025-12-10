@@ -38,6 +38,7 @@ const mockVersions: GetConfigurationResponseVersion[] = [
     created_at: '2025-12-18 18:01:40.660826+00',
     last_activated_at: '',
     created_by: 'mock-user-1',
+    last_activated_by: null,
   },
   {
     id: 'prev-id',
@@ -47,7 +48,8 @@ const mockVersions: GetConfigurationResponseVersion[] = [
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
     created_at: '2025-12-09 18:01:40.660826+00',
     last_activated_at: '2025-12-09 9:01:40.660826+00',
-    created_by: 'mock-user-2',
+    created_by: 'mock-user-1',
+    last_activated_by: 'mock-user-2',
   },
 ];
 
