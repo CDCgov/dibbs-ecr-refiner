@@ -58,6 +58,8 @@ export async function createNewConfiguration(
   await page.getByTestId('combo-box-clear-button').press('Tab');
   await page.getByTestId('modalFooter').getByTestId('button').click();
   await baseExpect(
-    page.getByRole('heading', { name: 'New configuration created' })
+    page.locator(
+      `h4:has-text("New configuration created") + p:has-text("${conditionName}")`
+    )
   ).toBeVisible();
 }

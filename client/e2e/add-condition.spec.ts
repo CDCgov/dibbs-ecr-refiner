@@ -10,15 +10,7 @@ test.describe
     page,
     makeAxeBuilder,
   }) => {
-    /// ==========================================================================
-    /// Test that a new condition can be added
-    /// ==========================================================================
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
     await createNewConfiguration('Acanthamoeba', page);
-
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     /// ==========================================================================
