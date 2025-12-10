@@ -1,6 +1,5 @@
 import { test, expect } from './fixtures/fixtures';
 import { createNewConfiguration } from './utils';
-import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 
 test.describe
   .serial('Adding/modifying configurations by initial condition', () => {
