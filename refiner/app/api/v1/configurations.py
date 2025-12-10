@@ -1494,7 +1494,7 @@ async def activate_configuration(
 
     if not config_to_activate:
         raise HTTPException(
-            status_code=status.HTTP_404_FORBIDDEN,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Configuration to deactivate can't be found.",
         )
 
