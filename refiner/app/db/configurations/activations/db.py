@@ -8,6 +8,8 @@ from app.db.configurations.db import (
     get_active_config_db,
 )
 from app.db.configurations.model import DbConfiguration
+from app.db.events.db import insert_event_db
+from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection
 
 type CursorType = dict[str, Any]
@@ -16,6 +18,7 @@ type CursorType = dict[str, Any]
 async def _activate_configuration_db(
     configuration_id: UUID,
     activated_by_user_id: UUID,
+    jurisdiction_id: str,
     *,
     cur: AsyncCursor[CursorType],
 ) -> DbConfiguration | None:
@@ -52,11 +55,24 @@ async def _activate_configuration_db(
     if not row:
         return None
 
+    await insert_event_db(
+        event=EventInput(
+            configuration_id=configuration_id,
+            user_id=activated_by_user_id,
+            jurisdiction_id=jurisdiction_id,
+            event_type="activate_configuration",
+            action_text="Activated configuration",
+        ),
+        cursor=cur,
+    )
+
     return DbConfiguration.from_db_row(row)
 
 
 async def _deactivate_configuration_db(
     configuration_id: UUID,
+    user_id: UUID,
+    jurisdiction_id: str,
     *,
     cur: AsyncCursor[CursorType],
 ) -> DbConfiguration | None:
@@ -114,6 +130,17 @@ async def _deactivate_configuration_db(
     if not row:
         return None
 
+    await insert_event_db(
+        event=EventInput(
+            configuration_id=configuration_id,
+            user_id=user_id,
+            jurisdiction_id=jurisdiction_id,
+            event_type="deactivate_configuration",
+            action_text="Deactivated configuration",
+        ),
+        cursor=cur,
+    )
+
     return DbConfiguration.from_db_row(row)
 
 
@@ -145,6 +172,7 @@ async def activate_configuration_db(
                 activated_config = await _activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
+                    jurisdiction_id=jurisdiction_id,
                     cur=cur,
                 )
                 if activated_config:
@@ -152,7 +180,10 @@ async def activate_configuration_db(
             else:
                 # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
                 deactivated_config = await _deactivate_configuration_db(
-                    configuration_id=current_active_config.id, cur=cur
+                    configuration_id=current_active_config.id,
+                    user_id=activated_by_user_id,
+                    jurisdiction_id=jurisdiction_id,
+                    cur=cur,
                 )
                 if not deactivated_config:
                     raise Exception(
@@ -162,6 +193,7 @@ async def activate_configuration_db(
                 activated_config = await _activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
+                    jurisdiction_id=jurisdiction_id,
                     cur=cur,
                 )
                 if activated_config:
@@ -172,6 +204,8 @@ async def activate_configuration_db(
 
 async def deactivate_configuration_db(
     configuration_id: UUID,
+    user_id: UUID,
+    jurisdiction_id: str,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -182,5 +216,7 @@ async def deactivate_configuration_db(
         async with conn.cursor(row_factory=dict_row) as internal_cur:
             return await _deactivate_configuration_db(
                 configuration_id=configuration_id,
+                user_id=user_id,
+                jurisdiction_id=jurisdiction_id,
                 cur=internal_cur,
             )
