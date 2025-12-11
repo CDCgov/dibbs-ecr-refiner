@@ -20,8 +20,8 @@ export function refreshDatabase(): string {
   }
 }
 
-export async function login(page: Page) {
-  await page.goto('/');
+export async function login(page: Page, baseUrl = '/') {
+  await page.goto(baseUrl);
   await page.getByText('Log in').click();
   await page
     .getByRole('textbox', { name: 'Username or email' })

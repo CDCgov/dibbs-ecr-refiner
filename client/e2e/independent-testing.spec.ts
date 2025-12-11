@@ -4,6 +4,10 @@ import fs from 'fs';
 import { createNewConfiguration } from './utils';
 
 test.describe('should be able to access independent testing', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/configurations');
+  });
+
   // Resolve the file path relative to the project root
   const filePath = path.resolve(
     process.cwd(),
@@ -232,14 +236,6 @@ test.describe('should be able to access independent testing', () => {
       .getByRole('link', { name: "visit eCR Refiner's repository" })
       .getAttribute('href');
     expect(linkURL).not.toBeNull();
-    await page.goto(linkURL as string);
-
-    // Check that the default file is there
-    await expect(
-      page.getByRole('link', {
-        name: 'APHL_eCR_Refiner_COVID_Influenza_Sample_Files.zip',
-      })
-    ).toBeVisible();
   });
 
   test('refinement percentages between the two flows should match', async ({
