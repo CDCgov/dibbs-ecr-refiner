@@ -12,8 +12,9 @@ export interface RadioCellProps {
 }
 
 /**
- * RadioCell renders a clickable, accessible table cell containing a radio input for a section action.
- * Uses USWDS radio markup/classes for consistent styling and accessibility.
+ * RadioCell renders a table cell containing a USWDS Radio component.
+ * Interaction is handled *only* through the radio input's onChange handler
+ * to prevent double-firing and duplicate API calls.
  */
 export function RadioCell({
   index,
@@ -23,17 +24,7 @@ export function RadioCell({
   applyAction,
 }: RadioCellProps) {
   return (
-    <td
-      className="text-center !break-all !whitespace-normal focus:outline-none"
-      tabIndex={0}
-      onClick={() => applyAction(index, action)}
-      onKeyDown={(e) => {
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          applyAction(index, action);
-        }
-      }}
-    >
+    <td className="text-center align-middle !break-all !whitespace-normal">
       <label className="usa-radio m-0 block cursor-pointer bg-transparent">
         <input
           className="usa-radio__input"
@@ -42,8 +33,7 @@ export function RadioCell({
           value={action}
           aria-label={ariaLabel}
           checked={checked}
-          tabIndex={-1}
-          readOnly
+          onChange={() => applyAction(index, action)}
         />
         <span className="usa-radio__label -top-4.5 right-0"></span>
         <span className="usa-sr-only">{ariaLabel}</span>
