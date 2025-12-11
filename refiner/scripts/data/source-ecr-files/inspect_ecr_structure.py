@@ -266,6 +266,10 @@ def display_rr_details(console: Console, root: _Element, ns: NamespaceMap) -> Co
 
 
 def main():
+    """
+    The main function that inspects eICR/RR pairs.
+    """
+
     console = Console()
 
     if not (files := pick_xml_files(console)):
