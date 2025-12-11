@@ -270,12 +270,13 @@ def setup(request):
     DO $$
     BEGIN
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
         )
         VALUES (
             '{TEST_JD_ID}',
             '{covid_id}',
             'COVID-19',
+            '{TEST_USER_ID}',
             '["{covid_id}"]'::jsonb,
             '[]'::jsonb,
             '{{}}'::jsonb,
@@ -285,12 +286,13 @@ def setup(request):
         ON CONFLICT DO NOTHING;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
         )
         VALUES (
             '{TEST_JD_ID}',
             '{flu_id}',
             'Influenza',
+            '{TEST_USER_ID}',
             '["{flu_id}"]'::jsonb,
             '[]'::jsonb,
             '{{}}'::jsonb,

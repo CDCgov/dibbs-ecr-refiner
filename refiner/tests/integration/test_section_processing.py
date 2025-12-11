@@ -16,11 +16,12 @@ from app.db.users.model import DbUser
 from app.main import app
 
 TEST_SESSION_TOKEN = "test-token"
+TEST_LOGGED_IN_USER_ID = "5deb43c2-6a82-4052-9918-616e01d255c7"
 
 
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=TEST_LOGGED_IN_USER_ID,
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -66,6 +67,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url="https://test.com",
     )
 
@@ -87,6 +89,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         status=initial_config.status,
         last_activated_at=initial_config.last_activated_at,
         last_activated_by=initial_config.last_activated_by,
+        created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url=initial_config.condition_canonical_url,
     )
 
@@ -143,6 +146,7 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url="https://test.com",
     )
 

@@ -88,6 +88,7 @@ class DbConfiguration:
     version: int
     last_activated_at: datetime | None
     last_activated_by: UUID | None
+    created_by: UUID
     condition_canonical_url: str
 
     @classmethod
@@ -121,5 +122,6 @@ class DbConfiguration:
             version=row["version"],
             last_activated_at=row["last_activated_at"],
             last_activated_by=row["last_activated_by"],
+            created_by=row["created_by"],
             condition_canonical_url=row["condition_canonical_url"],
         )
