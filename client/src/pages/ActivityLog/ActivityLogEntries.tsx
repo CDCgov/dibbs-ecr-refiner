@@ -1,11 +1,6 @@
 import { AuditEvent } from '../../api/schemas';
 import { Table } from '../../components/Table';
-
-const timeFormatter = new Intl.DateTimeFormat('en-US', {
-  hour: 'numeric',
-  minute: 'numeric',
-  hour12: true,
-});
+import { useDatetimeFormatter } from '../../hooks/UseDatetimeFormatter';
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];
 }
@@ -17,6 +12,8 @@ export function ActivityLogEntries({
   const conditionHeader = 'Condition';
   const actionHeader = 'Action';
   const dateHeader = 'Date';
+
+  const formatDatetime = useDatetimeFormatter();
 
   return (
     <Table striped>
@@ -38,7 +35,7 @@ export function ActivityLogEntries({
         {filteredLogEntries
           .sort((a, b) => (a.created_at > b.created_at ? -1 : 1))
           .map((r) => {
-            const createdAtDate = new Date(r.created_at);
+            const { date, time } = formatDatetime(r.created_at);
             return (
               <tr key={r.id} aria-label="Log entry">
                 <td data-label={nameHeader} className="font-bold!">
@@ -47,8 +44,10 @@ export function ActivityLogEntries({
                 <td data-label={conditionHeader}>{r.configuration_name}</td>
                 <td data-label={actionHeader}>{r.action_text}</td>
                 <td data-label={dateHeader}>
-                  {createdAtDate.toLocaleDateString()} <br />
-                  {timeFormatter.format(createdAtDate)}
+                  <div className="flex flex-col">
+                    <span>{date}</span>
+                    <span>{time}</span>
+                  </div>
                 </td>
               </tr>
             );

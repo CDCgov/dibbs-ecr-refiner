@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
-
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigBuild } from '.';
 import userEvent from '@testing-library/user-event';
@@ -37,13 +36,21 @@ const mockVersions: GetConfigurationResponseVersion[] = [
     status: 'draft',
     condition_canonical_url:
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    created_at: '2025-12-18 18:01:40.660826+00',
+    last_activated_at: '',
+    created_by: 'mock-user-1',
+    last_activated_by: null,
   },
   {
     id: 'prev-id',
     version: 1,
-    status: 'inactive',
+    status: 'active',
     condition_canonical_url:
       'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+    created_at: '2025-12-09 18:01:40.660826+00',
+    last_activated_at: '2025-12-09 9:01:40.660826+00',
+    created_by: 'mock-user-1',
+    last_activated_by: 'mock-user-2',
   },
 ];
 
@@ -267,6 +274,42 @@ describe('Config builder page', () => {
     expect(
       await screen.findByRole('link', { name: 'Go to draft' })
     ).toBeInTheDocument();
+  });
+
+  it('should display user and status information in the version picker menu', async () => {
+    const expectedMenuText = 'Editing: Version 2';
+    const user = userEvent.setup();
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          status: 'draft',
+          active_version: 1,
+          version: 2,
+          is_draft: true,
+          draft_id: 'config-id',
+        },
+      },
+    });
+    renderPage();
+
+    // check that menu structure looks accurate
+    expect(await screen.findByText(expectedMenuText)).toBeInTheDocument();
+    await user.click(await screen.findByText(expectedMenuText));
+    const menuItems = await screen.findAllByRole('menuitem');
+    expect(menuItems).toHaveLength(2);
+
+    // check that draft config displays info in the expected format
+    const draft = menuItems[0];
+    const expectedDraftTextFormat =
+      /^Version 2 Draft created (\d{2}\/\d{2}\/\d{4}), (\d{1,2}:\d{2} (AM|PM)) by mock-user-1$/;
+    expect(draft).toHaveTextContent(expectedDraftTextFormat);
+
+    // check that active config displays info in the expected format
+    const active = menuItems[1];
+    const expectedActiveTextFormat =
+      /^Version 1 \(Active\)Last activated (\d{2}\/\d{2}\/\d{4}), (\d{1,2}:\d{2} (AM|PM)) by mock-user-2$/;
+    expect(active).toHaveTextContent(expectedActiveTextFormat);
   });
 
   it('should render code set buttons', async () => {

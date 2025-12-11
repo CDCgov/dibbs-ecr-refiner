@@ -9,7 +9,5 @@ import type { ConfigurationStatusUpdateResponseStatus } from './configurationSta
 
 export interface ConfigurationStatusUpdateResponse {
   configuration_id: string;
-  version: number;
-  condition_canonical_url: string;
   status: ConfigurationStatusUpdateResponseStatus;
 }

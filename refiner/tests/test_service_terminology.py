@@ -42,6 +42,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "status": "draft",
         "last_activated_at": None,
         "last_activated_by": None,
+        "created_by": uuid4(),
         "condition_canonical_url": "https://test.com",
     }
     defaults.update(kwargs)
