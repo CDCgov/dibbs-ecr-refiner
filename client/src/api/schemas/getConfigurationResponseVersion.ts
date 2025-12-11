@@ -6,10 +6,16 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { GetConfigurationResponseVersionStatus } from './getConfigurationResponseVersionStatus';
+import type { GetConfigurationResponseVersionLastActivatedAt } from './getConfigurationResponseVersionLastActivatedAt';
+import type { GetConfigurationResponseVersionLastActivatedBy } from './getConfigurationResponseVersionLastActivatedBy';
 
 export interface GetConfigurationResponseVersion {
   id: string;
   version: number;
   condition_canonical_url: string;
   status: GetConfigurationResponseVersionStatus;
+  created_at: string;
+  created_by: string;
+  last_activated_at: GetConfigurationResponseVersionLastActivatedAt;
+  last_activated_by: GetConfigurationResponseVersionLastActivatedBy;
 }
