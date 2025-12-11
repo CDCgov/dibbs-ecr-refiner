@@ -1,3 +1,4 @@
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -114,6 +115,58 @@ vi.mock('../../../api/conditions/conditions', async () => {
 });
 
 describe('Config builder page', () => {
+  it('shows lock banner and disables edit controls when locked by another user', async () => {
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          lock: {
+            user_id: 'other-user-id',
+            username: 'Jane Doe',
+          },
+        },
+      },
+    });
+    // Mock useLogin to return a user with id different from lock.user_id
+    vi.mock('../../../hooks/Login', () => ({
+      useLogin: () => [{ id: 'my-user-id', name: 'Test User' }],
+    }));
+    (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    render(
+      <TestQueryClientProvider>
+        <MemoryRouter initialEntries={['/configurations/config-id/build']}>
+          <Routes>
+            <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+          </Routes>
+        </MemoryRouter>
+      </TestQueryClientProvider>
+    );
+    const lockBanner = await screen.findByRole('status');
+    expect(within(lockBanner).getByText(/View-only mode:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Jane Doe/)).toBeInTheDocument();
+    // The ADD button should be disabled
+    expect(screen.getByRole('button', { name: /add new code set/i })).toBeDisabled();
+    // The custom code add button should be disabled
+    // Switch to the custom codes tab to render the button
+    const customCodesTab = await screen.findByRole('button', { name: /custom codes/i });
+    await userEvent.click(customCodesTab);
+    // Assert the "Custom codes" heading is present
+    expect(await screen.findByRole('heading', { name: /custom codes/i })).toBeInTheDocument();
+    screen.debug(); // Debug the DOM after switching tabs
+    const addCustomCodeBtn = await screen.findByRole('button', { name: /add new custom code/i });
+    expect(addCustomCodeBtn).toBeDisabled();
+  });
   function renderPage() {
     return render(
       <TestQueryClientProvider>

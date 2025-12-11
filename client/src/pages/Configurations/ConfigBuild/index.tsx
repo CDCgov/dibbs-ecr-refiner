@@ -103,6 +103,7 @@ export function ConfigBuild() {
           section_processing={response.data.section_processing}
           display_name={response.data.display_name}
           deduplicated_codes={response.data.deduplicated_codes}
+          lock={response.data.lockedBy}
         />
       </SectionContainer>
     </div>
@@ -134,7 +135,15 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
->;
+> & {
+  lock?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+};
+
+import { useLogin } from '../../../hooks/Login';
 
 function Builder({
   id,
@@ -144,7 +153,13 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
+  lock,
 }: BuilderProps) {
+  const [user] = useLogin();
+  const isLocked = Boolean(lock && user && lock.id !== user.id);
+  const lockedByName = isLocked ? lock?.name : null;
+  const lockedByEmail = isLocked ? lock?.email : null;
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
     'none' | 'codeset' | 'custom' | 'sections'
@@ -199,6 +214,19 @@ function Builder({
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
+      {isLocked && (
+        <div
+          role="status"
+          aria-live="polite"
+          tabIndex={0}
+          className="mb-4 rounded border border-yellow-400 bg-yellow-100 p-4 text-yellow-900 focus:outline-none"
+        >
+          <strong>View only:</strong> [
+          <span className="font-bold">{lockedByName}</span>/
+          <span className="font-bold">{lockedByEmail}</span>] currently has this
+          configuration open.
+        </div>
+      )}
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
@@ -212,6 +240,7 @@ function Builder({
                 id="open-codesets"
                 aria-label="Add new code set to configuration"
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                disabled={isLocked}
               >
                 ADD
               </Button>
@@ -253,6 +282,7 @@ function Builder({
                         configurationId={id}
                         conditionId={codeSet.condition_id}
                         conditionName={codeSet.display_name}
+                        disabled={isLocked}
                         onClick={() =>
                           setCodesetListItemFocus(codeSet.condition_id)
                         }
@@ -328,6 +358,7 @@ function Builder({
                 opener
                 className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
                 aria-label="Add new custom code"
+                disabled={isLocked}
               >
                 Add code
               </ModalToggleButton>
@@ -336,6 +367,7 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
+                isLocked={isLocked}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -343,6 +375,7 @@ function Builder({
               <EicrSectionReview
                 configurationId={id}
                 sectionProcessing={section_processing}
+                isLocked={isLocked}
               />
             </>
           ) : null}
@@ -404,6 +437,7 @@ interface DeleteCodeSetButtonProps {
   conditionId: string;
   conditionName: string;
   onClick: () => void;
+  disabled?: boolean;
 }
 
 function DeleteCodeSetButton({
@@ -411,6 +445,7 @@ function DeleteCodeSetButton({
   conditionId,
   conditionName,
   onClick,
+  disabled,
 }: DeleteCodeSetButtonProps) {
   const { mutate: disassociateMutation, isPending } =
     useDisassociateConditionWithConfiguration();
@@ -461,9 +496,10 @@ function DeleteCodeSetButton({
 
   return (
     <button
-      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only"
+      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
+      disabled={disabled}
     >
       <Icon.Delete className="!fill-red-700" size={3} aria-hidden />
     </button>
@@ -506,6 +542,7 @@ interface CustomCodesDetailProps {
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
+  isLocked?: boolean;
 }
 
 function CustomCodesDetail({
@@ -513,6 +550,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
   deduplicated_codes,
+  isLocked,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -554,12 +592,14 @@ function CustomCodesDetail({
                   className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
+                  disabled={isLocked}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
-                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline"
+                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline disabled:!cursor-not-allowed"
                   aria-label={`Delete custom code ${customCode.name}`}
+                  disabled={isLocked}
                   onClick={() => {
                     deleteCode(
                       {
