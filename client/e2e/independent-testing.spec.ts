@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { createNewConfiguration } from './utils';
 
-test.describe.serial('should be able to access independent testing', () => {
+test.describe('should be able to access independent testing', () => {
   // Resolve the file path relative to the project root
   const filePath = path.resolve(
     process.cwd(),

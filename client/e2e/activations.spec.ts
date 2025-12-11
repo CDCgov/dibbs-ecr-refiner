@@ -1,8 +1,7 @@
 import { test, expect } from './fixtures/fixtures';
 import { createNewConfiguration } from './utils';
 
-test.describe
-  .serial('Activation for new draft configurations works as expected', () => {
+test.describe('Activation for new draft configurations works as expected', () => {
   test('activations flow shows the correct options with different versions', async ({
     page,
     makeAxeBuilder,

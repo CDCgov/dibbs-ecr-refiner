@@ -1,8 +1,7 @@
 import { test, expect } from './fixtures/fixtures';
 import { createNewConfiguration } from './utils';
 
-test.describe
-  .serial('Adding/modifying configurations by initial condition', () => {
+test.describe('Adding/modifying configurations by initial condition', () => {
   test('should be able to create a configuration for Acanthamoeba', async ({
     page,
     makeAxeBuilder,
