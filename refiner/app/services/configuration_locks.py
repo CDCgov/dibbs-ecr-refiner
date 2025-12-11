@@ -2,12 +2,11 @@ from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
-from app.core.config import ENVIRONMENT
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection, db
 
-LOCK_TIMEOUT_MINUTES = int(ENVIRONMENT["CONFIG_LOCK_TIMEOUT_MINUTES"])
+LOCK_TIMEOUT_MINUTES = 30
 
 
 class ConfigurationLock:
