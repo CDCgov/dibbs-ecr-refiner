@@ -1455,18 +1455,7 @@ class ConfigurationStatusUpdateResponse:
     """
 
     configuration_id: UUID
-    version: int
-    condition_canonical_url: str
     status: DbConfigurationStatus
-
-
-@dataclass(frozen=True)
-class ConfigurationActivationInput(BaseModel):
-    """
-    Input for updating the status a configuration.
-    """
-
-    condition_canonical_url: str
 
 
 @router.patch(
@@ -1477,7 +1466,6 @@ class ConfigurationActivationInput(BaseModel):
 )
 async def activate_configuration(
     configuration_id: UUID,
-    body: ConfigurationActivationInput,
     db: AsyncDatabaseConnection = Depends(get_db),
     user: DbUser = Depends(get_logged_in_user),
 ) -> ConfigurationStatusUpdateResponse:
@@ -1486,14 +1474,13 @@ async def activate_configuration(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        body (ConfigurationActivationInput): Input for the activation, which includes
-            condition_canonical_url: used to deconflict / deactivate any sibling configurations
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
     Raises:
-        HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
-        HTTPException: 500 if configuration can't be activated
+        HTTPException: 400 if configuration can't be activated because of its current state
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 500 if configuration can't be activated by the server
 
     Returns:
         ActivateConfigurationResponse: Metadata about the activated condition for confirmation
@@ -1504,17 +1491,24 @@ async def activate_configuration(
         jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
+
     if not config_to_activate:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Configuration is not found or isn't editable by the specified user jurisdiction permissions.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration to deactivate can't be found.",
+        )
+
+    if config_to_activate.status == "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configuration is already active.",
         )
 
     active_config = await activate_configuration_db(
-        config_to_activate=config_to_activate,
-        canonical_url=body.condition_canonical_url,
+        configuration_id=config_to_activate.id,
+        activated_by_user_id=user.id,
+        canonical_url=config_to_activate.condition_canonical_url,
         jurisdiction_id=user.jurisdiction_id,
-        configuration_id=configuration_id,
         db=db,
     )
 
@@ -1525,10 +1519,7 @@ async def activate_configuration(
         )
 
     return ConfigurationStatusUpdateResponse(
-        configuration_id=active_config.id,
-        version=active_config.version,
-        condition_canonical_url=active_config.condition_canonical_url,
-        status="active",
+        configuration_id=active_config.id, status=active_config.status
     )
 
 
@@ -1548,13 +1539,13 @@ async def deactivate_configuration(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        canonical_url (str): The condition's canonical_url, used to deconflict / deactivate any sibling configurations
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
     Raises:
-        HTTPException: 403 if configuration isn't editable by the user because of mismatched jurisdictions
-        HTTPException: 500 if configuration can't be deactivated
+        HTTPException: 400 if configuration can't be deactivated because of its current state
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 500 if configuration can't be deactivated by the server
 
     Returns:
         ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
@@ -1564,10 +1555,23 @@ async def deactivate_configuration(
         jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
+
     if not config_to_deactivate:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Configuration to deactivate can't be found or isn't editable by the current user jurisdiction permissions.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration to deactivate can't be found.",
+        )
+
+    if config_to_deactivate.status == "inactive":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configuration is already inactive.",
+        )
+
+    if config_to_deactivate.status == "draft":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot deactivate a draft configuration.",
         )
 
     deactivated_config = await deactivate_configuration_db(
@@ -1579,9 +1583,7 @@ async def deactivate_configuration(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuration can't be deactivated.",
         )
+
     return ConfigurationStatusUpdateResponse(
-        configuration_id=deactivated_config.id,
-        version=deactivated_config.version,
-        condition_canonical_url=deactivated_config.condition_canonical_url,
-        status="inactive",
+        configuration_id=deactivated_config.id, status=deactivated_config.status
     )

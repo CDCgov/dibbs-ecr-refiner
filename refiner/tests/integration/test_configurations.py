@@ -68,13 +68,10 @@ class TestConfigurations:
 
         condition_id_to_test = str(configuration["condition_id"])
         initial_configuration_id = str(configuration["id"])
-        canonical_url = str(configuration["condition_canonical_url"])
 
         # Activate config
-        payload = {"condition_canonical_url": canonical_url}
         response = await authed_client.patch(
-            f"/api/v1/configurations/{initial_configuration_id}/activate",
-            json=payload,
+            f"/api/v1/configurations/{initial_configuration_id}/activate"
         )
         assert response.status_code == 200
         data = response.json()
@@ -92,10 +89,8 @@ class TestConfigurations:
         assert "id" in new_draft_response_data
 
         new_draft_response_id = new_draft_response_data["id"]
-        payload = {"condition_canonical_url": canonical_url}
         new_draft_activation_response = await authed_client.patch(
-            f"/api/v1/configurations/{new_draft_response_id}/activate",
-            json=payload,
+            f"/api/v1/configurations/{new_draft_response_id}/activate"
         )
         assert new_draft_activation_response.status_code == 200
         new_draft_activation_data = new_draft_activation_response.json()
@@ -123,7 +118,6 @@ class TestConfigurations:
             configuration = await cur.fetchone()
             assert configuration is not None
         initial_configuration_id = str(configuration["id"])
-        canonical_url = str(configuration["condition_canonical_url"])
 
         # create a new test client with a mocked deactivate function that throws
         # an error to test the rollback. The existing fixture has the real function bundled in it
@@ -141,10 +135,8 @@ class TestConfigurations:
             ) as client:
                 client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
 
-                payload = {"condition_canonical_url": canonical_url}
                 response = await client.patch(
-                    f"/api/v1/configurations/{initial_configuration_id}/activate",
-                    json=payload,
+                    f"/api/v1/configurations/{initial_configuration_id}/activate"
                 )
 
                 async with db_conn.cursor() as cur:
