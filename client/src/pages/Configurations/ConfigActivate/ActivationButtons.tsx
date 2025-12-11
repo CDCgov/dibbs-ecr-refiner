@@ -1,65 +1,112 @@
-import { useEffect, useState } from 'react';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { SwitchFromPrevious } from './buttonDisplays/SwitchFromPreviousButtons';
 import { TurnOffButtons } from './buttonDisplays/TurnOffButtons';
 import { TurnOnButtons } from './buttonDisplays/TurnOnButtons';
-
-enum StatusUpdateStates {
-  TURN_ON,
-  TURN_OFF,
-  SWITCH_FROM_PREVIOUS,
-}
+import { useQueryClient, QueryClient } from '@tanstack/react-query';
+import {
+  useActivateConfiguration,
+  useDeactivateConfiguration,
+  getGetConfigurationQueryKey,
+} from '../../../api/configurations/configurations';
+import { useToast } from '../../../hooks/useToast';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
-  isSuccess: boolean;
-  handleActivation: () => void;
-  handleDeactivation: () => void;
-  curVersion: number;
-  activeVersion: number | null;
 }
 
 export function ActivationButtons({
   configurationData,
-  isSuccess,
-  handleActivation,
-  handleDeactivation,
-  curVersion,
-  activeVersion,
 }: ActivationButtonsProps) {
-  const [buttonState, setButtonState] = useState<StatusUpdateStates>();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!configurationData) return;
-    const currentVersionIsActive = configurationData.status === 'active';
-    const noCurrentActiveConfig = configurationData.active_version === null;
+  const { mutate: activate } = useActivateConfiguration();
+  const { mutate: deactivate } = useDeactivateConfiguration();
 
-    if (currentVersionIsActive) {
-      setButtonState(StatusUpdateStates.TURN_OFF);
-    } else if (noCurrentActiveConfig) {
-      setButtonState(StatusUpdateStates.TURN_ON);
-    } else {
-      setButtonState(StatusUpdateStates.SWITCH_FROM_PREVIOUS);
+  const showToast = useToast();
+
+  function handleActivation() {
+    if (!configurationData) {
+      showToast({
+        variant: 'error',
+        heading: 'Something went wrong',
+        body: 'Condition not defined',
+      });
+      return;
     }
-  }, [isSuccess, configurationData]);
+    activate(
+      {
+        configurationId: configurationData.id,
+      },
+      {
+        onSuccess: async () => {
+          await refetchConfigurations(configurationData, queryClient);
+
+          showToast({
+            heading: 'Configuration activated',
+            body: '',
+          });
+        },
+      }
+    );
+  }
+
+  function handleDeactivation() {
+    if (!configurationData || !configurationData.active_configuration_id) {
+      showToast({
+        variant: 'error',
+        heading: 'Something went wrong',
+        body: 'Condition could not be deactivated',
+      });
+      return;
+    }
+
+    deactivate(
+      { configurationId: configurationData.active_configuration_id },
+      {
+        onSuccess: async () => {
+          await refetchConfigurations(configurationData, queryClient);
+
+          showToast({
+            heading: 'Configuration deactivated',
+            body: '',
+          });
+        },
+      }
+    );
+  }
+
+  const curVersion = configurationData.version;
+  const activeVersion = configurationData.active_version;
+
+  if (activeVersion === null) {
+    return <TurnOnButtons handleActivation={handleActivation}></TurnOnButtons>;
+  } else if (curVersion === activeVersion) {
+    return <TurnOffButtons handleDeactivation={handleDeactivation} />;
+  }
 
   return (
-    <div className="mt-6">
-      {buttonState === StatusUpdateStates.SWITCH_FROM_PREVIOUS && (
-        <SwitchFromPrevious
-          handleActivation={handleActivation}
-          handleDeactivation={handleDeactivation}
-          curVersion={curVersion}
-          activeVersion={activeVersion}
-        />
-      )}
-      {buttonState === StatusUpdateStates.TURN_ON && (
-        <TurnOnButtons handleActivation={handleActivation}></TurnOnButtons>
-      )}
+    <SwitchFromPrevious
+      handleActivation={handleActivation}
+      handleDeactivation={handleDeactivation}
+      curVersion={curVersion}
+      activeVersion={activeVersion}
+    />
+  );
+}
 
-      {buttonState === StatusUpdateStates.TURN_OFF && (
-        <TurnOffButtons handleDeactivation={handleDeactivation} />
-      )}
-    </div>
+async function refetchConfigurations(
+  configurationData: GetConfigurationResponse,
+  queryClient: QueryClient
+) {
+  await Promise.allSettled(
+    configurationData.all_versions.map(async (v) => {
+      await queryClient.invalidateQueries({
+        queryKey: getGetConfigurationQueryKey(v.id),
+      });
+
+      await queryClient.refetchQueries({
+        queryKey: getGetConfigurationQueryKey(v.id),
+      });
+    })
   );
 }

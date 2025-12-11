@@ -1,4 +1,4 @@
-import { Page, expect as baseExpect } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 
 export function refreshDatabase(): string {
@@ -21,7 +21,14 @@ export function refreshDatabase(): string {
 }
 
 export async function login(page: Page, baseUrl = '/') {
-  await page.goto(baseUrl);
+  console.log('Attempting to navigate to:', baseUrl);
+  await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
+  console.log('Page loaded. Current URL:', page.url());
+  console.log('Page title:', await page.title());
+
+  // Take a screenshot to see what actually loaded
+  await page.screenshot({ path: 'debug-login-page.png' });
+
   await page.getByText('Log in').click();
   await page
     .getByRole('textbox', { name: 'Username or email' })
@@ -30,7 +37,7 @@ export async function login(page: Page, baseUrl = '/') {
   await page.getByRole('textbox', { name: 'Password' }).fill('refiner');
   await page.getByRole('button', { name: 'Sign In' }).click();
   // check that we are on the logged-in home screen
-  await baseExpect(
+  await expect(
     page.getByText('Your reportable condition configurations')
   ).toBeVisible();
 }
@@ -39,7 +46,7 @@ export async function logout(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'refiner' }).click();
   await page.getByRole('menuitem', { name: 'Log out' }).click();
-  await baseExpect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
 }
 
 export async function createNewConfiguration(
@@ -56,7 +63,7 @@ export async function createNewConfiguration(
   await page.getByTestId('combo-box-input').press('Tab');
   await page.getByTestId('combo-box-clear-button').press('Tab');
   await page.getByTestId('modalFooter').getByTestId('button').click();
-  await baseExpect(
+  await expect(
     page.locator(
       `h4:has-text("New configuration created") + p:has-text("${conditionName}")`
     )

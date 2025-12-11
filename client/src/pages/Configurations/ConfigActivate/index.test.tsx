@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigActivate } from '.';
 import { TestQueryClientProvider } from '../../../test-utils';
@@ -49,16 +49,14 @@ describe('Config activation page', () => {
     );
   }
 
-  it('should show "Activate" as the current step', async () => {
+  it('should show "Activate" as the current step', () => {
     renderPage();
 
-    await waitFor(() => {
-      expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
-      expect(screen.getByText('Test', { selector: 'a' })).toBeInTheDocument();
-      expect(screen.getByText('Activate', { selector: 'a' })).toHaveAttribute(
-        'aria-current',
-        'page'
-      );
-    });
+    expect(screen.getByText('Build', { selector: 'a' })).toBeInTheDocument();
+    expect(screen.getByText('Test', { selector: 'a' })).toBeInTheDocument();
+    expect(screen.getByText('Activate', { selector: 'a' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
   });
 });

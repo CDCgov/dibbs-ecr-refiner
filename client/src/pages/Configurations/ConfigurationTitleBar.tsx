@@ -12,8 +12,7 @@ type ConfigurationTitleBarProps = {
 
 type ConfigurationTitleContent = {
   title: string;
-  subtitle: string;
-  boldedWords?: string;
+  subtitle: React.ReactNode;
 };
 
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
@@ -27,16 +26,24 @@ export function ConfigurationTitleBar({
   } = {
     build: {
       title: 'Build configuration',
-      subtitle: 'Review and select the data to retain in the eCRs you receive.',
+      subtitle: (
+        <p>'Review and select the data to retain in the eCRs you receive.'</p>
+      ),
     },
     test: {
       title: 'Test configuration',
-      subtitle: 'Check the results of your configuration before turning it on.',
+      subtitle: (
+        <p>'Check the results of your configuration before turning it on.'</p>
+      ),
     },
     activate: {
       title: 'Turn on configuration',
-      subtitle: `Refiner will immediately start to refine eCRs with ${condition} as a reportable condition, in accordance with this configuration.`,
-      boldedWords: 'immediately',
+      subtitle: (
+        <span>
+          Refiner will <b>immediately</b> start to refine eCRs with {condition}{' '}
+          as a reportable condition, in accordance with this configuration.
+        </span>
+      ),
     },
   };
   const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
@@ -95,25 +102,8 @@ export function ConfigurationTitleBar({
             </div>
           </div>
         </div>
-        <p>
-          {boldWord(
-            CONFIGURATION_TITLE_CONTENTS[step].subtitle,
-            CONFIGURATION_TITLE_CONTENTS[step]?.boldedWords ?? undefined
-          )}
-        </p>
+        {CONFIGURATION_TITLE_CONTENTS[step].subtitle}
       </div>
     </div>
-  );
-}
-
-function boldWord(text: string, word: string | undefined) {
-  if (!word) return <>{text}</>;
-  const [before, after] = text.split(word);
-  return (
-    <>
-      {before}
-      <strong>{word}</strong>
-      {after}
-    </>
   );
 }
