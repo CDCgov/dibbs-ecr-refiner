@@ -8,6 +8,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
 
 from ...db.events.db import (
@@ -120,6 +121,17 @@ async def get_events(
             )
             configuration_options.append(option)
             seen_urls.add(c.condition_canonical_url)
+
+    # unlock if user holds lock
+    for c in jd_configurations:
+        lock = await ConfigurationLock.get_lock(str(c.id), db)
+        if lock and str(lock.user_id) == str(user.id):
+            await ConfigurationLock.release_lock(
+                configuration_id=c.id,
+                user_id=user.id,
+                jurisdiction_id=jd,
+                db=db,
+            )
 
     return EventResponse(
         total_pages=total_pages,
