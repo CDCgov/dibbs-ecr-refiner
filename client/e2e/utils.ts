@@ -1,15 +1,19 @@
 import { Page, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 
-export async function login(page: Page) {
+export async function login(page: Page, user?: string | null) {
+
+  const username = typeof user === 'string' ? user : 'refiner';
+  const password = typeof user === 'string' ? user : 'refiner';
+
   await page.goto('/');
   await page.getByText('Log in').click();
   await page.getByRole('textbox', { name: 'Username or email' }).click();
   await page
     .getByRole('textbox', { name: 'Username or email' })
-    .fill('refiner');
+    .fill(username);
   await page.getByRole('textbox', { name: 'Username or email' }).press('Tab');
-  await page.getByRole('textbox', { name: 'Password' }).fill('refiner');
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
   await page.getByRole('button', { name: 'Sign In' }).click();
 
   // check that we are on the logged-in home screen

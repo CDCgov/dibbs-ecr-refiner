@@ -71,4 +71,29 @@ test.describe('Viewing the application when logged in', () => {
     await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
     await expect(page.getByText('Log in')).toBeVisible();
   });
+
+  test('should show the secondary username in the top right and able to logout', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    await login(page, "refiner2");
+
+    // 1️⃣ Locate the refiner button and click it
+    const refinerButton = page.locator('button', { hasText: 'refiner2 (SDDH)' });
+    await expect(refinerButton).toBeVisible();
+    await refinerButton.click();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // 2️⃣ Assert the logout link is visible
+    const logoutLink = page.locator('a[href="/api/logout"]', {
+      hasText: 'Log out',
+    });
+    await expect(logoutLink).toBeVisible();
+
+    // 3️⃣ Click the logout link
+    await logoutLink.click();
+    await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
+    await expect(page.getByText('Log in')).toBeVisible();
+  });
 });
