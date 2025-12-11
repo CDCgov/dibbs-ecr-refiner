@@ -1,30 +1,22 @@
-import { test as loggedInTest, expect } from './fixtures/fixtures';
-import test from '@playwright/test';
-import { login } from './utils';
+import { test, expect } from './fixtures/fixtures';
 
-loggedInTest.describe('Viewing the application sign in content', () => {
-  loggedInTest(
-    'should be able to see the configuration page, and both testing and configuration tabs',
-    async ({ page, makeAxeBuilder }) => {
-      await expect(
-        page.getByRole('link', { name: 'Provide Feedback' })
-      ).toBeVisible();
-      await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
-      await expect(
-        page.getByRole('link', { name: 'Configurations' })
-      ).toBeVisible();
-      await expect(
-        page.getByText('Your reportable condition configurations')
-      ).toBeVisible();
-      await expect(makeAxeBuilder).toHaveNoAxeViolations();
-    }
-  );
-  // import and use the base test from Playwright since we need to log in and out
-  test('should show the username in the top right and able to logout', async ({
+test.describe('Viewing the application sign in content', () => {
+  test('should be able to see the configuration page, and both testing and configuration tabs', async ({
     page,
+    makeAxeBuilder,
   }) => {
-    await login(page);
-    // 1️⃣ Locate the refiner button and click it
+    await expect(
+      page.getByRole('link', { name: 'Provide Feedback' })
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Configurations' })
+    ).toBeVisible();
+    await expect(
+      page.getByText('Your reportable condition configurations')
+    ).toBeVisible();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     const refinerButton = page.locator('button', {
       hasText: 'refiner (SDDH)',
     });

@@ -7,6 +7,12 @@ export default defineConfig({
     timeout: 10 * 1000,
   },
   forbidOnly: !!process.env.CI,
+  webServer: {
+    command: 'just dev up', // without --detach
+    url: 'http://localhost:8081',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
   workers: 1,
   reporter: [['html', { open: 'never' }]],
   use: {
