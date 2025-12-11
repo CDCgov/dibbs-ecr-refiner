@@ -40,8 +40,9 @@ export function ConfigurationTitleBar({
       title: 'Turn on configuration',
       subtitle: (
         <span>
-          Refiner will <b>immediately</b> start to refine eCRs with {condition}{' '}
-          as a reportable condition, in accordance with this configuration.
+          Refiner will <span className="font-bold">immediately</span> start to
+          refine eCRs with {condition} as a reportable condition, in accordance
+          with this configuration.
         </span>
       ),
     },
