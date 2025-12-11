@@ -52,9 +52,6 @@ export function ConfigActivate() {
     activate(
       {
         configurationId: configuration.data.id,
-        data: {
-          condition_canonical_url: configuration.data.condition_canonical_url,
-        },
       },
       {
         onSuccess: async () => {
