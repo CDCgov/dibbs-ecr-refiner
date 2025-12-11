@@ -13,6 +13,7 @@ import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
 import type { GetConfigurationResponseVersion } from './getConfigurationResponseVersion';
 import type { GetConfigurationResponseActiveVersion } from './getConfigurationResponseActiveVersion';
+import type { GetConfigurationResponseLockedBy } from './getConfigurationResponseLockedBy';
 
 export interface GetConfigurationResponse {
   id: string;
@@ -31,4 +32,5 @@ export interface GetConfigurationResponse {
   version: number;
   active_version: GetConfigurationResponseActiveVersion;
   latest_version: number;
+  lockedBy: GetConfigurationResponseLockedBy;
 }

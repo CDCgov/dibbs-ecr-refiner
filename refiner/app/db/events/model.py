@@ -10,7 +10,14 @@ class _EventBase:
     user_id: UUID
     configuration_id: UUID
     event_type: Literal[
-        "create_configuration", "add_code", "delete_code", "edit_code", "section_update"
+        "create_configuration",
+        "add_code",
+        "delete_code",
+        "edit_code",
+        "section_update",
+        "lock_acquire",
+        "lock_release",
+        "lock_renew",
     ]
     action_text: str
 
