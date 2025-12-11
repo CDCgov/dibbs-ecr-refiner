@@ -27,7 +27,7 @@ export function SwitchActivationModal({
           </p>
           <p>
             The eCR pipeline will begin using Version {curVersion}{' '}
-            <b>immediately</b>
+            <span className="font-bold">immediately</span>
           </p>
           <p>Do you want to continue?</p>
         </div>
