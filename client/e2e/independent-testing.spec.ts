@@ -155,8 +155,6 @@ test.describe('should be able to access independent testing', () => {
     /// ==========================================================================
     /// Test independent test flow: upload, refine, download
     /// ==========================================================================
-    await page.getByRole('link', { name: /eCR Refiner/i }).click();
-
     await page.getByRole('link', { name: 'Testing' }).click();
 
     // Locate the file input by its id
@@ -227,7 +225,6 @@ test.describe('should be able to access independent testing', () => {
   test('should be able to see the generated files for jurisdictions to test', async ({
     page,
   }) => {
-    await page.getByRole('link', { name: /eCR Refiner/i }).click();
     await page.getByRole('link', { name: 'Testing' }).click();
 
     // navigate to the place where we're linking to the sample files
