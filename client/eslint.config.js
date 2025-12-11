@@ -100,6 +100,17 @@ export default defineConfig(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  {
+    files: [
+      'playwright.config.{ts,tsx}',
+      'e2e/**/*.spec.{ts,tsx}',
+      'e2e/**/*.{ts,tsx}',
+    ],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+    },
+  },
 
   prettier
 );

@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 
 export const test = baseTest.extend<object, { workerStorageState: string }>({
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   storageState: ({ workerStorageState }, use) => use(workerStorageState),
 
   workerStorageState: [
@@ -37,7 +36,6 @@ export const test = baseTest.extend<object, { workerStorageState: string }>({
   page: async ({ page }, use) => {
     // start in the logged in homepage
     await page.goto('/configurations');
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });
