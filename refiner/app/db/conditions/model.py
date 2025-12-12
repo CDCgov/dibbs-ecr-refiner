@@ -16,7 +16,19 @@ class DbConditionCoding:
 
 
 @dataclass
-class DbCondition:
+class DbConditionBasicInfo:
+    """
+    Simple information about a condition from the database. Excludes info about code sets.
+    """
+
+    id: UUID
+    display_name: str
+    canonical_url: str
+    version: str
+
+
+@dataclass
+class DbCondition(DbConditionBasicInfo):
     """
     Model to represent a complete condition row from the database (row).
 
@@ -24,10 +36,6 @@ class DbCondition:
     all the JSON fields that contain aggregated codes from child RSGs.
     """
 
-    id: UUID
-    display_name: str
-    canonical_url: str
-    version: str
     # the child RSG codes that match 1:1 with RC SNOMED codes
     # that will come **from** the RR's coded information organizer
     child_rsg_snomed_codes: list[str]
