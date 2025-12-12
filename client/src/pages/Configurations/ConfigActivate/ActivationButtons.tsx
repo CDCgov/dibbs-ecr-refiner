@@ -47,7 +47,7 @@ export function ActivationButtons({
             formatError(error) || error.message || 'Unknown error';
           showToast({
             variant: 'error',
-            heading: 'Error associating condition',
+            heading: 'Error activating condition',
             body: errorDetail,
           });
         },
@@ -76,6 +76,15 @@ export function ActivationButtons({
           showToast({
             heading: 'Configuration deactivated',
             body: '',
+          });
+        },
+        onError: (error) => {
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error deactivating condition',
+            body: errorDetail,
           });
         },
       }
