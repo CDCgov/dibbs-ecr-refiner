@@ -16,7 +16,7 @@ class DbConditionCoding:
 
 
 @dataclass
-class DbConditionBasicInfo:
+class DbConditionBase:
     """
     Simple information about a condition from the database. Excludes info about code sets.
     """
@@ -28,7 +28,7 @@ class DbConditionBasicInfo:
 
 
 @dataclass
-class DbCondition(DbConditionBasicInfo):
+class DbCondition(DbConditionBase):
     """
     Model to represent a complete condition row from the database (row).
 

@@ -6,13 +6,13 @@ from psycopg.rows import class_row, dict_row
 from app.db.configurations.model import DbConfigurationCondition
 
 from ..pool import AsyncDatabaseConnection
-from .model import DbCondition, DbConditionBasicInfo
+from .model import DbCondition, DbConditionBase
 
 # TES and refiner are currently using version 3.0.0 for CGs and its child RSGs
 CURRENT_VERSION = "3.0.0"
 
 
-async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBasicInfo]:
+async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase]:
     """
     Queries the database and retrieves a list of conditions matching CURRENT_VERSION. This query does not include related code set information.
 
@@ -37,7 +37,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBasi
     params = (CURRENT_VERSION,)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConditionBasicInfo)) as cur:
+        async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
