@@ -9,7 +9,6 @@ import {
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
 import { IncludedCondition } from '../../../api/schemas';
-import { Spinner } from '../../../components/Spinner';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
@@ -25,16 +24,11 @@ export function ConditionCodeSetListItem({
   reportable_condition_display_name,
 }: ConditionCodeSetListItemProps) {
   const [showButton, setShowButton] = useState(false);
-  const [isRefreshingConditionList, setIsRefreshingConditionList] =
-    useState(false);
 
-  const { mutate: associateMutation, isPending: isAssociatePending } =
+  const { mutate: associateMutation } =
     useAssociateConditionWithConfiguration();
-  const { mutate: disassociateMutation, isPending: isDissociatePending } =
+  const { mutate: disassociateMutation } =
     useDisassociateConditionWithConfiguration();
-
-  const isLoading =
-    isAssociatePending || isDissociatePending || isRefreshingConditionList;
 
   const showToast = useToast();
   const queryClient = useQueryClient();
@@ -57,14 +51,11 @@ export function ConditionCodeSetListItem({
             body: resp.data.condition_name,
           });
 
-          setIsRefreshingConditionList(true);
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
-          setIsRefreshingConditionList(false);
         },
         onError: (error) => {
-          setIsRefreshingConditionList(false);
           const errorDetail =
             formatError(error) || error.message || 'Unknown error';
           showToast({
@@ -89,14 +80,12 @@ export function ConditionCodeSetListItem({
             heading: 'Condition code set removed',
             body: resp.data.condition_name,
           });
-          setIsRefreshingConditionList(true);
+
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
-          setIsRefreshingConditionList(false);
         },
         onError: (error) => {
-          setIsRefreshingConditionList(false);
           const errorDetail =
             formatError(error) || error.message || 'Unknown error';
           showToast({
@@ -143,9 +132,7 @@ export function ConditionCodeSetListItem({
       }}
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
-      {isLoading ? (
-        <Spinner />
-      ) : showButton ? (
+      {showButton ? (
         condition.display_name === reportable_condition_display_name ? (
           <span className="text-bold !mr-0 !w-[80px] text-black">Default</span>
         ) : condition.associated ? (

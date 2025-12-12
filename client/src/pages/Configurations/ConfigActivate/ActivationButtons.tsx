@@ -2,7 +2,7 @@ import { GetConfigurationResponse } from '../../../api/schemas';
 import { SwitchFromPrevious } from './buttonDisplays/SwitchFromPreviousButtons';
 import { TurnOffButtons } from './buttonDisplays/TurnOffButtons';
 import { TurnOnButtons } from './buttonDisplays/TurnOnButtons';
-import { useQueryClient, QueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useActivateConfiguration,
   useDeactivateConfiguration,
@@ -39,7 +39,9 @@ export function ActivationButtons({
       },
       {
         onSuccess: async () => {
-          await refetchConfigurations(configurationData, queryClient);
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationData.id),
+          });
 
           showToast({
             heading: 'Configuration activated',
@@ -64,7 +66,9 @@ export function ActivationButtons({
       { configurationId: configurationData.active_configuration_id },
       {
         onSuccess: async () => {
-          await refetchConfigurations(configurationData, queryClient);
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationData.id),
+          });
 
           showToast({
             heading: 'Configuration deactivated',
@@ -91,22 +95,5 @@ export function ActivationButtons({
       curVersion={curVersion}
       activeVersion={activeVersion}
     />
-  );
-}
-
-async function refetchConfigurations(
-  configurationData: GetConfigurationResponse,
-  queryClient: QueryClient
-) {
-  await Promise.allSettled(
-    configurationData.all_versions.map(async (v) => {
-      await queryClient.invalidateQueries({
-        queryKey: getGetConfigurationQueryKey(v.id),
-      });
-
-      await queryClient.refetchQueries({
-        queryKey: getGetConfigurationQueryKey(v.id),
-      });
-    })
   );
 }

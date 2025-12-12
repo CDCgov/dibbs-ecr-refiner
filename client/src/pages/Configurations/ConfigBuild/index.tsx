@@ -421,13 +421,10 @@ function DeleteCodeSetButton({
 }: DeleteCodeSetButtonProps) {
   const { mutate: disassociateMutation, isPending } =
     useDisassociateConditionWithConfiguration();
-  const [isListInvalidating, setIsListInvalidating] = useState(false);
 
   const showToast = useToast();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
-
-  const isLoading = isPending || isListInvalidating;
 
   function handleDisassociateCondition(conditionId: string) {
     disassociateMutation(
@@ -441,15 +438,14 @@ function DeleteCodeSetButton({
             heading: 'Condition code set removed',
             body: resp.data.condition_name,
           });
-          setIsListInvalidating(true);
+
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
-          setIsListInvalidating(false);
+
           onClick(); // set focus to previous code set button
         },
         onError: (error) => {
-          setIsListInvalidating(false);
           const errorDetail =
             formatError(error) || error.message || 'Unknown error';
           showToast({
@@ -462,7 +458,7 @@ function DeleteCodeSetButton({
     );
   }
 
-  if (isLoading) {
+  if (isPending) {
     return <Spinner size={20} className="mr-2" />;
   }
 
