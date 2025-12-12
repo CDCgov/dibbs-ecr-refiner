@@ -27,13 +27,13 @@ export function ConfigurationTitleBar({
     build: {
       title: 'Build configuration',
       subtitle: (
-        <p>'Review and select the data to retain in the eCRs you receive.'</p>
+        <p>Review and select the data to retain in the eCRs you receive.</p>
       ),
     },
     test: {
       title: 'Test configuration',
       subtitle: (
-        <p>'Check the results of your configuration before turning it on.'</p>
+        <p>Check the results of your configuration before turning it on.</p>
       ),
     },
     activate: {
