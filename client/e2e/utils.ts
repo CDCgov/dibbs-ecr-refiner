@@ -21,8 +21,7 @@ export function refreshDatabase(): string {
 }
 
 export async function login(page: Page, baseUrl = '/') {
-  await page.goto(baseUrl);
-
+  await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
   await page.getByText('Log in').click();
   await page
     .getByRole('textbox', { name: 'Username or email' })
