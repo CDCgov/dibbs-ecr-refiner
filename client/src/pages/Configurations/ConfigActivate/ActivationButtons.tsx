@@ -9,6 +9,7 @@ import {
   getGetConfigurationQueryKey,
 } from '../../../api/configurations/configurations';
 import { useToast } from '../../../hooks/useToast';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
@@ -21,18 +22,11 @@ export function ActivationButtons({
 
   const { mutate: activate } = useActivateConfiguration();
   const { mutate: deactivate } = useDeactivateConfiguration();
+  const formatError = useApiErrorFormatter();
 
   const showToast = useToast();
 
   function handleActivation() {
-    if (!configurationData) {
-      showToast({
-        variant: 'error',
-        heading: 'Something went wrong',
-        body: 'Condition not defined',
-      });
-      return;
-    }
     activate(
       {
         configurationId: configurationData.id,
@@ -48,12 +42,21 @@ export function ActivationButtons({
             body: '',
           });
         },
+        onError: (error) => {
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            variant: 'error',
+            heading: 'Error associating condition',
+            body: errorDetail,
+          });
+        },
       }
     );
   }
 
   function handleDeactivation() {
-    if (!configurationData || !configurationData.active_configuration_id) {
+    if (!configurationData.active_configuration_id) {
       showToast({
         variant: 'error',
         heading: 'Something went wrong',
