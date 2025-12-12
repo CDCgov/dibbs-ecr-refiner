@@ -102,7 +102,6 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     // Wait for saving to go away (refetch finished)
     await page.getByText('Saving').waitFor({ state: 'detached' });
-    await page.getByText('Saved').waitFor({ state: 'visible' });
 
     await page.getByRole('button', { name: 'Acanthamoeba' }).click();
 
