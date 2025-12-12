@@ -19,6 +19,7 @@ class AuditEvent:
     id: UUID
     username: str
     configuration_name: str
+    configuration_version: int
     condition_id: UUID
     action_text: str
     created_at: datetime
@@ -67,6 +68,7 @@ async def get_events_by_jd_db(
         e.id,
         u.username,
         c.name AS configuration_name,
+        c.version as configuration_version,
         c.id AS condition_id,
         e.action_text,
         e.created_at

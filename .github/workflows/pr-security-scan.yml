@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
   security-events: write
-  pull-requests: write  # For adding comments to PRs
+  pull-requests: write # For adding comments to PRs
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,7 +42,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.image.dockerfile }}
-          load: true  # Load locally for scanning only
+          load: true # Load locally for scanning only
           tags: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -51,20 +51,18 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-${{ matrix.image.name }}-results.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          format: "sarif"
+          output: "trivy-${{ matrix.image.name }}-results.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
           ignore-unfixed: true
-          timeout: '10m'
-
-
+          timeout: "10m"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: 'trivy-${{ matrix.image.name }}-results.sarif'
-          category: 'pr-scan-${{ matrix.image.name }}'
+          sarif_file: "trivy-${{ matrix.image.name }}-results.sarif"
+          category: "pr-scan-${{ matrix.image.name }}"
 
       - name: Generate scan summary
         if: always()
