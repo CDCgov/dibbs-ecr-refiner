@@ -24,7 +24,11 @@ function handleSessionExpiry(error: Error) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      gcTime: 0,
       retry: 2,
+    },
+    mutations: {
+      gcTime: 0,
     },
   },
   queryCache: new QueryCache({
