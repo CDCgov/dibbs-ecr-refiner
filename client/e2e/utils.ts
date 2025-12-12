@@ -21,13 +21,7 @@ export function refreshDatabase(): string {
 }
 
 export async function login(page: Page, baseUrl = '/') {
-  console.log('Attempting to navigate to:', baseUrl);
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
-  console.log('Page loaded. Current URL:', page.url());
-  console.log('Page title:', await page.title());
-
-  // Take a screenshot to see what actually loaded
-  await page.screenshot({ path: 'debug-login-page.png' });
 
   await page.getByText('Log in').click();
   await page
