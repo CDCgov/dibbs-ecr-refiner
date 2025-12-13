@@ -362,12 +362,13 @@ def setup(request):
         ON CONFLICT DO NOTHING;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
         )
         VALUES (
             '{TEST_JD_ID}',
             '{zika_id}',
             'Zika Virus Disease',
+            '{TEST_USER_ID}',
             '["{zika_id}"]'::jsonb,
             '[]'::jsonb,
             '{{}}'::jsonb,
