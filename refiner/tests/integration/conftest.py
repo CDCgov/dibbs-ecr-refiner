@@ -5,12 +5,23 @@ import psycopg
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+from lxml import etree
 from psycopg.rows import dict_row
+from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
-# Ensure session secret is set before `app` imports
+# ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
+
+from rich.console import Console
+
 from app.api.auth.session import get_hashed_token
+from scripts.validation.validate_ecr_data import (
+    STANDARDS_MAP,
+    display_svrl_results,
+    get_document_template_info,
+    parse_svrl,
+)
 
 # Session info
 TEST_SESSION_TOKEN = "test-token"
@@ -60,12 +71,32 @@ async def authed_client(auth_cookie, base_url):
         yield client
 
 
-@pytest.fixture(scope="session")
-def test_assets_path() -> Path:
+@pytest.fixture
+def covid_influenza_v1_1_zip_path(fixtures_path: Path) -> Path:
     """
-    Return the path to the test assets directory.
+    Returns the Path to the packaged v1.1 COVID+Influenza zip file.
     """
-    return Path(__file__).parent.parent / "assets"
+
+    if (
+        path := fixtures_path / "eicr_v1_1/mon_mothma_covid_influenza_1.1.zip"
+    ) and path.exists():
+        return path
+    else:
+        pytest.fail(f"Fixture ZIP file not found: {path}")
+
+
+@pytest.fixture
+def zika_v3_1_1_zip_path(fixtures_path: Path) -> Path:
+    """
+    Returns the Path to the packaged v3.1.1 Zika zip file.
+    """
+
+    if (
+        path := fixtures_path / "eicr_v3_1_1/mon_mothma_zika_3.1.1.zip"
+    ) and path.exists():
+        return path
+    else:
+        pytest.fail(f"Fixture ZIP file not found: {path}")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -73,6 +104,7 @@ def setup_logging():
     """
     Configure logging for integration tests
     """
+
     import logging
 
     logging.basicConfig(level=logging.INFO)
@@ -88,6 +120,7 @@ def base_url() -> str:
     Returns:
         str: The base URL (e.g., "http://0.0.0.0:8080/")
     """
+
     return "http://0.0.0.0:8080/"
 
 
@@ -234,19 +267,46 @@ def setup(request):
         ],
         "db",
     )
+    zika_result = refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-t",
+            "-A",
+            "-F",
+            "|",
+            "-c",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Zika Virus Disease' AND version = '3.0.0';",
+        ],
+        "db",
+    )
 
     covid_id, covid_canonical_url = get_id_and_url(covid_result)
     flu_id, flu_canonical_url = get_id_and_url(flu_result)
+    zika_id, zika_canonical_url = get_id_and_url(zika_result)
 
-    if not covid_id or not flu_id or not covid_canonical_url or not flu_canonical_url:
+    if (
+        not covid_id
+        or not flu_id
+        or not zika_id
+        or not covid_canonical_url
+        or not flu_canonical_url
+        or not zika_canonical_url
+    ):
         raise RuntimeError(
-            f"Could not find COVID-19 or Influenza condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url})"
+            f"Could not find COVID-19, Influenza, or Zika Virus Disease condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url}), Zika=({zika_id}, {zika_canonical_url})"
         )
     print(
         f"✅ Found COVID-19 condition_id: {covid_id} canonical_url: {covid_canonical_url}"
     )
     print(
         f"✅ Found Influenza condition_id: {flu_id} canonical_url: {flu_canonical_url}"
+    )
+    print(
+        f"✅ Found Zika Virus Disease condition_id: {zika_id} canonical_url: {zika_canonical_url}"
     )
 
     print(
@@ -298,6 +358,21 @@ def setup(request):
             1
         )
         ON CONFLICT DO NOTHING;
+
+        INSERT INTO configurations (
+            jurisdiction_id, condition_id, name, included_conditions, custom_codes, local_codes, section_processing, version
+        )
+        VALUES (
+            '{TEST_JD_ID}',
+            '{zika_id}',
+            'Zika Virus Disease',
+            '["{zika_id}"]'::jsonb,
+            '[]'::jsonb,
+            '{{}}'::jsonb,
+            '{section_processing_default}'::jsonb,
+            1
+        )
+        ON CONFLICT DO NOTHING;
     END $$;
     """
     refiner_service.exec_in_container(
@@ -319,6 +394,133 @@ def setup(request):
         """
         Registered finalizer to stop Docker Compose services.
         """
+
         print("🧹 Tests finished! Tearing down.")
 
     request.addfinalizer(teardown)
+
+
+@pytest.fixture(scope="session")
+def fixtures_path() -> Path:
+    """
+    Return the path to the test fixtures directory.
+    """
+
+    return Path(__file__).parent.parent / "fixtures"
+
+
+@pytest.fixture
+def validate_xml_string():
+    """
+    Fixture providing XML validation against Schematron rules.
+    Delegates to the canonical validation logic in scripts/validation/.
+    """
+
+    def _validate(xml_string: str, doc_type_hint: str) -> dict:
+        # parse and detect version (same logic as determine_validation_path, but for strings)
+        root = etree.fromstring(xml_string.encode("utf-8"))
+        nsmap = {"hl7": "urn:hl7-org:v3"}
+        root_oid, extension = get_document_template_info(root, nsmap)
+
+        if not root_oid or root_oid not in STANDARDS_MAP:
+            raise ValueError(f"Could not detect document type.  OID: {root_oid}")
+
+        standard_family = STANDARDS_MAP[root_oid]
+        if extension not in standard_family["versions"]:
+            raise ValueError(
+                f"Unknown version extension: {extension} for OID: {root_oid}"
+            )
+
+        xslt_path = standard_family["versions"][extension]["path"]
+        if not xslt_path.exists():
+            raise FileNotFoundError(f"XSLT not found: {xslt_path}")
+
+        # run schematron validation (same as validate_xml_with_schematron)
+        with PySaxonProcessor(license=False) as processor:
+            xslt_processor = processor.new_xslt30_processor()
+            executable = xslt_processor.compile_stylesheet(
+                stylesheet_file=str(xslt_path)
+            )
+            xdm_node = processor.parse_xml(xml_text=xml_string)
+            svrl_output = executable.transform_to_string(xdm_node=xdm_node)
+
+            if not svrl_output:
+                return {"errors": 0, "warnings": 0, "details": []}
+
+            # parse svrl using the canonical parser
+            results = parse_svrl(svrl_output)
+            errors = [r for r in results if r["severity"] in ("ERROR", "FATAL")]
+            warnings = [r for r in results if r["severity"] == "WARNING"]
+
+            return {
+                "errors": len(errors),
+                "warnings": len(warnings),
+                "details": results,
+            }
+
+    return _validate
+
+
+def validate_refined_xml(
+    xml_string: str,
+    doc_type: str,
+    item_label: str,
+    test_name: str,
+) -> etree._Element:
+    """
+    Validate that an XML string is well-formed and has the expected CDA root tag.
+
+    Raises AssertionError with detailed message if validation fails.
+    Returns the parsed root element for further inspection if needed.
+    """
+    assert xml_string and isinstance(xml_string, str), (
+        f"[{test_name}] Expected non-empty string for {item_label} '{doc_type}', "
+        f"got {type(xml_string)}"
+    )
+
+    try:
+        root = etree.fromstring(xml_string.encode("utf-8"))
+    except etree.XMLSyntaxError as e:
+        pytest.fail(
+            f"[{test_name}] Expected well-formed XML for {item_label} {doc_type}, "
+            f"got XMLSyntaxError: {e}.  Content (first 500 chars): {xml_string[:500]}"
+        )
+
+    assert root.tag == "{urn:hl7-org:v3}ClinicalDocument", (
+        f"[{test_name}] Expected root tag '{{urn:hl7-org:v3}}ClinicalDocument' "
+        f"for {item_label} {doc_type}, got {root.tag}"
+    )
+
+    return root
+
+
+def assert_schematron_valid(
+    validation_result: dict,
+    item_label: str,
+    test_name: str,
+) -> None:
+    """
+    Assert that a Schematron validation result has no errors.
+
+    Fails with detailed error messages if validation errors are present.
+    """
+
+    if validation_result["errors"] == 0:
+        return
+
+    console = Console()
+
+    # filter to just errors
+    errors_only = [
+        row
+        for row in validation_result["details"]
+        if row["severity"] in ("ERROR", "FATAL")
+    ]
+
+    console.print(f"\n[bold red]Validation Failed:[/bold red] {item_label}\n")
+    display_svrl_results(errors_only, console)
+
+    pytest.fail(
+        f"[{test_name}] Expected 0 Schematron errors for {item_label}, "
+        f"got {validation_result['errors']} errors (see above for details)"
+    )
