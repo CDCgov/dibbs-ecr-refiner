@@ -123,6 +123,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="url-1",
     )
     monkeypatch.setattr(
@@ -141,6 +142,10 @@ def mock_db_functions(monkeypatch):
             status="draft",
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
+            created_by=MOCK_LOGGED_IN_USER_ID,
+            created_at=datetime.now(),
+            last_activated_at=None,
+            last_activated_by=None,
         )
     ]
 
@@ -189,6 +194,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
 
@@ -358,6 +364,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
     )
     monkeypatch.setattr(

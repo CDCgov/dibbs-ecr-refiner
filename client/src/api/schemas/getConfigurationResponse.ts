@@ -12,6 +12,7 @@ import type { IncludedCondition } from './includedCondition';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
 import type { GetConfigurationResponseVersion } from './getConfigurationResponseVersion';
+import type { GetConfigurationResponseActiveConfigurationId } from './getConfigurationResponseActiveConfigurationId';
 import type { GetConfigurationResponseActiveVersion } from './getConfigurationResponseActiveVersion';
 
 export interface GetConfigurationResponse {
@@ -29,6 +30,7 @@ export interface GetConfigurationResponse {
   deduplicated_codes: string[];
   all_versions: GetConfigurationResponseVersion[];
   version: number;
+  active_configuration_id: GetConfigurationResponseActiveConfigurationId;
   active_version: GetConfigurationResponseActiveVersion;
   latest_version: number;
 }

@@ -35,7 +35,7 @@ jobs:
             path: "refiner"
           - name: "refiner-lambda"
             path: "lambda"
-      fail-fast: false  # Continue scanning other images if one fails
+      fail-fast: false # Continue scanning other images if one fails
 
     steps:
       - name: Checkout repository
@@ -74,18 +74,18 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.check.outputs.image }}
-          format: 'sarif'
-          output: 'trivy-${{ matrix.image.name }}-results.sarif'
+          format: "sarif"
+          output: "trivy-${{ matrix.image.name }}-results.sarif"
           severity: ${{ steps.params.outputs.severity }}
           ignore-unfixed: true
-          timeout: '10m'
+          timeout: "10m"
 
       - name: Upload Trivy scan results to GitHub Security tab
         if: steps.check.outputs.exists == 'true'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: 'trivy-${{ matrix.image.name }}-results.sarif'
-          category: 'vulnerability-scan-${{ matrix.image.name }}'
+          sarif_file: "trivy-${{ matrix.image.name }}-results.sarif"
+          category: "vulnerability-scan-${{ matrix.image.name }}"
 
       - name: Scan summary for ${{ matrix.image.name }}
         if: always()
