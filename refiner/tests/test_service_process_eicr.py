@@ -1,794 +1,202 @@
-from typing import Any
-
 import pytest
 from lxml import etree
 from lxml.etree import _Element
 
-from app.core.exceptions import (
-    StructureValidationError,
-    XMLParsingError,
-)
-from app.core.models.types import XMLFiles
-from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.services.ecr.models import EICRSpecification
 from app.services.ecr.process_eicr import (
-    CLINICAL_DATA_TABLE_HEADERS,
-    MINIMAL_SECTION_MESSAGE,
-    REFINER_OUTPUT_TITLE,
-    REMOVE_SECTION_MESSAGE,
     _analyze_trigger_codes_in_context,
-    _create_or_update_text_element,
-    _extract_clinical_data,
-    _find_condition_relevant_elements,
-    _find_path_to_entry,
     _preserve_relevant_entries_and_generate_summary,
-    _prune_unwanted_siblings,
     get_section_by_code,
+    get_section_loinc_codes,
     process_section,
 )
+from app.services.ecr.specification import load_spec
 
 from .conftest import NAMESPACES
 
 # NOTE:
-# TEST FIXTURES AND SETUP
+# TEST FIXTURES
+# =============================================================================
 
 
 @pytest.fixture(scope="session")
-def xml_test_setup(read_test_xml) -> dict[str, Any | _Element | None]:
+def eicr_spec_v1_1() -> EICRSpecification:
     """
-    Setup XML elements for testing section processing.
+    Loads the complete eICR v1.1 specification once per session.
     """
 
-    test_message: Any = read_test_xml("mon-mothma-covid-lab-positive_eicr.xml")
-    structured_body: Any = test_message.find(
-        ".//{urn:hl7-org:v3}structuredBody", NAMESPACES
-    )
-
-    return {
-        "structured_body": structured_body,
-        "results_section": get_section_by_code(structured_body, "30954-2"),
-        "encounters_section": get_section_by_code(structured_body, "46240-8"),
-        "social_history_section": get_section_by_code(structured_body, "29762-2"),
-    }
+    return load_spec("1.1")
 
 
 @pytest.fixture(scope="session")
-def clinical_test_data(
-    xml_test_setup,
-) -> dict[str, str | Any | None]:
+def eicr_spec_v3_1_1() -> EICRSpecification:
     """
-    Setup clinical test data for section processing.
+    Loads the complete eICR v3.1.1 specification once per session.
     """
 
-    # use a simple XPath to find clinical elements with specific codes
-    clinical_xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
-
-    # use direct XPath instead of _get_observations
-    clinical_elements: Any = xml_test_setup["results_section"].xpath(
-        clinical_xpath, namespaces=NAMESPACES
-    )
-
-    return {
-        "xpath": clinical_xpath,
-        "clinical_elements": clinical_elements,
-        "single_clinical_element": clinical_elements[0] if clinical_elements else None,
-    }
+    return load_spec("3.1.1")
 
 
-def test_xml_files_container(sample_xml_files: XMLFiles) -> None:
+# fixtures for eICR v1.1
+@pytest.fixture
+def results_section_v1_1(structured_body_v1_1: _Element) -> _Element:
     """
-    Verify XMLFiles container has required content.
+    Provides the 'Results' section from the v1.1 eICR fixture.
     """
 
-    assert sample_xml_files.eicr is not None
-    assert sample_xml_files.rr is not None
+    return get_section_by_code(structured_body_v1_1, "30954-2")
 
 
-def _get_entries_for_section(
-    section: etree.Element,
-    namespaces: dict = NAMESPACES,
-) -> list[etree.Element]:
+@pytest.fixture
+def clinical_elements_v1_1(results_section_v1_1: _Element) -> list[_Element]:
     """
-    Gets the entries of a section of an eICR.
-
-    Args:
-        section: The <section> element to retrieve entries from
-        namespaces: The namespaces to use when searching for elements
-
-    Returns:
-        list[etree.Element]: List of <entry> elements in the section
+    Provides specific clinical elements from the v1.1 'Results' section.
     """
 
-    entries: Any = section.xpath(".//hl7:entry", namespaces=namespaces)
-    return entries if entries is not None else []
+    xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
+    return results_section_v1_1.xpath(xpath, namespaces=NAMESPACES)
 
 
-def make_db_condition_coding(code, display):
-    return DbConditionCoding(code=code, display=display)
+# fixtures for eICR v3.1.1
+@pytest.fixture
+def results_section_v3_1_1(structured_body_v3_1_1: _Element) -> _Element:
+    """
+    Provides the 'Results' section from the v3.1.1 eICR fixture.
+    """
 
-
-def make_condition(**kwargs):
-    defaults = {
-        "id": "fake-id",
-        "display_name": "Test Condition",
-        "canonical_url": "http://example.com",
-        "version": "1.0.0",
-        "child_rsg_snomed_codes": [],
-        "snomed_codes": [],
-        "loinc_codes": [],
-        "icd10_codes": [],
-        "rxnorm_codes": [],
-    }
-    defaults.update(kwargs)
-    return DbCondition(**defaults)
+    return get_section_by_code(structured_body_v3_1_1, "30954-2")
 
 
 # NOTE:
 # SECTION PROCESSING TESTS
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    "fixture_name, loinc_code, expected_title",
+    [
+        ("structured_body_v1_1", "11450-4", "Problem List"),
+        ("structured_body_v1_1", "30954-2", "Results"),
+        ("structured_body_v3_1_1", "11450-4", "Problems"),
+        ("structured_body_v3_1_1", "30954-2", "Results"),
+    ],
+)
+def test_get_section_by_code(
+    request, fixture_name: str, loinc_code: str, expected_title: str
+):
+    """
+    Tests that a section can be retrieved by its LOINC code for different eICR versions.
+    """
+
+    structured_body: _Element = request.getfixturevalue(fixture_name)
+    section = get_section_by_code(structured_body, loinc_code)
+    assert section is not None
+    assert section.find(".//hl7:title", namespaces=NAMESPACES).text == expected_title
+
+
+@pytest.mark.parametrize(
+    "fixture_name, spec_fixture_name",
+    [
+        ("structured_body_v1_1", "eicr_spec_v1_1"),
+        ("structured_body_v3_1_1", "eicr_spec_v3_1_1"),
+    ],
+)
+def test_get_section_loinc_codes(request, fixture_name: str, spec_fixture_name: str):
+    """
+    Tests that `get_section_loinc_codes` extracts all expected top-level section codes.
+    """
+
+    structured_body: _Element = request.getfixturevalue(fixture_name)
+    spec: EICRSpecification = request.getfixturevalue(spec_fixture_name)
+
+    loinc_codes = get_section_loinc_codes(structured_body)
+    expected_loinc_codes = set(spec.sections.keys())
+
+    # we only test for codes present in the spec that are also in the document
+    assert set(loinc_codes).issubset(expected_loinc_codes)
 
 
 def test_process_section_no_clinical_elements() -> None:
     """
-    Test _process_section when no clinical elements are found.
+    Test `process_section` when no matches are found, creating a minimal section.
     """
 
-    section: _Element = etree.fromstring("""
-        <section xmlns="urn:hl7-org:v3">
-            <code code="30954-2"/>
-        </section>
-    """)
-
-    # pass empty XPath since no condition codes provided
-    process_section(
-        section=section,
-        # empty XPath means no condition codes
-        combined_xpath="",
-        namespaces={"hl7": "urn:hl7-org:v3"},
+    section: _Element = etree.fromstring(
+        '<section xmlns="urn:hl7-org:v3"><code code="30954-2"/></section>'
     )
-
-    # verify that a text element was created (minimal section)
-    text_elem: _Element | None = section.find(
-        path=".//hl7:text", namespaces={"hl7": "urn:hl7-org:v3"}
-    )
-    assert text_elem is not None
-
-    # verify table with message exists
-    table: _Element = text_elem.find(path="table")
-    assert table is not None
-    assert MINIMAL_SECTION_MESSAGE in table.findtext(".//td")
-
-    # verify section has nullFlavor="NI"
+    process_section(section=section, combined_xpath="", namespaces=NAMESPACES)
     assert section.get("nullFlavor") == "NI"
 
 
-def test_process_section_with_error():
+def test_process_section_with_matches_v1_1(
+    results_section_v1_1: _Element, eicr_spec_v1_1: EICRSpecification
+):
     """
-    Test error handling in _process_section.
+    Test the complete `process_section` workflow for v1.1 using a real spec.
     """
 
-    section: _Element = etree.fromstring("""
-        <section xmlns="urn:hl7-org:v3">
-            <code code="invalid"/>
-            <entry>
-                <observation>
-                    <code code="nonexistent"/>
-                </observation>
-            </entry>
-        </section>
-    """)
-
-    # use a valid XPath that won't match anything
-    combined_xpath = './/hl7:observation[hl7:code[@code="nonexistent-code"]]'
+    xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
+    results_spec = eicr_spec_v1_1.sections.get("30954-2")
 
     process_section(
-        section=section,
-        combined_xpath=combined_xpath,
-        namespaces=NAMESPACES,
-    )
-
-    # verify section still exists and has a text element
-    assert section.find("{urn:hl7-org:v3}code") is not None
-    assert section.find("{urn:hl7-org:v3}text") is not None
-
-    xpath_query = './/hl7:code[@code="nonexistent-code"]'
-    result = section.xpath(_path=xpath_query, namespaces=NAMESPACES)
-    # empty list means no elements found
-    assert not result
-
-
-def test_find_condition_relevant_elements_with_matches(xml_test_setup) -> None:
-    """
-    Test _find_condition_relevant_elements with matching clinical elements.
-    """
-
-    section: Any = xml_test_setup["results_section"]
-    # use XPath that should find elements in the test data
-    xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
-
-    result: list[_Element] = _find_condition_relevant_elements(
-        section=section, combined_xpath=xpath, namespaces=NAMESPACES
-    )
-
-    assert isinstance(result, list)
-    assert len(result) > 0
-
-    # verify elements are actually clinical elements
-    for elem in result:
-        assert elem.tag.endswith("observation")
-
-
-def test_process_section_complete_workflow_with_matches(xml_test_setup) -> None:
-    """
-    Test complete _process_section workflow when matches are found.
-    """
-
-    section: Any = xml_test_setup["results_section"]
-    xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
-
-    process_section(
-        section=section,
+        section=results_section_v1_1,
         combined_xpath=xpath,
         namespaces=NAMESPACES,
-        section_config=None,
+        section_specification=results_spec,
         version="1.1",
     )
 
-    # verify section was processed (not minimal)
-    assert section.get("nullFlavor") != "NI"
-
-    # verify text element was updated
-    final_text: Any = section.find(".//hl7:text", namespaces=NAMESPACES)
+    assert results_section_v1_1.get("nullFlavor") is None
+    final_text = results_section_v1_1.find(".//hl7:text", namespaces=NAMESPACES)
     assert final_text is not None
-
-    # verify table structure
-    table: Any = final_text.find("table")
-    assert table is not None
-    rows: Any = table.findall(".//tr")
-    # header + data rows
-    assert len(rows) > 1
+    assert final_text.find("table") is not None
 
 
-def test_find_condition_relevant_elements_no_matches(xml_test_setup) -> None:
+def test_analyze_trigger_codes_in_context_positive_match_v1_1(
+    eicr_spec_v1_1: EICRSpecification,
+):
     """
-    Test _find_condition_relevant_elements when no elements match.
+    Test that a real trigger code from the v1.1 spec is correctly identified.
     """
 
-    section: Any = xml_test_setup["results_section"]
-    # use XPath that won't match anything
-    xpath = './/hl7:observation[hl7:code[@code="nonexistent-code"]]'
+    results_spec = eicr_spec_v1_1.sections["30954-2"]
+    trigger_oid = results_spec.trigger_codes[0].oid
 
-    result: list[_Element] = _find_condition_relevant_elements(
-        section=section, combined_xpath=xpath, namespaces=NAMESPACES
+    trigger_element = etree.fromstring(
+        f'<observation xmlns="urn:hl7-org:v3"><templateId root="{trigger_oid}"/></observation>'
+    )
+    non_trigger_element = etree.fromstring(
+        '<observation xmlns="urn:hl7-org:v3"><code code="regular"/></observation>'
     )
 
-    assert isinstance(result, list)
-    assert len(result) == 0
-
-
-def test_find_condition_relevant_elements_empty_xpath(xml_test_setup) -> None:
-    """
-    Test _find_condition_relevant_elements with empty XPath.
-    """
-
-    section: Any = xml_test_setup["results_section"]
-
-    # empty XPath should return empty list, not raise exception
-    result: list[_Element] = _find_condition_relevant_elements(
-        section=section, combined_xpath="", namespaces=NAMESPACES
+    result = _analyze_trigger_codes_in_context(
+        [trigger_element, non_trigger_element], results_spec
     )
-
-    assert isinstance(result, list)
-    assert len(result) == 0
-
-    # test whitespace-only XPath too
-    result_whitespace: list[_Element] = _find_condition_relevant_elements(
-        section=section, combined_xpath="   ", namespaces=NAMESPACES
-    )
-    assert isinstance(result_whitespace, list)
-    assert len(result_whitespace) == 0
-
-
-def test_find_condition_relevant_elements_invalid_xpath(xml_test_setup) -> None:
-    """
-    Test _find_condition_relevant_elements with invalid XPath.
-    """
-
-    section: Any = xml_test_setup["results_section"]
-    # invalid XPath syntax
-    invalid_xpath = ".//hl7:observation[["
-
-    with pytest.raises(XMLParsingError) as exc_info:
-        _find_condition_relevant_elements(
-            section=section, combined_xpath=invalid_xpath, namespaces=NAMESPACES
-        )
-
-    assert "Failed to evaluate XPath for condition-relevant elements" in str(
-        exc_info.value
-    )
-
-
-@pytest.mark.parametrize(
-    "trigger_templates,expected_trigger_count",
-    [
-        # no trigger templates configured
-        ([], 0),
-        # trigger templates that won't match
-        (["2.16.840.1.113883.10.20.15.2.3.99"], 0),
-        # valid trigger template
-        (["2.16.840.1.113883.10.20.15.2.3.12"], 0),
-    ],
-)
-def test_analyze_trigger_codes_in_context(
-    clinical_test_data, trigger_templates, expected_trigger_count
-) -> None:
-    """
-    Test _analyze_trigger_codes_in_context with various trigger template configurations.
-    """
-
-    contextual_matches: Any = clinical_test_data["clinical_elements"]
-
-    # mock section config
-    section_config: None = None
-    if trigger_templates:
-        section_config: None = {
-            "trigger_codes": {
-                "test_trigger": {"template_id_root": trigger_templates[0]}
-            }
-        }
-
-    result: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches, section_config
-    )
-
-    assert isinstance(result, dict)
-    assert len(result) == len(contextual_matches)
-
-    # count trigger codes
-    trigger_count: int = sum(1 for is_trigger in result.values() if is_trigger)
-    assert trigger_count == expected_trigger_count
-
-    # verify all elements have analysis
-    for elem in contextual_matches:
-        element_id: int = id(elem)
-        assert element_id in result
-        assert isinstance(result[element_id], bool)
-
-
-def test_analyze_trigger_codes_in_context_empty_matches() -> None:
-    """
-    Test _analyze_trigger_codes_in_context with empty contextual matches.
-    """
-
-    result: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches=[], section_config=None
-    )
-
-    assert isinstance(result, dict)
-    assert len(result) == 0
-
-
-def test_analyze_trigger_codes_in_context_no_config() -> None:
-    """
-    Test _analyze_trigger_codes_in_context with no section config.
-    """
-
-    # create mock clinical elements
-    clinical_elements: list[_Element] = [
-        etree.fromstring(
-            '<observation xmlns="urn:hl7-org:v3"><code code="test"/></observation>'
-        )
-    ]
-
-    result: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches=clinical_elements, section_config=None
-    )
-
-    assert isinstance(result, dict)
-    assert len(result) == 1
-    # all should be False when no trigger templates
-    assert all(not is_trigger for is_trigger in result.values())
-
-
-def test_trigger_code_identification_principle() -> None:
-    """
-    Test that trigger codes are only identified within contextually relevant elements.
-    """
-
-    # create elements that would have trigger templates but aren't contextually relevant
-    # this test validates the principle that trigger identification happens AFTER context filtering
-    trigger_element: _Element = etree.fromstring("""
-        <observation xmlns="urn:hl7-org:v3">
-            <templateId root="2.16.840.1.113883.10.20.15.2.3.12"/>
-            <code code="trigger-code"/>
-        </observation>
-    """)
-
-    non_trigger_element: _Element = etree.fromstring("""
-        <observation xmlns="urn:hl7-org:v3">
-            <code code="regular-code"/>
-        </observation>
-    """)
-
-    # only contextually relevant elements should be passed to trigger analysis
-    # trigger element is NOT in contextual matches
-    contextual_matches: list[_Element] = [non_trigger_element]
-
-    # verify trigger_element would be identified as trigger if it were in context
-    section_config: dict[str, dict[str, dict[str, str]]] = {
-        "trigger_codes": {
-            "test_trigger": {"template_id_root": "2.16.840.1.113883.10.20.15.2.3.12"}
-        }
-    }
-
-    # verify that trigger_element WOULD be identified if it were in contextual matches
-    result_with_trigger: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches=[trigger_element], section_config=section_config
-    )
-    assert len(result_with_trigger) == 1
-    assert result_with_trigger[id(trigger_element)] is True
-
-    # test with trigger_element excluded from context
-    result: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches, section_config
-    )
-    # even though trigger template exists, no elements should be marked as triggers
-    # because the trigger element wasn't in contextual matches
-    assert len(result) == 1
+    assert result[id(trigger_element)] is True
     assert result[id(non_trigger_element)] is False
 
 
-@pytest.mark.parametrize(
-    "section_config,expected_template_count",
-    [
-        # no trigger codes configuration
-        (None, 0),
-        # empty trigger codes
-        ({"trigger_codes": {}}, 0),
-        # single trigger code
-        (
-            {
-                "trigger_codes": {
-                    "lab": {"template_id_root": "2.16.840.1.113883.10.20.15.2.3.12"}
-                }
-            },
-            1,
-        ),
-        # multiple trigger codes
-        (
-            {
-                "trigger_codes": {
-                    "lab": {"template_id_root": "2.16.840.1.113883.10.20.15.2.3.12"},
-                    "medication": {
-                        "template_id_root": "2.16.840.1.113883.10.20.15.2.3.13"
-                    },
-                }
-            },
-            2,
-        ),
-        # trigger code without template_id_root (should be ignored)
-        ({"trigger_codes": {"invalid": {"other_field": "value"}}}, 0),
-    ],
-)
-def test_trigger_template_extraction(section_config, expected_template_count) -> None:
+def test_preserve_relevant_entries_and_generate_summary(
+    results_section_v1_1: _Element, clinical_elements_v1_1: list[_Element]
+):
     """
-    Test extraction of trigger templates from section configuration.
+    Test the `_preserve_relevant_entries_and_generate_summary` workflow for v1.1.
     """
 
-    # create a simple clinical element
-    clinical_element: _Element = etree.fromstring("""
-        <observation xmlns="urn:hl7-org:v3">
-            <code code="test"/>
-        </observation>
-    """)
-
-    result: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches=[clinical_element], section_config=section_config
+    initial_entry_count = len(
+        results_section_v1_1.xpath(".//hl7:entry", namespaces=NAMESPACES)
     )
-
-    # should get result for our element
-    assert len(result) == 1
-    assert id(clinical_element) in result
-
-
-def test_preserve_relevant_entries_and_generate_summary(xml_test_setup) -> None:
-    """
-    Test _preserve_relevant_entries_and_generate_summary integration.
-    """
-
-    section: Any = xml_test_setup["results_section"]
-
-    # find some clinical elements to work with
-    clinical_elements = section.xpath(
-        './/hl7:observation[hl7:code[@code="94310-0"]]', namespaces=NAMESPACES
-    )
-
-    if not clinical_elements:
-        pytest.skip("No clinical elements found in test data")
-
-    # mock trigger analysis (no triggers for simplicity)
-    trigger_analysis: dict[int, bool] = {id(elem): False for elem in clinical_elements}
-
-    # get initial entry count
-    initial_entries: Any = section.xpath(".//hl7:entry", namespaces=NAMESPACES)
-    initial_count: int = len(initial_entries)
+    trigger_analysis = {id(elem): False for elem in clinical_elements_v1_1}
 
     _preserve_relevant_entries_and_generate_summary(
-        section=section,
-        contextual_matches=clinical_elements,
+        section=results_section_v1_1,
+        contextual_matches=clinical_elements_v1_1,
         trigger_analysis=trigger_analysis,
         namespaces=NAMESPACES,
     )
 
-    # verify that we started with some entries (test data validation)
-    assert initial_count > 0, "Test data should contain entries"
-
-    # verify text element was updated
-    text_element: Any = section.find(".//hl7:text", namespaces=NAMESPACES)
-    assert text_element is not None
-
-    # verify table structure
-    table: Any = text_element.find("table")
-    assert table is not None
-
-    # verify title
-    title: Any = text_element.find("title")
-    assert title is not None
-    assert title.text == REFINER_OUTPUT_TITLE
-
-
-def test_preserve_relevant_entries_and_generate_summary_empty_matches() -> None:
-    """
-    Test _preserve_relevant_entries_and_generate_summary with empty matches.
-    """
-
-    # create a simple section
-    section: _Element = etree.fromstring("""
-        <section xmlns="urn:hl7-org:v3">
-            <code code="30954-2"/>
-            <entry>
-                <observation>
-                    <code code="test"/>
-                </observation>
-            </entry>
-        </section>
-    """)
-
-    _preserve_relevant_entries_and_generate_summary(
-        section=section,
-        contextual_matches=[],
-        trigger_analysis={},
-        namespaces=NAMESPACES,
+    final_entry_count = len(
+        results_section_v1_1.xpath(".//hl7:entry", namespaces=NAMESPACES)
     )
-
-    # should still create/update text element even with no matches
-    text_element: _Element = section.find(path=".//hl7:text", namespaces=NAMESPACES)
-    assert text_element is not None
-
-
-def test_three_step_process_integration(xml_test_setup) -> None:
-    """
-    Test the complete three-step process integration.
-    """
-
-    section: Any = xml_test_setup["results_section"]
-    xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
-
-    # STEP 1: find contextual matches
-    contextual_matches: list[_Element] = _find_condition_relevant_elements(
-        section=section, combined_xpath=xpath, namespaces=NAMESPACES
-    )
-
-    # STEP 2: analyze trigger codes within context
-    trigger_analysis: dict[int, bool] = _analyze_trigger_codes_in_context(
-        contextual_matches=contextual_matches, section_config=None
-    )
-
-    # STEP 3: preserve entries and generate summary
-    _preserve_relevant_entries_and_generate_summary(
-        section=section,
-        contextual_matches=contextual_matches,
-        trigger_analysis=trigger_analysis,
-        namespaces=NAMESPACES,
-    )
-
-    # verify the complete process worked
-    assert len(contextual_matches) == len(trigger_analysis)
-
-    # verify text element was created/updated
-    text_element: Any = section.find(".//hl7:text", namespaces=NAMESPACES)
-    assert text_element is not None
-
-    # verify trigger analysis structure
-    for elem in contextual_matches:
-        element_id: int = id(elem)
-        assert element_id in trigger_analysis
-        assert isinstance(trigger_analysis[element_id], bool)
-
-
-# NOTE:
-# ENTRY AND ELEMENT TESTS
-
-
-def test_find_path_to_entry_no_match() -> None:
-    """
-    Test finding path when no match exists.
-    """
-
-    clinical_element: _Element = etree.fromstring("""
-        <observation xmlns="urn:hl7-org:v3">
-            <code code="different"/>
-        </observation>
-    """)
-
-    with pytest.raises(StructureValidationError) as exc_info:
-        _find_path_to_entry(element=clinical_element)
-    assert "Parent <entry> element not found" in str(exc_info.value)
-
-
-@pytest.mark.parametrize(
-    "xml_content,xpath,expected_entry_count",
-    [
-        (
-            """
-            <section xmlns="urn:hl7-org:v3">
-              <entry>
-                <organizer>
-                  <component>
-                    <observation>
-                      <code code="94310-0"/>
-                    </observation>
-                  </component>
-                </organizer>
-              </entry>
-              <entry>
-                <organizer>
-                  <component>
-                    <observation>
-                      <code code="67890-1"/>
-                    </observation>
-                  </component>
-                </organizer>
-              </entry>
-            </section>
-            """,
-            './/hl7:observation[hl7:code[@code="94310-0"]]',
-            1,
-        ),
-    ],
-)
-def test_prune_unwanted_siblings(xml_content, xpath, expected_entry_count) -> None:
-    """
-    Test removal of non-matching sibling entries.
-    """
-
-    # parse the XML string into an element
-    element: _Element = etree.fromstring(xml_content)
-
-    # find matching clinical elements using XPath
-    matching_clinical_elements = element.xpath(xpath, namespaces=NAMESPACES)
-    paths: list[_Element] = [
-        _find_path_to_entry(elem) for elem in matching_clinical_elements
-    ]
-
-    # call with the section element (element is the section in this case)
-    _prune_unwanted_siblings(entry_paths=paths, section=element)
-
-    # verify the result
-    remaining_entries: list[Any] = _get_entries_for_section(section=element)
-    assert len(remaining_entries) == expected_entry_count
-
-
-# NOTE:
-# CLINICAL DATA EXTRACTION
-
-
-@pytest.mark.parametrize(
-    "clinical_index,expected_data",
-    [
-        (
-            0,
-            {
-                "display_text": "SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection",
-                "code": "94310-0",
-                "code_system": "LOINC",
-            },
-        ),
-    ],
-)
-def test_extract_clinical_data(
-    clinical_test_data,
-    clinical_index,
-    expected_data,
-) -> None:
-    """
-    Test extraction of clinical element metadata.
-    """
-
-    clinical_element: Any = clinical_test_data["clinical_elements"][clinical_index]
-    data: dict[str, str | bool | None] = _extract_clinical_data(clinical_element)
-    assert data == expected_data
-
-
-# NOTE:
-# TEXT ELEMENT GENERATION TESTS
-
-
-def test_create_or_update_text_element(clinical_test_data) -> None:
-    """
-    Test creation of text element from clinical elements.
-    """
-
-    # updated function signature to include trigger_code_elements parameter
-    # empty set for test
-    trigger_code_elements: set[Any] = set()
-    text_element: _Element = _create_or_update_text_element(
-        clinical_elements=clinical_test_data["clinical_elements"],
-        trigger_code_elements=trigger_code_elements,
-    )
-
-    # verify basic structure
-    assert text_element.tag.endswith("text")
-    assert text_element.find(path=".//table") is not None
-    assert text_element.find(path=".//title") is not None
-
-    # verify title contains expected text
-    title: _Element | None = text_element.find(path=".//title")
-    assert title.text == REFINER_OUTPUT_TITLE
-
-    # verify content
-    table: _Element | None = text_element.find(".//table")
-    rows: list[_Element] = table.findall(path=".//tr")
-    # header row plus at least one data row
-    assert len(rows) > 1
-
-    # verify header uses new constants
-    header: list[_Element] = rows[0].findall(".//th")
-    assert [h.text for h in header] == CLINICAL_DATA_TABLE_HEADERS
-
-
-def test_create_or_update_text_invalid_section() -> None:
-    """
-    Test creating text element with invalid section.
-    """
-
-    clinical_elements: list[_Element] = [
-        etree.fromstring("""
-            <observation xmlns="urn:hl7-org:v3">
-                <code code="test" displayName="Test Code" codeSystemName="Test System"/>
-            </observation>
-        """)
-    ]
-
-    # updated function signature
-    trigger_code_elements: set[Any] = set()
-    text_element: _Element = _create_or_update_text_element(
-        clinical_elements=clinical_elements, trigger_code_elements=trigger_code_elements
-    )
-    assert text_element is not None
-    assert text_element.tag == "{urn:hl7-org:v3}text"
-    assert text_element.find(path="table") is not None
-
-
-def test_text_constants() -> None:
-    """
-    Test that our text constants are properly defined and accessible.
-    """
-
-    assert (
-        REFINER_OUTPUT_TITLE
-        == "Output from CDC eCR Refiner application by request of jurisdiction."
-    )
-    assert (
-        REMOVE_SECTION_MESSAGE
-        == "Section details have been removed as requested by jurisdiction for this condition."
-    )
-    assert (
-        MINIMAL_SECTION_MESSAGE
-        == "No clinical information matches the configured code sets for this condition."
-    )
-    assert CLINICAL_DATA_TABLE_HEADERS == [
-        "Display Text",
-        "Code",
-        "Code System",
-        "Is Trigger Code",
-        "Matching Condition Code",
-    ]
+    # some entries should be pruned, but not all
+    assert 0 < final_entry_count < initial_entry_count

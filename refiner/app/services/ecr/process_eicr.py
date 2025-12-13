@@ -1,5 +1,5 @@
 import uuid
-from typing import Literal, cast
+from typing import Final, Literal, cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -9,23 +9,23 @@ from ...core.exceptions import (
     XMLParsingError,
 )
 from ..format import remove_element
+from .models import EicrVersion, NamespaceMap, SectionSpecification
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
 # =============================================================================
 
-
 # <text> constants for refined sections
-REFINER_OUTPUT_TITLE = (
+REFINER_OUTPUT_TITLE: Final[str] = (
     "Output from CDC eCR Refiner application by request of jurisdiction."
 )
-REMOVE_SECTION_MESSAGE = (
+REMOVE_SECTION_MESSAGE: Final[str] = (
     "Section details have been removed as requested by jurisdiction for this condition."
 )
-MINIMAL_SECTION_MESSAGE = (
+MINIMAL_SECTION_MESSAGE: Final[str] = (
     "No clinical information matches the configured code sets for this condition."
 )
-CLINICAL_DATA_TABLE_HEADERS = [
+CLINICAL_DATA_TABLE_HEADERS: Final[list[str]] = [
     "Display Text",
     "Code",
     "Code System",
@@ -42,7 +42,7 @@ CLINICAL_DATA_TABLE_HEADERS = [
 def get_section_by_code(
     structured_body: _Element,
     loinc_code: str,
-    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
+    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
 ) -> _Element | None:
     """
     Get a section from structuredBody by its LOINC code.
@@ -76,7 +76,7 @@ def get_section_by_code(
 
 def get_section_loinc_codes(
     structured_body: _Element,
-    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
+    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
 ) -> list[str]:
     """
     Parses an eICR's structuredBody to find all top-level section codes.
@@ -120,9 +120,9 @@ def get_section_loinc_codes(
 def process_section(
     section: _Element,
     combined_xpath: str,
-    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"},
-    section_config: dict | None = None,
-    version: Literal["1.1"] = "1.1",
+    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
+    section_specification: SectionSpecification | None = None,
+    version: EicrVersion = "1.1",
 ) -> None:
     """
     Process a section by filtering its entries based on provided condition codes.
@@ -145,24 +145,27 @@ def process_section(
         section: The XML section element to process.
         combined_xpath: XPath query from ProcessedCondition codes.
         namespaces: XML namespaces for XPath evaluation.
-        section_config: Configuration for this section from refiner_details.json.
+        section_specification: Static specification for this section. Contains the
+            set of valid trigger code OIDs for the specific eICR version.
         version: eICR version being processed.
     """
 
     # NOTE: neutralize section's direct <code> and <text> children to exclude from search
     # * this prevents matching the section's defining code or narrative text, ensuring
     #   the search is limited to structured clinical entries
-    section_code_element = section.find("./hl7:code", namespaces=namespaces)
     original_code_value = None
-    if section_code_element is not None:
-        original_code_value = section_code_element.get("code")
-        if original_code_value and "code" in section_code_element.attrib:
+
+    if (
+        section_code_element := section.find("./hl7:code", namespaces=namespaces)
+    ) is not None:
+        if (
+            original_code_value := section_code_element.get("code")
+        ) and "code" in section_code_element.attrib:
             # swap the code value with a temporary non-matching one to prevent
             # it from being found, while preserving attribute order
             section_code_element.set("code", f"TEMP_SWAP_{uuid.uuid4()}")
 
-    text_element = section.find("./hl7:text", namespaces=namespaces)
-    if text_element is not None:
+    if (text_element := section.find("./hl7:text", namespaces=namespaces)) is not None:
         # clears all children and text content
         text_element.clear()
 
@@ -193,7 +196,7 @@ def process_section(
             # * this ensures trigger codes are only identified within relevant clinical context
             #   so that the updated <text> element can call out trigger code matches from coded matches
             trigger_analysis = _analyze_trigger_codes_in_context(
-                contextual_matches, section_config
+                contextual_matches, section_specification
             )
 
             # STEP 3: PROCESS ENTRIES AND GENERATE OUTPUT
@@ -214,7 +217,7 @@ def process_section(
 
 
 def _find_condition_relevant_elements(
-    section: _Element, combined_xpath: str, namespaces: dict
+    section: _Element, combined_xpath: str, namespaces: NamespaceMap
 ) -> list[_Element]:
     """
     STEP 1: Find clinical elements matching SNOMED condition codes.
@@ -259,7 +262,8 @@ def _find_condition_relevant_elements(
 
 
 def _analyze_trigger_codes_in_context(
-    contextual_matches: list[_Element], section_config: dict | None
+    contextual_matches: list[_Element],
+    section_specification: SectionSpecification | None,
 ) -> dict[int, bool]:
     """
     STEP 2: Identify trigger codes among already-contextually-relevant elements.
@@ -270,43 +274,41 @@ def _analyze_trigger_codes_in_context(
 
     Args:
         contextual_matches: List of clinical elements already filtered for context
-        section_config: Configuration for this section from refiner_details.json
+        section_specification: Static specification for this section. Contains the
+            set of valid trigger code OIDs used for fast lookup.
 
     Returns:
         dict[int, bool]: Mapping of element_id -> is_trigger_code for each element
     """
 
-    trigger_analysis = {}
+    # STEP 1: extract the set of OIDs (or empty set if spec is None)
+    # * we extract the set here because _has_trigger_template_ancestor needs an
+    #   iterable container of strings, not the full specification object
+    trigger_oids = (
+        section_specification.trigger_oids if section_specification else set()
+    )
 
-    # get trigger templates for this section from config
-    trigger_templates = []
-    if section_config and "trigger_codes" in section_config:
-        # extract template_id_root values from trigger_codes
-        for trigger_type, trigger_info in section_config["trigger_codes"].items():
-            if "template_id_root" in trigger_info:
-                trigger_templates.append(trigger_info["template_id_root"])
-
-    if not trigger_templates:
-        # no trigger templates defined for this section
-        # mark all contextual matches as non-trigger codes
+    # STEP 2: return early if no trigger code OIDs are defined
+    # * this is an optimization to avoid tree traversal for sections that don't
+    #   have any configured trigger codes in the specification
+    if not section_specification or not section_specification.trigger_codes:
         return {id(elem): False for elem in contextual_matches}
 
-    # cache template ancestor checks to avoid repeated tree traversals
-    # fresh cache per section ensures clean slate for each processing cycle
-    template_cache = {}
+    trigger_analysis = {}
+    template_cache: dict[int, bool] = {}
 
     for clinical_element in contextual_matches:
         element_id = id(clinical_element)
 
-        # check cache first to avoid redundant tree traversals
-        if element_id not in template_cache:
-            template_cache[element_id] = _has_trigger_template_ancestor(
-                clinical_element, trigger_templates
+        # if it's not in the cache, compute it and assign it to result
+        # if it **is** in the cache, just retrieve it
+        # then, assign that result to the analysis map
+        if (result := template_cache.get(element_id)) is None:
+            result = template_cache[element_id] = _has_trigger_template_ancestor(
+                clinical_element, trigger_oids
             )
 
-        # store the trigger code analysis for this element
-        is_trigger = template_cache[element_id]
-        trigger_analysis[element_id] = is_trigger
+        trigger_analysis[element_id] = result
 
     return trigger_analysis
 
@@ -315,7 +317,7 @@ def _preserve_relevant_entries_and_generate_summary(
     section: _Element,
     contextual_matches: list[_Element],
     trigger_analysis: dict[int, bool],
-    namespaces: dict,
+    namespaces: NamespaceMap,
 ) -> None:
     """
     STEP 3: Process entry-level operations and generate final section content.
@@ -405,7 +407,7 @@ def _prune_unwanted_siblings(
     """
 
     # find all entries in the section
-    namespaces = {"hl7": "urn:hl7-org:v3"}
+    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
 
     xpath_result = section.xpath(".//hl7:entry", namespaces=namespaces)
     if not isinstance(xpath_result, list):
@@ -599,9 +601,7 @@ def _extract_clinical_data(
     }
 
 
-def _has_trigger_template_ancestor(
-    element: _Element, trigger_templates: list[str]
-) -> bool:
+def _has_trigger_template_ancestor(element: _Element, trigger_oids: set[str]) -> bool:
     """
     Check if element is within a trigger code template.
 
@@ -615,25 +615,39 @@ def _has_trigger_template_ancestor(
 
     Args:
         element: The XML element to check
-        trigger_templates: List of template IDs that indicate trigger codes
+        trigger_oids: Set of template OIDs (root or root:extension) that indicate trigger codes.
 
     Returns:
         bool: True if element is within any of the trigger templates
     """
 
-    if not trigger_templates:
+    if not trigger_oids:
         return False
 
     current: _Element | None = element
-    namespaces: dict[str, str] = {"hl7": "urn:hl7-org:v3"}
+    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
 
-    # Walk up the tree looking for trigger template IDs
+    # walk up the tree looking for trigger template OIDs
     while current is not None:
-        xpath_result = current.xpath(".//hl7:templateId/@root", namespaces=namespaces)
-        if isinstance(xpath_result, list):
-            template_ids = xpath_result
-            if any(tid in trigger_templates for tid in template_ids):
-                return True
+        template_elements = current.xpath(".//hl7:templateId", namespaces=namespaces)
+
+        if isinstance(template_elements, list):
+            for template in template_elements:
+                # make sure the `.get()` is only performed on an _Element
+                if not isinstance(template, _Element):
+                    continue
+                # now we can just check the root
+                if (root := template.get("root")) and root in trigger_oids:
+                    return True
+
+                # check root:extension composite
+                if (
+                    root
+                    and (extension := template.get("extension"))
+                    and f"{root}:{extension}" in trigger_oids
+                ):
+                    return True
+
         current = current.getparent()
 
     return False
@@ -666,14 +680,14 @@ def create_minimal_section(
         XMLParsingError: If XPath evaluation fails
     """
 
-    MESSAGE_MAP = {
+    MESSAGE_MAP: Final[dict[str, str]] = {
         "no_match": MINIMAL_SECTION_MESSAGE,
         "configured": REMOVE_SECTION_MESSAGE,
     }
 
     _section_message = MESSAGE_MAP[removal_reason]
 
-    namespaces = {"hl7": "urn:hl7-org:v3"}
+    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
     text_element = section.find(".//hl7:text", namespaces=namespaces)
 
     if text_element is None:

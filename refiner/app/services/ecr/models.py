@@ -1,5 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, TypedDict
+
+type NamespaceMap = dict[str, str]
+type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
 
 
 @dataclass
@@ -57,3 +60,49 @@ class RefinementPlan:
 
     xpath: str
     section_instructions: dict[str, Literal["retain", "refine", "remove"]]
+
+
+# NOTE:
+# STATIC SPECIFICATION MODELS
+# =============================================================================
+
+
+@dataclass(frozen=True)
+class TriggerCode:
+    """
+    Represents a specific trigger code definition within a section.
+    """
+
+    oid: str
+    display_name: str
+    element_tag: str  # e.g., "observation", "act", "manufacturedProduct"
+
+
+@dataclass(frozen=True)
+class SectionSpecification:
+    """
+    Represents the static rules for a specific section in the eICR specification.
+    """
+
+    loinc_code: str
+    display_name: str
+    template_id: str
+    trigger_codes: list[TriggerCode] = field(default_factory=list)
+
+    @property
+    def trigger_oids(self) -> set[str]:
+        """
+        Returns a set of all trigger code OIDs for O(1) lookup.
+        """
+
+        return {tc.oid for tc in self.trigger_codes}
+
+
+@dataclass(frozen=True)
+class EICRSpecification:
+    """
+    Represents the full static specification for a specific eICR version.
+    """
+
+    version: str
+    sections: dict[str, SectionSpecification]

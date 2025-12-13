@@ -1,4 +1,4 @@
-from typing import Literal, cast
+from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -11,20 +11,14 @@ from ...core.exceptions import (
     XMLValidationError,
 )
 from ...core.models.types import XMLFiles
-from ..file_io import read_json_asset
 from ..format import remove_element
+from .models import NamespaceMap
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
     process_section,
 )
-
-# NOTE:
-# CONSTANTS AND CONFIGURATION
-# =============================================================================
-
-# read json that contains details for refining and is the base of what drives `refine`
-REFINER_DETAILS = read_json_asset("refiner_details.json")
+from .specification import detect_eicr_version, load_spec
 
 # NOTE:
 # PUBLIC API FUNCTIONS
@@ -85,7 +79,7 @@ def refine_eicr(
         # parse the eicr document
         eicr_root = xml_files.parse_eicr()
 
-        namespaces = {"hl7": "urn:hl7-org:v3"}
+        namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
         structured_body = eicr_root.find(".//hl7:structuredBody", namespaces)
 
         # if we don't have a structuredBody this is a major problem
@@ -95,12 +89,11 @@ def refine_eicr(
                 details={"document_type": "eICR"},
             )
 
-        # TODO:
-        # detect version from document. in future we'll have a function here to check
-        # we'll then use the 'refiner_config.json' as the brain for processing in a
-        # config-driven way for section processing where the version will be passed to
-        # _process_section
-        version: Literal["1.1"] = "1.1"
+        # 1. detect version
+        version = detect_eicr_version(eicr_root)
+
+        # 2. load specification
+        specification = load_spec(version)
 
         for section_code, action in plan.section_instructions.items():
             section = get_section_by_code(
@@ -118,12 +111,12 @@ def refine_eicr(
                 # we will just force a minimal section
                 create_minimal_section(section=section, removal_reason="configured")
             elif action == "refine":
-                section_config = REFINER_DETAILS["sections"].get(section_code)
+                section_specification = specification.sections.get(section_code)
                 process_section(
                     section=section,
                     combined_xpath=plan.xpath,
                     namespaces=namespaces,
-                    section_config=section_config,
+                    section_specification=section_specification,
                     version=version,
                 )
 
@@ -174,7 +167,7 @@ def refine_rr(
 
     # look for structured body
     rr_root = xml_files.parse_rr()
-    namespaces = {
+    namespaces: NamespaceMap = {
         "hl7": "urn:hl7-org:v3",
         "cda": "urn:hl7-org:v3",
     }
