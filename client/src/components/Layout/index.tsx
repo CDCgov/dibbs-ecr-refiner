@@ -66,7 +66,7 @@ export function Header({ displayName }: HeaderProps) {
       <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 sm:flex-row sm:items-center xl:px-20">
         <Link to="/">
           <h1 className="flex items-center gap-3">
-            <img src={DibbsLogo} alt="DIBBs" />
+            <img src={DibbsLogo} alt="DIBBs" role="presentation" />
             <span className="font-merriweather text-2xl text-white">
               eCR Refiner
             </span>
