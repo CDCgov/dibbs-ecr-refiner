@@ -14,7 +14,7 @@ class ConfigurationLock:
     Represents a lock for a configuration to prevent concurrent edits.
     """
 
-    def __init__(self, configuration_id: str, user_id: str, expires_at: datetime):
+    def __init__(self, configuration_id: UUID, user_id: UUID, expires_at: datetime):
         """
         Initialize a ConfigurationLock instance.
         """

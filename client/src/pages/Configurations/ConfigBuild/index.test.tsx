@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, Mock } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigBuild } from '.';
@@ -16,7 +16,6 @@ import {
   useDeleteCustomCodeFromConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { Mock } from 'vitest';
 
 // Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
@@ -160,18 +159,28 @@ describe('Config builder page', () => {
       </TestQueryClientProvider>
     );
     const lockBanner = await screen.findByRole('status');
-    expect(within(lockBanner).getByText(/View-only mode:/i)).toBeInTheDocument();
+    expect(
+      within(lockBanner).getByText(/View-only mode:/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Jane Doe/)).toBeInTheDocument();
     // The ADD button should be disabled
-    expect(screen.getByRole('button', { name: /add new code set/i })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: /add new code set/i })
+    ).toBeDisabled();
     // The custom code add button should be disabled
     // Switch to the custom codes tab to render the button
-    const customCodesTab = await screen.findByRole('button', { name: /custom codes/i });
+    const customCodesTab = await screen.findByRole('button', {
+      name: /custom codes/i,
+    });
     await userEvent.click(customCodesTab);
     // Assert the "Custom codes" heading is present
-    expect(await screen.findByRole('heading', { name: /custom codes/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /custom codes/i })
+    ).toBeInTheDocument();
     screen.debug(); // Debug the DOM after switching tabs
-    const addCustomCodeBtn = await screen.findByRole('button', { name: /add new custom code/i });
+    const addCustomCodeBtn = await screen.findByRole('button', {
+      name: /add new custom code/i,
+    });
     expect(addCustomCodeBtn).toBeDisabled();
   });
   function renderPage() {

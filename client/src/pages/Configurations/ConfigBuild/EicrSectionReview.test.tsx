@@ -44,11 +44,11 @@ describe('EicrSectionReview accessibility & behavior', () => {
       { name: 'Section X', code: 'X01', action: 'refine' },
     ];
     renderWithClient(
-<EicrSectionReview
-         sectionProcessing={sections}
-         configurationId={configurationId}
-         isLocked={false}
-       />
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+        isLocked={false}
+      />
     );
     // Find the radio for 'Include entire section' and click its parent cell
     const input = screen.getByLabelText('Include entire section Section X');
@@ -75,11 +75,11 @@ describe('EicrSectionReview accessibility & behavior', () => {
       { name: 'Section Y', code: 'Y01', action: 'retain' },
     ];
     renderWithClient(
-<EicrSectionReview
-         sectionProcessing={sections}
-         configurationId={configurationId}
-         isLocked={false}
-       />
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+        isLocked={false}
+      />
     );
     // Find cell for 'Include entire section'
     const cell = within(screen.getByRole('table'))
@@ -118,11 +118,11 @@ describe('EicrSectionReview accessibility & behavior', () => {
       }, 10);
     });
     renderWithClient(
-<EicrSectionReview
-         sectionProcessing={sections}
-         configurationId={configurationId}
-         isLocked={false}
-       />
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+        isLocked={false}
+      />
     );
     // Find target cell
     const cell = within(screen.getByRole('table'))

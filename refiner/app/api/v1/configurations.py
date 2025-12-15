@@ -358,6 +358,7 @@ async def get_configuration(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
 ) -> GetConfigurationResponse:
     """
     Get a single configuration by its ID including all associated conditions.
@@ -374,6 +375,31 @@ async def get_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    # get current lock
+    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    if not lock or lock.expires_at <= datetime.utcnow():
+        await ConfigurationLock.acquire_lock(
+            configuration_id=configuration_id,
+            user_id=user.id,
+            jurisdiction_id=jd,
+            db=db,
+        )
+        lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    locked_by = None
+    if lock and lock.expires_at > datetime.utcnow():
+        try:
+            user_obj = await get_user_by_id_db(lock.user_id, db)
+            if user_obj:
+                locked_by = LockedByUser(
+                    id=str(user_obj.id), name=user_obj.username, email=user_obj.email
+                )
+            else:
+                locked_by = None
+                logger.warning(f"Could not find user with ID: {lock.user_id}")
+        except Exception as e:
+            locked_by = None
+            logger.error(f"Error fetching user for lock: {e}")
 
     # Fetch all included conditions
     conditions = await get_included_conditions_db(
@@ -447,26 +473,6 @@ async def get_configuration(
     is_draft = draft_id == config.id
     active_version = active_config.version if active_config is not None else None
     latest_version = latest_config.version if latest_config is not None else 0
-
-    # get current lock
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if not lock or lock.expires_at <= datetime.utcnow():
-        await ConfigurationLock.acquire_lock(
-            configuration_id=configuration_id,
-            user_id=user.id,
-            jurisdiction_id=jd,
-            db=db,
-        )
-        lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    locked_by = None
-    if lock and lock.expires_at > datetime.utcnow():
-        try:
-            user_obj = await get_user_by_id_db(lock.user_id, db)
-            locked_by = LockedByUser(
-                id=str(user_obj.id), name=user_obj.username, email=user_obj.email
-            )
-        except Exception:
-            locked_by = None
 
     return GetConfigurationResponse(
         id=config.id,
@@ -1711,6 +1717,41 @@ async def deactivate_configuration(
     return ConfigurationStatusUpdateResponse(
         configuration_id=deactivated_config.id, status=deactivated_config.status
     )
+
+
+@router.api_route(
+    "/{configuration_id}/release-lock",
+    methods=["POST"],
+    status_code=204,
+    tags=["configurations"],
+    operation_id="releaseConfigurationLock",
+)
+async def release_configuration_lock(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Release config lock if held by user.
+
+    204 if released. 409 if locked by other. 404 if no lock.
+    """
+    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    if not lock or lock.expires_at <= datetime.utcnow():
+        raise HTTPException(status_code=404, detail="Configuration has no active lock.")
+    if str(lock.user_id) != str(user.id):
+        raise HTTPException(
+            status_code=409,
+            detail=f"{user.username}/{user.email} currently has this configuration open.",
+        )
+    jd = user.jurisdiction_id
+    await ConfigurationLock.release_lock(
+        configuration_id=configuration_id,
+        user_id=user.id,
+        jurisdiction_id=jd,
+        db=db,
+    )
+    return Response(status_code=204)
 
 
 def _get_literal_system(system: str) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]:

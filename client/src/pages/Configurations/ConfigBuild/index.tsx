@@ -52,9 +52,27 @@ import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { Status } from './Status';
 
+import { useLocation } from 'react-router-dom';
+
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
   const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleReleaseLock = () => {
+      if (id) {
+        const url = `/api/v1/configurations/${id}/release-lock`;
+        navigator.sendBeacon(url);
+      }
+    };
+    window.addEventListener('beforeunload', handleReleaseLock);
+
+    return () => {
+      handleReleaseLock();
+      window.removeEventListener('beforeunload', handleReleaseLock);
+    };
+  }, [id, location.key]);
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
