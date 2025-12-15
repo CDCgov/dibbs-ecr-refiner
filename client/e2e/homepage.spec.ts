@@ -76,10 +76,12 @@ test.describe('Viewing the application when logged in', () => {
     page,
     makeAxeBuilder,
   }) => {
-    await login(page, "refiner2");
+    await login(page, 'refiner2');
 
     // 1️⃣ Locate the refiner button and click it
-    const refinerButton = page.locator('button', { hasText: 'refiner2 (SDDH)' });
+    const refinerButton = page.locator('button', {
+      hasText: 'refiner2 (SDDH)',
+    });
     await expect(refinerButton).toBeVisible();
     await refinerButton.click();
 
