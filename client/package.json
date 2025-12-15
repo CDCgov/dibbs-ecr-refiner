@@ -66,7 +66,7 @@
     "jsdom": "^27.3.0",
     "nodemon": "^3.1.10",
     "orval": "^7.15.0",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "rimraf": "^6.1.2",
     "sass-embedded": "1.93.3",
