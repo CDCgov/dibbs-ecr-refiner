@@ -136,7 +136,7 @@ async def _deactivate_configuration_db(
             user_id=user_id,
             jurisdiction_id=jurisdiction_id,
             event_type="deactivate_configuration",
-            action_text="Deactivated configuration",
+            action_text="De-activated configuration",
         ),
         cursor=cur,
     )
