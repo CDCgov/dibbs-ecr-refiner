@@ -47,7 +47,7 @@ export function RunTest({
       <div className="flex flex-col gap-6 xl:flex-row">
         <Container className="flex-1" color="white">
           <Content className="flex items-center gap-6">
-            <img className="px-3 py-1" src={UploadSvg} alt="" />
+            <img className="px-3 py-1" src={UploadSvg} role="presentation" />
             <div className="flex flex-col items-center gap-10">
               <p className="flex flex-col items-center gap-2 text-black">
                 <span className="font-bold">
@@ -127,6 +127,8 @@ function UploadZipFile({
           ) : null}
           <label
             htmlFor="zip-upload"
+            aria-label="Open system file browser for testing"
+            role="button"
             className={labelStyling}
             tabIndex={0}
             onKeyDown={(e) => {
@@ -155,7 +157,7 @@ function UploadFileWarning() {
     <div className="bg-state-error-lighter rounded p-4">
       <p className="text-state-error-dark flex flex-col gap-3">
         <span className="flex items-center gap-2">
-          <WarningIcon aria-label="Warning" />
+          <WarningIcon role="presentation" />
           <span>This environment is not approved to handle PHI/PII.</span>
         </span>
         <span className="text-center font-bold">

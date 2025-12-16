@@ -104,6 +104,7 @@ export function Footer() {
             <a
               className="font-bold hover:underline"
               href="mailto:dibbs@cdc.gov"
+              aria-label="Email us at dibbs@cdc.gov (will open your email client)"
             >
               dibbs@cdc.gov
             </a>
