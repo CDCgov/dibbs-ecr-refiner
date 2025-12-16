@@ -54,6 +54,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                 scope="row"
               >
                 <button
+                  aria-label={`Configure the configuration for ${name}`}
                   className="block h-full w-full cursor-pointer px-4 py-2 text-left"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -69,6 +70,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
               </td>
               <td data-label={statusHeader} className="flex align-middle">
                 <button
+                  aria-label={`Configure the configuration for ${name}`}
                   className="block h-full w-full cursor-pointer px-4 py-2 text-left"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {

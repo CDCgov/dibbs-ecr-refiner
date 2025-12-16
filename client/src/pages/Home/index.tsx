@@ -40,9 +40,9 @@ export function Home() {
 function HowItWorks() {
   return (
     <div className="flex flex-1 flex-col items-center gap-13 px-10 py-10 xl:px-34">
-      <h2 className="text-2xl font-bold text-black lg:text-4xl">
+      <h1 className="text-2xl font-bold text-black lg:text-4xl">
         How it works
-      </h2>
+      </h1>
       <ol className="flex flex-col gap-6 md:justify-between lg:flex-row">
         <li className="flex items-start gap-6 lg:w-1/3">
           <Number>1</Number>
