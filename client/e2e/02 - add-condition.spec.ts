@@ -1,39 +1,12 @@
 import { test, expect } from './fixtures/fixtures';
-import { login, logout } from './utils';
-import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
+import { createNewConfiguration } from './utils';
 
-test.describe
-  .serial('Adding/modifying configurations by initial condition', () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-  });
-
-  test.afterEach(async ({ page }) => {
-    await logout(page);
-  });
-
+test.describe('Adding/modifying configurations by initial condition', () => {
   test('should be able to create a configuration for Acanthamoeba', async ({
     page,
     makeAxeBuilder,
   }) => {
-    /// ==========================================================================
-    /// Test that a new condition can be added
-    /// ==========================================================================
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    await page.getByTestId('combo-box-input').click();
-    await page.getByTestId('combo-box-input').fill('Acanthamoeba');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page.getByRole('option', { name: 'Acanthamoeba' }).press('Enter');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page.getByTestId('combo-box-clear-button').press('Tab');
-    await page.getByTestId('modalFooter').getByTestId('button').click();
-    await expect(
-      page.getByRole('heading', { name: 'New configuration created' })
-    ).toBeVisible();
-
+    await createNewConfiguration('Acanthamoeba', page);
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     /// ==========================================================================
@@ -103,12 +76,6 @@ test.describe
     await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
     await page.getByTestId('modalFooter').getByTestId('button').click();
     await expect(
-      page
-        .locator('div')
-        .filter({ hasText: /^Custom code added1234$/ })
-        .nth(2)
-    ).toBeVisible();
-    await expect(
       page.getByRole('cell', { name: 'qwert', exact: true })
     ).toBeVisible();
     await expect(
@@ -135,6 +102,7 @@ test.describe
 
     // Wait for saving to go away (refetch finished)
     await page.getByText('Saving').waitFor({ state: 'detached' });
+    await page.getByText('Saved').waitFor({ state: 'visible' });
 
     await page.getByRole('button', { name: 'Acanthamoeba' }).click();
 

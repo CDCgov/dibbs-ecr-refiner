@@ -6,21 +6,21 @@ from psycopg.rows import class_row, dict_row
 from app.db.configurations.model import DbConfigurationCondition
 
 from ..pool import AsyncDatabaseConnection
-from .model import DbCondition
+from .model import DbCondition, DbConditionBase
 
 # TES and refiner are currently using version 3.0.0 for CGs and its child RSGs
 CURRENT_VERSION = "3.0.0"
 
 
-async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
+async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase]:
     """
-    Queries the database and retrieves a list of conditions matching CURRENT_VERSION.
+    Queries the database and retrieves a list of conditions matching CURRENT_VERSION. This query does not include related code set information.
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
 
     Returns:
-        list[DbCondition]: List of conditions.
+        list[DbConditionBasicInfo]: List containing information about conditions.
     """
 
     query = """
@@ -28,12 +28,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
                 id,
                 display_name,
                 canonical_url,
-                version,
-                child_rsg_snomed_codes,
-                snomed_codes,
-                loinc_codes,
-                icd10_codes,
-                rxnorm_codes
+                version
             FROM conditions
             WHERE version = %s
             ORDER BY display_name ASC;
@@ -42,14 +37,14 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbCondition]:
     params = (CURRENT_VERSION,)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
+        async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
     if not rows:
         raise Exception(f"No conditions found for version {CURRENT_VERSION}.")
 
-    return [DbCondition.from_db_row(row) for row in rows]
+    return rows
 
 
 async def get_condition_by_id_db(

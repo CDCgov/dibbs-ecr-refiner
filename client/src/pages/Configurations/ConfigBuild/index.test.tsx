@@ -68,6 +68,7 @@ const baseMockConfig: GetConfigurationResponse = {
   all_versions: mockVersions,
   version: 2,
   active_version: null,
+  active_configuration_id: null,
   latest_version: 2,
   condition_canonical_url:
     'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
