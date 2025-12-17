@@ -88,12 +88,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// ==========================================================================
     await page.getByRole('button', { name: 'Sections' }).click();
     await expect(
-      page.getByLabel('Include and refine section History of encounters')
+      page.getByLabel('Include and refine section Encounters Section')
     ).toBeChecked();
 
-    const radio = page.getByLabel(
-      'Include entire section History of encounters'
-    );
+    const radio = page.getByLabel('Include entire section Encounters Section');
     const parent = radio.locator('..');
     await parent.click();
 
@@ -108,7 +106,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await page.getByRole('button', { name: 'Sections' }).click();
     await expect(
-      page.getByLabel('Include entire section History of encounters')
+      page.getByLabel('Include entire section Encounters Section')
     ).toBeChecked();
 
     /// ==========================================================================
