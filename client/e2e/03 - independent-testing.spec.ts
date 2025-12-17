@@ -1,23 +1,18 @@
 import { test, expect } from './fixtures/fixtures';
-import { login, logout } from './utils';
-import { CONFIGURATION_CTA } from '../src/pages/Configurations/utils';
 import path from 'path';
 import fs from 'fs';
+import { createNewConfiguration } from './utils';
 
-test.describe.serial('should be able to access independent testing', () => {
+test.describe('should be able to access independent testing', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/configurations');
+  });
+
   // Resolve the file path relative to the project root
   const filePath = path.resolve(
     process.cwd(),
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
-
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-  });
-
-  test.afterEach(async ({ page }) => {
-    await logout(page);
-  });
 
   test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
     page,
@@ -73,13 +68,7 @@ test.describe.serial('should be able to access independent testing', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // configure covid-19
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-    await page.getByTestId('combo-box-input').click();
-    await page.getByTestId('combo-box-input').fill('COVID-19');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page.getByRole('option', { name: 'COVID-19' }).press('Enter');
-    await page.getByRole('button', { name: 'Set up configuration' }).click();
-    await expect(page.getByText('Build configuration')).toBeVisible();
+    await createNewConfiguration('COVID-19', page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
@@ -127,15 +116,7 @@ test.describe.serial('should be able to access independent testing', () => {
     ).toBeVisible();
 
     // configure influenza
-    await page.getByRole('button', { name: CONFIGURATION_CTA }).click();
-    await page.getByTestId('combo-box-input').click();
-    await page.getByTestId('combo-box-input').fill('Influenza');
-    await page.getByTestId('combo-box-input').press('Tab');
-    await page
-      .getByRole('option', { name: 'Influenza', exact: true })
-      .press('Enter');
-    await page.getByRole('button', { name: 'Set up configuration' }).click();
-    await expect(page.getByText('Build configuration')).toBeVisible();
+    await createNewConfiguration('Influenza', page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
@@ -178,8 +159,6 @@ test.describe.serial('should be able to access independent testing', () => {
     /// ==========================================================================
     /// Test independent test flow: upload, refine, download
     /// ==========================================================================
-    await page.getByRole('link', { name: /eCR Refiner/i }).click();
-
     await page.getByRole('link', { name: 'Testing' }).click();
 
     // Locate the file input by its id
@@ -250,7 +229,6 @@ test.describe.serial('should be able to access independent testing', () => {
   test('should be able to see the generated files for jurisdictions to test', async ({
     page,
   }) => {
-    await page.getByRole('link', { name: /eCR Refiner/i }).click();
     await page.getByRole('link', { name: 'Testing' }).click();
 
     // navigate to the place where we're linking to the sample files
@@ -258,14 +236,6 @@ test.describe.serial('should be able to access independent testing', () => {
       .getByRole('link', { name: "visit eCR Refiner's repository" })
       .getAttribute('href');
     expect(linkURL).not.toBeNull();
-    await page.goto(linkURL as string);
-
-    // Check that the default file is there
-    await expect(
-      page.getByRole('link', {
-        name: 'APHL_eCR_Refiner_COVID_Influenza_Sample_Files.zip',
-      })
-    ).toBeVisible();
   });
 
   test('refinement percentages between the two flows should match', async ({

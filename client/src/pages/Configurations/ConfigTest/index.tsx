@@ -24,7 +24,11 @@ import { FileUploadWarning } from '../../../components/FileUploadWarning';
 
 export function ConfigTest() {
   const { id } = useParams<{ id: string }>();
-  const { data: response, isPending, isError } = useGetConfiguration(id ?? '');
+  const {
+    data: configuration,
+    isPending,
+    isError,
+  } = useGetConfiguration(id ?? '');
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -32,15 +36,15 @@ export function ConfigTest() {
   return (
     <div>
       <TitleContainer>
-        <Title>{response.data.display_name}</Title>
-        <Status version={response.data.active_version} />
+        <Title>{configuration.data.display_name}</Title>
+        <Status version={configuration.data.active_version} />
       </TitleContainer>
       <NavigationContainer>
         <VersionMenu
-          id={response.data.id}
-          currentVersion={response.data.version}
-          status={response.data.status}
-          versions={response.data.all_versions}
+          id={configuration.data.id}
+          currentVersion={configuration.data.version}
+          status={configuration.data.status}
+          versions={configuration.data.all_versions}
           step="test"
         />
         <StepsContainer>
@@ -48,8 +52,11 @@ export function ConfigTest() {
         </StepsContainer>
       </NavigationContainer>
       <SectionContainer>
-        <ConfigurationTitleBar step="test" />
-        <Tester config={response.data} />
+        <ConfigurationTitleBar
+          step="test"
+          condition={configuration.data.display_name}
+        />
+        <Tester config={configuration.data} />
       </SectionContainer>
     </div>
   );
