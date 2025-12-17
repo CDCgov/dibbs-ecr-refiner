@@ -86,7 +86,7 @@
     },
     {
       "tag": "Amazon Web Services - Simple Storage Service S3 Standard",
-      "background": "#3f8639",
+      "background": "#e2730e",
       "stroke": "#3f8584",
       "icon": "./.icons/aws-s3-standard.png"
     },

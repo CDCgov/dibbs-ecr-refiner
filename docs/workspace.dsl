@@ -41,8 +41,8 @@ workspace {
                 }
                 storage = container "Storage Account" {
                     description "Storage account for storing application data"
-                    technology "Azure Blob Storage"
-                    tags "Microsoft Azure - Storage Accounts"
+                    technology "Amazon Web Services - S3"
+                    tags "Amazon Web Services - Simple Storage Service S3 Standard"
                 }
             }
 
@@ -87,20 +87,20 @@ workspace {
         }
 
         // Azure Relationships
-        user -> refiner.network "Navigates to Refiner Application" uses "Browser"
+        user -> refiner.network "Navigates to Refiner Application" "Browser"
         refiner.network -> refiner.app "Redirects to" "HTTPS"
-        refiner.app -> refiner.fusion_auth "Authenticates the user" uses "OAuth2"
-        refiner.auth -> refiner.app "Provides authentication tokens to" uses "OAuth2"
-        refiner.fusion_auth -> refiner.app "Provides authentication tokens to" uses "OAuth2"
-        refiner.app -> refiner.registry "Provides container images to" uses "Docker"
-        refiner.app -> refiner.api "Communicates with token to" uses "HTTPS"
-        refiner.api -> refiner.database "Reads from and writes to" uses "Postgres"
-        refiner.api -> refiner.storage "Reads from and writes to" uses "Postgres"
-        refiner.api -> refiner.localstack "Reads from and writes to" uses "HTTPS"
+        refiner.app -> refiner.fusion_auth "Authenticates the user" "OAuth2"
+        refiner.auth -> refiner.app "Provides authentication tokens to" "OAuth2"
+        refiner.fusion_auth -> refiner.app "Provides authentication tokens to" "OAuth2"
+        refiner.app -> refiner.registry "Provides container images to" "Docker"
+        refiner.app -> refiner.api "Communicates with token to" "HTTPS"
+        refiner.api -> refiner.database "Reads from and writes to" "SQL"
+        refiner.api -> refiner.storage "Reads from and writes to" "S3"
+        refiner.api -> refiner.localstack "Reads from and writes to" "HTTPS"
 
         // AWS Relationships
-        refiner.storage -> refiner.sqs "Sends messages to" uses "HTTPS"
-        refiner.sqs -> refiner.lambda "Triggers" uses "SQS"
+        refiner.storage -> refiner.sqs "Sends messages to" "HTTPS"
+        refiner.sqs -> refiner.lambda "Triggers" "SQS"
         refiner.lambda -> refiner.storage "Reads from and writes to" "HTTPS"
     }
 
