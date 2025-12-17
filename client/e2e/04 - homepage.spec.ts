@@ -10,7 +10,7 @@ test.describe('Viewing the application sign in content', () => {
     ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Testing' })).toBeVisible();
     await expect(
-      page.getByRole('link', { name: 'Configurations' })
+      page.getByRole('link', { name: 'Configurations', exact: true })
     ).toBeVisible();
     await expect(
       page.getByText('Your reportable condition configurations')

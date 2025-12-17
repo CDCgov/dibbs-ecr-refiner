@@ -393,6 +393,7 @@ const ConditionCodeSetButton = forwardRef<
         )}
         onClick={onViewCodeSet}
         {...props}
+        aria-label={`View TES code set information for ${codeSetName}`}
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
