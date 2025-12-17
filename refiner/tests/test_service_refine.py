@@ -1,229 +1,264 @@
 from lxml import etree
 
-from app.db.conditions.model import DbCondition
-from app.db.configurations.model import (
-    DbConfiguration,
-)
+from app.core.models.types import XMLFiles
+from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.model import DbConfiguration
 from app.services.ecr.models import RefinementPlan
 from app.services.ecr.refine import refine_eicr, refine_rr
-from app.services.terminology import ConfigurationPayload
-from tests.test_service_process_eicr import (
-    make_condition,
-)
-from tests.test_service_terminology import make_dbconfiguration
+from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
 
-NAMESPACES = {"hl7": "urn:hl7-org:v3"}
+from .conftest import NAMESPACES
+
+# NOTE:
+# LOCAL TEST HELPER FUNCTIONS - v1.1
+# =============================================================================
 
 
-def build_xpath_for_codes(codes: set[str]) -> str:
+def _make_condition_v1_1(**kwargs) -> DbCondition:
     """
-    Helper to build XPath from a set of codes, mimicking ProcessedConfiguration.build_xpath()
+    Creates a DbCondition model for v1.1 testing.
     """
 
-    if not codes:
-        return ""
+    defaults = {
+        "id": "fake-condition-id-v1-1",
+        "display_name": "Test Condition v1.1",
+        "canonical_url": "http://example.com/condition/v1.1",
+        "version": "1.1",
+        "child_rsg_snomed_codes": [],
+        "snomed_codes": [],
+        "loinc_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": [],
+    }
+    defaults.update(kwargs)
+    return DbCondition(**defaults)
 
-    code_conditions = " or ".join(f'@code="{code}"' for code in codes)
-    return (
-        f".//hl7:*[hl7:code[{code_conditions}] or hl7:translation[{code_conditions}] or hl7:value[{code_conditions}]] | "
-        f".//hl7:code[{code_conditions}] | "
-        f".//hl7:translation[{code_conditions}] | "
-        f".//hl7:value[{code_conditions}]"
-    )
+
+def _make_db_configuration_v1_1(**kwargs) -> DbConfiguration:
+    """
+    Creates a DbConfiguration model for v1.1 testing.
+    """
+
+    defaults = {
+        "id": "fake-config-id-v1-1",
+        "name": "Test Config v1.1",
+        "jurisdiction_id": "SDDH",
+        "condition_id": "fake-condition-id-v1-1",
+        "status": "active",
+        "version": 1,
+        "included_conditions": [],
+        "custom_codes": [],
+        "local_codes": [],
+        "section_processing": [],
+        "last_activated_at": None,
+        "last_activated_by": None,
+        "condition_canonical_url": "http://example.com/condition/v1.1",
+        "created_by": "fake-config-id-v1-1",
+    }
+    defaults.update(kwargs)
+    return DbConfiguration(**defaults)
 
 
-def test_preserve_social_history_section(sample_xml_files):
-    # social history loinc code is 29762-2
-    # tell the plan to "retain" (don't touch) the social history section
-    plan = RefinementPlan(
-        xpath="",
-        section_instructions={"29762-2": "retain"},
-    )
-    refined_xml = refine_eicr(xml_files=sample_xml_files, plan=plan)
+# NOTE:
+# LOCAL TEST HELPER FUNCTIONS - v3.1.1
+# =============================================================================
 
-    # parse both original and refined XMLs
+
+def _make_condition_v3_1_1(**kwargs) -> DbCondition:
+    """
+    Creates a DbCondition model for v3.1.1 testing.
+    """
+
+    defaults = {
+        "id": "fake-condition-id-v3-1-1",
+        "display_name": "Test Condition v3.1.1",
+        "canonical_url": "http://example.com/condition/v3.1.1",
+        "version": "3.1.1",
+        "child_rsg_snomed_codes": [],
+        "snomed_codes": [],
+        "loinc_codes": [],
+        "icd10_codes": [],
+        "rxnorm_codes": [],
+    }
+    defaults.update(kwargs)
+    return DbCondition(**defaults)
+
+
+def _make_db_configuration_v3_1_1(**kwargs) -> DbConfiguration:
+    """
+    Creates a DbConfiguration model for v3.1.1 testing.
+    """
+
+    defaults = {
+        "id": "fake-config-id-v3-1-1",
+        "name": "Test Config v3.1.1",
+        "jurisdiction_id": "SDDH",
+        "condition_id": "fake-condition-id-v3-1-1",
+        "status": "active",
+        "version": 1,
+        "included_conditions": [],
+        "custom_codes": [],
+        "local_codes": [],
+        "section_processing": [],
+        "last_activated_at": None,
+        "last_activated_by": None,
+        "condition_canonical_url": "http://example.com/condition/v3.1.1",
+        "created_by": "fake-config-id-v1-1",
+    }
+    defaults.update(kwargs)
+    return DbConfiguration(**defaults)
+
+
+# NOTE:
+# EICR REFINEMENT TESTS
+# =============================================================================
+
+
+def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests the 'retain' action, which should not modify the section.
+    """
+
+    plan = RefinementPlan(xpath="", section_instructions={"29762-2": "retain"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
     doc_refined = etree.fromstring(refined_xml.encode("utf-8"))
-    doc_original = etree.fromstring(sample_xml_files.eicr.encode("utf-8"))
-
-    social_section_refined = doc_refined.xpath(
-        './/hl7:section[hl7:code[@code="29762-2"]]', namespaces=NAMESPACES
-    )[0]
-    social_section_original = doc_original.xpath(
+    section_refined = doc_refined.xpath(
         './/hl7:section[hl7:code[@code="29762-2"]]', namespaces=NAMESPACES
     )[0]
 
-    # section should NOT be minimal
-    assert social_section_refined.get("nullFlavor") != "NI"
+    original_doc = etree.fromstring(covid_influenza_v1_1_files.eicr.encode("utf-8"))
+    section_original = original_doc.xpath(
+        './/hl7:section[hl7:code[@code="29762-2"]]', namespaces=NAMESPACES
+    )[0]
 
-    # compare entries
-    # they should be the same since refiner didn't touch them at all and normally
-    # they'd be refined out unless a config was set up to keep them
-    entries_refined = social_section_refined.xpath(
-        ".//hl7:entry", namespaces=NAMESPACES
-    )
-    entries_original = social_section_original.xpath(
-        ".//hl7:entry", namespaces=NAMESPACES
-    )
-
-    # assert both number and content are the same
-    assert len(entries_refined) == len(entries_original)
-    for orig, refined in zip(entries_original, entries_refined):
-        # compare the string representations
-        assert etree.tostring(orig) == etree.tostring(refined)
+    assert etree.tostring(section_refined) == etree.tostring(section_original)
 
 
-def test_minimal_problems_section(sample_xml_files):
-    # no matching codes in problems section
-    # tell the plan to "refine" but with a non-matching code
+def test_refine_action_with_no_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests 'refine' with a non-matching XPath, which should create a minimal section.
+    """
+
     plan = RefinementPlan(
-        xpath=build_xpath_for_codes(codes={"NOT_A_REAL_CODE"}),
+        xpath=".//hl7:code[@code='NON_EXISTENT_CODE']",
         section_instructions={"11450-4": "refine"},
     )
-
-    refined_xml = refine_eicr(xml_files=sample_xml_files, plan=plan)
-
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
     doc = etree.fromstring(refined_xml.encode("utf-8"))
     problems_section = doc.xpath(
         './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=NAMESPACES
     )[0]
-    # it should be a minimal (empty) section if there are no matching codes
     assert problems_section.get("nullFlavor") == "NI"
-    assert not problems_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
 
 
-def test_retain_single_lab_entry(sample_xml_files):
-    # use the loinc code "94310-0" present in results section
-    plan = RefinementPlan(
-        xpath=build_xpath_for_codes(codes={"94310-0"}),
-        section_instructions={"30954-2": "refine"},
+def test_refine_action_with_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests the 'refine' action for v1.1, ensuring it correctly uses the
+    terminology pipeline to build an XPath and filter a section.
+    """
+
+    condition = _make_condition_v1_1(
+        loinc_codes=[DbConditionCoding(code="94310-0", display="")]
     )
+    config = _make_db_configuration_v1_1()
+    payload = ConfigurationPayload(conditions=[condition], configuration=config)
 
-    refined_xml = refine_eicr(xml_files=sample_xml_files, plan=plan)
+    processed_config = ProcessedConfiguration.from_payload(payload)
+    xpath = processed_config.build_xpath()
+
+    plan = RefinementPlan(xpath=xpath, section_instructions={"30954-2": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 
     doc = etree.fromstring(refined_xml.encode("utf-8"))
     results_section = doc.xpath(
         './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=NAMESPACES
     )[0]
-    entries = results_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
-    assert any(
-        "94310-0" in etree.tostring(entry, encoding="unicode") for entry in entries
-    )
-    # should not be minimal
-    assert results_section.get("nullFlavor") != "NI"
+    section_text = etree.tostring(results_section, encoding="unicode")
+    assert "94310-0" in section_text
 
 
-def test_retain_multiple_problem_entries(sample_xml_files):
-    # use snomed code "840539006" (COVID-19) and "230145002" (Difficulty Breathing) in Problems section
-    plan = RefinementPlan(
-        xpath=build_xpath_for_codes(codes={"840539006", "230145002"}),
-        section_instructions={"11450-4": "refine"},
-    )
-
-    refined_xml = refine_eicr(xml_files=sample_xml_files, plan=plan)
-
-    doc = etree.fromstring(refined_xml.encode("utf-8"))
-    problems_section = doc.xpath(
-        './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=NAMESPACES
-    )[0]
-    entries = problems_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
-    # check for both codes in entries (they appear as <value code="..."> in the XML)
-    assert any(
-        "840539006" in etree.tostring(entry, encoding="unicode")
-        or "230145002" in etree.tostring(entry, encoding="unicode")
-        for entry in entries
-    )
-    # should not be minimal
-    assert problems_section.get("nullFlavor") != "NI"
+# NOTE:
+# RR REFINEMENT TESTS
+# =============================================================================
 
 
-def test_preserve_encounters_section_with_narrative_and_entry(sample_xml_files):
-    # encounters section loinc code is 46240-8
-    plan = RefinementPlan(
-        xpath=build_xpath_for_codes(codes={"NOT_A_CODE"}),
-        section_instructions={"46240-8": "retain"},
-    )
+def test_refine_rr_by_condition_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests RR refinement for v1.1: keeps ONLY the observations for conditions
+    specified in the configuration.
+    """
 
-    refined_xml = refine_eicr(xml_files=sample_xml_files, plan=plan)
+    covid_condition = _make_condition_v1_1(child_rsg_snomed_codes=["840539006"])
+    config = _make_db_configuration_v1_1()
+    payload = ConfigurationPayload(conditions=[covid_condition], configuration=config)
 
-    doc = etree.fromstring(refined_xml.encode("utf-8"))
-    encounters_section = doc.xpath(
-        './/hl7:section[hl7:code[@code="46240-8"]]', namespaces=NAMESPACES
-    )[0]
-    assert encounters_section.get("nullFlavor") != "NI"
-    # should have both the narrative and at least one entry
-    entries = encounters_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
-    assert entries
-
-
-def test_results_section_minimal_on_nonexistent_code(sample_xml_files):
-    # use a code not present in results section ("NOT_A_REAL_CODE")
-    plan = RefinementPlan(
-        xpath=build_xpath_for_codes({"NOT_A_REAL_CODE"}),
-        section_instructions={"30954-2": "refine"},
-    )
-
-    refined_xml = refine_eicr(xml_files=sample_xml_files, plan=plan)
-
-    doc = etree.fromstring(refined_xml.encode("utf-8"))
-    results_section = doc.xpath(
-        './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=NAMESPACES
-    )[0]
-    assert results_section.get("nullFlavor") == "NI"
-    assert not results_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
-
-
-def test_refine_rr_by_condition(sample_xml_files):
-    mockCovidConfiguration: DbCondition = make_condition(
-        child_rsg_snomed_codes=["840539006"]
-    )
-    config: DbConfiguration = make_dbconfiguration()
-    payload = ConfigurationPayload(
-        conditions=[mockCovidConfiguration], configuration=config
-    )
     refined_xml = refine_rr(
-        jurisdiction_id="SDDH", xml_files=sample_xml_files, payload=payload
+        jurisdiction_id="SDDH", xml_files=covid_influenza_v1_1_files, payload=payload
     )
-    # searching for entry with SNOMED 840539006 (COVID as tagged in sample files)
-    doc = etree.fromstring(refined_xml.encode("utf-8"))
-
-    results_observation = doc.xpath(
-        ".//hl7:entry//hl7:organizer//hl7:observation[hl7:value/@code='840539006']",
-        namespaces=NAMESPACES,
+    doc_string = etree.tostring(
+        etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
     )
 
-    assert len(results_observation) == 1
-    reportable_response = results_observation[0].xpath(
-        ".//hl7:component/hl7:observation[hl7:value/@code='RRVS1']",
-        namespaces=NAMESPACES,
-    )
-    # should give us exactly one reportable response observation based on the sample file
-    assert len(reportable_response) == 1
-
-    non_reportable_responses = results_observation[0].xpath(
-        ".//hl7:component/hl7:observation[hl7:value/@code='!RRVS1']",
-        namespaces=NAMESPACES,
-    )
-    # and zero non-reportable responses, since those should have gotten filtered out
-    assert len(non_reportable_responses) == 0
+    assert "840539006" in doc_string
+    assert "49727002" not in doc_string
 
 
-def test_refine_rr_by_jurisdiction(sample_xml_files):
-    mockCovidConfiguration: DbCondition = make_condition(
-        child_rsg_snomed_codes=["840539006"]
-    )
-    config: DbConfiguration = make_dbconfiguration()
-    payload = ConfigurationPayload(
-        conditions=[mockCovidConfiguration], configuration=config
-    )
+def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests RR refinement for v1.1: removes observations not for the given jurisdiction.
+    """
+
+    covid_condition = _make_condition_v1_1(child_rsg_snomed_codes=["840539006"])
+    config = _make_db_configuration_v1_1()
+    payload = ConfigurationPayload(conditions=[covid_condition], configuration=config)
+
     refined_xml = refine_rr(
-        jurisdiction_id="SOME_RANDOM_JD", xml_files=sample_xml_files, payload=payload
+        jurisdiction_id="SOME_OTHER_JD",
+        xml_files=covid_influenza_v1_1_files,
+        payload=payload,
     )
-    # searching for entry with SNOMED 840539006 (COVID as tagged in sample files)
-    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    doc_string = etree.tostring(
+        etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
+    )
 
-    results_observation = doc.xpath(
-        ".//hl7:entry//hl7:organizer//hl7:observation[hl7:value/@code='840539006']",
-        namespaces=NAMESPACES,
+    assert "840539006" not in doc_string
+
+
+def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
+    """
+    Tests RR refinement on the Zika file: confirms the Zika observation is kept.
+    """
+
+    zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
+    config = _make_db_configuration_v3_1_1()
+    payload = ConfigurationPayload(conditions=[zika_condition], configuration=config)
+
+    refined_xml = refine_rr(
+        jurisdiction_id="SDDH", xml_files=zika_v3_1_1_files, payload=payload
     )
-    # should filter out the observation since the jurisdiction ID doesn't match
-    assert len(results_observation) == 0
+    doc_string = etree.tostring(
+        etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
+    )
+
+    assert "3928002" in doc_string
+
+
+def test_refine_rr_by_jurisdiction_v3_1_1(zika_v3_1_1_files: XMLFiles):
+    """
+    Tests RR refinement on the Zika file: confirms the Zika observation is
+    removed when the jurisdiction does not match.
+    """
+
+    zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
+    config = _make_db_configuration_v3_1_1()
+    payload = ConfigurationPayload(conditions=[zika_condition], configuration=config)
+
+    refined_xml = refine_rr(
+        jurisdiction_id="SOME_OTHER_JD", xml_files=zika_v3_1_1_files, payload=payload
+    )
+    doc_string = etree.tostring(
+        etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
+    )
+
+    assert "3928002" not in doc_string

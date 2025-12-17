@@ -1,0 +1,13 @@
+digraph {
+  compound=true
+  graph [fontname="Libre Franklin", rankdir=LR, ranksep=1.0, nodesep=1.0]
+  node [fontname="Libre Franklin", shape=box, margin="0.4,0.3"]
+  edge [fontname="Libre Franklin"]
+  label=<<br /><font point-size="34">DIBBs eCR Refiner - System Landscape</font><br /><font point-size="24">The system landscape diagram for the DIBBs eCR Refiner platform</font>>
+
+  1 [id=1,shape=rect, label=<<font point-size="34">Jurisdiction User</font><br /><font point-size="19">[Person]</font><br /><br /><font point-size="24">A jurisdiction user of the<br />DIBBs eCR Refiner platform</font>>, style=filled, color="#afcadb", fillcolor="#6e99b2", fontcolor="#ffffff"]
+  2 [id=2,shape=rect, label=<<font point-size="34">DIBBs eCR Refiner</font><br /><font point-size="19">[Software System]</font><br /><br /><font point-size="24">The DIBBs eCR Refiner platform</font>>, style=filled, color="#000000", fillcolor="#facc2e", fontcolor="#000000"]
+
+  1 -> 2 [id=15, label=<<font point-size="24">Navigates to Refiner<br />Application</font>>, style="dashed", color="#444444", fontcolor="#444444"]
+
+}

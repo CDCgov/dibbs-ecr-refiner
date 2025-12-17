@@ -8,13 +8,12 @@ from psycopg.types.json import Jsonb
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 
-from ...services.file_io import read_json_asset
+from ...services.ecr.specification import load_spec
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import DbConfiguration, DbConfigurationCustomCode, DbConfigurationStatus
 
 EMPTY_JSONB = Jsonb([])
-REFINER_DETAILS = read_json_asset("refiner_details.json")
 
 
 async def insert_configuration_db(
@@ -69,15 +68,17 @@ async def insert_configuration_db(
         condition_canonical_url
     """
 
-    section_details = REFINER_DETAILS["sections"]
+    # use the new specification system in the ecr service
+    # * default to version 1.1 for backward compatibility
+    spec = load_spec("1.1")
 
     section_processing_defaults = [
         {
-            "name": details["display_name"],
-            "code": code,
+            "name": section_spec.display_name,
+            "code": loinc_code,
             "action": "refine",
         }
-        for code, details in section_details.items()
+        for loinc_code, section_spec in spec.sections.items()
     ]
 
     params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
