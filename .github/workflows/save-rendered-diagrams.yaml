@@ -121,4 +121,6 @@ jobs:
 
   rerun-tests:
     uses: ./.github/workflows/tests.yml
+    with:
+      python_runner_version: 3.13.3
     secrets: inherit
