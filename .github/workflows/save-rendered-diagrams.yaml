@@ -6,17 +6,16 @@ permissions:
 on:
   pull_request:
     paths:
-      - 'docs/models/**'
-      - 'docs/views/**'
-      - 'docs/styles/**'
-      - 'docs/workspace.*'
-      - '.github/workflows/save-rendered-diagrams.yaml'
+      - "docs/models/**"
+      - "docs/views/**"
+      - "docs/styles/**"
+      - "docs/workspace.*"
+      - ".github/workflows/save-rendered-diagrams.yaml"
 
 jobs:
   render-static-diagrams:
     runs-on: ubuntu-latest
     steps:
-
       # MARK: :setup
       #  _______         __
       # |     __|.-----.|  |_.--.--.-----.
@@ -115,3 +114,11 @@ jobs:
           git add .
           git commit -m "Updating rendered Structurizr diagrams"
           git push origin HEAD:$GITHUB_HEAD_REF
+
+  rerun-build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+
+  rerun-tests:
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit

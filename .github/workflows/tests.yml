@@ -13,10 +13,6 @@ on:
         default: 3.13
         required: true
         type: number
-  workflow_run:
-    workflows: ["Save Rendered Diagrams"]
-    types:
-      - completed
 
 permissions:
   contents: read
