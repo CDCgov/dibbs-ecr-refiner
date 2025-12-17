@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, Mock } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter, Router, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigBuild } from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
@@ -72,6 +72,7 @@ const baseMockConfig: GetConfigurationResponse = {
   latest_version: 2,
   condition_canonical_url:
     'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  lockedBy: null,
 };
 
 // Mock configurations request
@@ -126,10 +127,7 @@ vi.mock('../../../hooks/Login', async () => {
   const actual = await vi.importActual('../../../hooks/Login');
   return {
     ...actual,
-    useLogin: vi.fn(() => [
-      { id: 'my-user-id', name: 'Test User' },
-      false,
-    ]),
+    useLogin: vi.fn(() => [{ id: 'my-user-id', name: 'Test User' }, false]),
   };
 });
 
@@ -171,9 +169,7 @@ describe('Config builder page', () => {
       </MemoryRouter>
     );
     const lockBanner = await screen.findByRole('status');
-    expect(
-      within(lockBanner).getByText(/View only:/i)
-    ).toBeInTheDocument();
+    expect(within(lockBanner).getByText(/View only:/i)).toBeInTheDocument();
     expect(screen.getByText(/Jane Doe/)).toBeInTheDocument();
     // The ADD button should be disabled
     expect(
@@ -200,10 +196,7 @@ describe('Config builder page', () => {
       <MemoryRouter initialEntries={['/configurations/config-id/build']}>
         <TestQueryClientProvider>
           <Routes>
-            <Route
-              path="/configurations/:id/build"
-              element={<ConfigBuild />}
-            />
+            <Route path="/configurations/:id/build" element={<ConfigBuild />} />
           </Routes>
         </TestQueryClientProvider>
       </MemoryRouter>

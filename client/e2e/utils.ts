@@ -20,7 +20,15 @@ export function refreshDatabase(): string {
   }
 }
 
-export async function login({ page, user, baseUrl = "/" }: { page: Page; user?: string | null; baseUrl?: string }) {
+export async function login({
+  page,
+  user,
+  baseUrl = '/',
+}: {
+  page: Page;
+  user?: string | null;
+  baseUrl?: string;
+}) {
   const username = typeof user === 'string' ? user : 'refiner';
   const password = typeof user === 'string' ? user : 'refiner';
 
