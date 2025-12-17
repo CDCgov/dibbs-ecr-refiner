@@ -107,12 +107,17 @@ jobs:
         working-directory: client
       - name: Start Application
         run: just dev up --detach
+
       - name: Migrate Database
         run: |
           sleep 10
           just migrate local
       - name: Seed Database
         run: just db seed
+      - name: Wait for Auth Service to be Ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8082 > /dev/null 2>&1; do sleep 2; done'
+          echo "Auth Service is ready!"
       - name: Run Playwright E2E Tests
         run: just client run e2e
       - name: Upload HTML Report

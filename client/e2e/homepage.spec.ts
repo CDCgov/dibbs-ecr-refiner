@@ -31,7 +31,7 @@ test.describe('Viewing the application when logged in', () => {
     await expect(
       page.getByRole('link', { name: 'Provide Feedback' })
     ).toBeHidden();
-    await login(page);
+    await login({ page });
     await expect(
       page.getByRole('link', { name: 'Provide Feedback' })
     ).toBeVisible();
@@ -51,7 +51,7 @@ test.describe('Viewing the application when logged in', () => {
     page,
     makeAxeBuilder,
   }) => {
-    await login(page);
+    await login({ page });
 
     // 1️⃣ Locate the refiner button and click it
     const refinerButton = page.locator('button', { hasText: 'refiner (SDDH)' });
@@ -76,7 +76,7 @@ test.describe('Viewing the application when logged in', () => {
     page,
     makeAxeBuilder,
   }) => {
-    await login(page, 'refiner2');
+    await login({ page, user: 'refiner2' });
 
     // 1️⃣ Locate the refiner button and click it
     const refinerButton = page.locator('button', {

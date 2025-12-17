@@ -33,6 +33,7 @@ export * from './getConditionCode';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';
 export * from './getConfigurationResponse';
+export * from './getConfigurationResponseActiveConfigurationId';
 export * from './getConfigurationResponseActiveVersion';
 export * from './getConfigurationResponseDraftId';
 export * from './getConfigurationResponseLockedBy';
