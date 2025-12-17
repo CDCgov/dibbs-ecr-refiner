@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -234,7 +234,7 @@ def mock_db_functions(monkeypatch):
     async def mock_acquire_lock(
         configuration_id: UUID, user_id: UUID, jurisdiction_id: str, db=None
     ):
-        now = datetime.now(datetime.UTC)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=30)
 
         # Check if lock exists and is active
@@ -264,7 +264,7 @@ def mock_db_functions(monkeypatch):
     async def mock_renew_lock(
         configuration_id: UUID, user_id: UUID, jurisdiction_id: str, db=None
     ):
-        now = datetime.now(datetime.UTC)
+        now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=30)
 
         config_id_str = str(configuration_id)
@@ -375,11 +375,11 @@ async def test_lock_renewal_and_expiry(authed_client):
     locks_storage = test_module._locks_storage
     config_id_str = str(configuration_id)
     if config_id_str in locks_storage:
-        locks_storage[config_id_str]["expires_at"] = datetime.now(
-            datetime.UTC
-        ) - timedelta(minutes=1)
+        locks_storage[config_id_str]["expires_at"] = datetime.now(UTC) - timedelta(
+            minutes=1
+        )
 
     # Now lock should be considered expired
     lock = await ConfigurationLock.get_lock(str(configuration_id), db)
     assert lock is not None  # Lock still exists in storage
-    assert lock.expires_at < datetime.now(datetime.UTC)  # But it's expired
+    assert lock.expires_at < datetime.now(UTC)  # But it's expired
