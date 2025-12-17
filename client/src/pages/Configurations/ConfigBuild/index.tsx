@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { useParams, useLocation } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
@@ -52,7 +52,6 @@ import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { Status } from './Status';
 
-import { useLocation } from 'react-router-dom';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();

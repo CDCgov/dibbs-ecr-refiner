@@ -53,3 +53,9 @@ class ResizeObserver {
 }
 
 (global as any).ResizeObserver = ResizeObserver;
+
+// Mock navigator.sendBeacon for tests
+Object.defineProperty(navigator, 'sendBeacon', {
+  writable: true,
+  value: vi.fn(),
+});
