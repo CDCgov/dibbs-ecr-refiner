@@ -1,14 +1,9 @@
 workspace {
     !identifiers hierarchical
-
     model {
         properties {
             "structurizr.groupSeparator" "/"
         }
-
-        // dev = person "eCR Developer" {
-        //     description "A developer of the DIBBs eCR Refiner platform"
-        // }
 
         user = person "Jurisdiction User" {
             description "A jurisdiction user of the DIBBs eCR Refiner platform"
@@ -16,11 +11,13 @@ workspace {
 
         refiner = softwareSystem "DIBBs eCR Refiner" {
             description "The DIBBs eCR Refiner platform"
+        
             tags "DIBBs"
 
             group "Network Layer" {
                 network = container "Virtual Network" {
                     description "Virtual network for the DIBBs eCR Refiner platform"
+                    technology "Microsoft Azure - Virtual Networks"
                     tags "Microsoft Azure - Virtual Networks"
                 }
                 auth = container "Authentication \n Service" {
@@ -44,12 +41,12 @@ workspace {
                 }
                 storage = container "Storage Account" {
                     description "Storage account for storing application data"
-                    technology "Azure Blob Storage"
-                    tags "Microsoft Azure - Storage Accounts"
+                    technology "Amazon Web Services - S3"
+                    tags "Amazon Web Services - Simple Storage Service S3 Standard"
                 }
             }
 
-            localstack = container "LocalStackdocs/workspace/diagrams/structurizr/**/*.json -diff0" {
+            localstack = container "LocalStack" {
                 description "S3-compatible API local development and testing"
                 technology "LocalStack"
                 tags "LocalStack" "Development"
@@ -90,76 +87,37 @@ workspace {
         }
 
         // Azure Relationships
-        user -> refiner.network "Navigates to Refiner Application"
-        refiner.network -> refiner.app "Redirects to"
-        refiner.app -> refiner.fusion_auth "Authenticates the user"
-        refiner.fusion_auth -> refiner.app "Provides authentication tokens to"
-        refiner.app -> refiner.api "Communicates with token to"
-        refiner.api -> refiner.database "Reads from and writes to"
-        refiner.api -> refiner.storage "Reads from and writes to"
-        refiner.api -> refiner.localstack "Reads from and writes to"
+        user -> refiner.network "Navigates to Refiner Application" "Browser"
+        refiner.network -> refiner.app "Redirects to" "HTTPS"
+        refiner.app -> refiner.fusion_auth "Authenticates the user" "OAuth2"
+        refiner.auth -> refiner.app "Provides authentication tokens to" "OAuth2"
+        refiner.fusion_auth -> refiner.app "Provides authentication tokens to" "OAuth2"
+        refiner.app -> refiner.registry "Provides container images to" "Docker"
+        refiner.app -> refiner.api "Communicates with token to" "HTTPS"
+        refiner.api -> refiner.database "Reads from and writes to" "SQL"
+        refiner.api -> refiner.storage "Reads from and writes to" "S3"
+        refiner.api -> refiner.localstack "Reads from and writes to" "HTTPS"
 
         // AWS Relationships
-        refiner.storage -> refiner.sqs "Sends messages to"
-        refiner.sqs -> refiner.lambda "Triggers"
-        refiner.lambda -> refiner.storage "Reads from and writes to"
-
-
-        // development = deploymentEnvironment "Development" {
-        //     deploymentNode "Developer Laptop" {
-        //         description "Laptop used by developers to develop and test the application"
-        //         containerInstance refiner.app {
-        //             description "Runs the frontend application locally"
-        //         }
-        //         containerInstance refiner.api {
-        //             description "Runs the API locally"
-        //         }
-        //         containerInstance refiner.auth {
-        //             description "Runs the authentication service locally"
-        //         }
-        //         deploymentNode "LocalStack" {
-        //             containerInstance refiner.localstack {
-        //                 description "Runs an S3-compatible API locally"
-        //             }
-        //         }
-        //         deploymentNode "PostgreSQL Database" {
-        //             tags "Database"
-        //             containerInstance refiner.database {
-        //                 description "Runs the PostgreSQL database locally"
-        //             }
-        //         }
-        //     }
-        // }
+        refiner.storage -> refiner.sqs "Sends messages to" "HTTPS"
+        refiner.sqs -> refiner.lambda "Triggers" "SQS"
+        refiner.lambda -> refiner.storage "Reads from and writes to" "HTTPS"
     }
 
     views {
 
-        systemLandscape "refiner-system-landscape" {
+        systemLandscape refiner-landscape "refiner-system-landscape" {
             include *
             autolayout lr
             title "DIBBs eCR Refiner - System Landscape"
             description "The system landscape diagram for the DIBBs eCR Refiner platform"
         }
 
-        // systemContext refiner "refiner-system-context" {
-        //     include *
-        //
-        //     title "DIBBs eCR Refiner - System Context"
-        //     description "The system context diagram for the DIBBs eCR Refiner platform"
-        // }
-
-        // container refiner "refiner-application-azure" {
-        //     include *
-        //     exclude refiner.registry refiner.localstack refiner.auth
-        //
-        //     title "DIBBs eCR Refiner - Application"
-        //     description "The application diagram for the DIBBs eCR Refiner platform"
-        // }
-
-        // deployment * development "local-development" {
-        //     include *
-        //     autolayout lr
-        // }
+        container refiner refiner {
+            include *
+            autoLayout lr
+            title "DIBBs eCR Refiner - Application Container"
+        }
 
         styles {
             element "Container" {
@@ -207,6 +165,6 @@ workspace {
     }
 
     configuration {
-        scope none
+        scope softwaresystem
     }
 }
