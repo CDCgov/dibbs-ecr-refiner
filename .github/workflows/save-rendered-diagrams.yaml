@@ -115,14 +115,9 @@ jobs:
           git commit -m "Updating rendered Structurizr diagrams"
           git push origin HEAD:$GITHUB_HEAD_REF
 
-  rerun-build:
-    needs: render-static-diagrams
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
-
-  rerun-tests:
-    needs: render-static-diagrams
-    uses: ./.github/workflows/tests.yml
-    with:
-      python_runner_version: 3.13
-    secrets: inherit
+      - name: Rerun build and test
+        run: |
+          gh workflow run build.yml --ref $GITHUB_HEAD_REF
+          gh workflow run test.yml --ref $GITHUB_HEAD_REF
+        env:
+          GH_TOKEN: ${{ github.token }}
