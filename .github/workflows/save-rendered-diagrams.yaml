@@ -22,7 +22,18 @@ jobs:
       # |__     ||  -__||   _|  |  |  _  |
       # |_______||_____||____|_____|   __|
       #                            |__|
-      #
+
+      # generate a new app token so that the followup build / test workflow
+      # steps will still run
+      # https://docs.github.com/en/enterprise-server@2.22/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow:~:text=When%20you%20use,push%20events%20occur.
+
+      - name: Generate token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -114,10 +125,3 @@ jobs:
           git add .
           git commit -m "Updating rendered Structurizr diagrams"
           git push origin HEAD:$GITHUB_HEAD_REF
-
-      - name: Rerun build and test
-        run: |
-          gh workflow run build.yml --ref $GITHUB_HEAD_REF
-          gh workflow run test.yml --ref $GITHUB_HEAD_REF
-        env:
-          GH_TOKEN: ${{ github.token }}
