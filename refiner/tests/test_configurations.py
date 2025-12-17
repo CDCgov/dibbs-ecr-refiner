@@ -252,6 +252,20 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=custom_code_edit_mock),
     )
 
+    # Mock ConfigurationLock methods
+    monkeypatch.setattr(
+        "app.api.v1.configurations.ConfigurationLock.acquire_lock",
+        AsyncMock(return_value=True),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.ConfigurationLock.get_lock",
+        AsyncMock(return_value=None),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.ConfigurationLock.release_lock",
+        AsyncMock(return_value=True),
+    )
+
     yield
 
 
