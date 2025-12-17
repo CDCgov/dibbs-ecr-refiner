@@ -116,10 +116,12 @@ jobs:
           git push origin HEAD:$GITHUB_HEAD_REF
 
   rerun-build:
+    needs: render-static-diagrams
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
   rerun-tests:
+    needs: render-static-diagrams
     uses: ./.github/workflows/tests.yml
     with:
       python_runner_version: 3.13
