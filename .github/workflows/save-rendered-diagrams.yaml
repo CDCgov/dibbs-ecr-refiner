@@ -27,12 +27,13 @@ jobs:
       # steps will still run
       # https://docs.github.com/en/enterprise-server@2.22/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow:~:text=When%20you%20use,push%20events%20occur.
 
-      - name: Generate token
-        id: generate-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      # todo: add these back in when we have the creds set up in the repo
+      # - name: Generate token
+      #   id: generate-token
+      #   uses: actions/create-github-app-token@v1
+      #   with:
+      #     app-id: ${{ secrets.APP_ID }}
+      #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Checkout
         uses: actions/checkout@v4
