@@ -1,0 +1,138 @@
+{
+  "url": "http://localhost:8081/configurations/424d2273-7d85-488b-9ef9-db82a395e7d2/activate",
+  "extensionVersion": "4.118.0",
+  "axeVersion": "4.11.0",
+  "standard": "WCAG 2.1 AA",
+  "testingStartDate": "2025-12-16T15:24:38.920Z",
+  "testingEndDate": "2025-12-16T15:28:42.091Z",
+  "bestPracticesEnabled": false,
+  "experimentalEnabled": false,
+  "issueSummary": {
+    "critical": 0,
+    "serious": 0,
+    "moderate": 0,
+    "minor": 0,
+    "bestPractices": 0,
+    "needsReview": 0
+  },
+  "remainingTestingSummary": { "run": false },
+  "igtSummary": [
+    {
+      "tool": "Table",
+      "skipped": false,
+      "name": "12/16/2025 at 9:24 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 1331
+    },
+    {
+      "tool": "Keyboard",
+      "skipped": false,
+      "name": "12/16/2025 at 9:27 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 6685
+    },
+    {
+      "tool": "Keyboard",
+      "skipped": false,
+      "name": "12/16/2025 at 9:24 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 6483
+    },
+    {
+      "tool": "Modal Dialog",
+      "skipped": false,
+      "name": "12/16/2025 at 9:27 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 13223
+    },
+    {
+      "tool": "Modal Dialog",
+      "skipped": false,
+      "name": "12/16/2025 at 9:27 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 5479
+    },
+    {
+      "tool": "Modal Dialog",
+      "skipped": false,
+      "name": "12/16/2025 at 9:25 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 16515
+    },
+    {
+      "tool": "Interactive Elements",
+      "skipped": false,
+      "name": "12/16/2025 at 9:28 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 8509
+    },
+    {
+      "tool": "Interactive Elements",
+      "skipped": false,
+      "name": "12/16/2025 at 9:25 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 9574
+    },
+    {
+      "tool": "Structure",
+      "skipped": false,
+      "name": "12/16/2025 at 9:26 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 17922
+    },
+    {
+      "tool": "Images",
+      "skipped": false,
+      "name": "12/16/2025 at 9:26 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 11916
+    },
+    {
+      "tool": "Forms",
+      "skipped": false,
+      "name": "12/16/2025 at 9:28 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 2550
+    },
+    {
+      "tool": "Forms",
+      "skipped": false,
+      "name": "12/16/2025 at 9:26 AM",
+      "run": true,
+      "issues": { "critical": 0, "serious": 0, "moderate": 0, "minor": 0 },
+      "duration": 2650
+    }
+  ],
+  "failedRules": [],
+  "needsReview": [],
+  "source": {
+    "productName": "axe-devtools-html",
+    "productVersion": "4.118.0",
+    "productComponentName": "extension-chrome"
+  },
+  "testDetails": {
+    "testId": "f2e89ef1-74ee-4b1b-ba8f-65ae552598ba",
+    "testName": "DIBBs eCR Refiner - Activate Page",
+    "axeVersion": "4.11.0",
+    "engine": "axe-core",
+    "standard": "WCAG 2.1 AA",
+    "createdBy": "tji5@cdc.gov",
+    "startDate": "2025-12-16T15:24:38.920Z",
+    "endDate": "2025-12-16T15:28:42.091Z",
+    "bestPracticesEnabled": false,
+    "experimentalEnabled": false,
+    "integrationTestId": null
+  },
+  "allIssues": []
+}
