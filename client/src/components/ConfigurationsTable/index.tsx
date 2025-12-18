@@ -46,34 +46,52 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
           return (
             <tr
               key={id}
-              onClick={() => void navigate(`/configurations/${id}/build`)}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  void navigate(`/configurations/${id}/build`);
-                }
-              }}
               aria-label={`View ${status === GetConfigurationsResponseStatus.draft || status === GetConfigurationsResponseStatus.inactive ? 'inactive' : 'active'} configuration for ${name}`}
-              className="cursor-pointer"
             >
               <td
                 data-label={reportableConditionHeader}
-                className="!font-bold"
+                className="p-0! font-bold!"
                 scope="row"
               >
-                {name}
+                <button
+                  aria-label={`Configure the configuration for ${name}`}
+                  className="block h-full w-full cursor-pointer px-4 py-2 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      void navigate(`/configurations/${id}/build`);
+                    }
+                  }}
+                  onClick={() => {
+                    void navigate(`/configurations/${id}/build`);
+                  }}
+                >
+                  {name}
+                </button>
               </td>
-              <td data-label={statusHeader}>
-                {status === GetConfigurationsResponseStatus.active ? (
-                  <span className="text-success-dark">
-                    <span className="text-color-success not-sr-only pr-1">
-                      ⏺︎
+              <td data-label={statusHeader} className="flex p-0! align-middle">
+                <button
+                  aria-label={`Configure the configuration for ${name}`}
+                  className="block h-full w-full cursor-pointer px-4 py-2 text-left"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      void navigate(`/configurations/${id}/build`);
+                    }
+                  }}
+                  onClick={() => {
+                    void navigate(`/configurations/${id}/build`);
+                  }}
+                >
+                  {status === GetConfigurationsResponseStatus.active ? (
+                    <span className="text-success-dark">
+                      <span className="text-color-success not-sr-only pr-1">
+                        ⏺︎
+                      </span>
+                      Active
                     </span>
-                    Active
-                  </span>
-                ) : (
-                  <span>Inactive</span>
-                )}
+                  ) : (
+                    <span>Inactive</span>
+                  )}
+                </button>
               </td>
             </tr>
           );
