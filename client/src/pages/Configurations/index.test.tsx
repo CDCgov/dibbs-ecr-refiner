@@ -211,7 +211,7 @@ describe('Configurations Page', () => {
 
     // Check that navigation to the build page worked
     expect(
-      await screen.findByText('Anaplasmosis', { selector: 'h2' })
+      await screen.findByText('Anaplasmosis', { selector: 'h1' })
     ).toBeInTheDocument();
 
     expect(

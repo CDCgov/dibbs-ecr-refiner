@@ -169,7 +169,7 @@
   border-top-right-radius: 7px;
 }
 
-.usa-table tbody tr {
+.usa-table tbody tr td {
   @apply h-17;
 }
 
