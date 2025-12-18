@@ -6,24 +6,35 @@ permissions:
 on:
   pull_request:
     paths:
-      - 'docs/models/**'
-      - 'docs/views/**'
-      - 'docs/styles/**'
-      - 'docs/workspace.*'
-      - '.github/workflows/save-rendered-diagrams.yaml'
+      - "docs/models/**"
+      - "docs/views/**"
+      - "docs/styles/**"
+      - "docs/workspace.*"
+      - ".github/workflows/save-rendered-diagrams.yaml"
 
 jobs:
   render-static-diagrams:
     runs-on: ubuntu-latest
     steps:
-
       # MARK: :setup
       #  _______         __
       # |     __|.-----.|  |_.--.--.-----.
       # |__     ||  -__||   _|  |  |  _  |
       # |_______||_____||____|_____|   __|
       #                            |__|
-      #
+
+      # generate a new app token so that the followup build / test workflow
+      # steps will still run
+      # https://docs.github.com/en/enterprise-server@2.22/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow:~:text=When%20you%20use,push%20events%20occur.
+
+      # todo: add these back in when we have the creds set up in the repo
+      # - name: Generate token
+      #   id: generate-token
+      #   uses: actions/create-github-app-token@v1
+      #   with:
+      #     app-id: ${{ secrets.APP_ID }}
+      #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
