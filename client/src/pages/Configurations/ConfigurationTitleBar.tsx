@@ -86,7 +86,7 @@ export function ConfigurationTitleBar({
               {shouldShowSpinner ? (
                 <>
                   <Icon.Autorenew
-                    aria-label="icon indicating saving in progress"
+                    role="presentation"
                     className="text-blue-cool-50 h-6! w-6! animate-spin"
                   ></Icon.Autorenew>
                   Saving
@@ -94,7 +94,7 @@ export function ConfigurationTitleBar({
               ) : (
                 <>
                   <Icon.Check
-                    aria-label="icon indicating saving completed"
+                    role="presentation"
                     className="text-state-success h-6! w-6!"
                   ></Icon.Check>{' '}
                   Saved

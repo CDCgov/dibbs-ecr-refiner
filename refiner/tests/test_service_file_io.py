@@ -22,15 +22,12 @@ class MockFileUpload:
         return self._content
 
 
-def test_parse_xml_valid(read_test_file):
+def test_parse_xml_valid(covid_influenza_v1_1_files: XMLFiles):
     """
     Test parsing valid XML.
     """
 
-    xml_content = read_test_file(
-        "mon-mothma-covid-lab-positive_eicr.xml"
-    )  # Updated to match
-    root = file_io.parse_xml(xml_content)
+    root = file_io.parse_xml(covid_influenza_v1_1_files.eicr.encode("utf-8"))
     assert root is not None
     assert root.tag.endswith("ClinicalDocument")
 
@@ -41,27 +38,23 @@ def test_parse_xml_invalid():
     """
 
     with pytest.raises(XMLValidationError):
-        file_io.parse_xml("<not>valid</xml>")
+        file_io.parse_xml(b"<not>valid</xml>")
 
 
 @pytest.mark.asyncio
-async def test_read_xml_zip(test_assets_path, tmp_path):
+async def test_read_xml_zip(create_test_zip, fixtures_path: Path):
     """
     Test reading XMLFiles from a zip file.
     """
 
     # create a new zip with proper file names
-    test_zip = tmp_path / "test.zip"
-    with ZipFile(test_zip, "w") as zf:
-        # copy the existing files with the expected names
-        with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_eicr.xml", "rb"
-        ) as src:
-            zf.writestr("CDA_eICR.xml", src.read())
-        with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_RR.xml", "rb"
-        ) as src:
-            zf.writestr("CDA_RR.xml", src.read())
+    test_zip = create_test_zip(
+        {
+            "CDA_eICR.xml": fixtures_path
+            / "eicr_v1_1/mon_mothma_covid_influenza_eICR.xml",
+            "CDA_RR.xml": fixtures_path / "eicr_v1_1/mon_mothma_covid_influenza_RR.xml",
+        }
+    )
 
     with open(test_zip, "rb") as f:
         zip_bytes = f.read()
@@ -91,24 +84,24 @@ async def test_read_invalid_zip():
 
 
 @pytest.mark.asyncio
-async def test_uncompressed_zip_size_too_large(test_assets_path, tmp_path):
+async def test_uncompressed_zip_size_too_large(create_test_zip, fixtures_path: Path):
     # Create a valid ZIP that contains a document that is too large to process
     big_content = b"x" * (file_io.MAX_UNCOMPRESSED_SIZE + 1)
 
-    test_zip = tmp_path / "test.zip"
-    with ZipFile(test_zip, "w") as zf:
-        with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_eicr.xml", "rb"
-        ) as src:
-            zf.writestr("CDA_eICR.xml", src.read())
-        with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_RR.xml", "rb"
-        ) as src:
-            zf.writestr("CDA_RR.xml", src.read())
-        # extra large file to be checked
+    # Use the create_test_zip fixture to handle temp paths
+    zip_path = create_test_zip(
+        {
+            "CDA_eICR.xml": fixtures_path
+            / "eicr_v1_1/mon_mothma_covid_influenza_eICR.xml",
+            "CDA_RR.xml": fixtures_path / "eicr_v1_1/mon_mothma_covid_influenza_RR.xml",
+        }
+    )
+
+    # Add the large file to the existing zip
+    with ZipFile(zip_path, "a") as zf:
         zf.writestr("large.xml", big_content)
 
-    with open(test_zip, "rb") as f:
+    with open(zip_path, "rb") as f:
         zip_bytes = f.read()
 
     mock_file = MockFileUpload(zip_bytes)
@@ -117,39 +110,32 @@ async def test_uncompressed_zip_size_too_large(test_assets_path, tmp_path):
     assert "Uncompressed .zip file must not exceed" in exc.value.message
 
 
-def test_xml_files_container(read_test_file):
+def test_xml_files_container(covid_influenza_v1_1_files: XMLFiles):
     """
     Test XMLFiles container functionality.
     """
 
-    xml_files = XMLFiles(
-        eicr=read_test_file("mon-mothma-covid-lab-positive_eicr.xml"),  # Updated
-        rr=read_test_file("mon-mothma-covid-lab-positive_RR.xml"),  # Updated
-    )
-
-    eicr_root = xml_files.parse_eicr()
+    eicr_root = covid_influenza_v1_1_files.parse_eicr()
     assert isinstance(eicr_root, etree._Element)
     assert eicr_root.tag.endswith("ClinicalDocument")
 
-    rr_root = xml_files.parse_rr()
+    rr_root = covid_influenza_v1_1_files.parse_rr()
     assert isinstance(rr_root, etree._Element)
     assert rr_root.tag.endswith("ClinicalDocument")
 
 
 @pytest.mark.asyncio
-async def test_zip_missing_eicr(test_assets_path, tmp_path):
+async def test_zip_missing_eicr(create_test_zip, fixtures_path: Path):
     """
     Test validation when eICR file is missing.
     """
 
     # create zip with only RR file
-    test_zip = tmp_path / "test.zip"
-    with ZipFile(test_zip, "w") as zf:
-        # Copy the existing RR file but use the expected name
-        with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_RR.xml", "rb"
-        ) as src:
-            zf.writestr("CDA_RR.xml", src.read())
+    test_zip = create_test_zip(
+        {
+            "CDA_RR.xml": fixtures_path / "eicr_v1_1/mon_mothma_covid_influenza_RR.xml",
+        }
+    )
 
     with open(test_zip, "rb") as f:
         mock_file = MockFileUpload(f.read())
@@ -162,19 +148,18 @@ async def test_zip_missing_eicr(test_assets_path, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_zip_missing_rr(test_assets_path, tmp_path):
+async def test_zip_missing_rr(create_test_zip, fixtures_path: Path):
     """
     Test validation when RR file is missing.
     """
 
-    # create zip with only RR file
-    test_zip = tmp_path / "test.zip"
-    with ZipFile(test_zip, "w") as zf:
-        # Copy the existing eICR file but use the expected name
-        with open(
-            test_assets_path / "mon-mothma-covid-lab-positive_eicr.xml", "rb"
-        ) as src:
-            zf.writestr("CDA_eICR.xml", src.read())
+    # create zip with only eICR file
+    test_zip = create_test_zip(
+        {
+            "CDA_eICR.xml": fixtures_path
+            / "eicr_v1_1/mon_mothma_covid_influenza_eICR.xml",
+        }
+    )
 
     with open(test_zip, "rb") as f:
         mock_file = MockFileUpload(f.read())

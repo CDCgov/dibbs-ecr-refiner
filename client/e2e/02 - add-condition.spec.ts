@@ -18,13 +18,18 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     ).toBeVisible();
 
     // Add a few code sets and check that remove button shows up properly
-    await page.getByText('Acute Flaccid Myelitis (AFM)').click();
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Acute Flaccid Myelitis (AFM)' })
+      .click();
     await expect(
       page.getByRole('button', { name: 'Remove Acute Flaccid Myelitis (AFM)' })
     ).toBeVisible();
 
     await page
-      .getByText('Agricultural Chemicals (Fertilizer) Poisoning')
+      .getByRole('listitem')
+      .filter({ hasText: 'Agricultural Chemicals (Fertilizer) Poisoning' })
+
       .click();
     await expect(
       page.getByRole('button', {
@@ -32,7 +37,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       })
     ).toBeVisible();
 
-    await page.getByText('Alpha-gal Syndrome').click();
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Alpha-gal Syndrome' })
+      .click();
     await expect(
       page.getByRole('button', {
         name: 'Remove Alpha-gal Syndrome',
@@ -59,7 +67,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await expect(
       page.getByRole('button', {
-        name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
+        name: 'View TES code set information for Balamuthia mandrillaris Disease',
       })
     ).toBeVisible();
 
@@ -88,12 +96,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// ==========================================================================
     await page.getByRole('button', { name: 'Sections' }).click();
     await expect(
-      page.getByLabel('Include and refine section History of encounters')
+      page.getByLabel('Include and refine section Encounters Section')
     ).toBeChecked();
 
-    const radio = page.getByLabel(
-      'Include entire section History of encounters'
-    );
+    const radio = page.getByLabel('Include entire section Encounters Section');
     const parent = radio.locator('..');
     await parent.click();
 
@@ -108,7 +114,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await page.getByRole('button', { name: 'Sections' }).click();
     await expect(
-      page.getByLabel('Include entire section History of encounters')
+      page.getByLabel('Include entire section Encounters Section')
     ).toBeChecked();
 
     /// ==========================================================================
@@ -154,21 +160,22 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     makeAxeBuilder,
   }) => {
     await page
-      .getByRole('row', {
-        name: 'View inactive configuration for Acanthamoeba',
+      .getByRole('button', {
+        name: 'Configure the configuration for Acanthamoeba',
       })
+      .filter({ hasText: 'Acanthamoeba' })
       .click();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await expect(
       page.getByRole('button', {
-        name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
+        name: 'View TES code set information for Balamuthia mandrillaris Disease',
       })
     ).toBeVisible();
     await page
       .getByRole('button', {
-        name: 'Balamuthia mandrillaris Disease, 1178 codes in code set',
+        name: 'View TES code set information for Balamuthia mandrillaris Disease',
       })
       .click();
     await expect(
@@ -192,11 +199,11 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// Test that a condition can be deleted from configuration added in previous test
     /// ==========================================================================
     await page
-      .getByRole('row', {
-        name: 'View inactive configuration for Acanthamoeba',
+      .getByRole('button', {
+        name: 'Configure the configuration for Acanthamoeba',
       })
+      .filter({ hasText: 'Acanthamoeba' })
       .click();
-
     // --- Locate the CONDITION CODE SETS container ---
     const conditionCodeSets = page.locator('div', {
       hasText: 'CONDITION CODE SETS',
@@ -222,7 +229,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .click();
 
     const acanthamoebaButton = conditionCodeSets.getByRole('button', {
-      name: /Acanthamoeba, \d+ codes in code set/,
+      name: 'View TES code set information for Acanthamoeba',
     });
 
     await expect(acanthamoebaButton).toBeVisible();
@@ -260,9 +267,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// Test that a configuration can be exported
     /// ==========================================================================
     await page
-      .getByRole('row', {
-        name: 'View inactive configuration for Acanthamoeba',
+      .getByRole('button', {
+        name: 'Configure the configuration for Acanthamoeba',
       })
+      .filter({ hasText: 'Acanthamoeba' })
       .click();
 
     // Wait for the download event and trigger it
@@ -288,13 +296,14 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// Test that custom codes can be edited and deleted
     /// ==========================================================================
     await page
-      .getByRole('row', {
-        name: 'View inactive configuration for Acanthamoeba',
+      .getByRole('button', {
+        name: 'Configure the configuration for Acanthamoeba',
       })
+      .filter({ hasText: 'Acanthamoeba' })
       .click();
 
     // Open the "Custom codes" section
-    await page.locator('button', { hasText: 'Custom codes' }).click();
+    await page.getByText('Custom codes').click();
 
     // Click the Edit button for the existing custom code
     await page.getByText('Edit', { exact: true }).click();

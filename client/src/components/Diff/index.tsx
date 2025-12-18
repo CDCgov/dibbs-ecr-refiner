@@ -38,7 +38,7 @@ export function Diff({
   return (
     <div>
       {/* Main header container */}
-      <div className="mt-6 mb-8 flex flex-col items-start justify-between rounded-md bg-white p-3 md:flex-row md:items-center">
+      <div className="mt-6 mb-8 flex flex-col items-start justify-between rounded-md bg-white px-2 py-1 md:flex-row md:items-center">
         {/* Left section */}
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-4 lg:flex-row">
@@ -47,7 +47,7 @@ export function Diff({
             ))}
           </div>
           <div>
-            <div className="flex flex-col items-start gap-3">
+            <div className="gapx-2 flex flex-col items-start py-1">
               <Button
                 variant="tertiary"
                 onClick={() => downloadFile(refined_download_url)}
@@ -64,12 +64,12 @@ export function Diff({
           {/* Layout group */}
           <div className="flex items-center gap-2">
             <span className="font-bold">Layout</span>
-            <div className="border-blue-cool-60 bg-blue-cool-10 flex overflow-hidden rounded-md border-[1px]">
+            <div className="border-blue-cool-60 flex gap-1 rounded-sm border p-0">
               <button
                 aria-label="Show split diff"
                 onClick={() => setSplitView(true)}
                 className={classNames(
-                  'px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black',
+                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black',
                   {
                     'bg-blue-cool-10 text-blue-cool-60': splitView,
                     'text-gray-cool-50 bg-white': !splitView,
@@ -82,7 +82,7 @@ export function Diff({
                 aria-label="Show stacked diff"
                 onClick={() => setSplitView(false)}
                 className={classNames(
-                  'px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black',
+                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black focus:outline-offset-0 focus:outline-solid',
                   {
                     'bg-blue-cool-10 text-blue-cool-60': !splitView,
                     'text-gray-cool-50 bg-white': splitView,
@@ -97,11 +97,11 @@ export function Diff({
           {/* Content toggle */}
           <div className="flex items-center gap-2">
             <span className="font-bold">Content</span>
-            <div className="border-blue-cool-60 bg-blue-cool-10 flex overflow-hidden rounded-sm border-[1px]">
+            <div className="border-blue-cool-60 flex gap-1 rounded-sm border p-0">
               <button
                 onClick={() => setShowDiffOnly(false)}
                 className={classNames(
-                  'px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
                   {
                     'text-gray-cool-50 bg-white': showDiffOnly,
                     'bg-blue-cool-10 text-blue-cool-60': !showDiffOnly,
@@ -113,7 +113,7 @@ export function Diff({
               <button
                 onClick={() => setShowDiffOnly(true)}
                 className={classNames(
-                  'px-4 py-1 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
+                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
                   {
                     'bg-blue-cool-10 text-blue-cool-60': showDiffOnly,
                     'text-gray-cool-50 bg-white': !showDiffOnly,
@@ -159,7 +159,7 @@ interface SuccessItemProps {
 
 function SuccessItem({ children }: SuccessItemProps) {
   return (
-    <div className="flex items-center gap-3 p-4">
+    <div className="gapx-2 flex items-center p-4 py-1">
       <span className="font-bold">Refiner results:</span>
       <p data-testid="test-refinement-result" className="leading-snug">
         {children}
@@ -179,6 +179,8 @@ const SymbolsIcon = ({ isActive }: IconProps) => {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
+      aria-role="tab"
+      aria-controls="panel-split-view"
     >
       <path
         d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM5 19H11V5H5V19Z"
@@ -203,6 +205,8 @@ const DashboardIcon = ({ isActive }: IconProps) => {
       height="24"
       viewBox="0 0 24 24"
       fill="none"
+      aria-role="tab"
+      aria-controls="panel-stacked-view"
     >
       <path
         d="M7 17H14V15H7V17ZM7 13H17V11H7V13ZM7 9H17V7H7V9ZM5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM5 19H19V5H5V19Z"

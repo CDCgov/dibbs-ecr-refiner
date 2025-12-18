@@ -118,9 +118,9 @@ export function EicrSectionReview({
       id="sections-table"
       aria-label="Choose what you'd like to do with the sections in your eICR"
     >
-      <h2 className="!mb-4 text-lg leading-10 font-bold">
+      <h1 className="!mb-4 text-lg leading-10 font-bold">
         Choose what you'd like to do with the sections in your eICR
-      </h2>
+      </h1>
       <p className="!mb-4">
         Choose whether to refine, include fully, or omit sections of your eICR
         to save space and protect patient privacy.

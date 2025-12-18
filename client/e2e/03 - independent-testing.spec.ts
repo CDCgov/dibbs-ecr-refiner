@@ -60,7 +60,9 @@ test.describe('should be able to access independent testing', () => {
     );
 
     // go home
-    await page.getByRole('link', { name: 'DIBBs eCR Refiner' }).click();
+    await page
+      .getByRole('link', { name: 'Link back to the home configurations page' })
+      .click();
     await expect(
       page.getByText('Your reportable condition configurations')
     ).toBeVisible();
@@ -110,7 +112,9 @@ test.describe('should be able to access independent testing', () => {
     await page.getByRole('button', { name: 'Start over' }).click();
 
     // go home
-    await page.getByRole('link', { name: 'DIBBs eCR Refiner' }).click();
+    await page
+      .getByRole('link', { name: 'Link back to the home configurations page' })
+      .click();
     await expect(
       page.getByText('Your reportable condition configurations')
     ).toBeVisible();
@@ -259,8 +263,15 @@ test.describe('should be able to access independent testing', () => {
       .getByTestId('test-refinement-result')
       .textContent();
 
-    await page.getByRole('link', { name: 'Configurations' }).click();
-    await page.getByRole('cell', { name: 'COVID-19', exact: true }).click();
+    await page
+      .getByRole('link', { name: 'Configurations', exact: true })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Configure the configuration for COVID-19',
+      })
+      .filter({ hasText: 'COVID-19' })
+      .click();
     await page.getByText('Test', { exact: true }).click();
     await fileUpload.setInputFiles(filePath);
 
@@ -271,8 +282,15 @@ test.describe('should be able to access independent testing', () => {
 
     expect(inlineFlowCovidResult).toStrictEqual(independentFlowCovidResult);
 
-    await page.getByRole('link', { name: 'Configurations' }).click();
-    await page.getByRole('cell', { name: 'Influenza', exact: true }).click();
+    await page
+      .getByRole('link', { name: 'Configurations', exact: true })
+      .click();
+    await page
+      .getByRole('button', {
+        name: 'Configure the configuration for Influenza',
+      })
+      .filter({ hasText: 'Influenza' })
+      .click();
 
     await page.getByText('Test', { exact: true }).click();
     await fileUpload.setInputFiles(filePath);
