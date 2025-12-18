@@ -50,7 +50,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
             >
               <td
                 data-label={reportableConditionHeader}
-                className="!p-0 !font-bold"
+                className="p-0! font-bold!"
                 scope="row"
               >
                 <button
@@ -68,7 +68,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   {name}
                 </button>
               </td>
-              <td data-label={statusHeader} className="flex align-middle">
+              <td data-label={statusHeader} className="flex p-0! align-middle">
                 <button
                   aria-label={`Configure the configuration for ${name}`}
                   className="block h-full w-full cursor-pointer px-4 py-2 text-left"
