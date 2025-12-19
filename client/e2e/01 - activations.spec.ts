@@ -115,31 +115,46 @@ test.describe('Activation for new draft configurations works as expected', () =>
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    // Click "Next page"
-    await page.getByRole('button', { name: 'Next page' }).click();
+    const activateRow = page
+      .getByRole('row')
+      .filter({ hasText: 'refiner' })
+      .filter({
+        has: page.locator('td[data-label="Action"]', {
+          hasText: /^Activated configuration$/,
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Hepatitis A Virus infection',
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Version 2',
+        }),
+      });
 
-    // Wait for pagination state to update
-    await expect(page.getByRole('button', { name: 'Page 2' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    await expect(activateRow).toBeVisible();
 
-    await expect(
-      page
-        .getByRole('row')
-        .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Hepatitis A Virus infection' })
-        .filter({ hasText: 'De-activated configuration' })
-    ).toBeVisible();
+    const deactivateRow = page
+      .getByRole('row')
+      .filter({ hasText: 'refiner' })
+      .filter({
+        has: page.locator('td[data-label="Action"]', {
+          hasText: /^De-activated configuration$/,
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Hepatitis A Virus infection',
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Version 2',
+        }),
+      });
 
-    await expect(
-      page
-        .getByRole('row')
-        .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Hepatitis A Virus infection' })
-        .filter({
-          hasText: 'Activated configuration',
-        })
-    ).toBeVisible();
+    await expect(deactivateRow).toBeVisible();
   });
 });
