@@ -12,7 +12,6 @@ export interface RadioCellProps {
 }
 
 /**
- * RadioCell renders a table cell containing a USWDS Radio component.
  * Interaction is handled *only* through the radio input's onChange handler
  * to prevent double-firing and duplicate API calls.
  */
