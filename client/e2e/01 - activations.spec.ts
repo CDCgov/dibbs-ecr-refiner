@@ -106,5 +106,40 @@ test.describe('Activation for new draft configurations works as expected', () =>
     await expect(page.getByText('Status: Inactive')).toBeVisible();
 
     await expect(turnOnButton).toBeVisible();
+
+    /// ==========================================================================
+    /// Test that the condition and configuration creation shows up in the activity log
+    /// ==========================================================================
+    await page.getByText('Activity log').click();
+    expect(page.getByRole('heading', { name: 'Activity log' }));
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // Click "Next page"
+    await page.getByRole('button', { name: 'Next page' }).click();
+
+    // Wait for pagination state to update
+    await expect(page.getByRole('button', { name: 'Page 2' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Hepatitis A Virus infection' })
+        .filter({ hasText: 'De-activated configuration' })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: 'Hepatitis A Virus infection' })
+        .filter({
+          hasText: 'Activated configuration',
+        })
+    ).toBeVisible();
   });
 });
