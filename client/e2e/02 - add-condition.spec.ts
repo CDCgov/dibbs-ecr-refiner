@@ -1,12 +1,19 @@
 import { test, expect } from './fixtures/fixtures';
-import { createNewConfiguration } from './utils';
 
+let configurationToTest = '';
 test.describe('Adding/modifying configurations by initial condition', () => {
-  test('should be able to create a configuration for Acanthamoeba', async ({
+  test('should be able to create a configuration for ', async ({
     page,
     makeAxeBuilder,
+    configurationPage,
   }) => {
-    await createNewConfiguration('Acanthamoeba', page);
+    configurationToTest = configurationPage.getConfigurationName();
+
+    // start on the activate page for the configuration
+    await expect(
+      page.getByRole('heading', { name: configurationToTest, exact: true })
+    ).toBeVisible();
+
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     /// ==========================================================================
@@ -110,7 +117,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByText('Saving').waitFor({ state: 'detached' });
     await page.getByText('Saved').waitFor({ state: 'visible' });
 
-    await page.getByRole('button', { name: 'Acanthamoeba' }).click();
+    await page.getByRole('button', { name: configurationToTest }).click();
 
     await page.getByRole('button', { name: 'Sections' }).click();
     await expect(
@@ -129,7 +136,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({ hasText: 'Created configuration' })
     ).toBeVisible();
 
@@ -137,7 +144,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({
           hasText: "Associated 'Balamuthia mandrillaris Disease' code set",
         })
@@ -147,7 +154,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({ hasText: "Added custom code '1234'" })
     ).toBeVisible();
   });
@@ -155,16 +162,11 @@ test.describe('Adding/modifying configurations by initial condition', () => {
   /// ==========================================================================
   /// Test that a condition can be selected from configuration added in previous test
   /// ==========================================================================
-  test('should be able to view configuration for Acanthamoeba', async ({
+  test('should be able to view configuration for the created configuration', async ({
     page,
     makeAxeBuilder,
   }) => {
-    await page
-      .getByRole('button', {
-        name: 'Configure the configuration for Acanthamoeba',
-      })
-      .filter({ hasText: 'Acanthamoeba' })
-      .click();
+    await page.getByText(configurationToTest).click();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -189,21 +191,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await expect(
       page.getByRole('button', { name: 'Custom codes 1' })
     ).toBeVisible();
-  });
 
-  test('should be able to delete condition Balamuthia mandrillaris from Acanthamoeba config', async ({
-    page,
-    makeAxeBuilder,
-  }) => {
-    /// ==========================================================================
-    /// Test that a condition can be deleted from configuration added in previous test
-    /// ==========================================================================
-    await page
-      .getByRole('button', {
-        name: 'Configure the configuration for Acanthamoeba',
-      })
-      .filter({ hasText: 'Acanthamoeba' })
-      .click();
     // --- Locate the CONDITION CODE SETS container ---
     const conditionCodeSets = page.locator('div', {
       hasText: 'CONDITION CODE SETS',
@@ -228,14 +216,18 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       })
       .click();
 
-    const acanthamoebaButton = conditionCodeSets.getByRole('button', {
-      name: 'View TES code set information for Acanthamoeba',
+    const defaultCodeSetButton = conditionCodeSets.getByRole('button', {
+      name: `View TES code set information for ${configurationToTest}`,
     });
 
-    await expect(acanthamoebaButton).toBeVisible();
+    await expect(defaultCodeSetButton).toBeVisible();
 
     // User should see default code set once current code set has been deleted
-    await expect(page.getByText('Acanthamoeba code set')).toBeVisible();
+    await expect(
+      page.getByRole('button', {
+        name: `View TES code set information for ${configurationToTest}`,
+      })
+    ).toBeVisible();
 
     // Expect "Balamuthia mandrillaris Disease" code set to no longer be visible
     const balamuthiaButton = conditionCodeSets.getByRole('button', {
@@ -255,51 +247,20 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({
           hasText: "Removed 'Balamuthia mandrillaris Disease' code set",
         })
     ).toBeVisible();
-  });
 
-  test('should be able export Acanthamoeba config', async ({ page }) => {
-    /// ==========================================================================
-    /// Test that a configuration can be exported
-    /// ==========================================================================
     await page
-      .getByRole('button', {
-        name: 'Configure the configuration for Acanthamoeba',
-      })
-      .filter({ hasText: 'Acanthamoeba' })
+      .getByRole('link', { name: 'Configurations', exact: true })
       .click();
-
-    // Wait for the download event and trigger it
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.locator('a[href*="/export"]').click(),
-    ]);
-
-    // Verify the file downloaded successfully
-    const suggestedName = download.suggestedFilename();
-    expect(suggestedName).toMatch(/Acanthamoeba_Code Export/);
-
-    // Optionally, save it to a temp folder and verify it exists
-    const path = await download.path();
-    expect(path).toBeTruthy();
-  });
-
-  test('should be able edit and delete custom code', async ({
-    page,
-    makeAxeBuilder,
-  }) => {
-    /// ==========================================================================
-    /// Test that custom codes can be edited and deleted
-    /// ==========================================================================
     await page
       .getByRole('button', {
-        name: 'Configure the configuration for Acanthamoeba',
+        name: `Configure the configuration for ${configurationToTest} `,
       })
-      .filter({ hasText: 'Acanthamoeba' })
+      .filter({ hasText: configurationToTest })
       .click();
 
     // Open the "Custom codes" section
@@ -368,7 +329,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({ hasText: "Updated custom code from '1234' to '5678'" })
     ).toBeVisible();
 
@@ -376,7 +337,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({
           hasText:
             "Updated name for custom code '1234' from 'qwert' to 'test-edit'",
@@ -387,7 +348,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({
           hasText:
             "Updated system for custom code '1234' from 'rxnorm' to 'loinc'",
@@ -398,22 +359,48 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page
         .getByRole('row')
         .filter({ hasText: 'refiner' })
-        .filter({ hasText: 'Acanthamoeba' })
+        .filter({ hasText: configurationToTest })
         .filter({ hasText: "Removed custom code '5678'" })
     ).toBeVisible();
 
-    // filter by Acanthamoeba
+    // filter by the created configuration
     await page
       .getByLabel('Condition')
-      .selectOption(
-        'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/ceef5555-ce1a-42ff-a124-6508eec46658'
-      );
+      .selectOption({ label: configurationToTest });
 
     // should be 11 items on page 1 (including header)
     await expect(page.getByRole('row')).toHaveCount(11);
     await page.getByRole('button', { name: 'Next' }).click();
 
     // should be 3 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(3);
+    await expect(page.getByRole('row')).toHaveCount(4);
+  });
+
+  test('should be able export the created config', async ({
+    page,
+    configurationPage,
+  }) => {
+    const configurationToTest = configurationPage.getConfigurationName();
+
+    // start on the activate page for the configuration
+    await expect(
+      page.getByRole('heading', { name: configurationToTest, exact: true })
+    ).toBeVisible();
+
+    // Wait for the download event and trigger it
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('a[href*="/export"]').click(),
+    ]);
+
+    // Verify the file downloaded successfully
+    const suggestedName = download.suggestedFilename();
+    expect(suggestedName).toContain(
+      `${configurationToTest.replace(' ', '_')}_Code Export`
+    );
+
+    // Optionally, save it to a temp folder and verify it exists
+    const path = await download.path();
+    expect(path).toBeTruthy();
   });
 });

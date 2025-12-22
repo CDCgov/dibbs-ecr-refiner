@@ -1,9 +1,53 @@
-import { test as baseTest } from '@playwright/test';
+import { test as baseTest, expect, Page, WorkerInfo } from '@playwright/test';
 import { login } from '../utils';
 import fs from 'fs';
 import path from 'path';
+class ConfigurationPage {
+  private readonly conditionIndex: number;
+  private conditionName: string = '';
+  private conditionId: string = '';
 
-export const test = baseTest.extend<object, { workerStorageState: string }>({
+  constructor(
+    public readonly page: Page,
+    conditionIndex: number
+  ) {
+    this.conditionIndex = conditionIndex;
+  }
+
+  async createNewConfiguration(page: Page) {
+    await this.page.goto('/configurations');
+    await page
+      .getByRole('button', { name: 'Set up new configuration' })
+      .click();
+    await page.getByTestId('combo-box-input').click();
+
+    await page.getByRole('option').nth(this.conditionIndex).click();
+
+    await page.keyboard.press('Enter');
+    const createdConfigurationName = await page
+      .getByTestId('combo-box-input')
+      .inputValue();
+
+    this.conditionName = createdConfigurationName;
+
+    await page.getByRole('button', { name: 'Set up configuration' }).click();
+
+    await expect(
+      page.locator(
+        `h4:has-text("New configuration created") + p:has-text("${createdConfigurationName}")`
+      )
+    ).toBeVisible();
+  }
+
+  getConfigurationName() {
+    return this.conditionName;
+  }
+}
+
+const defaultFixturesTest = baseTest.extend<
+  object,
+  { workerStorageState: string }
+>({
   storageState: ({ workerStorageState }, use) => use(workerStorageState),
 
   workerStorageState: [
@@ -32,10 +76,23 @@ export const test = baseTest.extend<object, { workerStorageState: string }>({
     },
     { scope: 'worker' },
   ],
-
   page: async ({ page }, use) => {
     // start in the logged in homepage
     await page.goto('/configurations');
     await use(page);
+  },
+});
+
+type RefinerFixtures = {
+  configurationPage: ConfigurationPage;
+};
+export const test = defaultFixturesTest.extend<RefinerFixtures>({
+  configurationPage: async ({ page }, use, workerInfo: WorkerInfo) => {
+    const configurationPage = new ConfigurationPage(
+      page,
+      workerInfo.workerIndex
+    );
+    await configurationPage.createNewConfiguration(page);
+    await use(configurationPage);
   },
 });
