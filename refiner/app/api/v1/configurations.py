@@ -1579,6 +1579,8 @@ async def deactivate_configuration(
 
     deactivated_config = await deactivate_configuration_db(
         configuration_id=config_to_deactivate.id,
+        user_id=user.id,
+        jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
     if not deactivated_config:
