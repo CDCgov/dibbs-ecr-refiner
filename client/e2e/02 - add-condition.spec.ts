@@ -25,32 +25,28 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     ).toBeVisible();
 
     // Add a few code sets and check that remove button shows up properly
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: 'Acute Flaccid Myelitis (AFM)' })
-      .click();
+    await page.getByRole('listitem').filter({ hasText: 'Diphtheria' }).click();
     await expect(
-      page.getByRole('button', { name: 'Remove Acute Flaccid Myelitis (AFM)' })
+      page.getByRole('button', { name: 'Remove Diphtheria' })
     ).toBeVisible();
 
     await page
       .getByRole('listitem')
-      .filter({ hasText: 'Agricultural Chemicals (Fertilizer) Poisoning' })
-
+      .filter({ hasText: 'Diphyllobothriasis' })
       .click();
     await expect(
       page.getByRole('button', {
-        name: 'Remove Agricultural Chemicals (Fertilizer) Poisoning',
+        name: 'Remove Diphyllobothriasis',
       })
     ).toBeVisible();
 
     await page
       .getByRole('listitem')
-      .filter({ hasText: 'Alpha-gal Syndrome' })
+      .filter({ hasText: 'Double Outlet Right Ventricle (DORV)' })
       .click();
     await expect(
       page.getByRole('button', {
-        name: 'Remove Alpha-gal Syndrome',
+        name: 'Remove Double Outlet Right Ventricle (DORV)',
       })
     ).toBeVisible();
 
@@ -59,8 +55,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .click();
     await page
       .getByRole('searchbox', { name: 'Search by condition name' })
-      .fill('disease');
-    await page.getByText('Balamuthia mandrillaris Disease').click();
+      .fill('syndrome');
+    await page.getByText('Down Syndrome').click();
     await page.getByTestId('close-drawer').click();
     await page.waitForSelector(
       '[role="alert"]:has-text("Condition code set added")',
@@ -74,7 +70,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await expect(
       page.getByRole('button', {
-        name: 'View TES code set information for Balamuthia mandrillaris Disease',
+        name: 'View TES code set information for Down Syndrome',
       })
     ).toBeVisible();
 
@@ -132,6 +128,11 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
+    // filter by the created configuration
+    await page
+      .getByLabel('Condition')
+      .selectOption({ label: configurationToTest });
+
     await expect(
       page
         .getByRole('row')
@@ -146,7 +147,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
         .filter({ hasText: 'refiner' })
         .filter({ hasText: configurationToTest })
         .filter({
-          hasText: "Associated 'Balamuthia mandrillaris Disease' code set",
+          hasText: "Associated 'Down Syndrome' code set",
         })
     ).toBeVisible();
 
@@ -172,17 +173,17 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await expect(
       page.getByRole('button', {
-        name: 'View TES code set information for Balamuthia mandrillaris Disease',
+        name: 'View TES code set information for Down Syndrome',
       })
     ).toBeVisible();
     await page
       .getByRole('button', {
-        name: 'View TES code set information for Balamuthia mandrillaris Disease',
+        name: 'View TES code set information for Down Syndrome',
       })
       .click();
     await expect(
       page.getByRole('heading', {
-        name: 'Balamuthia mandrillaris Disease code set',
+        name: 'Down Syndrome code set',
       })
     ).toBeVisible();
 
@@ -197,10 +198,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       hasText: 'CONDITION CODE SETS',
     });
 
-    // Locate the <li> row containing Balamuthia mandrillaris Disease delete button
+    // Locate the <li> row containing Down Syndrome delete button
     const balamuthiaRow = conditionCodeSets.locator('li', {
       has: page.getByRole('button', {
-        name: 'Delete code set Balamuthia mandrillaris Disease',
+        name: 'Delete code set Down Syndrome',
       }),
     });
 
@@ -212,7 +213,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     // Click the delete button inside this row
     await balamuthiaRow
       .getByRole('button', {
-        name: 'Delete code set Balamuthia mandrillaris Disease',
+        name: 'Delete code set Down Syndrome',
       })
       .click();
 
@@ -229,9 +230,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       })
     ).toBeVisible();
 
-    // Expect "Balamuthia mandrillaris Disease" code set to no longer be visible
+    // Expect "Down Syndrome" code set to no longer be visible
     const balamuthiaButton = conditionCodeSets.getByRole('button', {
-      name: /Balamuthia mandrillaris Disease, \d+ codes in code set/,
+      name: /Down Syndrome, \d+ codes in code set/,
     });
     await expect(balamuthiaButton).not.toBeVisible();
 
@@ -249,7 +250,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
         .filter({ hasText: 'refiner' })
         .filter({ hasText: configurationToTest })
         .filter({
-          hasText: "Removed 'Balamuthia mandrillaris Disease' code set",
+          hasText: "Removed 'Down Syndrome' code set",
         })
     ).toBeVisible();
 
@@ -373,7 +374,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: 'Next' }).click();
 
     // should be 3 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(4);
+    await expect(page.getByRole('row')).toHaveCount(3);
   });
 
   test('should be able export the created config', async ({

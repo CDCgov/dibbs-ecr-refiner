@@ -129,7 +129,7 @@ test.describe('Activation for new draft configurations works as expected', () =>
       })
       .filter({
         has: page.locator('td[data-label="Condition"]', {
-          hasText: 'Hepatitis A Virus infection',
+          hasText: configurationToTest,
         }),
       })
       .filter({
@@ -150,7 +150,7 @@ test.describe('Activation for new draft configurations works as expected', () =>
       })
       .filter({
         has: page.locator('td[data-label="Condition"]', {
-          hasText: 'Hepatitis A Virus infection',
+          hasText: configurationToTest,
         }),
       })
       .filter({

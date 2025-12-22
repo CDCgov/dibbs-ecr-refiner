@@ -92,7 +92,9 @@ export const test = defaultFixturesTest.extend<RefinerFixtures>({
       page,
       workerInfo.workerIndex
     );
-    await configurationPage.createNewConfiguration(page);
+    if (configurationPage.getConfigurationName() === '') {
+      await configurationPage.createNewConfiguration(page);
+    }
     await use(configurationPage);
   },
 });
