@@ -145,7 +145,7 @@ async def auth_callback(
         # TODO: Should we no longer collect name and state_code?
         jurisdiction_id = await upsert_jurisdiction_db(
             DbJurisdiction(
-                id=idp_jurisdiction_id,
+                id=str(idp_jurisdiction_id),
                 name="Placeholder Jurisdiction",
                 state_code="PLACEHOLDER",
             ),
@@ -153,9 +153,9 @@ async def auth_callback(
         )
 
         user = IdpUserResponse(
-            user_id=idp_user_id,
-            username=idp_username,
-            email=idp_email,
+            user_id=str(idp_user_id),
+            username=str(idp_username),
+            email=str(idp_email),
             jurisdiction_id=jurisdiction_id,
         )
 
