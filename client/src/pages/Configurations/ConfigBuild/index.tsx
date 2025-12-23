@@ -50,13 +50,25 @@ import { Spinner } from '../../../components/Spinner';
 import { TesLink } from '../TesLink';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
+import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const [user] = useLogin();
 
+  // use ref so effect skip initial load
   useEffect(() => {
+    const didMount = (window as any)._didMount_ref_configBuild || {
+      current: false,
+    };
+    if (!(window as any)._didMount_ref_configBuild)
+      (window as any)._didMount_ref_configBuild = didMount;
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
     const handleReleaseLock = () => {
       if (id) {
         const url = `/api/v1/configurations/${id}/release-lock`;
@@ -64,7 +76,6 @@ export function ConfigBuild() {
       }
     };
     window.addEventListener('beforeunload', handleReleaseLock);
-
     return () => {
       handleReleaseLock();
       window.removeEventListener('beforeunload', handleReleaseLock);
@@ -108,6 +119,13 @@ export function ConfigBuild() {
           conditionId={configuration.data.condition_id}
           latestVersion={configuration.data.latest_version}
           step="build"
+        />
+      ) : null}
+      {configuration.data.lockedBy &&
+      configuration.data.lockedBy.id !== user?.id ? (
+        <ConfigLockBanner
+          lockedByName={configuration.data.lockedBy.name}
+          lockedByEmail={configuration.data.lockedBy.email}
         />
       ) : null}
       <SectionContainer>
@@ -180,8 +198,6 @@ function Builder({
 }: BuilderProps) {
   const [user] = useLogin();
   const isLocked = Boolean(lock && user && lock.id !== user.id);
-  const lockedByName = isLocked ? lock?.name : null;
-  const lockedByEmail = isLocked ? lock?.email : null;
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -237,19 +253,6 @@ function Builder({
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
-      {isLocked && (
-        <div
-          role="status"
-          aria-live="polite"
-          tabIndex={0}
-          className="mb-4 rounded border border-yellow-400 bg-yellow-100 p-4 text-yellow-900 focus:outline-none"
-        >
-          <strong>View only:</strong> [
-          <span className="font-bold">{lockedByName}</span>/
-          <span className="font-bold">{lockedByEmail}</span>] currently has this
-          configuration open.
-        </div>
-      )}
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
