@@ -1,4 +1,4 @@
-import { useParams, useLocation } from 'react-router';
+import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
 import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
