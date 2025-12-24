@@ -7,9 +7,10 @@ import { useEffect } from 'react';
 export function useConfigLockRelease(id?: string) {
   useEffect(() => {
     if (!id) return;
-    const didMount = (window as any)._didMount_ref_configLockRelease || { current: false };
-    if (!(window as any)._didMount_ref_configLockRelease)
-      (window as any)._didMount_ref_configLockRelease = didMount;
+    type DidMountRef = { current: boolean };
+    const win = window as unknown as { _didMount_ref_configLockRelease?: DidMountRef };
+    const didMount: DidMountRef = win._didMount_ref_configLockRelease || { current: false };
+    if (!win._didMount_ref_configLockRelease) win._didMount_ref_configLockRelease = didMount;
     if (!didMount.current) {
       didMount.current = true;
       return;
