@@ -106,5 +106,55 @@ test.describe('Activation for new draft configurations works as expected', () =>
     await expect(page.getByText('Status: Inactive')).toBeVisible();
 
     await expect(turnOnButton).toBeVisible();
+
+    /// ==========================================================================
+    /// Test that the condition and configuration creation shows up in the activity log
+    /// ==========================================================================
+    await page.getByText('Activity log').click();
+    expect(page.getByRole('heading', { name: 'Activity log' }));
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    const activateRow = page
+      .getByRole('row')
+      .filter({ hasText: 'refiner' })
+      .filter({
+        has: page.locator('td[data-label="Action"]', {
+          hasText: /^Activated configuration$/,
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Hepatitis A Virus infection',
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Version 2',
+        }),
+      });
+
+    await expect(activateRow).toBeVisible();
+
+    const deactivateRow = page
+      .getByRole('row')
+      .filter({ hasText: 'refiner' })
+      .filter({
+        has: page.locator('td[data-label="Action"]', {
+          hasText: /^De-activated configuration$/,
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Hepatitis A Virus infection',
+        }),
+      })
+      .filter({
+        has: page.locator('td[data-label="Condition"]', {
+          hasText: 'Version 2',
+        }),
+      });
+
+    await expect(deactivateRow).toBeVisible();
   });
 });
