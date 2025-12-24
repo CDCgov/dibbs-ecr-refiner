@@ -10,7 +10,9 @@ describe('ConfigLockBanner', () => {
   });
 
   it('null if name/email missing', () => {
-    const { container } = render(<ConfigLockBanner lockedByName={null} lockedByEmail="bar" />);
+    const { container } = render(
+      <ConfigLockBanner lockedByName={null} lockedByEmail="bar" />
+    );
     expect(container).toBeEmptyDOMElement();
     render(<ConfigLockBanner lockedByName="foo" lockedByEmail={null} />);
     expect(screen.queryByText(/View only/)).toBeNull();

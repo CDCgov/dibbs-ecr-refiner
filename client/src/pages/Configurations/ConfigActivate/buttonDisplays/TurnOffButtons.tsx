@@ -8,7 +8,10 @@ interface TurnOffButtonsProps {
   handleDeactivation: () => void;
   disabled?: boolean;
 }
-export function TurnOffButtons({ handleDeactivation, disabled }: TurnOffButtonsProps) {
+export function TurnOffButtons({
+  handleDeactivation,
+  disabled,
+}: TurnOffButtonsProps) {
   const deactivateRef = useRef<ModalRef>(null);
 
   return (

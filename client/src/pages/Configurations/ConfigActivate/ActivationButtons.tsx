@@ -97,9 +97,16 @@ export function ActivationButtons({
   const activeVersion = configurationData.active_version;
 
   if (activeVersion === null) {
-    return <TurnOnButtons handleActivation={handleActivation} disabled={isLocked} />;
+    return (
+      <TurnOnButtons handleActivation={handleActivation} disabled={isLocked} />
+    );
   } else if (curVersion === activeVersion) {
-    return <TurnOffButtons handleDeactivation={handleDeactivation} disabled={isLocked} />;
+    return (
+      <TurnOffButtons
+        handleDeactivation={handleDeactivation}
+        disabled={isLocked}
+      />
+    );
   }
 
   return (

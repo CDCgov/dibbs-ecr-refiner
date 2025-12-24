@@ -8,7 +8,10 @@ interface TurnOnButtonsProps {
   handleActivation: () => void;
   disabled?: boolean;
 }
-export function TurnOnButtons({ handleActivation, disabled }: TurnOnButtonsProps) {
+export function TurnOnButtons({
+  handleActivation,
+  disabled,
+}: TurnOnButtonsProps) {
   const activateRef = useRef<ModalRef>(null);
 
   return (
