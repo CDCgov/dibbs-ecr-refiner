@@ -52,35 +52,14 @@ import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
+import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const location = useLocation();
   const [user] = useLogin();
 
-  // use ref so effect skip initial load
-  useEffect(() => {
-    const didMount = (window as any)._didMount_ref_configBuild || {
-      current: false,
-    };
-    if (!(window as any)._didMount_ref_configBuild)
-      (window as any)._didMount_ref_configBuild = didMount;
-    if (!didMount.current) {
-      didMount.current = true;
-      return;
-    }
-    const handleReleaseLock = () => {
-      if (id) {
-        const url = `/api/v1/configurations/${id}/release-lock`;
-        navigator.sendBeacon(url);
-      }
-    };
-    window.addEventListener('beforeunload', handleReleaseLock);
-    return () => {
-      handleReleaseLock();
-      window.removeEventListener('beforeunload', handleReleaseLock);
-    };
-  }, [id, location.key]);
+  // release lock on beforeunload
+  useConfigLockRelease(id);
   const {
     data: configuration,
     isPending,

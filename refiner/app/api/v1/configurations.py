@@ -379,6 +379,8 @@ async def get_configuration(
 
     # get current lock
     lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    # Only acquire lock if none or expired. Never override valid lock
+    # from other user.
     if not lock or lock.expires_at <= datetime.utcnow():
         await ConfigurationLock.acquire_lock(
             configuration_id=configuration_id,
@@ -524,6 +526,16 @@ async def get_configuration_export(
             detail="Configuration not found.",
         )
 
+    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    if (
+        lock
+        and str(lock.user_id) != str(user.id)
+        and lock.expires_at > datetime.utcnow()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"{user.username}/{user.email} currently has this configuration open.",
+        )
     # Determine included conditions
     included_conditions = await get_included_conditions_db(
         included_conditions=config.included_conditions, db=db

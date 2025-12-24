@@ -6,8 +6,9 @@ import { TurnOffModal } from '../modals/TurnOffModal';
 
 interface TurnOffButtonsProps {
   handleDeactivation: () => void;
+  disabled?: boolean;
 }
-export function TurnOffButtons({ handleDeactivation }: TurnOffButtonsProps) {
+export function TurnOffButtons({ handleDeactivation, disabled }: TurnOffButtonsProps) {
   const deactivateRef = useRef<ModalRef>(null);
 
   return (
@@ -16,6 +17,7 @@ export function TurnOffButtons({ handleDeactivation }: TurnOffButtonsProps) {
         modalRef={deactivateRef}
         opener
         className={classNames('self-start', SECONDARY_BUTTON_STYLES)}
+        disabled={disabled}
       >
         Turn off current version
       </ModalToggleButton>

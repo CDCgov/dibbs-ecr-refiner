@@ -13,12 +13,14 @@ interface SwitchFromPreviousProps {
   handleDeactivation: () => void;
   curVersion: number;
   activeVersion: number | null;
+  disabled?: boolean;
 }
 export function SwitchFromPrevious({
   handleActivation,
   handleDeactivation,
   curVersion,
   activeVersion,
+  disabled,
 }: SwitchFromPreviousProps) {
   const deactivateRef = useRef<ModalRef>(null);
   const activateRef = useRef<ModalRef>(null);
@@ -51,6 +53,7 @@ export function SwitchFromPrevious({
           modalRef={deactivateRef}
           opener
           className={classNames('self-start', SECONDARY_BUTTON_STYLES)}
+          disabled={disabled}
         >
           Turn off configuration
         </ModalToggleButton>

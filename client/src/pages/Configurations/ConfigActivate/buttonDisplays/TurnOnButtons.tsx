@@ -6,8 +6,9 @@ import { TurnOnModal } from '../modals/TurnOnModal';
 
 interface TurnOnButtonsProps {
   handleActivation: () => void;
+  disabled?: boolean;
 }
-export function TurnOnButtons({ handleActivation }: TurnOnButtonsProps) {
+export function TurnOnButtons({ handleActivation, disabled }: TurnOnButtonsProps) {
   const activateRef = useRef<ModalRef>(null);
 
   return (
@@ -16,6 +17,7 @@ export function TurnOnButtons({ handleActivation }: TurnOnButtonsProps) {
         modalRef={activateRef}
         opener
         className={classNames('self-start', SECONDARY_BUTTON_STYLES)}
+        disabled={disabled}
       >
         Turn on configuration
       </ModalToggleButton>
