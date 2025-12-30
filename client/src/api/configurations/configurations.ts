@@ -1098,4 +1098,67 @@ export const useDeactivateConfiguration = <TError = AxiosError<HTTPValidationErr
 
       return useMutation(mutationOptions, queryClient);
     }
+    /**
+ * Release config lock if held by user.
+
+204 if released. 409 if locked by other. 404 if no lock.
+ * @summary Release Configuration Lock
+ */
+export const releaseConfigurationLock = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    
+    
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/release-lock`,undefined,options
+    );
+  }
+
+
+
+export const getReleaseConfigurationLockMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseConfigurationLock>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof releaseConfigurationLock>>, TError,{configurationId: string}, TContext> => {
+
+const mutationKey = ['releaseConfigurationLock'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof releaseConfigurationLock>>, {configurationId: string}> = (props) => {
+          const {configurationId} = props ?? {};
+
+          return  releaseConfigurationLock(configurationId,axiosOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReleaseConfigurationLockMutationResult = NonNullable<Awaited<ReturnType<typeof releaseConfigurationLock>>>
+    
+    export type ReleaseConfigurationLockMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Release Configuration Lock
+ */
+export const useReleaseConfigurationLock = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseConfigurationLock>>, TError,{configurationId: string}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof releaseConfigurationLock>>,
+        TError,
+        {configurationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getReleaseConfigurationLockMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
     

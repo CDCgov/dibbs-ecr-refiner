@@ -34,24 +34,30 @@ class TestConfigurations:
         assert response.json()["name"] == "Drowning and Submersion"
 
         # Assert that associated config creation event was logged
+        # Note: Creating a configuration also acquires a lock, so we expect 2 events
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == 200
         audit_events = response.json()["audit_events"]
-        assert len(audit_events) == 1
-        event = audit_events[0]
-        assert event["username"] == test_username
-        assert event["configuration_name"] == condition["display_name"]
-        assert event["action_text"] == "Created configuration"
+        assert len(audit_events) == 2
+        # Find the "Created configuration" event (not the lock acquisition event)
+        creation_event = next(
+            (e for e in audit_events if e["action_text"] == "Created configuration"),
+            None,
+        )
+        assert creation_event is not None
+        assert creation_event["username"] == test_username
+        assert creation_event["configuration_name"] == condition["display_name"]
 
         # Attempt to create the same config again (should fail)
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == 409
 
-        # Make sure no event was created during failure
+        # Make sure no new event was created during failure
+        # (should still be 2 from the successful creation above)
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == 200
         failure_audit_events = response.json()["audit_events"]
-        assert len(failure_audit_events) == 1
+        assert len(failure_audit_events) == 2
 
     async def test_activate_configuration(self, setup, authed_client, db_conn):
         # Get a configuration from the created config

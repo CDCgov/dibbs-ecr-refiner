@@ -12,7 +12,6 @@ const test = baseTest.extend<AxeFixture>({
     const makeAxeBuilder = () =>
       new AxeBuilder({ page }).withTags(['wcag21aa']);
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(makeAxeBuilder);
   },
 });

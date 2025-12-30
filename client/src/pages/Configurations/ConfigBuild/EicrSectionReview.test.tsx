@@ -47,6 +47,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
       <EicrSectionReview
         sectionProcessing={sections}
         configurationId={configurationId}
+        isLocked={false}
       />
     );
     // Find the radio for 'Include entire section' and click its parent cell
@@ -77,6 +78,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
       <EicrSectionReview
         sectionProcessing={sections}
         configurationId={configurationId}
+        isLocked={false}
       />
     );
     // Find cell for 'Include entire section'
@@ -119,6 +121,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
       <EicrSectionReview
         sectionProcessing={sections}
         configurationId={configurationId}
+        isLocked={false}
       />
     );
     // Find target cell

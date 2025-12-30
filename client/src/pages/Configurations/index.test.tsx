@@ -1,6 +1,7 @@
 import { describe, expect, Mock } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
+
 import { Configurations } from '.';
 import { TestQueryClientProvider } from '../../test-utils';
 import userEvent from '@testing-library/user-event';
@@ -69,18 +70,34 @@ vi.mock('../../api/conditions/conditions', async () => {
 
 const renderPageView = () =>
   render(
-    <TestQueryClientProvider>
-      <ToastContainer />
-      <MemoryRouter initialEntries={['/configurations']}>
+    <MemoryRouter initialEntries={['/configurations']}>
+      <TestQueryClientProvider>
+        <ToastContainer />
         <Routes>
           <Route path="/configurations" element={<Configurations />} />
           <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         </Routes>
-      </MemoryRouter>
-    </TestQueryClientProvider>
+      </TestQueryClientProvider>
+    </MemoryRouter>
   );
 
 describe('Configurations Page', () => {
+  describe('Minimal Test Case', () => {
+    it('renders Configurations with MemoryRouter', () => {
+      render(
+        <MemoryRouter initialEntries={['/configurations']}>
+          <TestQueryClientProvider>
+            <Routes>
+              <Route path="/configurations" element={<Configurations />} />
+            </Routes>
+          </TestQueryClientProvider>
+        </MemoryRouter>
+      );
+      expect(
+        screen.getByText('Your reportable condition configurations')
+      ).toBeInTheDocument();
+    });
+  });
   beforeEach(() => vi.resetAllMocks());
 
   it('should render the Configurations page with title and search bar', async () => {

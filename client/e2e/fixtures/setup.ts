@@ -24,7 +24,7 @@ export const test = baseTest.extend<object, { workerStorageState: string }>({
       // Important: make sure we authenticate in a clean environment by unsetting storage state.
       const page = await browser.newPage({ storageState: undefined });
       // pass in the base URL directly since it doesn't seem to be picking up the value from the config for some reason
-      await login(page, 'http://localhost:8081');
+      await login({ page, baseUrl: 'http://localhost:8081' });
 
       await page.context().storageState({ path: fileName });
       await page.close();

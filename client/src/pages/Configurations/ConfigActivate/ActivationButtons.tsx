@@ -13,10 +13,12 @@ import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
+  isLocked?: boolean;
 }
 
 export function ActivationButtons({
   configurationData,
+  isLocked = false,
 }: ActivationButtonsProps) {
   const queryClient = useQueryClient();
 
@@ -95,9 +97,16 @@ export function ActivationButtons({
   const activeVersion = configurationData.active_version;
 
   if (activeVersion === null) {
-    return <TurnOnButtons handleActivation={handleActivation}></TurnOnButtons>;
+    return (
+      <TurnOnButtons handleActivation={handleActivation} disabled={isLocked} />
+    );
   } else if (curVersion === activeVersion) {
-    return <TurnOffButtons handleDeactivation={handleDeactivation} />;
+    return (
+      <TurnOffButtons
+        handleDeactivation={handleDeactivation}
+        disabled={isLocked}
+      />
+    );
   }
 
   return (
@@ -106,6 +115,7 @@ export function ActivationButtons({
       handleDeactivation={handleDeactivation}
       curVersion={curVersion}
       activeVersion={activeVersion}
+      disabled={isLocked}
     />
   );
 }
