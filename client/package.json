@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
-    "@eslint/js": "^9.39.1",
+    "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@tanstack/eslint-plugin-query": "^5.91.2",
     "@testing-library/jest-dom": "^6.9.1",
@@ -51,7 +51,7 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/parser": "^8.50.0",
     "@vitejs/plugin-react": "^5.1.2",
-    "@vitest/coverage-v8": "^4.0.14",
+    "@vitest/coverage-v8": "^4.0.16",
     "concurrently": "^9.2.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
@@ -63,17 +63,17 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "focus-trap-react": "^10.3.1",
     "globals": "^16.5.0",
-    "jsdom": "^27.3.0",
+    "jsdom": "^27.4.0",
     "nodemon": "^3.1.10",
-    "orval": "^7.17.0",
+    "orval": "^7.17.2",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "rimraf": "^6.1.2",
-    "sass-embedded": "1.93.3",
+    "sass-embedded": "1.97.1",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.50.1",
     "vite": "^7.2.7",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=22.20.0"
