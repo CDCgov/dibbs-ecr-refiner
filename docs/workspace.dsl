@@ -110,8 +110,9 @@ workspace {
             include *
             autolayout lr
             title "DIBBs eCR Refiner - System Landscape"
-            description "The system landscape diagram for the DIBBs eCR Refiner platform"
+            description "The system landscape diagram for the DIBBs eCR Refiner platform some whitespace change"
         }
+
 
         container refiner refiner {
             include *
