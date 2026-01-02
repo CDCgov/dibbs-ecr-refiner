@@ -1,8 +1,8 @@
 import { test, expect } from './fixtures/fixtures';
 
-let configurationToTest = '';
 test.describe('Adding/modifying configurations by initial condition', () => {
-  test('should be able to create a configuration for ', async ({
+  let configurationToTest = '';
+  test('should be able to create a configuration', async ({
     page,
     makeAxeBuilder,
     configurationPage,
@@ -163,13 +163,16 @@ test.describe('Adding/modifying configurations by initial condition', () => {
   /// ==========================================================================
   /// Test that a condition can be selected from configuration added in previous test
   /// ==========================================================================
-  test('should be able to view configuration for the created configuration', async ({
+  test('should be able to view configuration', async ({
     page,
     makeAxeBuilder,
   }) => {
-    await page.getByText(configurationToTest).click();
-
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await page
+      .getByRole('link', { name: 'Configurations', exact: true })
+      .click();
+    await page.getByTestId('table').getByText(configurationToTest).click();
 
     await expect(
       page.getByRole('button', {
@@ -243,6 +246,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     expect(page.getByRole('heading', { name: 'Activity log' }));
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await page
+      .getByLabel('Condition')
+      .selectOption({ label: configurationToTest });
 
     await expect(
       page
@@ -373,8 +380,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await expect(page.getByRole('row')).toHaveCount(11);
     await page.getByRole('button', { name: 'Next' }).click();
 
-    // should be 3 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(3);
+    // should be 4 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(4);
   });
 
   test('should be able export the created config', async ({
