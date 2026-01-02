@@ -1,14 +1,18 @@
 import { test, expect } from './fixtures/fixtures';
-import { createNewConfiguration } from './utils';
 
 test.describe('Activation for new draft configurations works as expected', () => {
   test('activations flow shows the correct options with different versions', async ({
     page,
     makeAxeBuilder,
+    configurationPage,
   }) => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
-    await createNewConfiguration('Hepatitis A Virus infection', page);
+    const configurationToTest = configurationPage.getConfigurationName();
 
+    // start on the activate page for the configuration
+    await expect(
+      page.getByRole('heading', { name: configurationToTest, exact: true })
+    ).toBeVisible();
     // activate the newly created config
     await expect(page.getByText('Build configuration')).toBeVisible();
     await page.getByRole('link', { name: 'Activate' }).click();
@@ -125,7 +129,7 @@ test.describe('Activation for new draft configurations works as expected', () =>
       })
       .filter({
         has: page.locator('td[data-label="Condition"]', {
-          hasText: 'Hepatitis A Virus infection',
+          hasText: configurationToTest,
         }),
       })
       .filter({
@@ -146,7 +150,7 @@ test.describe('Activation for new draft configurations works as expected', () =>
       })
       .filter({
         has: page.locator('td[data-label="Condition"]', {
-          hasText: 'Hepatitis A Virus infection',
+          hasText: configurationToTest,
         }),
       })
       .filter({

@@ -1,11 +1,16 @@
 import { test, expect } from './fixtures/fixtures';
 import path from 'path';
 import fs from 'fs';
-import { createNewConfiguration } from './utils';
+import { createNewConfiguration, deleteConfigurationArtifacts } from './utils';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/configurations');
+  });
+
+  test.afterAll(() => {
+    deleteConfigurationArtifacts('COVID-19');
+    deleteConfigurationArtifacts('Influenza');
   });
 
   // Resolve the file path relative to the project root
