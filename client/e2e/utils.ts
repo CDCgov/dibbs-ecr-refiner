@@ -21,10 +21,24 @@ export function refreshDatabase(): string {
 }
 
 export function deleteConfigurationArtifacts(conditionName: string): string {
-  const output = execSync(`just db delete-configuration '${conditionName}'`, {
-    encoding: 'utf-8',
-  });
-  return output;
+  try {
+    execSync(`just db delete-configuration '${conditionName}'`, {
+      encoding: 'utf-8',
+    });
+    return 'Successfully cleaned up e2e configuration artifacts';
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null) {
+      const err = error as { stderr?: string; message?: string };
+      if (err.stderr) {
+        throw new Error(String(err.stderr));
+      } else if (err.message) {
+        throw new Error(String(err.message));
+      } else {
+        throw new Error(JSON.stringify(err));
+      }
+    }
+    throw new Error(String(error));
+  }
 }
 
 export async function login(page: Page, baseUrl = '/') {
