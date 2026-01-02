@@ -1,5 +1,5 @@
 import { test as baseTest, expect, Page, WorkerInfo } from '@playwright/test';
-import { login } from '../utils';
+import { deleteConfigurationArtifacts, login } from '../utils';
 import fs from 'fs';
 import path from 'path';
 class ConfigurationPage {
@@ -54,6 +54,7 @@ const defaultFixturesTest = baseTest.extend<
     async ({ browser }, use) => {
       // Use parallelIndex as a unique identifier for each worker.
       const id = test.info().parallelIndex;
+      // playwright will cache and use session authentication cookies here for reuse
       const fileName = path.resolve(
         test.info().project.outputDir,
         `.auth/${id}.json`
@@ -67,7 +68,7 @@ const defaultFixturesTest = baseTest.extend<
 
       // Important: make sure we authenticate in a clean environment by unsetting storage state.
       const page = await browser.newPage({ storageState: undefined });
-      // pass in the base URL directly since it doesn't seem to be picking up the value from the config for some reason
+      // pass in the base URL directly since the value defined in playwright configs isn't accessible yet in the default fixtures
       await login(page, 'http://localhost:8081');
 
       await page.context().storageState({ path: fileName });
@@ -96,5 +97,9 @@ export const test = defaultFixturesTest.extend<RefinerFixtures>({
       await configurationPage.createNewConfiguration(page);
     }
     await use(configurationPage);
+
+    // cleanup the configuration artifacts
+    const conditionName = configurationPage.getConfigurationName();
+    deleteConfigurationArtifacts(conditionName);
   },
 });

@@ -20,6 +20,13 @@ export function refreshDatabase(): string {
   }
 }
 
+export function deleteConfigurationArtifacts(conditionName: string): string {
+  const output = execSync(`just db delete-configuration ${conditionName}`, {
+    encoding: 'utf-8',
+  });
+  return output;
+}
+
 export async function login(page: Page, baseUrl = '/') {
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
   await page.getByText('Log in').click();
