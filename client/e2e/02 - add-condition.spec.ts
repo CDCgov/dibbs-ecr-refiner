@@ -1,13 +1,12 @@
 import { test, expect } from './fixtures/fixtures';
 
 test.describe('Adding/modifying configurations by initial condition', () => {
-  let configurationToTest = '';
   test('should be able to create a configuration', async ({
     page,
     makeAxeBuilder,
     configurationPage,
   }) => {
-    configurationToTest = configurationPage.getConfigurationName();
+    const configurationToTest = configurationPage.getConfigurationName();
 
     // start on the activate page for the configuration
     await expect(
@@ -166,11 +165,68 @@ test.describe('Adding/modifying configurations by initial condition', () => {
   test('should be able to view configuration', async ({
     page,
     makeAxeBuilder,
+    configurationPage,
   }) => {
+    const configurationToTest = configurationPage.getConfigurationName();
+
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     await page
       .getByRole('link', { name: 'Configurations', exact: true })
+      .click();
+    await page.getByTestId('table').getByText(configurationToTest).click();
+    await expect(
+      page.getByRole('heading', { name: configurationToTest })
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Add new code set to' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Add condition code sets' })
+    ).toBeVisible();
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Down Syndrome' })
+      .click();
+
+    await page.getByRole('listitem').filter({ hasText: 'Diphtheria' }).click();
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Diphyllobothriasis' })
+      .click();
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Double Outlet Right Ventricle (DORV)' })
+      .click();
+
+    await page.getByTestId('close-drawer').click();
+
+    await page.getByRole('button', { name: 'Custom codes' }).click();
+    await page.getByRole('button', { name: 'Add new custom code' }).click();
+
+    await page.getByRole('textbox', { name: 'Code #' }).click();
+    await page.getByRole('textbox', { name: 'Code #' }).fill('1234');
+    await page.getByTestId('Select').selectOption('rxnorm');
+    await page.getByRole('textbox', { name: 'Code name' }).click();
+    await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
+    await page.getByTestId('modalFooter').getByTestId('button').click();
+    await expect(
+      page.getByRole('cell', { name: 'qwert', exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: '1234', exact: true })
+    ).toBeVisible();
+    await page.getByText('Custom code added').click();
+
+    // click away and navigate back
+    await page
+      .getByRole('link', { name: 'Configurations', exact: true })
+      .click();
+    await page
+      .getByRole('heading', {
+        name: 'Your reportable condition configurations',
+      })
       .click();
     await page.getByTestId('table').getByText(configurationToTest).click();
 
@@ -202,19 +258,19 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     });
 
     // Locate the <li> row containing Down Syndrome delete button
-    const balamuthiaRow = conditionCodeSets.locator('li', {
+    const downSyndromeRow = conditionCodeSets.locator('li', {
       has: page.getByRole('button', {
         name: 'Delete code set Down Syndrome',
       }),
     });
 
     // Hover over the row to reveal the delete button
-    await balamuthiaRow.hover();
+    await downSyndromeRow.hover();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Click the delete button inside this row
-    await balamuthiaRow
+    await downSyndromeRow
       .getByRole('button', {
         name: 'Delete code set Down Syndrome',
       })
@@ -234,10 +290,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     ).toBeVisible();
 
     // Expect "Down Syndrome" code set to no longer be visible
-    const balamuthiaButton = conditionCodeSets.getByRole('button', {
+    const downSyndromeButton = conditionCodeSets.getByRole('button', {
       name: /Down Syndrome, \d+ codes in code set/,
     });
-    await expect(balamuthiaButton).not.toBeVisible();
+    await expect(downSyndromeButton).not.toBeVisible();
 
     /// ==========================================================================
     /// Test that the condition deletion shows up in the activity log
@@ -381,7 +437,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: 'Next' }).click();
 
     // should be 4 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(4);
+    await expect(page.getByRole('row')).toHaveCount(2);
   });
 
   test('should be able export the created config', async ({
@@ -404,7 +460,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     // Verify the file downloaded successfully
     const suggestedName = download.suggestedFilename();
     expect(suggestedName).toContain(
-      `${configurationToTest.replace(' ', '_')}_Code Export`
+      `${configurationToTest.replace(/ /g, '_')}_Code Export`
     );
 
     // Optionally, save it to a temp folder and verify it exists

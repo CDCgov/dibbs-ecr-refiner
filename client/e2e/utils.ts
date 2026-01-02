@@ -21,7 +21,7 @@ export function refreshDatabase(): string {
 }
 
 export function deleteConfigurationArtifacts(conditionName: string): string {
-  const output = execSync(`just db delete-configuration ${conditionName}`, {
+  const output = execSync(`just db delete-configuration '${conditionName}'`, {
     encoding: 'utf-8',
   });
   return output;
