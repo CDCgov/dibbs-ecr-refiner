@@ -5,7 +5,6 @@ import path from 'path';
 class ConfigurationPage {
   private readonly conditionIndex: number;
   private conditionName: string = '';
-  private conditionId: string = '';
 
   constructor(
     public readonly page: Page,
