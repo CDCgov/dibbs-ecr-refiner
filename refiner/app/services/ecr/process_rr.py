@@ -134,6 +134,7 @@ def get_reportable_conditions_by_jurisdiction(
             jurisdiction_code = id_element.get("extension")
             if not jurisdiction_code:
                 continue
+            jurisdiction_code = jurisdiction_code.upper()
 
             # ii.
             # confirm RR1/RRVS1 "reportable" determination exists in this organizer
