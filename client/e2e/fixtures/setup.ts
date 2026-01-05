@@ -1,7 +1,5 @@
 import { test as baseTest, expect, Page, WorkerInfo } from '@playwright/test';
 import { deleteConfigurationArtifacts, login } from '../utils';
-import fs from 'fs';
-import path from 'path';
 class ConfigurationPage {
   private readonly conditionIndex: number;
   private conditionName: string = '';
@@ -43,42 +41,16 @@ class ConfigurationPage {
   }
 }
 
-const defaultFixturesTest = baseTest.extend<
-  object,
-  { workerStorageState: string }
->({
-  storageState: ({ workerStorageState }, use) => use(workerStorageState),
-
-  workerStorageState: [
-    async ({ browser }, use) => {
-      // Use parallelIndex as a unique identifier for each worker.
-      const id = test.info().parallelIndex;
-      // playwright will cache and use session authentication cookies here for reuse
-      const fileName = path.resolve(
-        test.info().project.outputDir,
-        `.auth/${id}.json`
-      );
-
-      if (fs.existsSync(fileName)) {
-        // Reuse existing authentication state if any.
-        await use(fileName);
-        return;
-      }
-
-      // Important: make sure we authenticate in a clean environment by unsetting storage state.
-      const page = await browser.newPage({ storageState: undefined });
-      // pass in the base URL directly since the value defined in playwright configs isn't accessible yet in the default fixtures
-      await login(page, 'http://localhost:8081');
-
-      await page.context().storageState({ path: fileName });
-      await page.close();
-      await use(fileName);
-    },
-    { scope: 'worker' },
-  ],
+const defaultFixturesTest = baseTest.extend<object>({
   page: async ({ page }, use) => {
     // start in the logged in homepage
     await page.goto('/configurations');
+    const returnToHomepageButton = page.getByRole('button', {
+      name: 'Return to homepage',
+    });
+    if (returnToHomepageButton) {
+      await login(page, 'http://localhost:8081');
+    }
     await use(page);
   },
 });

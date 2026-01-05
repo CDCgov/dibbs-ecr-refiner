@@ -176,7 +176,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .click();
     await page.getByTestId('table').getByText(configurationToTest).click();
     await expect(
-      page.getByRole('heading', { name: configurationToTest })
+      page.getByRole('heading', { name: configurationToTest, exact: true })
     ).toBeVisible();
 
     await page.getByRole('button', { name: 'Add new code set to' }).click();
