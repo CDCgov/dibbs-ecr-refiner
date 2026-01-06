@@ -160,7 +160,7 @@ interface SuccessItemProps {
 function SuccessItem({ children }: SuccessItemProps) {
   return (
     <div className="gapx-2 flex items-center p-4 py-1">
-      <span className="font-bold">Refiner results:</span>
+      <span className="mr-1 font-bold">Refiner results: </span>
       <p data-testid="test-refinement-result" className="leading-snug">
         {children}
       </p>
