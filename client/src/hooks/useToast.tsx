@@ -5,7 +5,6 @@ import { Toast } from '../components/Toast';
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
   // progress: 0.2,
-  position: 'bottom-left',
   closeOnClick: true,
   closeButton: false,
   className: classNames(
