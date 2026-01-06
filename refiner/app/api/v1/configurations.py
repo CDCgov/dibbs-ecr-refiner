@@ -394,7 +394,7 @@ async def get_configuration(
             user_obj = await get_user_by_id_db(lock.user_id, db)
             if user_obj:
                 locked_by = LockedByUser(
-                    id=str(user_obj.id), name=user_obj.username, email=user_obj.email
+                    id=user_obj.id, name=user_obj.username, email=user_obj.email
                 )
             else:
                 locked_by = None

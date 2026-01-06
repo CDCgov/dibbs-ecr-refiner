@@ -135,8 +135,8 @@ class ConfigurationLock:
     async def raise_if_locked_by_other(
         configuration_id: str,
         user_id: str,
-        username: str = None,
-        email: str = None,
+        username: str | None = None,
+        email: str | None = None,
         db: AsyncDatabaseConnection = db,
     ):
         """
