@@ -32,6 +32,7 @@ from app.db.configurations.activations.db import (
     deactivate_configuration_db,
 )
 from app.db.users.db import get_user_by_id_db
+from app.db.users.model import UserInfoBase
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
     get_canonical_url_to_highest_inactive_version_map,
@@ -301,14 +302,12 @@ class IncludedCondition:
 
 
 @dataclass(frozen=True)
-class LockedByUser:
+class LockedByUser(UserInfoBase):
     """
-    Model for the property lockedBy for GetConfigurationResponse.
+    LockedByUser response to provide user information.
     """
 
-    id: str
-    name: str
-    email: str
+    pass
 
 
 @dataclass(frozen=True)
