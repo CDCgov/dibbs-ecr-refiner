@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
+from fastapi import HTTPException, status
+
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection, db
@@ -128,3 +130,25 @@ class ConfigurationLock:
                 )
                 await insert_event_db(event=event, cursor=cur)
         return True
+
+    @staticmethod
+    async def raise_if_locked_by_other(
+        configuration_id: str,
+        user_id: str,
+        username: str = None,
+        email: str = None,
+        db: AsyncDatabaseConnection = db,
+    ):
+        """
+        Raises an HTTP status of 409 if the configuration is locked by another user.
+        """
+        lock = await ConfigurationLock.get_lock(configuration_id, db)
+        if (
+            lock
+            and str(lock.user_id) != str(user_id)
+            and lock.expires_at > datetime.utcnow()
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"{username}/{email} currently has this configuration open.",
+            )

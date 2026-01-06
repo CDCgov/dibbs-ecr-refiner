@@ -662,16 +662,13 @@ async def associate_condition_codeset_with_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if (
-        lock
-        and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
@@ -741,16 +738,13 @@ async def remove_condition_codeset_from_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if (
-        lock
-        and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     condition = await get_condition_by_id_db(id=condition_id, db=db)
 
@@ -882,16 +876,13 @@ async def add_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if (
-        lock
-        and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     # Create a custom code object
     allowed_systems = ["LOINC", "SNOMED", "ICD-10", "RxNorm"]
@@ -984,16 +975,13 @@ async def delete_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if (
-        lock
-        and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     updated_config = await delete_custom_code_from_configuration_db(
         config=config, system=system, code=code, user_id=user.id, db=db
@@ -1163,16 +1151,13 @@ async def edit_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if (
-        lock
-        and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     custom_codes = _get_modified_custom_codes(
         config=config,
@@ -1560,16 +1545,13 @@ async def update_section_processing(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if (
-        lock
-        and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.utcnow()
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     # convert payload to DB-friendly format (SectionUpdate dataclasses)
     section_updates = [
@@ -1753,14 +1735,13 @@ async def release_configuration_lock(
 
     204 if released. 409 if locked by other. 404 if no lock.
     """
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
-    if not lock or lock.expires_at <= datetime.utcnow():
-        raise HTTPException(status_code=404, detail="Configuration has no active lock.")
-    if str(lock.user_id) != str(user.id):
-        raise HTTPException(
-            status_code=409,
-            detail=f"{user.username}/{user.email} currently has this configuration open.",
-        )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
     jd = user.jurisdiction_id
     await ConfigurationLock.release_lock(
         configuration_id=configuration_id,
