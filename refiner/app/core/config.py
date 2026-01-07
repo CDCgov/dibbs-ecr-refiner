@@ -48,5 +48,4 @@ ENVIRONMENT: dict[str, str] = {
     "AWS_SECRET_ACCESS_KEY": _get_env_variable("AWS_SECRET_ACCESS_KEY"),
     "AWS_REGION": _get_env_variable("AWS_REGION"),
     "S3_UPLOADED_FILES_BUCKET_NAME": _get_env_variable("S3_UPLOADED_FILES_BUCKET_NAME"),
-    "CONFIG_LOCK_TIMEOUT_MINUTES": os.getenv("CONFIG_LOCK_TIMEOUT_MINUTES", "30"),
 }
