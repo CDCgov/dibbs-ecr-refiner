@@ -164,16 +164,18 @@ While this could work, it:
 2. Catches problems late
 3. Assumes the public S3 bucket is being used directly by the web app and the Lambda (what if the data is replicated to a private bucket?)
 
+Problem #1 likely wouldn't be a big issue for Refiner since the max configuration number will not be extremely high. Problem #2 is not ideal but could be used as a backup for the idea described in the next section. Lastly, and most importantly, problem #3 is something we'd need to dig into more to know if this is a viable option. If the Lambda does not read directly from the public bucket but is instead replicated, this will introduce additional complexity.
+
 #### Event driven
 
-Another idea is to forgo any sort of regular automated integrity checking in favor of an event driven approach. The "events" in this case would be user actions in the UI that impact activation and deactivation. As described above, the database will always be the source of truth, the data flow is always one way, and the data in the S3 bucket will not be modified by other processes.
+Another idea is to forgo any sort of regular automated integrity checking in favor of an event driven approach. The "events" in this case would be user actions in the UI that impact activation and deactivation. As described above, the database will always be the source of truth, the data flow is always one way, and the data in the S3 bucket will not be modified by other processes outside of the web app.
 
 The only time the S3 data will be modified is during an activation or a deactivation. If we can guarantee that:
 
 1. S3 files are written
 2. Configuration database row is updated
 
-We can be confident that these objects are in sync. Additionally, we can increase safety during activations and deactivations by making use of a pointer file that Lambda will read from to determine the action it will take. More on this in the outcomes section.
+We can be confident that these objects are accurate and in sync. Additionally, we can increase safety during activations and deactivations by making use of a pointer file that Lambda will read from to determine the action it will take. More on this in the outcomes section.
 
 ## Decision Outcome
 
@@ -359,6 +361,420 @@ The initial format of this file will look as such:
     "childRsgSnomedCodes": [186747009,840539006]
 }
 ```
+
+### Activation/deactivation scenario
+
+The purpose of this section is to give a full, real-world example demonstrating how a user within a jurisdiction may interact with the application and the result it will have on the Lambda's processing.
+
+For this demo, we'll assume the following:
+
+Jurisdiction ID: `SDDH`
+Condition: Influenza
+
+#### Step 1: Activate for the first time
+
+SDDH user successfully activates the Influenza configuration for the first time, which is also the first ever configuration activation for the jurisdiction.
+
+Changes that occur in the database:
+
+- Influenza database record is updated
+  - `status` changes from `draft` to `active`
+  - `last_activated_at` is set to the current time
+  - `last_activated_by` is set to the user's ID
+
+Changes that occur in S3:
+
+- Jurisdiction directory `SDDH` is created
+- Influenza has 8 child RSG groupers, so a subdirectory is created for each
+  - `541131000124102`
+  - `43692000`
+  - `6142004`
+  - `725894000`
+  - `77282800`
+  - `95891005`
+  - `719590007`
+  - `661761000124109`
+- A `current.json` is written to every subdirectory and contains `"version": 1`
+- A `/1/metadata.json` file is written for every subdirectory
+- A `/1/active.json` file is written for every subdirectory
+
+The end result in S3 looks like this:
+
+```sh
+.
+└── SDDH/
+    ├── 541131000124102/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 43692000/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 6142004/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 725894000/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 77282800/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 95891005/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 719590007/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    └── 661761000124109/
+        ├── current.json
+        └── 1/
+            ├── active.json
+            └── metadata.json
+```
+
+#### Step 2: Influenza is deactivated
+
+SDDH user successfully deactivates the Influenza configuration.
+
+Changes that occur in the database:
+
+- Influenza database record is updated
+  - `status` changes from `active` to `inactive`
+
+Changes that occur in S3:
+
+- Every condition code subdirectory has its `current.json` `version` set to `null`
+
+The end result in S3 looks like this:
+
+```sh
+.
+└── SDDH/
+    ├── 541131000124102/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 43692000/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 6142004/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 725894000/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 77282800/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 95891005/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 719590007/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    └── 661761000124109/
+        ├── current.json
+        └── 1/
+            ├── active.json
+            └── metadata.json
+```
+
+#### Step 3: Influenza is activated again
+
+SDDH user successfully reactivates the existing Influenza configuration after previously deactivating it.
+
+Changes that occur in the database:
+
+- Influenza database record is updated
+  - `status` changes from `inactive` to `active`
+
+Changes that occur in S3:
+
+- Every condition code subdirectory has its `current.json` `version` set to `1`
+
+The end result in S3 looks like this:
+
+```sh
+.
+└── SDDH/
+    ├── 541131000124102/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 43692000/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 6142004/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 725894000/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 77282800/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 95891005/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 719590007/
+    │   ├── current.json
+    │   └── 1/
+    │       ├── active.json
+    │       └── metadata.json
+    └── 661761000124109/
+        ├── current.json
+        └── 1/
+            ├── active.json
+            └── metadata.json
+```
+
+> [!IMPORTANT]
+> The activation logic needs to validate that all files that should exist do exist. If they do not, they must be written.
+
+#### Step 4: Influenza draft is created and then activated
+
+SDDH user successfully activates their version 2 Influenza draft.
+
+Changes that occur in the database:
+
+- Influenza version 1 configuration record is updated
+  - `status` changes from `active` to `inactive`
+- Influenza version 2 draft configuration record is updated
+  - `status` changes from `draft` to `active`
+
+Changes that occur in S3:
+
+- A `/2/active.json` file is written for every subdirectory
+- A `/2/metadata.json` file is written for every subdirectory
+- A `current.json` is updated in every existing subdirectory to contain `"version": 2`
+
+The end result in S3 looks like this:
+
+```sh
+.
+└── SDDH/
+    ├── 541131000124102/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 43692000/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   ├── 2
+    │   ├── active.json
+    │   └── metadata.json
+    ├── 6142004/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 725894000/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 77282800/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 95891005/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 719590007/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    └── 661761000124109/
+        ├── current.json
+        ├── 1/
+        │   ├── active.json
+        │   └── metadata.json
+        └── 2/
+            ├── active.json
+            └── metadata.json
+```
+
+#### Step 5: Influenza deactivation fails
+
+SDDH user unsuccessfully attempts to deactive Influenza.
+
+Changes that occur in S3:
+
+- 3/8 `current.json` files are updated to `"version": null` and then writes to S3 begin failing
+
+Changes that occur in the database:
+
+- Influenza configuration record is unchanged
+  - `status` is still `active`
+
+The end result in S3 looks like this:
+
+- Unchanged from previous step
+
+Recovery:
+
+- Configuration is still `active` so the user can attempt to set it to `inactive` again
+- Deactivation logic is idempotent and all `current.json` file updates can be attempted once again
+
+User deactivates the configuration successfully.
+
+#### Step 6: User creates a Down Syndrome draft and unsuccessfully activates it
+
+SDDH user unsuccessfully attempts to activate their Down Syndrome draft.
+
+Changes that occur in S3:
+
+- `41040004` subdirectory is created
+- `/1/active.json` file is created
+
+Writing the metadata file fails and the activation process fails.
+
+- Down Syndrome configuration record is unchanged
+  - `status` is still `draft`
+
+The end result in S3 looks like this:
+
+```sh
+.
+└── SDDH/
+    ├── 41040004/ <-- Down Syndrome
+    │   └── 1/
+    │       └── active.json
+    ├── 541131000124102/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 43692000/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   ├── 2
+    │   ├── active.json
+    │   └── metadata.json
+    ├── 6142004/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 725894000/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 77282800/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 95891005/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    ├── 719590007/
+    │   ├── current.json
+    │   ├── 1/
+    │   │   ├── active.json
+    │   │   └── metadata.json
+    │   └── 2/
+    │       ├── active.json
+    │       └── metadata.json
+    └── 661761000124109/
+        ├── current.json
+        ├── 1/
+        │   ├── active.json
+        │   └── metadata.json
+        └── 2/
+            ├── active.json
+            └── metadata.json
+```
+
+Recovery:
+
+This failure occurred because `metadata.json` could not be written. Because of this `metadata.json` and `current.json` are missing for Down Syndrome.
+
+In order to recover from this failure the user attempts to activate the Down Syndrome configuration again since it remained in `draft`. Lambda will not do any processing on Down Syndrome since the `current.json` is missing.
+
+The activation is successful next time around.
 
 ## Links
 
