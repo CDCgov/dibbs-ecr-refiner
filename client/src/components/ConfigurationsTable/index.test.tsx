@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 import userEvent from '@testing-library/user-event';
@@ -85,11 +85,15 @@ describe('Configurations Table component', () => {
     );
 
     // This ensures the aria-label is correct
-    const row = screen.getByRole('row', {
-      name: 'View active configuration for Chlamydia trachomatis infection',
-    });
+    const rowButton = within(
+      screen.getByRole('row', {
+        name: 'View active configuration for Chlamydia trachomatis infection',
+      })
+    ).getAllByRole('button', {
+      name: 'Configure the configuration for Chlamydia trachomatis infection',
+    })[0];
 
-    await user.click(row);
+    await user.click(rowButton);
 
     expect(mockNavigate).toHaveBeenCalledWith(
       '/configurations/chlamydia-config-id/build'
@@ -105,12 +109,16 @@ describe('Configurations Table component', () => {
       </BrowserRouter>
     );
 
-    const row = screen.getByRole('row', {
-      name: 'View active configuration for Chlamydia trachomatis infection',
-    });
+    const rowButton = within(
+      screen.getByRole('row', {
+        name: 'View active configuration for Chlamydia trachomatis infection',
+      })
+    ).getAllByRole('button', {
+      name: 'Configure the configuration for Chlamydia trachomatis infection',
+    })[0];
 
-    row.focus();
-    expect(row).toHaveFocus();
+    rowButton.focus();
+    expect(rowButton).toHaveFocus();
 
     // Pressing enter
     await user.keyboard('{Enter}');

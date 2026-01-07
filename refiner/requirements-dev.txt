@@ -5,11 +5,11 @@ pytest
 pytest-asyncio
 pytest-cov
 python-dotenv
-ruff==0.14.8
+ruff==0.14.10
 saxonche
 testcontainers[compose]>=3.7.1
 tqdm
-mypy==1.19.0
+mypy==1.19.1
 lxml-stubs
 types-Authlib
 boto3-stubs

@@ -33,7 +33,7 @@ export function App() {
 
   return (
     <Layout displayName={`${user.username} (${user.jurisdiction_id})`}>
-      <ToastContainer />
+      <ToastContainer className="bottom-5!" position="bottom-left" stacked />
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />

@@ -40,7 +40,10 @@ export function Header({ displayName }: HeaderProps) {
     <>
       <NavigationBar />
       <Menu>
-        <MenuButton className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none">
+        <MenuButton
+          aria-label="Open settings menu"
+          className="font-public-sans hover:bg-blue-cool-70 flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-white focus:outline-none"
+        >
           <Icon.Person size={3} aria-hidden />
           {displayName}
         </MenuButton>
@@ -64,13 +67,13 @@ export function Header({ displayName }: HeaderProps) {
   return (
     <header>
       <div className="bg-blue-cool-80 flex flex-col items-start justify-between gap-4 px-2 sm:flex-row sm:items-center xl:px-20">
-        <Link to="/">
-          <h1 className="flex items-center gap-3">
-            <img src={DibbsLogo} alt="DIBBs" />
+        <Link to="/" aria-label="Link back to the home configurations page">
+          <div className="my-4 flex items-center gap-3">
+            <img src={DibbsLogo} alt="DIBBs" role="presentation" />
             <span className="font-merriweather text-2xl text-white">
               eCR Refiner
             </span>
-          </h1>
+          </div>
         </Link>
 
         {displayName && loggedInHeaderContent}
@@ -101,6 +104,7 @@ export function Footer() {
             <a
               className="font-bold hover:underline"
               href="mailto:dibbs@cdc.gov"
+              aria-label="Email us at dibbs@cdc.gov (will open your email client)"
             >
               dibbs@cdc.gov
             </a>

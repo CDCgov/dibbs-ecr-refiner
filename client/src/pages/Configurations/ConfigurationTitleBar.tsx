@@ -7,27 +7,46 @@ type ConfigurationSteps = 'build' | 'test' | 'activate';
 
 type ConfigurationTitleBarProps = {
   step: ConfigurationSteps;
+  condition: string;
 };
 
-const CONFIGURATION_TITLE_CONTENTS = {
-  build: {
-    title: 'Build configuration',
-    subtitle: 'Review and select the data to retain in the eCRs you receive.',
-  },
-  test: {
-    title: 'Test configuration',
-    subtitle: 'Check the results of your configuration before turning it on.',
-  },
-  activate: {
-    title: 'Turn on configuration',
-    subtitle:
-      'Refiner will immediately start to refine eCRs with gonorrhea as a reportable condition, in accordance with this configuration.',
-  },
+type ConfigurationTitleContent = {
+  title: string;
+  subtitle: React.ReactNode;
 };
 
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
-export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
+export function ConfigurationTitleBar({
+  step,
+  condition,
+}: ConfigurationTitleBarProps) {
+  const CONFIGURATION_TITLE_CONTENTS: {
+    [step: string]: ConfigurationTitleContent;
+  } = {
+    build: {
+      title: 'Build configuration',
+      subtitle: (
+        <p>Review and select the data to retain in the eCRs you receive.</p>
+      ),
+    },
+    test: {
+      title: 'Test configuration',
+      subtitle: (
+        <p>Check the results of your configuration before turning it on.</p>
+      ),
+    },
+    activate: {
+      title: 'Turn on configuration',
+      subtitle: (
+        <span>
+          Refiner will <span className="font-bold">immediately</span> start to
+          refine eCRs with {condition} as a reportable condition, in accordance
+          with this configuration.
+        </span>
+      ),
+    },
+  };
   const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
   const spinnerStart = useRef<number>(0);
   const numSavingActions = useIsMutating();
@@ -67,7 +86,7 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
               {shouldShowSpinner ? (
                 <>
                   <Icon.Autorenew
-                    aria-label="icon indicating saving in progress"
+                    role="presentation"
                     className="text-blue-cool-50 h-6! w-6! animate-spin"
                   ></Icon.Autorenew>
                   Saving
@@ -75,7 +94,7 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
               ) : (
                 <>
                   <Icon.Check
-                    aria-label="icon indicating saving completed"
+                    role="presentation"
                     className="text-state-success h-6! w-6!"
                   ></Icon.Check>{' '}
                   Saved
@@ -84,7 +103,7 @@ export function ConfigurationTitleBar({ step }: ConfigurationTitleBarProps) {
             </div>
           </div>
         </div>
-        <p> {CONFIGURATION_TITLE_CONTENTS[step].subtitle}</p>
+        {CONFIGURATION_TITLE_CONTENTS[step].subtitle}
       </div>
     </div>
   );

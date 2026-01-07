@@ -319,6 +319,7 @@ async def inline_testing(
     reportability_data = _extract_reportable_conditions_for_jurisdiction(
         xml_files, jurisdiction_id
     )
+
     reportable_codes_in_rr = set(reportability_data["rc_codes_for_jurisdiction"])
     rsg_codes_from_primary_condition = set(
         trace.primary_condition.child_rsg_snomed_codes
@@ -435,8 +436,10 @@ def _extract_reportable_conditions_for_jurisdiction(
         # add all codes to rc_codes_all
         for cond in jurisdiction_group.conditions:
             rc_codes_all.append(cond.code)
+            jd_code_to_check = jurisdiction_group.jurisdiction.upper()
+
             # if this jurisdiction matches the one we're filtering for, add to filtered list
-            if jurisdiction_group.jurisdiction == jurisdiction_id:
+            if jd_code_to_check == jurisdiction_id:
                 rc_codes_for_jurisdiction.append(cond.code)
 
     return {

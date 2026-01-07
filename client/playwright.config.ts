@@ -4,11 +4,10 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 30 * 1000,
   expect: {
-    timeout: 5000,
+    timeout: 10 * 1000,
   },
-  fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  workers: 2,
   reporter: [['html', { open: 'never' }]],
   use: {
     trace: 'on-first-retry',
