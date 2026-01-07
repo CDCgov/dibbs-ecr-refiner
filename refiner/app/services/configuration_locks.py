@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
@@ -51,7 +51,7 @@ class ConfigurationLock:
         """
         Acquire a lock for a configuration, replacing any expired or released lock.
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=LOCK_TIMEOUT_MINUTES)
         existing = await ConfigurationLock.get_lock(str(configuration_id), db)
         if existing and existing.expires_at > now:
@@ -113,7 +113,7 @@ class ConfigurationLock:
         """
         Renew the lock for a configuration, extending its expiration.
         """
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=LOCK_TIMEOUT_MINUTES)
         query = "UPDATE configurations_locks SET expires_at = %s WHERE configuration_id = %s AND user_id = %s"
         params = (expires_at, str(configuration_id), str(user_id))
@@ -146,7 +146,7 @@ class ConfigurationLock:
         if (
             lock
             and str(lock.user_id) != str(user_id)
-            and lock.expires_at > datetime.utcnow()
+            and lock.expires_at > datetime.now(UTC)
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
