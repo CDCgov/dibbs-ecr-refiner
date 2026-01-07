@@ -159,14 +159,6 @@ The only time the S3 data will be modified is during an activation or a deactiva
 
 We can be confident that these objects are in sync. With good integration testing in place, I lean strongly towards this approach over polling.
 
-## Decision Drivers
-
-What metrics or factors drove your decision?
-
-## Considered Options
-
-What other options were considered, and what pros and cons exist around these decisions?
-
 ## Decision Outcome
 
 Below are my recommendations for each of the problems listed above.
@@ -190,7 +182,10 @@ For **directory and file naming** I propose we use the following format:
 
 #### current.json
 
-As mentioned above, I am proposing that each condition code directory contain a `current.json` at this path: `{jurisdiction ID}/{condition code}/current.json`. This file will be read and parsed by Lambda to determine if a configuration is active or not. It will also tell Lambda which version of a configuration to use. This file is a pointer for Lambda that can be updated by the web application without causing any negative impacts to the "always on" processing that the Lambda is doing.
+As mentioned above, I am proposing that each condition code directory contain a `current.json` at this path: `{jurisdiction ID}/{condition code}/current.json`. This file will be created upon a user activating the configuration within their jurisdiction. This file will be read and parsed by Lambda to determine which version of a configuration to use (or not, if `version` is `null` or the file is missing). This file is a pointer for Lambda that can be updated by the web application without causing any negative impacts to the "always on" processing that the Lambda is doing.
+
+> [!IMPORTANT]
+> Lambda will treat a missing `current.json` as the configuration being inactive. No processing will be attempted.
 
 The structure of `current.json` will be:
 
