@@ -1,7 +1,11 @@
 import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
-import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
+import {
+  Button,
+  DISABLED_BUTTON_STYLES,
+  SECONDARY_BUTTON_STYLES,
+} from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
@@ -9,7 +13,14 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
+import {
+  useRef,
+  useEffect,
+  useMemo,
+  useState,
+  forwardRef,
+  useContext,
+} from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -51,6 +62,7 @@ import { TesLink } from '../TesLink';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { Status } from './Status';
+import { EditableContext } from './editContext';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -59,6 +71,7 @@ export function ConfigBuild() {
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
+  const isEditable = configuration?.data.status === 'draft';
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -69,50 +82,52 @@ export function ConfigBuild() {
   });
 
   return (
-    <div>
-      <TitleContainer>
-        <Title>{configuration.data.display_name}</Title>
-        <Status version={configuration.data.active_version} />
-      </TitleContainer>
-      <NavigationContainer>
-        <VersionMenu
-          id={configuration.data.id}
-          currentVersion={configuration.data.version}
-          status={configuration.data.status}
-          versions={configuration.data.all_versions}
-          step="build"
-        />
-        <StepsContainer>
-          <Steps configurationId={configuration.data.id} />
-        </StepsContainer>
-      </NavigationContainer>
-      {!configuration.data.is_draft ? (
-        <DraftBanner
-          draftId={configuration.data.draft_id}
-          conditionId={configuration.data.condition_id}
-          latestVersion={configuration.data.latest_version}
-          step="build"
-        />
-      ) : null}
-      <SectionContainer>
-        <div className="content flex flex-wrap justify-between">
-          <ConfigurationTitleBar
+    <EditableContext value={isEditable}>
+      <div>
+        <TitleContainer>
+          <Title>{configuration.data.display_name}</Title>
+          <Status version={configuration.data.active_version} />
+        </TitleContainer>
+        <NavigationContainer>
+          <VersionMenu
+            id={configuration.data.id}
+            currentVersion={configuration.data.version}
+            status={configuration.data.status}
+            versions={configuration.data.all_versions}
             step="build"
-            condition={configuration.data.display_name}
           />
-          <Export id={configuration.data.id} />
-        </div>
-        <Builder
-          id={configuration.data.id}
-          code_sets={sortedCodeSets}
-          included_conditions={configuration.data.included_conditions}
-          custom_codes={configuration.data.custom_codes}
-          section_processing={configuration.data.section_processing}
-          display_name={configuration.data.display_name}
-          deduplicated_codes={configuration.data.deduplicated_codes}
-        />
-      </SectionContainer>
-    </div>
+          <StepsContainer>
+            <Steps configurationId={configuration.data.id} />
+          </StepsContainer>
+        </NavigationContainer>
+        {!configuration.data.is_draft ? (
+          <DraftBanner
+            draftId={configuration.data.draft_id}
+            conditionId={configuration.data.condition_id}
+            latestVersion={configuration.data.latest_version}
+            step="build"
+          />
+        ) : null}
+        <SectionContainer>
+          <div className="content flex flex-wrap justify-between">
+            <ConfigurationTitleBar
+              step="build"
+              condition={configuration.data.display_name}
+            />
+            <Export id={configuration.data.id} />
+          </div>
+          <Builder
+            id={configuration.data.id}
+            code_sets={sortedCodeSets}
+            included_conditions={configuration.data.included_conditions}
+            custom_codes={configuration.data.custom_codes}
+            section_processing={configuration.data.section_processing}
+            display_name={configuration.data.display_name}
+            deduplicated_codes={configuration.data.deduplicated_codes}
+          />
+        </SectionContainer>
+      </div>
+    </EditableContext>
   );
 }
 
@@ -162,6 +177,8 @@ function Builder({
   const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
     null
   );
+  const isEditable = useContext(EditableContext);
+
   const modalRef = useRef<ModalRef | null>(null);
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {}
@@ -213,15 +230,17 @@ function Builder({
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
               </OptionsLabel>
-              <Button
-                variant="secondary"
-                className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
-                id="open-codesets"
-                aria-label="Add new code set to configuration"
-                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-              >
-                ADD
-              </Button>
+              {isEditable && (
+                <Button
+                  variant="secondary"
+                  className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
+                  id="open-codesets"
+                  aria-label="Add new code set to configuration"
+                  onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                >
+                  ADD
+                </Button>
+              )}
             </OptionsLabelContainer>
             <OptionsListContainer>
               <OptionsList>
@@ -251,20 +270,16 @@ function Builder({
                         selectedCodesetId ? 'codeset-table' : undefined
                       }
                     />
-                    {i === 0 ? (
-                      <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
-                        Default
-                      </span>
-                    ) : (
-                      <DeleteCodeSetButton
-                        configurationId={id}
-                        conditionId={codeSet.condition_id}
-                        conditionName={codeSet.display_name}
-                        onClick={() =>
-                          setCodesetListItemFocus(codeSet.condition_id)
-                        }
-                      />
-                    )}
+
+                    <DeleteCodeSetButton
+                      index={i}
+                      configurationId={id}
+                      conditionId={codeSet.condition_id}
+                      conditionName={codeSet.display_name}
+                      onClick={() =>
+                        setCodesetListItemFocus(codeSet.condition_id)
+                      }
+                    />
                   </li>
                 ))}
               </OptionsList>
@@ -333,8 +348,12 @@ function Builder({
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
+                className={classNames(
+                  '!mt-4',
+                  isEditable ? SECONDARY_BUTTON_STYLES : DISABLED_BUTTON_STYLES
+                )}
                 aria-label="Add new custom code"
+                disabled={!isEditable}
               >
                 Add code
               </ModalToggleButton>
@@ -408,6 +427,7 @@ const ConditionCodeSetButton = forwardRef<
 );
 
 interface DeleteCodeSetButtonProps {
+  index: number;
   configurationId: string;
   conditionId: string;
   conditionName: string;
@@ -415,6 +435,7 @@ interface DeleteCodeSetButtonProps {
 }
 
 function DeleteCodeSetButton({
+  index,
   configurationId,
   conditionId,
   conditionName,
@@ -459,17 +480,28 @@ function DeleteCodeSetButton({
     );
   }
 
+  const isEditable = useContext(EditableContext);
+
   if (isPending) {
     return <Spinner size={20} className="mr-2" />;
   }
 
-  return (
+  return index === 0 ? (
+    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+      Default
+    </span>
+  ) : (
     <button
       className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
+      disabled={!isEditable}
     >
-      <Icon.Delete className="!fill-red-700" size={3} aria-hidden />
+      <Icon.Delete
+        className={isEditable ? 'fill-red-700!' : 'text-gray-cool-40'}
+        size={3}
+        aria-hidden
+      />
     </button>
   );
 }

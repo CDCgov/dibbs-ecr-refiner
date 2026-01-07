@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Button } from '../../../components/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -9,6 +9,7 @@ import {
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
 import { IncludedCondition } from '../../../api/schemas';
+import { EditableContext } from './editContext';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
@@ -29,6 +30,8 @@ export function ConditionCodeSetListItem({
     useAssociateConditionWithConfiguration();
   const { mutate: disassociateMutation } =
     useDisassociateConditionWithConfiguration();
+
+  const isEditable = useContext(EditableContext);
 
   const showToast = useToast();
   const queryClient = useQueryClient();
@@ -99,6 +102,7 @@ export function ConditionCodeSetListItem({
   }
 
   function onClick(associated: boolean) {
+    if (!isEditable) return;
     if (associated) {
       handleDisassociate();
     } else {
@@ -137,7 +141,7 @@ export function ConditionCodeSetListItem({
           <span className="text-bold !mr-0 !w-[80px] text-black">Default</span>
         ) : condition.associated ? (
           <Button
-            variant="secondary"
+            variant={isEditable ? 'secondary' : 'disabled'}
             aria-pressed={true}
             aria-label={`Remove ${condition.display_name}`}
             className="!mr-0 !w-[80px]"
@@ -151,7 +155,7 @@ export function ConditionCodeSetListItem({
           </Button>
         ) : (
           <Button
-            variant="primary"
+            variant={isEditable ? 'primary' : 'disabled'}
             aria-pressed={false}
             aria-label={`Add ${condition.display_name}`}
             className="!mr-0 !w-[80px]"

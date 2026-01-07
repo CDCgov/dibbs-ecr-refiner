@@ -9,6 +9,7 @@ export interface RadioCellProps {
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -21,16 +22,21 @@ export function RadioCell({
   checked,
   ariaLabel,
   applyAction,
+  disabled = false,
 }: RadioCellProps) {
   return (
     <td
       className="text-center !break-all !whitespace-normal focus:outline-none"
       tabIndex={0}
-      onClick={() => applyAction(index, action)}
+      onClick={() => {
+        applyAction(index, action);
+      }}
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();
-          applyAction(index, action);
+          {
+            applyAction(index, action);
+          }
         }
       }}
     >
@@ -44,6 +50,7 @@ export function RadioCell({
           checked={checked}
           tabIndex={-1}
           readOnly
+          disabled={disabled}
         />
         <span className="usa-radio__label -top-4.5 right-0"></span>
         <span className="usa-sr-only">{ariaLabel}</span>

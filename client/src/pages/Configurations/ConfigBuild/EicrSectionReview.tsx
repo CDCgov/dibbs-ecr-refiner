@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Table } from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import {
@@ -10,6 +10,7 @@ import { UpdateSectionProcessingEntryAction } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { RadioCell } from '../../../components/Button/RadioCell';
 import { useQueryClient } from '@tanstack/react-query';
+import { EditableContext } from './editContext';
 
 interface EicrSectionReviewProps {
   configurationId: string;
@@ -35,6 +36,7 @@ export function EicrSectionReview({
   const { mutate: updateSectionProcessing } =
     useUpdateConfigurationSectionProcessing();
   const queryClient = useQueryClient();
+  const isDisabled = !useContext(EditableContext);
 
   // Initialize state based on the sectionProcessing prop. Only initialize
   // when local state is empty or the number of sections changes so we don't
@@ -56,6 +58,7 @@ export function EicrSectionReview({
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => {
+    if (isDisabled) return;
     // Capture previous action so we can revert if the mutation fails
     const previousAction = selectedActions[index] ?? 'retain';
 
@@ -173,6 +176,7 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'refine'}
                 ariaLabel={`Include and refine section ${section.name}`}
                 applyAction={applyAction}
+                disabled={isDisabled}
               />
               <RadioCell
                 index={index}
@@ -180,6 +184,7 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'retain'}
                 ariaLabel={`Include entire section ${section.name}`}
                 applyAction={applyAction}
+                disabled={isDisabled}
               />
 
               <RadioCell
@@ -188,6 +193,7 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'remove'}
                 ariaLabel={`Remove section ${section.name}`}
                 applyAction={applyAction}
+                disabled={isDisabled}
               />
             </tr>
           ))}
