@@ -34,14 +34,14 @@ This document will provide information on the following topics:
 
 ### Directory naming and identification by Lambda
 
-When the Lambda receives an SQS message, it will contain information that describes where the eICR and RR files can be located. The Refiner will attempt to fetch both of these files. Once it has this information, it will parse the RR for the following data:
+When the Lambda receives an SQS message, it will contain information that describes where the eICR and RR files are located. The Refiner will attempt to fetch both of these files. Once it has this information, it will parse the RR for the following data:
 
 - Jurisdiction ID
 - Reportable condition codes
 
-Once the Refiner has this information it must check to see if the jurisdiction has an active configuration per serialized configuration file. If a configuration file exists, run the refining process using it. If a configuration file does not exist, the refining process can be skipped and it'll move on to the next condition code. At the end, the files will be outputted.
+Using this info, it must check to see if the jurisdiction has an active configuration for a reportable condition code. If a configuration file exists, run the refining process using it. If a configuration file does not exist, the refining process can be skipped and it'll move on to the next condition code. At the end, the files will be outputted.
 
-In order to accommodate this process, we should organize the S3 bucket as such:
+In order to accommodate this process, we will likely want to structure the S3 bucket like this:
 
 1. Top-level directory contains a sub-directory per jurisdiction
 2. Jurisdiction directory contains sub-directories matching the condition code for each activated configuration
@@ -50,9 +50,13 @@ In order to accommodate this process, we should organize the S3 bucket as such:
 The S3 bucket will be structured like this:
 
 ```sh
-{jurisdiction ID}/{condition code}/current.json
-{jurisdiction ID}/{condition code}/{version}/active.json
-{jurisdiction ID}/{condition code}/{version}/metadata.json
+.
+└── {jurisdiction ID}/
+    └── {condition code}/
+        ├── current.json
+        └── {version}/
+            ├── active.json
+            └── metadata.json
 ```
 
 Using the jurisdiction ID, condition, and version the Refiner can attempt to find an `active.json` file for a condition. If it exists, the Refiner can consume it.
@@ -61,36 +65,44 @@ Using the jurisdiction ID, condition, and version the Refiner can attempt to fin
 
 Something to consider is that each condition may have more than one child condition code. One approach to handling this is to allow the web application to create an `active.json` file per child condition code and write it to the expected path in S3. This would effectively create a duplicate activation file for each code.
 
-For example, the SDDH's jurisdiction's first COVID-19 activation would generate these two activation files for the `SDDH` jurisdiction:
+For example, the SDDH jurisdiction's first COVID-19 activation would generate these two activation files:
 
 ```sh
-SDDH/186747009/1/active.json
-SDDH/840539006/1/active.json
+.
+└── SDDH/
+    ├── 186747009/
+    │   └── 1/
+    │       └── active.json
+    └── 840539006/
+        └── 1/
+            └── active.json
 ```
 
 This does, however, break the concept of having a single `s3_url` tied to a single configuration. We would need to rethink this if we took this approach.
 
 #### Conditions with multiple child RSG codes - mapping strategy (option 2)
 
-Another potential route we could take in order to handle multiple condition codes could be to generate and include a mapping file as part of the Lambda package. When a condition code is received by the Lambda, it uses the value to see if that code maps to another possible if the specified file path does not exist.
+Another potential route we could take in order to handle multiple condition codes could be to generate and include a mapping file as part of the Lambda package. When a condition code is received by the Lambda, it uses the value to see if that code maps to another "dominant" code if the specified file path does not exist.
 
 For example, a COVID-19 activation would generate this activation file for the `SDDH` jurisdiction:
 
 ```sh
-SDDH/186747009/1/active.json
+.
+└── SDDH/
+    └── 186747009/
+        └── 1/
+            └── active.json
 ```
 
 We only have a single file but we have two possible COVID-19 child RSG codes: `186747009` and `840539006`. If the Refiner receives `186747009` the activation file will be found and used. However, if the Refiner receives `840539006` instead no file will be found. In this case, the Refiner would need to check the map using `840539006` as the key, which would point to the "dominant" value we determine for COVID-19 and use the file from that path instead.
 
-Multiple copies of the same activation file per child code seems like the more straightforward route to take. This enables us to stick with the idea of a path either existing or not existing without extra work needing to be done by the Lambda to try to determine if the file lives elsewhere. S3 storage is also very cheap, so this should not cause budget issues.
-
-This does mean that a configuration may now map to multiple S3 URLs upon serializing and saving the file. We should create a join table or store this information as an array on a configuration record.
+This method involves a pre-computed mapping file that we'd need to create and maintain along with introducing additional work for the Lambda (multiple possible file path checks instead of one).
 
 ### Required updates to application activation logic
 
 The concept of activations has already been built and is usable in the application today. We will, however, need to update the application further to serialize the configuration information and write it to the S3 bucket.
 
-I propose we update the activation step to include the following:
+The activation logic to write the files will need to be something like this:
 
 1. Open a database transaction
 2. Create serialized activation file(s)
@@ -101,16 +113,20 @@ I propose we update the activation step to include the following:
 
 We need to ensure that both writing to S3 and writing to the database are successful in order for an activation to be considered successful. If one of these steps fail then we need to provide an error message to the user that lets them know to try again.
 
+More in-depth details on this later in the document, including handling failures.
+
 ### Required updates to application deactivation logic
 
 Similar to activations, deactivation handling will also need to be updated to add S3 modifications into the workflow.
 
-I propose we update the deactivation step to include the following:
+The deactivation logic will need to be something like this:
 
 1. Open a database transaction
 2. Delete condition code directory (or directories) from S3
 3. Update configuration row in database (remove S3 URL(s))
 4. Commit database transaction
+
+More in-depth details on this later in the document, including handling failures.
 
 ### Activation file metadata
 
@@ -119,7 +135,7 @@ As mentioned earlier, each condition code directory should contain two files:
 - `active.json` - the serialized configuration file that will be read, deserialized, and used by the Lambda
 - `metadata.json` - a file containing metadata about the configuration
 
-The metadata file will not be used by the Refiner. It will only serve as a piece of data to help us debug issues and/or compare against a configuration record in the database.
+The metadata file will not be used by the Refiner. It will serve only as a piece of data to help us debug issues and/or compare against a configuration record in the database.
 
 #### Metadata inclusions
 
@@ -150,31 +166,35 @@ While this could work, it:
 
 #### Event driven
 
-Another idea is to forgo any sort of regular automated integrity checking in favor of an event driven approach. As described above, the database will always be the source of truth, the data flow is always one way, and the data in the S3 bucket will not be modified by other processes.
+Another idea is to forgo any sort of regular automated integrity checking in favor of an event driven approach. The "events" in this case would be user actions in the UI that impact activation and deactivation. As described above, the database will always be the source of truth, the data flow is always one way, and the data in the S3 bucket will not be modified by other processes.
 
 The only time the S3 data will be modified is during an activation or a deactivation. If we can guarantee that:
 
 1. S3 files are written
 2. Configuration database row is updated
 
-We can be confident that these objects are in sync. With good integration testing in place, I lean strongly towards this approach over polling.
+We can be confident that these objects are in sync. Additionally, we can increase safety during activations and deactivations by making use of a pointer file that Lambda will read from to determine the action it will take. More on this in the outcomes section.
 
 ## Decision Outcome
 
-Below are my recommendations for each of the problems listed above.
+Below are my recommendations for each of the problems described above.
 
 ### Directory and file naming
 
 For **directory and file naming** I propose we use the following format:
 
 ```sh
-{jurisdiction ID}/{condition code}/{version}/active.json
-{jurisdiction ID}/{condition code}/{version}/metadata.json
-{jurisdiction ID}/{condition code}/current.json
+.
+└── {jurisdiction ID}/
+    └── {condition code}/
+        ├── current.json
+        └── {version}/
+            ├── active.json
+            └── metadata.json
 ```
 
-- `jurisdiction ID` - the ID of the jurisdiction that appears in the RR
-- `condition code` - the child RSG SNOMED code of the condition
+- `jurisdiction ID` - the ID of the jurisdiction (comes from parsing the RR)
+- `condition code` - the child RSG SNOMED code of the condition (comes from parsing the RR)
 - `version` - the version of the configuration
 - `active.json` - the file containing the serialized version of a condition configuration, used by Lambda for the refining process
 - `metadata.json` - the file containing metadata about the activation, condition, and configuration. Not used by any automated process, informational only for the time being
@@ -195,7 +215,7 @@ The structure of `current.json` will be:
 }
 ```
 
-- `version` - the integer version of the active configuration, or `null` if inactive
+- `version` - the integer version of the currently active configuration, or `null` if inactive
 
 Once the Lambda receives the jurisdiction ID and reportable condition codes from the RR, it can check which versioned sub-directory it should be using.
 
@@ -242,13 +262,18 @@ A successful activation will produce the following changes:
 1. In S3, these files will be written
 
     ```sh
-    SDDH/186747009/1/active.json
-    SDDH/186747009/1/metadata.json
-    SDDH/186747009/current.json
-
-    SDDH/840539006/1/active.json
-    SDDH/840539006/1/metadata.json
-    SDDH/840539006/current.json
+    .
+    └── SDDH/
+        ├── 186747009/
+        │   ├── current.json
+        │   └── 1/
+        │       ├── active.json
+        │       └── metadata.json
+        └── 840539006/
+            ├── current.json
+            └── 1/
+                ├── active.json
+                └── metadata.json
     ```
 
 2. The database row of the version 1 COVID-19 configuration for SDDH will have its status set to `active` and its `s3_urls` will include the URLs for the two active configuration files written.
@@ -257,14 +282,18 @@ A successful activation will produce the following changes:
 
 A failed activation will produce the following changes:
 
-1. In S3, some files may be written
+1. In S3, only some of the necessary files could be written. Note that we're missing this directory's `current.json` and the entire subdirectory for `840539006`
 
     ```sh
-    SDDH/186747009/1/active.json
-    SDDH/186747009/1/metadata.json
+    .
+    └── SDDH/
+        └── 186747009/
+            └── 1/
+                ├── active.json
+                └── metadata.json
     ```
 
-2. In this scenario, only 2 files were written so the activation will fail
+2. In this scenario, only 2 of the necessary files were written so the activation will fail
 3. Database transaction ends, record is not updated, user is given an error message in the web app
 4. Lambda continues processing without issue since no `current.json` file exists
 
@@ -272,13 +301,13 @@ A failed activation will produce the following changes:
 
 Retrying a failed activation should work similarly to a typical activation. The main difference is that files produced by a failed activation may already exist.
 
-During the retry we should attempt to write files to the path we need them at. We should replace existing files already at that path if they exist.
+During the retry we should attempt to write files to the paths we need them at regardless of whether they exist already or not.
 
 ### Web application updates for deactivation
 
 We should not delete any files during a deactivation. The reason being that the Lambda continues to process data regardless of whether files are being modified via the web app.
 
-If a user goes to deactivate a configuration, we should modify the `current.json` file at each child RSG code that condition maps to.
+If a user goes to deactivate a configuration, we should modify the `current.json` for each child RSG code that condition maps to. This will leave configuration files in place while effectively deactivating the Refiner for a reportable condition code.
 
 #### Deactivation - Successful outcome
 
@@ -292,7 +321,7 @@ If jurisdiction `SDDH` deactivates their version 3 COVID-19 configuration, the f
 
 A deactivation failure means that one or both of these two operations failed:
 
-- `current.json` files new `version` value couldn't be written to S3
+- The `current.json`'s new `version` value couldn't be written to S3
 - The configuration's `status` update in the database was unsuccessful
 
 In order to address this we should:
@@ -305,7 +334,7 @@ A retry would mean:
 1. Cycling through all child RSG codes and setting their `current.json` value to `null`, even if they are already `null`
 2. Setting the `active` configuration to `inactive` after S3 updates occur
 
-This should be a relatively straightforward problem for us to handle.
+This can be event driven: if S3 actions fail but the configuration remains `active` in the web application, we can allow the user to attempt deactivation again. The application will try to go through the same process as it did previously.
 
 ### Metadata file
 
@@ -317,7 +346,7 @@ I suggest we include the following information to get us started:
 - TES version number of the condition
 - Condition name
 - Configuration version number
-- List of condition child RSG SNOMED codes (or S3 URLs to relevant directories)
+- List of condition child RSG SNOMED codes (or S3 URLs to related directories)
 
 The initial format of this file will look as such:
 
@@ -330,3 +359,7 @@ The initial format of this file will look as such:
     "childRsgSnomedCodes": [186747009,840539006]
 }
 ```
+
+## Links
+
+I used this to create these nice directory trees: [https://tree.nathanfriend.com/](https://tree.nathanfriend.com/)
