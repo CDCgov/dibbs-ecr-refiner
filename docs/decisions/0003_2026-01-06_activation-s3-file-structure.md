@@ -362,7 +362,7 @@ The initial format of this file will look as such:
 }
 ```
 
-### Activation/deactivation scenario
+### Real life scenario example
 
 The purpose of this section is to give a full, real-world example demonstrating how a user within a jurisdiction may interact with the application and the result it will have on the Lambda's processing.
 
