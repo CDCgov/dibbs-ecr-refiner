@@ -5,6 +5,7 @@ import classNames from 'classnames';
 import {
   PRIMARY_BUTTON_STYLES,
   SECONDARY_BUTTON_STYLES,
+  DISABLED_BUTTON_STYLES,
 } from '../../../../components/Button';
 import { TurnOffModal } from '../modals/TurnOffModal';
 
@@ -52,7 +53,11 @@ export function SwitchFromPrevious({
         <ModalToggleButton
           modalRef={deactivateRef}
           opener
-          className={classNames('self-start', SECONDARY_BUTTON_STYLES)}
+          className={classNames(
+            'self-start',
+            SECONDARY_BUTTON_STYLES,
+            DISABLED_BUTTON_STYLES
+          )}
           disabled={disabled}
         >
           Turn off configuration
