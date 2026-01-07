@@ -15,8 +15,8 @@ export interface RadioCellProps {
 }
 
 /**
- * RadioCell renders a clickable, accessible table cell containing a radio input for a section action.
- * Uses USWDS radio markup/classes for consistent styling and accessibility.
+ * Interaction is handled *only* through the radio input's onChange handler
+ * to prevent double-firing and duplicate API calls.
  */
 export function RadioCell({
   index,
@@ -65,6 +65,7 @@ export function RadioCell({
           tabIndex={-1}
           readOnly
           disabled={disabled}
+          onChange={() => applyAction(index, action)}
         />
         <span className="usa-radio__label -top-4.5 right-0"></span>
         <span className="usa-sr-only">{ariaLabel}</span>
