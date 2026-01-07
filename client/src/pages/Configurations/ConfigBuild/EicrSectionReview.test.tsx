@@ -45,10 +45,10 @@ describe('EicrSectionReview accessibility & behavior', () => {
     ];
 
     renderWithClient(
-        <EicrSectionReview
-            sectionProcessing={sections}
-            configurationId={configurationId}
-        />
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+      />
     );
 
     const input = screen.getByLabelText('Include entire section Section X');
@@ -63,35 +63,32 @@ describe('EicrSectionReview accessibility & behavior', () => {
     });
 
     expect(
-        await screen.findByLabelText('Include entire section Section X')
+      await screen.findByLabelText('Include entire section Section X')
     ).toBeChecked();
   });
 
   it('reverts optimistic UI and shows toast on API error', async () => {
     const configurationId = 'config-3';
-    const sections = [
-      { name: 'Section Z', code: 'Z01', action: 'retain' },
-    ];
+    const sections = [{ name: 'Section Z', code: 'Z01', action: 'refine' }];
 
     mockMutate.mockImplementation((_payload: any, options: any) => {
       options?.onError?.(new Error('Server error'));
     });
 
     renderWithClient(
-        <EicrSectionReview
-            sectionProcessing={sections}
-            configurationId={configurationId}
-        />
+      <EicrSectionReview
+        sectionProcessing={sections}
+        configurationId={configurationId}
+      />
     );
 
-    const cell = within(screen.getByRole('table'))
-        .getByLabelText('Include entire section Section Z')
-        .closest('td');
+    // Click the RADIO, not the <td>
+    const radio = screen.getByLabelText('Include entire section Section Z');
 
-    await userEvent.click(cell!);
+    await userEvent.click(radio);
 
     await waitFor(() => {
-      expect(mockShowToast).toHaveBeenCalled();
+      expect(mockShowToast).toHaveBeenCalledTimes(1);
       expect(mockFormatError).toHaveBeenCalled();
     });
   });
