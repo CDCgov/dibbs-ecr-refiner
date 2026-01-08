@@ -239,7 +239,10 @@ def mock_db_functions(monkeypatch):
 
         # Check if lock exists and is active
         existing_lock_data = _locks_storage.get(str(configuration_id))
-        if existing_lock_data and existing_lock_data["expires_at"] > now:
+        if (
+            existing_lock_data
+            and existing_lock_data["expires_at"].timestamp() > now.timestamp()
+        ):
             # Lock is active
             return existing_lock_data["user_id"] == str(user_id)
 
@@ -382,4 +385,6 @@ async def test_lock_renewal_and_expiry(authed_client):
     # Now lock should be considered expired
     lock = await ConfigurationLock.get_lock(str(configuration_id), db)
     assert lock is not None  # Lock still exists in storage
-    assert lock.expires_at < datetime.now(UTC)  # But it's expired
+    assert (
+        lock.expires_at.timestamp() < datetime.now(UTC).timestamp()
+    )  # But it's expired
