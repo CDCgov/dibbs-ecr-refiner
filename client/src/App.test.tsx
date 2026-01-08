@@ -30,11 +30,11 @@ vi.mock('./api/configurations/configurations', async () => {
 
 const renderApp = () => {
   return render(
-    <TestQueryClientProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <TestQueryClientProvider>
         <App />
-      </BrowserRouter>
-    </TestQueryClientProvider>
+      </TestQueryClientProvider>
+    </BrowserRouter>
   );
 };
 

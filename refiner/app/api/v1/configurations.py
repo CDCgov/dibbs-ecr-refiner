@@ -2,7 +2,7 @@ import csv
 import io
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from io import StringIO
 from logging import Logger
 from pathlib import Path
@@ -31,6 +31,9 @@ from app.db.configurations.activations.db import (
     activate_configuration_db,
     deactivate_configuration_db,
 )
+from app.db.users.db import get_user_by_id_db
+from app.db.users.model import UserInfoBase
+from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
     get_canonical_url_to_highest_inactive_version_map,
 )
@@ -269,6 +272,19 @@ async def create_configuration(
             detail="Unable to create configuration",
         )
 
+    # acquire lock for new configuration
+    success = await ConfigurationLock.acquire_lock(
+        configuration_id=config.id,
+        user_id=user.id,
+        jurisdiction_id=jd,
+        db=db,
+    )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to acquire lock for new configuration",
+        )
+
     return CreateConfigurationResponse(id=config.id, name=config.name)
 
 
@@ -286,9 +302,18 @@ class IncludedCondition:
 
 
 @dataclass(frozen=True)
+class LockedByUser(UserInfoBase):
+    """
+    LockedByUser response to provide user information.
+    """
+
+    pass
+
+
+@dataclass(frozen=True)
 class GetConfigurationResponse:
     """
-    Information about a specific configuration to return to the client.
+    Model for a configration response.
     """
 
     id: UUID
@@ -308,6 +333,7 @@ class GetConfigurationResponse:
     active_configuration_id: UUID | None
     active_version: int | None
     latest_version: int
+    lockedBy: LockedByUser | None
 
 
 @dataclass(frozen=True)
@@ -332,6 +358,7 @@ async def get_configuration(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
 ) -> GetConfigurationResponse:
     """
     Get a single configuration by its ID including all associated conditions.
@@ -348,6 +375,33 @@ async def get_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
+    # get current lock
+    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    # Only acquire lock if none or expired. Never override valid lock
+    # from other user.
+    if not lock or lock.expires_at <= datetime.now(UTC):
+        await ConfigurationLock.acquire_lock(
+            configuration_id=configuration_id,
+            user_id=user.id,
+            jurisdiction_id=jd,
+            db=db,
+        )
+        lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    locked_by = None
+    if lock and lock.expires_at > datetime.now(UTC):
+        try:
+            user_obj = await get_user_by_id_db(lock.user_id, db)
+            if user_obj:
+                locked_by = LockedByUser(
+                    id=user_obj.id, name=user_obj.username, email=user_obj.email
+                )
+            else:
+                locked_by = None
+                logger.warning(f"Could not find user with ID: {lock.user_id}")
+        except Exception as e:
+            locked_by = None
+            logger.error(f"Error fetching user for lock: {e}")
 
     # Fetch all included conditions
     conditions = await get_included_conditions_db(
@@ -441,6 +495,7 @@ async def get_configuration(
         active_version=active_version,
         active_configuration_id=active_configuration_id,
         latest_version=latest_version,
+        lockedBy=locked_by,
     )
 
 
@@ -470,6 +525,16 @@ async def get_configuration_export(
             detail="Configuration not found.",
         )
 
+    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    if (
+        lock
+        and str(lock.user_id) != str(user.id)
+        and lock.expires_at > datetime.now(UTC)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"{user.username}/{user.email} currently has this configuration open.",
+        )
     # Determine included conditions
     included_conditions = await get_included_conditions_db(
         included_conditions=config.included_conditions, db=db
@@ -596,6 +661,13 @@ async def associate_condition_codeset_with_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
@@ -665,6 +737,13 @@ async def remove_condition_codeset_from_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     condition = await get_condition_by_id_db(id=condition_id, db=db)
 
@@ -796,11 +875,24 @@ async def add_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     # Create a custom code object
+    allowed_systems = ["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+    if sanitized_system_name not in allowed_systems:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"System must be one of {allowed_systems}. Got: {sanitized_system_name}",
+        )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=sanitized_system_name,
+        system=_get_literal_system(sanitized_system_name),
         name=body.name,
     )
 
@@ -882,6 +974,13 @@ async def delete_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     updated_config = await delete_custom_code_from_configuration_db(
         config=config, system=system, code=code, user_id=user.id, db=db
@@ -955,12 +1054,21 @@ def _get_modified_custom_codes(
 
     # create a new code using the changes provided by the user.
     # use the old values as fallbacks.
+    allowed_systems = ["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+    new_system_value = (
+        _get_sanitized_system_name(updateInput.new_system)
+        if updateInput.new_system
+        else existing_code.system
+    )
+    if new_system_value not in allowed_systems:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"System must be one of {allowed_systems}. Got: {new_system_value}",
+        )
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
-        system=_get_sanitized_system_name(updateInput.new_system)
-        if updateInput.new_system
-        else existing_code.system,
+        system=_get_literal_system(new_system_value),
     )
 
     # check for duplicates
@@ -1042,6 +1150,13 @@ async def edit_custom_code(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
 
     custom_codes = _get_modified_custom_codes(
         config=config,
@@ -1429,6 +1544,14 @@ async def update_section_processing(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
     # convert payload to DB-friendly format (SectionUpdate dataclasses)
     section_updates = [
         SectionUpdate(code=s.code, action=s.action) for s in payload.sections
@@ -1592,3 +1715,52 @@ async def deactivate_configuration(
     return ConfigurationStatusUpdateResponse(
         configuration_id=deactivated_config.id, status=deactivated_config.status
     )
+
+
+@router.api_route(
+    "/{configuration_id}/release-lock",
+    methods=["POST"],
+    status_code=204,
+    tags=["configurations"],
+    operation_id="releaseConfigurationLock",
+)
+async def release_configuration_lock(
+    configuration_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> Response:
+    """
+    Release config lock if held by user.
+
+    204 if released. 409 if locked by other. 404 if no lock.
+    """
+    await ConfigurationLock.raise_if_locked_by_other(
+        str(configuration_id),
+        str(user.id),
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+    jd = user.jurisdiction_id
+    await ConfigurationLock.release_lock(
+        configuration_id=configuration_id,
+        user_id=user.id,
+        jurisdiction_id=jd,
+        db=db,
+    )
+    return Response(status_code=204)
+
+
+def _get_literal_system(system: str) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]:
+    """
+    Helper to ensure Literal type for custom code system.
+    """
+    if system == "LOINC":
+        return "LOINC"
+    if system == "SNOMED":
+        return "SNOMED"
+    if system == "ICD-10":
+        return "ICD-10"
+    if system == "RxNorm":
+        return "RxNorm"
+    raise ValueError(f"Invalid system: {system}")

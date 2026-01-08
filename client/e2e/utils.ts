@@ -20,14 +20,45 @@ export function refreshDatabase(): string {
   }
 }
 
-export async function login(page: Page, baseUrl = '/') {
+export function deleteConfigurationArtifacts(conditionName: string): string {
+  try {
+    execSync(`just db delete-configuration '${conditionName}'`, {
+      encoding: 'utf-8',
+    });
+    return 'Successfully cleaned up e2e configuration artifacts';
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null) {
+      const err = error as { stderr?: string; message?: string };
+      if (err.stderr) {
+        throw new Error(String(err.stderr));
+      } else if (err.message) {
+        throw new Error(String(err.message));
+      } else {
+        throw new Error(JSON.stringify(err));
+      }
+    }
+    throw new Error(String(error));
+  }
+}
+
+export async function login({
+  page,
+  user,
+  baseUrl = '/',
+}: {
+  page: Page;
+  user?: string | null;
+  baseUrl?: string;
+}) {
+  const username = typeof user === 'string' ? user : 'refiner';
+  const password = typeof user === 'string' ? user : 'refiner';
+
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
   await page.getByText('Log in').click();
-  await page
-    .getByRole('textbox', { name: 'Username or email' })
-    .fill('refiner');
+  await page.getByRole('textbox', { name: 'Username or email' }).click();
+  await page.getByRole('textbox', { name: 'Username or email' }).fill(username);
   await page.getByRole('textbox', { name: 'Username or email' }).press('Tab');
-  await page.getByRole('textbox', { name: 'Password' }).fill('refiner');
+  await page.getByRole('textbox', { name: 'Password' }).fill(password);
   await page.getByRole('button', { name: 'Sign In' }).click();
   // check that we are on the logged-in home screen
   await expect(
