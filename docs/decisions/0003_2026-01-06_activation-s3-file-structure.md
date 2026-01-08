@@ -362,6 +362,12 @@ The initial format of this file will look as such:
 }
 ```
 
+### Tickets
+
+Epic: [[EPIC] Production Activation (Lambda)](https://github.com/CDCgov/dibbs-ecr-refiner/issues/401)
+
+Tickets will be created or updated as needed to be relevant to the plan described in this document.
+
 ### Real life scenario example
 
 The purpose of this section is to give a full, real-world example demonstrating how a user within a jurisdiction may interact with the application and the result it will have on the Lambda's processing.
