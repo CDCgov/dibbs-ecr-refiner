@@ -32,6 +32,8 @@ This document will provide information on the following topics:
 - Activation file metadata
 - Ensuring database and file consistency
 
+This top section will describe the problems and offer some potential solutions. Please jump to my recommendations in [this section](#decision-outcome).
+
 ### Directory naming and identification by Lambda
 
 When the Lambda receives an SQS message, it will contain information that describes where the eICR and RR files are located. The Refiner will attempt to fetch both of these files. Once it has this information, it will parse the RR for the following data:
