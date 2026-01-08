@@ -22,11 +22,9 @@ export function TurnOnButtons({
       <ModalToggleButton
         modalRef={activateRef}
         opener
-        className={classNames(
-          'self-start',
-          SECONDARY_BUTTON_STYLES,
-          DISABLED_BUTTON_STYLES
-        )}
+        className={classNames('self-start', SECONDARY_BUTTON_STYLES, {
+          disabled: DISABLED_BUTTON_STYLES,
+        })}
         disabled={disabled}
       >
         Turn on configuration
