@@ -54,7 +54,7 @@ class ConfigurationLock:
         now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=LOCK_TIMEOUT_MINUTES)
         existing = await ConfigurationLock.get_lock(str(configuration_id), db)
-        if existing and existing.expires_at > now:
+        if existing and existing.expires_at.timestamp() > now.timestamp():
             # Lock is active
             return existing.user_id == str(user_id)  # Only allow if same user
         # Acquire or replace lock
@@ -146,7 +146,7 @@ class ConfigurationLock:
         if (
             lock
             and str(lock.user_id) != str(user_id)
-            and lock.expires_at > datetime.now(UTC)
+            and lock.expires_at.timestamp() > datetime.now(UTC).timestamp()
         ):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
