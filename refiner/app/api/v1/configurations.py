@@ -380,7 +380,7 @@ async def get_configuration(
     lock = await ConfigurationLock.get_lock(str(configuration_id), db)
     # Only acquire lock if none or expired. Never override valid lock
     # from other user.
-    if not lock or lock.expires_at <= datetime.now(UTC):
+    if not lock or lock.expires_at.timestamp() <= datetime.now(UTC).timestamp():
         await ConfigurationLock.acquire_lock(
             configuration_id=configuration_id,
             user_id=user.id,
@@ -389,7 +389,7 @@ async def get_configuration(
         )
         lock = await ConfigurationLock.get_lock(str(configuration_id), db)
     locked_by = None
-    if lock and lock.expires_at > datetime.now(UTC):
+    if lock and lock.expires_at.timestamp() > datetime.now(UTC).timestamp():
         try:
             user_obj = await get_user_by_id_db(lock.user_id, db)
             if user_obj:
@@ -529,7 +529,7 @@ async def get_configuration_export(
     if (
         lock
         and str(lock.user_id) != str(user.id)
-        and lock.expires_at > datetime.now(UTC)
+        and lock.expires_at.timestamp() > datetime.now(UTC).timestamp()
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
