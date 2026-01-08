@@ -17,6 +17,9 @@ class _EventBase:
         "delete_code",
         "edit_code",
         "section_update",
+        "lock_acquire",
+        "lock_release",
+        "lock_renew",
     ]
     action_text: str
 

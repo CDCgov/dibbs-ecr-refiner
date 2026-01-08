@@ -14,6 +14,7 @@ import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionP
 import type { GetConfigurationResponseVersion } from './getConfigurationResponseVersion';
 import type { GetConfigurationResponseActiveConfigurationId } from './getConfigurationResponseActiveConfigurationId';
 import type { GetConfigurationResponseActiveVersion } from './getConfigurationResponseActiveVersion';
+import type { GetConfigurationResponseLockedBy } from './getConfigurationResponseLockedBy';
 
 export interface GetConfigurationResponse {
   id: string;
@@ -33,4 +34,5 @@ export interface GetConfigurationResponse {
   active_configuration_id: GetConfigurationResponseActiveConfigurationId;
   active_version: GetConfigurationResponseActiveVersion;
   latest_version: number;
+  lockedBy: GetConfigurationResponseLockedBy;
 }
