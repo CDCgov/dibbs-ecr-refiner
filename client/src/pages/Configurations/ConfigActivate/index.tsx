@@ -1,5 +1,4 @@
 import { useParams } from 'react-router';
-import { useLogin } from '../../../hooks/Login';
 import { ConfigLockBanner } from '../ConfigBuild/ConfigLockBanner';
 import { Title } from '../../../components/Title';
 import {
@@ -29,15 +28,10 @@ export function ConfigActivate() {
   // release lock on beforeunload
   useConfigLockRelease(id);
 
-  const [user] = useLogin();
-  const isLocked = Boolean(
-    configuration?.data.lockedBy &&
-    user &&
-    configuration?.data.lockedBy.id !== user.id
-  );
-
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
+
+  const { is_locked } = configuration.data;
 
   return (
     <div>
@@ -57,10 +51,10 @@ export function ConfigActivate() {
           <Steps configurationId={id} />
         </StepsContainer>
       </NavigationContainer>
-      {isLocked && (
+      {is_locked && (
         <ConfigLockBanner
-          lockedByName={configuration.data.lockedBy?.name}
-          lockedByEmail={configuration.data.lockedBy?.email}
+          lockedByName={configuration.data.locked_by?.name}
+          lockedByEmail={configuration.data.locked_by?.email}
         />
       )}
       <SectionContainer>
@@ -89,7 +83,7 @@ export function ConfigActivate() {
           <div className="mt-6">
             <ActivationButtons
               configurationData={configuration.data}
-              isLocked={isLocked}
+              isLocked={is_locked}
             />
           </div>
         </div>

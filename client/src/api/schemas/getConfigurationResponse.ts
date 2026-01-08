@@ -34,5 +34,6 @@ export interface GetConfigurationResponse {
   active_configuration_id: GetConfigurationResponseActiveConfigurationId;
   active_version: GetConfigurationResponseActiveVersion;
   latest_version: number;
-  lockedBy: GetConfigurationResponseLockedBy;
+  is_locked: boolean;
+  locked_by: GetConfigurationResponseLockedBy;
 }

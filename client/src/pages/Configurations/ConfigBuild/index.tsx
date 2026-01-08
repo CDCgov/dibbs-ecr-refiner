@@ -56,7 +56,6 @@ import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const [user] = useLogin();
 
   // release lock on beforeunload
   useConfigLockRelease(id);
@@ -68,6 +67,8 @@ export function ConfigBuild() {
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
+
+  const { is_locked } = configuration.data;
 
   // sort so the default code set always displays first
   const sortedCodeSets = configuration.data.code_sets.sort((a) => {
@@ -100,11 +101,10 @@ export function ConfigBuild() {
           step="build"
         />
       ) : null}
-      {configuration.data.lockedBy &&
-      configuration.data.lockedBy.id !== user?.id ? (
+      {is_locked ? (
         <ConfigLockBanner
-          lockedByName={configuration.data.lockedBy.name}
-          lockedByEmail={configuration.data.lockedBy.email}
+          lockedByName={configuration.data.locked_by?.name}
+          lockedByEmail={configuration.data.locked_by?.email}
         />
       ) : null}
       <SectionContainer>
@@ -123,7 +123,7 @@ export function ConfigBuild() {
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           deduplicated_codes={configuration.data.deduplicated_codes}
-          lock={configuration.data.lockedBy}
+          is_locked={is_locked}
         />
       </SectionContainer>
     </div>
@@ -155,15 +155,8 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
-> & {
-  lock?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-};
-
-import { useLogin } from '../../../hooks/Login';
+  | 'is_locked'
+>;
 
 function Builder({
   id,
@@ -173,11 +166,8 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
-  lock,
+  is_locked,
 }: BuilderProps) {
-  const [user] = useLogin();
-  const isLocked = Boolean(lock && user && lock.id !== user.id);
-
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
     'none' | 'codeset' | 'custom' | 'sections'
@@ -245,7 +235,7 @@ function Builder({
                 id="open-codesets"
                 aria-label="Add new code set to configuration"
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                disabled={isLocked}
+                disabled={is_locked}
               >
                 ADD
               </Button>
@@ -287,7 +277,7 @@ function Builder({
                         configurationId={id}
                         conditionId={codeSet.condition_id}
                         conditionName={codeSet.display_name}
-                        disabled={isLocked}
+                        disabled={is_locked}
                         onClick={() =>
                           setCodesetListItemFocus(codeSet.condition_id)
                         }
@@ -363,7 +353,7 @@ function Builder({
                 opener
                 className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
                 aria-label="Add new custom code"
-                disabled={isLocked}
+                disabled={is_locked}
               >
                 Add code
               </ModalToggleButton>
@@ -372,7 +362,7 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
-                isLocked={isLocked}
+                isLocked={is_locked}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -380,7 +370,7 @@ function Builder({
               <EicrSectionReview
                 configurationId={id}
                 sectionProcessing={section_processing}
-                isLocked={isLocked}
+                isLocked={is_locked}
               />
             </>
           ) : null}
