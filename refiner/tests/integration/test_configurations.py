@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from psycopg.rows import dict_row
 
 from tests.test_conditions import TEST_SESSION_TOKEN
 
@@ -14,7 +13,7 @@ class TestConfigurations:
         self, setup, authed_client, test_username, db_conn
     ):
         # Get a condition to use to create a config
-        async with db_conn.cursor(row_factory=dict_row) as cur:
+        async with db_conn.cursor() as cur:
             await cur.execute(
                 """
                 SELECT id, display_name
@@ -35,69 +34,40 @@ class TestConfigurations:
         assert response.json()["name"] == "Drowning and Submersion"
 
         # Assert that associated config creation event was logged
-        # Note: Creating a configuration also acquires a lock, so we expect 2 events
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == 200
         audit_events = response.json()["audit_events"]
-        assert len(audit_events) == 2
-        # Find the "Created configuration" event (not the lock acquisition event)
-        creation_event = next(
-            (e for e in audit_events if e["action_text"] == "Created configuration"),
-            None,
-        )
-        assert creation_event is not None
-        assert creation_event["username"] == test_username
-        assert creation_event["configuration_name"] == condition["display_name"]
+        assert len(audit_events) == 1
+        event = audit_events[0]
+        assert event["username"] == test_username
+        assert event["configuration_name"] == condition["display_name"]
+        assert event["action_text"] == "Created configuration"
 
         # Attempt to create the same config again (should fail)
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == 409
 
-        # Make sure no new event was created during failure
-        # (should still be 2 from the successful creation above)
+        # Make sure no event was created during failure
         response = await authed_client.get("/api/v1/events/")
         assert response.status_code == 200
         failure_audit_events = response.json()["audit_events"]
-        assert len(failure_audit_events) == 2
+        assert len(failure_audit_events) == 1
 
     async def test_activate_configuration(self, setup, authed_client, db_conn):
-        # Ensure the condition exists
-        async with db_conn.cursor(row_factory=dict_row) as cur:
+        # Get a configuration from the created config
+        async with db_conn.cursor() as cur:
             await cur.execute(
                 """
-                SELECT id, display_name
-                FROM conditions
-                WHERE display_name = 'Drowning and Submersion'
-                AND version = '3.0.0'
+                SELECT id, condition_canonical_url, condition_id
+                FROM configurations
+                WHERE name = 'Drowning and Submersion';
                 """
             )
-            condition = await cur.fetchone()
-            assert condition is not None
+            configuration = await cur.fetchone()
+            assert configuration is not None
 
-        # Activate any existing draft configuration for this condition
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id FROM configurations
-                WHERE name = 'Drowning and Submersion' AND status = 'draft';
-                """
-            )
-            draft_config = await cur.fetchone()
-        if draft_config:
-            draft_id = draft_config["id"]
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{draft_id}/activate"
-            )
-            assert response.status_code == 200
-
-        # Now create a new configuration for activation
-        payload = {"condition_id": str(condition["id"])}
-        response = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert response.status_code == 200
-        config_data = response.json()
-        initial_configuration_id = config_data["id"]
-        # Use the condition_id from the payload for subsequent steps
-        condition_id_to_test = payload["condition_id"]
+        condition_id_to_test = str(configuration["condition_id"])
+        initial_configuration_id = str(configuration["id"])
 
         # Activate config
         response = await authed_client.patch(
@@ -131,18 +101,13 @@ class TestConfigurations:
         validation_response = await authed_client.get(
             f"/api/v1/configurations/{initial_configuration_id}"
         )
-        if validation_response.status_code != 200:
-            print("Validation response error:", validation_response.text)
-        # NOTE: The backend currently returns a 500 error when fetching an inactive configuration.
-        # This is a bug and should be fixed in the API. Accepting 500 here as a temporary workaround.
-        assert validation_response.status_code in [200, 404, 500]
-        if validation_response.status_code == 200:
-            validation_response_data = validation_response.json()
-            assert validation_response_data["id"] == initial_configuration_id
-            assert validation_response_data["status"] == "inactive"
+        assert validation_response.status_code == 200
+        validation_response_data = validation_response.json()
+        assert validation_response_data["id"] == initial_configuration_id
+        assert validation_response_data["status"] == "inactive"
 
     async def test_activate_rollback(self, setup, db_conn):
-        async with db_conn.cursor(row_factory=dict_row) as cur:
+        async with db_conn.cursor() as cur:
             await cur.execute(
                 """
                     SELECT id, condition_canonical_url, condition_id
@@ -174,7 +139,7 @@ class TestConfigurations:
                     f"/api/v1/configurations/{initial_configuration_id}/activate"
                 )
 
-                async with db_conn.cursor(row_factory=dict_row) as cur:
+                async with db_conn.cursor() as cur:
                     query = """
                             SELECT id, condition_canonical_url, condition_id, status
                             FROM configurations
@@ -190,7 +155,7 @@ class TestConfigurations:
 
     async def test_deactivate_configuration(self, setup, authed_client, db_conn):
         # Get the activated configuration from the previous tests
-        async with db_conn.cursor(row_factory=dict_row) as cur:
+        async with db_conn.cursor() as cur:
             await cur.execute(
                 """
                 SELECT id, condition_canonical_url, condition_id

@@ -14,7 +14,6 @@ import { useQueryClient } from '@tanstack/react-query';
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
-  isLocked?: boolean;
 }
 
 /**
@@ -26,7 +25,6 @@ interface EicrSectionReviewProps {
 export function EicrSectionReview({
   configurationId,
   sectionProcessing,
-  isLocked,
 }: EicrSectionReviewProps) {
   // Store selected action for each section in state
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
@@ -58,9 +56,6 @@ export function EicrSectionReview({
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => {
-    if (isLocked) {
-      return;
-    }
     // Capture previous action so we can revert if the mutation fails
     const previousAction = selectedActions[index] ?? 'retain';
 
@@ -178,7 +173,6 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'refine'}
                 ariaLabel={`Include and refine section ${section.name}`}
                 applyAction={applyAction}
-                disabled={isLocked}
               />
               <RadioCell
                 index={index}
@@ -186,7 +180,6 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'retain'}
                 ariaLabel={`Include entire section ${section.name}`}
                 applyAction={applyAction}
-                disabled={isLocked}
               />
 
               <RadioCell
@@ -195,7 +188,6 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'remove'}
                 ariaLabel={`Remove section ${section.name}`}
                 applyAction={applyAction}
-                disabled={isLocked}
               />
             </tr>
           ))}

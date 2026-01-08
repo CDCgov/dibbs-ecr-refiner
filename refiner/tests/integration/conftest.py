@@ -6,6 +6,7 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from lxml import etree
+from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
@@ -50,7 +51,7 @@ def test_username():
 @pytest_asyncio.fixture(scope="session")
 async def db_conn():
     conn = await psycopg.AsyncConnection.connect(
-        "postgresql://postgres:refiner@localhost:5432/refiner"
+        "postgresql://postgres:refiner@localhost:5432/refiner", row_factory=dict_row
     )
     try:
         yield conn
@@ -286,37 +287,17 @@ def setup(request):
     covid_id, covid_canonical_url = get_id_and_url(covid_result)
     flu_id, flu_canonical_url = get_id_and_url(flu_result)
     zika_id, zika_canonical_url = get_id_and_url(zika_result)
-    # Add Drowning and Submersion condition lookup
-    drowning_result = refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-t",
-            "-A",
-            "-F",
-            "|",
-            "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Drowning and Submersion' AND version = '3.0.0';",
-        ],
-        "db",
-    )
-    drowning_id, drowning_canonical_url = get_id_and_url(drowning_result)
 
     if (
         not covid_id
         or not flu_id
         or not zika_id
-        or not drowning_id
         or not covid_canonical_url
         or not flu_canonical_url
         or not zika_canonical_url
-        or not drowning_canonical_url
     ):
         raise RuntimeError(
-            f"Could not find COVID-19, Influenza, Zika Virus Disease, or Drowning and Submersion condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url}), Zika=({zika_id}, {zika_canonical_url}), Drowning=({drowning_id}, {drowning_canonical_url})"
+            f"Could not find COVID-19, Influenza, or Zika Virus Disease condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url}), Zika=({zika_id}, {zika_canonical_url})"
         )
     print(
         f"✅ Found COVID-19 condition_id: {covid_id} canonical_url: {covid_canonical_url}"
@@ -327,12 +308,9 @@ def setup(request):
     print(
         f"✅ Found Zika Virus Disease condition_id: {zika_id} canonical_url: {zika_canonical_url}"
     )
-    print(
-        f"✅ Found Drowning and Submersion condition_id: {drowning_id} canonical_url: {drowning_canonical_url}"
-    )
 
     print(
-        "📝 Inserting test configurations for integration tests (app-aligned schema)..."
+        "📝 Inserting two test configurations for integration tests (app-aligned schema)..."
     )
 
     # Define the default section processing that matches production behavior
@@ -398,8 +376,6 @@ def setup(request):
             1
         )
         ON CONFLICT DO NOTHING;
-
-
     END $$;
     """
     refiner_service.exec_in_container(

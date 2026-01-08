@@ -5,8 +5,6 @@ import {
 } from '../layout';
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
-import { useLogin } from '../../../hooks/Login';
-import { ConfigLockBanner } from '../ConfigBuild/ConfigLockBanner';
 import { Title } from '../../../components/Title';
 import { RunTest } from '../../Testing/RunTest';
 import { useState } from 'react';
@@ -23,7 +21,6 @@ import { Uploading } from '../../Testing/Uploading';
 import { Status } from '../ConfigBuild/Status';
 import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { FileUploadWarning } from '../../../components/FileUploadWarning';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 
 export function ConfigTest() {
   const { id } = useParams<{ id: string }>();
@@ -32,16 +29,6 @@ export function ConfigTest() {
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
-
-  // release lock on beforeunload
-  useConfigLockRelease(id);
-
-  const [user] = useLogin();
-  const isLocked = Boolean(
-    configuration?.data.lockedBy &&
-    user &&
-    configuration?.data.lockedBy.id !== user.id
-  );
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -64,18 +51,12 @@ export function ConfigTest() {
           <Steps configurationId={id} />
         </StepsContainer>
       </NavigationContainer>
-      {isLocked && (
-        <ConfigLockBanner
-          lockedByName={configuration.data.lockedBy?.name}
-          lockedByEmail={configuration.data.lockedBy?.email}
-        />
-      )}
       <SectionContainer>
         <ConfigurationTitleBar
           step="test"
           condition={configuration.data.display_name}
         />
-        <Tester config={configuration.data} isLocked={isLocked} />
+        <Tester config={configuration.data} />
       </SectionContainer>
     </div>
   );
@@ -85,10 +66,9 @@ type Status = 'idle' | 'pending' | 'error' | 'success';
 
 interface TesterProps {
   config: GetConfigurationResponse;
-  isLocked?: boolean;
 }
 
-function Tester({ config, isLocked = false }: TesterProps) {
+function Tester({ config }: TesterProps) {
   const [status, setStatus] = useState<Status>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const {
@@ -121,7 +101,6 @@ function Tester({ config, isLocked = false }: TesterProps) {
           onClickCustomFile={() => runTest(selectedFile)}
           selectedFile={selectedFile}
           setSelectedFile={setSelectedFile}
-          isLocked={isLocked}
         />
       )}
 

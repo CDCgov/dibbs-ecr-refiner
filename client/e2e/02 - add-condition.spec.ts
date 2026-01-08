@@ -436,12 +436,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await expect(page.getByRole('row')).toHaveCount(11);
     await page.getByRole('button', { name: 'Next' }).click();
 
-    // should be 11 items on page 2 (including header)
-    await expect(page.getByRole('row')).toHaveCount(11);
-    await page.getByRole('button', { name: 'Next' }).click();
-
-    // should be 5 items on page 3 (including header)
-    await expect(page.getByRole('row')).toHaveCount(3);
+    // should be 4 items on page 2 (including header)
+    await expect(page.getByRole('row')).toHaveCount(2);
   });
 
   test('should be able export the created config', async ({

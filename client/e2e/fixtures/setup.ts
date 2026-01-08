@@ -49,7 +49,7 @@ const defaultFixturesTest = baseTest.extend<object>({
       name: 'Return to homepage',
     });
     if (returnToHomepageButton) {
-      await login({ page, baseUrl: 'http://localhost:8081' });
+      await login(page, 'http://localhost:8081');
     }
     await use(page);
   },

@@ -41,24 +41,14 @@ export function deleteConfigurationArtifacts(conditionName: string): string {
   }
 }
 
-export async function login({
-  page,
-  user,
-  baseUrl = '/',
-}: {
-  page: Page;
-  user?: string | null;
-  baseUrl?: string;
-}) {
-  const username = typeof user === 'string' ? user : 'refiner';
-  const password = typeof user === 'string' ? user : 'refiner';
-
+export async function login(page: Page, baseUrl = '/') {
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
   await page.getByText('Log in').click();
-  await page.getByRole('textbox', { name: 'Username or email' }).click();
-  await page.getByRole('textbox', { name: 'Username or email' }).fill(username);
+  await page
+    .getByRole('textbox', { name: 'Username or email' })
+    .fill('refiner');
   await page.getByRole('textbox', { name: 'Username or email' }).press('Tab');
-  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.getByRole('textbox', { name: 'Password' }).fill('refiner');
   await page.getByRole('button', { name: 'Sign In' }).click();
   // check that we are on the logged-in home screen
   await expect(

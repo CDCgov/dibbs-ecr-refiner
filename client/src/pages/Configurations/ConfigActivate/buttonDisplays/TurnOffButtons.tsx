@@ -1,20 +1,13 @@
 import { ModalRef, ModalToggleButton } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 import { useRef } from 'react';
-import {
-  DISABLED_BUTTON_STYLES,
-  SECONDARY_BUTTON_STYLES,
-} from '../../../../components/Button';
+import { SECONDARY_BUTTON_STYLES } from '../../../../components/Button';
 import { TurnOffModal } from '../modals/TurnOffModal';
 
 interface TurnOffButtonsProps {
   handleDeactivation: () => void;
-  disabled?: boolean;
 }
-export function TurnOffButtons({
-  handleDeactivation,
-  disabled,
-}: TurnOffButtonsProps) {
+export function TurnOffButtons({ handleDeactivation }: TurnOffButtonsProps) {
   const deactivateRef = useRef<ModalRef>(null);
 
   return (
@@ -22,12 +15,7 @@ export function TurnOffButtons({
       <ModalToggleButton
         modalRef={deactivateRef}
         opener
-        className={classNames(
-          'self-start',
-          SECONDARY_BUTTON_STYLES,
-          DISABLED_BUTTON_STYLES
-        )}
-        disabled={disabled}
+        className={classNames('self-start', SECONDARY_BUTTON_STYLES)}
       >
         Turn off current version
       </ModalToggleButton>

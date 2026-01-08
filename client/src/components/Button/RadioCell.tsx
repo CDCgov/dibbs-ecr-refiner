@@ -1,13 +1,10 @@
 import { UpdateSectionProcessingEntryAction } from '../../api/schemas';
 
-import classNames from 'classnames';
-
 export interface RadioCellProps {
   index: number;
   action: UpdateSectionProcessingEntryAction;
   checked: boolean;
   ariaLabel: string;
-  disabled?: boolean;
   applyAction: (
     index: number,
     action: UpdateSectionProcessingEntryAction
@@ -24,36 +21,10 @@ export function RadioCell({
   checked,
   ariaLabel,
   applyAction,
-  disabled,
 }: RadioCellProps) {
   return (
-    <td
-      className={classNames(
-        'text-center',
-        '!break-all',
-        '!whitespace-normal',
-        'focus:outline-none',
-        { 'cursor-not-allowed': disabled }
-      )}
-      tabIndex={0}
-      aria-disabled={disabled}
-      onKeyDown={(e) => {
-        if (e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-          applyAction(index, action);
-        }
-      }}
-    >
-      <label
-        className={classNames(
-          'usa-radio',
-          'm-0',
-          'block',
-          'bg-transparent',
-          { 'cursor-pointer': !disabled },
-          { 'cursor-not-allowed': disabled }
-        )}
-      >
+    <td className="text-center align-middle !break-all !whitespace-normal">
+      <label className="usa-radio m-0 block cursor-pointer bg-transparent">
         <input
           className="usa-radio__input"
           type="radio"
@@ -61,9 +32,6 @@ export function RadioCell({
           value={action}
           aria-label={ariaLabel}
           checked={checked}
-          tabIndex={-1}
-          readOnly
-          disabled={disabled}
           onChange={() => applyAction(index, action)}
         />
         <span className="usa-radio__label -top-4.5 right-0"></span>

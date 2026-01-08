@@ -2,7 +2,7 @@
 
 Date: 2025-10-31
 
-Status: Accepted
+Status: Proposed
 
 ## Context and Problem Statement
 

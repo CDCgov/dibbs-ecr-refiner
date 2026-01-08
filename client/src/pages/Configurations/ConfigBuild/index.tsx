@@ -50,16 +50,10 @@ import { Spinner } from '../../../components/Spinner';
 import { TesLink } from '../TesLink';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
-import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const [user] = useLogin();
-
-  // release lock on beforeunload
-  useConfigLockRelease(id);
   const {
     data: configuration,
     isPending,
@@ -100,13 +94,6 @@ export function ConfigBuild() {
           step="build"
         />
       ) : null}
-      {configuration.data.lockedBy &&
-      configuration.data.lockedBy.id !== user?.id ? (
-        <ConfigLockBanner
-          lockedByName={configuration.data.lockedBy.name}
-          lockedByEmail={configuration.data.lockedBy.email}
-        />
-      ) : null}
       <SectionContainer>
         <div className="content flex flex-wrap justify-between">
           <ConfigurationTitleBar
@@ -123,7 +110,6 @@ export function ConfigBuild() {
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           deduplicated_codes={configuration.data.deduplicated_codes}
-          lock={configuration.data.lockedBy}
         />
       </SectionContainer>
     </div>
@@ -155,15 +141,7 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
-> & {
-  lock?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-};
-
-import { useLogin } from '../../../hooks/Login';
+>;
 
 function Builder({
   id,
@@ -173,11 +151,7 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
-  lock,
 }: BuilderProps) {
-  const [user] = useLogin();
-  const isLocked = Boolean(lock && user && lock.id !== user.id);
-
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
     'none' | 'codeset' | 'custom' | 'sections'
@@ -245,7 +219,6 @@ function Builder({
                 id="open-codesets"
                 aria-label="Add new code set to configuration"
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                disabled={isLocked}
               >
                 ADD
               </Button>
@@ -287,7 +260,6 @@ function Builder({
                         configurationId={id}
                         conditionId={codeSet.condition_id}
                         conditionName={codeSet.display_name}
-                        disabled={isLocked}
                         onClick={() =>
                           setCodesetListItemFocus(codeSet.condition_id)
                         }
@@ -363,7 +335,6 @@ function Builder({
                 opener
                 className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
                 aria-label="Add new custom code"
-                disabled={isLocked}
               >
                 Add code
               </ModalToggleButton>
@@ -372,7 +343,6 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
-                isLocked={isLocked}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -380,7 +350,6 @@ function Builder({
               <EicrSectionReview
                 configurationId={id}
                 sectionProcessing={section_processing}
-                isLocked={isLocked}
               />
             </>
           ) : null}
@@ -443,7 +412,6 @@ interface DeleteCodeSetButtonProps {
   conditionId: string;
   conditionName: string;
   onClick: () => void;
-  disabled?: boolean;
 }
 
 function DeleteCodeSetButton({
@@ -451,7 +419,6 @@ function DeleteCodeSetButton({
   conditionId,
   conditionName,
   onClick,
-  disabled,
 }: DeleteCodeSetButtonProps) {
   const { mutate: disassociateMutation, isPending } =
     useDisassociateConditionWithConfiguration();
@@ -498,10 +465,9 @@ function DeleteCodeSetButton({
 
   return (
     <button
-      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
-      disabled={disabled}
     >
       <Icon.Delete className="!fill-red-700" size={3} aria-hidden />
     </button>
@@ -544,7 +510,6 @@ interface CustomCodesDetailProps {
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
-  isLocked?: boolean;
 }
 
 function CustomCodesDetail({
@@ -552,7 +517,6 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
   deduplicated_codes,
-  isLocked,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -594,14 +558,12 @@ function CustomCodesDetail({
                   className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
-                  disabled={isLocked}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
-                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline disabled:!cursor-not-allowed"
+                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline"
                   aria-label={`Delete custom code ${customCode.name}`}
-                  disabled={isLocked}
                   onClick={() => {
                     deleteCode(
                       {

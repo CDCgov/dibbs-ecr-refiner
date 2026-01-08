@@ -1,6 +1,4 @@
 import { useParams } from 'react-router';
-import { useLogin } from '../../../hooks/Login';
-import { ConfigLockBanner } from '../ConfigBuild/ConfigLockBanner';
 import { Title } from '../../../components/Title';
 import {
   NavigationContainer,
@@ -15,7 +13,6 @@ import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { Status } from '../ConfigBuild/Status';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { ActivationButtons } from './ActivationButtons';
-import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 
 export function ConfigActivate() {
   const { id } = useParams<{ id: string }>();
@@ -25,16 +22,6 @@ export function ConfigActivate() {
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
-
-  // release lock on beforeunload
-  useConfigLockRelease(id);
-
-  const [user] = useLogin();
-  const isLocked = Boolean(
-    configuration?.data.lockedBy &&
-    user &&
-    configuration?.data.lockedBy.id !== user.id
-  );
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
@@ -57,12 +44,6 @@ export function ConfigActivate() {
           <Steps configurationId={id} />
         </StepsContainer>
       </NavigationContainer>
-      {isLocked && (
-        <ConfigLockBanner
-          lockedByName={configuration.data.lockedBy?.name}
-          lockedByEmail={configuration.data.lockedBy?.email}
-        />
-      )}
       <SectionContainer>
         <ConfigurationTitleBar
           step="activate"
@@ -89,8 +70,7 @@ export function ConfigActivate() {
           <div className="mt-6">
             <ActivationButtons
               configurationData={configuration.data}
-              isLocked={isLocked}
-            />
+            ></ActivationButtons>
           </div>
         </div>
       </SectionContainer>

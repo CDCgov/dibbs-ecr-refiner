@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.db.configurations.db import SectionUpdate, update_section_processing_db
+from app.db.configurations.db import update_section_processing_db
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -113,6 +113,8 @@ async def test_update_section_processing_valid():
     fake_db = _FakeDB(row=row)
 
     # Payload for updates
+    from app.db.configurations.db import SectionUpdate
+
     section_updates = [
         SectionUpdate(code="A", action="refine"),
         SectionUpdate(code="B", action="retain"),
@@ -163,6 +165,8 @@ async def test_update_section_processing_invalid_action():
     )
 
     # Invalid payload
+    from app.db.configurations.db import SectionUpdate
+
     section_updates = [
         SectionUpdate(code="A", action="invalid_action"),
     ]
@@ -230,6 +234,8 @@ async def test_update_section_processing_unknown_code():
     fake_db = _FakeDB(row=row)
 
     # Payload with unknown code
+    from app.db.configurations.db import SectionUpdate
+
     section_updates = [
         SectionUpdate(code="Unknown", action="refine"),
     ]

@@ -110,11 +110,6 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         "app.api.v1.configurations.get_conditions_db",
         AsyncMock(return_value=[]),
     )
-    # Mock ConfigurationLock
-    monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.get_lock",
-        AsyncMock(return_value=None),
-    )
 
     payload = {"sections": [{"code": "A", "action": "remove"}]}
 
@@ -162,11 +157,6 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.update_section_processing_db",
-        AsyncMock(return_value=None),
-    )
-    # Mock ConfigurationLock
-    monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.get_lock",
         AsyncMock(return_value=None),
     )
 

@@ -23,17 +23,6 @@ When an update command is run `exports/refiner-realm.json` is modified and will 
 
 Once run, your newly exported `refiner-realm.json` will be placed into `./exports` on your host machine (thanks to the volume we have defined).
 
-> [!IMPORTANT]
-> After updating the `refiner-realm.json` file you may not see your changes
-> reflected in `dibbs-ecr-refiner-auth-1` service. Take a look at the logs for
-> this service using `docker logs -f dibbs-ecr-refiner-auth-1` and see if
-> there's a line in the log that looks like the following:
-> `[org.keycloak.exportimport.util.ImportUtils] (main) Realm 'refiner' already
-> exists. Import skipped`
->
-> If you see this, make sure you delete all your containers and then restart it
-> again. This should fix the caching issue and pull in your newly updated file.
-
 ## Developer Information
 
 ### Accessing the Keycloak GUI
@@ -48,11 +37,5 @@ A test user has been created that developers can use to log into the Refiner app
 
 - username: `refiner`
 - password: `refiner`
-
-There's also another user used for certain tests that developers can use to log
-into the Refiner app:
-
-- username: `refiner2`
-- password: `refiner2`
 
 If you want to try logging into Keycloak directly (not through Refiner), the user login portal is here: [http://localhost:8082/realms/refiner/account](http://localhost:8082/realms/refiner/account).

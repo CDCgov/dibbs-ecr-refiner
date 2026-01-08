@@ -4,17 +4,6 @@ from uuid import UUID
 
 
 @dataclass(frozen=True)
-class UserInfoBase:
-    """
-    A class for information about a user.
-    """
-
-    id: UUID
-    name: str
-    email: str
-
-
-@dataclass(frozen=True)
 class DbUser:
     """
     A `user` row from the database.
