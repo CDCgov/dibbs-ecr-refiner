@@ -72,7 +72,8 @@ const baseMockConfig: GetConfigurationResponse = {
   latest_version: 2,
   condition_canonical_url:
     'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
-  lockedBy: null,
+  locked_by: null,
+  is_locked: false,
 };
 
 // Mock configurations request
@@ -122,22 +123,14 @@ vi.mock('../../../api/conditions/conditions', async () => {
   };
 });
 
-// Mock Login hook - can be overridden in tests
-vi.mock('../../../hooks/Login', async () => {
-  const actual = await vi.importActual('../../../hooks/Login');
-  return {
-    ...actual,
-    useLogin: vi.fn(() => [{ id: 'my-user-id', name: 'Test User' }, false]),
-  };
-});
-
 describe('Config builder page', () => {
   it('shows lock banner and disables edit controls when locked by another user', async () => {
     (useGetConfiguration as unknown as Mock).mockReturnValue({
       data: {
         data: {
           ...baseMockConfig,
-          lockedBy: {
+          is_locked: true,
+          locked_by: {
             id: 'other-user-id',
             name: 'Jane Doe',
             email: 'jane@foo.com',
@@ -145,8 +138,7 @@ describe('Config builder page', () => {
         },
       },
     });
-    // The useLogin mock at module level returns { id: 'my-user-id' }
-    // which is different from lockedBy.id, so isLocked should be true
+
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
       reset: vi.fn(),

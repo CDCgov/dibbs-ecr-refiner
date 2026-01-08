@@ -333,7 +333,8 @@ class GetConfigurationResponse:
     active_configuration_id: UUID | None
     active_version: int | None
     latest_version: int
-    lockedBy: LockedByUser | None
+    is_locked: bool
+    locked_by: LockedByUser | None
 
 
 @dataclass(frozen=True)
@@ -377,7 +378,7 @@ async def get_configuration(
         )
 
     # get current lock
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     # Only acquire lock if none or expired. Never override valid lock
     # from other user.
     if not lock or lock.expires_at.timestamp() <= datetime.now(UTC).timestamp():
@@ -387,7 +388,7 @@ async def get_configuration(
             jurisdiction_id=jd,
             db=db,
         )
-        lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+        lock = await ConfigurationLock.get_lock(configuration_id, db)
     locked_by = None
     if lock and lock.expires_at.timestamp() > datetime.now(UTC).timestamp():
         try:
@@ -477,6 +478,8 @@ async def get_configuration(
     active_configuration_id = active_config.id if active_config is not None else None
     latest_version = latest_config.version if latest_config is not None else 0
 
+    is_locked = locked_by is not None and locked_by.id != user.id
+
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
@@ -495,7 +498,8 @@ async def get_configuration(
         active_version=active_version,
         active_configuration_id=active_configuration_id,
         latest_version=latest_version,
-        lockedBy=locked_by,
+        locked_by=locked_by,
+        is_locked=is_locked,
     )
 
 
@@ -525,7 +529,7 @@ async def get_configuration_export(
             detail="Configuration not found.",
         )
 
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     if (
         lock
         and str(lock.user_id) != str(user.id)
@@ -662,8 +666,8 @@ async def associate_condition_codeset_with_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
@@ -738,8 +742,8 @@ async def remove_condition_codeset_from_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
@@ -876,8 +880,8 @@ async def add_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
@@ -975,8 +979,8 @@ async def delete_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
@@ -1151,8 +1155,8 @@ async def edit_custom_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
@@ -1545,8 +1549,8 @@ async def update_section_processing(
         )
 
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
@@ -1735,8 +1739,8 @@ async def release_configuration_lock(
     204 if released. 409 if locked by other. 404 if no lock.
     """
     await ConfigurationLock.raise_if_locked_by_other(
-        str(configuration_id),
-        str(user.id),
+        configuration_id,
+        user.id,
         username=user.username,
         email=user.email,
         db=db,
