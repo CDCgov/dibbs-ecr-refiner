@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 
 from ...core.config import ENVIRONMENT
 
-uploaded_artifact_bucket_name = ENVIRONMENT["S3_UPLOADED_FILES_BUCKET_NAME"]
+uploaded_artifact_bucket_name = ENVIRONMENT["S3_BUCKET_CONFIG"]
 
 config = Config(signature_version="s3v4")
 
@@ -20,11 +20,20 @@ config = Config(signature_version="s3v4")
 s3_client = boto3.client(
     "s3",
     region_name=ENVIRONMENT["AWS_REGION"],
-    aws_access_key_id=ENVIRONMENT["AWS_ACCESS_KEY_ID"],
-    aws_secret_access_key=ENVIRONMENT["AWS_SECRET_ACCESS_KEY"],
     endpoint_url=os.getenv("S3_ENDPOINT_URL"),
     config=config,
 )
+
+if ENVIRONMENT["ENV"] == "local" or ENVIRONMENT["ENV"] == "demo":
+    s3_client = boto3.client(
+        "s3",
+        # use mock access keys needed for localstack
+        aws_access_key_id="refiner",
+        aws_secret_access_key="refiner",
+        region_name=ENVIRONMENT["AWS_REGION"],
+        endpoint_url=os.getenv("S3_ENDPOINT_URL"),
+        config=config,
+    )
 
 
 def upload_refined_ecr(

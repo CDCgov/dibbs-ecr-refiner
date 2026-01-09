@@ -42,15 +42,15 @@ The eCR Refiner requires the following environment variables to be specified in 
 
 - `ENV`: The environment name (`local`, `dev`, `test`, `prod`, etc.)
 - `DB_URL`: The PostgreSQL connection string
+- `DB_PASSWORD`: The PostgreSQL password
 - `SESSION_SECRET_KEY`: A string used to compute user session hashes that are stored in the `sessions` table
 - `AUTH_PROVIDER`: Name of the OIDC authentication provider (`keycloak`, `google`, etc.)
 - `AUTH_CLIENT_ID`: OIDC client ID
 - `AUTH_CLIENT_SECRET`: OIDC client secret string
 - `AUTH_ISSUER`: OIDC auth issuer string
-- `AWS_ACCESS_KEY_ID`: The access key for your AWS account
-- `AWS_SECRET_ACCESS_KEY`: The secret key for your AWS account
 - `AWS_REGION`: The AWS region to use
 - `S3_UPLOADED_FILES_BUCKET_NAME`: Name of the S3 bucket that holds user-uploaded eICR/RR pairs
+- `LOG_LEVEL`: Name of the S3 bucket that holds user-uploaded eICR/RR pairs
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 
