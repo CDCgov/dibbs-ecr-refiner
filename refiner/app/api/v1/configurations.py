@@ -276,7 +276,6 @@ async def create_configuration(
     success = await ConfigurationLock.acquire_lock(
         configuration_id=config.id,
         user_id=user.id,
-        jurisdiction_id=jd,
         db=db,
     )
     if not success:
@@ -385,7 +384,6 @@ async def get_configuration(
         await ConfigurationLock.acquire_lock(
             configuration_id=configuration_id,
             user_id=user.id,
-            jurisdiction_id=jd,
             db=db,
         )
         lock = await ConfigurationLock.get_lock(configuration_id, db)
@@ -1745,11 +1743,10 @@ async def release_configuration_lock(
         email=user.email,
         db=db,
     )
-    jd = user.jurisdiction_id
+
     await ConfigurationLock.release_lock(
         configuration_id=configuration_id,
         user_id=user.id,
-        jurisdiction_id=jd,
         db=db,
     )
     return Response(status_code=204)
