@@ -4,8 +4,6 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.db.events.db import insert_event_db
-from app.db.events.model import EventInput
 from app.db.pool import AsyncDatabaseConnection, db
 
 LOCK_TIMEOUT_MINUTES = 30
@@ -45,7 +43,6 @@ class ConfigurationLock:
     async def acquire_lock(
         configuration_id: UUID,
         user_id: UUID,
-        jurisdiction_id: str,
         db: AsyncDatabaseConnection = db,
     ) -> bool:
         """
@@ -66,22 +63,12 @@ class ConfigurationLock:
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-                # Audit log
-                event = EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=configuration_id,
-                    event_type="lock_acquire",
-                    action_text=f"Lock acquired for configuration {configuration_id} by user {user_id}",
-                )
-                await insert_event_db(event=event, cursor=cur)
         return True
 
     @staticmethod
     async def release_lock(
         configuration_id: UUID,
         user_id: UUID,
-        jurisdiction_id: str,
         db: AsyncDatabaseConnection = db,
     ) -> bool:
         """
@@ -92,22 +79,12 @@ class ConfigurationLock:
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-                # Audit log
-                event = EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=configuration_id,
-                    event_type="lock_release",
-                    action_text=f"Lock released for configuration {configuration_id} by user {user_id}",
-                )
-                await insert_event_db(event=event, cursor=cur)
         return True
 
     @staticmethod
     async def renew_lock(
         configuration_id: UUID,
         user_id: UUID,
-        jurisdiction_id: str,
         db: AsyncDatabaseConnection = db,
     ) -> bool:
         """
@@ -120,15 +97,6 @@ class ConfigurationLock:
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-                # Audit log
-                event = EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=configuration_id,
-                    event_type="lock_renew",
-                    action_text=f"Lock renewed for configuration {configuration_id} by user {user_id}",
-                )
-                await insert_event_db(event=event, cursor=cur)
         return True
 
     @staticmethod

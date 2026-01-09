@@ -177,7 +177,7 @@ describe('Config builder page', () => {
     expect(
       await screen.findByRole('heading', { name: /custom codes/i })
     ).toBeInTheDocument();
-    screen.debug(); // Debug the DOM after switching tabs
+
     const addCustomCodeBtn = await screen.findByRole('button', {
       name: /add new custom code/i,
     });
