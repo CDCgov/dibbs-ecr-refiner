@@ -8,6 +8,7 @@ import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import { defineConfig } from 'eslint/config';
 import reactPlugin from 'eslint-plugin-react';
+import testingLibraryPlugin from 'eslint-plugin-testing-library';
 
 export default defineConfig(
   { ignores: ['dist', 'tests/setup.ts', 'src/api'] },
@@ -16,6 +17,7 @@ export default defineConfig(
       js.configs.recommended,
       eslintConfigPrettier,
       importPlugin.flatConfigs.recommended,
+      testingLibraryPlugin.configs['flat/react'],
       ...tseslint.configs.recommendedTypeChecked,
     ],
     files: ['**/*.{ts,tsx}'],
@@ -46,6 +48,8 @@ export default defineConfig(
         { allowConstantExport: true },
       ],
       'import/no-duplicates': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'testing-library/no-debugging-utils': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
