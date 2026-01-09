@@ -17,7 +17,6 @@ export default defineConfig(
       js.configs.recommended,
       eslintConfigPrettier,
       importPlugin.flatConfigs.recommended,
-      testingLibraryPlugin.configs['flat/react'],
       ...tseslint.configs.recommendedTypeChecked,
     ],
     files: ['**/*.{ts,tsx}'],
@@ -49,7 +48,6 @@ export default defineConfig(
       ],
       'import/no-duplicates': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
-      'testing-library/no-debugging-utils': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -100,7 +98,9 @@ export default defineConfig(
   {
     // provide some flexibility for test files
     files: ['**/*.test.{ts,tsx}', '**/tests/**/*.ts'],
+    plugins: { 'testing-library': testingLibraryPlugin },
     rules: {
+      'testing-library/no-debugging-utils': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
