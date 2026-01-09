@@ -15,7 +15,6 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
 )
-from app.db.pool import db
 from app.db.users.model import DbUser
 from app.main import app
 from app.services.configuration_locks import ConfigurationLock
@@ -231,50 +230,42 @@ def mock_db_functions(monkeypatch):
             )
         return None
 
-    async def mock_acquire_lock(
-        configuration_id: UUID, user_id: UUID, jurisdiction_id: str, db=None
-    ):
+    async def mock_acquire_lock(configuration_id: UUID, user_id: UUID, db=None):
         now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=30)
 
         # Check if lock exists and is active
-        existing_lock_data = _locks_storage.get(str(configuration_id))
+        existing_lock_data = _locks_storage.get(configuration_id)
         if (
             existing_lock_data
             and existing_lock_data["expires_at"].timestamp() > now.timestamp()
         ):
             # Lock is active
-            return existing_lock_data["user_id"] == str(user_id)
+            return existing_lock_data["user_id"] == user_id
 
         # Acquire or replace lock
-        _locks_storage[str(configuration_id)] = {
+        _locks_storage[configuration_id] = {
             "configuration_id": configuration_id,
-            "user_id": str(user_id),
+            "user_id": user_id,
             "expires_at": expires_at,
         }
         return True
 
-    async def mock_release_lock(
-        configuration_id: UUID, user_id: UUID, jurisdiction_id: str, db=None
-    ):
-        config_id_str = str(configuration_id)
-        if config_id_str in _locks_storage:
-            lock_data = _locks_storage[config_id_str]
-            if lock_data["user_id"] == str(user_id):
-                del _locks_storage[config_id_str]
+    async def mock_release_lock(configuration_id: UUID, user_id: UUID, db=None):
+        if configuration_id in _locks_storage:
+            lock_data = _locks_storage[configuration_id]
+            if lock_data["user_id"] == user_id:
+                del _locks_storage[configuration_id]
         return True
 
-    async def mock_renew_lock(
-        configuration_id: UUID, user_id: UUID, jurisdiction_id: str, db=None
-    ):
+    async def mock_renew_lock(configuration_id: UUID, user_id: UUID, db=None):
         now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=30)
 
-        config_id_str = str(configuration_id)
-        if config_id_str in _locks_storage:
-            lock_data = _locks_storage[config_id_str]
-            if lock_data["user_id"] == str(user_id):
-                _locks_storage[config_id_str]["expires_at"] = expires_at
+        if configuration_id in _locks_storage:
+            lock_data = _locks_storage[configuration_id]
+            if lock_data["user_id"] == user_id:
+                _locks_storage[configuration_id]["expires_at"] = expires_at
         return True
 
     monkeypatch.setattr(
@@ -286,7 +277,7 @@ def mock_db_functions(monkeypatch):
         mock_acquire_lock,
     )
     monkeypatch.setattr(
-        "app.services.configuration_locks.ConfigurationLock.release_lock",
+        "app.services.configuration_locks.ConfigurationLock.release_if_owned",
         mock_release_lock,
     )
     monkeypatch.setattr(
@@ -301,27 +292,25 @@ def mock_db_functions(monkeypatch):
 async def test_acquire_and_release_lock(authed_client):
     configuration_id = uuid4()
     user_id = uuid4()
-    jurisdiction_id = "test-jd"
+    db = None
 
     # Acquire lock
-    acquired = await ConfigurationLock.acquire_lock(
-        configuration_id, user_id, jurisdiction_id, db
-    )
+    acquired = await ConfigurationLock.acquire_lock(configuration_id, user_id, db)
     assert acquired is True
 
     # Lock should be present and owned by user
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     assert lock is not None
-    assert lock.user_id == str(user_id)
+    assert lock.user_id == user_id
 
     # Release lock
-    released = await ConfigurationLock.release_lock(
-        configuration_id, user_id, jurisdiction_id, db
-    )
-    assert released is True
+    await ConfigurationLock.release_if_owned(configuration_id, user_id, db)
+
+    # Release is idempotent and should work a second time
+    await ConfigurationLock.release_if_owned(configuration_id, user_id, db)
 
     # Lock should be gone
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     assert lock is None
 
 
@@ -330,30 +319,22 @@ async def test_lock_contention(authed_client):
     configuration_id = uuid4()
     user1 = uuid4()
     user2 = uuid4()
-    jurisdiction_id = "test-jd"
+    db = None
 
     # User1 acquires lock
-    acquired1 = await ConfigurationLock.acquire_lock(
-        configuration_id, user1, jurisdiction_id, db
-    )
+    acquired1 = await ConfigurationLock.acquire_lock(configuration_id, user1, db)
     assert acquired1 is True
 
     # User2 tries to acquire lock (should not succeed)
-    acquired2 = await ConfigurationLock.acquire_lock(
-        configuration_id, user2, jurisdiction_id, db
-    )
+    acquired2 = await ConfigurationLock.acquire_lock(configuration_id, user2, db)
     assert acquired2 is False
 
     # User1 releases lock
-    released = await ConfigurationLock.release_lock(
-        configuration_id, user1, jurisdiction_id, db
-    )
+    released = await ConfigurationLock.release_if_owned(configuration_id, user1, db)
     assert released is True
 
     # User2 can now acquire lock
-    acquired2b = await ConfigurationLock.acquire_lock(
-        configuration_id, user2, jurisdiction_id, db
-    )
+    acquired2b = await ConfigurationLock.acquire_lock(configuration_id, user2, db)
     assert acquired2b is True
 
 
@@ -361,29 +342,28 @@ async def test_lock_contention(authed_client):
 async def test_lock_renewal_and_expiry(authed_client):
     configuration_id = uuid4()
     user_id = uuid4()
-    jurisdiction_id = "test-jd"
+    db = None
 
     # Acquire lock
-    await ConfigurationLock.acquire_lock(configuration_id, user_id, jurisdiction_id, db)
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    await ConfigurationLock.acquire_lock(configuration_id, user_id, db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     assert lock is not None
     expires_at_initial = lock.expires_at
 
     # Renew lock
-    await ConfigurationLock.renew_lock(configuration_id, user_id, jurisdiction_id, db)
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    await ConfigurationLock.renew_lock(configuration_id, user_id, db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     assert lock.expires_at > expires_at_initial
 
     # Simulate expiry by directly manipulating the mocked storage
     locks_storage = test_module._locks_storage
-    config_id_str = str(configuration_id)
-    if config_id_str in locks_storage:
-        locks_storage[config_id_str]["expires_at"] = datetime.now(UTC) - timedelta(
+    if configuration_id in locks_storage:
+        locks_storage[configuration_id]["expires_at"] = datetime.now(UTC) - timedelta(
             minutes=1
         )
 
     # Now lock should be considered expired
-    lock = await ConfigurationLock.get_lock(str(configuration_id), db)
+    lock = await ConfigurationLock.get_lock(configuration_id, db)
     assert lock is not None  # Lock still exists in storage
     assert (
         lock.expires_at.timestamp() < datetime.now(UTC).timestamp()
