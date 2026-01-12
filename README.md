@@ -50,7 +50,7 @@ The eCR Refiner requires the following environment variables to be specified in 
 - `AUTH_ISSUER`: OIDC auth issuer string
 - `AWS_REGION`: The AWS region to use
 - `S3_BUCKET_CONFIG`: Name of the S3 bucket that holds condition configurations
-- `LOG_LEVEL`: Name of the S3 bucket that holds user-uploaded eICR/RR pairs
+- `LOG_LEVEL`: Switch for the app to control log output into the environment logging service
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 
