@@ -28,6 +28,10 @@ elif ENVIRONMENT["ENV"] == "demo":
     s3_client = boto3.client(
         "s3",
         region_name=ENVIRONMENT["AWS_REGION"],
+        # get these directly rather than from the loaded config file so the
+        # app doesn't crash in envs where they're missing
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         endpoint_url=os.getenv("S3_ENDPOINT_URL"),
         config=config,
     )
