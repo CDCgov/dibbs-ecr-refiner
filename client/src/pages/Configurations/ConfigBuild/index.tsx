@@ -822,13 +822,26 @@ export function CustomCodeModal({
   ];
 
   const [form, setForm] = useState({
-    code: '',
-    system: '',
-    name: '',
+    code: selectedCustomCode?.code ?? '',
+    system: selectedCustomCode?.system
+      ? normalizeSystem(selectedCustomCode.system)
+      : '',
+    name: selectedCustomCode?.name ?? '',
   });
 
-  if (selectedCustomCode && form !== selectedCustomCode) {
-    setForm(selectedCustomCode);
+  if (
+    form.code === '' &&
+    form.name === '' &&
+    form.system === '' &&
+    selectedCustomCode
+  ) {
+    setForm({
+      code: selectedCustomCode?.code ?? '',
+      system: selectedCustomCode?.system
+        ? normalizeSystem(selectedCustomCode.system)
+        : '',
+      name: selectedCustomCode?.name ?? '',
+    });
   }
 
   const [error, setError] = useState<string | null>(null);
