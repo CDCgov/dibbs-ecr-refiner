@@ -18,8 +18,8 @@ if ENVIRONMENT["ENV"] == "local":
     s3_client = boto3.client(
         "s3",
         # use mock access keys needed for localstack
-        aws_access_key_id="refiner",
-        aws_secret_access_key="refiner",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         region_name=ENVIRONMENT["AWS_REGION"],
         endpoint_url=os.getenv("S3_ENDPOINT_URL"),
         config=config,

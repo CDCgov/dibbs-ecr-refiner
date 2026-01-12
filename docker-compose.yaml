@@ -35,6 +35,9 @@ services:
       - AUTH_ISSUER=http://localhost:8082/realms/refiner
       - AUTH_ISSUER_INTERNAL=http://auth:8082/realms/refiner
       - AWS_REGION=us-east-1
+      # only used in envs not running on EC2 (ie not on APHL infra)
+      - AWS_ACCESS_KEY_ID=refiner
+      - AWS_SECRET_ACCESS_KEY=refiner
       - S3_ENDPOINT_URL=http://localstack:4566
       - S3_BUCKET_CONFIG=local-config-bucket
       - LOG_LEVEL=debug
