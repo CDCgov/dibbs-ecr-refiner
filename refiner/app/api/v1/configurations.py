@@ -1663,7 +1663,7 @@ async def deactivate_configuration(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationStatusUpdateResponse:
     """
-        Deactivate the specified configuration.
+    Deactivate the specified configuration.
 
     Args:
         configuration_id (UUID): ID of the configuration to update
@@ -1719,10 +1719,8 @@ async def deactivate_configuration(
     )
 
 
-@router.api_route(
+@router.post(
     "/{configuration_id}/release-lock",
-    methods=["POST"],
-    status_code=204,
     tags=["configurations"],
     operation_id="releaseConfigurationLock",
 )
@@ -1734,22 +1732,18 @@ async def release_configuration_lock(
     """
     Release config lock if held by user.
 
-    204 if released. 409 if locked by other. 404 if no lock.
+    Args:
+        configuration_id (UUID): ID of the configuration to update
+        user (DbUser): The logged-in user
+        db (AsyncDatabaseConnection): Database connection
     """
-    await ConfigurationLock.raise_if_locked_by_other(
-        configuration_id,
-        user.id,
-        username=user.username,
-        email=user.email,
-        db=db,
-    )
 
-    await ConfigurationLock.release_lock(
+    await ConfigurationLock.release_if_owned(
         configuration_id=configuration_id,
         user_id=user.id,
         db=db,
     )
-    return Response(status_code=204)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 def _get_literal_system(system: str) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]:
