@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
+from zipfile import ZipFile
 
 import boto3
 from moto import mock_aws
 
+from ..services.file_io import get_asset_path
 from .lambda_function import lambda_handler
 
 
@@ -15,12 +17,12 @@ def test_lambda():
         event = json.load(f)
 
     # Load sample input data
-    rr_file_path = Path(__file__).parent / "test" / "CDA_RR.xml"
-    with open(rr_file_path, encoding="utf-8") as f:
-        rr_xml = f.read()
-    eicr_file_path = Path(__file__).parent / "test" / "CDA_eICR.xml"
-    with open(eicr_file_path, encoding="utf-8") as f:
-        eicr_xml = f.read()
+    zip_path = get_asset_path("demo", "mon-mothma-covid-influenza.zip")
+    with ZipFile(zip_path) as z:
+        with z.open("CDA_RR.xml") as f:
+            rr_xml = f.read()
+        with z.open("CDA_eICR.xml") as f:
+            eicr_xml = f.read()
 
     # Create a persistence ID (matching event)
     persistence_id = "persistence/id"
