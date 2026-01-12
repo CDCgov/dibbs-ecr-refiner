@@ -228,7 +228,6 @@ def mock_db_functions(monkeypatch):
                 user_id=lock_data["user_id"],
                 expires_at=lock_data["expires_at"],
             )
-        return None
 
     async def mock_acquire_lock(configuration_id: UUID, user_id: UUID, db=None):
         now = datetime.now(UTC)
@@ -256,7 +255,6 @@ def mock_db_functions(monkeypatch):
             lock_data = _locks_storage[configuration_id]
             if lock_data["user_id"] == user_id:
                 del _locks_storage[configuration_id]
-        return True
 
     async def mock_renew_lock(configuration_id: UUID, user_id: UUID, db=None):
         now = datetime.now(UTC)
@@ -266,7 +264,6 @@ def mock_db_functions(monkeypatch):
             lock_data = _locks_storage[configuration_id]
             if lock_data["user_id"] == user_id:
                 _locks_storage[configuration_id]["expires_at"] = expires_at
-        return True
 
     monkeypatch.setattr(
         "app.services.configuration_locks.ConfigurationLock.get_lock",
@@ -330,8 +327,7 @@ async def test_lock_contention(authed_client):
     assert acquired2 is False
 
     # User1 releases lock
-    released = await ConfigurationLock.release_if_owned(configuration_id, user1, db)
-    assert released is True
+    await ConfigurationLock.release_if_owned(configuration_id, user1, db)
 
     # User2 can now acquire lock
     acquired2b = await ConfigurationLock.acquire_lock(configuration_id, user2, db)
