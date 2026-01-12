@@ -267,8 +267,8 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=None),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.release_lock",
-        AsyncMock(return_value=True),
+        "app.api.v1.configurations.ConfigurationLock.release_if_owned",
+        AsyncMock(return_value=None),
     )
 
     yield
