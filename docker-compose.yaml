@@ -36,7 +36,7 @@ services:
       - AUTH_ISSUER_INTERNAL=http://auth:8082/realms/refiner
       - AWS_REGION=us-east-1
       - S3_ENDPOINT_URL=http://localstack:4566
-      - S3_BUCKET_CONFIG=dibbs-dev-refiner-configuration
+      - S3_BUCKET_CONFIG=local-config-bucket
       - LOG_LEVEL=debug
     logging:
       driver: "json-file"

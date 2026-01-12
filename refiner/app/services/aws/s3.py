@@ -14,17 +14,7 @@ uploaded_artifact_bucket_name = ENVIRONMENT["S3_BUCKET_CONFIG"]
 
 config = Config(signature_version="s3v4")
 
-# S3_ENDPOINT_URL is **only** used in local dev; so we grab that
-# via os.getenv rather than the ENVIRONMENT we import from core.config
-# this is so we can connect to localstack
-s3_client = boto3.client(
-    "s3",
-    region_name=ENVIRONMENT["AWS_REGION"],
-    endpoint_url=os.getenv("S3_ENDPOINT_URL"),
-    config=config,
-)
-
-if ENVIRONMENT["ENV"] == "local" or ENVIRONMENT["ENV"] == "demo":
+if ENVIRONMENT["ENV"] == "local":
     s3_client = boto3.client(
         "s3",
         # use mock access keys needed for localstack
@@ -32,6 +22,19 @@ if ENVIRONMENT["ENV"] == "local" or ENVIRONMENT["ENV"] == "demo":
         aws_secret_access_key="refiner",
         region_name=ENVIRONMENT["AWS_REGION"],
         endpoint_url=os.getenv("S3_ENDPOINT_URL"),
+        config=config,
+    )
+elif ENVIRONMENT["ENV"] == "demo":
+    s3_client = boto3.client(
+        "s3",
+        region_name=ENVIRONMENT["AWS_REGION"],
+        endpoint_url=os.getenv("S3_ENDPOINT_URL"),
+        config=config,
+    )
+else:
+    s3_client = boto3.client(
+        "s3",
+        region_name=ENVIRONMENT["AWS_REGION"],
         config=config,
     )
 
