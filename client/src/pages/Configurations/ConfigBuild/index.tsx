@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
+import { useRef, useMemo, useState, forwardRef } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -183,6 +183,11 @@ function Builder({
     {}
   );
 
+  // initialize table with the first code set if 1)nothing is loaded and 2) the data is loaded
+  if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+    onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
+  }
+
   function onCodesetClick(name: string, id: string) {
     setSelectedCodesetName(name);
     setSelectedCodesetId(id);
@@ -213,12 +218,6 @@ function Builder({
 
     codeSetButtonRefs.current[previousCodeSetId]?.click();
   }
-
-  useEffect(() => {
-    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
-    }
-  }, [code_sets, default_condition_name, tableView]);
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
@@ -687,17 +686,15 @@ function ConditionCodeTable({
     minMatchCharLength: 3,
   });
 
+  if (results && isLoadingResults) {
+    setIsLoadingResults(false);
+  }
+
   const debouncedSearchUpdate = useDebouncedCallback((input: string) => {
     setIsLoadingResults(true);
     setSearchText(input);
     setHasSearched(true);
   }, DEBOUNCE_TIME_MS);
-
-  useEffect(() => {
-    if (isLoadingResults) {
-      setIsLoadingResults(false);
-    }
-  }, [results, isLoadingResults]);
 
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
@@ -839,14 +836,6 @@ export function CustomCodeModal({
   });
 
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setForm({
-      code: initialCode ?? '',
-      system: initialSystem ? normalizeSystem(initialSystem) : '',
-      name: initialName ?? '',
-    });
-  }, [initialCode, initialSystem, initialName]);
 
   function resetForm() {
     setForm({ code: '', system: '', name: '' });
