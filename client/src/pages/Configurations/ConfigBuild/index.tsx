@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useMemo, useState, forwardRef } from 'react';
+import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -621,10 +621,9 @@ function CustomCodesDetail({
         </tbody>
       </table>
       <CustomCodeModal
+        key={selectedCustomCode?.code}
         configurationId={configurationId}
-        initialCode={selectedCustomCode?.code}
-        initialSystem={selectedCustomCode?.system}
-        initialName={selectedCustomCode?.name}
+        selectedCustomCode={selectedCustomCode}
         deduplicated_codes={deduplicated_codes}
         modalRef={modalRef}
         onClose={toggleModal}
@@ -686,15 +685,15 @@ function ConditionCodeTable({
     minMatchCharLength: 3,
   });
 
-  if (results && isLoadingResults) {
-    setIsLoadingResults(false);
-  }
-
   const debouncedSearchUpdate = useDebouncedCallback((input: string) => {
     setIsLoadingResults(true);
     setSearchText(input);
     setHasSearched(true);
   }, DEBOUNCE_TIME_MS);
+
+  if (results && isLoadingResults) {
+    setIsLoadingResults(false);
+  }
 
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
@@ -796,9 +795,7 @@ interface CustomCodeModalProps {
   configurationId: string;
   modalRef: React.RefObject<ModalRef | null>;
   onClose: () => void;
-  initialCode?: string;
-  initialSystem?: string;
-  initialName?: string;
+  selectedCustomCode: DbConfigurationCustomCode | null;
   deduplicated_codes: string[];
 }
 
@@ -806,9 +803,7 @@ export function CustomCodeModal({
   configurationId,
   modalRef,
   onClose,
-  initialCode,
-  initialSystem,
-  initialName,
+  selectedCustomCode,
   deduplicated_codes,
 }: CustomCodeModalProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
@@ -827,12 +822,12 @@ export function CustomCodeModal({
     { name: 'Other', value: 'other' },
   ];
 
-  const isEditing = initialCode && initialSystem && initialName;
-
   const [form, setForm] = useState({
-    code: initialCode ?? '',
-    system: initialSystem ? normalizeSystem(initialSystem) : '',
-    name: initialName ?? '',
+    code: selectedCustomCode?.code ?? '',
+    system: selectedCustomCode?.system
+      ? normalizeSystem(selectedCustomCode.system)
+      : '',
+    name: selectedCustomCode?.name ?? '',
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -852,14 +847,14 @@ export function CustomCodeModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isEditing) {
+    if (selectedCustomCode) {
       editCode(
         {
           configurationId,
           data: {
-            code: initialCode,
-            system: normalizeSystem(initialSystem),
-            name: initialName,
+            code: selectedCustomCode.code,
+            system: normalizeSystem(selectedCustomCode.system),
+            name: selectedCustomCode.name,
             new_code: form.code,
             new_system: normalizeSystem(form.system),
             new_name: form.name,
@@ -923,7 +918,7 @@ export function CustomCodeModal({
         id="modal-heading"
         className="text-bold font-merriweather mb-6 !p-0 text-xl"
       >
-        {isEditing ? 'Edit custom code' : 'Add custom code'}
+        {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
 
       <button
@@ -1001,7 +996,7 @@ export function CustomCodeModal({
           variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
           className="!m-0"
         >
-          {isEditing ? 'Update' : 'Add custom code'}
+          {selectedCustomCode ? 'Update' : 'Add custom code'}
         </Button>
       </ModalFooter>
     </Modal>
