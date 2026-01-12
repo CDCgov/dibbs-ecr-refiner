@@ -15,21 +15,29 @@ class AsyncDatabaseConnection:
     Async Database connection using a connection pool.
     """
 
-    def __init__(self, db_url: str, min_size: int = 1, max_size: int = 10) -> None:
+    def __init__(
+        self, db_url: str, db_password: str, min_size: int = 1, max_size: int = 10
+    ) -> None:
         """
         Initializes the connection pool with the given database URL and size limits.
 
         Args:
             db_url (str): The PostgreSQL connection string.
+            db_password (str): The PostgreSQL password.
             min_size (int, optional): Minimum number of connections to maintain in the pool. Defaults to 1.
             max_size (int, optional): Maximum number of connections allowed in the pool. Defaults to 10.
         """
         self.connection_url = db_url
+        self.db_password = db_password
+
         self.pool = AsyncConnectionPool(
             self.connection_url,
             min_size=min_size,
             max_size=max_size,
             open=False,
+            kwargs={
+                "password": self.db_password,
+            },
         )
 
     async def connect(self) -> None:
@@ -81,7 +89,9 @@ class AsyncDatabaseConnection:
             )
 
 
-db = AsyncDatabaseConnection(db_url=ENVIRONMENT["DB_URL"])
+db = AsyncDatabaseConnection(
+    db_url=ENVIRONMENT["DB_URL"], db_password=ENVIRONMENT["DB_PASSWORD"]
+)
 
 
 async def get_db() -> AsyncDatabaseConnection:
