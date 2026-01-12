@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
+import { useRef, useMemo, useState, forwardRef } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
