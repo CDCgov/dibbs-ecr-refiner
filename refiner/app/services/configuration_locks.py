@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.db.pool import AsyncDatabaseConnection, db
+from app.db.pool import AsyncDatabaseConnection
 
 LOCK_TIMEOUT_MINUTES = 30
 
@@ -24,7 +24,7 @@ class ConfigurationLock:
 
     @staticmethod
     async def get_lock(
-        configuration_id: UUID, db: AsyncDatabaseConnection = db
+        configuration_id: UUID, db: AsyncDatabaseConnection
     ) -> Optional["ConfigurationLock"]:
         """
         Retrieve the current lock for a configuration, if any.
@@ -43,7 +43,7 @@ class ConfigurationLock:
     async def acquire_lock(
         configuration_id: UUID,
         user_id: UUID,
-        db: AsyncDatabaseConnection = db,
+        db: AsyncDatabaseConnection,
     ) -> bool:
         """
         Acquire a lock for a configuration, replacing any expired or released lock.
@@ -63,14 +63,15 @@ class ConfigurationLock:
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-        return True
+                return True
+        return False
 
     @staticmethod
-    async def release_lock(
+    async def release_if_owned(
         configuration_id: UUID,
         user_id: UUID,
-        db: AsyncDatabaseConnection = db,
-    ) -> bool:
+        db: AsyncDatabaseConnection,
+    ) -> None:
         """
         Release the lock for a configuration if held by the user.
         """
@@ -79,14 +80,13 @@ class ConfigurationLock:
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-        return True
 
     @staticmethod
     async def renew_lock(
         configuration_id: UUID,
         user_id: UUID,
-        db: AsyncDatabaseConnection = db,
-    ) -> bool:
+        db: AsyncDatabaseConnection,
+    ) -> None:
         """
         Renew the lock for a configuration, extending its expiration.
         """
@@ -97,16 +97,15 @@ class ConfigurationLock:
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-        return True
 
     @staticmethod
     async def raise_if_locked_by_other(
         configuration_id: UUID,
         user_id: UUID,
+        db: AsyncDatabaseConnection,
         username: str | None = None,
         email: str | None = None,
-        db: AsyncDatabaseConnection = db,
-    ):
+    ) -> None:
         """
         Raises an HTTP status of 409 if the configuration is locked by another user.
         """
