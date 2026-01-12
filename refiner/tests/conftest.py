@@ -10,19 +10,21 @@ from lxml.etree import _Element
 from app.core.models.types import XMLFiles
 from tests.fixtures.loader import load_fixture_str, load_fixture_xml
 
-os.environ["ENV"] = "mock-env"
-os.environ["DB_URL"] = "postgresql://mock:mock@fakedb:5432/refiner"
+os.environ["ENV"] = "local"
+os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
+os.environ["DB_PASSWORD"] = "mock"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
 os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
 os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
 os.environ["AUTH_ISSUER"] = "http://mock.com"
 os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
 
-os.environ["AWS_ACCESS_KEY_ID"] = "mock-aws-access-key-id"
-os.environ["AWS_SECRET_ACCESS_KEY"] = "mock-aws-secret-access-key"
 os.environ["AWS_REGION"] = "us-east-1"
+os.environ["AWS_ACCESS_KEY_ID"] = "refiner"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "refiner"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
-os.environ["S3_UPLOADED_FILES_BUCKET_NAME"] = "mock-bucket"
+os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
+os.environ["LOG_LEVEL"] = "debug"
 
 
 type NamespaceMap = dict[str, str]
