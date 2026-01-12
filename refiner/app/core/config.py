@@ -39,13 +39,12 @@ def _get_env_variable(name: str) -> str:
 ENVIRONMENT: dict[str, str] = {
     "ENV": _get_env_variable("ENV"),
     "DB_URL": _get_env_variable("DB_URL"),
+    "DB_PASSWORD": _get_env_variable("DB_PASSWORD"),
     "SESSION_SECRET_KEY": _get_env_variable("SESSION_SECRET_KEY"),
     "AUTH_PROVIDER": _get_env_variable("AUTH_PROVIDER"),
     "AUTH_CLIENT_ID": _get_env_variable("AUTH_CLIENT_ID"),
     "AUTH_CLIENT_SECRET": _get_env_variable("AUTH_CLIENT_SECRET"),
     "AUTH_ISSUER": _get_env_variable("AUTH_ISSUER"),
-    "AWS_ACCESS_KEY_ID": _get_env_variable("AWS_ACCESS_KEY_ID"),
-    "AWS_SECRET_ACCESS_KEY": _get_env_variable("AWS_SECRET_ACCESS_KEY"),
     "AWS_REGION": _get_env_variable("AWS_REGION"),
-    "S3_UPLOADED_FILES_BUCKET_NAME": _get_env_variable("S3_UPLOADED_FILES_BUCKET_NAME"),
+    "S3_BUCKET_CONFIG": _get_env_variable("S3_BUCKET_CONFIG"),
 }
