@@ -50,8 +50,17 @@ def test_lambda():
     assert "eCRMessageV2/persistence/id" in s3_paths
 
     # Expected eICR output files created by Refiner
-    assert "RefinerOutput/persistence/id/SDDH/772828001" in s3_paths
-    assert "RefinerOutput/persistence/id/SDDH/840539006" in s3_paths
+    full_flu_path = "RefinerOutput/persistence/id/SDDH/772828001"
+    full_covid_path = "RefinerOutput/persistence/id/SDDH/840539006"
+    assert full_flu_path in s3_paths
+    assert full_covid_path in s3_paths
 
     # Expected completion file for pipeline
     assert "RefinerComplete/persistence/id" in s3_paths
+
+    # Load RefinerComplete/persistence/id and ensure it contains expected paths
+    resp = s3.get_object(Bucket=bucket, Key=f"RefinerComplete/{persistence_id}")
+    complete_json = json.loads(resp["Body"].read().decode("utf-8"))
+    assert not complete_json["RefinerSkip"]
+    assert full_flu_path in complete_json["RefinerOutputFiles"]
+    assert full_covid_path in complete_json["RefinerOutputFiles"]
