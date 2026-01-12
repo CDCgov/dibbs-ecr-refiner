@@ -621,7 +621,6 @@ function CustomCodesDetail({
         </tbody>
       </table>
       <CustomCodeModal
-        key={selectedCustomCode?.code}
         configurationId={configurationId}
         selectedCustomCode={selectedCustomCode}
         deduplicated_codes={deduplicated_codes}
@@ -823,12 +822,14 @@ export function CustomCodeModal({
   ];
 
   const [form, setForm] = useState({
-    code: selectedCustomCode?.code ?? '',
-    system: selectedCustomCode?.system
-      ? normalizeSystem(selectedCustomCode.system)
-      : '',
-    name: selectedCustomCode?.name ?? '',
+    code: '',
+    system: '',
+    name: '',
   });
+
+  if (selectedCustomCode && form !== selectedCustomCode) {
+    setForm(selectedCustomCode);
+  }
 
   const [error, setError] = useState<string | null>(null);
 
