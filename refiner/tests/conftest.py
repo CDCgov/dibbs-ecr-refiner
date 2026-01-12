@@ -20,6 +20,8 @@ os.environ["AUTH_ISSUER"] = "http://mock.com"
 os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
 
 os.environ["AWS_REGION"] = "us-east-1"
+os.environ["AWS_ACCESS_KEY_ID"] = "refiner"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "refiner"
 os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
