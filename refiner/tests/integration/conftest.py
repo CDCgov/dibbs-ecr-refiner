@@ -221,7 +221,7 @@ def setup(request):
     )
 
     print(
-        "🔎 Looking up dynamic condition UUIDs and canonical URLs for COVID-19 and Influenza (version 3.0.0)..."
+        "🔎 Looking up dynamic condition UUIDs and canonical URLs for COVID-19 and Influenza (version 4.0.0)..."
     )
 
     def get_id_and_url(exec_result):
@@ -246,7 +246,7 @@ def setup(request):
             "-F",
             "|",
             "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'COVID-19' AND version = '3.0.0';",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'COVID-19' AND version = '4.0.0';",
         ],
         "db",
     )
@@ -262,7 +262,7 @@ def setup(request):
             "-F",
             "|",
             "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Influenza' AND version = '3.0.0';",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Influenza' AND version = '4.0.0';",
         ],
         "db",
     )
@@ -278,7 +278,7 @@ def setup(request):
             "-F",
             "|",
             "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Zika Virus Disease' AND version = '3.0.0';",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Zika Virus Disease' AND version = '4.0.0';",
         ],
         "db",
     )
@@ -299,7 +299,7 @@ def setup(request):
             "-F",
             "|",
             "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Drowning and Submersion' AND version = '3.0.0';",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Drowning and Submersion' AND version = '4.0.0';",
         ],
         "db",
     )

@@ -8,8 +8,8 @@ from app.db.configurations.model import DbConfigurationCondition
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase
 
-# TES and refiner are currently using version 3.0.0 for CGs and its child RSGs
-CURRENT_VERSION = "3.0.0"
+# TES and refiner are currently using version 4.0.0 for CGs and its child RSGs
+CURRENT_VERSION = "4.0.0"
 
 
 async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase]:
