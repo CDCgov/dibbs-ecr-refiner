@@ -23,13 +23,16 @@ SEEDING_DATA_DIR = DATA_DIR / "seeding"
 ENV_PATH = SCRIPTS_DIR / ".env"
 
 
-def get_db_connection(db_url) -> Connection:
+def get_db_connection(db_url, db_password) -> Connection:
     """
     Establishes and returns a connection to the PostgreSQL database.
     """
 
     try:
-        return psycopg.connect(db_url)
+        return psycopg.connect(
+            db_url,
+            password=db_password,
+        )
     except psycopg.OperationalError as error:
         logging.error(f"❌ Database connection failed: {error}")
         raise
@@ -74,7 +77,7 @@ def parse_snomed_from_url(url: str) -> str | None:
     return None
 
 
-def seed_database(db_url) -> None:
+def seed_database(db_url, db_password) -> None:
     """
     Orchestrates the entire database seeding process.
     """
@@ -151,7 +154,7 @@ def seed_database(db_url) -> None:
 
     # pass 2: connect to db and perform all inserts in a single transaction
     try:
-        with get_db_connection(db_url=db_url) as connection:
+        with get_db_connection(db_url=db_url, db_password=db_password) as connection:
             with connection.cursor() as cursor:
                 logging.info("🧹 Clearing all data tables...")
                 tables = [
@@ -202,4 +205,5 @@ def seed_database(db_url) -> None:
 if __name__ == "__main__":
     load_dotenv(dotenv_path=ENV_PATH)
     db_url = os.getenv("DB_URL")
-    seed_database(db_url=db_url)
+    db_password = os.getenv("DB_PASSWORD")
+    seed_database(db_url=db_url, db_password=db_password)

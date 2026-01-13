@@ -5,7 +5,7 @@
 > view the documentation at: [https://just.systems/man/en](). Run `just help`
 > for a list of commands.
 
-The DIBBs eCR Refiner reduces eICR and RR files down to only the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
+The DIBBs eCR Refiner reduces eICR and RR files down to the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
 
 For more detailed information about the relationship between the eICR and RR documents and what informs the design of the eCR Refiner please see [this document](/refiner/eCR-CDA-Notes.md).
 
@@ -42,15 +42,15 @@ The eCR Refiner requires the following environment variables to be specified in 
 
 - `ENV`: The environment name (`local`, `dev`, `test`, `prod`, etc.)
 - `DB_URL`: The PostgreSQL connection string
+- `DB_PASSWORD`: The PostgreSQL password
 - `SESSION_SECRET_KEY`: A string used to compute user session hashes that are stored in the `sessions` table
 - `AUTH_PROVIDER`: Name of the OIDC authentication provider (`keycloak`, `google`, etc.)
 - `AUTH_CLIENT_ID`: OIDC client ID
 - `AUTH_CLIENT_SECRET`: OIDC client secret string
 - `AUTH_ISSUER`: OIDC auth issuer string
-- `AWS_ACCESS_KEY_ID`: The access key for your AWS account
-- `AWS_SECRET_ACCESS_KEY`: The secret key for your AWS account
 - `AWS_REGION`: The AWS region to use
-- `S3_UPLOADED_FILES_BUCKET_NAME`: Name of the S3 bucket that holds user-uploaded eICR/RR pairs
+- `S3_BUCKET_CONFIG`: Name of the S3 bucket that holds condition configurations
+- `LOG_LEVEL`: Switch for the app to control log output into the environment logging service
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 

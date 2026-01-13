@@ -13,14 +13,8 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import {
-  useRef,
-  useEffect,
-  useMemo,
-  useState,
-  forwardRef,
-  useContext,
-} from 'react';
+import { useRef, useMemo, useState, forwardRef, useContext } from 'react';
+
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -61,11 +55,16 @@ import { Spinner } from '../../../components/Spinner';
 import { TesLink } from '../TesLink';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
+import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
+import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { EditableContext } from './editContext';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
+
+  // release lock on beforeunload
+  useConfigLockRelease(id);
   const {
     data: configuration,
     isPending,
@@ -76,6 +75,8 @@ export function ConfigBuild() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
+  const { is_locked } = configuration.data;
+
   // sort so the default code set always displays first
   const sortedCodeSets = configuration.data.code_sets.sort((a) => {
     return a.display_name === configuration.data.display_name ? -1 : 1;
@@ -83,50 +84,68 @@ export function ConfigBuild() {
 
   return (
     <EditableContext value={isEditable}>
-      <div>
-        <TitleContainer>
-          <Title>{configuration.data.display_name}</Title>
-          <Status version={configuration.data.active_version} />
-        </TitleContainer>
-        <NavigationContainer>
-          <VersionMenu
-            id={configuration.data.id}
-            currentVersion={configuration.data.version}
-            status={configuration.data.status}
-            versions={configuration.data.all_versions}
+      <TitleContainer>
+        <Title>{configuration.data.display_name}</Title>
+        <Status version={configuration.data.active_version} />
+      </TitleContainer>
+      <NavigationContainer>
+        <VersionMenu
+          id={configuration.data.id}
+          currentVersion={configuration.data.version}
+          status={configuration.data.status}
+          versions={configuration.data.all_versions}
+          step="build"
+        />
+        <StepsContainer>
+          <Steps configurationId={configuration.data.id} />
+        </StepsContainer>
+      </NavigationContainer>
+      {!configuration.data.is_draft ? (
+        <DraftBanner
+          draftId={configuration.data.draft_id}
+          conditionId={configuration.data.condition_id}
+          latestVersion={configuration.data.latest_version}
+          step="build"
+        />
+      ) : null}
+      {is_locked ? (
+        <ConfigLockBanner
+          lockedByName={configuration.data.locked_by?.name}
+          lockedByEmail={configuration.data.locked_by?.email}
+        />
+      ) : null}
+      <SectionContainer>
+        <div className="content flex flex-wrap justify-between">
+          <ConfigurationTitleBar
             step="build"
+            condition={configuration.data.display_name}
           />
-          <StepsContainer>
-            <Steps configurationId={configuration.data.id} />
-          </StepsContainer>
-        </NavigationContainer>
-        {!configuration.data.is_draft ? (
-          <DraftBanner
-            draftId={configuration.data.draft_id}
-            conditionId={configuration.data.condition_id}
-            latestVersion={configuration.data.latest_version}
-            step="build"
-          />
-        ) : null}
-        <SectionContainer>
-          <div className="content flex flex-wrap justify-between">
-            <ConfigurationTitleBar
-              step="build"
-              condition={configuration.data.display_name}
-            />
-            <Export id={configuration.data.id} />
-          </div>
-          <Builder
-            id={configuration.data.id}
-            code_sets={sortedCodeSets}
-            included_conditions={configuration.data.included_conditions}
-            custom_codes={configuration.data.custom_codes}
-            section_processing={configuration.data.section_processing}
-            display_name={configuration.data.display_name}
-            deduplicated_codes={configuration.data.deduplicated_codes}
-          />
-        </SectionContainer>
-      </div>
+          <Export id={configuration.data.id} />
+        </div>
+
+        <Builder
+          id={configuration.data.id}
+          code_sets={sortedCodeSets}
+          included_conditions={configuration.data.included_conditions}
+          custom_codes={configuration.data.custom_codes}
+          section_processing={configuration.data.section_processing}
+          display_name={configuration.data.display_name}
+          deduplicated_codes={configuration.data.deduplicated_codes}
+          is_locked={is_locked}
+        />
+      </SectionContainer>
+
+      <StepsContainer>
+        <Steps configurationId={configuration.data.id} />
+      </StepsContainer>
+      {!configuration.data.is_draft ? (
+        <DraftBanner
+          draftId={configuration.data.draft_id}
+          conditionId={configuration.data.condition_id}
+          latestVersion={configuration.data.latest_version}
+          step="build"
+        />
+      ) : null}
     </EditableContext>
   );
 }
@@ -156,6 +175,7 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
+  | 'is_locked'
 >;
 
 function Builder({
@@ -166,6 +186,7 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
+  is_locked,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -183,6 +204,11 @@ function Builder({
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {}
   );
+
+  // initialize table with the first code set if 1)nothing is loaded and 2) the data is loaded
+  if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+    onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
+  }
 
   function onCodesetClick(name: string, id: string) {
     setSelectedCodesetName(name);
@@ -214,12 +240,6 @@ function Builder({
 
     codeSetButtonRefs.current[previousCodeSetId]?.click();
   }
-
-  useEffect(() => {
-    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
-    }
-  }, [code_sets, default_condition_name, tableView]);
 
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
@@ -353,7 +373,7 @@ function Builder({
                   isEditable ? SECONDARY_BUTTON_STYLES : DISABLED_BUTTON_STYLES
                 )}
                 aria-label="Add new custom code"
-                disabled={!isEditable}
+                disabled={is_locked || !isEditable}
               >
                 Add code
               </ModalToggleButton>
@@ -362,6 +382,7 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
+                isLocked={is_locked}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -369,6 +390,7 @@ function Builder({
               <EicrSectionReview
                 configurationId={id}
                 sectionProcessing={section_processing}
+                isLocked={is_locked}
               />
             </>
           ) : null}
@@ -432,6 +454,7 @@ interface DeleteCodeSetButtonProps {
   conditionId: string;
   conditionName: string;
   onClick: () => void;
+  disabled?: boolean;
 }
 
 function DeleteCodeSetButton({
@@ -440,6 +463,7 @@ function DeleteCodeSetButton({
   conditionId,
   conditionName,
   onClick,
+  disabled,
 }: DeleteCodeSetButtonProps) {
   const { mutate: disassociateMutation, isPending } =
     useDisassociateConditionWithConfiguration();
@@ -492,10 +516,10 @@ function DeleteCodeSetButton({
     </span>
   ) : (
     <button
-      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only"
+      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
-      disabled={!isEditable}
+      disabled={disabled || !isEditable}
     >
       <Icon.Delete
         className={isEditable ? 'fill-red-700!' : 'text-gray-cool-40'}
@@ -542,6 +566,7 @@ interface CustomCodesDetailProps {
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
+  isLocked?: boolean;
 }
 
 function CustomCodesDetail({
@@ -549,6 +574,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
   deduplicated_codes,
+  isLocked,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -590,12 +616,14 @@ function CustomCodesDetail({
                   className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
+                  disabled={isLocked}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
-                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline"
+                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline disabled:!cursor-not-allowed"
                   aria-label={`Delete custom code ${customCode.name}`}
+                  disabled={isLocked}
                   onClick={() => {
                     deleteCode(
                       {
@@ -627,9 +655,7 @@ function CustomCodesDetail({
       </table>
       <CustomCodeModal
         configurationId={configurationId}
-        initialCode={selectedCustomCode?.code}
-        initialSystem={selectedCustomCode?.system}
-        initialName={selectedCustomCode?.name}
+        selectedCustomCode={selectedCustomCode}
         deduplicated_codes={deduplicated_codes}
         modalRef={modalRef}
         onClose={toggleModal}
@@ -697,11 +723,9 @@ function ConditionCodeTable({
     setHasSearched(true);
   }, DEBOUNCE_TIME_MS);
 
-  useEffect(() => {
-    if (isLoadingResults) {
-      setIsLoadingResults(false);
-    }
-  }, [results, isLoadingResults]);
+  if (results && isLoadingResults) {
+    setIsLoadingResults(false);
+  }
 
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
@@ -803,9 +827,7 @@ interface CustomCodeModalProps {
   configurationId: string;
   modalRef: React.RefObject<ModalRef | null>;
   onClose: () => void;
-  initialCode?: string;
-  initialSystem?: string;
-  initialName?: string;
+  selectedCustomCode: DbConfigurationCustomCode | null;
   deduplicated_codes: string[];
 }
 
@@ -813,9 +835,7 @@ export function CustomCodeModal({
   configurationId,
   modalRef,
   onClose,
-  initialCode,
-  initialSystem,
-  initialName,
+  selectedCustomCode,
   deduplicated_codes,
 }: CustomCodeModalProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
@@ -834,23 +854,30 @@ export function CustomCodeModal({
     { name: 'Other', value: 'other' },
   ];
 
-  const isEditing = initialCode && initialSystem && initialName;
-
   const [form, setForm] = useState({
-    code: initialCode ?? '',
-    system: initialSystem ? normalizeSystem(initialSystem) : '',
-    name: initialName ?? '',
+    code: selectedCustomCode?.code ?? '',
+    system: selectedCustomCode?.system
+      ? normalizeSystem(selectedCustomCode.system)
+      : '',
+    name: selectedCustomCode?.name ?? '',
   });
 
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
+  if (
+    form.code === '' &&
+    form.name === '' &&
+    form.system === '' &&
+    selectedCustomCode
+  ) {
     setForm({
-      code: initialCode ?? '',
-      system: initialSystem ? normalizeSystem(initialSystem) : '',
-      name: initialName ?? '',
+      code: selectedCustomCode?.code ?? '',
+      system: selectedCustomCode?.system
+        ? normalizeSystem(selectedCustomCode.system)
+        : '',
+      name: selectedCustomCode?.name ?? '',
     });
-  }, [initialCode, initialSystem, initialName]);
+  }
+
+  const [error, setError] = useState<string | null>(null);
 
   function resetForm() {
     setForm({ code: '', system: '', name: '' });
@@ -867,14 +894,14 @@ export function CustomCodeModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isEditing) {
+    if (selectedCustomCode) {
       editCode(
         {
           configurationId,
           data: {
-            code: initialCode,
-            system: normalizeSystem(initialSystem),
-            name: initialName,
+            code: selectedCustomCode.code,
+            system: normalizeSystem(selectedCustomCode.system),
+            name: selectedCustomCode.name,
             new_code: form.code,
             new_system: normalizeSystem(form.system),
             new_name: form.name,
@@ -938,7 +965,7 @@ export function CustomCodeModal({
         id="modal-heading"
         className="text-bold font-merriweather mb-6 !p-0 text-xl"
       >
-        {isEditing ? 'Edit custom code' : 'Add custom code'}
+        {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
 
       <button
@@ -1016,7 +1043,7 @@ export function CustomCodeModal({
           variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
           className="!m-0"
         >
-          {isEditing ? 'Update' : 'Add custom code'}
+          {selectedCustomCode ? 'Update' : 'Add custom code'}
         </Button>
       </ModalFooter>
     </Modal>

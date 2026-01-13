@@ -101,3 +101,7 @@ check-code CONDITION VERSION SYSTEM CODE:
             AND c.version = '{{VERSION}}' \
             AND elem->>'code' = '{{CODE}}'; \
     "
+[group('db')]
+[doc('Cascade delete all the related configuration artifacts. For use after an E2E test run')]
+delete-configuration CONFIGURATION_NAME:
+    just db query "DELETE FROM configurations_locks WHERE configuration_id IN (SELECT id FROM configurations WHERE name = '{{CONFIGURATION_NAME}}'); DELETE FROM events WHERE configuration_id IN (SELECT id FROM configurations WHERE name = '{{CONFIGURATION_NAME}}'); DELETE FROM configurations WHERE name = '{{CONFIGURATION_NAME}}';"

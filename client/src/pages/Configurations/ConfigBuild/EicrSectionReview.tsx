@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Table } from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import {
@@ -15,6 +15,7 @@ import { EditableContext } from './editContext';
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
+  isLocked?: boolean;
 }
 
 /**
@@ -26,9 +27,12 @@ interface EicrSectionReviewProps {
 export function EicrSectionReview({
   configurationId,
   sectionProcessing,
+  isLocked,
 }: EicrSectionReviewProps) {
   // Store selected action for each section in state
-  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+  const [selectedActions, setSelectedActions] = useState<string[]>(
+    sectionProcessing.map((section) => section.action ?? 'retain')
+  );
 
   const showToast = useToast();
   const formatError = useApiErrorFormatter();
@@ -38,18 +42,6 @@ export function EicrSectionReview({
   const queryClient = useQueryClient();
   const isDisabled = !useContext(EditableContext);
 
-  // Initialize state based on the sectionProcessing prop. Only initialize
-  // when local state is empty or the number of sections changes so we don't
-  // clobber optimistic UI updates while a mutation is in-flight.
-  useEffect(() => {
-    setSelectedActions((prev) => {
-      if (prev.length === 0 || prev.length !== sectionProcessing.length) {
-        return sectionProcessing.map((section) => section.action ?? 'retain');
-      }
-      return prev;
-    });
-  }, [sectionProcessing]);
-
   /**
    * Central helper that updates local state and calls the backend API for a
    * single section action change.
@@ -58,7 +50,9 @@ export function EicrSectionReview({
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => {
-    if (isDisabled) return;
+    if (isLocked) {
+      return;
+    }
     // Capture previous action so we can revert if the mutation fails
     const previousAction = selectedActions[index] ?? 'retain';
 

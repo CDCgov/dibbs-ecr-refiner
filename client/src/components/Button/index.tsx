@@ -17,7 +17,7 @@ export const SECONDARY_BUTTON_STYLES =
   '!bg-white !text-violet-warm-60 !border-violet-warm-60 !border-[2px] !rounded-sm hover:!border-violet-warm-70 hover:!text-violet-warm-70';
 
 export const DISABLED_BUTTON_STYLES =
-  ' !bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed';
+  '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed';
 
 /**
  * Button component supporting multiple variants and behaviors,

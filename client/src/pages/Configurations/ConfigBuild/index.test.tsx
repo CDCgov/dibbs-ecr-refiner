@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, Mock } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ConfigBuild } from '.';
@@ -15,7 +16,6 @@ import {
   useDeleteCustomCodeFromConfiguration,
   useGetConfiguration,
 } from '../../../api/configurations/configurations';
-import { Mock } from 'vitest';
 
 // Mock all API requests.
 const mockCodeSets: DbTotalConditionCodeCount[] = [
@@ -72,6 +72,8 @@ const baseMockConfig: GetConfigurationResponse = {
   latest_version: 2,
   condition_canonical_url:
     'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
+  locked_by: null,
+  is_locked: false,
 };
 
 // Mock configurations request
@@ -122,15 +124,74 @@ vi.mock('../../../api/conditions/conditions', async () => {
 });
 
 describe('Config builder page', () => {
-  function renderPage() {
-    return render(
-      <TestQueryClientProvider>
-        <MemoryRouter initialEntries={['/configurations/config-id/build']}>
+  it('shows lock banner and disables edit controls when locked by another user', async () => {
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: {
+        data: {
+          ...baseMockConfig,
+          is_locked: true,
+          locked_by: {
+            id: 'other-user-id',
+            name: 'Jane Doe',
+            email: 'jane@foo.com',
+          },
+        },
+      },
+    });
+
+    (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    render(
+      <MemoryRouter initialEntries={['/configurations/config-id/build']}>
+        <TestQueryClientProvider>
           <Routes>
             <Route path="/configurations/:id/build" element={<ConfigBuild />} />
           </Routes>
-        </MemoryRouter>
-      </TestQueryClientProvider>
+        </TestQueryClientProvider>
+      </MemoryRouter>
+    );
+    const lockBanner = await screen.findByRole('status');
+    expect(within(lockBanner).getByText(/View only:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Jane Doe/)).toBeInTheDocument();
+    // The ADD button should be disabled
+    expect(
+      screen.getByRole('button', { name: /add new code set/i })
+    ).toBeDisabled();
+    // The custom code add button should be disabled
+    // Switch to the custom codes tab to render the button
+    const customCodesTab = await screen.findByRole('button', {
+      name: /custom codes/i,
+    });
+    await userEvent.click(customCodesTab);
+    // Assert the "Custom codes" heading is present
+    expect(
+      await screen.findByRole('heading', { name: /custom codes/i })
+    ).toBeInTheDocument();
+
+    const addCustomCodeBtn = await screen.findByRole('button', {
+      name: /add new custom code/i,
+    });
+    expect(addCustomCodeBtn).toBeDisabled();
+  });
+  function renderPage() {
+    return render(
+      <MemoryRouter initialEntries={['/configurations/config-id/build']}>
+        <TestQueryClientProvider>
+          <Routes>
+            <Route path="/configurations/:id/build" element={<ConfigBuild />} />
+          </Routes>
+        </TestQueryClientProvider>
+      </MemoryRouter>
     );
   }
 
