@@ -142,8 +142,7 @@ def run_fetch_pipeline(
                 if record_counts[category] > 0:
                     filepath_out.write(",\n")
 
-                # use indent=2 for smaller file sizes
-                json.dump(resource, filepath_out, indent=2)
+                json.dump(resource, filepath_out, indent=4)
                 filepath_out.write("\n")
                 record_counts[category] += 1
 
