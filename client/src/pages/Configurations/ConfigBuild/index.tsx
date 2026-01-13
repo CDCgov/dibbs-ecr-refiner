@@ -581,15 +581,16 @@ function CustomCodesDetail({
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener
-                  className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
+                  variant="tertiary"
+                  className="!mr-6"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
                   disabled={isLocked}
                 >
                   Edit
                 </ModalToggleButton>
-                <button
-                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline disabled:!cursor-not-allowed"
+                <Button
+                  variant="tertiary"
                   aria-label={`Delete custom code ${customCode.name}`}
                   disabled={isLocked}
                   onClick={() => {
@@ -615,7 +616,7 @@ function CustomCodesDetail({
                   }}
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
