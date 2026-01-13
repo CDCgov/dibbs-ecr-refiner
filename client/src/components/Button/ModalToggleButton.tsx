@@ -22,7 +22,7 @@ export function ModalToggleButton({
   modalRef,
   opener,
   closer,
-  variant = 'primary',
+  variant,
   className,
   disabled,
   ...props
