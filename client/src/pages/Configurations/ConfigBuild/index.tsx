@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
-import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
+import { Button } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
@@ -16,7 +16,6 @@ import {
   Modal,
   ModalRef,
   ModalHeading,
-  ModalToggleButton,
   ModalFooter,
   Label,
   TextInput,
@@ -53,6 +52,7 @@ import { DraftBanner } from './DraftBanner';
 import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
+import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -350,7 +350,8 @@ function Builder({
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
+                variant="secondary"
+                className={classNames('mt-4!')}
                 aria-label="Add new custom code"
                 disabled={is_locked}
               >
