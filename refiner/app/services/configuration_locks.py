@@ -4,9 +4,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.db.events.db import insert_event_db
-from app.db.events.model import EventInput
-from app.db.pool import AsyncDatabaseConnection, db
+from app.db.pool import AsyncDatabaseConnection
 
 LOCK_TIMEOUT_MINUTES = 30
 
@@ -26,7 +24,7 @@ class ConfigurationLock:
 
     @staticmethod
     async def get_lock(
-        configuration_id: str, db: AsyncDatabaseConnection = db
+        configuration_id: UUID, db: AsyncDatabaseConnection
     ) -> Optional["ConfigurationLock"]:
         """
         Retrieve the current lock for a configuration, if any.
@@ -45,15 +43,14 @@ class ConfigurationLock:
     async def acquire_lock(
         configuration_id: UUID,
         user_id: UUID,
-        jurisdiction_id: str,
-        db: AsyncDatabaseConnection = db,
+        db: AsyncDatabaseConnection,
     ) -> bool:
         """
         Acquire a lock for a configuration, replacing any expired or released lock.
         """
         now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=LOCK_TIMEOUT_MINUTES)
-        existing = await ConfigurationLock.get_lock(str(configuration_id), db)
+        existing = await ConfigurationLock.get_lock(configuration_id, db)
         if existing and existing.expires_at.timestamp() > now.timestamp():
             # Lock is active
             return existing.user_id == str(user_id)  # Only allow if same user
@@ -62,83 +59,53 @@ class ConfigurationLock:
             "INSERT INTO configurations_locks (configuration_id, user_id, expires_at) VALUES (%s, %s, %s) "
             "ON CONFLICT (configuration_id) DO UPDATE SET user_id = EXCLUDED.user_id, expires_at = EXCLUDED.expires_at"
         )
-        params = (str(configuration_id), str(user_id), expires_at)
+        params = (configuration_id, user_id, expires_at)
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-                # Audit log
-                event = EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=configuration_id,
-                    event_type="lock_acquire",
-                    action_text=f"Lock acquired for configuration {configuration_id} by user {user_id}",
-                )
-                await insert_event_db(event=event, cursor=cur)
-        return True
+                return True
+        return False
 
     @staticmethod
-    async def release_lock(
+    async def release_if_owned(
         configuration_id: UUID,
         user_id: UUID,
-        jurisdiction_id: str,
-        db: AsyncDatabaseConnection = db,
-    ) -> bool:
+        db: AsyncDatabaseConnection,
+    ) -> None:
         """
         Release the lock for a configuration if held by the user.
         """
         query = "DELETE FROM configurations_locks WHERE configuration_id = %s AND user_id = %s"
-        params = (str(configuration_id), str(user_id))
+        params = (configuration_id, user_id)
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-                # Audit log
-                event = EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=configuration_id,
-                    event_type="lock_release",
-                    action_text=f"Lock released for configuration {configuration_id} by user {user_id}",
-                )
-                await insert_event_db(event=event, cursor=cur)
-        return True
 
     @staticmethod
     async def renew_lock(
         configuration_id: UUID,
         user_id: UUID,
-        jurisdiction_id: str,
-        db: AsyncDatabaseConnection = db,
-    ) -> bool:
+        db: AsyncDatabaseConnection,
+    ) -> None:
         """
         Renew the lock for a configuration, extending its expiration.
         """
         now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=LOCK_TIMEOUT_MINUTES)
         query = "UPDATE configurations_locks SET expires_at = %s WHERE configuration_id = %s AND user_id = %s"
-        params = (expires_at, str(configuration_id), str(user_id))
+        params = (expires_at, configuration_id, user_id)
         async with db.get_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(query, params)
-                # Audit log
-                event = EventInput(
-                    jurisdiction_id=jurisdiction_id,
-                    user_id=user_id,
-                    configuration_id=configuration_id,
-                    event_type="lock_renew",
-                    action_text=f"Lock renewed for configuration {configuration_id} by user {user_id}",
-                )
-                await insert_event_db(event=event, cursor=cur)
-        return True
 
     @staticmethod
     async def raise_if_locked_by_other(
-        configuration_id: str,
-        user_id: str,
+        configuration_id: UUID,
+        user_id: UUID,
+        db: AsyncDatabaseConnection,
         username: str | None = None,
         email: str | None = None,
-        db: AsyncDatabaseConnection = db,
-    ):
+    ) -> None:
         """
         Raises an HTTP status of 409 if the configuration is locked by another user.
         """

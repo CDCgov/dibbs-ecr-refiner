@@ -8,6 +8,7 @@ import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import { defineConfig } from 'eslint/config';
 import reactPlugin from 'eslint-plugin-react';
+import testingLibraryPlugin from 'eslint-plugin-testing-library';
 
 export default defineConfig(
   { ignores: ['dist', 'tests/setup.ts', 'src/api'] },
@@ -46,6 +47,7 @@ export default defineConfig(
         { allowConstantExport: true },
       ],
       'import/no-duplicates': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -96,7 +98,9 @@ export default defineConfig(
   {
     // provide some flexibility for test files
     files: ['**/*.test.{ts,tsx}', '**/tests/**/*.ts'],
+    plugins: { 'testing-library': testingLibraryPlugin },
     rules: {
+      'testing-library/no-debugging-utils': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },

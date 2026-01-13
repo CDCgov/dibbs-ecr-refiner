@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useEffect, useMemo, useState, forwardRef } from 'react';
+import { useRef, useMemo, useState, forwardRef } from 'react';
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -56,7 +56,6 @@ import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
-  const [user] = useLogin();
 
   // release lock on beforeunload
   useConfigLockRelease(id);
@@ -68,6 +67,8 @@ export function ConfigBuild() {
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
+
+  const { is_locked } = configuration.data;
 
   // sort so the default code set always displays first
   const sortedCodeSets = configuration.data.code_sets.sort((a) => {
@@ -100,11 +101,10 @@ export function ConfigBuild() {
           step="build"
         />
       ) : null}
-      {configuration.data.lockedBy &&
-      configuration.data.lockedBy.id !== user?.id ? (
+      {is_locked ? (
         <ConfigLockBanner
-          lockedByName={configuration.data.lockedBy.name}
-          lockedByEmail={configuration.data.lockedBy.email}
+          lockedByName={configuration.data.locked_by?.name}
+          lockedByEmail={configuration.data.locked_by?.email}
         />
       ) : null}
       <SectionContainer>
@@ -123,7 +123,7 @@ export function ConfigBuild() {
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           deduplicated_codes={configuration.data.deduplicated_codes}
-          lock={configuration.data.lockedBy}
+          is_locked={is_locked}
         />
       </SectionContainer>
     </div>
@@ -155,15 +155,8 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
-> & {
-  lock?: {
-    id: string;
-    name: string;
-    email: string;
-  } | null;
-};
-
-import { useLogin } from '../../../hooks/Login';
+  | 'is_locked'
+>;
 
 function Builder({
   id,
@@ -173,11 +166,8 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
-  lock,
+  is_locked,
 }: BuilderProps) {
-  const [user] = useLogin();
-  const isLocked = Boolean(lock && user && lock.id !== user.id);
-
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
     'none' | 'codeset' | 'custom' | 'sections'
@@ -192,6 +182,11 @@ function Builder({
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {}
   );
+
+  // initialize table with the first code set if 1)nothing is loaded and 2) the data is loaded
+  if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
+    onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
+  }
 
   function onCodesetClick(name: string, id: string) {
     setSelectedCodesetName(name);
@@ -224,12 +219,6 @@ function Builder({
     codeSetButtonRefs.current[previousCodeSetId]?.click();
   }
 
-  useEffect(() => {
-    if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
-      onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
-    }
-  }, [code_sets, default_condition_name, tableView]);
-
   return (
     <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
@@ -245,7 +234,7 @@ function Builder({
                 id="open-codesets"
                 aria-label="Add new code set to configuration"
                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                disabled={isLocked}
+                disabled={is_locked}
               >
                 ADD
               </Button>
@@ -287,7 +276,7 @@ function Builder({
                         configurationId={id}
                         conditionId={codeSet.condition_id}
                         conditionName={codeSet.display_name}
-                        disabled={isLocked}
+                        disabled={is_locked}
                         onClick={() =>
                           setCodesetListItemFocus(codeSet.condition_id)
                         }
@@ -363,7 +352,7 @@ function Builder({
                 opener
                 className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
                 aria-label="Add new custom code"
-                disabled={isLocked}
+                disabled={is_locked}
               >
                 Add code
               </ModalToggleButton>
@@ -372,7 +361,7 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
-                isLocked={isLocked}
+                isLocked={is_locked}
               />
             </>
           ) : tableView === 'sections' ? (
@@ -380,7 +369,7 @@ function Builder({
               <EicrSectionReview
                 configurationId={id}
                 sectionProcessing={section_processing}
-                isLocked={isLocked}
+                isLocked={is_locked}
               />
             </>
           ) : null}
@@ -633,9 +622,7 @@ function CustomCodesDetail({
       </table>
       <CustomCodeModal
         configurationId={configurationId}
-        initialCode={selectedCustomCode?.code}
-        initialSystem={selectedCustomCode?.system}
-        initialName={selectedCustomCode?.name}
+        selectedCustomCode={selectedCustomCode}
         deduplicated_codes={deduplicated_codes}
         modalRef={modalRef}
         onClose={toggleModal}
@@ -703,11 +690,9 @@ function ConditionCodeTable({
     setHasSearched(true);
   }, DEBOUNCE_TIME_MS);
 
-  useEffect(() => {
-    if (isLoadingResults) {
-      setIsLoadingResults(false);
-    }
-  }, [results, isLoadingResults]);
+  if (results && isLoadingResults) {
+    setIsLoadingResults(false);
+  }
 
   // Show only the filtered codes if the user isn't searching
   const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
@@ -809,9 +794,7 @@ interface CustomCodeModalProps {
   configurationId: string;
   modalRef: React.RefObject<ModalRef | null>;
   onClose: () => void;
-  initialCode?: string;
-  initialSystem?: string;
-  initialName?: string;
+  selectedCustomCode: DbConfigurationCustomCode | null;
   deduplicated_codes: string[];
 }
 
@@ -819,9 +802,7 @@ export function CustomCodeModal({
   configurationId,
   modalRef,
   onClose,
-  initialCode,
-  initialSystem,
-  initialName,
+  selectedCustomCode,
   deduplicated_codes,
 }: CustomCodeModalProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
@@ -840,23 +821,30 @@ export function CustomCodeModal({
     { name: 'Other', value: 'other' },
   ];
 
-  const isEditing = initialCode && initialSystem && initialName;
-
   const [form, setForm] = useState({
-    code: initialCode ?? '',
-    system: initialSystem ? normalizeSystem(initialSystem) : '',
-    name: initialName ?? '',
+    code: selectedCustomCode?.code ?? '',
+    system: selectedCustomCode?.system
+      ? normalizeSystem(selectedCustomCode.system)
+      : '',
+    name: selectedCustomCode?.name ?? '',
   });
 
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
+  if (
+    form.code === '' &&
+    form.name === '' &&
+    form.system === '' &&
+    selectedCustomCode
+  ) {
     setForm({
-      code: initialCode ?? '',
-      system: initialSystem ? normalizeSystem(initialSystem) : '',
-      name: initialName ?? '',
+      code: selectedCustomCode?.code ?? '',
+      system: selectedCustomCode?.system
+        ? normalizeSystem(selectedCustomCode.system)
+        : '',
+      name: selectedCustomCode?.name ?? '',
     });
-  }, [initialCode, initialSystem, initialName]);
+  }
+
+  const [error, setError] = useState<string | null>(null);
 
   function resetForm() {
     setForm({ code: '', system: '', name: '' });
@@ -873,14 +861,14 @@ export function CustomCodeModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isEditing) {
+    if (selectedCustomCode) {
       editCode(
         {
           configurationId,
           data: {
-            code: initialCode,
-            system: normalizeSystem(initialSystem),
-            name: initialName,
+            code: selectedCustomCode.code,
+            system: normalizeSystem(selectedCustomCode.system),
+            name: selectedCustomCode.name,
             new_code: form.code,
             new_system: normalizeSystem(form.system),
             new_name: form.name,
@@ -944,7 +932,7 @@ export function CustomCodeModal({
         id="modal-heading"
         className="text-bold font-merriweather mb-6 !p-0 text-xl"
       >
-        {isEditing ? 'Edit custom code' : 'Add custom code'}
+        {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
 
       <button
@@ -1022,7 +1010,7 @@ export function CustomCodeModal({
           variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
           className="!m-0"
         >
-          {isEditing ? 'Update' : 'Add custom code'}
+          {selectedCustomCode ? 'Update' : 'Add custom code'}
         </Button>
       </ModalFooter>
     </Modal>

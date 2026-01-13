@@ -22,11 +22,9 @@ export function TurnOffButtons({
       <ModalToggleButton
         modalRef={deactivateRef}
         opener
-        className={classNames(
-          'self-start',
-          SECONDARY_BUTTON_STYLES,
-          DISABLED_BUTTON_STYLES
-        )}
+        className={classNames('self-start', SECONDARY_BUTTON_STYLES, {
+          disabled: DISABLED_BUTTON_STYLES,
+        })}
         disabled={disabled}
       >
         Turn off current version
