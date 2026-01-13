@@ -1,53 +1,68 @@
-import base64
 import json
 from pathlib import Path
+from zipfile import ZipFile
 
 import boto3
 from moto import mock_aws
 
+from ..services.file_io import get_asset_path
 from .lambda_function import lambda_handler
 
 
 @mock_aws
 def test_lambda():
+    # Load example event
     event_file_path = Path(__file__).parent / "example-events" / "event.json"
     with open(event_file_path) as f:
         event = json.load(f)
 
-    bucket = "dibbs-refiner-dev"
+    # Load sample input data
+    zip_path = get_asset_path("demo", "mon-mothma-covid-influenza.zip")
+    with ZipFile(zip_path) as z:
+        with z.open("CDA_RR.xml") as f:
+            rr_xml = f.read()
+        with z.open("CDA_eICR.xml") as f:
+            eicr_xml = f.read()
 
+    # Create a persistence ID (matching event)
+    persistence_id = "persistence/id"
+
+    # Create an S3 bucket (matching event)
+    bucket = "dibbs-refiner-dev"
     s3 = boto3.client("s3", region_name="us-east-1")
     s3.create_bucket(Bucket=bucket)
 
-    # Define sample input file test data
-    test_data = {
-        "eicr": base64.b64encode(b"<eicr>test</eicr>").decode("utf-8"),
-        "rr": base64.b64encode(b"<rr>test</rr>").decode("utf-8"),
-    }
+    # RR will come from RefinerInput/
+    rr_input_key = f"RefinerInput/{persistence_id}"
+    s3.put_object(Bucket=bucket, Key=rr_input_key, Body=rr_xml)
 
-    # Convert dict to JSON string and encode as bytes
-    json_str = json.dumps(test_data)
-    json_bytes = json_str.encode("utf-8")
+    # eICR will be found in eCRMessageV2
+    eicr_input_key = f"eCRMessageV2/{persistence_id}"
+    s3.put_object(Bucket=bucket, Key=eicr_input_key, Body=eicr_xml)
 
-    input_key = "RefinerInput/testfile"
-    s3.put_object(Bucket=bucket, Key=input_key, Body=json_bytes)
-
+    # Run the Lambda
     response = lambda_handler(event, context={})
     assert response["statusCode"] == 200
 
     # Collect names of all keys that exist after running the lambda
-    output_objects = s3.list_objects_v2(Bucket=bucket)
-    result = {"RefinerInput": 0, "RefinerOutput": 0, "RefinerComplete": 0}
-    for obj in output_objects["Contents"]:
-        input_key = obj["Key"]
-        key_prefix, _, _ = input_key.partition("/")
-        result[key_prefix] = result[key_prefix] + 1
+    s3_paths = [obj["Key"] for obj in s3.list_objects_v2(Bucket=bucket)["Contents"]]
 
-    # Provided 1 input file
-    assert result["RefinerInput"] == 1
+    # Expected input files paths
+    assert "RefinerInput/persistence/id" in s3_paths
+    assert "eCRMessageV2/persistence/id" in s3_paths
 
-    # Lambda uses 2 mock eICRs
-    assert result["RefinerOutput"] == 2
+    # Expected eICR output files created by Refiner
+    full_flu_path = "RefinerOutput/persistence/id/SDDH/772828001"
+    full_covid_path = "RefinerOutput/persistence/id/SDDH/840539006"
+    assert full_flu_path in s3_paths
+    assert full_covid_path in s3_paths
 
-    # 1 resulting "complete" file
-    assert result["RefinerComplete"] == 1
+    # Expected completion file for pipeline
+    assert "RefinerComplete/persistence/id" in s3_paths
+
+    # Load RefinerComplete/persistence/id and ensure it contains expected paths
+    resp = s3.get_object(Bucket=bucket, Key=f"RefinerComplete/{persistence_id}")
+    complete_json = json.loads(resp["Body"].read().decode("utf-8"))
+    assert not complete_json["RefinerSkip"]
+    assert full_flu_path in complete_json["RefinerOutputFiles"]
+    assert full_covid_path in complete_json["RefinerOutputFiles"]
