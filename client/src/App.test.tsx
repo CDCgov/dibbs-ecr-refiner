@@ -48,11 +48,11 @@ describe('App', () => {
   });
 
   it('Should display a deployed version code to the user', () => {
-    vi.stubEnv('VITE_GIT_HASH', 'test-hash');
+    vi.stubEnv('VITE_GIT_HASH', 'a1b2c3d4e5f67890abcdef1234567890abcdef12');
 
     renderApp();
 
-    expect(screen.getByText(`Version code: test-hash`)).toBeInTheDocument();
+    expect(screen.getByText('Version code: a1b2c3d')).toBeInTheDocument();
   });
 
   it('Should show the username and their jurisdiction in the header', async () => {
