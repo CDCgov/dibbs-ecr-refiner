@@ -36,10 +36,6 @@ export function ModalToggleButton({
         buttonStyles = SECONDARY_BUTTON_STYLES;
         break;
 
-      case 'disabled':
-        buttonStyles = DISABLED_BUTTON_STYLES;
-        break;
-
       case 'selected':
         buttonStyles = SELECTED_BUTTON_STYLES;
         break;

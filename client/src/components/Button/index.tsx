@@ -5,12 +5,7 @@ import {
 } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'disabled'
-  | 'selected'
-  | 'tertiary';
+export type ButtonVariant = 'primary' | 'secondary' | 'selected' | 'tertiary';
 interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   type?: UswdsButtonProps['type'];
   variant?: ButtonVariant;
@@ -41,16 +36,20 @@ export function Button({
   to,
   onClick,
   className,
+  disabled,
   ...props
 }: ButtonProps) {
-  const styles = classNames(className, {
-    [PRIMARY_BUTTON_STYLES]: variant === 'primary',
-    [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
-    [DISABLED_BUTTON_STYLES]: variant === 'disabled',
-    [SELECTED_BUTTON_STYLES]: variant === 'selected',
-    [TERTIARY_BUTTON_STYLES]: variant === 'tertiary',
-  });
-
+  const styles = classNames(
+    className,
+    disabled
+      ? DISABLED_BUTTON_STYLES
+      : {
+          [PRIMARY_BUTTON_STYLES]: variant === 'primary',
+          [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
+          [SELECTED_BUTTON_STYLES]: variant === 'selected',
+          [TERTIARY_BUTTON_STYLES]: variant === 'tertiary',
+        }
+  );
   if (to) {
     const sideEffect = onClick as
       | React.MouseEventHandler<HTMLAnchorElement>
@@ -67,7 +66,13 @@ export function Button({
   }
 
   return (
-    <UswdsButton onClick={onClick} type={type} className={styles} {...props}>
+    <UswdsButton
+      onClick={onClick}
+      type={type}
+      disabled={disabled}
+      className={styles}
+      {...props}
+    >
       {children}
     </UswdsButton>
   );
