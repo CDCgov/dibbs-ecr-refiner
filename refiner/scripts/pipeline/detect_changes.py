@@ -134,7 +134,7 @@ def main() -> None:
         for filename in new_files | updated_files:
             shutil.move(TES_DATA_STAGING_DIR / filename, TES_DATA_DIR / filename)
             status = "NEW" if filename in new_files else "UPDATED"
-            print(f"    🚚 {STATUS}: {filename}")
+            print(f"    🚚 {status}: {filename}")
 
         for filename in deleted_files:
             (TES_DATA_DIR / filename).unlink()
