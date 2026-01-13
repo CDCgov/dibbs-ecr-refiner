@@ -41,15 +41,21 @@ export function Button({
   to,
   onClick,
   className,
+  disabled,
   ...props
 }: ButtonProps) {
-  const styles = classNames(className, {
-    [PRIMARY_BUTTON_STYLES]: variant === 'primary',
-    [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
-    [DISABLED_BUTTON_STYLES]: variant === 'disabled',
-    [SELECTED_BUTTON_STYLES]: variant === 'selected',
-    [TERTIARY_BUTTON_STYLES]: variant === 'tertiary',
-  });
+  const styles = classNames(
+    className,
+    disabled
+      ? DISABLED_BUTTON_STYLES
+      : {
+          [PRIMARY_BUTTON_STYLES]: variant === 'primary',
+          [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
+          [DISABLED_BUTTON_STYLES]: variant === 'disabled',
+          [SELECTED_BUTTON_STYLES]: variant === 'selected',
+          [TERTIARY_BUTTON_STYLES]: variant === 'tertiary',
+        }
+  );
 
   if (to) {
     const sideEffect = onClick as
@@ -67,7 +73,13 @@ export function Button({
   }
 
   return (
-    <UswdsButton onClick={onClick} type={type} className={styles} {...props}>
+    <UswdsButton
+      onClick={onClick}
+      disabled={disabled}
+      type={type}
+      className={styles}
+      {...props}
+    >
       {children}
     </UswdsButton>
   );

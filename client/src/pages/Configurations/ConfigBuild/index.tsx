@@ -103,6 +103,7 @@ export function ConfigBuild() {
           conditionId={configuration.data.condition_id}
           latestVersion={configuration.data.latest_version}
           step="build"
+          disabled={disabledForConcurrency}
         />
       ) : null}
       {disabledForConcurrency ? (
