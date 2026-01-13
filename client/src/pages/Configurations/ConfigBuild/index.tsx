@@ -96,7 +96,7 @@ export function ConfigBuild() {
           <Steps configurationId={configuration.data.id} />
         </StepsContainer>
       </NavigationContainer>
-      {!configuration.data.is_draft ? (
+      {!isEditable ? (
         <DraftBanner
           draftId={configuration.data.draft_id}
           conditionId={configuration.data.condition_id}
@@ -189,7 +189,7 @@ function Builder({
     {}
   );
 
-  // initialize table with the first code set if 1)nothing is loaded and 2) the data is loaded
+  // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
   if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
     onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
   }
@@ -226,7 +226,7 @@ function Builder({
   }
 
   return (
-    <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
+    <div className="bg-blue-cool-5 h-140 rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
@@ -237,7 +237,7 @@ function Builder({
               {isEditable && (
                 <Button
                   variant="secondary"
-                  className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center !px-3 !py-2 font-bold hover:cursor-pointer"
+                  className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center px-3! py-2! font-bold hover:cursor-pointer"
                   id="open-codesets"
                   aria-label="Add new code set to configuration"
                   onClick={() => setIsDrawerOpen(!isDrawerOpen)}
@@ -595,7 +595,7 @@ function CustomCodesDetail({
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener
-                  className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
+                  className="usa-button--unstyled text-blue-cool-50! mr-6! font-bold! no-underline! hover:underline!"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
                   disabled={isLocked}
@@ -603,7 +603,7 @@ function CustomCodesDetail({
                   Edit
                 </ModalToggleButton>
                 <button
-                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline disabled:!cursor-not-allowed"
+                  className="text-blue-cool-50! font-bold no-underline! hover:cursor-pointer! hover:underline! disabled:cursor-not-allowed!"
                   aria-label={`Delete custom code ${customCode.name}`}
                   disabled={isLocked}
                   onClick={() => {
