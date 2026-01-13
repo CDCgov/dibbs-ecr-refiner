@@ -3,34 +3,33 @@ FROM node:22-alpine3.22 AS client-builder
 
 WORKDIR /src
 
-# install git to capture hash
-RUN apk add --no-cache git
-COPY .git .git
-
 COPY ./client/package*.json ./
-RUN npm install
+RUN npm ci
+
+# Used as part of the client build
+ARG VITE_GIT_HASH
+ARG VITE_GIT_BRANCH
+ENV VITE_GIT_HASH=$VITE_GIT_HASH
+ENV VITE_GIT_BRANCH=$VITE_GIT_BRANCH
 
 COPY ./client ./
-
 RUN npm run build
 
-# Package production app
+
+# Runtime image
 FROM python:3.14-slim
-
-RUN apt-get update && \
-    apt-get upgrade -y
-
-RUN pip install --upgrade pip  --break-system-packages
 
 WORKDIR /code
 
-COPY ./refiner/requirements.txt /code/requirements.txt
-RUN pip install -r requirements.txt
+RUN python -m pip install --upgrade pip
 
-COPY ./refiner/app /code/app
-COPY ./refiner/assets /code/assets
-COPY ./refiner/README.md /code/README.md
-COPY --from=client-builder /src/dist /code/dist
+COPY ./refiner/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./refiner/app ./app
+COPY ./refiner/assets ./assets
+COPY ./refiner/README.md ./README.md
+COPY --from=client-builder /src/dist ./dist
 
 EXPOSE 8080
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

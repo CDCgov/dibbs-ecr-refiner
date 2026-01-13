@@ -95,6 +95,9 @@ jobs:
           file: Dockerfile.app
           push: true
           tags: ${{ steps.vars.outputs.app_tags }}
+          build-args: |
+            VITE_GIT_HASH=${{ github.sha }}
+            VITE_GIT_BRANCH=${{ github.ref_name }}
 
       - name: Build and push Refiner Lambda image
         uses: docker/build-push-action@v6
