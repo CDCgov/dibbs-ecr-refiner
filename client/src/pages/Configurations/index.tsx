@@ -171,7 +171,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       )}
       <ModalFooter className="flex justify-self-end">
         <Button
-          variant={`${selectedCondition ? 'primary' : 'disabled'}`}
+          variant="primary"
           disabled={!selectedCondition}
           onClick={() => {
             if (!selectedCondition) return;
