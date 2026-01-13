@@ -1,7 +1,8 @@
-import { ModalRef, ModalToggleButton } from '@trussworks/react-uswds';
-import { Button, SECONDARY_BUTTON_STYLES } from '../../../../components/Button';
+import { ModalRef } from '@trussworks/react-uswds';
+import { Button } from '../../../../components/Button';
 import { GenericModal } from './GenericModal';
 import { RefObject } from 'react';
+import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
 
 interface TurnOffModal {
   handleDeactivation: () => void;
@@ -23,11 +24,7 @@ export function TurnOffModal({ modalRef, handleDeactivation }: TurnOffModal) {
       }
       footer={
         <div>
-          <ModalToggleButton
-            modalRef={modalRef}
-            closer
-            className={SECONDARY_BUTTON_STYLES}
-          >
+          <ModalToggleButton modalRef={modalRef} closer variant="secondary">
             Cancel
           </ModalToggleButton>
           <Button onClick={() => handleDeactivation()}>Yes, turn off</Button>

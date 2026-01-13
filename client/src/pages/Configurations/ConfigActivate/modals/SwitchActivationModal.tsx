@@ -1,7 +1,8 @@
-import { ModalRef, ModalToggleButton } from '@trussworks/react-uswds';
+import { ModalRef } from '@trussworks/react-uswds';
 import { GenericModal } from './GenericModal';
-import { Button, SECONDARY_BUTTON_STYLES } from '../../../../components/Button';
+import { Button } from '../../../../components/Button';
 import { RefObject } from 'react';
+import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
 
 interface SwitchActivationModal {
   curVersion: number;
@@ -34,11 +35,7 @@ export function SwitchActivationModal({
       }
       footer={
         <div>
-          <ModalToggleButton
-            modalRef={modalRef}
-            closer
-            className={SECONDARY_BUTTON_STYLES}
-          >
+          <ModalToggleButton modalRef={modalRef} closer variant="secondary">
             Cancel
           </ModalToggleButton>
           <Button onClick={() => handleActivation()}>

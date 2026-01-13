@@ -1,13 +1,9 @@
-import { ModalRef, ModalToggleButton } from '@trussworks/react-uswds';
+import { ModalRef } from '@trussworks/react-uswds';
 import { SwitchActivationModal } from '../modals/SwitchActivationModal';
 import { useRef } from 'react';
 import classNames from 'classnames';
-import {
-  PRIMARY_BUTTON_STYLES,
-  SECONDARY_BUTTON_STYLES,
-  DISABLED_BUTTON_STYLES,
-} from '../../../../components/Button';
 import { TurnOffModal } from '../modals/TurnOffModal';
+import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
 
 interface SwitchFromPreviousProps {
   handleActivation: () => void;
@@ -33,7 +29,7 @@ export function SwitchFromPrevious({
         <ModalToggleButton
           modalRef={activateRef}
           opener
-          className={classNames('self-start', PRIMARY_BUTTON_STYLES)}
+          className={classNames('self-start')}
         >
           Switch to version {curVersion}
         </ModalToggleButton>
@@ -53,11 +49,8 @@ export function SwitchFromPrevious({
         <ModalToggleButton
           modalRef={deactivateRef}
           opener
-          className={classNames(
-            'self-start',
-            SECONDARY_BUTTON_STYLES,
-            DISABLED_BUTTON_STYLES
-          )}
+          variant="secondary"
+          className={classNames('self-start')}
           disabled={disabled}
         >
           Turn off configuration
