@@ -9,7 +9,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useMemo, useState, forwardRef, useContext } from 'react';
+import { useRef, useMemo, useState, forwardRef } from 'react';
 
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
@@ -54,24 +54,25 @@ import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
-import { EditableContext } from './editContext';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
 
   // release lock on beforeunload
   useConfigLockRelease(id);
+
   const {
     data: configuration,
     isPending,
     isError,
   } = useGetConfiguration(id ?? '');
-  const isEditable = configuration?.data.status === 'draft';
 
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
   const { is_locked } = configuration.data;
+  const isEditable = configuration?.data.status === 'draft';
+  const isDisabled = is_locked || !isEditable;
 
   // sort so the default code set always displays first
   const sortedCodeSets = configuration.data.code_sets.sort((a) => {
@@ -79,7 +80,7 @@ export function ConfigBuild() {
   });
 
   return (
-    <EditableContext value={isEditable}>
+    <>
       <TitleContainer>
         <Title>{configuration.data.display_name}</Title>
         <Status version={configuration.data.active_version} />
@@ -127,10 +128,10 @@ export function ConfigBuild() {
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           deduplicated_codes={configuration.data.deduplicated_codes}
-          is_locked={is_locked}
+          disabled={isDisabled}
         />
       </SectionContainer>
-    </EditableContext>
+    </>
   );
 }
 
@@ -159,8 +160,7 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
-  | 'is_locked'
->;
+> & { disabled?: boolean };
 
 function Builder({
   id,
@@ -170,7 +170,7 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
-  is_locked,
+  disabled,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -182,7 +182,6 @@ function Builder({
   const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
     null
   );
-  const isEditable = useContext(EditableContext);
 
   const modalRef = useRef<ModalRef | null>(null);
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
@@ -234,7 +233,7 @@ function Builder({
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
               </OptionsLabel>
-              {isEditable && (
+              {!disabled && (
                 <Button
                   variant="secondary"
                   className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center px-3! py-2! font-bold hover:cursor-pointer"
@@ -337,7 +336,7 @@ function Builder({
             </OptionsListContainer>
           </div>
         </div>
-        <div className="flex !h-full !max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex h-full! max-h-138! w-full! flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
@@ -355,7 +354,7 @@ function Builder({
                 variant="secondary"
                 className={classNames('mt-4!')}
                 aria-label="Add new custom code"
-                disabled={is_locked || !isEditable}
+                disabled={disabled}
               >
                 Add code
               </ModalToggleButton>
@@ -364,17 +363,15 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
-                isLocked={is_locked}
+                disabled={disabled}
               />
             </>
           ) : tableView === 'sections' ? (
-            <>
-              <EicrSectionReview
-                configurationId={id}
-                sectionProcessing={section_processing}
-                isLocked={is_locked}
-              />
-            </>
+            <EicrSectionReview
+              configurationId={id}
+              sectionProcessing={section_processing}
+              disabled={disabled}
+            />
           ) : null}
         </div>
       </div>
@@ -384,6 +381,7 @@ function Builder({
         conditions={included_conditions}
         configurationId={id}
         reportable_condition_display_name={default_condition_name}
+        disabled={disabled}
       />
     </div>
   );
@@ -486,8 +484,6 @@ function DeleteCodeSetButton({
     );
   }
 
-  const isEditable = useContext(EditableContext);
-
   if (isPending) {
     return <Spinner size={20} className="mr-2" />;
   }
@@ -498,13 +494,13 @@ function DeleteCodeSetButton({
     </span>
   ) : (
     <button
-      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+      className="text-gray-cool-40 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
-      disabled={disabled || !isEditable}
+      disabled={disabled}
     >
       <Icon.Delete
-        className={isEditable ? 'fill-red-700!' : 'text-gray-cool-40'}
+        className={disabled ? 'text-gray-cool-40' : 'fill-red-700!'}
         size={3}
         aria-hidden
       />
@@ -536,7 +532,7 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 }
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
-  return <div className="max-h-[15rem] overflow-y-scroll pt-2">{children}</div>;
+  return <div className="max-h-60 overflow-y-scroll pt-2">{children}</div>;
 }
 
 function OptionsList({ children }: { children: React.ReactNode }) {
@@ -548,7 +544,7 @@ interface CustomCodesDetailProps {
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
-  isLocked?: boolean;
+  disabled?: boolean;
 }
 
 function CustomCodesDetail({
@@ -556,7 +552,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
   deduplicated_codes,
-  isLocked,
+  disabled,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -571,7 +567,7 @@ function CustomCodesDetail({
 
   return (
     <>
-      <table id="custom-table" className="!mt-6 w-full border-separate">
+      <table id="custom-table" className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
@@ -598,14 +594,14 @@ function CustomCodesDetail({
                   className="usa-button--unstyled text-blue-cool-50! mr-6! font-bold! no-underline! hover:underline!"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
-                  disabled={isLocked}
+                  disabled={disabled}
                 >
                   Edit
                 </ModalToggleButton>
                 <button
                   className="text-blue-cool-50! font-bold no-underline! hover:cursor-pointer! hover:underline! disabled:cursor-not-allowed!"
                   aria-label={`Delete custom code ${customCode.name}`}
-                  disabled={isLocked}
+                  disabled={disabled}
                   onClick={() => {
                     deleteCode(
                       {
@@ -753,7 +749,7 @@ function ConditionCodeTable({
           </Select>
         </div>
       </div>
-      <hr className="border-blue-cool-5 mb-6 w-full border-[1px]" />
+      <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
 
       {isLoadingResults ? (
@@ -940,12 +936,12 @@ export function CustomCodeModal({
       aria-describedby="modal-heading"
       aria-labelledby="modal-heading"
       isLarge
-      className="!max-w-[25rem] !rounded-none p-10"
+      className="max-w-100! rounded-none! p-10"
       forceAction
     >
       <ModalHeading
         id="modal-heading"
-        className="text-bold font-merriweather mb-6 !p-0 text-xl"
+        className="text-bold font-merriweather mb-6 p-0! text-xl"
       >
         {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
@@ -959,10 +955,10 @@ export function CustomCodeModal({
         }}
         className="absolute top-4 right-4 h-6 w-6 rounded text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
       >
-        <Icon.Close className="!h-6 !w-6" aria-hidden />
+        <Icon.Close className="h-6! w-6!" aria-hidden />
       </button>
 
-      <div className="mt-5 flex flex-col gap-5 !p-0">
+      <div className="mt-5 flex flex-col gap-5 p-0!">
         <div>
           <Label htmlFor="code">Code #</Label>
           <TextInput
@@ -1023,7 +1019,7 @@ export function CustomCodeModal({
           onClick={handleSubmit}
           disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
           variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
-          className="!m-0"
+          className="m-0!"
         >
           {selectedCustomCode ? 'Update' : 'Add custom code'}
         </Button>

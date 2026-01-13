@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { Table } from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import {
@@ -10,12 +10,11 @@ import { UpdateSectionProcessingEntryAction } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { RadioCell } from '../../../components/Button/RadioCell';
 import { useQueryClient } from '@tanstack/react-query';
-import { EditableContext } from './editContext';
 
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
-  isLocked?: boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -27,7 +26,7 @@ interface EicrSectionReviewProps {
 export function EicrSectionReview({
   configurationId,
   sectionProcessing,
-  isLocked,
+  disabled,
 }: EicrSectionReviewProps) {
   // Store selected action for each section in state
   const [selectedActions, setSelectedActions] = useState<string[]>(
@@ -40,7 +39,6 @@ export function EicrSectionReview({
   const { mutate: updateSectionProcessing } =
     useUpdateConfigurationSectionProcessing();
   const queryClient = useQueryClient();
-  const isDisabled = !useContext(EditableContext);
 
   /**
    * Central helper that updates local state and calls the backend API for a
@@ -50,7 +48,7 @@ export function EicrSectionReview({
     index: number,
     action: UpdateSectionProcessingEntryAction
   ) => {
-    if (isLocked) {
+    if (disabled) {
       return;
     }
     // Capture previous action so we can revert if the mutation fails
@@ -110,15 +108,15 @@ export function EicrSectionReview({
       id="sections-table"
       aria-label="Choose what you'd like to do with the sections in your eICR"
     >
-      <h1 className="!mb-4 text-lg leading-10 font-bold">
+      <h1 className="mb-4! text-lg leading-10 font-bold">
         Choose what you'd like to do with the sections in your eICR
       </h1>
-      <p className="!mb-4">
+      <p className="mb-4!">
         Choose whether to refine, include fully, or omit sections of your eICR
         to save space and protect patient privacy.
       </p>
-      <p className="!mb-2 leading-8">Options:</p>
-      <ul className="!mb-4 list-inside list-disc pl-4">
+      <p className="mb-2! leading-8">Options:</p>
+      <ul className="mb-4! list-inside list-disc pl-4">
         <li>
           <span className="font-bold">Include & refine section:</span> Includes
           only the coded data you've chosen to retain in your configuration.
@@ -132,28 +130,28 @@ export function EicrSectionReview({
           section from the eICR entirely.
         </li>
       </ul>
-      <Table className="mt-2 !max-w-[740px] !border-separate border-spacing-0 rounded-full border-l-0">
+      <Table className="mt-2 max-w-185! border-separate! border-spacing-0 rounded-full border-l-0">
         <colgroup>
-          <col className="w-[260px]" />
-          <col className="w-[160px]" />
-          <col className="w-[160px]" />
-          <col className="w-[160px]" />
+          <col className="w-65" />
+          <col className="w-40" />
+          <col className="w-40" />
+          <col className="w-40" />
         </colgroup>
         <caption className="usa-sr-only">
           Choose actions for each eICR section
         </caption>
         <thead>
           <tr>
-            <th scope="col" className="!text-gray-cool-60">
+            <th scope="col" className="text-gray-cool-60!">
               Section name
             </th>
-            <th scope="col" className="!text-gray-cool-60 text-center">
+            <th scope="col" className="text-gray-cool-60! text-center">
               Include &amp; <br /> refine section
             </th>
-            <th scope="col" className="!text-gray-cool-60 text-center">
+            <th scope="col" className="text-gray-cool-60!text-center">
               Include <br /> entire section
             </th>
-            <th scope="col" className="!text-gray-cool-60 text-center">
+            <th scope="col" className="text-gray-cool-60! text-center">
               Remove section
             </th>
           </tr>
@@ -161,7 +159,7 @@ export function EicrSectionReview({
         <tbody>
           {sectionProcessing.map((section, index) => (
             <tr key={section.name}>
-              <td className="!cursor-default !font-bold !break-words !whitespace-normal">
+              <td className="cursor-default! font-bold! wrap-break-word! whitespace-normal!">
                 {section.name}
               </td>
               <RadioCell
@@ -170,7 +168,7 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'refine'}
                 ariaLabel={`Include and refine section ${section.name}`}
                 applyAction={applyAction}
-                disabled={isDisabled}
+                disabled={disabled}
               />
               <RadioCell
                 index={index}
@@ -178,7 +176,7 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'retain'}
                 ariaLabel={`Include entire section ${section.name}`}
                 applyAction={applyAction}
-                disabled={isDisabled}
+                disabled={disabled}
               />
 
               <RadioCell
@@ -187,7 +185,7 @@ export function EicrSectionReview({
                 checked={selectedActions[index] === 'remove'}
                 ariaLabel={`Remove section ${section.name}`}
                 applyAction={applyAction}
-                disabled={isDisabled}
+                disabled={disabled}
               />
             </tr>
           ))}

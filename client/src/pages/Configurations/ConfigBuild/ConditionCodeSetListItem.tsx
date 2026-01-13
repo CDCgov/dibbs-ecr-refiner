@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../../../components/Button';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -9,13 +9,14 @@ import {
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
 import { IncludedCondition } from '../../../api/schemas';
-import { EditableContext } from './editContext';
+import classNames from 'classnames';
 
 interface ConditionCodeSetListItemProps {
   condition: IncludedCondition;
   configurationId: string;
   highlight?: React.ReactNode;
   reportable_condition_display_name: string;
+  disabled?: boolean;
 }
 
 export function ConditionCodeSetListItem({
@@ -23,6 +24,7 @@ export function ConditionCodeSetListItem({
   configurationId,
   highlight,
   reportable_condition_display_name,
+  disabled,
 }: ConditionCodeSetListItemProps) {
   const [showButton, setShowButton] = useState(false);
 
@@ -30,8 +32,6 @@ export function ConditionCodeSetListItem({
     useAssociateConditionWithConfiguration();
   const { mutate: disassociateMutation } =
     useDisassociateConditionWithConfiguration();
-
-  const isEditable = useContext(EditableContext);
 
   const showToast = useToast();
   const queryClient = useQueryClient();
@@ -102,7 +102,7 @@ export function ConditionCodeSetListItem({
   }
 
   function onClick(associated: boolean) {
-    if (!isEditable) return;
+    if (disabled) return;
     if (associated) {
       handleDisassociate();
     } else {
@@ -111,13 +111,20 @@ export function ConditionCodeSetListItem({
     setShowButton(true);
   }
 
+  const isDefault =
+    condition.display_name === reportable_condition_display_name;
   return (
     <li
-      className="flex h-16 cursor-pointer items-center justify-between rounded-md p-4 hover:bg-white"
+      className={classNames(
+        'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white',
+        isDefault ? '' : 'cursor-pointer'
+      )}
       role="listitem"
       onClick={(e) => {
         e.stopPropagation();
-        onClick(condition.associated);
+        if (!isDefault) {
+          onClick(condition.associated);
+        }
       }}
       onMouseEnter={() => setShowButton(true)}
       onMouseLeave={() => {
@@ -137,33 +144,35 @@ export function ConditionCodeSetListItem({
     >
       <p>{highlight ? <>{highlight}</> : condition.display_name}</p>
       {showButton ? (
-        condition.display_name === reportable_condition_display_name ? (
-          <span className="text-bold !mr-0 !w-[80px] text-black">Default</span>
+        isDefault ? (
+          <span className="text-bold mr-0! w-20! text-black">Default</span>
         ) : condition.associated ? (
           <Button
-            variant={isEditable ? 'secondary' : 'disabled'}
+            variant="secondary"
             aria-pressed={true}
             aria-label={`Remove ${condition.display_name}`}
-            className="!mr-0 !w-[80px]"
+            className="mr-0! w-20!"
             onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
               e.stopPropagation();
               onClick(condition.associated);
             }}
             tabIndex={-1}
+            disabled={disabled}
           >
             Remove
           </Button>
         ) : (
           <Button
-            variant={isEditable ? 'primary' : 'disabled'}
+            variant="primary"
             aria-pressed={false}
             aria-label={`Add ${condition.display_name}`}
-            className="!mr-0 !w-[80px]"
+            className="mr-0! w-20!"
             onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
               e.stopPropagation();
               onClick(condition.associated);
             }}
             tabIndex={-1}
+            disabled={disabled}
           >
             Add
           </Button>
