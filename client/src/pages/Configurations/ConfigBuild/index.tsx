@@ -70,9 +70,9 @@ export function ConfigBuild() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
-  const { is_locked } = configuration.data;
-  const isEditable = configuration?.data.status === 'draft';
-  const isDisabled = is_locked || !isEditable;
+  const { is_locked: disabledForConcurrency } = configuration.data;
+  const disabledForPrevVersion = configuration?.data.status !== 'draft';
+  const isDisabled = disabledForConcurrency || disabledForPrevVersion;
 
   // sort so the default code set always displays first
   const sortedCodeSets = configuration.data.code_sets.sort((a) => {
@@ -97,7 +97,7 @@ export function ConfigBuild() {
           <Steps configurationId={configuration.data.id} />
         </StepsContainer>
       </NavigationContainer>
-      {!isEditable ? (
+      {disabledForPrevVersion ? (
         <DraftBanner
           draftId={configuration.data.draft_id}
           conditionId={configuration.data.condition_id}
@@ -105,7 +105,7 @@ export function ConfigBuild() {
           step="build"
         />
       ) : null}
-      {is_locked ? (
+      {disabledForConcurrency ? (
         <ConfigLockBanner
           lockedByName={configuration.data.locked_by?.name}
           lockedByEmail={configuration.data.locked_by?.email}

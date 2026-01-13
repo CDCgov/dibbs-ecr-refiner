@@ -24,7 +24,7 @@ export function RadioCell({
   checked,
   ariaLabel,
   applyAction,
-  disabled = false,
+  disabled,
 }: RadioCellProps) {
   return (
     <td
@@ -43,9 +43,7 @@ export function RadioCell({
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') {
           e.preventDefault();
-          {
-            applyAction(index, action);
-          }
+          applyAction(index, action);
         }
       }}
     >
