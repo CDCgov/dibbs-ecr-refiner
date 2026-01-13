@@ -134,18 +134,6 @@ export function ConfigBuild() {
           is_locked={is_locked}
         />
       </SectionContainer>
-
-      <StepsContainer>
-        <Steps configurationId={configuration.data.id} />
-      </StepsContainer>
-      {!configuration.data.is_draft ? (
-        <DraftBanner
-          draftId={configuration.data.draft_id}
-          conditionId={configuration.data.condition_id}
-          latestVersion={configuration.data.latest_version}
-          step="build"
-        />
-      ) : null}
     </EditableContext>
   );
 }
