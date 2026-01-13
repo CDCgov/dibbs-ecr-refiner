@@ -28,24 +28,28 @@ export function ModalToggleButton({
   ...props
 }: ModalButtonProps & JSX.IntrinsicElements['button']) {
   let buttonStyles;
-  switch (variant) {
-    case 'secondary':
-      buttonStyles = SECONDARY_BUTTON_STYLES;
-      break;
+  if (disabled) {
+    buttonStyles = DISABLED_BUTTON_STYLES;
+  } else {
+    switch (variant) {
+      case 'secondary':
+        buttonStyles = SECONDARY_BUTTON_STYLES;
+        break;
 
-    case 'disabled':
-      buttonStyles = DISABLED_BUTTON_STYLES;
-      break;
+      case 'disabled':
+        buttonStyles = DISABLED_BUTTON_STYLES;
+        break;
 
-    case 'selected':
-      buttonStyles = SELECTED_BUTTON_STYLES;
-      break;
+      case 'selected':
+        buttonStyles = SELECTED_BUTTON_STYLES;
+        break;
 
-    case 'tertiary':
-      buttonStyles = TERTIARY_BUTTON_STYLES;
-      break;
-    default:
-      buttonStyles = disabled ? DISABLED_BUTTON_STYLES : PRIMARY_BUTTON_STYLES;
+      case 'tertiary':
+        buttonStyles = TERTIARY_BUTTON_STYLES;
+        break;
+      default:
+        buttonStyles = PRIMARY_BUTTON_STYLES;
+    }
   }
 
   return (
