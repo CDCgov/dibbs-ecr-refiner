@@ -9,7 +9,7 @@ from typing import Any
 TARGET_CONDITIONS: list[str] = []
 
 # the directory where the raw json data files are stored
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data" / "source-tes-groupers"
 
 # setup basic logging
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
