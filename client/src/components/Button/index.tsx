@@ -5,9 +5,10 @@ import {
 } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 
+export type ButtonVariant = 'primary' | 'secondary' | 'selected' | 'tertiary';
 interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   type?: UswdsButtonProps['type'];
-  variant?: 'primary' | 'secondary' | 'disabled' | 'selected' | 'tertiary';
+  variant?: ButtonVariant;
   to?: string;
 }
 export const PRIMARY_BUTTON_STYLES =
@@ -18,6 +19,10 @@ export const SECONDARY_BUTTON_STYLES =
 
 export const DISABLED_BUTTON_STYLES =
   '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed';
+export const SELECTED_BUTTON_STYLES =
+  'bg-transparent text-black hover:!bg-transparent hover:!text-black active:!bg-transparent active:!text-black';
+export const TERTIARY_BUTTON_STYLES =
+  '!bg-transparent !text-blue-cool-60 hover:!underline hover:cursor-pointer !p-0 !m-0';
 
 /**
  * Button component supporting multiple variants and behaviors,
@@ -31,18 +36,20 @@ export function Button({
   to,
   onClick,
   className,
+  disabled,
   ...props
 }: ButtonProps) {
-  const styles = classNames(className, {
-    [PRIMARY_BUTTON_STYLES]: variant === 'primary',
-    [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
-    [DISABLED_BUTTON_STYLES]: variant === 'disabled',
-    'bg-transparent text-black hover:!bg-transparent hover:!text-black active:!bg-transparent active:!text-black':
-      variant === 'selected',
-    '!bg-transparent !text-blue-cool-60 hover:!underline hover:cursor-pointer !p-0 !m-0':
-      variant === 'tertiary',
-  });
-
+  const styles = classNames(
+    className,
+    disabled
+      ? DISABLED_BUTTON_STYLES
+      : {
+          [PRIMARY_BUTTON_STYLES]: variant === 'primary',
+          [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
+          [SELECTED_BUTTON_STYLES]: variant === 'selected',
+          [TERTIARY_BUTTON_STYLES]: variant === 'tertiary',
+        }
+  );
   if (to) {
     const sideEffect = onClick as
       | React.MouseEventHandler<HTMLAnchorElement>
@@ -59,7 +66,13 @@ export function Button({
   }
 
   return (
-    <UswdsButton onClick={onClick} type={type} className={styles} {...props}>
+    <UswdsButton
+      onClick={onClick}
+      type={type}
+      disabled={disabled}
+      className={styles}
+      {...props}
+    >
       {children}
     </UswdsButton>
   );
