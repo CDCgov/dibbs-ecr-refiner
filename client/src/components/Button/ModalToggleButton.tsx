@@ -54,6 +54,7 @@ export function ModalToggleButton({
       modalRef={modalRef}
       opener={opener}
       closer={closer}
+      disabled={disabled}
       {...props}
     >
       {children}
