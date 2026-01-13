@@ -45,7 +45,7 @@ jobs:
           load: true # Load locally for scanning only
           tags: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
