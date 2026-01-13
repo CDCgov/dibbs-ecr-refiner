@@ -12,14 +12,12 @@ interface RunTestProps {
   onClickSampleFile: () => Promise<void>;
   selectedFile: File | null;
   setSelectedFile: React.Dispatch<React.SetStateAction<File | null>>;
-  isLocked?: boolean;
 }
 export function RunTest({
   onClickSampleFile,
   onClickCustomFile,
   selectedFile,
   setSelectedFile,
-  isLocked = false,
 }: RunTestProps) {
   const env = useGetEnv();
 
@@ -64,7 +62,6 @@ export function RunTest({
                   selectedFile={selectedFile}
                   onSelectedFileChange={onSelectedFileChange}
                   onClickSampleFile={onClickSampleFile}
-                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -98,8 +95,7 @@ function UploadZipFile({
   selectedFile,
   onSelectedFileChange,
   onClickSampleFile,
-  disabled = false,
-}: UploadZipFile & { disabled?: boolean }) {
+}: UploadZipFile) {
   const env = useGetEnv();
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +104,6 @@ function UploadZipFile({
     'usa-button !bg-violet-warm-60 hover:!bg-violet-warm-70': !selectedFile,
     'text-violet-warm-60 hover:text-violet-warm-70 justify-start font-bold hover:underline hover:cursor-pointer !text-blue-cool-60':
       selectedFile,
-    '!cursor-not-allowed': disabled,
   });
 
   return (
@@ -121,17 +116,12 @@ function UploadZipFile({
         className="hidden disabled:cursor-not-allowed"
         accept=".zip"
         onChange={onSelectedFileChange}
-        disabled={disabled}
       />
       <div className="flex flex-col gap-6">
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
           {selectedFile ? (
-            <Button
-              ref={autoFocus}
-              onClick={() => void onClick()}
-              disabled={disabled}
-            >
+            <Button ref={autoFocus} onClick={() => void onClick()}>
               Refine .zip file
             </Button>
           ) : null}
@@ -140,29 +130,19 @@ function UploadZipFile({
             aria-label="Open system file browser for testing"
             role="button"
             className={labelStyling}
-            tabIndex={disabled ? -1 : 0}
-            aria-disabled={disabled}
-            onKeyDown={
-              disabled
-                ? undefined
-                : (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      inputRef.current?.click();
-                    }
-                  }
-            }
-            style={disabled ? { cursor: 'not-allowed', opacity: 0.5 } : {}}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                inputRef.current?.click();
+              }
+            }}
           >
             {selectedFile ? 'Change file' : 'Upload .zip file'}
           </label>
         </div>
         {/* render an autoupload file for QoL in local dev */}
         {env === 'local' ? (
-          <Button
-            variant="secondary"
-            disabled={disabled}
-            onClick={() => void onClickSampleFile()}
-          >
+          <Button variant="secondary" onClick={() => void onClickSampleFile()}>
             Use test file <br />
             (local only)
           </Button>

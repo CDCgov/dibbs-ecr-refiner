@@ -1,11 +1,8 @@
-import { ModalRef, ModalToggleButton } from '@trussworks/react-uswds';
-import classNames from 'classnames';
+import { ModalRef } from '@trussworks/react-uswds';
 import { useRef } from 'react';
-import {
-  DISABLED_BUTTON_STYLES,
-  SECONDARY_BUTTON_STYLES,
-} from '../../../../components/Button';
+
 import { TurnOnModal } from '../modals/TurnOnModal';
+import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
 
 interface TurnOnButtonsProps {
   handleActivation: () => void;
@@ -22,9 +19,7 @@ export function TurnOnButtons({
       <ModalToggleButton
         modalRef={activateRef}
         opener
-        className={classNames('self-start', SECONDARY_BUTTON_STYLES, {
-          disabled: DISABLED_BUTTON_STYLES,
-        })}
+        variant="secondary"
         disabled={disabled}
       >
         Turn on configuration

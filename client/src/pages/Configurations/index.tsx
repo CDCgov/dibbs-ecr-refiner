@@ -9,7 +9,6 @@ import {
 import { useToast } from '../../hooks/useToast';
 
 import {
-  ModalToggleButton,
   Modal,
   ModalHeading,
   ModalFooter,
@@ -27,6 +26,7 @@ import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 import { Spinner } from '../../components/Spinner';
 import classNames from 'classnames';
+import { ModalToggleButton } from '../../components/Button/ModalToggleButton';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -93,7 +93,7 @@ export function Configurations() {
         <ModalToggleButton
           modalRef={modalRef}
           opener
-          className="!bg-violet-warm-60 hover:!bg-violet-warm-70 !m-0"
+          className="bg-violet-warm-60! hover:bg-violet-warm-70! m-0!"
         >
           {CONFIGURATION_CTA}
         </ModalToggleButton>
@@ -171,7 +171,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       )}
       <ModalFooter className="flex justify-self-end">
         <Button
-          variant={`${selectedCondition ? 'primary' : 'disabled'}`}
+          variant="primary"
           disabled={!selectedCondition}
           onClick={() => {
             if (!selectedCondition) return;
