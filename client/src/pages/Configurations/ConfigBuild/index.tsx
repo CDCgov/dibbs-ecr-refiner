@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import { Title } from '../../../components/Title';
-import { Button, SECONDARY_BUTTON_STYLES } from '../../../components/Button';
+import { Button } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
@@ -16,7 +16,6 @@ import {
   Modal,
   ModalRef,
   ModalHeading,
-  ModalToggleButton,
   ModalFooter,
   Label,
   TextInput,
@@ -53,6 +52,7 @@ import { DraftBanner } from './DraftBanner';
 import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
+import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -350,7 +350,8 @@ function Builder({
               <ModalToggleButton
                 modalRef={modalRef}
                 opener
-                className={classNames('!mt-4', SECONDARY_BUTTON_STYLES)}
+                variant="secondary"
+                className={classNames('mt-4!')}
                 aria-label="Add new custom code"
                 disabled={is_locked}
               >
@@ -580,15 +581,16 @@ function CustomCodesDetail({
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener
-                  className="usa-button--unstyled !text-blue-cool-50 !mr-6 !font-bold !no-underline hover:!underline"
+                  variant="tertiary"
+                  className="!mr-6"
                   onClick={() => setSelectedCustomCode(customCode)}
                   aria-label={`Edit custom code ${customCode.name}`}
                   disabled={isLocked}
                 >
                   Edit
                 </ModalToggleButton>
-                <button
-                  className="!text-blue-cool-50 font-bold !no-underline hover:!cursor-pointer hover:!underline disabled:!cursor-not-allowed"
+                <Button
+                  variant="tertiary"
                   aria-label={`Delete custom code ${customCode.name}`}
                   disabled={isLocked}
                   onClick={() => {
@@ -614,7 +616,7 @@ function CustomCodesDetail({
                   }}
                 >
                   Delete
-                </button>
+                </Button>
               </td>
             </tr>
           ))}
@@ -1007,7 +1009,7 @@ export function CustomCodeModal({
         <Button
           onClick={handleSubmit}
           disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
-          variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
+          variant="primary"
           className="!m-0"
         >
           {selectedCustomCode ? 'Update' : 'Add custom code'}

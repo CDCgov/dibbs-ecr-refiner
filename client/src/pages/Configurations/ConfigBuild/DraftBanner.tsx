@@ -4,15 +4,15 @@ import {
   ModalFooter,
   ModalHeading,
   ModalRef,
-  ModalToggleButton,
 } from '@trussworks/react-uswds';
 import { useNavigate } from 'react-router';
 import { useCreateConfiguration } from '../../../api/configurations/configurations';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
-import { Button, PRIMARY_BUTTON_STYLES } from '../../../components/Button';
+import { Button } from '../../../components/Button';
 import { useRef } from 'react';
 import classNames from 'classnames';
+import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
 interface DraftBannerProps {
   draftId: string | null;
@@ -56,7 +56,7 @@ export function DraftBanner({
         <ModalToggleButton
           modalRef={modalRef}
           opener
-          className={classNames('self-start', PRIMARY_BUTTON_STYLES)}
+          className={classNames('self-start')}
         >
           Draft a new version
         </ModalToggleButton>
