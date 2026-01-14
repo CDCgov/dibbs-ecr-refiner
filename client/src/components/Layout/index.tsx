@@ -110,7 +110,8 @@ export function Footer() {
             </a>
           </p>
           <p className="text-gray-cool-20 text-xs">
-            Version code: {import.meta.env.VITE_GIT_HASH ?? 'local'}
+            Version code:{' '}
+            {import.meta.env.VITE_GIT_HASH?.slice(0, 7) ?? 'local'}
           </p>
         </div>
       </div>

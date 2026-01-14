@@ -8,7 +8,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "check": "tsc --noEmit",
-    "build": "tsc -b && VITE_GIT_HASH=$(git rev-parse --short HEAD) VITE_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD) vite build --base=/dist",
+    "build": "tsc -b && vite build --base=/dist",
     "watch:openapi": "nodemon",
     "codegen": "rimraf src/api/* && orval --config orval.config.ts",
     "lint:check": "eslint .",
