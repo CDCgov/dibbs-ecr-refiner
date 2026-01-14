@@ -13,7 +13,7 @@ from rich.table import Table
 
 SCRIPTS_DIR = Path(__file__).parent.parent
 ENV_PATH = SCRIPTS_DIR / ".env"
-TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0"]
+TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0"]
 
 TABLES_TO_CHECK = [
     "conditions",
@@ -124,6 +124,19 @@ WARNING_CHECKS: list[dict[str, Any]] = [
 ]
 
 
+COMPARISON_CHECKS: list[dict[str, Any]] = [
+    {
+        "title": "Code Counts for v3 vs v4 (COVID-19 & Influenza)",
+        "query": """
+            SELECT version, display_name, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes
+            FROM conditions
+            WHERE display_name IN ('COVID-19', 'Influenza')
+            ORDER BY display_name, version;
+        """,
+    }
+]
+
+
 def get_db_connection(console: Console) -> Connection:
     """
     Constructs a DB connection string from environment variables and connects.
@@ -198,6 +211,45 @@ def display_summary_stats(cursor: Cursor, console: Console) -> None:
     console.print(stats_table)
 
 
+def run_comparison_check(
+    cursor: Cursor, console: Console, title: str, query: str
+) -> None:
+    """
+    Runs a comparison query and displays the results in a table.
+
+    This is useful to check if the way that we can get codes from v1.0.0 through 3.0.0 will work for 4.0.0.
+    """
+
+    console.print(f"🔬 Running comparison: [bold cyan]{title}[/bold cyan]...")
+
+    cursor.execute(query)
+    results = cursor.fetchall()
+
+    if not results:
+        console.print("    [yellow]No data found for comparison.[/yellow]")
+        return
+
+    table = Table(title=title)
+    table.add_column("Condition", style="cyan")
+    table.add_column("Version", style="magenta")
+    table.add_column("Total Codes", style="green", justify="right")
+
+    for row in results:
+        loinc_count = len(row.get("loinc_codes") or [])
+        snomed_count = len(row.get("snomed_codes") or [])
+        icd10_count = len(row.get("icd10_codes") or [])
+        rxnorm_count = len(row.get("rxnorm_codes") or [])
+        total_codes = loinc_count + snomed_count + icd10_count + rxnorm_count
+
+        table.add_row(
+            row["display_name"],
+            row["version"],
+            f"{total_codes:,}",
+        )
+
+    console.print(table)
+
+
 def main() -> None:
     """
     Main function to orchestrate all database sanity checks.
@@ -243,6 +295,11 @@ def main() -> None:
                 )
                 if not passed:
                     warnings_found = True
+
+            # run comparison checks
+            console.print("\n[bold blue]📊 Comparison Checks[/bold blue]")
+            for check in COMPARISON_CHECKS:
+                run_comparison_check(cursor, console, **check)
 
             # display results
             console.rule()

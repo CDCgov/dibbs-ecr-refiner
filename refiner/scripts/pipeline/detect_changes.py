@@ -17,7 +17,7 @@ load_dotenv()
 # SCRIPTS_DIR is dibbs-ecr-refiner/refiner/scripts
 PIPELINE_DIR = Path(__file__).parent
 SCRIPTS_DIR = PIPELINE_DIR.parent
-TES_DATA_DIR = SCRIPTS_DIR / "data" / "tes"
+TES_DATA_DIR = SCRIPTS_DIR / "data" / "source-tes-groupers"
 TES_DATA_STAGING_DIR = TES_DATA_DIR / "staging"
 MANIFEST_PATH = TES_DATA_DIR / "manifest.json"
 
@@ -89,14 +89,25 @@ def main() -> None:
         log_dir_base=SCRIPTS_DIR,
     )
 
-    # 3: analyze new files
+    # 3: analyze new files and add a safety check
+    new_files_in_staging = list(TES_DATA_STAGING_DIR.glob("*.json"))
+
+    # safety check
+    if not new_files_in_staging:
+        print(
+            "🚨 WARNING: Staging directory is empty after fetch. Aborting to prevent data loss."
+        )
+        shutil.rmtree(TES_DATA_STAGING_DIR)
+        print("✅ Pipeline finished with no changes.")
+        return
+
     print("🧐 Analyzing new files and generating new manifest...")
     new_manifest_files = {
         json_file.name: {
             "hash": calculate_sha256(json_file),
             "record_count": record_counts.get(json_file.name.replace(".json", ""), 0),
         }
-        for json_file in TES_DATA_STAGING_DIR.glob("*.json")
+        for json_file in new_files_in_staging
     }
 
     # 4: compare using set operations for clarity
@@ -111,7 +122,7 @@ def main() -> None:
         filename
         for filename in common_files
         if new_manifest_files[filename]["hash"]
-        != old_manifest["files"][filename]["hash"]
+        != old_manifest.get("files", {}).get(filename, {}).get("hash")
     }
 
     # 5: act on results

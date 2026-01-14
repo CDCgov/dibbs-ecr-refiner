@@ -13,28 +13,49 @@ def dynamic_classify_valueset(valueset: dict[str, Any]) -> str | None:
     """
     Dynamically classifies a ValueSet based on its archetype.
 
+    It does so correctly by identifying all versions of
+    additional_context_groupers.
+
     Args:
         valueset: A dictionary representing a single FHIR ValueSet resource.
 
     Returns:
         A dynamically generated category name string (e.g.,
-        'condition_grouper_1.0.0') or None if the ValueSet should be
+        'condition_grouper_4.0.0') or None if the ValueSet should be
         ignored.
     """
 
     profiles = valueset.get("meta", {}).get("profile", [])
-    valueset_id = valueset.get("id", "")
     version = valueset.get("version", "unknown_version")
     archetype = "unclassified"
 
+    # rule 1:
+    # ignore ecr triggering valuesets
     if any("us-ph-triggering-valueset" in p for p in profiles):
         return None
-    elif any("vsm-reportingspecificationgroupervalueset" in p for p in profiles):
+
+    # rule 2:
+    # identify by profile first (most reliable)
+    if any("vsm-reportingspecificationgroupervalueset" in p for p in profiles):
         archetype = "reporting_spec_grouper"
     elif any("vsm-conditiongroupervalueset" in p for p in profiles):
         archetype = "condition_grouper"
-    elif not profiles and valueset_id.isdigit():
-        archetype = "additional_context_grouper"
+
+    # rule 3:
+    # fallback for additional context groupers (no meta.profile)
+    # * they are identifiable by having a `useContext` field with a specific code
+    # * this correctly identifies v2.0.0, v3.0.0, **and** v4.0.0.
+    elif "useContext" in valueset:
+        use_contexts = valueset.get("useContext", [])
+        for context in use_contexts:
+            codings = context.get("valueCodeableConcept", {}).get("coding", [])
+            if any(c.get("code") == "additional-context-grouper" for c in codings):
+                archetype = "additional_context_grouper"
+                break
+
+    # if no classification was made, we can safely ignore it
+    if archetype == "unclassified":
+        return None
 
     return f"{archetype}_{version}"
 
@@ -120,6 +141,7 @@ def run_fetch_pipeline(
                 filepath_out = file_handlers[category]
                 if record_counts[category] > 0:
                     filepath_out.write(",\n")
+
                 json.dump(resource, filepath_out, indent=4)
                 filepath_out.write("\n")
                 record_counts[category] += 1

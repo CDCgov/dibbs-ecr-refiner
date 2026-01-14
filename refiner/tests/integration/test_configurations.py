@@ -20,7 +20,7 @@ class TestConfigurations:
                 SELECT id, display_name
                 FROM conditions
                 WHERE display_name = 'Drowning and Submersion'
-                AND version = '3.0.0'
+                AND version = '4.0.0'
                 """
             )
             condition = await cur.fetchone()
@@ -63,7 +63,7 @@ class TestConfigurations:
                 SELECT id, display_name
                 FROM conditions
                 WHERE display_name = 'Drowning and Submersion'
-                AND version = '3.0.0'
+                AND version = '4.0.0'
                 """
             )
             condition = await cur.fetchone()
