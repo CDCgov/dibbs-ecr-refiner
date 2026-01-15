@@ -48,7 +48,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
       <EicrSectionReview
         sectionProcessing={sections}
         configurationId={configurationId}
-        isLocked={false}
+        disabled={false}
       />
     );
 
@@ -80,7 +80,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
       <EicrSectionReview
         sectionProcessing={sections}
         configurationId={configurationId}
-        isLocked={false}
+        disabled={false}
       />
     );
 
