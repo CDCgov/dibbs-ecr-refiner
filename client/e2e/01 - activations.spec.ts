@@ -39,6 +39,24 @@ test.describe('Activation for new draft configurations works as expected', () =>
 
     await expect(page.getByText('Status: Version 1 active')).toBeVisible();
 
+    // ensure activated conditions show the locked banner
+
+    await page.getByRole('link', { name: 'Build' }).click();
+    await expect(
+      page.getByText(
+        'Previous versions cannot be modified. You must draft a new version to make changes.'
+      )
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Custom codes' }).click();
+
+    const addCodeButton = page.getByRole('button', {
+      name: 'Add new custom code',
+    });
+    await expect(addCodeButton).toBeDisabled();
+
+    await page.getByRole('link', { name: 'Activate' }).click();
+
     // check turn off flow works correctly
     const turnOffCurrentVersionButton = page.getByRole('button', {
       name: 'Turn off current version',

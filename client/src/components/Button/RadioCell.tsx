@@ -30,12 +30,15 @@ export function RadioCell({
     <td
       className={classNames(
         'text-center',
-        '!break-all',
-        '!whitespace-normal',
+        'break-all!',
+        'whitespace-normal!',
         'focus:outline-none',
         { 'cursor-not-allowed': disabled }
       )}
       tabIndex={0}
+      onClick={() => {
+        applyAction(index, action);
+      }}
       aria-disabled={disabled}
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') {
