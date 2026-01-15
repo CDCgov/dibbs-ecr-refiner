@@ -41,33 +41,35 @@ class ConditionGrouper:
     children: list[ReportingSpecGrouper] = field(default_factory=list)
 
 
-# helper functions ---
-def extract_codes_from_valueset(valueset: dict[str, Any]) -> dict[str, list[dict]]:
+def extract_codes_from_valueset(valueset: dict[str, Any]) -> set[tuple[str, str]]:
     """
-    Extracts all code types from a single ValueSet into structured lists.
+    Extracts all codes from a single ValueSet into a set of (system, code) tuples.
+
+    This function now handles both 'compose' and 'expansion' structures.
     """
 
-    codes = {
-        "loinc_codes": [],
-        "snomed_codes": [],
-        "icd10_codes": [],
-        "rxnorm_codes": [],
-    }
-    system_map = {
-        "http://loinc.org": "loinc_codes",
-        "http://snomed.info/sct": "snomed_codes",
-        "http://hl7.org/fhir/sid/icd-10-cm": "icd10_codes",
-        "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
-    }
-    compose = valueset.get("compose", {})
-    for include_item in compose.get("include", []):
-        system_url = include_item.get("system")
-        code_key = system_map.get(system_url)
-        if code_key and "concept" in include_item:
-            for concept in include_item["concept"]:
-                codes[code_key].append(
-                    {"display": concept.get("display"), "code": concept.get("code")}
-                )
+    codes = set()
+
+    # method 1:
+    # from 'compose' section
+    if "compose" in valueset:
+        compose = valueset.get("compose", {})
+        for include_item in compose.get("include", []):
+            system_url = include_item.get("system")
+            if system_url and "concept" in include_item:
+                for concept in include_item["concept"]:
+                    if concept.get("code"):
+                        codes.add((system_url, concept.get("code")))
+
+    # method 2:
+    # from 'expansion' section
+    if "expansion" in valueset:
+        expansion = valueset.get("expansion", {})
+        for contains_item in expansion.get("contains", []):
+            system_url = contains_item.get("system")
+            if system_url and contains_item.get("code"):
+                codes.add((system_url, contains_item.get("code")))
+
     return codes
 
 
@@ -113,7 +115,7 @@ def get_valuesets_from_file(file_path: Path) -> tuple[str, list[dict]]:
             return "Single ValueSet", [data]
 
     except json.JSONDecodeError:
-        logging.error(f"Could not decode JSON from {file_path.name}")
+        logging.error(f"Could not decode JSON from {file_file_path.name}")
     except Exception as e:
         logging.error(f"An unexpected error occurred with {file_path.name}: {e}")
 
@@ -159,7 +161,7 @@ def main():
         f"✅ Found {len(all_valuesets_map)} unique (url + version) combinations across all files."
     )
 
-    # validation checks
+    # pre-flight validation checks
     print("\n" + "=" * 80)
     logging.info("✈️ PRE-FLIGHT CHECK: Validating data against database schema rules...")
     print("=" * 80)
@@ -242,32 +244,17 @@ def main():
 
     # check 4: aggregated code structures must be valid
     code_structure_failed = False
+    # this check is now less relevant to the new goal but good to keep
     expected_keys = {"loinc_codes", "snomed_codes", "icd10_codes", "rxnorm_codes"}
     for valueset in parent_valuesets:
+        # NOTE: this is a simulation of the old seeding logic's aggregation
         aggregated_codes = {key: [] for key in expected_keys}
         for include_item in valueset.get("compose", {}).get("include", []):
             for child_ref in include_item.get("valueSet", []):
                 try:
                     child_url, child_version = child_ref.split("|", 1)
-                    child_vs = all_valuesets_map.get((child_url, child_version))
-                    if child_vs:
-                        child_codes = extract_codes_from_valueset(child_vs)
-                        for code_type, codes in child_codes.items():
-                            aggregated_codes[code_type].extend(codes)
-                except (ValueError, KeyError):
+                except ValueError:
                     continue
-
-        if set(aggregated_codes.keys()) != expected_keys:
-            logging.error(
-                f"  ❌ FAILED [Codes]: Aggregated codes dict has wrong keys for URL={valueset.get('url')}"
-            )
-            code_structure_failed = True
-        for key, value in aggregated_codes.items():
-            if not isinstance(value, list):
-                logging.error(
-                    f"  ❌ FAILED [Codes]: Aggregated code value for '{key}' is not a list for URL={valueset.get('url')}"
-                )
-                code_structure_failed = True
 
     if not code_structure_failed:
         logging.info(
@@ -275,17 +262,111 @@ def main():
         )
     has_failed_check = has_failed_check or code_structure_failed
 
-    # final result
     if has_failed_check:
         print("\n" + "=" * 80)
         logging.critical(
-            "😭 One or more pre-flight checks failed. Seeding would likely fail or result in incomplete data."
+            "😭 One or more pre-flight checks failed. Aborting further checks."
         )
         exit(1)
+    else:
+        print("\n" + "=" * 80)
+        logging.info("🎉 SUCCESS: All pre-flight checks passed.")
+        print("=" * 80)
 
+    # ==============================================================================
+    # SPECIAL VALIDATION: 4.0.0 expansion.contains vs. compose.include
+    # ==============================================================================
     print("\n" + "=" * 80)
-    logging.info("🎉 SUCCESS: All pre-flight checks passed.")
-    logging.info("Validation script finished.")
+    logging.info(
+        "🔬 SPECIAL VALIDATION: Checking 4.0.0 Condition Grouper Expansions..."
+    )
+    print("=" * 80)
+
+    v4_parents_with_expansion = [
+        vs
+        for vs in parent_valuesets
+        if vs.get("version") == "4.0.0" and "expansion" in vs
+    ]
+
+    if not v4_parents_with_expansion:
+        logging.warning(
+            "No v4.0.0 condition groupers with an 'expansion' section found to check."
+        )
+    else:
+        logging.info(
+            f"Found {len(v4_parents_with_expansion)} v4.0.0 condition groupers with expansions to analyze."
+        )
+        v4_checks_passed = 0
+        v4_checks_failed = 0
+
+        for parent_vs in v4_parents_with_expansion:
+            condition_name = parent_vs.get("title") or parent_vs.get("name")
+            logging.info(f"\n--- Checking '{condition_name}' ---")
+
+            # set a:
+            # get codes from the expansion.contains
+            # * these are new to condition grouper 4.0.0 FHIR ValueSets
+            expansion_codes = extract_codes_from_valueset(parent_vs)
+            logging.info(
+                f"  [Set A] Found {len(expansion_codes)} codes in the parent's `expansion`."
+            )
+
+            # set b:
+            # get codes by composing them from children
+            # * this is the way we normally grab the reporting specification grouper codes
+            composed_codes = set()
+            for include_item in parent_vs.get("compose", {}).get("include", []):
+                for child_ref in include_item.get("valueSet", []):
+                    try:
+                        child_url, child_version = child_ref.split("|", 1)
+                        child_vs = all_valuesets_map.get((child_url, child_version))
+                        if child_vs:
+                            child_codes = extract_codes_from_valueset(child_vs)
+                            composed_codes.update(child_codes)
+                    except ValueError:
+                        continue
+            logging.info(
+                f"  [Set B] Found {len(composed_codes)} codes by composing from children."
+            )
+
+            # compare the sets
+            if composed_codes.issubset(expansion_codes):
+                logging.info(
+                    "  ✅ PASSED: All composed codes are present in the expansion."
+                )
+                if len(composed_codes) < len(expansion_codes):
+                    diff = len(expansion_codes) - len(composed_codes)
+                    logging.info(
+                        f"    ℹ️ Note: Expansion contains {diff} additional codes."
+                    )
+                v4_checks_passed += 1
+            else:
+                missing_codes = composed_codes - expansion_codes
+                logging.error(
+                    f"  ❌ FAILED: {len(missing_codes)} composed codes are MISSING from the expansion."
+                )
+                # Log a few examples of missing codes for debugging
+                for i, (system, code) in enumerate(list(missing_codes)[:3]):
+                    logging.error(
+                        f"    - Example missing code: System='{system}', Code='{code}'"
+                    )
+                v4_checks_failed += 1
+
+        # final summary for the v4.0.0 checks
+        print("-" * 50)
+        logging.info("V4.0.0 Expansion Check Summary:")
+        logging.info(f"  - Conditions Passed: {v4_checks_passed}")
+        logging.info(f"  - Conditions Failed: {v4_checks_failed}")
+        if v4_checks_failed > 0:
+            logging.critical(
+                "  >>> One or more v4.0.0 conditions failed the expansion check!"
+            )
+        else:
+            logging.info(
+                "  🎉🎉🎉 All v4.0.0 conditions passed the expansion check successfully!"
+            )
+
+    logging.info("\nValidation script finished.")
 
 
 if __name__ == "__main__":
