@@ -1666,7 +1666,7 @@ async def activate_configuration(
         )
 
     # Write the config data to S3 and get the URLs back
-    s3_parent_keys = await run_in_threadpool(
+    s3_urls = await run_in_threadpool(
         upload_configuration_payload, config_payload, config_metadata
     )
 
@@ -1676,7 +1676,7 @@ async def activate_configuration(
         activated_by_user_id=user.id,
         canonical_url=config_to_activate.condition_canonical_url,
         jurisdiction_id=user.jurisdiction_id,
-        s3_urls=s3_parent_keys,
+        s3_urls=s3_urls,
         db=db,
     )
 
@@ -1686,11 +1686,9 @@ async def activate_configuration(
             detail="Configuration could not be activated.",
         )
 
-    # Activation files have been written to S3 and database record has been updated
-    # so we can upload a new current.json
-    await run_in_threadpool(
-        upload_current_version_file, s3_parent_keys, active_config.version
-    )
+    # Activation files have been written to S3 and the database record has been updated.
+    # We can now make a new current.json file for the newly activated version.
+    await run_in_threadpool(upload_current_version_file, s3_urls, active_config.version)
 
     return ConfigurationStatusUpdateResponse(
         configuration_id=active_config.id, status=active_config.status
@@ -1748,9 +1746,9 @@ async def deactivate_configuration(
             detail="Cannot deactivate a draft configuration.",
         )
 
-    # try updating `current.json` first
-    s3_parent_keys = config_to_deactivate.s3_urls
-    await run_in_threadpool(upload_current_version_file, s3_parent_keys, None)
+    # Try updating `current.json` first
+    s3_urls = config_to_deactivate.s3_urls
+    await run_in_threadpool(upload_current_version_file, s3_urls, None)
 
     deactivated_config = await deactivate_configuration_db(
         configuration_id=config_to_deactivate.id,
