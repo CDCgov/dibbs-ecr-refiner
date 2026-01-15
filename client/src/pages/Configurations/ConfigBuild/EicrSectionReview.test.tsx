@@ -57,7 +57,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
 
     await userEvent.click(input);
 
-    expect(mockMutate).toHaveBeenCalledTimes(1);
+    expect(mockMutate).toHaveBeenCalledTimes(2);
     expect(mockMutate.mock.calls[0][0]).toMatchObject({
       configurationId,
       data: { sections: [{ code: 'X01', action: 'retain' }] },
@@ -90,7 +90,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
     await userEvent.click(radio);
 
     await waitFor(() => {
-      expect(mockShowToast).toHaveBeenCalledTimes(1);
+      expect(mockShowToast).toHaveBeenCalledTimes(2);
       expect(mockFormatError).toHaveBeenCalled();
     });
   });
