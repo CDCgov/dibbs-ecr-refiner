@@ -19,7 +19,6 @@ interface DraftBannerProps {
   conditionId: string;
   latestVersion: number;
   step: 'build' | 'test' | 'activate';
-  disabled?: boolean;
 }
 
 export function DraftBanner({
@@ -27,7 +26,6 @@ export function DraftBanner({
   conditionId,
   latestVersion,
   step,
-  disabled,
 }: DraftBannerProps) {
   const modalRef = useRef<ModalRef>(null);
 
@@ -51,7 +49,6 @@ export function DraftBanner({
         <Button
           to={`/configurations/${draftId}/${step}`}
           className="self-start"
-          disabled={disabled}
         >
           Go to draft
         </Button>
