@@ -9,7 +9,7 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 
-from app.db.configurations.model import SerializedConfiguration
+from app.db.configurations.model import ConfigurationStoragePayload
 
 from ...core.config import ENVIRONMENT
 
@@ -72,22 +72,23 @@ def upload_current_version_file(
 
 
 def upload_configuration(
-    configuration: SerializedConfiguration,
+    configuration: ConfigurationStoragePayload,
 ) -> list[str]:
     """
-    Takes a SerializedConfiguration and writes it to S3 for each child code.
+    Takes a ConfigurationStoragePayload and writes it to S3 for each child code.
 
     Args:
-        configuration (SerializedConfiguration): The serialized configuration to write to the bucket.
+        configuration (ConfigurationStoragePayload): The serialized configuration to write to the bucket.
 
     Returns:
         str: List of keys pointing to the child RSG SNOMEd code directories
     """
     s3_condition_code_paths = []
+    data = configuration.to_dict()
+
     for child_rsg_code in configuration.child_rsg_snomed_codes:
         # Write configuration and metadata files
         code_path = f"{configuration.jurisdiction_code}/{child_rsg_code}"
-        data = configuration.to_dict()
 
         # Write active.json
         path_with_version = f"{code_path}/{configuration.active_version}"
@@ -111,24 +112,6 @@ def upload_configuration(
         print(f"Writing file to: {path_with_version}/metadata.json")
 
     return s3_condition_code_paths
-
-
-def download_configuration(key: str) -> dict:
-    """
-    Given a key, downloads the file at that path and returns its contents as a dictionary.
-
-    Args:
-        key (str): Full S3 file path
-
-    Returns:
-        dict: Contents of the file
-    """
-    response = s3_client.get_object(
-        Bucket=S3_CONFIGURATION_BUCKET_NAME,
-        Key=key,
-    )
-    body = response["Body"].read().decode("utf-8")
-    return json.loads(body)
 
 
 def upload_refined_ecr(

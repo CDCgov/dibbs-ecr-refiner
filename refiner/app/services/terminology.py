@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
 from ..db.conditions.model import DbCondition
-from ..db.configurations.model import DbConfiguration, SerializedConfiguration
+from ..db.configurations.model import ConfigurationStoragePayload, DbConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -83,13 +83,13 @@ class ProcessedConfiguration:
 
     @classmethod
     def from_serialized_configuration(
-        cls, configuration: SerializedConfiguration
+        cls, configuration: ConfigurationStoragePayload
     ) -> "ProcessedConfiguration":
         """
-        Create a ProcessedConfiguration from a SerializedConfiguration object.
+        Create a ProcessedConfiguration from a ConfigurationStoragePayload object.
 
         Args:
-            configuration (SerializedConfiguration): The serialized configuration containing minimal configuration data
+            configuration (ConfigurationStoragePayload): The serialized configuration containing minimal configuration data
 
         Returns:
             ProcessedConfiguration: An object containing the final, combined set of codes.

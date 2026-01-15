@@ -1,13 +1,13 @@
 from logging import Logger
 
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
-from app.db.configurations.model import DbConfiguration, SerializedConfiguration
+from app.db.configurations.model import ConfigurationStoragePayload, DbConfiguration
 from app.db.pool import AsyncDatabaseConnection
 
 
 async def serialize_configuration(
     configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection
-) -> SerializedConfiguration | None:
+) -> ConfigurationStoragePayload | None:
     """
     Takes a DbConfiguration and distills it down to only condition codes and section information.
 
@@ -63,7 +63,7 @@ async def serialize_configuration(
         for section_process in configuration.section_processing
     ]
 
-    return SerializedConfiguration(
+    return ConfigurationStoragePayload(
         codes=codes,
         sections=sections,
         jurisdiction_code=configuration.jurisdiction_id,

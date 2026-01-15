@@ -130,9 +130,9 @@ class DbConfiguration:
 
 
 @dataclass(frozen=True)
-class SerializedConfiguration:
+class ConfigurationStoragePayload:
     """
-    Model for a serialized configuration that will be written to S3.
+    This is the model for a configuration that is being written to S3.
     """
 
     codes: set[str]
@@ -143,10 +143,10 @@ class SerializedConfiguration:
 
     def to_dict(self) -> dict:
         """
-        Returns the SerializedConfiguration represented as a dict.
+        Returns the ConfigurationStoragePayload represented as a dict.
 
         Returns:
-            dict: SerializedConfiguration represented as a dict
+            dict: ConfigurationStoragePayload represented as a dict
         """
         return {
             "codes": sorted(self.codes),
