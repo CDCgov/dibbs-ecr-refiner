@@ -85,6 +85,7 @@ async def test_update_section_processing_valid():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        s3_urls=[],
     )
 
     # The DB should return the updated row; build that row dict
@@ -108,6 +109,7 @@ async def test_update_section_processing_valid():
         "last_activated_by": mock_config.last_activated_by,
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
+        "s3_urls": mock_config.s3_urls,
     }
 
     fake_db = _FakeDB(row=row)
@@ -160,6 +162,7 @@ async def test_update_section_processing_invalid_action():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        s3_urls=[],
     )
 
     # Invalid payload
@@ -203,6 +206,7 @@ async def test_update_section_processing_unknown_code():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        s3_urls=[],
     )
 
     # The DB should return the same existing sections because unknown update codes are ignored.
@@ -225,6 +229,7 @@ async def test_update_section_processing_unknown_code():
         "last_activated_by": mock_config.last_activated_by,
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
+        "s3_urls": mock_config.s3_urls,
     }
 
     fake_db = _FakeDB(row=row)
