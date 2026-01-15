@@ -60,7 +60,6 @@ export function DraftBanner({
           modalRef={modalRef}
           opener
           className={classNames('self-start')}
-          disabled={disabled}
         >
           Draft a new version
         </ModalToggleButton>

@@ -1020,7 +1020,7 @@ export function CustomCodeModal({
         <Button
           onClick={handleSubmit}
           disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
-          variant={!isButtonEnabled || !!error ? 'disabled' : 'primary'}
+          variant="primary"
           className="m-0!"
         >
           {selectedCustomCode ? 'Update' : 'Add custom code'}

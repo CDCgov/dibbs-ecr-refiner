@@ -37,7 +37,9 @@ You should be redirected to the configurations page upon successful login.
 
 ## Running the eCR Refiner application in production
 
-The eCR Refiner requires the following environment variables to be specified in order to run the application:
+The eCR Refiner requires the following environment variables to be specified in order to run the application.
+
+### Web application
 
 - `ENV`: The environment name (`local`, `dev`, `test`, `prod`, etc.)
 - `DB_URL`: The PostgreSQL connection string
@@ -52,6 +54,13 @@ The eCR Refiner requires the following environment variables to be specified in 
 - `LOG_LEVEL`: Switch for the app to control log output into the environment logging service
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
+
+### Lambda
+
+- `EICR_INPUT_PREFIX` - S3 directory containing eICR files (default: `eCRMessageV2/`)
+- `REFINER_INPUT_PREFIX` - S3 directory containing RR files (default: `RefinerInput/`)
+- `REFINER_OUTPUT_PREFIX` - S3 directory where refined files are written (default: `RefinerOutput/`)
+- `REFINER_COMPLETE_PREFIX` - S3 directory where a completion file is written by the Refiner to indicate success (default: `RefinerComplete/`)
 
 ## Creating a production build
 

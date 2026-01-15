@@ -15,7 +15,6 @@ COPY ./refiner/assets ./assets
 
 # Copy refiner modules
 COPY ./refiner/app/core app/core
-COPY ./refiner/app/db app/db
 COPY ./refiner/app/services app/services
 
 # Handler entrypoint

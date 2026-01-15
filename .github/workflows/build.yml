@@ -23,6 +23,9 @@ jobs:
           context: .
           file: Dockerfile.app
           push: false
+          build-args: |
+            VITE_GIT_HASH=${{ github.sha }}
+            VITE_GIT_BRANCH=${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
   lambda-build:
