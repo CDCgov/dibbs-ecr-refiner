@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import date
 from io import BytesIO
@@ -8,9 +9,11 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 
+from app.db.configurations.model import SerializedConfiguration
+
 from ...core.config import ENVIRONMENT
 
-uploaded_artifact_bucket_name = ENVIRONMENT["S3_BUCKET_CONFIG"]
+S3_CONFIGURATION_BUCKET_NAME = ENVIRONMENT["S3_BUCKET_CONFIG"]
 
 config = Config(signature_version="s3v4")
 
@@ -43,6 +46,91 @@ else:
     )
 
 
+def upload_current_version_file(
+    directory_keys: list[str], active_version: int | None
+) -> None:
+    """
+    Writes a new `current.json` file all directories with new activation files.
+
+    Args:
+        directory_keys (list[str]): A list of child RSG code directories in the form: s3://bucket/SDDH/12345
+        active_version (int): The newly activated configuration version
+    """
+    data = {
+        "version": active_version
+        if active_version is not None and active_version > 0
+        else None
+    }
+    for key in directory_keys:
+        s3_client.put_object(
+            Bucket=S3_CONFIGURATION_BUCKET_NAME,
+            Key=f"{key}/current.json",
+            Body=json.dumps(data, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+        print(f"Updating current.json to version {active_version}: {key}/current.json")
+
+
+def upload_configuration(
+    configuration: SerializedConfiguration,
+) -> list[str]:
+    """
+    Takes a SerializedConfiguration and writes it to S3 for each child code.
+
+    Args:
+        configuration (SerializedConfiguration): The serialized configuration to write to the bucket.
+
+    Returns:
+        str: List of keys pointing to the child RSG SNOMEd code directories
+    """
+    s3_condition_code_paths = []
+    for child_rsg_code in configuration.child_rsg_snomed_codes:
+        # Write configuration and metadata files
+        code_path = f"{configuration.jurisdiction_code}/{child_rsg_code}"
+        data = configuration.to_dict()
+
+        # Write active.json
+        path_with_version = f"{code_path}/{configuration.active_version}"
+        s3_client.put_object(
+            Bucket=S3_CONFIGURATION_BUCKET_NAME,
+            Key=f"{path_with_version}/active.json",
+            Body=json.dumps(data, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        # Write metadata.json
+        s3_client.put_object(
+            Bucket=S3_CONFIGURATION_BUCKET_NAME,
+            Key=f"{path_with_version}/metadata.json",
+            Body=json.dumps(data, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        s3_condition_code_paths.append(code_path)
+        print(f"Writing file to: {path_with_version}/active.json")
+        print(f"Writing file to: {path_with_version}/metadata.json")
+
+    return s3_condition_code_paths
+
+
+def download_configuration(key: str) -> dict:
+    """
+    Given a key, downloads the file at that path and returns its contents as a dictionary.
+
+    Args:
+        key (str): Full S3 file path
+
+    Returns:
+        dict: Contents of the file
+    """
+    response = s3_client.get_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=key,
+    )
+    body = response["Body"].read().decode("utf-8")
+    return json.loads(body)
+
+
 def upload_refined_ecr(
     user_id: UUID, file_buffer: BytesIO, filename: str, logger: Logger
 ) -> str:
@@ -65,11 +153,11 @@ def upload_refined_ecr(
         today = date.today().isoformat()  # YYYY-MM-DD
         key = f"refiner-test-suite/{today}/{user_id}/{filename}"
 
-        s3_client.upload_fileobj(file_buffer, uploaded_artifact_bucket_name, key)
+        s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, key)
 
         presigned_url = s3_client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": uploaded_artifact_bucket_name, "Key": key},
+            Params={"Bucket": S3_CONFIGURATION_BUCKET_NAME, "Key": key},
             ExpiresIn=expires,
         )
 
@@ -86,7 +174,7 @@ def upload_refined_ecr(
             "Attempted refined file upload to S3 failed",
             extra={
                 "error": str(e),
-                "bucket": uploaded_artifact_bucket_name,
+                "bucket": S3_CONFIGURATION_BUCKET_NAME,
                 "key": key,
                 "user_id": user_id,
             },

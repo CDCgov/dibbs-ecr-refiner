@@ -1,10 +1,10 @@
-from typing import cast
+from typing import Literal, cast
 
 from lxml import etree
 from lxml.etree import _Element
 
 from app.services.ecr.models import RefinementPlan
-from app.services.terminology import ConfigurationPayload
+from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
 
 from ...core.exceptions import (
     StructureValidationError,
@@ -16,6 +16,7 @@ from .models import NamespaceMap
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
+    get_section_loinc_codes,
     process_section,
 )
 from .specification import detect_eicr_version, load_spec
@@ -44,6 +45,56 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
 
     percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
     return round(percent_diff)
+
+
+def create_refinement_plan(
+    processed_configuration: ProcessedConfiguration, xml_files: XMLFiles
+) -> RefinementPlan:
+    """
+    Create a RefinementPlan by combining configuration rules and the sections present in the eICR document.
+
+    This function lives in the orchestration layer (`testing.py`) because it
+    requires access to both the processed configuration data and the raw XML
+    file to create the final, actionable plan.
+
+    Args:
+        processed_configuration: The processed configuration containing terminology
+                                 and section processing rules.
+        xml_files: The XMLFiles object containing the eICR to be inspected.
+
+    Returns:
+        A RefinementPlan containing the exact instructions for `refine_eicr`.
+    """
+
+    # get eICR root and pull out the structuredBody
+    eicr_root = xml_files.parse_eicr()
+    structured_body = eicr_root.find(
+        ".//hl7:structuredBody", namespaces={"hl7": "urn:hl7-org:v3"}
+    )
+
+    # discover which sections are present in this specific eICR
+    if structured_body is None:
+        present_section_codes = []
+    else:
+        present_section_codes = get_section_loinc_codes(structured_body)
+
+    # create a map of the rules from the configuration for efficient lookup
+    rules_map: dict[str, str] = {
+        rule["code"]: rule["action"]
+        for rule in processed_configuration.section_processing
+    }
+
+    # build the final instruction set: for each section in the document,
+    # find its rule, defaulting to "remove" if no rule is specified
+    final_instructions: dict[str, Literal["retain", "refine", "remove"]] = {
+        code: cast(Literal["retain", "refine", "remove"], rules_map.get(code, "remove"))
+        for code in present_section_codes
+    }
+
+    return RefinementPlan(
+        xpath=processed_configuration.build_xpath(),
+        section_instructions=final_instructions,
+    )
 
 
 def refine_eicr(

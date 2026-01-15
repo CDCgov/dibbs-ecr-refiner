@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 
+from pydantic import BaseModel, Field
+
 from ..db.conditions.model import DbCondition
-from ..db.configurations.model import DbConfiguration
+from ..db.configurations.model import DbConfiguration, SerializedConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -42,6 +44,25 @@ class ConfigurationPayload:
     conditions: list[DbCondition]
 
 
+class Section(BaseModel):
+    """
+    Section data coming from an active.json S3 file.
+    """
+
+    code: str
+    name: str
+    action: str
+
+
+class ProcessedConfigurationData(BaseModel):
+    """
+    ProcessedConfiguration data coming from an active.json S3 file.
+    """
+
+    codes: set[str] = Field(min_length=1)
+    sections: list[Section]
+
+
 @dataclass(frozen=True)
 class ProcessedConfiguration:
     """
@@ -59,6 +80,42 @@ class ProcessedConfiguration:
 
     codes: set[str]
     section_processing: list[dict]
+
+    @classmethod
+    def from_serialized_configuration(
+        cls, configuration: SerializedConfiguration
+    ) -> "ProcessedConfiguration":
+        """
+        Create a ProcessedConfiguration from a SerializedConfiguration object.
+
+        Args:
+            configuration (SerializedConfiguration): The serialized configuration containing minimal configuration data
+
+        Returns:
+            ProcessedConfiguration: An object containing the final, combined set of codes.
+        """
+        return cls(
+            codes=configuration.codes,
+            section_processing=configuration.sections,
+        )
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ProcessedConfiguration":
+        """
+        Creates a ProcessedConfiguration from a validated dictionary.
+
+        Args:
+            data (dict): _description_
+
+        Returns:
+            ProcessedConfiguration: _description_
+        """
+        validated = ProcessedConfigurationData.model_validate(data)
+
+        return cls(
+            codes=validated.codes,
+            section_processing=[s.model_dump() for s in validated.sections],
+        )
 
     @classmethod
     def from_payload(cls, payload: ConfigurationPayload) -> "ProcessedConfiguration":

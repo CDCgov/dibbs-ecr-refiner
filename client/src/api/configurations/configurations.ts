@@ -956,6 +956,7 @@ export const useUpdateConfigurationSectionProcessing = <TError = AxiosError<HTTP
 Args:
     configuration_id (UUID): ID of the configuration to update
     user (DbUser): The logged-in user
+    logger (Logger): The standard logger
     db (AsyncDatabaseConnection): Database connection
 
 Raises:

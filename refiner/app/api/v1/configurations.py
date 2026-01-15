@@ -83,7 +83,12 @@ from ...db.configurations.model import (
 from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
-from ...services.aws.s3 import upload_refined_ecr
+from ...services.aws.s3 import (
+    upload_configuration,
+    upload_current_version_file,
+    upload_refined_ecr,
+)
+from ...services.configurations import serialize_configuration
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ...services.xslt import (
@@ -1595,6 +1600,7 @@ class ConfigurationStatusUpdateResponse:
 async def activate_configuration(
     configuration_id: UUID,
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
     user: DbUser = Depends(get_logged_in_user),
 ) -> ConfigurationStatusUpdateResponse:
     """
@@ -1603,6 +1609,7 @@ async def activate_configuration(
     Args:
         configuration_id (UUID): ID of the configuration to update
         user (DbUser): The logged-in user
+        logger (Logger): The standard logger
         db (AsyncDatabaseConnection): Database connection
 
     Raises:
@@ -1623,7 +1630,7 @@ async def activate_configuration(
     if not config_to_activate:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Configuration to deactivate can't be found.",
+            detail="Configuration to activate can't be found.",
         )
 
     if config_to_activate.status == "active":
@@ -1632,19 +1639,45 @@ async def activate_configuration(
             detail="Configuration is already active.",
         )
 
+    # Serialize the config
+    serialized_config = await serialize_configuration(
+        configuration=config_to_activate,
+        logger=logger,
+        db=db,
+    )
+
+    if not serialized_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration could not be serialized.",
+        )
+
+    # Write the serialized config to S3 and get the URL(s) back
+    s3_parent_keys = await run_in_threadpool(
+        upload_configuration,
+        serialized_config,
+    )
+
+    # Activate config in the database
     active_config = await activate_configuration_db(
         configuration_id=config_to_activate.id,
         activated_by_user_id=user.id,
         canonical_url=config_to_activate.condition_canonical_url,
         jurisdiction_id=user.jurisdiction_id,
+        s3_urls=s3_parent_keys,
         db=db,
     )
 
     if not active_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Configuration can't be deactivated.",
+            detail="Configuration could not be activated.",
         )
+
+    # Files are written to S3 and database record has been updated. Write current.json
+    await run_in_threadpool(
+        upload_current_version_file, s3_parent_keys, active_config.version
+    )
 
     return ConfigurationStatusUpdateResponse(
         configuration_id=active_config.id, status=active_config.status
@@ -1702,12 +1735,17 @@ async def deactivate_configuration(
             detail="Cannot deactivate a draft configuration.",
         )
 
+    # try updating `current.json` first
+    s3_parent_keys = config_to_deactivate.s3_urls
+    await run_in_threadpool(upload_current_version_file, s3_parent_keys, None)
+
     deactivated_config = await deactivate_configuration_db(
         configuration_id=config_to_deactivate.id,
         user_id=user.id,
         jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
+
     if not deactivated_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

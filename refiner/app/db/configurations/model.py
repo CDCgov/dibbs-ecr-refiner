@@ -90,6 +90,7 @@ class DbConfiguration:
     last_activated_by: UUID | None
     created_by: UUID
     condition_canonical_url: str
+    s3_urls: list[str]
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
@@ -124,4 +125,33 @@ class DbConfiguration:
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
             condition_canonical_url=row["condition_canonical_url"],
+            s3_urls=row["s3_urls"],
         )
+
+
+@dataclass(frozen=True)
+class SerializedConfiguration:
+    """
+    Model for a serialized configuration that will be written to S3.
+    """
+
+    codes: set[str]
+    sections: list[dict[str, str]]
+    child_rsg_snomed_codes: list[str]
+    jurisdiction_code: str
+    active_version: int
+
+    def to_dict(self) -> dict:
+        """
+        Returns the SerializedConfiguration represented as a dict.
+
+        Returns:
+            dict: SerializedConfiguration represented as a dict
+        """
+        return {
+            "codes": sorted(self.codes),
+            "sections": self.sections,
+            "child_rsg_snomed_codes": self.child_rsg_snomed_codes,
+            "jurisdiction_code": self.jurisdiction_code,
+            "active_version": self.active_version,
+        }
