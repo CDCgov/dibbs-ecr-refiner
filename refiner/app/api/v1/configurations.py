@@ -84,11 +84,14 @@ from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import (
-    upload_configuration,
+    upload_configuration_payload,
     upload_current_version_file,
     upload_refined_ecr,
 )
-from ...services.configurations import serialize_configuration
+from ...services.configurations import (
+    convert_config_to_storage_payload,
+    get_config_payload_metadata,
+)
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ...services.xslt import (
@@ -1639,23 +1642,32 @@ async def activate_configuration(
             detail="Configuration is already active.",
         )
 
-    # Serialize the config
-    serialized_config = await serialize_configuration(
+    # Convert the config to a form that can be put into object storage
+    config_payload = await convert_config_to_storage_payload(
         configuration=config_to_activate,
-        logger=logger,
         db=db,
     )
 
-    if not serialized_config:
+    if not config_payload:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Configuration could not be serialized.",
+            detail="Configuration payload object could not be created.",
         )
 
-    # Write the serialized config to S3 and get the URL(s) back
+    # Get the config's metadata
+    config_metadata = await get_config_payload_metadata(
+        configuration=config_to_activate, logger=logger, db=db
+    )
+
+    if not config_metadata:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Configuration metadata object could not be created.",
+        )
+
+    # Write the config data to S3 and get the URLs back
     s3_parent_keys = await run_in_threadpool(
-        upload_configuration,
-        serialized_config,
+        upload_configuration_payload, config_payload, config_metadata
     )
 
     # Activate config in the database
@@ -1674,7 +1686,8 @@ async def activate_configuration(
             detail="Configuration could not be activated.",
         )
 
-    # Files are written to S3 and database record has been updated. Write current.json
+    # Activation files have been written to S3 and database record has been updated
+    # so we can upload a new current.json
     await run_in_threadpool(
         upload_current_version_file, s3_parent_keys, active_config.version
     )

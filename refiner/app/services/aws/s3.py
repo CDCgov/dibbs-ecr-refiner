@@ -9,7 +9,10 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 
-from app.db.configurations.model import ConfigurationStoragePayload
+from app.db.configurations.model import (
+    ConfigurationStorageMetadata,
+    ConfigurationStoragePayload,
+)
 
 from ...core.config import ENVIRONMENT
 
@@ -71,31 +74,33 @@ def upload_current_version_file(
         print(f"Updating current.json to version {active_version}: {key}/current.json")
 
 
-def upload_configuration(
-    configuration: ConfigurationStoragePayload,
+def upload_configuration_payload(
+    payload: ConfigurationStoragePayload, metadata: ConfigurationStorageMetadata
 ) -> list[str]:
     """
-    Takes a ConfigurationStoragePayload and writes it to S3 for each child code.
+    Given a payload and metadata, writes this information to JSON files in S3.
 
     Args:
-        configuration (ConfigurationStoragePayload): The serialized configuration to write to the bucket.
+        payload (ConfigurationStoragePayload): The configuration payload to write to the bucket.
+        metadata: (ConfigurationStorageMetadata): The configuration metadata to write to the bucket.
 
     Returns:
-        str: List of keys pointing to the child RSG SNOMEd code directories
+        str: List of keys pointing to the child RSG SNOMED code directories
     """
     s3_condition_code_paths = []
-    data = configuration.to_dict()
 
-    for child_rsg_code in configuration.child_rsg_snomed_codes:
-        # Write configuration and metadata files
-        code_path = f"{configuration.jurisdiction_code}/{child_rsg_code}"
+    payload_data = payload.to_dict()
+    metadata_data = metadata.to_dict()
+
+    for child_rsg_code in metadata.child_rsg_snomed_codes:
+        parent_directory = f"{metadata.jurisdiction_code}/{child_rsg_code}"
 
         # Write active.json
-        path_with_version = f"{code_path}/{configuration.active_version}"
+        path_with_version = f"{parent_directory}/{metadata.active_version}"
         s3_client.put_object(
             Bucket=S3_CONFIGURATION_BUCKET_NAME,
             Key=f"{path_with_version}/active.json",
-            Body=json.dumps(data, indent=2).encode("utf-8"),
+            Body=json.dumps(payload_data, indent=2).encode("utf-8"),
             ContentType="application/json",
         )
 
@@ -103,11 +108,11 @@ def upload_configuration(
         s3_client.put_object(
             Bucket=S3_CONFIGURATION_BUCKET_NAME,
             Key=f"{path_with_version}/metadata.json",
-            Body=json.dumps(data, indent=2).encode("utf-8"),
+            Body=json.dumps(metadata_data, indent=2).encode("utf-8"),
             ContentType="application/json",
         )
 
-        s3_condition_code_paths.append(code_path)
+        s3_condition_code_paths.append(parent_directory)
         print(f"Writing file to: {path_with_version}/active.json")
         print(f"Writing file to: {path_with_version}/metadata.json")
 

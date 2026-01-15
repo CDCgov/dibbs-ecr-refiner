@@ -132,14 +132,11 @@ class DbConfiguration:
 @dataclass(frozen=True)
 class ConfigurationStoragePayload:
     """
-    This is the model for a configuration that is being written to S3.
+    The model for a configuration that is being written to S3.
     """
 
     codes: set[str]
     sections: list[dict[str, str]]
-    child_rsg_snomed_codes: list[str]
-    jurisdiction_code: str
-    active_version: int
 
     def to_dict(self) -> dict:
         """
@@ -151,7 +148,28 @@ class ConfigurationStoragePayload:
         return {
             "codes": sorted(self.codes),
             "sections": self.sections,
-            "child_rsg_snomed_codes": self.child_rsg_snomed_codes,
+        }
+
+
+@dataclass(frozen=True)
+class ConfigurationStorageMetadata:
+    """
+    The model for configuration metadata that is being written to S3.
+    """
+
+    child_rsg_snomed_codes: list[str]
+    jurisdiction_code: str
+    active_version: int
+
+    def to_dict(self) -> dict:
+        """
+        Returns the ConfigurationStorageMetadata represented as a dict.
+
+        Returns:
+            dict: ConfigurationStorageMetadata represented as a dict
+        """
+        return {
+            "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
             "jurisdiction_code": self.jurisdiction_code,
             "active_version": self.active_version,
         }

@@ -1,15 +1,19 @@
 from logging import Logger
 
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
-from app.db.configurations.model import ConfigurationStoragePayload, DbConfiguration
+from app.db.configurations.model import (
+    ConfigurationStorageMetadata,
+    ConfigurationStoragePayload,
+    DbConfiguration,
+)
 from app.db.pool import AsyncDatabaseConnection
 
 
-async def serialize_configuration(
+async def get_config_payload_metadata(
     configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection
-) -> ConfigurationStoragePayload | None:
+) -> ConfigurationStorageMetadata | None:
     """
-    Takes a DbConfiguration and distills it down to only condition codes and section information.
+    Creates a minimal ConfigurationStorageMetadata object from a DbConfiguration.
 
     Args:
         configuration (DbConfiguration): The configuration from the database
@@ -17,7 +21,41 @@ async def serialize_configuration(
         db (AsyncDatabaseConnection): The async database connection
 
     Returns:
-        dict: A dictionary containing "codes" and "sections"
+        ConfigurationStorageMetadata | None: A configuration metadata object that can be written to a file system, or None if operation can't be completed.
+    """
+    primary_condition = await get_condition_by_id_db(
+        id=configuration.condition_id, db=db
+    )
+
+    if not primary_condition:
+        logger.error(
+            "Configuration metadata could not be created due to missing primary condition ID.",
+            extra={
+                "configuration_id": configuration.id,
+                "jurisdiction_id": configuration.jurisdiction_id,
+            },
+        )
+        return None
+
+    return ConfigurationStorageMetadata(
+        child_rsg_snomed_codes=primary_condition.child_rsg_snomed_codes,
+        jurisdiction_code=configuration.jurisdiction_id,
+        active_version=configuration.version,
+    )
+
+
+async def convert_config_to_storage_payload(
+    configuration: DbConfiguration, db: AsyncDatabaseConnection
+) -> ConfigurationStoragePayload | None:
+    """
+    Takes a DbConfiguration and distills it down to the bare minimum data required for refining.
+
+    Args:
+        configuration (DbConfiguration): The configuration from the database
+        db (AsyncDatabaseConnection): The async database connection
+
+    Returns:
+        ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
     """
     codes: set[str] = set()
     sections: list[dict[str, str]] = []
@@ -25,20 +63,6 @@ async def serialize_configuration(
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-
-    primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id, db=db
-    )
-
-    if not primary_condition:
-        logger.error(
-            "Configuration serialization process failed due to configuration missing a primary condition ID.",
-            extra={
-                "configuration_id": configuration.id,
-                "jurisdiction_id": configuration.jurisdiction_id,
-            },
-        )
-        return None
 
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
@@ -63,13 +87,7 @@ async def serialize_configuration(
         for section_process in configuration.section_processing
     ]
 
-    return ConfigurationStoragePayload(
-        codes=codes,
-        sections=sections,
-        jurisdiction_code=configuration.jurisdiction_id,
-        child_rsg_snomed_codes=primary_condition.child_rsg_snomed_codes,
-        active_version=configuration.version,
-    )
+    return ConfigurationStoragePayload(codes=codes, sections=sections)
 
 
 def get_canonical_url_to_highest_inactive_version_map(
