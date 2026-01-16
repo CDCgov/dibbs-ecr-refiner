@@ -7,12 +7,20 @@
 import json
 import logging
 import os
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import boto3
+from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
+from ..services.ecr.refine import (
+    create_eicr_refinement_plan,
+    create_rr_refinement_plan,
+    refine_eicr,
+    refine_rr,
+)
 from ..services.ecr.reportability import determine_reportability
+from ..services.terminology import ProcessedConfiguration
 
 # Initialize the logger
 logger = logging.getLogger()
@@ -23,6 +31,7 @@ EICR_INPUT_PREFIX = os.getenv("EICR_INPUT_PREFIX", "eCRMessageV2/")
 REFINER_INPUT_PREFIX = os.getenv("REFINER_INPUT_PREFIX", "RefinerInput/")
 REFINER_OUTPUT_PREFIX = os.getenv("REFINER_OUTPUT_PREFIX", "RefinerOutput/")
 REFINER_COMPLETE_PREFIX = os.getenv("REFINER_COMPLETE_PREFIX", "RefinerComplete/")
+S3_BUCKET_CONFIG = os.getenv("S3_BUCKET_CONFIG")
 
 
 class RefinerCompleteFile(TypedDict):
@@ -72,8 +81,72 @@ def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
     return response["Body"].read().decode("utf-8")
 
 
+def _s3_object_exists(s3_client, bucket: str, key: str) -> bool:
+    try:
+        s3_client.head_object(Bucket=bucket, Key=key)
+        return True
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+
+        if error_code in ("404", "NoSuchKey"):
+            return False
+
+        logger.error("Unexpected error while fetching file from S3: ${key}", e)
+        raise
+
+
+def s3_content_to_dict(body: Any) -> dict:
+    try:
+        data = json.loads(body)
+        return data
+    except json.JSONDecodeError:
+        raise
+
+
+def read_current_version(s3_client, bucket: str, key: str) -> int | None:
+    """
+    Fetches the current active configuration version from `current.json` in the
+    configuration bucket if one exists. If the version is `null` or the file does not exist,
+    returns None;
+
+    Returns:
+        str | None: Active configuration version as an int, or None if no active version exists
+    """
+
+    # Check `current.json` file existance, return None if no object exists
+    current_exists = _s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
+
+    if not current_exists:
+        return None
+
+    # Read the file content and ensure required data is present
+    current_version_content = get_s3_object_content(s3_client, bucket=bucket, key=key)
+
+    current_version_dict = s3_content_to_dict(current_version_content)
+
+    # Check version existance and ensure it's an int
+    if isinstance(current_version_dict.get("version"), int):
+        return int(current_version_dict["version"])
+
+    return None
+
+
+def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
+    # Check that configuration file exists
+    config_exists = _s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
+
+    if not config_exists:
+        # It should exist because we've already checked the active version by this point
+        raise Exception(f"Activated configuration file could not be read at: {key}")
+
+    # Read the file content and ensure required data is present
+    config_file_content = get_s3_object_content(s3_client, bucket=bucket, key=key)
+
+    return s3_content_to_dict(config_file_content)
+
+
 def process_refiner(
-    xml_files: XMLFiles, s3_client, bucket: str, persistence_id: str
+    xml_files: XMLFiles, s3_client, bucket: str, config_bucket: str, persistence_id: str
 ) -> list[str]:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
@@ -113,6 +186,25 @@ def process_refiner(
             #
             # For now, we'll create a placeholder structure
             # The actual refinement will be implemented when configurations are available from S3
+
+            current_file_key = f"{jurisdiction_code}/{condition_code}/current.json"
+            config_version_to_use = read_current_version(
+                s3_client=s3_client,
+                bucket=config_bucket,
+                key=current_file_key,
+            )
+
+            # Skip if no active configuration for the condition is in use
+            if not config_version_to_use:
+                logger.info(
+                    f"No active configuration identified at key={current_file_key} while processing jurisdiction={jurisdiction_code}, condition={condition_code}, skipping"
+                )
+                continue
+
+            logger.info(
+                f"Current file found key={current_file_key} version={config_version_to_use}"
+            )
+
             logger.info(
                 f"Processing jurisdiction={jurisdiction_code}, condition={condition_code}"
             )
@@ -122,19 +214,64 @@ def process_refiner(
 
             # TODO: Replace with actual refined eICR content
             # For now, using original eICR as placeholder
-            refined_eicr_content = xml_files.eicr
 
-            # Upload refined eICR to S3
+            # Read active configuration
+            # /jurisdiction_code/condition_code/version/active.json
+            serialized_configuration_key = f"{jurisdiction_code}/{condition_code}/{config_version_to_use}/active.json"
+            serialized_configuration = read_configuration_file(
+                s3_client=s3_client,
+                bucket=config_bucket,
+                key=serialized_configuration_key,
+            )
+
+            logger.info(
+                f"Using activated configuration file key={serialized_configuration_key}"
+            )
+
+            processed_configuration = ProcessedConfiguration.from_dict(
+                serialized_configuration
+            )
+
+            eicr_refinement_plan = create_eicr_refinement_plan(
+                xml_files=xml_files, processed_configuration=processed_configuration
+            )
+
+            # Run refinement
+            refined_eicr_content = refine_eicr(
+                xml_files=xml_files, plan=eicr_refinement_plan
+            )
+
+            # Run RR refinement
+            rr_refinement_plan = create_rr_refinement_plan(
+                processed_configuration=processed_configuration
+            )
+
+            refined_rr_content = refine_rr(
+                xml_files=xml_files,
+                jurisdiction_id=jurisdiction_code,
+                plan=rr_refinement_plan,
+            )
+
+            # Upload refined eICR and RR to S3
+            eicr_output_key = f"{output_key}/refined_eICR.xml"
             s3_client.put_object(
                 Bucket=bucket,
-                Key=output_key,
+                Key=eicr_output_key,
                 Body=refined_eicr_content.encode("utf-8"),
                 ContentType="application/xml",
             )
+            refiner_output_files.append(eicr_output_key)
+            logger.info(f"Created refined output: {eicr_output_key}")
 
-            refiner_output_files.append(output_key)
-
-            logger.info(f"Created refined output: {output_key}")
+            rr_output_key = f"{output_key}/refined_RR.xml"
+            s3_client.put_object(
+                Bucket=bucket,
+                Key=rr_output_key,
+                Body=refined_rr_content.encode("utf-8"),
+                ContentType="application/xml",
+            )
+            refiner_output_files.append(rr_output_key)
+            logger.info(f"Created refined output: {rr_output_key}")
 
     return refiner_output_files
 
@@ -159,6 +296,10 @@ def lambda_handler(event, context):
     """
     try:
         logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
+        s3_config_bucket_name = S3_BUCKET_CONFIG
+
+        if not s3_config_bucket_name:
+            raise Exception("S3_BUCKET_CONFIG environment variable must be defined.")
 
         # Process each SQS record
         for record in event["Records"]:
@@ -196,7 +337,11 @@ def lambda_handler(event, context):
             # Process Refiner (eICR, RR) -> Refiner Output []
             logger.info("Starting refinement process")
             refiner_output_files = process_refiner(
-                xml_files, s3_client, s3_bucket_name, persistence_id
+                xml_files,
+                s3_client,
+                s3_bucket_name,
+                s3_config_bucket_name,
+                persistence_id,
             )
 
             # Create RefinerComplete file

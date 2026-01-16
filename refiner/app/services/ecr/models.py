@@ -45,7 +45,7 @@ class RefinedDocument:
 
 
 @dataclass
-class RefinementPlan:
+class EICRRefinementPlan:
     """
     A complete, actionable plan for refining a single eICR document.
 
@@ -60,6 +60,18 @@ class RefinementPlan:
 
     xpath: str
     section_instructions: dict[str, Literal["retain", "refine", "remove"]]
+
+
+@dataclass
+class RRRefinementPlan:
+    """
+    Refinement plan for an RR.
+
+    Only contains the child RSG SNOMED codes
+    that should be retained in the reportability response.
+    """
+
+    codes_to_retain: set[str]
 
 
 # NOTE:

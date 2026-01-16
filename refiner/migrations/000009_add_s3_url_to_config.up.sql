@@ -1,2 +1,2 @@
 ALTER TABLE configurations
-ADD COLUMN s3_url TEXT;
+ADD COLUMN s3_urls TEXT[];
