@@ -2,6 +2,9 @@ set working-directory := '../..'
 
 docker := require("docker")
 
+@_default:
+    just --list dev
+
 alias u := up
 alias d := down
 
