@@ -115,7 +115,7 @@ def get_valuesets_from_file(file_path: Path) -> tuple[str, list[dict]]:
             return "Single ValueSet", [data]
 
     except json.JSONDecodeError:
-        logging.error(f"Could not decode JSON from {file_file_path.name}")
+        logging.error(f"Could not decode JSON from {file_path.name}")
     except Exception as e:
         logging.error(f"An unexpected error occurred with {file_path.name}: {e}")
 
@@ -248,7 +248,7 @@ def main():
     expected_keys = {"loinc_codes", "snomed_codes", "icd10_codes", "rxnorm_codes"}
     for valueset in parent_valuesets:
         # NOTE: this is a simulation of the old seeding logic's aggregation
-        aggregated_codes = {key: [] for key in expected_keys}
+        _aggregated_codes = {key: [] for key in expected_keys}
         for include_item in valueset.get("compose", {}).get("include", []):
             for child_ref in include_item.get("valueSet", []):
                 try:
