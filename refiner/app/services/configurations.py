@@ -59,7 +59,7 @@ async def convert_config_to_storage_payload(
     """
     codes: set[str] = set()
     sections: list[dict[str, str]] = []
-    included_condition_child_rsg_codes: set[str] = set()
+    included_condition_rsg_codes: set[str] = set()
 
     # custom codes
     for cc in configuration.custom_codes:
@@ -89,12 +89,12 @@ async def convert_config_to_storage_payload(
     ]
 
     for c in conditions:
-        included_condition_child_rsg_codes.update(c.child_rsg_snomed_codes)
+        included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
     return ConfigurationStoragePayload(
         codes=codes,
         sections=sections,
-        included_condition_child_rsg_codes=included_condition_child_rsg_codes,
+        included_condition_rsg_codes=included_condition_rsg_codes,
     )
 
 

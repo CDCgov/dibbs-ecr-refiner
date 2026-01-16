@@ -137,7 +137,7 @@ class ConfigurationStoragePayload:
 
     codes: set[str]
     sections: list[dict[str, str]]
-    included_condition_child_rsg_codes: set[str]
+    included_condition_rsg_codes: set[str]
 
     def to_dict(self) -> dict:
         """
@@ -149,9 +149,7 @@ class ConfigurationStoragePayload:
         return {
             "codes": sorted(self.codes),
             "sections": self.sections,
-            "included_condition_child_rsg_codes": sorted(
-                self.included_condition_child_rsg_codes
-            ),
+            "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
         }
 
 

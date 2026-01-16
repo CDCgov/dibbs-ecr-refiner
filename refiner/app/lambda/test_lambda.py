@@ -170,7 +170,11 @@ def test_lambda_one_current_file(
     )
 
     # Create activation for COVID
-    covid_activation = {"codes": ["101289-7"], "sections": []}
+    covid_activation = {
+        "codes": ["101289-7"],
+        "sections": [],
+        "included_condition_rsg_codes": ["840539006"],
+    }
     s3_client.put_object(
         Bucket=config_bucket,
         Key=f"SDDH/840539006/{covid_current['version']}/active.json",
