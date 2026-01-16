@@ -87,10 +87,16 @@ def s3_input_objects(
 
 
 def collect_lambda_output_keys(s3_client, bucket) -> list[str]:
+    """
+    Returns a list of all keys written to the S3 bucket.
+    """
     return [obj["Key"] for obj in s3_client.list_objects_v2(Bucket=bucket)["Contents"]]
 
 
 def get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict:
+    """
+    Returns the content of the RefinerComplete file as a dict
+    """
     resp = s3_client.get_object(Bucket=bucket, Key=f"RefinerComplete/{persistance_id}")
     return json.loads(resp["Body"].read().decode("utf-8"))
 
@@ -144,7 +150,7 @@ def test_lambda_inactive(
 
 
 @mock_aws
-def test_lambda_one_current_file(
+def test_lambda_one_active(
     lambda_event,
     s3_client,
     data_bucket,
@@ -212,6 +218,120 @@ def test_lambda_one_current_file(
         in complete_json["RefinerOutputFiles"]
     )
     assert (
-        "RefinerOutput/{s3_input_objects}/SDDH/772828001"
+        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_eICR.xml"
         not in complete_json["RefinerOutputFiles"]
+    )
+
+
+@mock_aws
+def test_lambda_all_active(
+    lambda_event,
+    s3_client,
+    data_bucket,
+    config_bucket,
+    s3_input_objects,
+):
+    """
+    Test that a file with two reportable conditions works when a configuration is
+    active for both of those conditions.
+    """
+    from .lambda_function import lambda_handler
+
+    # COVID = 840539006
+    # Flu = 772828001
+
+    # Create current.json for COVID
+    covid_current = {"version": 1}
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key="SDDH/840539006/current.json",
+        Body=json.dumps(covid_current, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+    # Create activation for COVID
+    covid_activation = {
+        "codes": ["101289-7"],
+        "sections": [],
+        "included_condition_rsg_codes": ["840539006"],
+    }
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key=f"SDDH/840539006/{covid_current['version']}/active.json",
+        Body=json.dumps(covid_activation, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+    # Create current.json for the flu
+    flu_current = {"version": 1}
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key="SDDH/772828001/current.json",
+        Body=json.dumps(flu_current, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+    # Create activation for the flu
+    flu_activation = {
+        "codes": ["100343-3"],
+        "sections": [],
+        "included_condition_rsg_codes": ["772828001"],
+    }
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key=f"SDDH/772828001/{flu_current['version']}/active.json",
+        Body=json.dumps(flu_activation, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+    # Run the Lambda
+    response = lambda_handler(lambda_event, context={})
+    assert response["statusCode"] == 200
+
+    # Check that expected output files were written
+    created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
+    assert f"RefinerComplete/{s3_input_objects}" in created_files
+
+    # Expect COVID outputs
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
+        in created_files
+    )
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
+        in created_files
+    )
+
+    # Expect flu outputs
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_eICR.xml"
+        in created_files
+    )
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_RR.xml"
+        in created_files
+    )
+
+    # Check that content of RefinerComplete looks correct
+    complete_json = get_refiner_complete_content(
+        s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
+    )
+    assert not complete_json["RefinerSkip"]
+
+    # Expect COVID
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
+        in complete_json["RefinerOutputFiles"]
+    )
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
+        in complete_json["RefinerOutputFiles"]
+    )
+
+    # Expect flu
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_eICR.xml"
+        in complete_json["RefinerOutputFiles"]
+    )
+    assert (
+        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_RR.xml"
+        in complete_json["RefinerOutputFiles"]
     )
