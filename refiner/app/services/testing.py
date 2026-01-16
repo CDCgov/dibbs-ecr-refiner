@@ -20,7 +20,12 @@ from .ecr.models import (
     RefinedDocument,
     ReportableCondition,
 )
-from .ecr.refine import create_refinement_plan, refine_eicr, refine_rr
+from .ecr.refine import (
+    create_eicr_refinement_plan,
+    create_rr_refinement_plan,
+    refine_eicr,
+    refine_rr,
+)
 from .ecr.reportability import determine_reportability
 
 # NOTE:
@@ -216,13 +221,18 @@ async def independent_testing(
         trace.refine_object = processed_configuration
 
         # create the refinement plan as final set of instruction for refinement
-        plan = create_refinement_plan(
+        eicr_refinement_plan = create_eicr_refinement_plan(
             processed_configuration=processed_configuration, xml_files=xml_files
         )
+        refined_eicr_str = refine_eicr(xml_files=xml_files, plan=eicr_refinement_plan)
 
-        refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
+        rr_refinement_plan = create_rr_refinement_plan(
+            processed_configuration=processed_configuration
+        )
         refined_rr_str = refine_rr(
-            jurisdiction_id=jurisdiction_id, xml_files=xml_files, payload=payload
+            jurisdiction_id=jurisdiction_id,
+            xml_files=xml_files,
+            plan=rr_refinement_plan,
         )
 
         # use the first RR code that mapped to this condition for RefinedDocument
@@ -359,13 +369,19 @@ async def inline_testing(
         conditions=trace.all_conditions_for_configuration,
     )
     processed_configuration = ProcessedConfiguration.from_payload(payload)
-    plan = create_refinement_plan(
+
+    eicr_refinement_plan = create_eicr_refinement_plan(
         processed_configuration=processed_configuration, xml_files=xml_files
     )
-    refined_eicr_str = refine_eicr(xml_files=xml_files, plan=plan)
+    refined_eicr_str = refine_eicr(xml_files=xml_files, plan=eicr_refinement_plan)
 
-    refined_rr_string = refine_rr(
-        jurisdiction_id=jurisdiction_id, xml_files=xml_files, payload=payload
+    rr_refinement_plan = create_rr_refinement_plan(
+        processed_configuration=processed_configuration
+    )
+    refined_rr_str = refine_rr(
+        jurisdiction_id=jurisdiction_id,
+        xml_files=xml_files,
+        plan=rr_refinement_plan,
     )
 
     # STEP 5:
@@ -376,7 +392,7 @@ async def inline_testing(
             display_name=trace.primary_condition.display_name,
         ),
         refined_eicr=refined_eicr_str,
-        refined_rr=refined_rr_string,
+        refined_rr=refined_rr_str,
     )
 
     # log high level details of the refinement flow for this

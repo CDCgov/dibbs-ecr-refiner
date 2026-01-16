@@ -13,7 +13,12 @@ import boto3
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
-from ..services.ecr.refine import create_refinement_plan, refine_eicr
+from ..services.ecr.refine import (
+    create_eicr_refinement_plan,
+    create_rr_refinement_plan,
+    refine_eicr,
+    refine_rr,
+)
 from ..services.ecr.reportability import determine_reportability
 from ..services.terminology import ProcessedConfiguration
 
@@ -192,9 +197,13 @@ def process_refiner(
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
                 logger.info(
-                    f"No active configuration identified while processing jurisdiction={jurisdiction_code}, condition={condition_code}, skipping"
+                    f"No active configuration identified at key={current_file_key} while processing jurisdiction={jurisdiction_code}, condition={condition_code}, skipping"
                 )
                 continue
+
+            logger.info(
+                f"Current file found key={current_file_key} version={config_version_to_use}"
+            )
 
             logger.info(
                 f"Processing jurisdiction={jurisdiction_code}, condition={condition_code}"
@@ -215,29 +224,54 @@ def process_refiner(
                 key=serialized_configuration_key,
             )
 
+            logger.info(
+                f"Using activated configuration file key={serialized_configuration_key}"
+            )
+
             processed_configuration = ProcessedConfiguration.from_dict(
                 serialized_configuration
             )
-            refinement_plan = create_refinement_plan(
+
+            eicr_refinement_plan = create_eicr_refinement_plan(
                 xml_files=xml_files, processed_configuration=processed_configuration
             )
 
             # Run refinement
             refined_eicr_content = refine_eicr(
-                xml_files=xml_files, plan=refinement_plan
+                xml_files=xml_files, plan=eicr_refinement_plan
             )
 
-            # Upload refined eICR to S3
+            # Run RR refinement
+            rr_refinement_plan = create_rr_refinement_plan(
+                processed_configuration=processed_configuration
+            )
+
+            refined_rr_content = refine_rr(
+                xml_files=xml_files,
+                jurisdiction_id=jurisdiction_code,
+                plan=rr_refinement_plan,
+            )
+
+            # Upload refined eICR and RR to S3
+            eicr_output_key = f"{output_key}/refined_eICR.xml"
             s3_client.put_object(
                 Bucket=bucket,
-                Key=output_key,
+                Key=eicr_output_key,
                 Body=refined_eicr_content.encode("utf-8"),
                 ContentType="application/xml",
             )
+            refiner_output_files.append(eicr_output_key)
+            logger.info(f"Created refined output: {eicr_output_key}")
 
-            refiner_output_files.append(output_key)
-
-            logger.info(f"Created refined output: {output_key}")
+            rr_output_key = f"{output_key}/refined_RR.xml"
+            s3_client.put_object(
+                Bucket=bucket,
+                Key=rr_output_key,
+                Body=refined_rr_content.encode("utf-8"),
+                ContentType="application/xml",
+            )
+            refiner_output_files.append(rr_output_key)
+            logger.info(f"Created refined output: {rr_output_key}")
 
     return refiner_output_files
 

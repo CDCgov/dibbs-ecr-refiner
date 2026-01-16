@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
 from ..db.conditions.model import DbCondition
-from ..db.configurations.model import ConfigurationStoragePayload, DbConfiguration
+from ..db.configurations.model import DbConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -61,6 +61,7 @@ class ProcessedConfigurationData(BaseModel):
 
     codes: set[str] = Field(min_length=1)
     sections: list[Section]
+    included_condition_rsg_codes: set[str]
 
 
 @dataclass(frozen=True)
@@ -80,24 +81,7 @@ class ProcessedConfiguration:
 
     codes: set[str]
     section_processing: list[dict]
-
-    @classmethod
-    def from_serialized_configuration(
-        cls, configuration: ConfigurationStoragePayload
-    ) -> "ProcessedConfiguration":
-        """
-        Create a ProcessedConfiguration from a ConfigurationStoragePayload object.
-
-        Args:
-            configuration (ConfigurationStoragePayload): The serialized configuration containing minimal configuration data
-
-        Returns:
-            ProcessedConfiguration: An object containing the final, combined set of codes.
-        """
-        return cls(
-            codes=configuration.codes,
-            section_processing=configuration.sections,
-        )
+    included_condition_rsg_codes: set[str]
 
     @classmethod
     def from_dict(cls, data: dict) -> "ProcessedConfiguration":
@@ -105,16 +89,17 @@ class ProcessedConfiguration:
         Creates a ProcessedConfiguration from a validated dictionary.
 
         Args:
-            data (dict): _description_
+            data (dict): Input dictionary with required data.
 
         Returns:
-            ProcessedConfiguration: _description_
+            ProcessedConfiguration: A ProcessedConfiguration built from the dictionary
         """
         validated = ProcessedConfigurationData.model_validate(data)
 
         return cls(
             codes=validated.codes,
             section_processing=[s.model_dump() for s in validated.sections],
+            included_condition_rsg_codes=validated.included_condition_rsg_codes,
         )
 
     @classmethod
@@ -162,9 +147,14 @@ class ProcessedConfiguration:
             for section_process in payload.configuration.section_processing
         ]
 
+        included_condition_rsg_codes = set()
+        for c in payload.conditions:
+            included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
+
         return cls(
             codes=all_codes,
             section_processing=section_processing_as_dicts,
+            included_condition_rsg_codes=included_condition_rsg_codes,
         )
 
     def build_xpath(self) -> str:
@@ -204,34 +194,3 @@ class ProcessedConfiguration:
             f".//hl7:translation[{code_conditions}] | "
             f".//hl7:value[{code_conditions}]"
         )
-
-
-# NOTE:
-# HELPER FUNCTIONS
-# =============================================================================
-
-
-def aggregate_codes_from_conditions(conditions: list[DbCondition]) -> set[str]:
-    """
-    Extracts and combines all codes from a list of conditions.
-
-    Handles deduplication automatically via set.
-
-    Args:
-        conditions: List of conditions (can be single or multiple)
-    """
-
-    all_codes: set[str] = set()
-
-    for condition in conditions:
-        # extract codes from each JSONB array
-        for codes in [
-            condition.snomed_codes,
-            condition.loinc_codes,
-            condition.icd10_codes,
-            condition.rxnorm_codes,
-        ]:
-            # each codes array contains DbConditionCoding objects
-            all_codes.update(code.code for code in codes)
-
-    return all_codes

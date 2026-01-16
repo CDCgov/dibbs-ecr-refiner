@@ -3,8 +3,8 @@ from typing import Literal, cast
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.ecr.models import RefinementPlan
-from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
+from app.services.ecr.models import EICRRefinementPlan
+from app.services.terminology import ProcessedConfiguration
 
 from ...core.exceptions import (
     StructureValidationError,
@@ -12,7 +12,7 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ..format import remove_element
-from .models import NamespaceMap
+from .models import NamespaceMap, RRRefinementPlan
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
@@ -47,11 +47,11 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
     return round(percent_diff)
 
 
-def create_refinement_plan(
+def create_eicr_refinement_plan(
     processed_configuration: ProcessedConfiguration, xml_files: XMLFiles
-) -> RefinementPlan:
+) -> EICRRefinementPlan:
     """
-    Create a RefinementPlan by combining configuration rules and the sections present in the eICR document.
+    Create an EICRRefinementPlan by combining configuration rules and the sections present in the eICR document.
 
     This function lives in the orchestration layer (`testing.py`) because it
     requires access to both the processed configuration data and the raw XML
@@ -63,7 +63,7 @@ def create_refinement_plan(
         xml_files: The XMLFiles object containing the eICR to be inspected.
 
     Returns:
-        A RefinementPlan containing the exact instructions for `refine_eicr`.
+        An EICRRefinementPlan containing the exact instructions for `refine_eicr`.
     """
 
     # get eICR root and pull out the structuredBody
@@ -91,7 +91,7 @@ def create_refinement_plan(
         for code in present_section_codes
     }
 
-    return RefinementPlan(
+    return EICRRefinementPlan(
         xpath=processed_configuration.build_xpath(),
         section_instructions=final_instructions,
     )
@@ -99,7 +99,7 @@ def create_refinement_plan(
 
 def refine_eicr(
     xml_files: XMLFiles,
-    plan: RefinementPlan,
+    plan: EICRRefinementPlan,
 ) -> str:
     """
     Refine an eICR XML document by executing a provided RefinementPlan.
@@ -185,10 +185,27 @@ def refine_eicr(
         )
 
 
+def create_rr_refinement_plan(
+    processed_configuration: ProcessedConfiguration,
+) -> RRRefinementPlan:
+    """
+    Given a ProcessedConfiguration, creates and returns an RRRefinementPlan.
+
+    Args:
+        processed_configuration (ProcessedConfiguration): ProcessedConfiguration to build the plan from.
+
+    Returns:
+        RRRefinementPlan: The newly created RRRefinement plan.
+    """
+    return RRRefinementPlan(
+        codes_to_retain=processed_configuration.included_condition_rsg_codes
+    )
+
+
 def refine_rr(
     jurisdiction_id: str,
     xml_files: XMLFiles,
-    payload: ConfigurationPayload,
+    plan: RRRefinementPlan,
 ) -> str:
     """
     Refine a RR XML document from anything not reportable to the specified jurisdiction.
@@ -206,7 +223,7 @@ def refine_rr(
     Args:
         jurisdiction_id: the ID of the jurisdiction we're currently processing information for
         xml_files: The XMLFiles container with the eICR document to refine.
-        payload: The ConfigurationPayload for the corresponding eICR.
+        plan: The RRRefinementPlan for the corresponding eICR.
 
     Returns:
         str: The refined RR XML document as a string.
@@ -252,9 +269,7 @@ def refine_rr(
 
     # Compile the set of conditions the jurisdiction has a configuration
     # for as represented by the child_rsg_snomed codes that exist in the payload
-    codes_to_keep = set()
-    for condition in payload.conditions:
-        codes_to_keep.update(condition.child_rsg_snomed_codes)
+    codes_to_keep: set[str] = set(plan.codes_to_retain)
 
     components_to_check = cast(
         list[_Element],

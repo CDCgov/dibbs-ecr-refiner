@@ -3,8 +3,8 @@ from lxml import etree
 from app.core.models.types import XMLFiles
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration
-from app.services.ecr.models import RefinementPlan
-from app.services.ecr.refine import refine_eicr, refine_rr
+from app.services.ecr.models import EICRRefinementPlan
+from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
 
 from .conftest import NAMESPACES
@@ -121,7 +121,7 @@ def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
     Tests the 'retain' action, which should not modify the section.
     """
 
-    plan = RefinementPlan(xpath="", section_instructions={"29762-2": "retain"})
+    plan = EICRRefinementPlan(xpath="", section_instructions={"29762-2": "retain"})
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 
     doc_refined = etree.fromstring(refined_xml.encode("utf-8"))
@@ -142,7 +142,7 @@ def test_refine_action_with_no_matches_v1_1(covid_influenza_v1_1_files: XMLFiles
     Tests 'refine' with a non-matching XPath, which should create a minimal section.
     """
 
-    plan = RefinementPlan(
+    plan = EICRRefinementPlan(
         xpath=".//hl7:code[@code='NON_EXISTENT_CODE']",
         section_instructions={"11450-4": "refine"},
     )
@@ -169,7 +169,7 @@ def test_refine_action_with_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
     processed_config = ProcessedConfiguration.from_payload(payload)
     xpath = processed_config.build_xpath()
 
-    plan = RefinementPlan(xpath=xpath, section_instructions={"30954-2": "refine"})
+    plan = EICRRefinementPlan(xpath=xpath, section_instructions={"30954-2": "refine"})
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 
     doc = etree.fromstring(refined_xml.encode("utf-8"))
@@ -195,8 +195,15 @@ def test_refine_rr_by_condition_v1_1(covid_influenza_v1_1_files: XMLFiles):
     config = _make_db_configuration_v1_1()
     payload = ConfigurationPayload(conditions=[covid_condition], configuration=config)
 
+    processed_configuration = ProcessedConfiguration.from_payload(payload)
+
+    rr_refinement_plan = create_rr_refinement_plan(
+        processed_configuration=processed_configuration
+    )
     refined_xml = refine_rr(
-        jurisdiction_id="SDDH", xml_files=covid_influenza_v1_1_files, payload=payload
+        jurisdiction_id="SDDH",
+        xml_files=covid_influenza_v1_1_files,
+        plan=rr_refinement_plan,
     )
     doc_string = etree.tostring(
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
@@ -215,10 +222,15 @@ def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
     config = _make_db_configuration_v1_1()
     payload = ConfigurationPayload(conditions=[covid_condition], configuration=config)
 
+    processed_configuration = ProcessedConfiguration.from_payload(payload)
+    rr_refinement_plan = create_rr_refinement_plan(
+        processed_configuration=processed_configuration
+    )
+
     refined_xml = refine_rr(
         jurisdiction_id="SOME_OTHER_JD",
         xml_files=covid_influenza_v1_1_files,
-        payload=payload,
+        plan=rr_refinement_plan,
     )
     doc_string = etree.tostring(
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
@@ -236,8 +248,13 @@ def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
     config = _make_db_configuration_v3_1_1()
     payload = ConfigurationPayload(conditions=[zika_condition], configuration=config)
 
+    processed_configuration = ProcessedConfiguration.from_payload(payload)
+    rr_refinement_plan = create_rr_refinement_plan(
+        processed_configuration=processed_configuration
+    )
+
     refined_xml = refine_rr(
-        jurisdiction_id="SDDH", xml_files=zika_v3_1_1_files, payload=payload
+        jurisdiction_id="SDDH", xml_files=zika_v3_1_1_files, plan=rr_refinement_plan
     )
     doc_string = etree.tostring(
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
@@ -256,8 +273,15 @@ def test_refine_rr_by_jurisdiction_v3_1_1(zika_v3_1_1_files: XMLFiles):
     config = _make_db_configuration_v3_1_1()
     payload = ConfigurationPayload(conditions=[zika_condition], configuration=config)
 
+    processed_configuration = ProcessedConfiguration.from_payload(payload)
+    rr_refinement_plan = create_rr_refinement_plan(
+        processed_configuration=processed_configuration
+    )
+
     refined_xml = refine_rr(
-        jurisdiction_id="SOME_OTHER_JD", xml_files=zika_v3_1_1_files, payload=payload
+        jurisdiction_id="SOME_OTHER_JD",
+        xml_files=zika_v3_1_1_files,
+        plan=rr_refinement_plan,
     )
     doc_string = etree.tostring(
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
