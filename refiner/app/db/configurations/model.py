@@ -55,6 +55,7 @@ class DbConfigurationSectionProcessing:
     name: str
     code: str
     action: str
+    versions: list[str]
 
 
 DbConfigurationStatus = Literal["draft", "inactive", "active"]

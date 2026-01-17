@@ -77,6 +77,7 @@ async def insert_configuration_db(
             "name": section_spec.display_name,
             "code": loinc_code,
             "action": "refine",
+            "versions": section_spec.get_eicr_versions_by_loinc(loinc_code),
         }
         for loinc_code, section_spec in spec.sections.items()
     ]
@@ -112,7 +113,12 @@ async def insert_configuration_db(
             # section_processing
             Jsonb(
                 [
-                    {"name": c.name, "code": c.code, "action": c.action}
+                    {
+                        "name": c.name,
+                        "code": c.code,
+                        "action": c.action,
+                        "versions": c.versions,
+                    }
                     for c in config_to_clone.section_processing
                 ]
             ),
