@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Literal, TypedDict
 
+from .specification import EICR_SPECS_DATA
+
 type NamespaceMap = dict[str, str]
 type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
 
@@ -96,6 +98,12 @@ class SectionSpecification:
         """
 
         return {tc.oid for tc in self.trigger_codes}
+
+    def get_eicr_versions_by_loinc(self, loinc_code: str) -> list[str]:
+        """
+        Return all versions for loinc_code in EICR_SPECS_DATA, empty if not found.
+        """
+        return [v for v, secs in EICR_SPECS_DATA.items() if loinc_code in secs]
 
 
 @dataclass(frozen=True)
