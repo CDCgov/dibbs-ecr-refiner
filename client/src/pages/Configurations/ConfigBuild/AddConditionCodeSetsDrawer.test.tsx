@@ -101,6 +101,7 @@ describe('AddConditionCodeSetsDrawer', () => {
   it('renders drawer and condition names', () => {
     render(
       <AddConditionCodeSetsDrawer
+        disabled={false}
         {...defaultProps}
         conditions={mockConditions.map((condition) => ({
           ...condition,
@@ -122,6 +123,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     const user = userEvent.setup();
     render(
       <AddConditionCodeSetsDrawer
+        disabled={false}
         {...defaultProps}
         conditions={mockConditions.map((condition) => ({
           ...condition,
@@ -139,6 +141,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     const user = userEvent.setup();
     render(
       <AddConditionCodeSetsDrawer
+        disabled={false}
         {...defaultProps}
         conditions={mockConditions.map((condition) => ({
           ...condition,
@@ -159,6 +162,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     const user = userEvent.setup();
     render(
       <AddConditionCodeSetsDrawer
+        disabled={false}
         {...defaultProps}
         conditions={mockConditions.map((condition) => ({
           ...condition,
@@ -177,6 +181,7 @@ describe('AddConditionCodeSetsDrawer', () => {
     const user = userEvent.setup();
     render(
       <AddConditionCodeSetsDrawer
+        disabled={false}
         {...defaultProps}
         conditions={mockConditions.map((condition) => ({
           ...condition,
