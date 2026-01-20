@@ -27,7 +27,6 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const styles = classNames(className);
   if (to) {
     const sideEffect = onClick as
       | React.MouseEventHandler<HTMLAnchorElement>
@@ -36,7 +35,7 @@ export function Button({
       <Link
         onClick={sideEffect}
         to={to}
-        className={classNames('usa-button--outline', styles)}
+        className={classNames('usa-button--outline', className)}
       >
         {children}
       </Link>
@@ -48,7 +47,7 @@ export function Button({
       onClick={onClick}
       type={type}
       disabled={disabled}
-      className={styles}
+      className={className}
       secondary={variant === 'secondary'}
       unstyled={variant === 'tertiary'}
       {...props}
