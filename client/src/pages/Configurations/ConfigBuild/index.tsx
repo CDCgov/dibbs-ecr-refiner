@@ -927,7 +927,7 @@ export function CustomCodeModal({
       aria-describedby="modal-heading"
       aria-labelledby="modal-heading"
       isLarge
-      className="!max-w-[25rem] !rounded-none"
+      className="max-w-100! rounded-none!"
       forceAction
     >
       <ModalHeading
@@ -948,7 +948,7 @@ export function CustomCodeModal({
         <Icon.Close className="h-6! w-6!" aria-hidden />
       </Button>
 
-      <div className="mt-5 flex flex-col gap-5 !p-0">
+      <div className="mt-5 flex flex-col gap-5 p-0!">
         <div>
           <Label htmlFor="code">Code #</Label>
           <TextInput
