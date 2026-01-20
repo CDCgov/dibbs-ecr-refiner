@@ -11,18 +11,6 @@ interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   variant?: ButtonVariant;
   to?: string;
 }
-export const PRIMARY_BUTTON_STYLES =
-  '!bg-violet-warm-60 hover:!bg-violet-warm-70';
-
-export const SECONDARY_BUTTON_STYLES =
-  '!bg-white !text-violet-warm-60 !border-violet-warm-60 !border-[2px] !rounded-sm hover:!border-violet-warm-70 hover:!text-violet-warm-70';
-
-export const DISABLED_BUTTON_STYLES =
-  '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed';
-export const SELECTED_BUTTON_STYLES =
-  'bg-transparent text-black hover:!bg-transparent hover:!text-black active:!bg-transparent active:!text-black';
-export const TERTIARY_BUTTON_STYLES =
-  '!bg-transparent !text-blue-cool-60 hover:!underline hover:cursor-pointer !p-0 !m-0';
 
 /**
  * Button component supporting multiple variants and behaviors,
@@ -39,17 +27,7 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const styles = classNames(
-    className,
-    disabled
-      ? DISABLED_BUTTON_STYLES
-      : {
-          [PRIMARY_BUTTON_STYLES]: variant === 'primary',
-          [SECONDARY_BUTTON_STYLES]: variant === 'secondary',
-          [SELECTED_BUTTON_STYLES]: variant === 'selected',
-          [TERTIARY_BUTTON_STYLES]: variant === 'tertiary',
-        }
-  );
+  const styles = classNames(className);
   if (to) {
     const sideEffect = onClick as
       | React.MouseEventHandler<HTMLAnchorElement>
@@ -58,7 +36,7 @@ export function Button({
       <Link
         onClick={sideEffect}
         to={to}
-        className={classNames('usa-button', styles)}
+        className={classNames('usa-button--outline', styles)}
       >
         {children}
       </Link>
@@ -71,6 +49,8 @@ export function Button({
       type={type}
       disabled={disabled}
       className={styles}
+      secondary={variant === 'secondary'}
+      unstyled={variant === 'tertiary'}
       {...props}
     >
       {children}
