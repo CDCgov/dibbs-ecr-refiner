@@ -282,6 +282,7 @@ function Builder({
                       onClick={() =>
                         setCodesetListItemFocus(codeSet.condition_id)
                       }
+                      disabled={disabled}
                     />
                   </li>
                 ))}
@@ -488,6 +489,10 @@ function DeleteCodeSetButton({
     return <Spinner size={20} className="mr-2" />;
   }
 
+  if (disabled) {
+    return <></>;
+  }
+
   return index === 0 ? (
     <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
       Default
@@ -590,20 +595,22 @@ function CustomCodesDetail({
               <td className="w-1/2 text-right whitespace-nowrap">
                 <ModalToggleButton
                   modalRef={modalRef}
-                  opener
+                  opener={disabled}
                   variant="tertiary"
                   className="!mr-6"
-                  onClick={() => setSelectedCustomCode(customCode)}
+                  onClick={() => {
+                    if (disabled) return;
+                    setSelectedCustomCode(customCode);
+                  }}
                   aria-label={`Edit custom code ${customCode.name}`}
-                  disabled={disabled}
                 >
                   Edit
                 </ModalToggleButton>
                 <Button
                   variant="tertiary"
                   aria-label={`Delete custom code ${customCode.name}`}
-                  disabled={disabled}
                   onClick={() => {
+                    if (disabled) return;
                     deleteCode(
                       {
                         code: customCode.code,

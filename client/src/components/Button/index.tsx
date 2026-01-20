@@ -19,8 +19,10 @@ export const SECONDARY_BUTTON_STYLES =
 
 export const DISABLED_BUTTON_STYLES =
   '!bg-disabled-light !text-disabled-dark hover:!bg-disabled-light !cursor-not-allowed';
+
 export const SELECTED_BUTTON_STYLES =
   'bg-transparent text-black hover:!bg-transparent hover:!text-black active:!bg-transparent active:!text-black';
+
 export const TERTIARY_BUTTON_STYLES =
   '!bg-transparent !text-blue-cool-60 hover:!underline hover:cursor-pointer !p-0 !m-0';
 
