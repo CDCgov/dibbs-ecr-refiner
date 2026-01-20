@@ -66,12 +66,18 @@ export function ActivityLog() {
           pathname="/events"
           currentPage={selectedPage}
           maxSlots={6}
-          onClickNext={() => setSelectedPage((p) => p + 1)}
-          onClickPrevious={() => setSelectedPage((p) => p - 1)}
+          totalPages={total_pages}
           onClickPageNumber={(_, pageNumber) => {
             setSelectedPage(pageNumber);
           }}
-          totalPages={total_pages}
+          onClickPrevious={
+            selectedPage > 1 ? () => setSelectedPage((p) => p - 1) : undefined
+          }
+          onClickNext={
+            selectedPage < total_pages
+              ? () => setSelectedPage((p) => p + 1)
+              : undefined
+          }
         />
       </div>
     </section>
