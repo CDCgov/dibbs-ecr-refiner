@@ -17,13 +17,15 @@ The goal of this document is to outline what that serialized file format should 
 
 ## Decision Outcome
 
-This file will be written in JSON format and will have the following properties:
+The activation file will be written in JSON format and will have the following properties:
 
 - `codes`: an array of condition codes to use for eICR filtering
 - `sections`: an array of objects containing information related to eICR section filtering
 - `included_condition_rsg_codes`: an array of child RSG codes for all conditions associated with the configuration, required for RR filtering
 
-Here is a minimal example of what the file will look like:
+This file will always be named `active.json`
+
+Here is a minimal example of what the `active.json` file will look like:
 
 ```json
 {
@@ -3727,3 +3729,30 @@ This sample file demonstrates the following:
 ```
 
 <details>
+
+### Metadata
+
+Similarly to `active.json`, metadata will be written as a JSON file and will include information related to the activation process.
+
+Here is a minimal example of `metadata.json`:
+
+```json
+{
+  "child_rsg_snomed_codes": ["string"],
+  "jurisdiction_code": "string",
+  "active_version": int
+}
+```
+
+A real-world example might look like this:
+
+```json
+{
+  "child_rsg_snomed_codes": [
+    "186747009",
+    "840539006"
+  ],
+  "jurisdiction_code": "SDDH",
+  "active_version": 2
+}
+```
