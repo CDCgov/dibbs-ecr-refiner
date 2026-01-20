@@ -36,9 +36,6 @@ export function RadioCell({
         { 'cursor-not-allowed': disabled }
       )}
       tabIndex={0}
-      onClick={() => {
-        applyAction(index, action);
-      }}
       aria-disabled={disabled}
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') {
