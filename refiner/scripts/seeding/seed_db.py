@@ -22,6 +22,12 @@ TES_DATA_DIR = DATA_DIR / "source-tes-groupers"
 SEEDING_DATA_DIR = DATA_DIR / "seeding"
 ENV_PATH = SCRIPTS_DIR / ".env"
 
+# code systems we currently save to the database
+TARGET_CODE_SYSTEMS = ["loinc_codes", "snomed_codes", "icd10_codes", "rxnorm_codes"]
+
+# list of versions that are known to use the old composition method
+OLD_VERSIONS = ["1.0.0", "2.0.0", "3.0.0"]
+
 
 def get_db_connection(db_url, db_password) -> Connection:
     """
@@ -40,7 +46,9 @@ def get_db_connection(db_url, db_password) -> Connection:
 
 def extract_codes_from_valueset(valueset: dict[str, Any]) -> dict[str, list[dict]]:
     """
-    Extracts all code types from a single ValueSet into structured lists.
+    Extracts all code types from a ValueSet's 'compose' section.
+
+    (Used for v1-v3 condition groupers).
     """
 
     codes = {
@@ -67,6 +75,48 @@ def extract_codes_from_valueset(valueset: dict[str, Any]) -> dict[str, list[dict
     return codes
 
 
+def extract_codes_from_expansion(valueset: dict[str, Any]) -> dict[str, list[dict]]:
+    """
+    Extracts all code types from a ValueSet's 'expansion.contains' section.
+
+    This function dynamically handles any code system it encounters.
+    (Used for v4+ groupers).
+    """
+
+    all_codes_by_system = {}
+    system_map = {
+        "http://loinc.org": "loinc_codes",
+        "http://snomed.info/sct": "snomed_codes",
+        "http://hl7.org/fhir/sid/icd-10-cm": "icd10_codes",
+        "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
+    }
+
+    expansion = valueset.get("expansion", {})
+    for item in expansion.get("contains", []):
+        system_url = item.get("system")
+        if not system_url:
+            continue
+
+        # use the friendly name from system_map or derive from the URL
+        code_key = system_map.get(system_url, system_url.split("/")[-1])
+
+        if code_key not in all_codes_by_system:
+            all_codes_by_system[code_key] = []
+
+        all_codes_by_system[code_key].append(
+            {"display": item.get("display"), "code": item.get("code")}
+        )
+
+    # log the findings for this valueset
+    condition_name = valueset.get("title") or valueset.get("name", "Unknown")
+    logging.info(f"  Codes found for '{condition_name}':")
+    for system, codes in all_codes_by_system.items():
+        status = "SAVING" if system in TARGET_CODE_SYSTEMS else "IGNORING"
+        logging.info(f"    - {system}: {len(codes)} codes ({status})")
+
+    return all_codes_by_system
+
+
 def parse_snomed_from_url(url: str) -> str | None:
     """
     Extracts the SNOMED code from a Reporting Spec Grouper URL.
@@ -84,11 +134,10 @@ def seed_database(db_url, db_password) -> None:
 
     logging.info("🚀 Starting database seeding...")
 
-    # pass 1: prepare condition data from ValueSet files
+    # pass 1:
+    # prepare condition data from ValueSet files
     all_valuesets_map: dict[tuple, dict] = {}
-    json_files = [
-        file for file in TES_DATA_DIR.glob("*.json") if file.name != "manifest.json"
-    ]
+    json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
     for file_path in json_files:
         with open(file_path) as file:
             data = json.load(file)
@@ -107,31 +156,73 @@ def seed_database(db_url, db_password) -> None:
                 for item in valueset.get("compose", {}).get("include", [])
             )
         ]
+
         for parent in parent_valuesets:
-            child_snomed_codes, aggregated_codes = (
-                set(),
-                {
-                    "loinc_codes": [],
-                    "snomed_codes": [],
-                    "icd10_codes": [],
-                    "rxnorm_codes": [],
-                },
-            )
-            for include_item in parent.get("compose", {}).get("include", []):
-                for child_reference in include_item.get("valueSet", []):
-                    try:
-                        child_url, child_version = child_reference.split("|", 1)
-                    except ValueError:
-                        continue
-                    child_valueset = all_valuesets_map.get((child_url, child_version))
-                    if not child_valueset:
-                        continue
-                    snomed_code = parse_snomed_from_url(child_valueset.get("url"))
-                    if snomed_code:
-                        child_snomed_codes.add(snomed_code)
-                    child_extracted = extract_codes_from_valueset(child_valueset)
-                    for code_type, codes in child_extracted.items():
-                        aggregated_codes[code_type].extend(codes)
+            version = parent.get("version")
+            child_snomed_codes = set()
+            aggregated_codes = {}
+
+            # NOTE: for condition groupers of 4.0.0 and up (so long as they continue to use `expansion.contains`)
+            # we will extract the codes from this location rather than use the references from `compose.include` to
+            # extract them by finding their references. for condition groupers 1.0.0, 2.0.0, and 3.0.0 we will continue
+            # to seed the conditions table with this method (since it is what we were originally using). for 4.0.0 and up,
+            # we'll use the new method of `expansion.contains`
+            if version in OLD_VERSIONS:
+                logging.info(
+                    f"Processing '{parent.get('name')}' (v{version}) using COMPOSITION method..."
+                )
+                aggregated_codes = {key: [] for key in TARGET_CODE_SYSTEMS}
+                for include_item in parent.get("compose", {}).get("include", []):
+                    for child_reference in include_item.get("valueSet", []):
+                        try:
+                            child_key = tuple(child_reference.split("|", 1))
+                            child_valueset = all_valuesets_map.get(child_key)
+                            if not child_valueset:
+                                continue
+
+                            snomed = parse_snomed_from_url(
+                                child_valueset.get("url", "")
+                            )
+                            if snomed:
+                                child_snomed_codes.add(snomed)
+
+                            child_extracted = extract_codes_from_valueset(
+                                child_valueset
+                            )
+                            for code_type, codes in child_extracted.items():
+                                aggregated_codes[code_type].extend(codes)
+                        except (ValueError, KeyError):
+                            continue
+            # for v4.0.0 and all future versions, use the efficient expansion logic
+            else:
+                logging.info(
+                    f"Processing '{parent.get('name')}' (v{version}) using EXPANSION method..."
+                )
+                if "expansion" not in parent:
+                    logging.warning(
+                        f"  - WARNING: Expected an 'expansion' section for v{version} but found none. Code lists will be empty."
+                    )
+
+                aggregated_codes = extract_codes_from_expansion(parent)
+                # still need to get child_rsg_snomed_codes from the compose section, as this is
+                # very important to the app's business logic
+                for include_item in parent.get("compose", {}).get("include", []):
+                    for child_reference in include_item.get("valueSet", []):
+                        try:
+                            child_url, child_version = child_reference.split("|", 1)
+                            child_valueset = all_valuesets_map.get(
+                                (child_url, child_version)
+                            )
+                            if child_valueset:
+                                snomed = parse_snomed_from_url(
+                                    child_valueset.get("url", "")
+                                )
+                                if snomed:
+                                    child_snomed_codes.add(snomed)
+                        except ValueError:
+                            continue
+
+            # prepare the final record for insertion
             conditions_to_insert.append(
                 {
                     "canonical_url": parent.get("url"),
@@ -140,19 +231,24 @@ def seed_database(db_url, db_password) -> None:
                         parent.get("title") or parent.get("name") or ""
                     ).replace("_", " "),
                     "child_rsg_snomed_codes": list(child_snomed_codes),
-                    "loinc_codes": json.dumps(aggregated_codes["loinc_codes"]),
-                    "snomed_codes": json.dumps(aggregated_codes["snomed_codes"]),
-                    "icd10_codes": json.dumps(aggregated_codes["icd10_codes"]),
-                    "rxnorm_codes": json.dumps(aggregated_codes["rxnorm_codes"]),
+                    "loinc_codes": json.dumps(aggregated_codes.get("loinc_codes", [])),
+                    "snomed_codes": json.dumps(
+                        aggregated_codes.get("snomed_codes", [])
+                    ),
+                    "icd10_codes": json.dumps(aggregated_codes.get("icd10_codes", [])),
+                    "rxnorm_codes": json.dumps(
+                        aggregated_codes.get("rxnorm_codes", [])
+                    ),
                 }
             )
 
     if conditions_to_insert:
         logging.info(
-            f"  ✅ Prepared {len(conditions_to_insert)} condition records to insert."
+            f"\n✅ Prepared {len(conditions_to_insert)} condition records to insert."
         )
 
-    # pass 2: connect to db and perform all inserts in a single transaction
+    # pass 2:
+    # connect to db and perform all inserts
     try:
         with get_db_connection(db_url=db_url, db_password=db_password) as connection:
             with connection.cursor() as cursor:
@@ -169,10 +265,7 @@ def seed_database(db_url, db_password) -> None:
                         cursor.execute(
                             f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;"
                         )
-                    except (
-                        psycopg.errors.UndefinedTable,
-                        psycopg.errors.InFailedSqlTransaction,
-                    ):
+                    except psycopg.errors.UndefinedTable:
                         logging.warning(f"Table {table} does not exist, skipping.")
 
                 if conditions_to_insert:
