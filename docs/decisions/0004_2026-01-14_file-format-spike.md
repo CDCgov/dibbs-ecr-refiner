@@ -1,4 +1,4 @@
-# 4. file-format-spike
+# 4. S3 configurations file format
 
 Date: 2026-01-14
 
