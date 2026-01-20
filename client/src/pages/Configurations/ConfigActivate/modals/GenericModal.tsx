@@ -21,7 +21,7 @@ export function GenericModal({
   return (
     <Modal
       id="activation-confirmation-modal"
-      className="max-w-140! align-top! [&_.usa-modal\_\_main]:m-0!"
+      className="max-w-140! p-10! align-top! [&_.usa-modal\_\_main]:m-0!"
       ref={modalRef}
       aria-labelledby="activation-confirmation-modal-heading"
       aria-describedby="activation-confirmation-modal-text"
