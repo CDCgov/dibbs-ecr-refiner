@@ -233,16 +233,18 @@ function Builder({
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
               </OptionsLabel>
-              <Button
-                variant="secondary"
-                className="mr-0! flex h-8 flex-row items-center px-3! py-2!"
-                id="open-codesets"
-                aria-label="Add new code set to configuration"
-                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                disabled={disabled}
-              >
-                ADD
-              </Button>
+              {!disabled && (
+                <Button
+                  variant="secondary"
+                  className="mr-0! flex h-8 flex-row items-center px-3! py-2!"
+                  id="open-codesets"
+                  aria-label="Add new code set to configuration"
+                  onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                  disabled={disabled}
+                >
+                  ADD
+                </Button>
+              )}
             </OptionsLabelContainer>
             <OptionsListContainer>
               <OptionsList>
@@ -488,9 +490,9 @@ function DeleteCodeSetButton({
     return <Spinner size={20} className="mr-2" />;
   }
 
-  // if (disabled) {
-  //   return <></>;
-  // }
+  if (disabled) {
+    return <></>;
+  }
 
   return index === 0 ? (
     <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
@@ -591,48 +593,57 @@ function CustomCodesDetail({
                 {customCode.system}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
+
               <td className="w-1/2 text-right whitespace-nowrap">
-                <ModalToggleButton
-                  modalRef={modalRef}
-                  opener={disabled}
-                  variant="tertiary"
-                  className="!mr-6"
-                  onClick={() => {
-                    if (disabled) return;
-                    setSelectedCustomCode(customCode);
-                  }}
-                  aria-label={`Edit custom code ${customCode.name}`}
-                >
-                  Edit
-                </ModalToggleButton>
-                <Button
-                  variant="tertiary"
-                  aria-label={`Delete custom code ${customCode.name}`}
-                  onClick={() => {
-                    if (disabled) return;
-                    deleteCode(
-                      {
-                        code: customCode.code,
-                        system: customCode.system,
-                        configurationId: configurationId,
-                      },
-                      {
-                        onSuccess: async () => {
-                          await queryClient.invalidateQueries({
-                            queryKey:
-                              getGetConfigurationQueryKey(configurationId),
-                          });
-                          showToast({
-                            heading: 'Deleted code',
-                            body: customCode.code,
-                          });
-                        },
-                      }
-                    );
-                  }}
-                >
-                  Delete
-                </Button>
+                {!disabled && (
+                  <>
+                    <ModalToggleButton
+                      modalRef={modalRef}
+                      opener={disabled}
+                      variant="tertiary"
+                      className="!mr-6"
+                      onClick={() => {
+                        if (disabled) return;
+                        setSelectedCustomCode(customCode);
+                      }}
+                      aria-label={`Edit custom code ${customCode.name}`}
+                      disabled={disabled}
+                    >
+                      Edit
+                    </ModalToggleButton>
+                    <Button
+                      variant="tertiary"
+                      aria-label={`Delete custom code ${customCode.name}`}
+                      onClick={() => {
+                        if (disabled) return;
+                        deleteCode(
+                          {
+                            code: customCode.code,
+                            system: customCode.system,
+                            configurationId: configurationId,
+                          },
+                          {
+                            onSuccess: async () => {
+                              await queryClient.invalidateQueries({
+                                queryKey:
+                                  getGetConfigurationQueryKey(configurationId),
+                              });
+                              showToast({
+                                heading: 'Deleted code',
+                                body: customCode.code,
+                              });
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      Delete
+                    </Button>
+                    <div className="sr-only">
+                      Editing actions aren't available for previous versions
+                    </div>
+                  </>
+                )}
               </td>
             </tr>
           ))}
