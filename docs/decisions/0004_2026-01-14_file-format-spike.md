@@ -41,7 +41,7 @@ Here is a minimal example of what the file will look like:
 
 <details>
 
-<summary>Tips for collapsed sections</summary>
+<summary>Expand for a full example</summary>
 
 ### Example: File written to S3 for COVID-19
 
