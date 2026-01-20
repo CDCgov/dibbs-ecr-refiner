@@ -3728,7 +3728,7 @@ This sample file demonstrates the following:
 }
 ```
 
-<details>
+</details>
 
 ### Metadata
 
