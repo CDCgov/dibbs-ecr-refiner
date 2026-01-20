@@ -49,6 +49,7 @@ export function DraftBanner({
         <Button
           to={`/configurations/${draftId}/${step}`}
           className="self-start"
+          variant="primary"
         >
           Go to draft
         </Button>

@@ -233,17 +233,16 @@ function Builder({
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
               </OptionsLabel>
-              {!disabled && (
-                <Button
-                  variant="secondary"
-                  className="text-blue-cool-60 mr-0! flex h-8 flex-row items-center px-3! py-2! font-bold hover:cursor-pointer"
-                  id="open-codesets"
-                  aria-label="Add new code set to configuration"
-                  onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                >
-                  ADD
-                </Button>
-              )}
+              <Button
+                variant="secondary"
+                className="mr-0! flex h-8 flex-row items-center px-3! py-2!"
+                id="open-codesets"
+                aria-label="Add new code set to configuration"
+                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                disabled={disabled}
+              >
+                ADD
+              </Button>
             </OptionsLabelContainer>
             <OptionsListContainer>
               <OptionsList>
@@ -489,9 +488,9 @@ function DeleteCodeSetButton({
     return <Spinner size={20} className="mr-2" />;
   }
 
-  if (disabled) {
-    return <></>;
-  }
+  // if (disabled) {
+  //   return <></>;
+  // }
 
   return index === 0 ? (
     <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
@@ -954,17 +953,16 @@ export function CustomCodeModal({
         {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
 
-      <button
-        type="button"
+      <Button
         aria-label="Close this window"
         onClick={() => {
           resetForm();
           onClose();
         }}
-        className="absolute top-4 right-4 h-6 w-6 rounded text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
+        className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
       >
         <Icon.Close className="h-6! w-6!" aria-hidden />
-      </button>
+      </Button>
 
       <div className="mt-5 flex flex-col gap-5 p-0!">
         <div>
