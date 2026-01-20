@@ -236,9 +236,13 @@
 }
 
 .usa-button--unstyled {
-  @apply text-blue-cool-60! m-0! bg-transparent! p-0! font-bold no-underline! shadow-none! hover:cursor-pointer hover:bg-transparent! hover:underline!;
+  @apply text-blue-cool-60! m-0! bg-transparent! p-0! font-bold! no-underline! shadow-none! hover:cursor-pointer hover:bg-transparent! hover:underline!;
 }
 
 .usa-button--unstyled:disabled {
   @apply text-blue-cool-60! m-0! bg-transparent! p-0! shadow-none! hover:cursor-pointer hover:bg-transparent!;
+}
+
+.usa-modal__close {
+  @apply bg-transparent! p-0! pt-2! pr-2! text-base hover:bg-transparent!;
 }

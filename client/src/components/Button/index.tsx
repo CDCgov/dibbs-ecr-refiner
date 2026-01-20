@@ -35,7 +35,14 @@ export function Button({
       <Link
         onClick={sideEffect}
         to={to}
-        className={classNames('usa-button--outline', className)}
+        className={classNames(
+          {
+            ['usa-button']: variant === 'primary',
+            ['usa-button--secondary']: variant === 'secondary',
+            ['usa-button--unstyled']: variant === 'tertiary',
+          },
+          className
+        )}
       >
         {children}
       </Link>

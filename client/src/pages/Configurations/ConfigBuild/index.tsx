@@ -943,10 +943,9 @@ export function CustomCodeModal({
           resetForm();
           onClose();
         }}
-        variant="tertiary"
-        className="absolute top-4 right-4 h-6 w-6 rounded text-gray-500 hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900 focus:outline focus:outline-indigo-500"
+        className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
       >
-        <Icon.Close className="!h-6 !w-6" aria-hidden />
+        <Icon.Close className="h-6! w-6!" aria-hidden />
       </Button>
 
       <div className="mt-5 flex flex-col gap-5 !p-0">

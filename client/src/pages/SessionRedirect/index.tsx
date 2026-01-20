@@ -1,7 +1,7 @@
 import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
-import { PRIMARY_BUTTON_STYLES } from '../../components/Button';
 import { Footer, Header } from '../../components/Layout';
+import { Button } from '../../components/Button';
 
 interface SessionRedirectProps {
   displayHeaderAndFooter?: boolean;
@@ -24,15 +24,9 @@ export function SessionRedirect({
               Your session has ended. <br />
               Please log back in to access the app.
             </h1>
-            <a
-              href="/"
-              className={classNames(
-                PRIMARY_BUTTON_STYLES,
-                'usa-button !w-[12.5rem]'
-              )}
-            >
+            <Button to="/" className={classNames('usa-button w-50!')}>
               Return to home page
-            </a>
+            </Button>
           </div>
         </div>
       </main>
