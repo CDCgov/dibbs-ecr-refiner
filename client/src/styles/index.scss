@@ -115,8 +115,9 @@ button:focus:not(:focus-visible),
   padding: 0 !important;
 }
 
-.condition-creation-modal {
-  .usa-modal__close {
-    margin: 0;
-  }
+.usa-modal__content {
+  padding: 2rem !important;
+}
+.usa-modal__close {
+  margin: -2rem -2rem 0 auto;
 }

@@ -49,7 +49,6 @@ export function DraftBanner({
         <Button
           to={`/configurations/${draftId}/${step}`}
           className="self-start"
-          variant="primary"
         >
           Go to draft
         </Button>
@@ -87,7 +86,7 @@ function NewDraftModal({ modalRef, conditionId, version }: NewDraftModalProps) {
   return (
     <Modal
       id="draft-modal"
-      className="p-10 align-top!"
+      className="align-top!"
       ref={modalRef}
       aria-labelledby="draft-modal-heading"
       aria-describedby="draft-modal-text"

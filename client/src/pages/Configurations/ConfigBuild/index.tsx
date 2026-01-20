@@ -943,7 +943,7 @@ export function CustomCodeModal({
       aria-describedby="modal-heading"
       aria-labelledby="modal-heading"
       isLarge
-      className="max-w-100! rounded-none! p-10"
+      className="max-w-100!"
       forceAction
     >
       <ModalHeading
