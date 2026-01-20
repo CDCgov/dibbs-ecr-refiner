@@ -41,6 +41,17 @@ Here is a minimal example of what the `active.json` file will look like:
 }
 ```
 
+### JSON
+
+JSON as a file format is probably not too surprising, but the reasons I opted for this is because:
+
+- Native support in Python
+- Human readable
+  - Simple to diff
+- Very flexible
+- Only planning to do full file reads and writes
+- Will be working with fairly small files
+
 <details>
 
 <summary>Expand for a full example</summary>
