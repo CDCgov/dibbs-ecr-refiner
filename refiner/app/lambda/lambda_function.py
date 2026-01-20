@@ -81,7 +81,7 @@ def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
     return response["Body"].read().decode("utf-8")
 
 
-def _s3_object_exists(s3_client, bucket: str, key: str) -> bool:
+def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
     try:
         s3_client.head_object(Bucket=bucket, Key=key)
         return True
@@ -92,15 +92,19 @@ def _s3_object_exists(s3_client, bucket: str, key: str) -> bool:
             return False
 
         logger.error("Unexpected error while fetching file from S3: ${key}", e)
-        raise
 
 
-def s3_content_to_dict(body: Any) -> dict:
+def parse_s3_content_to_dict(body: Any) -> dict:
     try:
-        data = json.loads(body)
-        return data
-    except json.JSONDecodeError:
-        raise
+        data = body.read().decode("utf-8")
+        result = json.loads(data)
+    except Exception as e:
+        raise ValueError("Failed to parse S3 object as JSON") from e
+
+    if not isinstance(result, dict):
+        raise ValueError("Expected JSON object")
+
+    return result
 
 
 def read_current_version(s3_client, bucket: str, key: str) -> int | None:
@@ -114,7 +118,7 @@ def read_current_version(s3_client, bucket: str, key: str) -> int | None:
     """
 
     # Check `current.json` file existance, return None if no object exists
-    current_exists = _s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
+    current_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
 
     if not current_exists:
         return None
@@ -122,7 +126,7 @@ def read_current_version(s3_client, bucket: str, key: str) -> int | None:
     # Read the file content and ensure required data is present
     current_version_content = get_s3_object_content(s3_client, bucket=bucket, key=key)
 
-    current_version_dict = s3_content_to_dict(current_version_content)
+    current_version_dict = parse_s3_content_to_dict(current_version_content)
 
     # Check version existance and ensure it's an int
     if isinstance(current_version_dict.get("version"), int):
@@ -133,7 +137,7 @@ def read_current_version(s3_client, bucket: str, key: str) -> int | None:
 
 def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     # Check that configuration file exists
-    config_exists = _s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
+    config_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
 
     if not config_exists:
         # It should exist because we've already checked the active version by this point
@@ -142,7 +146,7 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     # Read the file content and ensure required data is present
     config_file_content = get_s3_object_content(s3_client, bucket=bucket, key=key)
 
-    return s3_content_to_dict(config_file_content)
+    return parse_s3_content_to_dict(config_file_content)
 
 
 def process_refiner(
