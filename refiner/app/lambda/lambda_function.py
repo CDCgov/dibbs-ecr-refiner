@@ -7,7 +7,7 @@
 import json
 import logging
 import os
-from typing import Any, TypedDict
+from typing import TypedDict
 
 import boto3
 from botocore.exceptions import ClientError
@@ -94,17 +94,13 @@ def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
         raise Exception("Unexpected error while fetching file from S3: ${key}", e)
 
 
-def parse_s3_content_to_dict(body: Any) -> dict:
+def parse_s3_content_to_dict(body: str) -> dict:
     try:
-        data = body.read().decode("utf-8")
-        result = json.loads(data)
-    except Exception as e:
-        raise ValueError("Failed to parse S3 object as JSON") from e
-
-    if not isinstance(result, dict):
-        raise ValueError("Expected JSON object")
-
-    return result
+        data = json.loads(body)
+        return data
+    except json.JSONDecodeError as e:
+        logger.info("Decoding S3 string to JSON failed", e)
+        raise
 
 
 def read_current_version(s3_client, bucket: str, key: str) -> int | None:
