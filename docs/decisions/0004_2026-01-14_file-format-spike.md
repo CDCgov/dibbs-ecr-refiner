@@ -21,7 +21,7 @@ This file will be written in JSON format and will have the following properties:
 
 - `codes`: an array of condition codes to use for eICR filtering
 - `sections`: an array of objects containing information related to eICR section filtering
-- `included_condition_rsg_codes`: an array of child RSG codes for all conditions associated with the configuration
+- `included_condition_rsg_codes`: an array of child RSG codes for all conditions associated with the configuration, required for RR filtering
 
 Here is a minimal example of what the file will look like:
 
