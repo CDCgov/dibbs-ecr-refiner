@@ -368,7 +368,7 @@ The initial format of this file will look as such:
 
 Epic: [[EPIC] Production Activation (Lambda)](https://github.com/CDCgov/dibbs-ecr-refiner/issues/401)
 
-Tickets will be created or updated as needed to be relevant to the plan described in this document.
+- [#767](https://github.com/CDCgov/dibbs-ecr-refiner/issues/767)
 
 ### Real life scenario example
 
