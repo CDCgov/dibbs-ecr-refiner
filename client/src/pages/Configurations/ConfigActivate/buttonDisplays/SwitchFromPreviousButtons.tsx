@@ -10,7 +10,7 @@ interface SwitchFromPreviousProps {
   handleDeactivation: () => void;
   curVersion: number;
   activeVersion: number | null;
-  disabled?: boolean;
+  disabled: boolean;
 }
 export function SwitchFromPrevious({
   handleActivation,

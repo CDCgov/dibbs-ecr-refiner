@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
-  disabled?: boolean;
+  disabled: boolean;
 }
 
 /**

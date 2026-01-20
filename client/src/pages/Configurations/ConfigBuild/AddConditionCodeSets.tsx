@@ -11,7 +11,7 @@ type AddConditionCodeSetsDrawerProps = {
   conditions: IncludedCondition[];
   configurationId: string;
   reportable_condition_display_name: string;
-  disabled?: boolean;
+  disabled: boolean;
 };
 
 export function AddConditionCodeSetsDrawer({

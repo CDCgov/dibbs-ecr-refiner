@@ -71,7 +71,7 @@ export function ConfigBuild() {
   if (!id || isError) return 'Error!';
 
   const { is_locked: disabledForConcurrency } = configuration.data;
-  const disabledForPrevVersion = configuration?.data.status !== 'draft';
+  const disabledForPrevVersion = configuration.data.status !== 'draft';
   const isDisabled = disabledForConcurrency || disabledForPrevVersion;
 
   // sort so the default code set always displays first
@@ -160,7 +160,7 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
-> & { disabled?: boolean };
+> & { disabled: boolean };
 
 function Builder({
   id,
@@ -436,7 +436,7 @@ interface DeleteCodeSetButtonProps {
   conditionId: string;
   conditionName: string;
   onClick: () => void;
-  disabled?: boolean;
+  disabled: boolean;
 }
 
 function DeleteCodeSetButton({
@@ -491,7 +491,7 @@ function DeleteCodeSetButton({
   }
 
   if (disabled) {
-    return <></>;
+    return null;
   }
 
   return index === 0 ? (
@@ -550,7 +550,7 @@ interface CustomCodesDetailProps {
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
-  disabled?: boolean;
+  disabled: boolean;
 }
 
 function CustomCodesDetail({

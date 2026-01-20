@@ -6,7 +6,7 @@ import { ModalToggleButton } from '../../../../components/Button/ModalToggleButt
 
 interface TurnOnButtonsProps {
   handleActivation: () => void;
-  disabled?: boolean;
+  disabled: boolean;
 }
 export function TurnOnButtons({
   handleActivation,

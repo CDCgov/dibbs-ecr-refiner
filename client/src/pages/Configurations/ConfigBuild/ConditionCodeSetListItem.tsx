@@ -16,7 +16,7 @@ interface ConditionCodeSetListItemProps {
   configurationId: string;
   highlight?: React.ReactNode;
   reportable_condition_display_name: string;
-  disabled?: boolean;
+  disabled: boolean;
 }
 
 export function ConditionCodeSetListItem({
@@ -117,14 +117,15 @@ export function ConditionCodeSetListItem({
     <li
       className={classNames(
         'flex h-16 items-center justify-between rounded-md p-4 hover:bg-white',
-        isDefault ? '' : 'cursor-pointer'
+        {
+          'cursor-pointer': !isDefault,
+        }
       )}
       role="listitem"
       onClick={(e) => {
         e.stopPropagation();
-        if (!isDefault) {
-          onClick(condition.associated);
-        }
+        if (isDefault) return;
+        onClick(condition.associated);
       }}
       onMouseEnter={() => setShowButton(true)}
       onMouseLeave={() => {
