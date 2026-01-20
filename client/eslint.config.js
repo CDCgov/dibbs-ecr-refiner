@@ -9,6 +9,7 @@ import importPlugin from 'eslint-plugin-import';
 import { defineConfig } from 'eslint/config';
 import reactPlugin from 'eslint-plugin-react';
 import testingLibraryPlugin from 'eslint-plugin-testing-library';
+import tanstackQuery from '@tanstack/eslint-plugin-query';
 
 export default defineConfig(
   { ignores: ['dist', 'tests/setup.ts', 'src/api'] },
@@ -32,9 +33,12 @@ export default defineConfig(
       react: reactPlugin,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      '@tanstack/query': tanstackQuery,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      ...tanstackQuery.configs.recommended.rules,
+
       'react/jsx-curly-brace-presence': [
         'error',
         {
