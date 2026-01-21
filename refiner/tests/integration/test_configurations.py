@@ -78,12 +78,62 @@ class TestConfigurations:
                 """
             )
             draft_config = await cur.fetchone()
+
         if draft_config:
             draft_id = draft_config["id"]
             response = await authed_client.patch(
                 f"/api/v1/configurations/{draft_id}/activate"
             )
             assert response.status_code == 200
+
+            # Check S3 for files activation
+            localstack_url = "http://localhost:4566/local-config-bucket/SDDH"
+            EXPECTED_DROWNING_RSG_CODE = "212962007"
+
+            # Activation file and content
+            activation_file = await authed_client.get(
+                f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/1/active.json"
+            )
+            activation_file_json = activation_file.json()
+
+            TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
+            TOTAL_EXPECTED_SECTION_COUNT = 9
+            TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
+                1  # No other conditions were included
+            )
+
+            assert (
+                len(activation_file_json["codes"])
+                == TOTAL_EXPECTED_CONDITION_CODE_COUNT
+            )
+            assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
+            assert (
+                len(activation_file_json["included_condition_rsg_codes"])
+                == TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES
+            )
+            assert (
+                activation_file_json["included_condition_rsg_codes"][0]
+                == EXPECTED_DROWNING_RSG_CODE
+            )
+
+            # Metadata file and content
+            metadata_file = await authed_client.get(
+                f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/1/metadata.json"
+            )
+            metadata_file_json = metadata_file.json()
+            assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
+            assert (
+                metadata_file_json["child_rsg_snomed_codes"][0]
+                == EXPECTED_DROWNING_RSG_CODE
+            )
+            assert metadata_file_json["jurisdiction_code"] == "SDDH"
+            assert metadata_file_json["active_version"] == 1
+
+            # Current file and content
+            current_file = await authed_client.get(
+                f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+            )
+            assert current_file.json()["version"] == 1
 
         # Now create a new configuration for activation
         payload = {"condition_id": str(condition["id"])}
