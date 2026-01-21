@@ -1,8 +1,9 @@
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 # configuration
 # * an empty list means we will process **all** parent conditions found in the data
