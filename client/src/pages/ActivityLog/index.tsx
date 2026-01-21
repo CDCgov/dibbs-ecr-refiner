@@ -1,4 +1,5 @@
-import { Label, Pagination, Select } from '@trussworks/react-uswds';
+import { Label, Select } from '@trussworks/react-uswds';
+import { Pagination } from '../../components/Pagination';
 import { Spinner } from '../../components/Spinner';
 import { Title } from '../../components/Title';
 import { useState } from 'react';
@@ -63,21 +64,12 @@ export function ActivityLog() {
           filteredLogEntries={eventResponse.data.audit_events}
         />
         <Pagination
-          pathname="/events"
-          currentPage={selectedPage}
-          maxSlots={6}
-          totalPages={total_pages}
-          onClickPageNumber={(_, pageNumber) => {
-            setSelectedPage(pageNumber);
-          }}
-          onClickPrevious={
-            selectedPage > 1 ? () => setSelectedPage((p) => p - 1) : undefined
-          }
-          onClickNext={
-            selectedPage < total_pages
-              ? () => setSelectedPage((p) => p + 1)
-              : undefined
-          }
+            currentPage={selectedPage}
+            totalPages={total_pages}
+            maxSlots={6}
+            onClickNext={() => setSelectedPage((p) => p + 1)}
+            onClickPrevious={() => setSelectedPage((p) => p - 1)}
+            onClickPageNumber={(_, page) => setSelectedPage(page)}
         />
       </div>
     </section>
