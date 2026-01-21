@@ -64,12 +64,12 @@ export function ActivityLog() {
           filteredLogEntries={eventResponse.data.audit_events}
         />
         <Pagination
-            currentPage={selectedPage}
-            totalPages={total_pages}
-            maxSlots={6}
-            onClickNext={() => setSelectedPage((p) => p + 1)}
-            onClickPrevious={() => setSelectedPage((p) => p - 1)}
-            onClickPageNumber={(_, page) => setSelectedPage(page)}
+          currentPage={selectedPage}
+          totalPages={total_pages}
+          maxSlots={6}
+          onClickNext={() => setSelectedPage((p) => p + 1)}
+          onClickPrevious={() => setSelectedPage((p) => p - 1)}
+          onClickPageNumber={(_, page) => setSelectedPage(page)}
         />
       </div>
     </section>
