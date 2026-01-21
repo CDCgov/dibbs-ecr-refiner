@@ -6,6 +6,9 @@ from psycopg.rows import dict_row
 
 from tests.test_conditions import TEST_SESSION_TOKEN
 
+LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/SDDH"
+EXPECTED_DROWNING_RSG_CODE = "212962007"
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio
@@ -86,13 +89,9 @@ class TestConfigurations:
             )
             assert response.status_code == 200
 
-            # Check S3 for files activation
-            localstack_url = "http://localhost:4566/local-config-bucket/SDDH"
-            EXPECTED_DROWNING_RSG_CODE = "212962007"
-
             # Activation file and content
             activation_file = await authed_client.get(
-                f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/1/active.json"
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/active.json"
             )
             activation_file_json = activation_file.json()
 
@@ -118,7 +117,7 @@ class TestConfigurations:
 
             # Metadata file and content
             metadata_file = await authed_client.get(
-                f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/1/metadata.json"
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/metadata.json"
             )
             metadata_file_json = metadata_file.json()
             assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
@@ -131,7 +130,7 @@ class TestConfigurations:
 
             # Current file and content
             current_file = await authed_client.get(
-                f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
             )
             assert current_file.json()["version"] == 1
 
@@ -155,12 +154,12 @@ class TestConfigurations:
 
         # Check that new files exist in S3
         activation_file = await authed_client.get(
-            f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/2/active.json"
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/2/active.json"
         )
         activation_file_json = activation_file.json()
 
         current_file = await authed_client.get(
-            f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
         )
         assert current_file.json()["version"] == 2
 
@@ -193,7 +192,7 @@ class TestConfigurations:
         assert validation_response_data["id"] == initial_configuration_id
         assert validation_response_data["status"] == "inactive"
 
-    async def test_activate_rollback(self, setup, db_conn):
+    async def test_activate_rollback(self, setup, authed_client, db_conn):
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
@@ -228,7 +227,7 @@ class TestConfigurations:
 
                 async with db_conn.cursor(row_factory=dict_row) as cur:
                     query = """
-                            SELECT id, condition_canonical_url, condition_id, status
+                            SELECT id, condition_canonical_url, condition_id, status, version
                             FROM configurations
                             WHERE id = %s;
                         """
@@ -237,6 +236,16 @@ class TestConfigurations:
                     configuration = await cur.fetchone()
                     assert configuration is not None
                     assert configuration["status"] == "inactive"
+                    print("CURRENTVERSION", configuration["version"])
+
+                    # Expect previous version to still be the active version
+                    current_file_resp = await authed_client.get(
+                        f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+                    )
+                    assert current_file_resp.status_code == 200
+
+                    # This is the previously activated version from the test above
+                    assert current_file_resp.json()["version"] == 3
 
                 assert response.status_code == 500
 
@@ -263,3 +272,12 @@ class TestConfigurations:
         data = response.json()
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "inactive"
+
+        # Expect null version when deactivated
+        current_file_resp = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+        )
+        assert current_file_resp.status_code == 200
+
+        # This is the previously activated version from the test above
+        assert current_file_resp.json()["version"] is None
