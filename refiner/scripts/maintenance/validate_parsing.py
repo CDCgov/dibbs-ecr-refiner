@@ -247,6 +247,7 @@ def main():
 
     # check 3: parent must have at least one valid child that meets seeder criteria    child_check_failed = False
     for valueset in parent_valuesets:
+        child_check_failed = False
         valid_valuesets = {
             *(
                 _extract_valid_child_valuesets_from_parent(
@@ -264,11 +265,11 @@ def main():
             )
             child_check_failed = True
 
-    if not child_check_failed:
-        logging.info(
-            "  ✅ PASSED [Children]: All parent conditions have at least one child that meets the seeder's criteria."
-        )
-    has_failed_check = has_failed_check or child_check_failed
+        if not child_check_failed:
+            logging.info(
+                "  ✅ PASSED [Children]: All parent conditions have at least one child that meets the seeder's criteria."
+            )
+        has_failed_check = has_failed_check or child_check_failed
 
     # check 4: aggregated code structures must be valid
     code_structure_failed = False
