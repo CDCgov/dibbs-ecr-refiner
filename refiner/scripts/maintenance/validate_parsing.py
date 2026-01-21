@@ -245,7 +245,7 @@ def main():
         )
     has_failed_check = has_failed_check or name_check_failed
 
-    child_check_failed = False
+    # check 3: parent must have at least one valid child that meets seeder criteria    child_check_failed = False
     for valueset in parent_valuesets:
         valid_valuesets = {
             *(
