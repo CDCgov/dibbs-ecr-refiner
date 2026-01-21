@@ -10,4 +10,5 @@ export interface DbConfigurationSectionProcessing {
   name: string;
   code: string;
   action: string;
+  versions: string[];
 }

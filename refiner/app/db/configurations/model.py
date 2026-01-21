@@ -49,12 +49,14 @@ class DbConfigurationSectionProcessing:
 
     Name is the section's name.
     Code is the LOINC code for the section.
-    Action is either: retain, refine, or remove
+    Action is either: retain, refine, or remove.
+    Versions is a list of versions this section appears in.
     """
 
     name: str
     code: str
     action: str
+    versions: list[str]
 
 
 DbConfigurationStatus = Literal["draft", "inactive", "active"]

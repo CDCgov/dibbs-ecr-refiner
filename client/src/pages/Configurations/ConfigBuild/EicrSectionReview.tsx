@@ -160,7 +160,18 @@ export function EicrSectionReview({
           {sectionProcessing.map((section, index) => (
             <tr key={section.name}>
               <td className="cursor-default! font-bold! wrap-break-word! whitespace-normal!">
-                {section.name}
+                <span className="font-bold!">{section.name}</span>
+                <br />
+                <span className="font-normal!">
+                  {Array.isArray(section.versions) &&
+                  section.versions.length > 0
+                    ? section.versions.length === 1
+                      ? `Version ${section.versions[0]}`
+                      : section.versions.length === 2
+                        ? `Versions ${section.versions[0]} and ${section.versions[1]}`
+                        : `Versions ${section.versions.slice(0, -1).join(', ')}, and ${section.versions[section.versions.length - 1]}`
+                    : null}
+                </span>
               </td>
               <RadioCell
                 index={index}
