@@ -153,6 +153,17 @@ class TestConfigurations:
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "active"
 
+        # Check that new files exist in S3
+        activation_file = await authed_client.get(
+            f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/2/active.json"
+        )
+        activation_file_json = activation_file.json()
+
+        current_file = await authed_client.get(
+            f"{localstack_url}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+        )
+        assert current_file.json()["version"] == 2
+
         # Create another configuration draft and try to activate it. Assert that the confirmation
         # returned matches the new draft ID.
         payload = {"condition_id": condition_id_to_test}
@@ -176,15 +187,11 @@ class TestConfigurations:
         validation_response = await authed_client.get(
             f"/api/v1/configurations/{initial_configuration_id}"
         )
-        if validation_response.status_code != 200:
-            print("Validation response error:", validation_response.text)
-        # NOTE: The backend currently returns a 500 error when fetching an inactive configuration.
-        # This is a bug and should be fixed in the API. Accepting 500 here as a temporary workaround.
-        assert validation_response.status_code in [200, 404, 500]
-        if validation_response.status_code == 200:
-            validation_response_data = validation_response.json()
-            assert validation_response_data["id"] == initial_configuration_id
-            assert validation_response_data["status"] == "inactive"
+        assert validation_response.status_code == 200
+
+        validation_response_data = validation_response.json()
+        assert validation_response_data["id"] == initial_configuration_id
+        assert validation_response_data["status"] == "inactive"
 
     async def test_activate_rollback(self, setup, db_conn):
         async with db_conn.cursor(row_factory=dict_row) as cur:
