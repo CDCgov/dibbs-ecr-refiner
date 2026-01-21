@@ -1,5 +1,4 @@
 import { Icon } from '@trussworks/react-uswds';
-import classNames from 'classnames';
 import { Footer, Header } from '../../components/Layout';
 import { Button } from '../../components/Button';
 
