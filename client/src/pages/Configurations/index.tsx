@@ -131,7 +131,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
     >
       <ModalHeading
         id="add-configuration-modal-heading"
-        className="font-merriweather !text-3xl !leading-18 font-bold text-black"
+        className="font-merriweather text-3xl! leading-18! font-bold text-black"
       >
         {CONFIGURATION_CTA}
       </ModalHeading>
@@ -148,7 +148,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         <>
           <Label
             htmlFor="new-condition"
-            className="!leading-6"
+            className="leading-6!"
             data-focus="true"
           >
             Select condition

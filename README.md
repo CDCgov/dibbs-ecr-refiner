@@ -1,8 +1,7 @@
 # DIBBs eCR Refiner
 
 > [!TIP]
-> This project leverages `just` as a command runner. To learn more about `just`
-> view the documentation at: [https://just.systems/man/en](). Run `just help`
+> This project leverages `just` as a command runner. To learn more about `just` > [view the documentation](https://just.systems/man/en). Run `just help`
 > for a list of commands.
 
 The DIBBs eCR Refiner reduces eICR and RR files down to the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
@@ -81,9 +80,9 @@ The linter can be run two different ways: either manually via the `ruff` command
 
 ### Manually
 
-1. Activate the `refiner` virtual environment (steps listed [here](./refiner/README.md#running-from-python-source-code))
+1. Activate the `refiner` virtual environment (steps listed [in the run from source instructions](./refiner/README.md#running-from-python-source-code))
 2. Install dev dependencies with `pip install -r requirements.txt -r requirements-dev.txt`
-3. Run any `ruff` command you'd like (see [here](https://docs.astral.sh/ruff/linter/))
+3. Run any `ruff` command you'd like (see [the ruff documentation for more details](https://docs.astral.sh/ruff/linter/))
 
 ### Pre-commit
 

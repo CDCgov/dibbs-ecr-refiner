@@ -10,6 +10,7 @@ import {
   TitleContainer,
 } from '../layout';
 import { useRef, useMemo, useState, forwardRef } from 'react';
+
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
 import {
@@ -59,6 +60,7 @@ export function ConfigBuild() {
 
   // release lock on beforeunload
   useConfigLockRelease(id);
+
   const {
     data: configuration,
     isPending,
@@ -68,7 +70,9 @@ export function ConfigBuild() {
   if (isPending) return <Spinner variant="centered" />;
   if (!id || isError) return 'Error!';
 
-  const { is_locked } = configuration.data;
+  const { is_locked: disabledForConcurrency } = configuration.data;
+  const disabledForPrevVersion = configuration.data.status !== 'draft';
+  const isDisabled = disabledForConcurrency || disabledForPrevVersion;
 
   // sort so the default code set always displays first
   const sortedCodeSets = configuration.data.code_sets.sort((a) => {
@@ -76,7 +80,7 @@ export function ConfigBuild() {
   });
 
   return (
-    <div>
+    <>
       <TitleContainer>
         <Title>{configuration.data.display_name}</Title>
         <Status version={configuration.data.active_version} />
@@ -93,7 +97,7 @@ export function ConfigBuild() {
           <Steps configurationId={configuration.data.id} />
         </StepsContainer>
       </NavigationContainer>
-      {!configuration.data.is_draft ? (
+      {disabledForPrevVersion ? (
         <DraftBanner
           draftId={configuration.data.draft_id}
           conditionId={configuration.data.condition_id}
@@ -101,7 +105,7 @@ export function ConfigBuild() {
           step="build"
         />
       ) : null}
-      {is_locked ? (
+      {disabledForConcurrency ? (
         <ConfigLockBanner
           lockedByName={configuration.data.locked_by?.name}
           lockedByEmail={configuration.data.locked_by?.email}
@@ -115,6 +119,7 @@ export function ConfigBuild() {
           />
           <Export id={configuration.data.id} />
         </div>
+
         <Builder
           id={configuration.data.id}
           code_sets={sortedCodeSets}
@@ -123,10 +128,10 @@ export function ConfigBuild() {
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           deduplicated_codes={configuration.data.deduplicated_codes}
-          is_locked={is_locked}
+          disabled={isDisabled}
         />
       </SectionContainer>
-    </div>
+    </>
   );
 }
 
@@ -155,8 +160,7 @@ type BuilderProps = Pick<
   | 'section_processing'
   | 'display_name'
   | 'deduplicated_codes'
-  | 'is_locked'
->;
+> & { disabled: boolean };
 
 function Builder({
   id,
@@ -166,7 +170,7 @@ function Builder({
   section_processing,
   display_name: default_condition_name,
   deduplicated_codes,
-  is_locked,
+  disabled,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
@@ -178,12 +182,13 @@ function Builder({
   const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
     null
   );
+
   const modalRef = useRef<ModalRef | null>(null);
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {}
   );
 
-  // initialize table with the first code set if 1)nothing is loaded and 2) the data is loaded
+  // initialize table with the first code set if 1) nothing is loaded and 2) the data is loaded
   if (tableView === 'none' && code_sets[0] && code_sets[0].condition_id) {
     onCodesetClick(code_sets[0].display_name, code_sets[0].condition_id);
   }
@@ -220,7 +225,7 @@ function Builder({
   }
 
   return (
-    <div className="bg-blue-cool-5 h-[35rem] rounded-lg p-4">
+    <div className="bg-blue-cool-5 h-140 rounded-lg p-4">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
@@ -228,16 +233,18 @@ function Builder({
               <OptionsLabel htmlFor="open-codesets">
                 CONDITION CODE SETS
               </OptionsLabel>
-              <Button
-                variant="secondary"
-                className="mr-0! flex h-8 flex-row items-center px-3! py-2!"
-                id="open-codesets"
-                aria-label="Add new code set to configuration"
-                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                disabled={is_locked}
-              >
-                ADD
-              </Button>
+              {!disabled && (
+                <Button
+                  variant="secondary"
+                  className="mr-0! flex h-8 flex-row items-center px-3! py-2!"
+                  id="open-codesets"
+                  aria-label="Add new code set to configuration"
+                  onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                  disabled={disabled}
+                >
+                  ADD
+                </Button>
+              )}
             </OptionsLabelContainer>
             <OptionsListContainer>
               <OptionsList>
@@ -267,21 +274,17 @@ function Builder({
                         selectedCodesetId ? 'codeset-table' : undefined
                       }
                     />
-                    {i === 0 ? (
-                      <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
-                        Default
-                      </span>
-                    ) : (
-                      <DeleteCodeSetButton
-                        configurationId={id}
-                        conditionId={codeSet.condition_id}
-                        conditionName={codeSet.display_name}
-                        disabled={is_locked}
-                        onClick={() =>
-                          setCodesetListItemFocus(codeSet.condition_id)
-                        }
-                      />
-                    )}
+
+                    <DeleteCodeSetButton
+                      index={i}
+                      configurationId={id}
+                      conditionId={codeSet.condition_id}
+                      conditionName={codeSet.display_name}
+                      onClick={() =>
+                        setCodesetListItemFocus(codeSet.condition_id)
+                      }
+                      disabled={disabled}
+                    />
                   </li>
                 ))}
               </OptionsList>
@@ -335,7 +338,7 @@ function Builder({
             </OptionsListContainer>
           </div>
         </div>
-        <div className="flex !h-full !max-h-[34.5rem] !w-full flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex h-full! max-h-138! w-full! flex-col items-start overflow-y-scroll rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <>
               <ConditionCodeTable
@@ -353,7 +356,7 @@ function Builder({
                 variant="secondary"
                 className={classNames('mt-4!')}
                 aria-label="Add new custom code"
-                disabled={is_locked}
+                disabled={disabled}
               >
                 Add code
               </ModalToggleButton>
@@ -362,17 +365,15 @@ function Builder({
                 modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
-                isLocked={is_locked}
+                disabled={disabled}
               />
             </>
           ) : tableView === 'sections' ? (
-            <>
-              <EicrSectionReview
-                configurationId={id}
-                sectionProcessing={section_processing}
-                isLocked={is_locked}
-              />
-            </>
+            <EicrSectionReview
+              configurationId={id}
+              sectionProcessing={section_processing}
+              disabled={disabled}
+            />
           ) : null}
         </div>
       </div>
@@ -382,6 +383,7 @@ function Builder({
         conditions={included_conditions}
         configurationId={id}
         reportable_condition_display_name={default_condition_name}
+        disabled={disabled}
       />
     </div>
   );
@@ -429,14 +431,16 @@ const ConditionCodeSetButton = forwardRef<
 );
 
 interface DeleteCodeSetButtonProps {
+  index: number;
   configurationId: string;
   conditionId: string;
   conditionName: string;
   onClick: () => void;
-  disabled?: boolean;
+  disabled: boolean;
 }
 
 function DeleteCodeSetButton({
+  index,
   configurationId,
   conditionId,
   conditionName,
@@ -486,14 +490,26 @@ function DeleteCodeSetButton({
     return <Spinner size={20} className="mr-2" />;
   }
 
-  return (
+  if (disabled) {
+    return null;
+  }
+
+  return index === 0 ? (
+    <span className="text-gray-cool-40 mr-2 hidden italic group-hover:block">
+      Default
+    </span>
+  ) : (
     <button
-      className="text-gray-cool-40 sr-only !pr-4 group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
+      className="text-gray-cool-40 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
       disabled={disabled}
     >
-      <Icon.Delete className="!fill-red-700" size={3} aria-hidden />
+      <Icon.Delete
+        className={disabled ? 'text-gray-cool-40' : 'fill-red-700!'}
+        size={3}
+        aria-hidden
+      />
     </button>
   );
 }
@@ -522,7 +538,7 @@ function OptionsLabelContainer({ children }: { children: React.ReactNode }) {
 }
 
 function OptionsListContainer({ children }: { children: React.ReactNode }) {
-  return <div className="max-h-[15rem] overflow-y-scroll pt-2">{children}</div>;
+  return <div className="max-h-60 overflow-y-scroll pt-2">{children}</div>;
 }
 
 function OptionsList({ children }: { children: React.ReactNode }) {
@@ -534,7 +550,7 @@ interface CustomCodesDetailProps {
   modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
-  isLocked?: boolean;
+  disabled: boolean;
 }
 
 function CustomCodesDetail({
@@ -542,7 +558,7 @@ function CustomCodesDetail({
   modalRef,
   customCodes,
   deduplicated_codes,
-  isLocked,
+  disabled,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -557,7 +573,7 @@ function CustomCodesDetail({
 
   return (
     <>
-      <table id="custom-table" className="!mt-6 w-full border-separate">
+      <table id="custom-table" className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
             <th>Custom code</th>
@@ -577,46 +593,57 @@ function CustomCodesDetail({
                 {customCode.system}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
+
               <td className="w-1/2 text-right whitespace-nowrap">
-                <ModalToggleButton
-                  modalRef={modalRef}
-                  opener
-                  variant="tertiary"
-                  className="!mr-6"
-                  onClick={() => setSelectedCustomCode(customCode)}
-                  aria-label={`Edit custom code ${customCode.name}`}
-                  disabled={isLocked}
-                >
-                  Edit
-                </ModalToggleButton>
-                <Button
-                  variant="tertiary"
-                  aria-label={`Delete custom code ${customCode.name}`}
-                  disabled={isLocked}
-                  onClick={() => {
-                    deleteCode(
-                      {
-                        code: customCode.code,
-                        system: customCode.system,
-                        configurationId: configurationId,
-                      },
-                      {
-                        onSuccess: async () => {
-                          await queryClient.invalidateQueries({
-                            queryKey:
-                              getGetConfigurationQueryKey(configurationId),
-                          });
-                          showToast({
-                            heading: 'Deleted code',
-                            body: customCode.code,
-                          });
-                        },
-                      }
-                    );
-                  }}
-                >
-                  Delete
-                </Button>
+                {!disabled && (
+                  <>
+                    <ModalToggleButton
+                      modalRef={modalRef}
+                      opener={disabled}
+                      variant="tertiary"
+                      className="!mr-6"
+                      onClick={() => {
+                        if (disabled) return;
+                        setSelectedCustomCode(customCode);
+                      }}
+                      aria-label={`Edit custom code ${customCode.name}`}
+                      disabled={disabled}
+                    >
+                      Edit
+                    </ModalToggleButton>
+                    <Button
+                      variant="tertiary"
+                      aria-label={`Delete custom code ${customCode.name}`}
+                      onClick={() => {
+                        if (disabled) return;
+                        deleteCode(
+                          {
+                            code: customCode.code,
+                            system: customCode.system,
+                            configurationId: configurationId,
+                          },
+                          {
+                            onSuccess: async () => {
+                              await queryClient.invalidateQueries({
+                                queryKey:
+                                  getGetConfigurationQueryKey(configurationId),
+                              });
+                              showToast({
+                                heading: 'Deleted code',
+                                body: customCode.code,
+                              });
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      Delete
+                    </Button>
+                    <div className="sr-only">
+                      Editing actions aren't available for previous versions
+                    </div>
+                  </>
+                )}
               </td>
             </tr>
           ))}
@@ -740,7 +767,7 @@ function ConditionCodeTable({
           </Select>
         </div>
       </div>
-      <hr className="border-blue-cool-5 mb-6 w-full border-[1px]" />
+      <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
 
       {isLoadingResults ? (
@@ -932,7 +959,7 @@ export function CustomCodeModal({
     >
       <ModalHeading
         id="modal-heading"
-        className="text-bold font-merriweather mb-6 !p-0 text-xl"
+        className="text-bold font-merriweather mb-6 p-0! text-xl"
       >
         {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
       </ModalHeading>
@@ -1009,7 +1036,7 @@ export function CustomCodeModal({
           onClick={handleSubmit}
           disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
           variant="primary"
-          className="!m-0"
+          className="m-0!"
         >
           {selectedCustomCode ? 'Update' : 'Add custom code'}
         </Button>

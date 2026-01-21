@@ -30,8 +30,8 @@ export function RadioCell({
     <td
       className={classNames(
         'text-center',
-        '!break-all',
-        '!whitespace-normal',
+        'break-all!',
+        'whitespace-normal!',
         'focus:outline-none',
         { 'cursor-not-allowed': disabled }
       )}
