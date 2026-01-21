@@ -81,27 +81,29 @@ export function ConfigurationTitleBar({
           <h2 className="text-gray-cool-90 mr-4 text-[1.75rem] font-bold">
             {CONFIGURATION_TITLE_CONTENTS[step].title}
           </h2>
-          <div className="text-gray-cool-60 h-4 items-center italic">
-            <div className="flex items-center">
-              {shouldShowSpinner ? (
-                <>
-                  <Icon.Autorenew
-                    role="presentation"
-                    className="text-blue-cool-50 h-6! w-6! animate-spin"
-                  ></Icon.Autorenew>
-                  Saving
-                </>
-              ) : (
-                <>
-                  <Icon.Check
-                    role="presentation"
-                    className="text-state-success h-6! w-6!"
-                  ></Icon.Check>{' '}
-                  Saved
-                </>
-              )}
+          {step === 'build' && (
+            <div className="text-gray-cool-60 h-4 items-center italic">
+              <div className="flex items-center">
+                {shouldShowSpinner ? (
+                  <>
+                    <Icon.Autorenew
+                      role="presentation"
+                      className="text-blue-cool-50 h-6! w-6! animate-spin"
+                    />
+                    Saving
+                  </>
+                ) : (
+                  <>
+                    <Icon.Check
+                      role="presentation"
+                      className="text-state-success h-6! w-6!"
+                    />{' '}
+                    Saved
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         {CONFIGURATION_TITLE_CONTENTS[step].subtitle}
       </div>
