@@ -14,6 +14,7 @@ export default defineConfig({
       target: './src/api', // react hook output
       schemas: './src/api/schemas',
       client: 'react-query',
+      httpClient: 'axios',
     },
     hooks: {
       afterAllFilesWrite: 'prettier --write',
