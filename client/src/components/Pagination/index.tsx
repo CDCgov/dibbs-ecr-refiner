@@ -12,28 +12,26 @@ type PaginationProps = {
 export function Pagination({
   currentPage,
   totalPages,
-  maxSlots = 6,
+  maxSlots = 7, // USWDS default behavior assumes odd window
   onClickNext,
   onClickPrevious,
   onClickPageNumber,
 }: PaginationProps) {
-  const half = Math.floor(maxSlots / 2);
+  const halfWindow = Math.floor((maxSlots - 3) / 2);
 
-  const start = Math.max(
-    1,
-    Math.min(currentPage - half, totalPages - maxSlots + 1)
-  );
+  const showLeftEllipsis = currentPage > halfWindow + 2;
+  const showRightEllipsis = currentPage < totalPages - (halfWindow + 1);
 
-  const end = Math.min(totalPages, start + maxSlots - 1);
+  const startPage = Math.max(2, currentPage - halfWindow);
 
-  const pages = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const endPage = Math.min(totalPages - 1, currentPage + halfWindow);
 
   const hidePrevious = currentPage === 1;
   const hideNext = currentPage === totalPages;
 
   return (
     <nav className="usa-pagination" aria-label="Pagination">
-      <ul className="usa-pagination__list flex items-center justify-center gap-1">
+      <ul className="usa-pagination__list flex items-center justify-center">
         {/* Previous */}
         <li
           className="usa-pagination__item usa-pagination__arrow"
@@ -53,8 +51,35 @@ export function Pagination({
           </button>
         </li>
 
-        {/* Page numbers */}
-        {pages.map((page) => (
+        {/* Page 1 */}
+        <li className="usa-pagination__item usa-pagination__page-no">
+          <button
+            type="button"
+            className={`usa-pagination__button ${
+              currentPage === 1 ? 'usa-current' : ''
+            }`}
+            aria-current={currentPage === 1 ? 'page' : undefined}
+            onClick={(e) => onClickPageNumber(e, 1)}
+          >
+            1
+          </button>
+        </li>
+
+        {/* Left ellipsis */}
+        {showLeftEllipsis && (
+          <li
+            className="usa-pagination__item usa-pagination__overflow"
+            aria-hidden="true"
+          >
+            <span>…</span>
+          </li>
+        )}
+
+        {/* Middle pages */}
+        {Array.from(
+          { length: endPage - startPage + 1 },
+          (_, i) => startPage + i
+        ).map((page) => (
           <li
             key={page}
             className="usa-pagination__item usa-pagination__page-no"
@@ -71,6 +96,32 @@ export function Pagination({
             </button>
           </li>
         ))}
+
+        {/* Right ellipsis */}
+        {showRightEllipsis && (
+          <li
+            className="usa-pagination__item usa-pagination__overflow"
+            aria-hidden="true"
+          >
+            <span>…</span>
+          </li>
+        )}
+
+        {/* Last page */}
+        {totalPages > 1 && (
+          <li className="usa-pagination__item usa-pagination__page-no">
+            <button
+              type="button"
+              className={`usa-pagination__button ${
+                currentPage === totalPages ? 'usa-current' : ''
+              }`}
+              aria-current={currentPage === totalPages ? 'page' : undefined}
+              onClick={(e) => onClickPageNumber(e, totalPages)}
+            >
+              {totalPages}
+            </button>
+          </li>
+        )}
 
         {/* Next */}
         <li
