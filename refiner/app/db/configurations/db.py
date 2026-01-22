@@ -122,7 +122,12 @@ async def insert_configuration_db(
             # section_processing
             Jsonb(
                 [
-                    {"name": c.name, "code": c.code, "action": c.action}
+                    {
+                        "name": c.name,
+                        "code": c.code,
+                        "action": c.action,
+                        "versions": c.versions,
+                    }
                     for c in config_to_clone.section_processing
                 ]
             ),

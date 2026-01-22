@@ -118,8 +118,13 @@ class DbConfiguration:
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             section_processing=[
-                DbConfigurationSectionProcessing(**sp)
-                for sp in row["section_processing"]
+                DbConfigurationSectionProcessing(
+                    name=sp.get("name"),
+                    code=sp.get("code"),
+                    action=sp.get("action"),
+                    versions=sp.get("versions", []),
+                )
+                for sp in row.get("section_processing", []) or []
             ],
             version=row["version"],
             last_activated_at=row["last_activated_at"],
