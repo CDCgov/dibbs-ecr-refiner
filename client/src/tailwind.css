@@ -108,6 +108,7 @@
   --color-state-success: #00a91c;
   --color-state-success-dark: #216e1f;
   --color-state-warning-lighter: #fff5c2;
+  --color-state-warning: #ddaa01;
   --color-state-warning-darker: #5c4809;
   --color-state-error-lighter: #fff3f2;
   --color-state-error-light: #fdb8ae;
@@ -216,4 +217,33 @@
 
 .Toastify__toast div {
   @apply rounded-lg;
+}
+
+/* button implementation of the design system */
+.usa-button {
+  @apply bg-violet-warm-60! hover:bg-violet-warm-70!;
+}
+
+.usa-button:disabled {
+  @apply bg-disabled-light! text-disabled-dark! hover:bg-disabled-light! cursor-not-allowed!;
+}
+
+.usa-button--secondary {
+  @apply text-violet-warm-60! border-violet-warm-60! hover:border-violet-warm-70! hover:text-violet-warm-70! rounded-sm! border-2! bg-white! hover:bg-white!;
+}
+
+.usa-button--secondary:disabled {
+  @apply border-disabled-light! text-disabled-dark! rounded-sm! border-2! bg-white! hover:bg-white!;
+}
+
+.usa-button--unstyled {
+  @apply text-blue-cool-60! m-0! bg-transparent! p-0! font-bold! no-underline! shadow-none! hover:cursor-pointer hover:bg-transparent! hover:underline!;
+}
+
+.usa-button--unstyled:disabled {
+  @apply text-blue-cool-60! m-0! bg-transparent! p-0! shadow-none! hover:cursor-pointer hover:bg-transparent!;
+}
+
+.usa-modal__close {
+  @apply bg-transparent! p-0! pt-2! pr-2! text-base hover:bg-transparent!;
 }

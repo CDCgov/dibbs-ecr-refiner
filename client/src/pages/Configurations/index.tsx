@@ -127,11 +127,11 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
       id="add-configuration-modal"
       aria-labelledby="add-configuration-modal-heading"
       aria-describedby="add-configuration-modal-description"
-      className="condition-creation-modal p-5 !align-top md:p-0 md:pb-5"
+      className="!align-top"
     >
       <ModalHeading
         id="add-configuration-modal-heading"
-        className="font-merriweather !text-3xl !leading-18 font-bold text-black"
+        className="font-merriweather text-3xl! leading-18! font-bold text-black"
       >
         {CONFIGURATION_CTA}
       </ModalHeading>
@@ -148,7 +148,7 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         <>
           <Label
             htmlFor="new-condition"
-            className="!leading-6"
+            className="leading-6!"
             data-focus="true"
           >
             Select condition
