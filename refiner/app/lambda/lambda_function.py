@@ -10,7 +10,6 @@ import os
 from typing import TypedDict
 
 import boto3
-from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
@@ -66,7 +65,7 @@ def extract_persistence_id(object_key: str, input_prefix: str) -> str:
     return object_key[len(input_prefix) :]
 
 
-def get_s3_object_content(s3_client: BaseClient, bucket: str, key: str) -> str:
+def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
     """
     Retrieve and decode an S3 object as UTF-8 string.
 
@@ -82,7 +81,7 @@ def get_s3_object_content(s3_client: BaseClient, bucket: str, key: str) -> str:
     return response["Body"].read().decode("utf-8")
 
 
-def check_s3_object_exists(s3_client: BaseClient, bucket: str, key: str) -> bool:
+def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
     try:
         s3_client.head_object(Bucket=bucket, Key=key)
         return True
@@ -104,7 +103,7 @@ def parse_s3_content_to_dict(body: str) -> dict:
         raise
 
 
-def read_current_version(s3_client: BaseClient, bucket: str, key: str) -> int | None:
+def read_current_version(s3_client, bucket: str, key: str) -> int | None:
     """
     Fetches the current active configuration version from `current.json` in the
     configuration bucket if one exists. If the version is `null` or the file does not exist,
@@ -132,7 +131,7 @@ def read_current_version(s3_client: BaseClient, bucket: str, key: str) -> int | 
     return None
 
 
-def read_configuration_file(s3_client: BaseClient, bucket: str, key: str) -> dict:
+def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     # Check that configuration file exists
     config_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
 
@@ -150,7 +149,7 @@ def read_configuration_file(s3_client: BaseClient, bucket: str, key: str) -> dic
 
 def process_refiner(
     xml_files: XMLFiles,
-    s3_client: BaseClient,
+    s3_client,
     bucket: str,
     config_bucket: str,
     persistence_id: str,
