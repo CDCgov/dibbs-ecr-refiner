@@ -41,7 +41,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
   it('optimistically updates UI and calls mutate on radio activation via cell click', async () => {
     const configurationId = 'config-1';
     const sections: DbConfigurationSectionProcessing[] = [
-      { name: 'Section X', code: 'X01', action: 'refine' },
+      { name: 'Section X', code: 'X01', action: 'refine', versions: ['1.1'] },
     ];
 
     renderWithClient(
@@ -70,7 +70,9 @@ describe('EicrSectionReview accessibility & behavior', () => {
 
   it('reverts optimistic UI and shows toast on API error', async () => {
     const configurationId = 'config-3';
-    const sections = [{ name: 'Section Z', code: 'Z01', action: 'refine' }];
+    const sections = [
+      { name: 'Section Z', code: 'Z01', action: 'refine', versions: ['1.1'] },
+    ];
 
     mockMutate.mockImplementation((_payload: any, options: any) => {
       options?.onError?.(new Error('Server error'));
