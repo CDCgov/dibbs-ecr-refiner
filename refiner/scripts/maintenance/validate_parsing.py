@@ -1,5 +1,6 @@
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -41,36 +42,71 @@ class ConditionGrouper:
     children: list[ReportingSpecGrouper] = field(default_factory=list)
 
 
+def _codes_from_expansion_section(
+    valueset: dict[str, Any],
+) -> Iterable[tuple[str, str]]:
+    """
+    Extracts all codes from a single ValueSet with an 'expansion' section.
+
+    Relevant for 4.0.0 and onwards codes.
+    """
+    expansion = valueset.get("expansion", {})
+    if not expansion:
+        return
+    for contains_item in expansion.get("contains", []):
+        system_url = contains_item.get("system")
+        code = contains_item.get("code")
+
+        if system_url and code:
+            yield system_url, code
+
+
+def _codes_from_compose_section(valueset: dict[str, Any]) -> Iterable[tuple[str, str]]:
+    """
+    Extracts all codes from a single ValueSet with an 'compose' section.
+
+    Relevant for any codes older than 3.0.0.
+    """
+    compose = valueset.get("compose", {})
+    if not compose:
+        return
+
+    for include_item in compose.get("include", []):
+        system_url = include_item.get("system")
+        if not system_url:
+            continue
+        for concept in include_item.get("concept", []):
+            code = concept.get("code")
+            if code:
+                yield system_url, code
+
+
 def extract_codes_from_valueset(valueset: dict[str, Any]) -> set[tuple[str, str]]:
     """
     Extracts all codes from a single ValueSet into a set of (system, code) tuples.
 
-    This function now handles both 'compose' and 'expansion' structures.
+    Handling both 'compose' and 'expansion' structures.
     """
+    return {
+        *(_codes_from_compose_section(valueset=valueset) or ()),
+        *(_codes_from_expansion_section(valueset=valueset) or ()),
+    }
 
-    codes = set()
 
-    # method 1:
-    # from 'compose' section
-    if "compose" in valueset:
-        compose = valueset.get("compose", {})
-        for include_item in compose.get("include", []):
-            system_url = include_item.get("system")
-            if system_url and "concept" in include_item:
-                for concept in include_item["concept"]:
-                    if concept.get("code"):
-                        codes.add((system_url, concept.get("code")))
-
-    # method 2:
-    # from 'expansion' section
-    if "expansion" in valueset:
-        expansion = valueset.get("expansion", {})
-        for contains_item in expansion.get("contains", []):
-            system_url = contains_item.get("system")
-            if system_url and contains_item.get("code"):
-                codes.add((system_url, contains_item.get("code")))
-
-    return codes
+def _extract_valid_child_valuesets_from_parent(
+    valueset: dict[str, Any],
+    all_valuesets_map: dict[tuple[str, str], dict],
+) -> Iterable[tuple[str, dict[str, Any]]]:
+    for include_item in valueset.get("compose", {}).get("include", []):
+        for child_ref in include_item.get("valueSet", []):
+            try:
+                child_url, child_version = child_ref.split("|", 1)
+            except ValueError:
+                continue
+            child_vs = all_valuesets_map.get((child_url, child_version))
+            child_vs_id = child_url + "/" + child_version
+            if child_vs and parse_snomed_from_url(child_vs.get("url", "")):
+                yield (child_vs_id, child_vs)
 
 
 def parse_snomed_from_url(url: str) -> str | None:
@@ -215,19 +251,15 @@ def main():
     # check 3: parent must have at least one valid child that meets seeder criteria
     child_check_failed = False
     for valueset in parent_valuesets:
-        found_valid_children = False
-        for include_item in valueset.get("compose", {}).get("include", []):
-            for child_ref in include_item.get("valueSet", []):
-                try:
-                    child_url, child_version = child_ref.split("|", 1)
-                    child_vs = all_valuesets_map.get((child_url, child_version))
-                    if child_vs and parse_snomed_from_url(child_vs.get("url", "")):
-                        found_valid_children = True
-                        break
-                except ValueError:
-                    continue
-            if found_valid_children:
-                break
+        found_valid_children = any(
+            _extract_valid_child_valuesets_from_parent(
+                valueset=valueset, all_valuesets_map=all_valuesets_map
+            )
+            or ()
+        )
+
+        if found_valid_children:
+            break
 
         if not found_valid_children:
             logging.error(
@@ -314,17 +346,14 @@ def main():
             # set b:
             # get codes by composing them from children
             # * this is the way we normally grab the reporting specification grouper codes
-            composed_codes = set()
-            for include_item in parent_vs.get("compose", {}).get("include", []):
-                for child_ref in include_item.get("valueSet", []):
-                    try:
-                        child_url, child_version = child_ref.split("|", 1)
-                        child_vs = all_valuesets_map.get((child_url, child_version))
-                        if child_vs:
-                            child_codes = extract_codes_from_valueset(child_vs)
-                            composed_codes.update(child_codes)
-                    except ValueError:
-                        continue
+            composed_codes = {
+                code
+                for _, valueset in _extract_valid_child_valuesets_from_parent(
+                    valueset=parent_vs, all_valuesets_map=all_valuesets_map
+                )
+                for code in extract_codes_from_valueset(valueset)
+            }
+
             logging.info(
                 f"  [Set B] Found {len(composed_codes)} codes by composing from children."
             )
