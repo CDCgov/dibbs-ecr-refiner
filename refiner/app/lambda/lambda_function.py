@@ -10,6 +10,7 @@ import os
 from typing import TypedDict
 
 import boto3
+from botocore.client import BaseClient
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
@@ -65,7 +66,7 @@ def extract_persistence_id(object_key: str, input_prefix: str) -> str:
     return object_key[len(input_prefix) :]
 
 
-def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
+def get_s3_object_content(s3_client: BaseClient, bucket: str, key: str) -> str:
     """
     Retrieve and decode an S3 object as UTF-8 string.
 
@@ -81,7 +82,7 @@ def get_s3_object_content(s3_client, bucket: str, key: str) -> str:
     return response["Body"].read().decode("utf-8")
 
 
-def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
+def check_s3_object_exists(s3_client: BaseClient, bucket: str, key: str) -> bool:
     try:
         s3_client.head_object(Bucket=bucket, Key=key)
         return True
@@ -103,7 +104,7 @@ def parse_s3_content_to_dict(body: str) -> dict:
         raise
 
 
-def read_current_version(s3_client, bucket: str, key: str) -> int | None:
+def read_current_version(s3_client: BaseClient, bucket: str, key: str) -> int | None:
     """
     Fetches the current active configuration version from `current.json` in the
     configuration bucket if one exists. If the version is `null` or the file does not exist,
@@ -131,7 +132,7 @@ def read_current_version(s3_client, bucket: str, key: str) -> int | None:
     return None
 
 
-def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
+def read_configuration_file(s3_client: BaseClient, bucket: str, key: str) -> dict:
     # Check that configuration file exists
     config_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
 
@@ -140,13 +141,19 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
         raise Exception(f"Activated configuration file could not be read at: {key}")
 
     # Read the file content and ensure required data is present
-    config_file_content = get_s3_object_content(s3_client, bucket=bucket, key=key)
+    config_file_content = get_s3_object_content(
+        s3_client=s3_client, bucket=bucket, key=key
+    )
 
     return parse_s3_content_to_dict(config_file_content)
 
 
 def process_refiner(
-    xml_files: XMLFiles, s3_client, bucket: str, config_bucket: str, persistence_id: str
+    xml_files: XMLFiles,
+    s3_client: BaseClient,
+    bucket: str,
+    config_bucket: str,
+    persistence_id: str,
 ) -> list[str]:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
@@ -177,16 +184,6 @@ def process_refiner(
         for condition in jurisdiction_group.conditions:
             condition_code = condition.code
 
-            # TODO: Implement actual refinement logic
-            # This requires:
-            # 1. Reading configuration from S3
-            # 2. Mapping RC SNOMED codes to conditions
-            # 3. Building ProcessedConfiguration
-            # 4. Calling refine_eicr()
-            #
-            # For now, we'll create a placeholder structure
-            # The actual refinement will be implemented when configurations are available from S3
-
             current_file_key = f"{jurisdiction_code}/{condition_code}/current.json"
             config_version_to_use = read_current_version(
                 s3_client=s3_client,
@@ -212,11 +209,8 @@ def process_refiner(
             # Construct output path: RefinerOutput/<persistance_id>/<jurisdiction_code>/<condition_code>
             output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/{condition_code}"
 
-            # TODO: Replace with actual refined eICR content
-            # For now, using original eICR as placeholder
-
             # Read active configuration
-            # /jurisdiction_code/condition_code/version/active.json
+            # example: /jurisdiction_code/condition_code/version/active.json
             serialized_configuration_key = f"{jurisdiction_code}/{condition_code}/{config_version_to_use}/active.json"
             serialized_configuration = read_configuration_file(
                 s3_client=s3_client,
@@ -322,14 +316,18 @@ def lambda_handler(event, context):
 
             # S3 GET RR
             logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
-            rr_content = get_s3_object_content(s3_client, s3_bucket_name, s3_object_key)
+            rr_content = get_s3_object_content(
+                s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
+            )
 
             # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
             eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
             logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
 
             # S3 GET eICR
-            eicr_content = get_s3_object_content(s3_client, s3_bucket_name, eicr_key)
+            eicr_content = get_s3_object_content(
+                s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
+            )
 
             # Create XMLFiles container
             xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
