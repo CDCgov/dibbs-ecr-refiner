@@ -99,10 +99,13 @@ def _extract_valid_child_valuesets_from_parent(
 ) -> Iterable[tuple[str, dict[str, Any]]]:
     for include_item in valueset.get("compose", {}).get("include", []):
         for child_ref in include_item.get("valueSet", []):
-            child_url, child_version = child_ref.split("|", 1)
+            try:
+                child_url, child_version = child_ref.split("|", 1)
+            except ValueError:
+                continue
             child_vs = all_valuesets_map.get((child_url, child_version))
             child_vs_id = child_url + "/" + child_version
-            if child_vs and parse_snomed_from_url(valueset.get("url", "")):
+            if child_vs and parse_snomed_from_url(child_vs.get("url", "")):
                 yield (child_vs_id, child_vs)
 
 
@@ -248,17 +251,14 @@ def main():
     # check 3: parent must have at least one valid child that meets seeder criteria
     child_check_failed = False
     for valueset in parent_valuesets:
-        found_valid_children = False
-        valid_valuesets = {
-            *(
-                _extract_valid_child_valuesets_from_parent(
-                    valueset=valueset, all_valuesets_map=all_valuesets_map
-                )
-                or ()
+        found_valid_children = any(
+            _extract_valid_child_valuesets_from_parent(
+                valueset=valueset, all_valuesets_map=all_valuesets_map
             )
-        }
-        if len(valid_valuesets) > 0:
-            found_valid_children = True
+            or ()
+        )
+
+        if found_valid_children:
             break
 
         if not found_valid_children:
