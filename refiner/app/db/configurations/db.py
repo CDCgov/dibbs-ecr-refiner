@@ -75,7 +75,7 @@ async def insert_configuration_db(
 
     # build loinc->versions dict once per import
 
-    _LOINC_VERSIONS_MAP = {}
+    _LOINC_VERSIONS_MAP: dict[str, set[str]] = {}
     for v, vdata in spec_mod.EICR_SPECS_DATA.items():
         for loinc in vdata.keys():
             _LOINC_VERSIONS_MAP.setdefault(loinc, set()).add(v)

@@ -93,17 +93,22 @@ async def get_events_by_jd_db(
     events: list[AuditEvent] = []
     for row in rows:
         try:
-            events.append(
-                AuditEvent(
-                    id=row["id"],
-                    username=row.get("username"),
-                    configuration_name=row.get("configuration_name"),
-                    configuration_version=int(row.get("configuration_version") or 0),
-                    condition_id=row.get("condition_id"),
-                    action_text=row.get("action_text"),
-                    created_at=row.get("created_at"),
+            condition_id = row.get("condition_id")
+            created_at = row.get("created_at")
+            if condition_id is not None and created_at is not None:
+                events.append(
+                    AuditEvent(
+                        id=row["id"],
+                        username=row.get("username") or "",
+                        configuration_name=row.get("configuration_name") or "",
+                        configuration_version=int(
+                            row.get("configuration_version") or 0
+                        ),
+                        condition_id=condition_id,
+                        action_text=row.get("action_text") or "",
+                        created_at=created_at,
+                    )
                 )
-            )
         except Exception as e:  # pragma: no cover - defensive parsing
             print("Failed to build AuditEvent from row:", row, "error:", e)
             continue
