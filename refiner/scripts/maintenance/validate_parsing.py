@@ -245,9 +245,10 @@ def main():
         )
     has_failed_check = has_failed_check or name_check_failed
 
-    # check 3: parent must have at least one valid child that meets seeder criteria    child_check_failed = False
+    # check 3: parent must have at least one valid child that meets seeder criteria
+    child_check_failed = False
     for valueset in parent_valuesets:
-        child_check_failed = False
+        found_valid_children = False
         valid_valuesets = {
             *(
                 _extract_valid_child_valuesets_from_parent(
@@ -257,19 +258,21 @@ def main():
             )
         }
         if len(valid_valuesets) > 0:
+            found_valid_children = True
             break
-        else:
+
+        if not found_valid_children:
             logging.error(
                 f"  ❌ FAILED [Children]: Parent '{valueset.get('name')}' (v{valueset.get('version')}) "
                 "has no valid children that meet the seeder's criteria (e.g., must be an 'rs-grouper')."
             )
             child_check_failed = True
 
-        if not child_check_failed:
-            logging.info(
-                "  ✅ PASSED [Children]: All parent conditions have at least one child that meets the seeder's criteria."
-            )
-        has_failed_check = has_failed_check or child_check_failed
+    if not child_check_failed:
+        logging.info(
+            "  ✅ PASSED [Children]: All parent conditions have at least one child that meets the seeder's criteria."
+        )
+    has_failed_check = has_failed_check or child_check_failed
 
     # check 4: aggregated code structures must be valid
     code_structure_failed = False
