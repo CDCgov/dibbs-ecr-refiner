@@ -38,6 +38,32 @@ describe('EicrSectionReview accessibility & behavior', () => {
     vi.clearAllMocks();
   });
 
+  it('shows correct versions text for each section row', async () => {
+    const configurationId = 'conf-test';
+    const sampleSections = [
+      { name: 'A', code: 'A01', action: 'refine', versions: ['1.0'] },
+      { name: 'B', code: 'B01', action: 'refine', versions: ['1.0', '2.0'] },
+      {
+        name: 'C',
+        code: 'C01',
+        action: 'refine',
+        versions: ['1.0', '2.0', '3.0'],
+      },
+    ];
+
+    renderWithClient(
+      <EicrSectionReview
+        sectionProcessing={sampleSections}
+        configurationId={configurationId}
+        disabled={false}
+      />
+    );
+
+    expect(screen.getByText('Version 1.0')).toBeInTheDocument();
+    expect(screen.getByText('Versions 1.0 and 2.0')).toBeInTheDocument();
+    expect(screen.getByText('Versions 1.0, 2.0, and 3.0')).toBeInTheDocument();
+  });
+
   it('optimistically updates UI and calls mutate on radio activation via cell click', async () => {
     const configurationId = 'config-1';
     const sections: DbConfigurationSectionProcessing[] = [
