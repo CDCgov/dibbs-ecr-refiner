@@ -41,26 +41,26 @@ The eCR Refiner requires the following environment variables to be specified in 
 
 ### Web application
 
-- `ENV`: The environment name (`local`, `dev`, `test`, `prod`, etc.)
-- `DB_URL`: The PostgreSQL connection string
-- `DB_PASSWORD`: The PostgreSQL password
-- `SESSION_SECRET_KEY`: A string used to compute user session hashes that are stored in the `sessions` table
-- `AUTH_PROVIDER`: Name of the OIDC authentication provider (`keycloak`, `google`, etc.)
-- `AUTH_CLIENT_ID`: OIDC client ID
-- `AUTH_CLIENT_SECRET`: OIDC client secret string
-- `AUTH_ISSUER`: OIDC auth issuer string
-- `AWS_REGION`: The AWS region to use
-- `S3_BUCKET_CONFIG`: Name of the S3 bucket that holds condition configurations
-- `LOG_LEVEL`: Switch for the app to control log output into the environment logging service
+| Name | Description | Required | Default value |
+| --- | --- | --- | --- |
+| ENV | The environment name (`local`, `dev`, `test`, `prod`, etc.) | Yes | N/A |
+| DB_URL | The PostgreSQL connection string | Yes | N/A |
+| DB_PASSWORD | The PostgreSQL password | Yes | N/A |
+| SESSION_SECRET_KEY | Used to compute user session hashes stored in the `sessions` table | Yes | N/A |
+| AUTH_PROVIDER | Name of the OIDC authentication provider (`keycloak`, `google`, `fusionauth`, etc.) | Yes | N/A |
+| AUTH_CLIENT_ID | OIDC client ID | Yes | N/A |
+| AUTH_CLIENT_SECRET | OIDC client secret string | Yes | N/A |
+| AUTH_ISSUER | OIDC authentication issuer string | Yes | N/A |
+| AWS_REGION | The AWS region to use | Yes | N/A |
+| S3_BUCKET_CONFIG | Name of the S3 bucket holding condition configurations | Yes | N/A |
+| LOG_LEVEL | Controls application log output verbosity | No | N/A |
+
 
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 
 ### Lambda
 
-- `EICR_INPUT_PREFIX` - S3 directory containing eICR files (default: `eCRMessageV2/`)
-- `REFINER_INPUT_PREFIX` - S3 directory containing RR files (default: `RefinerInput/`)
-- `REFINER_OUTPUT_PREFIX` - S3 directory where refined files are written (default: `RefinerOutput/`)
-- `REFINER_COMPLETE_PREFIX` - S3 directory where a completion file is written by the Refiner to indicate success (default: `RefinerComplete/`)
+Please refer to the [Lambda README](./refiner/app/lambda/README.md).
 
 ## Creating a production build
 
