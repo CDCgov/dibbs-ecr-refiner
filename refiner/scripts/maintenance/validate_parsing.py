@@ -346,19 +346,13 @@ def main():
             # set b:
             # get codes by composing them from children
             # * this is the way we normally grab the reporting specification grouper codes
-            composed_codes = set()
-            valid_valuesets = {
-                *(
-                    _extract_valid_child_valuesets_from_parent(
-                        valueset=parent_vs,
-                        all_valuesets_map=all_valuesets_map,
-                    )
-                    or ()
+            composed_codes = {
+                code
+                for _, valueset in _extract_valid_child_valuesets_from_parent(
+                    valueset=parent_vs, all_valuesets_map=all_valuesets_map
                 )
+                for code in extract_codes_from_valueset(valueset)
             }
-            for _, valueset in valid_valuesets:
-                child_codes = extract_codes_from_valueset(valueset)
-                composed_codes.update(child_codes)
 
             logging.info(
                 f"  [Set B] Found {len(composed_codes)} codes by composing from children."
