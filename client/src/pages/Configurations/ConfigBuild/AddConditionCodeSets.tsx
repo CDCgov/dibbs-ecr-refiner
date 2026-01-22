@@ -11,6 +11,7 @@ type AddConditionCodeSetsDrawerProps = {
   conditions: IncludedCondition[];
   configurationId: string;
   reportable_condition_display_name: string;
+  disabled: boolean;
 };
 
 export function AddConditionCodeSetsDrawer({
@@ -19,6 +20,7 @@ export function AddConditionCodeSetsDrawer({
   configurationId,
   conditions,
   reportable_condition_display_name,
+  disabled,
 }: AddConditionCodeSetsDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -33,7 +35,7 @@ export function AddConditionCodeSetsDrawer({
     <Drawer
       title="Add condition code sets"
       subtitle={
-        <p className="!pt-2">
+        <p className="pt-2!">
           Codes relevant to each condition are grouped together. These code sets
           are derived from the <TesLink />
         </p>
@@ -45,7 +47,7 @@ export function AddConditionCodeSetsDrawer({
       drawerWidth="35%"
     >
       <div className="flex h-full flex-col">
-        <ol className="flex-grow overflow-y-auto">
+        <ol className="grow overflow-y-auto">
           {filteredConditions.map((condition: IncludedCondition, i: number) => {
             const highlight = searchTerm
               ? highlightMatches(
@@ -83,6 +85,7 @@ export function AddConditionCodeSetsDrawer({
                 reportable_condition_display_name={
                   reportable_condition_display_name
                 }
+                disabled={disabled}
               />
             );
           })}

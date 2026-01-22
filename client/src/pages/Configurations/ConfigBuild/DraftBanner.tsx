@@ -34,7 +34,7 @@ export function DraftBanner({
   const editDraftText =
     'Previous versions cannot be modified. You can edit the existing draft.';
   return (
-    <div className="bg-state-warning-lighter flex w-full flex-col gap-4 px-8 py-2 shadow-lg md:flex-row md:justify-between lg:px-20">
+    <div className="bg-state-warning-lighter border-b-state-warning! flex w-full flex-col gap-4 border-b px-8 py-2 shadow-lg md:flex-row md:justify-between lg:px-20">
       <div className="flex items-center gap-2">
         <Icon.Info
           aria-hidden
@@ -86,7 +86,7 @@ function NewDraftModal({ modalRef, conditionId, version }: NewDraftModalProps) {
   return (
     <Modal
       id="draft-modal"
-      className="p-10 align-top!"
+      className="align-top!"
       ref={modalRef}
       aria-labelledby="draft-modal-heading"
       aria-describedby="draft-modal-text"

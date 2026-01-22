@@ -396,6 +396,7 @@ Args:
 Raises:
     HTTPException: 404 if configuration is not found in JD
     HTTPException: 404 if configuration is not found
+    HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if configuration cannot be updated
 
 Returns:
@@ -474,6 +475,7 @@ Raises:
     HTTPException: 404 if configuration is not found in JD
     HTTPException: 404 if condition is not found
     HTTPException: 409 if trying to remove the main condition
+    HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if configuration is cannot be updated
 
 Returns:
@@ -549,6 +551,7 @@ Args:
 
 Raises:
     HTTPException: 404 if configuration isn't found
+    HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if custom code can't be added
 
 Returns:
@@ -626,6 +629,7 @@ Raises:
     HTTPException: 400 if a system is not provided
     HTTPException: 400 if a code is not provided
     HTTPException: 404 if the configuration can't be found
+    HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if the configuration can't be updated
 
 Returns:
@@ -704,6 +708,7 @@ Raises:
     HTTPException: 400 if system is not provided
     HTTPException: 400 if code is not provided
     HTTPException: 404 if configuration can't be found
+    HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if configuration can't be updated
 
 Returns:
@@ -872,6 +877,7 @@ Args:
 
 Raises:
     HTTPException: 404 if configuration isn't found
+    HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if section processing can't be updated
 
 Returns:

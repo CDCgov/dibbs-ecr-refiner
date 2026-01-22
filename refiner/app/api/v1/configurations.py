@@ -652,6 +652,7 @@ async def associate_condition_codeset_with_configuration(
     Raises:
         HTTPException: 404 if configuration is not found in JD
         HTTPException: 404 if configuration is not found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if configuration cannot be updated
 
     Returns:
@@ -678,6 +679,12 @@ async def associate_condition_codeset_with_configuration(
         email=user.email,
         db=db,
     )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
 
     condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
@@ -730,6 +737,7 @@ async def remove_condition_codeset_from_configuration(
         HTTPException: 404 if configuration is not found in JD
         HTTPException: 404 if condition is not found
         HTTPException: 409 if trying to remove the main condition
+        HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if configuration is cannot be updated
 
     Returns:
@@ -754,6 +762,12 @@ async def remove_condition_codeset_from_configuration(
         email=user.email,
         db=db,
     )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
 
     condition = await get_condition_by_id_db(id=condition_id, db=db)
 
@@ -862,6 +876,7 @@ async def add_custom_code(
 
     Raises:
         HTTPException: 404 if configuration isn't found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if custom code can't be added
 
     Returns:
@@ -892,6 +907,12 @@ async def add_custom_code(
         email=user.email,
         db=db,
     )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
 
     # Create a custom code object
     allowed_systems = ["LOINC", "SNOMED", "ICD-10", "RxNorm"]
@@ -956,6 +977,7 @@ async def delete_custom_code(
         HTTPException: 400 if system is not provided
         HTTPException: 400 if code is not provided
         HTTPException: 404 if configuration can't be found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if configuration can't be updated
 
     Returns:
@@ -991,6 +1013,12 @@ async def delete_custom_code(
         email=user.email,
         db=db,
     )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
 
     updated_config = await delete_custom_code_from_configuration_db(
         config=config, system=system, code=code, user_id=user.id, db=db
@@ -1140,6 +1168,7 @@ async def edit_custom_code(
         HTTPException: 400 if a system is not provided
         HTTPException: 400 if a code is not provided
         HTTPException: 404 if the configuration can't be found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if the configuration can't be updated
 
     Returns:
@@ -1167,6 +1196,12 @@ async def edit_custom_code(
         email=user.email,
         db=db,
     )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
 
     custom_codes = _get_modified_custom_codes(
         config=config,
@@ -1535,6 +1570,7 @@ async def update_section_processing(
 
     Raises:
         HTTPException: 404 if configuration isn't found
+        HTTPException: 409 if configuration is not a draft and therefore not editable
         HTTPException: 500 if section processing can't be updated
 
     Returns:
@@ -1554,6 +1590,11 @@ async def update_section_processing(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
 
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,

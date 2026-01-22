@@ -62,7 +62,13 @@ const baseMockConfig: GetConfigurationResponse = {
   status: 'draft',
   code_sets: mockCodeSets,
   custom_codes: mockCustomCodes,
-  section_processing: [],
+  section_processing: [
+    {
+      name: 'Encounters Section',
+      code: 'some code',
+      action: 'refine',
+    },
+  ],
   included_conditions: [],
   deduplicated_codes: ['123456'],
   all_versions: mockVersions,
@@ -163,10 +169,10 @@ describe('Config builder page', () => {
     const lockBanner = await screen.findByRole('status');
     expect(within(lockBanner).getByText(/View only:/i)).toBeInTheDocument();
     expect(screen.getByText(/Jane Doe/)).toBeInTheDocument();
-    // The ADD button should be disabled
+    // The ADD button shouldn't be in the document
     expect(
-      screen.getByRole('button', { name: /add new code set/i })
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: /add new code set/i })
+    ).not.toBeInTheDocument();
     // The custom code add button should be disabled
     // Switch to the custom codes tab to render the button
     const customCodesTab = await screen.findByRole('button', {
@@ -258,6 +264,19 @@ describe('Config builder page', () => {
     expect(
       await screen.findByText(/You must draft a new version to make changes/i)
     ).toBeInTheDocument();
+
+    // editing should be disabled
+    await userEvent.click(screen.getByText('Custom codes'));
+    expect(
+      await screen.findByRole('button', { name: 'Add new custom code' })
+    ).toBeDisabled();
+
+    await userEvent.click(screen.getByText('Sections'));
+    expect(
+      screen.getByRole('radio', {
+        name: /include and refine section encounters section/i,
+      })
+    ).toBeDisabled();
     expect(
       await screen.findByRole('button', { name: 'Draft a new version' })
     ).toBeInTheDocument();

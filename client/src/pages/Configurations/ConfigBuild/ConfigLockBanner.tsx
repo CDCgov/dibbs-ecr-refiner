@@ -19,7 +19,7 @@ export function ConfigLockBanner({
       aria-live="polite"
       tabIndex={0}
       className={classNames(
-        'bg-state-warning-lighter flex w-full flex-col gap-4 px-8 py-4 shadow-lg md:flex-row md:justify-between lg:px-20',
+        'bg-state-warning-lighter border-b-state-warning! flex w-full flex-col gap-4 px-8 py-4 shadow-lg md:flex-row md:justify-between lg:px-20',
         className
       )}
     >
