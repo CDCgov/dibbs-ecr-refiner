@@ -50,7 +50,7 @@ else:
 
 
 def upload_current_version_file(
-    directory_keys: list[str], active_version: int | None
+    directory_keys: list[str], active_version: int | None, logger: Logger
 ) -> None:
     """
     Writes a new `current.json` file for all directories with new activation files.
@@ -58,6 +58,7 @@ def upload_current_version_file(
     Args:
         directory_keys (list[str]): A list of child RSG code directories in the form: s3://bucket/SDDH/12345
         active_version (int): The newly activated configuration version
+        logger (Logger): The standard application logger
     """
     data = {
         "version": active_version
@@ -71,21 +72,26 @@ def upload_current_version_file(
             Body=json.dumps(data, indent=2).encode("utf-8"),
             ContentType="application/json",
         )
-        print(f"Updating current.json to version {active_version}: {key}/current.json")
+        logger.debug(
+            f"Updating current.json to version {active_version}: {key}/current.json"
+        )
 
 
 def upload_configuration_payload(
-    payload: ConfigurationStoragePayload, metadata: ConfigurationStorageMetadata
+    payload: ConfigurationStoragePayload,
+    metadata: ConfigurationStorageMetadata,
+    logger: Logger,
 ) -> list[str]:
     """
     Given a payload and metadata, writes this information to JSON files in S3.
 
     Args:
         payload (ConfigurationStoragePayload): The configuration payload to write to the bucket.
-        metadata: (ConfigurationStorageMetadata): The configuration metadata to write to the bucket.
+        metadata (ConfigurationStorageMetadata): The configuration metadata to write to the bucket.
+        logger (Logger): The standard application logger.
 
     Returns:
-        str: List of keys pointing to the child RSG SNOMED code directories
+        list[str]: List of keys pointing to the child RSG SNOMED code directories
     """
     s3_condition_code_paths = []
 
@@ -113,8 +119,8 @@ def upload_configuration_payload(
         )
 
         s3_condition_code_paths.append(parent_directory)
-        print(f"Writing file to: {path_with_version}/active.json")
-        print(f"Writing file to: {path_with_version}/metadata.json")
+        logger.debug(f"Writing file to: {path_with_version}/active.json")
+        logger.debug(f"Writing file to: {path_with_version}/metadata.json")
 
     return s3_condition_code_paths
 

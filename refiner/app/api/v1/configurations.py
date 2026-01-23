@@ -1708,7 +1708,7 @@ async def activate_configuration(
 
     # Write the config data to S3 and get the URLs back
     s3_urls = await run_in_threadpool(
-        upload_configuration_payload, config_payload, config_metadata
+        upload_configuration_payload, config_payload, config_metadata, logger
     )
 
     # Activate config in the database
@@ -1729,7 +1729,9 @@ async def activate_configuration(
 
     # Activation files have been written to S3 and the database record has been updated.
     # We can now make a new current.json file for the newly activated version.
-    await run_in_threadpool(upload_current_version_file, s3_urls, active_config.version)
+    await run_in_threadpool(
+        upload_current_version_file, s3_urls, active_config.version, logger
+    )
 
     return ConfigurationStatusUpdateResponse(
         configuration_id=active_config.id, status=active_config.status
@@ -1745,6 +1747,7 @@ async def activate_configuration(
 async def deactivate_configuration(
     configuration_id: UUID,
     user: DbUser = Depends(get_logged_in_user),
+    logger: Logger = Depends(get_logger),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> ConfigurationStatusUpdateResponse:
     """
@@ -1753,6 +1756,7 @@ async def deactivate_configuration(
     Args:
         configuration_id (UUID): ID of the configuration to update
         user (DbUser): The logged-in user
+        logger (Logger): The standard application logger
         db (AsyncDatabaseConnection): Database connection
 
     Raises:
@@ -1789,7 +1793,7 @@ async def deactivate_configuration(
 
     # Try updating `current.json` first
     s3_urls = config_to_deactivate.s3_urls
-    await run_in_threadpool(upload_current_version_file, s3_urls, None)
+    await run_in_threadpool(upload_current_version_file, s3_urls, None, logger)
 
     deactivated_config = await deactivate_configuration_db(
         configuration_id=config_to_deactivate.id,
