@@ -38,7 +38,7 @@ describe('EicrSectionReview accessibility & behavior', () => {
     vi.clearAllMocks();
   });
 
-  it('shows correct versions text for each section row', async () => {
+  it('shows correct versions text for each section row', () => {
     const configurationId = 'conf-test';
     const sampleSections = [
       { name: 'A', code: 'A01', action: 'refine', versions: ['1.0'] },
