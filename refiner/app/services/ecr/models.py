@@ -71,7 +71,7 @@ class RRRefinementPlan:
     that should be retained in the reportability response.
     """
 
-    codes_to_retain: set[str]
+    included_condition_child_rsg_snomed_codes_to_retain: set[str]
 
 
 # NOTE:

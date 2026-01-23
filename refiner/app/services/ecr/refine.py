@@ -198,7 +198,7 @@ def create_rr_refinement_plan(
         RRRefinementPlan: The newly created RRRefinement plan.
     """
     return RRRefinementPlan(
-        codes_to_retain=processed_configuration.included_condition_rsg_codes
+        included_condition_child_rsg_snomed_codes_to_retain=processed_configuration.included_condition_rsg_codes
     )
 
 
@@ -269,7 +269,9 @@ def refine_rr(
 
     # Compile the set of conditions the jurisdiction has a configuration
     # for as represented by the child_rsg_snomed codes that exist in the payload
-    codes_to_keep: set[str] = set(plan.codes_to_retain)
+    codes_to_keep: set[str] = set(
+        plan.included_condition_child_rsg_snomed_codes_to_retain
+    )
 
     components_to_check = cast(
         list[_Element],
