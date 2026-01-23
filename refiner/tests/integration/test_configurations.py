@@ -227,7 +227,7 @@ class TestConfigurations:
 
                 async with db_conn.cursor(row_factory=dict_row) as cur:
                     query = """
-                            SELECT id, condition_canonical_url, condition_id, status, version
+                            SELECT id, condition_canonical_url, condition_id, status
                             FROM configurations
                             WHERE id = %s;
                         """
@@ -236,7 +236,6 @@ class TestConfigurations:
                     configuration = await cur.fetchone()
                     assert configuration is not None
                     assert configuration["status"] == "inactive"
-                    print("CURRENTVERSION", configuration["version"])
 
                     # Expect previous version to still be the active version
                     current_file_resp = await authed_client.get(
