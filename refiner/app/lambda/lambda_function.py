@@ -91,7 +91,7 @@ def check_s3_object_exists(s3_client, bucket: str, key: str) -> bool:
         if error_code in ("404", "NoSuchKey"):
             return False
 
-        raise Exception("Unexpected error while fetching file from S3: ${key}", e)
+        raise Exception(f"Unexpected error while fetching file from S3: {key}", e)
 
 
 def parse_s3_content_to_dict(body: str) -> dict:
