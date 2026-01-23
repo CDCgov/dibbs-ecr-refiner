@@ -53,7 +53,7 @@ def upload_current_version_file(
     directory_keys: list[str], active_version: int | None
 ) -> None:
     """
-    Writes a new `current.json` file all directories with new activation files.
+    Writes a new `current.json` file for all directories with new activation files.
 
     Args:
         directory_keys (list[str]): A list of child RSG code directories in the form: s3://bucket/SDDH/12345
