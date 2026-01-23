@@ -31,8 +31,14 @@ just db seed
 
 The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/). The sample user login credentials are:
 
-- `username`: refiner
-- `password`: refiner
+- `username`: `refiner`
+- `password`: `refiner`
+
+There is also secondary user that is setup locally with the following
+credentials:
+
+- `username`: `refiner2`
+- `password`: `refiner2`
 
 You should be redirected to the configurations page upon successful login.
 
