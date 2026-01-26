@@ -254,7 +254,7 @@ def process_refiner(
                 ContentType="application/xml",
             )
             refiner_output_files.append(eicr_output_key)
-            logger.info(f"Created refined output: {eicr_output_key}")
+            logger.info(f"Created refined eICR output: {eicr_output_key}")
 
             rr_output_key = f"{output_key}/refined_RR.xml"
             s3_client.put_object(
@@ -264,7 +264,7 @@ def process_refiner(
                 ContentType="application/xml",
             )
             refiner_output_files.append(rr_output_key)
-            logger.info(f"Created refined output: {rr_output_key}")
+            logger.info(f"Created refined RR output: {rr_output_key}")
 
     return refiner_output_files
 
