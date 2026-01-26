@@ -21,7 +21,6 @@ interface EicrSectionReviewProps {
  * VersionsList displays the versions in a grammatical list.
  */
 function VersionsList({ versions }: { versions: string[] }) {
-  if (!Array.isArray(versions) || versions.length === 0) return null;
   if (versions.length === 1) return <span>Version {versions[0]}</span>;
   if (versions.length === 2)
     return (
