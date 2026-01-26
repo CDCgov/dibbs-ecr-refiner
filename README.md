@@ -1,8 +1,9 @@
 # DIBBs eCR Refiner
 
 > [!TIP]
-> This project leverages `just` as a command runner. To learn more about `just` > [view the documentation](https://just.systems/man/en). Run `just help`
-> for a list of commands.
+> This project leverages `just` as a command runner. To learn more about `just`
+> [view the documentation](https://just.systems/man/en). Run `just help` for a
+> list of commands.
 
 The DIBBs eCR Refiner reduces eICR and RR files down to the most useful, necessary information to alleviate performance and storage burden on eCR data pipelines and disease surveillance systems and bring focus to pertinent data for a given reportable condition.
 
@@ -30,8 +31,14 @@ just db seed
 
 The application can be accessed in your browser at [http://localhost:8081/](http://localhost:8081/). The sample user login credentials are:
 
-- `username`: refiner
-- `password`: refiner
+- `username`: `refiner`
+- `password`: `refiner`
+
+There is also secondary user that is setup locally with the following
+credentials:
+
+- `username`: `refiner2`
+- `password`: `refiner2`
 
 You should be redirected to the configurations page upon successful login.
 
