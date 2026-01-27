@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.services.ecr.specification import LATEST_TES_VERSION
-
 
 @dataclass(frozen=True)
 class DbConfigurationCondition:
@@ -127,5 +125,5 @@ class DbConfiguration:
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
             condition_canonical_url=row["condition_canonical_url"],
-            tes_version=LATEST_TES_VERSION,
+            tes_version=row["tes_version"],
         )

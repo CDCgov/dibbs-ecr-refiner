@@ -21,6 +21,7 @@ from fastapi import (
 )
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
+from refiner.app.db.tes_version.db import get_latest_tes_version_name_db
 
 from app.core.exceptions import (
     FileProcessingError,
@@ -84,7 +85,6 @@ from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
-from ...services.ecr.specification import LATEST_TES_VERSION
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ...services.xslt import (
@@ -216,10 +216,11 @@ async def create_configuration(
     """
     Create a new configuration for a jurisdiction.
     """
+    latest_tes_version = await get_latest_tes_version_name_db(db)
 
     # get condition by ID
     condition = await get_condition_by_id_db(
-        id=body.condition_id, db=db, tes_version=LATEST_TES_VERSION
+        id=body.condition_id, db=db, tes_version=latest_tes_version
     )
 
     if not condition:

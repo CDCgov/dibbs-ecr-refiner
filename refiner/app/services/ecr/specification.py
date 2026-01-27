@@ -41,8 +41,6 @@ type EicrSpecsData = dict[str, dict[str, RawSectionData]]
 # NOTE:
 # CONSTANTS
 # =============================================================================
-# Current TES version. Used to create configurations in the DB / to disambiguate condition codes from previous version
-LATEST_TES_VERSION = "4.0.0"
 
 # map of templateId extensions to their semantic version strings
 EICR_VERSION_MAP: Final[dict[str, EicrVersion]] = {

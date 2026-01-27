@@ -7,8 +7,9 @@ from psycopg.types.json import Jsonb
 
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
+from app.db.tes_version.db import get_latest_tes_version_name_db
 
-from ...services.ecr.specification import LATEST_TES_VERSION, load_spec
+from ...services.ecr.specification import load_spec
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
@@ -86,6 +87,7 @@ async def insert_configuration_db(
         }
         for loinc_code, section_spec in spec.sections.items()
     ]
+    latest_tes_version = await get_latest_tes_version_name_db(db=db)
 
     params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb, str]
     if config_to_clone:
@@ -122,7 +124,7 @@ async def insert_configuration_db(
                     for c in config_to_clone.section_processing
                 ]
             ),
-            LATEST_TES_VERSION,
+            latest_tes_version,
         )
     else:
         params = (
@@ -141,7 +143,7 @@ async def insert_configuration_db(
             EMPTY_JSONB,
             # section_processing
             Jsonb(section_processing_defaults),
-            LATEST_TES_VERSION,
+            latest_tes_version,
         )
 
     async with db.get_connection() as conn:

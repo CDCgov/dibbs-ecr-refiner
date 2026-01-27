@@ -4,6 +4,7 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 
 from app.db.configurations.model import DbConfigurationCondition
+from app.db.tes_version.db import get_latest_tes_version_name_db
 
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase
@@ -12,7 +13,7 @@ from .model import DbCondition, DbConditionBase
 
 
 async def get_conditions_db(
-    db: AsyncDatabaseConnection, tes_version: str
+    db: AsyncDatabaseConnection, tes_version: str | None = None
 ) -> list[DbConditionBase]:
     """
     Queries the database and retrieves a list of conditions matching CURRENT_VERSION. This query does not include related code set information.
@@ -24,6 +25,8 @@ async def get_conditions_db(
     Returns:
         list[DbConditionBasicInfo]: List containing information about conditions.
     """
+    if not tes_version:
+        tes_version = await get_latest_tes_version_name_db(db)
 
     query = """
             SELECT
