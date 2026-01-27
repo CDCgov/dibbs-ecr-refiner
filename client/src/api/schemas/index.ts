@@ -28,6 +28,7 @@ export * from './dbTotalConditionCodeCount';
 export * from './eventFilterOption';
 export * from './eventResponse';
 export * from './getConditionCode';
+export * from './getConditionParams';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';
 export * from './getConfigurationResponse';

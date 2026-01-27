@@ -21,7 +21,6 @@ from fastapi import (
 )
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, field_validator
-from refiner.app.db.tes_version.db import get_latest_tes_version_name_db
 
 from app.core.exceptions import (
     FileProcessingError,
@@ -32,6 +31,7 @@ from app.db.configurations.activations.db import (
     activate_configuration_db,
     deactivate_configuration_db,
 )
+from app.db.tes_version.db import get_latest_tes_version_name_db
 from app.db.users.db import get_user_by_id_db
 from app.db.users.model import UserInfoBase
 from app.services.configuration_locks import ConfigurationLock

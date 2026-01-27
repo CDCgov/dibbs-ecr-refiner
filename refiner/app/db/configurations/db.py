@@ -72,7 +72,8 @@ async def insert_configuration_db(
         last_activated_at,
         last_activated_by,
         created_by,
-        condition_canonical_url
+        condition_canonical_url,
+        tes_version
     """
 
     # use the new specification system in the ecr service
@@ -189,7 +190,8 @@ async def get_configurations_db(
 			last_activated_at,
 			last_activated_by,
             created_by,
-            condition_canonical_url
+            condition_canonical_url,
+            tes_version
         FROM configurations
         WHERE jurisdiction_id = %s
         ORDER BY name asc;
@@ -226,7 +228,8 @@ async def get_configuration_by_id_db(
 			last_activated_at,
 			last_activated_by,
             created_by,
-            condition_canonical_url
+            condition_canonical_url,
+            tes_version
         FROM configurations
         WHERE id = %s
         AND jurisdiction_id = %s
@@ -333,7 +336,8 @@ async def associate_condition_codeset_with_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url;
+                condition_canonical_url,
+                tes_version;
             """
 
     new_condition = Jsonb([str(condition.id)])
@@ -411,7 +415,8 @@ async def disassociate_condition_codeset_with_configuration_db(
 			last_activated_at,
 			last_activated_by,
             created_by,
-            condition_canonical_url;
+            condition_canonical_ur,
+            tes_version;
     """
 
     params = (str(condition.id), config.id)
@@ -550,7 +555,8 @@ async def add_custom_code_to_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url;
+                condition_canonical_url,
+                tes_version;
             """
 
     custom_codes = config.custom_codes
@@ -622,7 +628,8 @@ async def delete_custom_code_from_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url;
+                condition_canonical_url,
+                tes_version;
             """
 
     updated_custom_codes = [
@@ -691,7 +698,8 @@ async def edit_custom_code_from_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url;
+                condition_canonical_url,
+                tes_version;
             """
 
     json_codes = [
@@ -865,7 +873,8 @@ async def update_section_processing_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url;
+                condition_canonical_url,
+                tes_version;
             """
 
     params = (Jsonb(updated_sections), config.id)
@@ -916,7 +925,8 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
 			last_activated_at,
 			last_activated_by,
             created_by,
-            condition_canonical_url
+            condition_canonical_url,
+            tes_version
         FROM configurations
         WHERE jurisdiction_id = %s
           AND condition_id = ANY(%s::uuid[])
@@ -978,7 +988,8 @@ async def get_latest_config_db(
 			last_activated_at,
 			last_activated_by,
             created_by,
-            condition_canonical_url
+            condition_canonical_url,
+            tes_version
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -1020,7 +1031,8 @@ async def get_active_config_db(
 			last_activated_at,
 			last_activated_by,
             created_by,
-            condition_canonical_url
+            condition_canonical_url,
+            tes_version
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s

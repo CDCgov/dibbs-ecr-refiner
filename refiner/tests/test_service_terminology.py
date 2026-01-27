@@ -44,6 +44,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "last_activated_by": None,
         "created_by": uuid4(),
         "condition_canonical_url": "https://test.com",
+        "tes_version": "1.0.0",
     }
     defaults.update(kwargs)
     return DbConfiguration(**defaults)

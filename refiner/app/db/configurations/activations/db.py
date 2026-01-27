@@ -42,7 +42,8 @@ async def _activate_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url;
+                condition_canonical_url
+                tes_version;
         """
 
     params = (
@@ -113,7 +114,8 @@ async def _deactivate_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url
+                condition_canonical_url,
+                tes_version
             FROM configurations
             WHERE id = %s
             AND NOT EXISTS (SELECT 1 FROM updated)

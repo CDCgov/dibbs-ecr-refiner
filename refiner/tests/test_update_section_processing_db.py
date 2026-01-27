@@ -109,6 +109,7 @@ async def test_update_section_processing_valid():
         "last_activated_by": mock_config.last_activated_by,
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
+        "tes_version": "1.0.0",
     }
 
     fake_db = _FakeDB(row=row)
@@ -228,6 +229,7 @@ async def test_update_section_processing_unknown_code():
         "last_activated_by": mock_config.last_activated_by,
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
+        "tes_version": "1.0.0",
     }
 
     fake_db = _FakeDB(row=row)
