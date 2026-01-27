@@ -1,302 +1,319 @@
 import json
 import logging
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import psycopg
 from dotenv import load_dotenv
+from fhir.resources.valueset import ValueSet
 from psycopg import Connection, sql
 
 # configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-SEEDING_DIR = Path(__file__).parent
-SCRIPTS_DIR = SEEDING_DIR.parent
-DATA_DIR = SCRIPTS_DIR / "data"
+BASE_DIR = Path(__file__).parent.parent
+DATA_DIR = BASE_DIR / "data"
 TES_DATA_DIR = DATA_DIR / "source-tes-groupers"
-SEEDING_DATA_DIR = DATA_DIR / "seeding"
-ENV_PATH = SCRIPTS_DIR / ".env"
+ENV_PATH = BASE_DIR / ".env"
 
-# code systems we currently save to the database
-TARGET_CODE_SYSTEMS = ["loinc_codes", "snomed_codes", "icd10_codes", "rxnorm_codes"]
+# type aliases
+# a tuple representing a single, raw code: (system, code, display) pulled straight from the fhir ValueSet
+# * display **could** be empty
+type FhirCodeTuple = tuple[str, str, str | None]
 
-# list of versions that are known to use the old composition method
-OLD_VERSIONS = ["1.0.0", "2.0.0", "3.0.0"]
+# a dictionary representing a single code prepared for categorization by a code system
+# * display **could** be empty
+type CodePayload = dict[str, str | None]
+
+# a list of processed codes for a specific system
+type SystemCodeList = list[CodePayload]
+
+# the map of all unique codes for a condition + version
+type ConditionCodePayload = dict[str, SystemCodeList]
+
+SYSTEM_MAP = {
+    "http://loinc.org": "loinc_codes",
+    "http://snomed.info/sct": "snomed_codes",
+    "http://hl7.org/fhir/sid/icd-10-cm": "icd10_codes",
+    "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
+}
 
 
-def get_db_connection(db_url, db_password) -> Connection:
+@dataclass
+class ConditionData:
+    """
+    Represents a single, processed condition grouper ready for database insertion.
+    """
+
+    parent_vs: ValueSet
+    all_vs_map: dict[tuple[str, str], ValueSet]
+
+    child_codes: set[FhirCodeTuple] = field(init=False, default_factory=set)
+    """
+    Codes from all child 'Reporting Specification Grouper' (RSG) ValueSets.
+    """
+
+    sibling_codes: set[FhirCodeTuple] = field(init=False, default_factory=set)
+    """
+    Codes from all sibling 'Additional Context Grouper' ValueSets.
+    """
+
+    child_rsg_snomed_codes: set[str] = field(init=False, default_factory=set)
+    """
+    SNOMED codes extracted directly from the URLs of child RSG ValueSets.
+    """
+
+    def __post_init__(self):
+        """
+        Populates the code sets after the instance is initialized.
+        """
+
+        self._aggregate_child_codes()
+        self._aggregate_sibling_codes()
+
+    def _aggregate_child_codes(self):
+        """
+        Extracts codes and SNOMED IDs from all child RSG ValueSets.
+        """
+
+        for child_vs in get_child_rsg_valuesets(self.parent_vs, self.all_vs_map):
+            if snomed_code := parse_snomed_from_url(child_vs.url or ""):
+                self.child_rsg_snomed_codes.add(snomed_code)
+            self.child_codes.update(extract_codes_from_compose(child_vs))
+
+    def _aggregate_sibling_codes(self):
+        """
+        Extracts codes from all sibling 'additional context' ValueSets.
+        """
+
+        for sib_vs in get_sibling_context_valuesets(self.parent_vs, self.all_vs_map):
+            self.sibling_codes.update(extract_codes_from_compose(sib_vs))
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        """
+        Generates the dictionary payload for database insertion.
+        """
+
+        # combine all codes; the union operator `|` correctly merges the sets
+        all_codes = self.child_codes | self.sibling_codes
+        categorized = categorize_codes_by_system(all_codes)
+        return {
+            "canonical_url": self.parent_vs.url,
+            "version": self.parent_vs.version,
+            "display_name": (self.parent_vs.title or self.parent_vs.name or "").replace(
+                "_", " "
+            ),
+            "child_rsg_snomed_codes": list(self.child_rsg_snomed_codes),
+            "loinc_codes": json.dumps(categorized["loinc_codes"]),
+            "snomed_codes": json.dumps(categorized["snomed_codes"]),
+            "icd10_codes": json.dumps(categorized["icd10_codes"]),
+            "rxnorm_codes": json.dumps(categorized["rxnorm_codes"]),
+        }
+
+
+def get_db_connection(db_url: str, db_password: str) -> Connection:
     """
     Establishes and returns a connection to the PostgreSQL database.
     """
 
     try:
-        return psycopg.connect(
-            db_url,
-            password=db_password,
-        )
+        return psycopg.connect(db_url, password=db_password)
     except psycopg.OperationalError as error:
-        logging.error(f"❌ Database connection failed: {error}")
+        logger.error(f"❌ Database connection failed: {error}")
         raise
 
 
-def extract_codes_from_valueset(valueset: dict[str, Any]) -> dict[str, list[dict]]:
+def load_valuesets_from_all_files() -> dict[tuple[str, str], ValueSet]:
     """
-    Extracts all code types from a ValueSet's 'compose' section.
-
-    (Used for v1-v3 condition groupers).
+    Loads all ValueSet resources from JSON files in the TES data directory.
     """
 
-    codes = {
-        "loinc_codes": [],
-        "snomed_codes": [],
-        "icd10_codes": [],
-        "rxnorm_codes": [],
-    }
-    system_map = {
-        "http://loinc.org": "loinc_codes",
-        "http://snomed.info/sct": "snomed_codes",
-        "http://hl7.org/fhir/sid/icd-10-cm": "icd10_codes",
-        "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
-    }
-    compose = valueset.get("compose", {})
-    for include_item in compose.get("include", []):
-        system_url = include_item.get("system")
-        code_key = system_map.get(system_url)
-        if code_key and "concept" in include_item:
-            for concept in include_item["concept"]:
-                codes[code_key].append(
-                    {"display": concept.get("display"), "code": concept.get("code")}
-                )
+    vs_map: dict[tuple[str, str], ValueSet] = {}
+    json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
+    for file_path in json_files:
+        with open(file_path, encoding="utf-8") as f:
+            data = json.load(f)
+        for vs_dict in data.get("valuesets", []):
+            if (url := vs_dict.get("url")) and (version := vs_dict.get("version")):
+                try:
+                    vs_map[(url, version)] = ValueSet.model_validate(vs_dict)
+                except Exception as e:
+                    logger.warning(f"Failed to parse ValueSet {url}|{version}: {e}")
+    logger.info(f"Loaded {len(vs_map)} unique ValueSets from all TES files.")
+    return vs_map
+
+
+def is_condition_grouper(vs: ValueSet) -> bool:
+    """
+    Checks if a ValueSet is a 'ConditionGrouper' via its metadata profile.
+    """
+
+    profiles = getattr(getattr(vs, "meta", None), "profile", []) or []
+    # we have to cast the return to make mypy happy
+    return bool(any("conditiongroupervalueset" in str(prof) for prof in profiles))
+
+
+def is_reporting_spec_grouper(vs: ValueSet) -> bool:
+    """
+    Checks if a ValueSet is a 'ReportingSpecGrouper' by its URL.
+    """
+
+    # we have to cast the return to make mypy happy
+    return bool(vs.url and "rs-grouper" in vs.url.lower())
+
+
+def is_additional_context_grouper(vs: ValueSet) -> bool:
+    """
+    Checks if a ValueSet is for 'Additional Context' by its name or title.
+    """
+
+    name = (vs.name or "").lower()
+    title = (vs.title or "").lower()
+    return "additional" in name or "additional" in title
+
+
+def extract_codes_from_compose(vs: ValueSet) -> set[FhirCodeTuple]:
+    """
+    Extracts all (system, code, display) tuples from a ValueSet's compose section.
+    """
+
+    codes: set[FhirCodeTuple] = set()
+    if vs.compose:
+        for inc in vs.compose.include or []:
+            if inc.system and inc.concept:
+                for concept in inc.concept:
+                    if concept.code:
+                        codes.add((inc.system, concept.code, concept.display))
     return codes
 
 
-def extract_codes_from_expansion(valueset: dict[str, Any]) -> dict[str, list[dict]]:
+def get_child_rsg_valuesets(
+    parent: ValueSet, all_vs_map: dict[tuple[str, str], ValueSet]
+) -> list[ValueSet]:
     """
-    Extracts all code types from a ValueSet's 'expansion.contains' section.
-
-    This function dynamically handles any code system it encounters.
-    (Used for v4+ groupers).
+    Finds all 'ReportingSpecGrouper' children of a parent ValueSet.
     """
 
-    all_codes_by_system = {}
-    system_map = {
-        "http://loinc.org": "loinc_codes",
-        "http://snomed.info/sct": "snomed_codes",
-        "http://hl7.org/fhir/sid/icd-10-cm": "icd10_codes",
-        "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
+    children: list[ValueSet] = []
+    if parent.compose:
+        for inc in parent.compose.include or []:
+            for ref in inc.valueSet or []:
+                url, sep, version = str(ref).partition("|")
+                if sep and (child_vs := all_vs_map.get((url, version))):
+                    if is_reporting_spec_grouper(child_vs):
+                        children.append(child_vs)
+    return children
+
+
+def get_sibling_context_valuesets(
+    parent: ValueSet, all_vs_map: dict[tuple[str, str], ValueSet]
+) -> list[ValueSet]:
+    """
+    Finds sibling 'Additional Context' ValueSets by matching name and version.
+    """
+
+    siblings: list[ValueSet] = []
+    parent_name = (parent.name or "").lower().replace("_", "")
+    for vs in all_vs_map.values():
+        if (
+            is_additional_context_grouper(vs)
+            and vs.version == parent.version
+            and vs.url != parent.url
+            and parent_name in (vs.name or "").lower().replace("_", "")
+        ):
+            siblings.append(vs)
+    return siblings
+
+
+def categorize_codes_by_system(all_codes: set[FhirCodeTuple]) -> ConditionCodePayload:
+    """
+    Categorizes a set of codes into a dictionary based on their system.
+    """
+
+    # the key is a "system_name", and the value is an empty list that will hold CodePayloads
+    result: ConditionCodePayload = {
+        system_name: [] for system_name in SYSTEM_MAP.values()
     }
-
-    expansion = valueset.get("expansion", {})
-    for item in expansion.get("contains", []):
-        system_url = item.get("system")
-        if not system_url:
-            continue
-
-        # use the friendly name from system_map or derive from the URL
-        code_key = system_map.get(system_url, system_url.split("/")[-1])
-
-        if code_key not in all_codes_by_system:
-            all_codes_by_system[code_key] = []
-
-        all_codes_by_system[code_key].append(
-            {"display": item.get("display"), "code": item.get("code")}
-        )
-
-    # log the findings for this valueset
-    condition_name = valueset.get("title") or valueset.get("name", "Unknown")
-    logging.info(f"  Codes found for '{condition_name}':")
-    for system, codes in all_codes_by_system.items():
-        status = "SAVING" if system in TARGET_CODE_SYSTEMS else "IGNORING"
-        logging.info(f"    - {system}: {len(codes)} codes ({status})")
-
-    return all_codes_by_system
+    for system, code, display in all_codes:
+        if system_key := SYSTEM_MAP.get(system):
+            result[system_key].append({"code": code, "display": display})
+    return result
 
 
 def parse_snomed_from_url(url: str) -> str | None:
     """
-    Extracts the SNOMED code from a Reporting Spec Grouper URL.
+    Extracts a SNOMED code from a 'rs-grouper' URL.
     """
 
-    if "rs-grouper-" in url:
-        return url.split("rs-grouper-")[-1]
-    return None
+    return url.split("rs-grouper-")[-1] if "rs-grouper-" in url else None
 
 
-def seed_database(db_url, db_password) -> None:
+def seed_database(db_url: str, db_password: str) -> None:
     """
     Orchestrates the entire database seeding process.
     """
 
-    logging.info("🚀 Starting database seeding...")
+    logger.info("🚀 Starting database seeding...")
+    all_vs_map = load_valuesets_from_all_files()
 
-    # pass 1:
-    # prepare condition data from ValueSet files
-    all_valuesets_map: dict[tuple, dict] = {}
-    json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
-    for file_path in json_files:
-        with open(file_path) as file:
-            data = json.load(file)
-            if "valuesets" in data:
-                for valueset in data.get("valuesets", []):
-                    key = (valueset.get("url"), valueset.get("version"))
-                    all_valuesets_map[key] = valueset
+    condition_groupers = [vs for vs in all_vs_map.values() if is_condition_grouper(vs)]
+    logger.info(f"Identified {len(condition_groupers)} condition groupers to process.")
 
-    conditions_to_insert = []
-    if all_valuesets_map:
-        parent_valuesets = [
-            valueset
-            for valueset in all_valuesets_map.values()
-            if any(
-                "valueSet" in item
-                for item in valueset.get("compose", {}).get("include", [])
-            )
-        ]
+    processed_conditions = [
+        ConditionData(parent, all_vs_map) for parent in condition_groupers
+    ]
+    conditions_to_insert = [cond.payload for cond in processed_conditions]
 
-        for parent in parent_valuesets:
-            version = parent.get("version")
-            child_snomed_codes = set()
-            aggregated_codes = {}
+    if not conditions_to_insert:
+        logger.warning("⚠️ No conditions were processed. Aborting database write.")
+        return
 
-            # NOTE: for condition groupers of 4.0.0 and up (so long as they continue to use `expansion.contains`)
-            # we will extract the codes from this location rather than use the references from `compose.include` to
-            # extract them by finding their references. for condition groupers 1.0.0, 2.0.0, and 3.0.0 we will continue
-            # to seed the conditions table with this method (since it is what we were originally using). for 4.0.0 and up,
-            # we'll use the new method of `expansion.contains`
-            if version in OLD_VERSIONS:
-                logging.info(
-                    f"Processing '{parent.get('name')}' (v{version}) using COMPOSITION method..."
-                )
-                aggregated_codes = {key: [] for key in TARGET_CODE_SYSTEMS}
-                for include_item in parent.get("compose", {}).get("include", []):
-                    for child_reference in include_item.get("valueSet", []):
-                        try:
-                            child_key = tuple(child_reference.split("|", 1))
-                            child_valueset = all_valuesets_map.get(child_key)
-                            if not child_valueset:
-                                continue
-
-                            snomed = parse_snomed_from_url(
-                                child_valueset.get("url", "")
-                            )
-                            if snomed:
-                                child_snomed_codes.add(snomed)
-
-                            child_extracted = extract_codes_from_valueset(
-                                child_valueset
-                            )
-                            for code_type, codes in child_extracted.items():
-                                aggregated_codes[code_type].extend(codes)
-                        except (ValueError, KeyError):
-                            continue
-            # for v4.0.0 and all future versions, use the efficient expansion logic
-            else:
-                logging.info(
-                    f"Processing '{parent.get('name')}' (v{version}) using EXPANSION method..."
-                )
-                if "expansion" not in parent:
-                    logging.warning(
-                        f"  - WARNING: Expected an 'expansion' section for v{version} but found none. Code lists will be empty."
-                    )
-
-                aggregated_codes = extract_codes_from_expansion(parent)
-                # still need to get child_rsg_snomed_codes from the compose section, as this is
-                # very important to the app's business logic
-                for include_item in parent.get("compose", {}).get("include", []):
-                    for child_reference in include_item.get("valueSet", []):
-                        try:
-                            child_url, child_version = child_reference.split("|", 1)
-                            child_valueset = all_valuesets_map.get(
-                                (child_url, child_version)
-                            )
-                            if child_valueset:
-                                snomed = parse_snomed_from_url(
-                                    child_valueset.get("url", "")
-                                )
-                                if snomed:
-                                    child_snomed_codes.add(snomed)
-                        except ValueError:
-                            continue
-
-            # prepare the final record for insertion
-            conditions_to_insert.append(
-                {
-                    "canonical_url": parent.get("url"),
-                    "version": parent.get("version"),
-                    "display_name": (
-                        parent.get("title") or parent.get("name") or ""
-                    ).replace("_", " "),
-                    "child_rsg_snomed_codes": list(child_snomed_codes),
-                    "loinc_codes": json.dumps(aggregated_codes.get("loinc_codes", [])),
-                    "snomed_codes": json.dumps(
-                        aggregated_codes.get("snomed_codes", [])
-                    ),
-                    "icd10_codes": json.dumps(aggregated_codes.get("icd10_codes", [])),
-                    "rxnorm_codes": json.dumps(
-                        aggregated_codes.get("rxnorm_codes", [])
-                    ),
-                }
-            )
-
-    if conditions_to_insert:
-        logging.info(
-            f"\n✅ Prepared {len(conditions_to_insert)} condition records to insert."
-        )
-
-    # pass 2:
-    # connect to db and perform all inserts
+    logger.info(f"✅ Prepared {len(conditions_to_insert)} records for insertion.")
     try:
-        with get_db_connection(db_url=db_url, db_password=db_password) as connection:
-            with connection.cursor() as cursor:
-                logging.info("🧹 Clearing all data tables...")
-                tables = [
-                    "conditions",
-                    "jurisdictions",
-                    "configurations",
-                    "sessions",
-                    "users",
-                ]
-                for table in tables:
-                    try:
-                        cursor.execute(
-                            f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;"
-                        )
-                    except psycopg.errors.UndefinedTable:
-                        logging.warning(f"Table {table} does not exist, skipping.")
+        with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
+            logger.info("🧹 Clearing specified data tables...")
+            tables_to_truncate = [
+                "conditions",
+                "jurisdictions",
+                "configurations",
+                "sessions",
+                "users",
+            ]
+            for table in tables_to_truncate:
+                try:
+                    cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;")
+                except psycopg.errors.UndefinedTable:
+                    logger.warning(f"Table '{table}' not found, skipping truncation.")
 
-                if conditions_to_insert:
-                    logging.info(
-                        f"⏳ Inserting {len(conditions_to_insert)} condition records..."
-                    )
-                    insert_query = sql.SQL("""
-                        INSERT INTO public.conditions (canonical_url, version, display_name, child_rsg_snomed_codes, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes)
-                        VALUES (%(canonical_url)s, %(version)s, %(display_name)s, %(child_rsg_snomed_codes)s, %(loinc_codes)s, %(snomed_codes)s, %(icd10_codes)s, %(rxnorm_codes)s)
-                    """)
-                    cursor.executemany(insert_query, conditions_to_insert)
-                    logging.info("  ✅ Conditions insert pass complete.")
-                else:
-                    logging.warning(
-                        "⚠️ No conditions were processed from ValueSet files."
-                    )
+            logger.info("⏳ Inserting condition records...")
+            insert_query = sql.SQL(
+                """
+                INSERT INTO public.conditions (canonical_url, version, display_name, child_rsg_snomed_codes, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes)
+                VALUES (%(canonical_url)s, %(version)s, %(display_name)s, %(child_rsg_snomed_codes)s, %(loinc_codes)s, %(snomed_codes)s, %(icd10_codes)s, %(rxnorm_codes)s)
+                """
+            )
+            cursor.executemany(insert_query, conditions_to_insert)
+            conn.commit()
 
-                connection.commit()
-                logging.info("\n🎉 SUCCESS: Database seeding complete!")
+            logger.info("🎉 SUCCESS: Database seeding complete!")
 
-    except (psycopg.Error, Exception) as error:
-        logging.error(
-            "❌ A critical error occurred during the seeding process. The transaction has been rolled back."
+    except (psycopg.Error, Exception):
+        logger.error(
+            "❌ A critical error occurred during the seeding process.", exc_info=True
         )
-        logging.error(f"  Error details: {error}")
-        logging.error("🧠 Make sure migrations have been run prior to seeding!")
+        logger.error("Make sure migrations have been run prior to seeding!")
         raise
 
 
 if __name__ == "__main__":
     load_dotenv(dotenv_path=ENV_PATH)
-    db_url = os.getenv("DB_URL")
-    db_password = os.getenv("DB_PASSWORD")
-    seed_database(db_url=db_url, db_password=db_password)
+    if not (db_url := os.getenv("DB_URL")) or not (
+        db_password := os.getenv("DB_PASSWORD")
+    ):
+        logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
+    else:
+        seed_database(db_url=db_url, db_password=db_password)
