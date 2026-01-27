@@ -2,6 +2,7 @@ import os
 from datetime import date
 from io import BytesIO
 from logging import Logger
+from typing import Any
 from uuid import UUID
 
 import boto3
@@ -12,35 +13,22 @@ from ...core.config import ENVIRONMENT
 
 uploaded_artifact_bucket_name = ENVIRONMENT["S3_BUCKET_CONFIG"]
 
-config = Config(signature_version="s3v4")
 
-if ENVIRONMENT["ENV"] == "local":
-    s3_client = boto3.client(
-        "s3",
-        # use mock access keys needed for localstack
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-        region_name=ENVIRONMENT["AWS_REGION"],
-        endpoint_url=os.getenv("S3_ENDPOINT_URL"),
-        config=config,
-    )
-elif ENVIRONMENT["ENV"] == "demo":
-    s3_client = boto3.client(
-        "s3",
-        region_name=ENVIRONMENT["AWS_REGION"],
-        # get these directly rather than from the loaded config file so the
-        # app doesn't crash in envs where they're missing
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-        endpoint_url=os.getenv("S3_ENDPOINT_URL"),
-        config=config,
-    )
-else:
-    s3_client = boto3.client(
-        "s3",
-        region_name=ENVIRONMENT["AWS_REGION"],
-        config=config,
-    )
+def _build_s3_client_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {
+        "region_name": ENVIRONMENT["AWS_REGION"],
+        "config": Config(signature_version="s3v4"),
+    }
+
+    if ENVIRONMENT["ENV"] in {"local", "demo"}:
+        kwargs["aws_access_key_id"] = os.getenv("AWS_ACCESS_KEY_ID")
+        kwargs["aws_secret_access_key"] = os.getenv("AWS_SECRET_ACCESS_KEY")
+        kwargs["endpoint_url"] = os.getenv("S3_ENDPOINT_URL")
+
+    return kwargs
+
+
+s3_client = boto3.client("s3", **_build_s3_client_kwargs())
 
 
 def upload_refined_ecr(

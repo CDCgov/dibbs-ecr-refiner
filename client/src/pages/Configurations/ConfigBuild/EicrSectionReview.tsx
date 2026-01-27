@@ -18,6 +18,25 @@ interface EicrSectionReviewProps {
 }
 
 /**
+ * VersionsList displays the versions in a grammatical list.
+ */
+function VersionsList({ versions }: { versions: string[] }) {
+  if (versions.length === 1) return <span>Version {versions[0]}</span>;
+  if (versions.length === 2)
+    return (
+      <span>
+        Versions {versions[0]} and {versions[1]}
+      </span>
+    );
+  return (
+    <span>
+      Versions {versions.slice(0, -1).join(', ')}, and{' '}
+      {versions[versions.length - 1]}
+    </span>
+  );
+}
+
+/**
  * EicrSectionReview displays an overview or review of eICR sections and allows
  * users to choose an action for each section (retain, refine, remove).
  * Radio inputs are fully accessible and can be selected by clicking anywhere
@@ -160,7 +179,11 @@ export function EicrSectionReview({
           {sectionProcessing.map((section, index) => (
             <tr key={section.name}>
               <td className="cursor-default! font-bold! wrap-break-word! whitespace-normal!">
-                {section.name}
+                <span className="font-bold!">{section.name}</span>
+                <br />
+                <span className="font-normal!">
+                  <VersionsList versions={section.versions} />
+                </span>
               </td>
               <RadioCell
                 index={index}
