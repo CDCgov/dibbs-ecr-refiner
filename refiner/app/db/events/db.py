@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import AsyncCursor
-from psycopg.rows import dict_row
+from psycopg.rows import class_row, dict_row
 
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
@@ -29,11 +29,9 @@ async def get_event_count_by_condition_db(
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> int:
+) -> int | None:
     """
     Gets a count of all events within a jurisdiction by condition.
-
-    Returns an int (0 when there are no matching rows) and never None.
     """
 
     query = """
@@ -49,9 +47,8 @@ async def get_event_count_by_condition_db(
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
-                return 0
-            # Use .get to guard against unexpected keys and coerce to int
-            return int(row.get("total_count", 0))
+                return None
+            return int(row["total_count"])
 
 
 async def get_events_by_jd_db(
@@ -72,7 +69,7 @@ async def get_events_by_jd_db(
         u.username,
         c.name AS configuration_name,
         c.version as configuration_version,
-        c.condition_id AS condition_id,
+        c.id AS condition_id,
         e.action_text,
         e.created_at
         FROM events e
@@ -86,34 +83,10 @@ async def get_events_by_jd_db(
     params = (jurisdiction_id, canonical_url, canonical_url, page_size, offset)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
+        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
             await cur.execute(query, params)
-            rows = await cur.fetchall()
-
-    events: list[AuditEvent] = []
-    for row in rows:
-        try:
-            condition_id = row.get("condition_id")
-            created_at = row.get("created_at")
-            if condition_id is not None and created_at is not None:
-                events.append(
-                    AuditEvent(
-                        id=row["id"],
-                        username=row.get("username") or "",
-                        configuration_name=row.get("configuration_name") or "",
-                        configuration_version=int(
-                            row.get("configuration_version") or 0
-                        ),
-                        condition_id=condition_id,
-                        action_text=row.get("action_text") or "",
-                        created_at=created_at,
-                    )
-                )
-        except Exception as e:  # pragma: no cover - defensive parsing
-            print("Failed to build AuditEvent from row:", row, "error:", e)
-            continue
-
-    return events
+            events_rows = await cur.fetchall()
+            return events_rows
 
 
 async def insert_event_db(
