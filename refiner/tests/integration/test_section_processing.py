@@ -50,8 +50,12 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
     # Arrange: existing configuration with two section_processing entries
     config_id = UUID(str(uuid4()))
     existing_sections = [
-        DbConfigurationSectionProcessing(name="Sec A", code="A", action="retain"),
-        DbConfigurationSectionProcessing(name="Sec B", code="B", action="refine"),
+        DbConfigurationSectionProcessing(
+            name="Sec A", code="A", action="retain", versions=[]
+        ),
+        DbConfigurationSectionProcessing(
+            name="Sec B", code="B", action="refine", versions=[]
+        ),
     ]
 
     initial_config = DbConfiguration(
@@ -74,8 +78,12 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
 
     # Updated config returned by DB helper
     updated_sections = [
-        DbConfigurationSectionProcessing(name="Sec A", code="A", action="remove"),
-        DbConfigurationSectionProcessing(name="Sec B", code="B", action="refine"),
+        DbConfigurationSectionProcessing(
+            name="Sec A", code="A", action="remove", versions=[]
+        ),
+        DbConfigurationSectionProcessing(
+            name="Sec B", code="B", action="refine", versions=[]
+        ),
     ]
     updated_config = DbConfiguration(
         id=initial_config.id,
@@ -137,7 +145,9 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
     # Arrange: existing configuration
     config_id = UUID(str(uuid4()))
     existing_sections = [
-        DbConfigurationSectionProcessing(name="Sec A", code="A", action="retain"),
+        DbConfigurationSectionProcessing(
+            name="Sec A", code="A", action="retain", versions=[]
+        ),
     ]
 
     initial_config = DbConfiguration(

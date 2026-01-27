@@ -49,12 +49,14 @@ class DbConfigurationSectionProcessing:
 
     Name is the section's name.
     Code is the LOINC code for the section.
-    Action is either: retain, refine, or remove
+    Action is either: retain, refine, or remove.
+    Versions is a list of versions this section appears in.
     """
 
     name: str
     code: str
     action: str
+    versions: list[str]
 
 
 DbConfigurationStatus = Literal["draft", "inactive", "active"]
@@ -117,8 +119,13 @@ class DbConfiguration:
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             section_processing=[
-                DbConfigurationSectionProcessing(**sp)
-                for sp in row["section_processing"]
+                DbConfigurationSectionProcessing(
+                    name=sp.get("name"),
+                    code=sp.get("code"),
+                    action=sp.get("action"),
+                    versions=sp.get("versions", []),
+                )
+                for sp in row.get("section_processing", []) or []
             ],
             version=row["version"],
             last_activated_at=row["last_activated_at"],
