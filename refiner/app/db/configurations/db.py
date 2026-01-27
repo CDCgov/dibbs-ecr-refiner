@@ -5,6 +5,7 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
+import app.services.ecr.specification as spec_mod
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 
@@ -72,11 +73,20 @@ async def insert_configuration_db(
     # * default to version 1.1 for backward compatibility
     spec = load_spec("1.1")
 
+    # build loinc->versions dict once per import
+
+    _LOINC_VERSIONS_MAP: dict[str, set[str]] = {}
+    for v, vdata in spec_mod.EICR_SPECS_DATA.items():
+        for loinc in vdata.keys():
+            _LOINC_VERSIONS_MAP.setdefault(loinc, set()).add(v)
+    _LOINC_VERSIONS_FLAT = {k: sorted(v) for k, v in _LOINC_VERSIONS_MAP.items()}
+
     section_processing_defaults = [
         {
             "name": section_spec.display_name,
             "code": loinc_code,
             "action": "refine",
+            "versions": _LOINC_VERSIONS_FLAT.get(loinc_code, []),
         }
         for loinc_code, section_spec in spec.sections.items()
     ]
@@ -112,7 +122,12 @@ async def insert_configuration_db(
             # section_processing
             Jsonb(
                 [
-                    {"name": c.name, "code": c.code, "action": c.action}
+                    {
+                        "name": c.name,
+                        "code": c.code,
+                        "action": c.action,
+                        "versions": c.versions,
+                    }
                     for c in config_to_clone.section_processing
                 ]
             ),

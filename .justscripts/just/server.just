@@ -22,6 +22,11 @@ _venv:
 test: _venv
     .venv/bin/pytest tests
 
+[doc('Run Ruff checker, fix things, and formatter')]
+fix: _venv
+    .venv/bin/ruff check --fix
+    .venv/bin/ruff format
+
 [doc('Run Ruff checker and formatter')]
 lint: _venv
     .venv/bin/ruff check
