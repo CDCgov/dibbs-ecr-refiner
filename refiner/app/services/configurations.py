@@ -38,9 +38,12 @@ async def get_config_payload_metadata(
         return None
 
     return ConfigurationStorageMetadata(
+        condition_name=primary_condition.display_name,
+        canonical_url=primary_condition.canonical_url,
+        tes_version=primary_condition.version,
+        jurisdiction_id=configuration.jurisdiction_id,
+        configuration_version=configuration.version,
         child_rsg_snomed_codes=primary_condition.child_rsg_snomed_codes,
-        jurisdiction_code=configuration.jurisdiction_id,
-        active_version=configuration.version,
     )
 
 

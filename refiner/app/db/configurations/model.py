@@ -166,9 +166,12 @@ class ConfigurationStorageMetadata:
     The model for configuration metadata that is being written to S3.
     """
 
+    condition_name: str
+    canonical_url: str
+    tes_version: str
+    jurisdiction_id: str
+    configuration_version: int
     child_rsg_snomed_codes: list[str]
-    jurisdiction_code: str
-    active_version: int
 
     def to_dict(self) -> dict:
         """
@@ -178,7 +181,10 @@ class ConfigurationStorageMetadata:
             dict: ConfigurationStorageMetadata represented as a dict
         """
         return {
+            "condition_name": self.condition_name,
+            "canonical_url": self.canonical_url,
+            "tes_version": self.tes_version,
+            "jurisdiction_id": self.jurisdiction_id,
+            "configuration_version": self.configuration_version,
             "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
-            "jurisdiction_code": self.jurisdiction_code,
-            "active_version": self.active_version,
         }

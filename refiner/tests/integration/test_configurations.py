@@ -63,7 +63,7 @@ class TestConfigurations:
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
-                SELECT id, display_name
+                SELECT id, display_name, version, canonical_url
                 FROM conditions
                 WHERE display_name = 'Drowning and Submersion'
                 AND version = '4.0.0'
@@ -76,13 +76,15 @@ class TestConfigurations:
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
-                SELECT id FROM configurations
-                WHERE name = 'Drowning and Submersion' AND status = 'draft';
+                SELECT id, jurisdiction_id, version
+                FROM configurations
+                WHERE name = 'Drowning and Submersion'
+                AND status = 'draft';
                 """
             )
             draft_config = await cur.fetchone()
+            assert draft_config is not None
 
-        if draft_config:
             draft_id = draft_config["id"]
             response = await authed_client.patch(
                 f"/api/v1/configurations/{draft_id}/activate"
@@ -120,13 +122,20 @@ class TestConfigurations:
                 f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/metadata.json"
             )
             metadata_file_json = metadata_file.json()
+            assert metadata_file_json["condition_name"] == condition["display_name"]
+            assert metadata_file_json["canonical_url"] == condition["canonical_url"]
+            assert metadata_file_json["tes_version"] == condition["version"]
+            assert (
+                metadata_file_json["jurisdiction_id"] == draft_config["jurisdiction_id"]
+            )
+            assert (
+                metadata_file_json["configuration_version"] == draft_config["version"]
+            )
             assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
             assert (
                 metadata_file_json["child_rsg_snomed_codes"][0]
                 == EXPECTED_DROWNING_RSG_CODE
             )
-            assert metadata_file_json["jurisdiction_code"] == "SDDH"
-            assert metadata_file_json["active_version"] == 1
 
             # Current file and content
             current_file = await authed_client.get(

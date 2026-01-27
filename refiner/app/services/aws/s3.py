@@ -87,10 +87,10 @@ def upload_configuration_payload(
     metadata_data = metadata.to_dict()
 
     for child_rsg_code in metadata.child_rsg_snomed_codes:
-        parent_directory = f"{metadata.jurisdiction_code}/{child_rsg_code}"
+        parent_directory = f"{metadata.jurisdiction_id}/{child_rsg_code}"
 
         # Write active.json
-        path_with_version = f"{parent_directory}/{metadata.active_version}"
+        path_with_version = f"{parent_directory}/{metadata.configuration_version}"
         s3_client.put_object(
             Bucket=S3_CONFIGURATION_BUCKET_NAME,
             Key=f"{path_with_version}/active.json",
