@@ -85,6 +85,7 @@ async def test_update_section_processing_valid():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        tes_version="1.0.0",
     )
 
     # The DB should return the updated row; build that row dict
@@ -160,6 +161,7 @@ async def test_update_section_processing_invalid_action():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        tes_version="1.0.0",
     )
 
     # Invalid payload
@@ -203,6 +205,7 @@ async def test_update_section_processing_unknown_code():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        tes_version="1.0.0",
     )
 
     # The DB should return the same existing sections because unknown update codes are ignored.

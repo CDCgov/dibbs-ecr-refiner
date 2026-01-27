@@ -9,15 +9,17 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase
 
 # TES and refiner are currently using version 4.0.0 for CGs and its child RSGs
-CURRENT_VERSION = "4.0.0"
 
 
-async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase]:
+async def get_conditions_db(
+    db: AsyncDatabaseConnection, tes_version: str
+) -> list[DbConditionBase]:
     """
     Queries the database and retrieves a list of conditions matching CURRENT_VERSION. This query does not include related code set information.
 
     Args:
         db (AsyncDatabaseConnection): Database connection.
+        tes_version (str): The TES version to filter on.
 
     Returns:
         list[DbConditionBasicInfo]: List containing information about conditions.
@@ -34,7 +36,7 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase
             ORDER BY display_name ASC;
             """
 
-    params = (CURRENT_VERSION,)
+    params = (tes_version,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
@@ -42,13 +44,13 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase
             rows = await cur.fetchall()
 
     if not rows:
-        raise Exception(f"No conditions found for version {CURRENT_VERSION}.")
+        raise Exception(f"No conditions found for version {tes_version}.")
 
     return rows
 
 
 async def get_condition_by_id_db(
-    id: UUID, db: AsyncDatabaseConnection
+    id: UUID, db: AsyncDatabaseConnection, tes_version: str
 ) -> DbCondition | None:
     """
     Gets a single, specific condition from the database by its primary key (UUID).
@@ -69,7 +71,7 @@ async def get_condition_by_id_db(
             WHERE id = %s AND version = %s
             """
 
-    params = (id, CURRENT_VERSION)
+    params = (id, tes_version)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -166,7 +168,7 @@ async def get_condition_codes_by_condition_id_db(
 
 
 async def get_conditions_by_child_rsg_snomed_codes_db(
-    db: AsyncDatabaseConnection, codes: list[str]
+    db: AsyncDatabaseConnection, codes: list[str], tes_version: str
 ) -> list[DbCondition]:
     """
     Given a list of RC SNOMED codes, find their assocaited CG rows.
@@ -179,6 +181,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     Args:
         db: The database connection.
         codes: A list of RC SNOMED codes extracted from an RR.
+        tes_version: The version of the TES to filter the condition codes on.
 
     Returns:
         A list of matching DbCondition objects.
@@ -205,7 +208,7 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
 
     params = (
         codes,
-        CURRENT_VERSION,
+        tes_version,
     )
 
     async with db.get_connection() as conn:

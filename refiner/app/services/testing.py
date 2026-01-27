@@ -4,6 +4,7 @@ from typing import Literal, TypedDict, cast
 from uuid import UUID
 
 from app.services.ecr.process_eicr import get_section_loinc_codes
+from app.services.ecr.specification import LATEST_TES_VERSION
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
@@ -463,7 +464,7 @@ async def _map_rc_codes_to_conditions(
     # STEP 1:
     # get all conditions associated with the RC SNOMED codes
     possible_conditions = await get_conditions_by_child_rsg_snomed_codes_db(
-        db=db, codes=rc_codes
+        db=db, codes=rc_codes, tes_version=LATEST_TES_VERSION
     )
 
     # STEP 2:

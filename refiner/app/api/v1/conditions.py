@@ -3,6 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.services.ecr.specification import LATEST_TES_VERSION
+
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
@@ -42,7 +44,7 @@ async def get_conditions(
     Returns:
         list[Condition]: List of all conditions.
     """
-    conditions = await get_conditions_db(db=db)
+    conditions = await get_conditions_db(db=db, tes_version=LATEST_TES_VERSION)
     return [
         GetConditionsResponse(id=condition.id, display_name=condition.display_name)
         for condition in conditions
@@ -83,7 +85,9 @@ async def get_condition(
     Returns:
         GetCondition: Info about the condition
     """
-    condition = await get_condition_by_id_db(id=condition_id, db=db)
+    condition = await get_condition_by_id_db(
+        id=condition_id, db=db, tes_version=LATEST_TES_VERSION
+    )
 
     if not condition:
         raise HTTPException(

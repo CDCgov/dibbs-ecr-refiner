@@ -8,10 +8,14 @@ from psycopg.types.json import Jsonb
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 
-from ...services.ecr.specification import load_spec
+from ...services.ecr.specification import LATEST_TES_VERSION, load_spec
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import DbConfiguration, DbConfigurationCustomCode, DbConfigurationStatus
+from .model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+    DbConfigurationStatus,
+)
 
 EMPTY_JSONB = Jsonb([])
 
@@ -39,7 +43,8 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        section_processing
+        section_processing,
+        tes_version
     )
     VALUES (
         %s,
@@ -49,7 +54,8 @@ async def insert_configuration_db(
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
-        %s::jsonb
+        %s::jsonb,
+        %s
     )
     RETURNING
         id,
@@ -81,7 +87,7 @@ async def insert_configuration_db(
         for loinc_code, section_spec in spec.sections.items()
     ]
 
-    params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
+    params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb, str]
     if config_to_clone:
         params = (
             jurisdiction_id,
@@ -116,6 +122,7 @@ async def insert_configuration_db(
                     for c in config_to_clone.section_processing
                 ]
             ),
+            LATEST_TES_VERSION,
         )
     else:
         params = (
@@ -134,6 +141,7 @@ async def insert_configuration_db(
             EMPTY_JSONB,
             # section_processing
             Jsonb(section_processing_defaults),
+            LATEST_TES_VERSION,
         )
 
     async with db.get_connection() as conn:

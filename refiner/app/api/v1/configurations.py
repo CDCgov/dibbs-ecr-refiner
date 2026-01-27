@@ -84,6 +84,7 @@ from ...db.demo.model import Condition
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services.aws.s3 import upload_refined_ecr
+from ...services.ecr.specification import LATEST_TES_VERSION
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
 from ...services.xslt import (
@@ -217,7 +218,9 @@ async def create_configuration(
     """
 
     # get condition by ID
-    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
+    condition = await get_condition_by_id_db(
+        id=body.condition_id, db=db, tes_version=LATEST_TES_VERSION
+    )
 
     if not condition:
         raise HTTPException(
@@ -438,13 +441,20 @@ async def get_configuration(
     # precomputed set of included_conditions ids
     included_ids = {c.id for c in config.included_conditions}
 
-    # Fetch all conditions from the database
-    all_conditions = await get_conditions_db(db=db)
-
     latest_config = await get_latest_config_db(
         jurisdiction_id=jd,
         condition_canonical_url=config.condition_canonical_url,
         db=db,
+    )
+
+    if not latest_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    # Fetch all conditions from the database
+    all_conditions = await get_conditions_db(
+        db=db, tes_version=latest_config.tes_version
     )
 
     # Build IncludedCondition objects, marking which are associated
@@ -678,7 +688,9 @@ async def associate_condition_codeset_with_configuration(
             detail="Trying to update a non-draft configuration",
         )
 
-    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
+    condition = await get_condition_by_id_db(
+        id=body.condition_id, db=db, tes_version=config.tes_version
+    )
 
     if not condition:
         raise HTTPException(
@@ -761,7 +773,9 @@ async def remove_condition_codeset_from_configuration(
             detail="Trying to update a non-draft configuration",
         )
 
-    condition = await get_condition_by_id_db(id=condition_id, db=db)
+    condition = await get_condition_by_id_db(
+        id=condition_id, db=db, tes_version=config.tes_version
+    )
 
     if not condition:
         raise HTTPException(
@@ -1359,7 +1373,7 @@ async def run_configuration_test(
 
     # get the primary DbCondition row that is linked to the DbConfiguration for the jurisdiction
     primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id, db=db
+        id=configuration.condition_id, db=db, tes_version=configuration.tes_version
     )
     if not primary_condition:
         raise HTTPException(
