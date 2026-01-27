@@ -54,7 +54,6 @@ services:
     ports:
       - "9000:8080"
     environment:
-      - ENV=local
       - AWS_ACCESS_KEY_ID=refiner
       - AWS_SECRET_ACCESS_KEY=refiner
       - S3_ENDPOINT_URL=http://localstack:4566
