@@ -1,7 +1,6 @@
 import json
 import logging
 from pathlib import Path
-from typing import TypeAlias
 
 from fhir.resources.valueset import ValueSet
 
@@ -14,7 +13,7 @@ DATA_DIR = Path(__file__).parent.parent / "data" / "source-tes-groupers"
 
 # type alias
 # a simple tuple for this script's purpose: (system_url, code)
-SimpleCode: TypeAlias = tuple[str, str]
+type SimpleCode = tuple[str, str]
 
 
 class ConditionVersion:
