@@ -1022,6 +1022,7 @@ export const useActivateConfiguration = <TError = AxiosError<HTTPValidationError
 Args:
     configuration_id (UUID): ID of the configuration to update
     user (DbUser): The logged-in user
+    logger (Logger): The standard application logger
     db (AsyncDatabaseConnection): Database connection
 
 Raises:
