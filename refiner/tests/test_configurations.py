@@ -275,11 +275,6 @@ def mock_db_functions(monkeypatch):
         AsyncMock(return_value=None),
     )
 
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_latest_tes_version_name_db",
-        AsyncMock(return_value="4.0.0"),
-    )
-
     yield
 
 
