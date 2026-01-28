@@ -32,6 +32,7 @@ REFINER_INPUT_PREFIX = os.getenv("REFINER_INPUT_PREFIX", "RefinerInput/")
 REFINER_OUTPUT_PREFIX = os.getenv("REFINER_OUTPUT_PREFIX", "RefinerOutput/")
 REFINER_COMPLETE_PREFIX = os.getenv("REFINER_COMPLETE_PREFIX", "RefinerComplete/")
 S3_BUCKET_CONFIG = os.getenv("S3_BUCKET_CONFIG")
+S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
 
 class RefinerCompleteFile(TypedDict):
@@ -300,7 +301,11 @@ def lambda_handler(event, context):
 
             # Initialize the S3 client
             region = record["awsRegion"]
-            s3_client = boto3.client("s3", region_name=region)
+            s3_client = boto3.client(
+                "s3",
+                region_name=region,
+                endpoint_url=S3_ENDPOINT_URL,
+            )
 
             # Parse the EventBridge S3 event from the SQS message body
             s3_event = json.loads(record["body"])
