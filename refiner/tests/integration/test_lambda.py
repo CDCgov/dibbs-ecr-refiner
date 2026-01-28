@@ -4,6 +4,7 @@ from uuid import uuid4
 import boto3
 import httpx
 import pytest
+import pytest_asyncio
 from botocore.client import Config
 
 from tests.fixtures.loader import load_fixture_str
@@ -25,7 +26,7 @@ def s3_client():
 
 
 @pytest.fixture
-def test_config(s3_client):
+def default_setup(s3_client):
     """
     Creates a test configuration in S3 for Lambda to consume.
     Cleans up after the test if needed.
@@ -37,7 +38,6 @@ def test_config(s3_client):
     except s3_client.exceptions.BucketAlreadyOwnedByYou:
         pass
 
-    # 186747009
     activation_key = "SDDH/840539006/1/active.json"
     activation_content = load_fixture_str("lambda/active.json")
 
@@ -119,6 +119,7 @@ def test_config(s3_client):
     yield {
         "rr_key": input_rr_key,
         "eicr_key": eicr_key,
+        "current_key": current_key,
         "bucket": BUCKET,
         "event": event,
     }
@@ -130,30 +131,89 @@ def test_config(s3_client):
     s3_client.delete_object(Bucket=BUCKET, Key=eicr_key)
 
 
+@pytest_asyncio.fixture
+async def http_client():
+    async with httpx.AsyncClient() as client:
+        yield client
+
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestLambda:
-    async def test_lambda_successful_refinement(self, s3_client, test_config):
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(LAMBDA_BASE_URL, json=test_config["event"])
+    async def test_lambda_successful_refinement(
+        self, http_client, s3_client, default_setup
+    ):
+        bucket = default_setup["bucket"]
 
-            assert resp.status_code == 200
+        resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
 
-            # Assert refined RR was created
-            expected_refined_rr_key = (
-                "RefinerOutput/persistence/id/SDDH/840539006/refined_RR.xml"
-            )
-            rr_response = s3_client.get_object(
-                Bucket=test_config["bucket"], Key=expected_refined_rr_key
-            )
+        assert resp.status_code == 200
 
-            assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        # Assert refined RR was created
+        expected_refined_rr_key = (
+            "RefinerOutput/persistence/id/SDDH/840539006/refined_RR.xml"
+        )
+        rr_response = s3_client.get_object(Bucket=bucket, Key=expected_refined_rr_key)
 
-            # Assert refined eICR was created
-            expected_refined_eicr_key = (
-                "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
-            )
-            eicr_response = s3_client.get_object(
-                Bucket=test_config["bucket"], Key=expected_refined_eicr_key
-            )
-            assert eicr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+        # Assert refined eICR was created
+        expected_refined_eicr_key = (
+            "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
+        )
+        eicr_response = s3_client.get_object(
+            Bucket=bucket, Key=expected_refined_eicr_key
+        )
+        assert eicr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    async def test_lambda_current_file_null_version(
+        self, http_client, s3_client, default_setup
+    ):
+        bucket = default_setup["bucket"]
+
+        # Set version to null
+        current_file_content = {"version": None}
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=default_setup["current_key"],
+            Body=json.dumps(current_file_content, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
+        assert resp.status_code == 200
+
+    async def test_lambda_current_file_missing_activation_file(
+        self, http_client, s3_client, default_setup
+    ):
+        bucket = default_setup["bucket"]
+
+        # Set version to null
+        current_file_content = {"version": 2}
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=default_setup["current_key"],
+            Body=json.dumps(current_file_content, indent=2).encode("utf-8"),
+            ContentType="application/json",
+        )
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
+        assert resp.status_code == 200
+
+        resp_json = resp.json()
+        error_message = resp_json["errorMessage"]
+        assert (
+            error_message
+            == "Activated configuration file could not be read at: SDDH/840539006/2/active.json"
+        )
+
+    async def test_lambda_missing_current_file(
+        self, http_client, s3_client, default_setup
+    ):
+        bucket = default_setup["bucket"]
+
+        # Ensure no current key exists
+        s3_client.delete_object(Bucket=bucket, Key=default_setup["current_key"])
+
+        resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
+        assert resp.status_code == 200
