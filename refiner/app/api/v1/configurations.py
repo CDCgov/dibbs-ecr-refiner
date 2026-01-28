@@ -224,12 +224,9 @@ async def create_configuration(
     """
     Create a new configuration for a jurisdiction.
     """
-    latest_tes_version = await get_latest_tes_version_name_db(db)
 
     # get condition by ID
-    condition = await get_condition_by_id_db(
-        id=body.condition_id, db=db, tes_version=latest_tes_version
-    )
+    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
     if not condition:
         raise HTTPException(
@@ -697,9 +694,7 @@ async def associate_condition_codeset_with_configuration(
             detail="Trying to update a non-draft configuration",
         )
 
-    condition = await get_condition_by_id_db(
-        id=body.condition_id, db=db, tes_version=config.tes_version
-    )
+    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
     if not condition:
         raise HTTPException(
@@ -782,9 +777,7 @@ async def remove_condition_codeset_from_configuration(
             detail="Trying to update a non-draft configuration",
         )
 
-    condition = await get_condition_by_id_db(
-        id=condition_id, db=db, tes_version=config.tes_version
-    )
+    condition = await get_condition_by_id_db(id=condition_id, db=db)
 
     if not condition:
         raise HTTPException(
@@ -1382,7 +1375,7 @@ async def run_configuration_test(
 
     # get the primary DbCondition row that is linked to the DbConfiguration for the jurisdiction
     primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id, db=db, tes_version=configuration.tes_version
+        id=configuration.condition_id, db=db
     )
     if not primary_condition:
         raise HTTPException(

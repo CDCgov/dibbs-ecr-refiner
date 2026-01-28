@@ -53,7 +53,7 @@ async def get_conditions_db(
 
 
 async def get_condition_by_id_db(
-    id: UUID, db: AsyncDatabaseConnection, tes_version: str
+    id: UUID, db: AsyncDatabaseConnection
 ) -> DbCondition | None:
     """
     Gets a single, specific condition from the database by its primary key (UUID).
@@ -71,10 +71,10 @@ async def get_condition_by_id_db(
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE id = %s AND version = %s
+            WHERE id = %s
             """
 
-    params = (id, tes_version)
+    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

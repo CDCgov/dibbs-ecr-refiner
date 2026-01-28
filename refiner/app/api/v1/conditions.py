@@ -91,9 +91,7 @@ async def get_condition(
     if not tes_version:
         tes_version = await get_latest_tes_version_name_db(db)
 
-    condition = await get_condition_by_id_db(
-        id=condition_id, db=db, tes_version=tes_version
-    )
+    condition = await get_condition_by_id_db(id=condition_id, db=db)
 
     if not condition:
         raise HTTPException(
