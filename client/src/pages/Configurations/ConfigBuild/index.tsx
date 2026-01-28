@@ -991,9 +991,7 @@ export function CustomCodeModal({
             onBlur={() => {
               const trimmedCode = form.code.trim(); // full trim (leading + trailing)
               if (deduplicated_codes.includes(trimmedCode)) {
-                setError(
-                  `The code "${trimmedCode}" already exists in the condition code set.`
-                );
+                setError(`The code "${trimmedCode}" already exists.`);
               } else {
                 setForm((prev) => ({ ...prev, code: trimmedCode })); // ensure stored value is clean
               }

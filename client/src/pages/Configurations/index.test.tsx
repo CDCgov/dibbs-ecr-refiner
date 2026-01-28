@@ -93,9 +93,7 @@ describe('Configurations Page', () => {
           </TestQueryClientProvider>
         </MemoryRouter>
       );
-      expect(
-        screen.getByText('Your reportable condition configurations')
-      ).toBeInTheDocument();
+      expect(screen.getByText('Configurations')).toBeInTheDocument();
     });
   });
   beforeEach(() => vi.resetAllMocks());
@@ -103,7 +101,7 @@ describe('Configurations Page', () => {
   it('should render the Configurations page with title and search bar', async () => {
     renderPageView();
     expect(
-      screen.getByText('Your reportable condition configurations')
+      screen.getByRole('heading', { name: 'Configurations' })
     ).toBeInTheDocument();
     expect(
       await screen.findByPlaceholderText('Search configurations')

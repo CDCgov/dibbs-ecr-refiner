@@ -25,7 +25,7 @@ test.describe('should be able to access independent testing', () => {
   }) => {
     // start on home screen
     await expect(
-      page.getByText('Your reportable condition configurations')
+      page.getByRole('heading', { name: 'Configurations' })
     ).toBeVisible();
 
     // go to independent testing flow
@@ -69,7 +69,7 @@ test.describe('should be able to access independent testing', () => {
       .getByRole('link', { name: 'Link back to the home configurations page' })
       .click();
     await expect(
-      page.getByText('Your reportable condition configurations')
+      page.getByRole('heading', { name: 'Configurations' })
     ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
@@ -121,7 +121,7 @@ test.describe('should be able to access independent testing', () => {
       .getByRole('link', { name: 'Link back to the home configurations page' })
       .click();
     await expect(
-      page.getByText('Your reportable condition configurations')
+      page.getByRole('heading', { name: 'Configurations' })
     ).toBeVisible();
 
     // configure influenza
