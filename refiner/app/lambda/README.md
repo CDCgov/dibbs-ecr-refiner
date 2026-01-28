@@ -2,6 +2,18 @@
 
 This package is exclusively used to build a version of the Refiner intended to run as an AWS Lambda function.
 
+## Running the eCR Refiner Lambda in production
+
+### Environment variables
+
+| Name | Description | Required | Default value |
+| --- | --- | --- | --- |
+| `S3_BUCKET_CONFIG` | S3 directory containing jurisdiction configuration files | Yes | N/A |
+| `EICR_INPUT_PREFIX` | S3 directory containing eICR files | No | `eCRMessageV2/` |
+| `REFINER_INPUT_PREFIX` | S3 directory containing RR files | No | `RefinerInput/` |
+| `REFINER_OUTPUT_PREFIX` | S3 directory where refined files are written | No | `eCRMessageV2/` |
+| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success | No | `eCRMessageV2/` |
+
 ## Build & File Structure
 
 The Lambda function is packaged as a Docker image and is defined by [Dockerfile.lambda](/Dockerfile.lambda).

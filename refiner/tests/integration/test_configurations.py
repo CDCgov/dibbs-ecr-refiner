@@ -6,6 +6,9 @@ from psycopg.rows import dict_row
 
 from tests.test_conditions import TEST_SESSION_TOKEN
 
+LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/SDDH"
+EXPECTED_DROWNING_RSG_CODE = "212962007"
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio
@@ -60,7 +63,7 @@ class TestConfigurations:
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
-                SELECT id, display_name
+                SELECT id, display_name, version, canonical_url
                 FROM conditions
                 WHERE display_name = 'Drowning and Submersion'
                 AND version = '4.0.0'
@@ -73,17 +76,72 @@ class TestConfigurations:
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
-                SELECT id FROM configurations
-                WHERE name = 'Drowning and Submersion' AND status = 'draft';
+                SELECT id, jurisdiction_id, version
+                FROM configurations
+                WHERE name = 'Drowning and Submersion'
+                AND status = 'draft';
                 """
             )
             draft_config = await cur.fetchone()
-        if draft_config:
+            assert draft_config is not None
+
             draft_id = draft_config["id"]
             response = await authed_client.patch(
                 f"/api/v1/configurations/{draft_id}/activate"
             )
             assert response.status_code == 200
+
+            # Activation file and content
+            activation_file = await authed_client.get(
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/active.json"
+            )
+            activation_file_json = activation_file.json()
+
+            TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
+            TOTAL_EXPECTED_SECTION_COUNT = 9
+            TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
+                1  # No other conditions were included
+            )
+
+            assert (
+                len(activation_file_json["codes"])
+                == TOTAL_EXPECTED_CONDITION_CODE_COUNT
+            )
+            assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
+            assert (
+                len(activation_file_json["included_condition_rsg_codes"])
+                == TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES
+            )
+            assert (
+                activation_file_json["included_condition_rsg_codes"][0]
+                == EXPECTED_DROWNING_RSG_CODE
+            )
+
+            # Metadata file and content
+            metadata_file = await authed_client.get(
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/metadata.json"
+            )
+            metadata_file_json = metadata_file.json()
+            assert metadata_file_json["condition_name"] == condition["display_name"]
+            assert metadata_file_json["canonical_url"] == condition["canonical_url"]
+            assert metadata_file_json["tes_version"] == condition["version"]
+            assert (
+                metadata_file_json["jurisdiction_id"] == draft_config["jurisdiction_id"]
+            )
+            assert (
+                metadata_file_json["configuration_version"] == draft_config["version"]
+            )
+            assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
+            assert (
+                metadata_file_json["child_rsg_snomed_codes"][0]
+                == EXPECTED_DROWNING_RSG_CODE
+            )
+
+            # Current file and content
+            current_file = await authed_client.get(
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+            )
+            assert current_file.json()["version"] == 1
 
         # Now create a new configuration for activation
         payload = {"condition_id": str(condition["id"])}
@@ -102,6 +160,17 @@ class TestConfigurations:
         data = response.json()
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "active"
+
+        # Check that new files exist in S3
+        activation_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/2/active.json"
+        )
+        activation_file_json = activation_file.json()
+
+        current_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+        )
+        assert current_file.json()["version"] == 2
 
         # Create another configuration draft and try to activate it. Assert that the confirmation
         # returned matches the new draft ID.
@@ -126,17 +195,13 @@ class TestConfigurations:
         validation_response = await authed_client.get(
             f"/api/v1/configurations/{initial_configuration_id}"
         )
-        if validation_response.status_code != 200:
-            print("Validation response error:", validation_response.text)
-        # NOTE: The backend currently returns a 500 error when fetching an inactive configuration.
-        # This is a bug and should be fixed in the API. Accepting 500 here as a temporary workaround.
-        assert validation_response.status_code in [200, 404, 500]
-        if validation_response.status_code == 200:
-            validation_response_data = validation_response.json()
-            assert validation_response_data["id"] == initial_configuration_id
-            assert validation_response_data["status"] == "inactive"
+        assert validation_response.status_code == 200
 
-    async def test_activate_rollback(self, setup, db_conn):
+        validation_response_data = validation_response.json()
+        assert validation_response_data["id"] == initial_configuration_id
+        assert validation_response_data["status"] == "inactive"
+
+    async def test_activate_rollback(self, setup, authed_client, db_conn):
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
@@ -181,6 +246,15 @@ class TestConfigurations:
                     assert configuration is not None
                     assert configuration["status"] == "inactive"
 
+                    # Expect previous version to still be the active version
+                    current_file_resp = await authed_client.get(
+                        f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+                    )
+                    assert current_file_resp.status_code == 200
+
+                    # This is the previously activated version from the test above
+                    assert current_file_resp.json()["version"] == 3
+
                 assert response.status_code == 500
 
     async def test_deactivate_configuration(self, setup, authed_client, db_conn):
@@ -206,3 +280,12 @@ class TestConfigurations:
         data = response.json()
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "inactive"
+
+        # Expect null version when deactivated
+        current_file_resp = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+        )
+        assert current_file_resp.status_code == 200
+
+        # This is the previously activated version from the test above
+        assert current_file_resp.json()["version"] is None
