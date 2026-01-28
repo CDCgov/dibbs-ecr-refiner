@@ -92,6 +92,7 @@ class DbConfiguration:
     last_activated_by: UUID | None
     created_by: UUID
     condition_canonical_url: str
+    tes_version: str
     s3_urls: list[str]
 
     @classmethod
@@ -132,6 +133,7 @@ class DbConfiguration:
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
             condition_canonical_url=row["condition_canonical_url"],
+            tes_version=row["tes_version"],
             s3_urls=row["s3_urls"],
         )
 

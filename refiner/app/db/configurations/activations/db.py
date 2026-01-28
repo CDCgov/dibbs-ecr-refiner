@@ -45,6 +45,7 @@ async def _activate_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls;
         """
 
@@ -103,6 +104,7 @@ async def _deactivate_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls
         ),
         unchanged AS (
@@ -121,6 +123,7 @@ async def _deactivate_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls
             FROM configurations
             WHERE id = %s

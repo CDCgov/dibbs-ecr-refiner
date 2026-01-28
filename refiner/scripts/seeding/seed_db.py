@@ -89,9 +89,15 @@ def seed_database(db_url, db_password) -> None:
     json_files = [
         file for file in TES_DATA_DIR.glob("*.json") if file.name != "manifest.json"
     ]
+    tes_versions = []
     for file_path in json_files:
         with open(file_path) as file:
             data = json.load(file)
+            if "condition_grouper" in file_path.name:
+                version_name = file_path.name.split("grouper_", 1)[1].split(".json")[0]
+                tes_versions.append(
+                    {"version": version_name, "is_current_version": False}
+                )
             if "valuesets" in data:
                 for valueset in data.get("valuesets", []):
                     key = (valueset.get("url"), valueset.get("version"))
@@ -163,6 +169,7 @@ def seed_database(db_url, db_password) -> None:
                     "configurations",
                     "sessions",
                     "users",
+                    "tes_versions",
                 ]
                 for table in tables:
                     try:
@@ -175,6 +182,21 @@ def seed_database(db_url, db_password) -> None:
                     ):
                         logging.warning(f"Table {table} does not exist, skipping.")
 
+                if tes_versions:
+                    logging.info(
+                        f"⏳ Inserting {len(tes_versions)} TES version records..."
+                    )
+                    versions_to_insert = sorted(
+                        # TODO: need to figure out a safter way of sorting on this key
+                        tes_versions,
+                        key=lambda v: v["version"],
+                    )
+                    versions_to_insert[-1]["is_current_version"] = True
+                    insert_query = sql.SQL("""
+                        INSERT into public.tes_versions (version, is_current_version)
+                        VALUES (%(version)s, %(is_current_version)s)
+                    """)
+                    cursor.executemany(insert_query, versions_to_insert)
                 if conditions_to_insert:
                     logging.info(
                         f"⏳ Inserting {len(conditions_to_insert)} condition records..."

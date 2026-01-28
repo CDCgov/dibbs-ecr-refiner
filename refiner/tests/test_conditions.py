@@ -69,6 +69,14 @@ async def test_get_conditions(monkeypatch, authed_client):
         "app.api.v1.conditions.get_conditions_db", fake_get_conditions_db
     )
 
+    async def fake_get_latest_tes_version_name_db(db):
+        return "4.0.0"
+
+    monkeypatch.setattr(
+        "app.api.v1.conditions.get_latest_tes_version_name_db",
+        fake_get_latest_tes_version_name_db,
+    )
+
     response = await authed_client.get("/api/v1/conditions/")
 
     assert response.status_code == status.HTTP_200_OK
@@ -95,12 +103,20 @@ async def test_get_condition_found(monkeypatch, authed_client):
         rxnorm_codes=[make_db_condition_coding("55555", "Asthma RXNORM")],
     )
 
+    async def fake_get_latest_tes_version_name_db(db):
+        return "4.0.0"
+
+    monkeypatch.setattr(
+        "app.api.v1.conditions.get_latest_tes_version_name_db",
+        fake_get_latest_tes_version_name_db,
+    )
+
     fake_codes = [
         GetConditionCode(system="LOINC", code="1234-5", description="test-code-1"),
         GetConditionCode(system="SNOMED", code="67890", description="test-code-2"),
     ]
 
-    async def fake_get_condition_by_id_db(id, db):
+    async def fake_get_condition_by_id_db(id, db, tes_version=None):
         return fake_condition if id == condition_id else None
 
     async def fake_get_condition_codes_by_condition_id_db(id, db):
@@ -128,7 +144,7 @@ async def test_get_condition_found(monkeypatch, authed_client):
 
 @pytest.mark.asyncio
 async def test_get_condition_not_found(monkeypatch, authed_client):
-    async def fake_get_condition_by_id_db(id, db):
+    async def fake_get_condition_by_id_db(id, db, tes_version=None):
         return None
 
     monkeypatch.setattr(
@@ -136,6 +152,13 @@ async def test_get_condition_not_found(monkeypatch, authed_client):
         fake_get_condition_by_id_db,
     )
 
+    async def get_latest_tes_version_metadata(db):
+        return {"version": "4.0.0", "is_current_version": True, "id": uuid4()}
+
+    monkeypatch.setattr(
+        "app.api.v1.conditions.get_latest_tes_version_name_db",
+        get_latest_tes_version_metadata,
+    )
     response = await authed_client.get(f"/api/v1/conditions/{uuid4()}")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND

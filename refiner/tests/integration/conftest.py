@@ -352,7 +352,7 @@ def setup(request):
     DO $$
     BEGIN
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version, tes_version
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -363,12 +363,13 @@ def setup(request):
             '[]'::jsonb,
             '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
-            1
+            1,
+            '4.0.0'
         )
         ON CONFLICT DO NOTHING;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version, tes_version
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -379,12 +380,13 @@ def setup(request):
             '[]'::jsonb,
             '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
-            1
+            1,
+            '4.0.0'
         )
         ON CONFLICT DO NOTHING;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version, tes_version
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -395,7 +397,8 @@ def setup(request):
             '[]'::jsonb,
             '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
-            1
+            1,
+            '4.0.0'
         )
         ON CONFLICT DO NOTHING;
 

@@ -446,13 +446,20 @@ async def get_configuration(
     # precomputed set of included_conditions ids
     included_ids = {c.id for c in config.included_conditions}
 
-    # Fetch all conditions from the database
-    all_conditions = await get_conditions_db(db=db)
-
     latest_config = await get_latest_config_db(
         jurisdiction_id=jd,
         condition_canonical_url=config.condition_canonical_url,
         db=db,
+    )
+
+    if not latest_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    # Fetch all conditions from the database
+    all_conditions = await get_conditions_db(
+        db=db, tes_version=latest_config.tes_version
     )
 
     # Build IncludedCondition objects, marking which are associated

@@ -8,11 +8,16 @@ from psycopg.types.json import Jsonb
 import app.services.ecr.specification as spec_mod
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
+from app.db.tes_version.db import get_latest_tes_version_name_db
 
 from ...services.ecr.specification import load_spec
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import DbConfiguration, DbConfigurationCustomCode, DbConfigurationStatus
+from .model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+    DbConfigurationStatus,
+)
 
 EMPTY_JSONB = Jsonb([])
 
@@ -40,7 +45,8 @@ async def insert_configuration_db(
         included_conditions,
         custom_codes,
         local_codes,
-        section_processing
+        section_processing,
+        tes_version
     )
     VALUES (
         %s,
@@ -50,7 +56,8 @@ async def insert_configuration_db(
         %s::jsonb,
         %s::jsonb,
         %s::jsonb,
-        %s::jsonb
+        %s::jsonb,
+        %s
     )
     RETURNING
         id,
@@ -67,6 +74,7 @@ async def insert_configuration_db(
         last_activated_by,
         created_by,
         condition_canonical_url,
+        tes_version,
         s3_urls
     """
 
@@ -91,8 +99,9 @@ async def insert_configuration_db(
         }
         for loinc_code, section_spec in spec.sections.items()
     ]
+    latest_tes_version = await get_latest_tes_version_name_db(db=db)
 
-    params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
+    params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb, str]
     if config_to_clone:
         params = (
             jurisdiction_id,
@@ -132,6 +141,7 @@ async def insert_configuration_db(
                     for c in config_to_clone.section_processing
                 ]
             ),
+            latest_tes_version,
         )
     else:
         params = (
@@ -150,6 +160,7 @@ async def insert_configuration_db(
             EMPTY_JSONB,
             # section_processing
             Jsonb(section_processing_defaults),
+            latest_tes_version,
         )
 
     async with db.get_connection() as conn:
@@ -196,6 +207,7 @@ async def get_configurations_db(
 			last_activated_by,
             created_by,
             condition_canonical_url,
+            tes_version,
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -234,6 +246,7 @@ async def get_configuration_by_id_db(
 			last_activated_by,
             created_by,
             condition_canonical_url,
+            tes_version,
             s3_urls
         FROM configurations
         WHERE id = %s
@@ -342,6 +355,7 @@ async def associate_condition_codeset_with_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls;
             """
 
@@ -421,6 +435,7 @@ async def disassociate_condition_codeset_with_configuration_db(
 			last_activated_by,
             created_by,
             condition_canonical_url,
+            tes_version,
             s3_urls;
     """
 
@@ -561,6 +576,7 @@ async def add_custom_code_to_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls;
             """
 
@@ -634,6 +650,7 @@ async def delete_custom_code_from_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls;
             """
 
@@ -704,6 +721,7 @@ async def edit_custom_code_from_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls;
             """
 
@@ -879,6 +897,7 @@ async def update_section_processing_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
+                tes_version,
                 s3_urls;
             """
 
@@ -931,6 +950,7 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
 			last_activated_by,
             created_by,
             condition_canonical_url,
+            tes_version,
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -994,6 +1014,7 @@ async def get_latest_config_db(
 			last_activated_by,
             created_by,
             condition_canonical_url,
+            tes_version,
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
@@ -1037,6 +1058,7 @@ async def get_active_config_db(
 			last_activated_by,
             created_by,
             condition_canonical_url,
+            tes_version,
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s

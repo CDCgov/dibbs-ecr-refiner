@@ -82,6 +82,7 @@ async def test_update_section_processing_valid():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        tes_version="1.0.0",
         s3_urls=[],
     )
     # The DB should return the updated row; build that row dict
@@ -105,6 +106,7 @@ async def test_update_section_processing_valid():
         "last_activated_by": mock_config.last_activated_by,
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
+        "tes_version": "1.0.0",
         "s3_urls": mock_config.s3_urls,
     }
 
@@ -158,6 +160,7 @@ async def test_update_section_processing_invalid_action():
         last_activated_by=None,
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
+        tes_version="1.0.0",
         s3_urls=[],
     )
 
@@ -181,6 +184,7 @@ async def test_update_section_processing_invalid_action():
         "last_activated_by": mock_config.last_activated_by,
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
+        "tes_version": "1.0.0",
         "s3_urls": mock_config.s3_urls,
     }
 

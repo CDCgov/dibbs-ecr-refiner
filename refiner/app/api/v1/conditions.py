@@ -3,6 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.db.tes_version.db import get_latest_tes_version_name_db
+
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
@@ -68,7 +70,9 @@ class GetConditionResponse:
     operation_id="getCondition",
 )
 async def get_condition(
-    condition_id: UUID, db: AsyncDatabaseConnection = Depends(get_db)
+    condition_id: UUID,
+    db: AsyncDatabaseConnection = Depends(get_db),
+    tes_version: str | None = None,
 ) -> GetConditionResponse:
     """
     Returns information about a given condition.
@@ -76,6 +80,7 @@ async def get_condition(
     Args:
         condition_id (UUID): ID of the condition
         db (AsyncDatabaseConnection): Database connection.
+        tes_version (str | None): Optional TES version filter, defaults to the latest version if not specified.
 
     Raises:
         HTTPException: 404 if no condition is found
@@ -83,6 +88,9 @@ async def get_condition(
     Returns:
         GetCondition: Info about the condition
     """
+    if not tes_version:
+        tes_version = await get_latest_tes_version_name_db(db)
+
     condition = await get_condition_by_id_db(id=condition_id, db=db)
 
     if not condition:
