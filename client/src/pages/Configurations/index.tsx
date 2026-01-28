@@ -68,9 +68,8 @@ export function Configurations() {
       <div className="flex flex-col gap-4 py-10">
         <Title>Configurations</Title>
         <p>
-          Configurations define which patient data is included in reports, such
-          as conditions, timeframes, and sections, for each reportable
-          condition.
+          Configurations define which patient data is included in refined eCR’s
+          for each reportable condition
         </p>
       </div>
       <div
