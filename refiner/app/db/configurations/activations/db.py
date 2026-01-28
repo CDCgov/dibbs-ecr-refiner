@@ -19,6 +19,7 @@ async def _activate_configuration_db(
     configuration_id: UUID,
     activated_by_user_id: UUID,
     jurisdiction_id: str,
+    s3_urls: list[str],
     *,
     cur: AsyncCursor[CursorType],
 ) -> DbConfiguration | None:
@@ -26,6 +27,7 @@ async def _activate_configuration_db(
             UPDATE configurations
             SET
                 status = 'active',
+                s3_urls = %s,
                 last_activated_by = %s
             WHERE id = %s
                 RETURNING
@@ -43,10 +45,12 @@ async def _activate_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
-                tes_version;
+                tes_version,
+                s3_urls;
         """
 
     params = (
+        s3_urls,
         activated_by_user_id,
         configuration_id,
     )
@@ -80,7 +84,9 @@ async def _deactivate_configuration_db(
     query = """
         WITH updated AS (
             UPDATE configurations
-            SET status = 'inactive'
+            SET
+                status = 'inactive',
+                s3_urls = NULL
             WHERE id = %s
             AND status = 'active'
             RETURNING
@@ -98,7 +104,8 @@ async def _deactivate_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
-                tes_version
+                tes_version,
+                s3_urls
         ),
         unchanged AS (
             SELECT
@@ -116,7 +123,8 @@ async def _deactivate_configuration_db(
                 last_activated_by,
                 created_by,
                 condition_canonical_url,
-                tes_version
+                tes_version,
+                s3_urls
             FROM configurations
             WHERE id = %s
             AND NOT EXISTS (SELECT 1 FROM updated)
@@ -152,6 +160,7 @@ async def activate_configuration_db(
     activated_by_user_id: UUID,
     canonical_url: str,
     jurisdiction_id: str,
+    s3_urls: list[str],
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -176,6 +185,7 @@ async def activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
                     jurisdiction_id=jurisdiction_id,
+                    s3_urls=s3_urls,
                     cur=cur,
                 )
                 if activated_config:
@@ -197,6 +207,7 @@ async def activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
                     jurisdiction_id=jurisdiction_id,
+                    s3_urls=s3_urls,
                     cur=cur,
                 )
                 if activated_config:

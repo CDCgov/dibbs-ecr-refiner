@@ -121,6 +121,7 @@ def mock_db_functions(monkeypatch):
         created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="url-1",
         tes_version="1.0.0",
+        s3_urls=[],
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_configuration_by_id_db",
@@ -193,6 +194,7 @@ def mock_db_functions(monkeypatch):
         created_by=MOCK_LOGGED_IN_USER_ID,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         tes_version="1.0.0",
+        s3_urls=[],
     )
 
     monkeypatch.setattr(

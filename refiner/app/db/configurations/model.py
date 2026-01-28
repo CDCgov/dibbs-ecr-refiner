@@ -49,12 +49,14 @@ class DbConfigurationSectionProcessing:
 
     Name is the section's name.
     Code is the LOINC code for the section.
-    Action is either: retain, refine, or remove
+    Action is either: retain, refine, or remove.
+    Versions is a list of versions this section appears in.
     """
 
     name: str
     code: str
     action: str
+    versions: list[str]
 
 
 DbConfigurationStatus = Literal["draft", "inactive", "active"]
@@ -91,6 +93,7 @@ class DbConfiguration:
     created_by: UUID
     condition_canonical_url: str
     tes_version: str
+    s3_urls: list[str]
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
@@ -117,8 +120,13 @@ class DbConfiguration:
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             section_processing=[
-                DbConfigurationSectionProcessing(**sp)
-                for sp in row["section_processing"]
+                DbConfigurationSectionProcessing(
+                    name=sp.get("name"),
+                    code=sp.get("code"),
+                    action=sp.get("action"),
+                    versions=sp.get("versions", []),
+                )
+                for sp in row.get("section_processing", []) or []
             ],
             version=row["version"],
             last_activated_at=row["last_activated_at"],
@@ -126,4 +134,59 @@ class DbConfiguration:
             created_by=row["created_by"],
             condition_canonical_url=row["condition_canonical_url"],
             tes_version=row["tes_version"],
+            s3_urls=row["s3_urls"],
         )
+
+
+@dataclass(frozen=True)
+class ConfigurationStoragePayload:
+    """
+    The model for a configuration that is being written to S3.
+    """
+
+    codes: set[str]
+    sections: list[dict[str, str]]
+    included_condition_rsg_codes: set[str]
+
+    def to_dict(self) -> dict:
+        """
+        Returns the ConfigurationStoragePayload represented as a dict.
+
+        Returns:
+            dict: ConfigurationStoragePayload represented as a dict
+        """
+        return {
+            "codes": sorted(self.codes),
+            "sections": self.sections,
+            "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
+        }
+
+
+@dataclass(frozen=True)
+class ConfigurationStorageMetadata:
+    """
+    The model for configuration metadata that is being written to S3.
+    """
+
+    condition_name: str
+    canonical_url: str
+    tes_version: str
+    jurisdiction_id: str
+    configuration_version: int
+    child_rsg_snomed_codes: list[str]
+
+    def to_dict(self) -> dict:
+        """
+        Returns the ConfigurationStorageMetadata represented as a dict.
+
+        Returns:
+            dict: ConfigurationStorageMetadata represented as a dict
+        """
+        return {
+            "condition_name": self.condition_name,
+            "canonical_url": self.canonical_url,
+            "tes_version": self.tes_version,
+            "jurisdiction_id": self.jurisdiction_id,
+            "configuration_version": self.configuration_version,
+            "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
+        }

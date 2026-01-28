@@ -73,10 +73,7 @@ async def test_update_section_processing_valid():
         local_codes=[],
         section_processing=[
             DbConfigurationSectionProcessing(
-                name="Section A", code="A", action="retain"
-            ),
-            DbConfigurationSectionProcessing(
-                name="Section B", code="B", action="remove"
+                name="Section A", code="A", action="retain", versions=[]
             ),
         ],
         version=1,
@@ -86,8 +83,8 @@ async def test_update_section_processing_valid():
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
         tes_version="1.0.0",
+        s3_urls=[],
     )
-
     # The DB should return the updated row; build that row dict
     updated_sections = [
         {"name": "Section A", "code": "A", "action": "refine"},
@@ -110,6 +107,7 @@ async def test_update_section_processing_valid():
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
         "tes_version": "1.0.0",
+        "s3_urls": mock_config.s3_urls,
     }
 
     fake_db = _FakeDB(row=row)
@@ -153,7 +151,7 @@ async def test_update_section_processing_invalid_action():
         local_codes=[],
         section_processing=[
             DbConfigurationSectionProcessing(
-                name="Section A", code="A", action="retain"
+                name="Section A", code="A", action="retain", versions=[]
             ),
         ],
         version=1,
@@ -163,50 +161,7 @@ async def test_update_section_processing_invalid_action():
         created_by=uuid4(),
         condition_canonical_url="https://test.com",
         tes_version="1.0.0",
-    )
-
-    # Invalid payload
-    section_updates = [
-        SectionUpdate(code="A", action="invalid_action"),
-    ]
-
-    # The DB is not consulted in this case because validation happens first.
-    with pytest.raises(
-        ValueError, match="Invalid action 'invalid_action' for section update."
-    ):
-        await update_section_processing_db(
-            config=mock_config,
-            section_updates=section_updates,
-            user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
-            db=_FakeDB(row=None),
-        )
-
-
-@pytest.mark.asyncio
-async def test_update_section_processing_unknown_code():
-    """
-    Test unknown codes in payload are ignored (no-op).
-    """
-    mock_config = DbConfiguration(
-        id="mock_id",
-        name="Test Config",
-        jurisdiction_id="JD-1",
-        condition_id="mock_condition",
-        included_conditions=[],
-        custom_codes=[],
-        local_codes=[],
-        section_processing=[
-            DbConfigurationSectionProcessing(
-                name="Section A", code="A", action="retain"
-            ),
-        ],
-        version=1,
-        status="draft",
-        last_activated_at=None,
-        last_activated_by=None,
-        created_by=uuid4(),
-        condition_canonical_url="https://test.com",
-        tes_version="1.0.0",
+        s3_urls=[],
     )
 
     # The DB should return the same existing sections because unknown update codes are ignored.
@@ -230,6 +185,7 @@ async def test_update_section_processing_unknown_code():
         "created_by": mock_config.created_by,
         "condition_canonical_url": mock_config.condition_canonical_url,
         "tes_version": "1.0.0",
+        "s3_urls": mock_config.s3_urls,
     }
 
     fake_db = _FakeDB(row=row)

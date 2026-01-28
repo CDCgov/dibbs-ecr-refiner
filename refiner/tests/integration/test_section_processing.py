@@ -50,8 +50,12 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
     # Arrange: existing configuration with two section_processing entries
     config_id = UUID(str(uuid4()))
     existing_sections = [
-        DbConfigurationSectionProcessing(name="Sec A", code="A", action="retain"),
-        DbConfigurationSectionProcessing(name="Sec B", code="B", action="refine"),
+        DbConfigurationSectionProcessing(
+            name="Sec A", code="A", action="retain", versions=[]
+        ),
+        DbConfigurationSectionProcessing(
+            name="Sec B", code="B", action="refine", versions=[]
+        ),
     ]
 
     initial_config = DbConfiguration(
@@ -70,12 +74,17 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url="https://test.com",
         tes_version="1.0.0",
+        s3_urls=[],
     )
 
     # Updated config returned by DB helper
     updated_sections = [
-        DbConfigurationSectionProcessing(name="Sec A", code="A", action="remove"),
-        DbConfigurationSectionProcessing(name="Sec B", code="B", action="refine"),
+        DbConfigurationSectionProcessing(
+            name="Sec A", code="A", action="remove", versions=[]
+        ),
+        DbConfigurationSectionProcessing(
+            name="Sec B", code="B", action="refine", versions=[]
+        ),
     ]
     updated_config = DbConfiguration(
         id=initial_config.id,
@@ -93,6 +102,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url=initial_config.condition_canonical_url,
         tes_version="1.0.0",
+        s3_urls=initial_config.s3_urls,
     )
 
     # Monkeypatch DB calls
@@ -137,7 +147,9 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
     # Arrange: existing configuration
     config_id = UUID(str(uuid4()))
     existing_sections = [
-        DbConfigurationSectionProcessing(name="Sec A", code="A", action="retain"),
+        DbConfigurationSectionProcessing(
+            name="Sec A", code="A", action="retain", versions=[]
+        ),
     ]
 
     initial_config = DbConfiguration(
@@ -156,6 +168,7 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
         created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url="https://test.com",
         tes_version="1.0.0",
+        s3_urls=[],
     )
 
     # Monkeypatch DB calls: update returns None to simulate failure
