@@ -32,7 +32,7 @@ REFINER_INPUT_PREFIX = os.getenv("REFINER_INPUT_PREFIX", "RefinerInput/")
 REFINER_OUTPUT_PREFIX = os.getenv("REFINER_OUTPUT_PREFIX", "RefinerOutput/")
 REFINER_COMPLETE_PREFIX = os.getenv("REFINER_COMPLETE_PREFIX", "RefinerComplete/")
 S3_BUCKET_CONFIG = os.getenv("S3_BUCKET_CONFIG")
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
+S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
 
 class RefinerCompleteFile(TypedDict):
