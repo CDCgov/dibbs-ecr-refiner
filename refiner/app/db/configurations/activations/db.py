@@ -42,7 +42,7 @@ async def _activate_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url
+                condition_canonical_url,
                 tes_version;
         """
 
@@ -97,7 +97,8 @@ async def _deactivate_configuration_db(
                 last_activated_at,
                 last_activated_by,
                 created_by,
-                condition_canonical_url
+                condition_canonical_url,
+                tes_version
         ),
         unchanged AS (
             SELECT
