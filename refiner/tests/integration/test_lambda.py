@@ -123,6 +123,7 @@ def default_setup(s3_client):
         "rr_key": rr_key,
         "eicr_key": eicr_key,
         "current_key": current_key,
+        "complete_key": f"RefinerComplete/{persistence_id}",
         "bucket": BUCKET,
         "event": event,
     }
@@ -175,6 +176,15 @@ class TestLambda:
             Bucket=bucket, Key=expected_refined_eicr_key
         )
         assert eicr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+        # Check generated RefinerComplete file
+        complete_response = s3_client.get_object(
+            Bucket=bucket, Key=default_setup["complete_key"]
+        )
+        complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+        assert expected_refined_eicr_key in complete_body["RefinerOutputFiles"]
+        assert expected_refined_rr_key in complete_body["RefinerOutputFiles"]
+        assert not complete_body["RefinerSkip"]
 
     async def test_lambda_current_file_null_version(
         self, http_client, s3_client, default_setup
