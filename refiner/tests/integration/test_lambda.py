@@ -14,6 +14,9 @@ LAMBDA_BASE_URL = "http://localhost:9000/2015-03-31/functions/function/invocatio
 
 @pytest.fixture
 def s3_client():
+    """
+    Creates an S3 client for manual interaction with Localstack within the tests.
+    """
     s3_client = boto3.client(
         "s3",
         endpoint_url="http://localhost:4566",  # localstack URL
@@ -28,7 +31,7 @@ def s3_client():
 @pytest.fixture
 def default_setup(s3_client):
     """
-    Creates a test configuration in S3 for Lambda to consume.
+    Creates a default test configuration in S3 for Lambda to consume.
     Cleans up after the test if needed.
     """
     BUCKET = "local-config-bucket"
@@ -65,10 +68,10 @@ def default_setup(s3_client):
     eicr_content = load_fixture_str("eicr_v1_1/mon_mothma_covid_influenza_eICR.xml")
 
     # Upload RR to S3
-    input_rr_key = f"RefinerInput/{persistence_id}"
+    rr_key = f"RefinerInput/{persistence_id}"
     s3_client.put_object(
         Bucket=BUCKET,
-        Key=input_rr_key,
+        Key=rr_key,
         Body=rr_content.encode("utf-8"),
         ContentType="application/xml",
     )
@@ -82,7 +85,7 @@ def default_setup(s3_client):
         ContentType="application/xml",
     )
 
-    # Build SQS-style event pointing to S3 object
+    # SQS style event pointing to the RR key
     event = {
         "Records": [
             {
@@ -101,7 +104,7 @@ def default_setup(s3_client):
                         "detail": {
                             "version": "0",
                             "bucket": {"name": BUCKET},
-                            "object": {"key": input_rr_key},
+                            "object": {"key": rr_key},
                             "size": 123,
                         },
                     }
@@ -117,7 +120,7 @@ def default_setup(s3_client):
     }
 
     yield {
-        "rr_key": input_rr_key,
+        "rr_key": rr_key,
         "eicr_key": eicr_key,
         "current_key": current_key,
         "bucket": BUCKET,
@@ -127,12 +130,15 @@ def default_setup(s3_client):
     # cleanup after test
     s3_client.delete_object(Bucket=BUCKET, Key=activation_key)
     s3_client.delete_object(Bucket=BUCKET, Key=current_key)
-    s3_client.delete_object(Bucket=BUCKET, Key=input_rr_key)
+    s3_client.delete_object(Bucket=BUCKET, Key=rr_key)
     s3_client.delete_object(Bucket=BUCKET, Key=eicr_key)
 
 
 @pytest_asyncio.fixture
 async def http_client():
+    """
+    Fixture to get an async client.
+    """
     async with httpx.AsyncClient() as client:
         yield client
 
@@ -143,6 +149,10 @@ class TestLambda:
     async def test_lambda_successful_refinement(
         self, http_client, s3_client, default_setup
     ):
+        """
+        Lambda should be able to successfully refine the RR and eICR when all of the
+        required files exist in their expected locations.
+        """
         bucket = default_setup["bucket"]
 
         resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
@@ -169,6 +179,12 @@ class TestLambda:
     async def test_lambda_current_file_null_version(
         self, http_client, s3_client, default_setup
     ):
+        """
+        Lambda should properly handle a current file will a `null` version,
+        e.g. {"version": null}
+
+        This tells Lambda the config is not active.
+        """
         bucket = default_setup["bucket"]
 
         # Set version to null
@@ -186,9 +202,14 @@ class TestLambda:
     async def test_lambda_current_file_missing_activation_file(
         self, http_client, s3_client, default_setup
     ):
+        """
+        Lambda should not perform any processing when it encounters an
+        unexpected configuration version. It should report a clear error message
+        explaining this.
+        """
         bucket = default_setup["bucket"]
 
-        # Set version to null
+        # Set version to a config version that doesn't exist
         current_file_content = {"version": 2}
         s3_client.put_object(
             Bucket=bucket,
@@ -210,6 +231,10 @@ class TestLambda:
     async def test_lambda_missing_current_file(
         self, http_client, s3_client, default_setup
     ):
+        """
+        Lambda should skip file processing when no current file exists for a reportable
+        condition since this means there is no activated configuration available to use.
+        """
         bucket = default_setup["bucket"]
 
         # Ensure no current key exists
