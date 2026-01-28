@@ -73,6 +73,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         last_activated_by=None,
         created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url="https://test.com",
+        s3_urls=[],
     )
 
     # Updated config returned by DB helper
@@ -99,6 +100,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         last_activated_by=initial_config.last_activated_by,
         created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url=initial_config.condition_canonical_url,
+        s3_urls=initial_config.s3_urls,
     )
 
     # Monkeypatch DB calls
@@ -163,6 +165,7 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
         last_activated_by=None,
         created_by=TEST_LOGGED_IN_USER_ID,
         condition_canonical_url="https://test.com",
+        s3_urls=[],
     )
 
     # Monkeypatch DB calls: update returns None to simulate failure

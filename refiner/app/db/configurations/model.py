@@ -92,6 +92,7 @@ class DbConfiguration:
     last_activated_by: UUID | None
     created_by: UUID
     condition_canonical_url: str
+    s3_urls: list[str]
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbConfiguration":
@@ -131,4 +132,59 @@ class DbConfiguration:
             last_activated_by=row["last_activated_by"],
             created_by=row["created_by"],
             condition_canonical_url=row["condition_canonical_url"],
+            s3_urls=row["s3_urls"],
         )
+
+
+@dataclass(frozen=True)
+class ConfigurationStoragePayload:
+    """
+    The model for a configuration that is being written to S3.
+    """
+
+    codes: set[str]
+    sections: list[dict[str, str]]
+    included_condition_rsg_codes: set[str]
+
+    def to_dict(self) -> dict:
+        """
+        Returns the ConfigurationStoragePayload represented as a dict.
+
+        Returns:
+            dict: ConfigurationStoragePayload represented as a dict
+        """
+        return {
+            "codes": sorted(self.codes),
+            "sections": self.sections,
+            "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
+        }
+
+
+@dataclass(frozen=True)
+class ConfigurationStorageMetadata:
+    """
+    The model for configuration metadata that is being written to S3.
+    """
+
+    condition_name: str
+    canonical_url: str
+    tes_version: str
+    jurisdiction_id: str
+    configuration_version: int
+    child_rsg_snomed_codes: list[str]
+
+    def to_dict(self) -> dict:
+        """
+        Returns the ConfigurationStorageMetadata represented as a dict.
+
+        Returns:
+            dict: ConfigurationStorageMetadata represented as a dict
+        """
+        return {
+            "condition_name": self.condition_name,
+            "canonical_url": self.canonical_url,
+            "tes_version": self.tes_version,
+            "jurisdiction_id": self.jurisdiction_id,
+            "configuration_version": self.configuration_version,
+            "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
+        }
