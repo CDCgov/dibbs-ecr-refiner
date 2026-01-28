@@ -16,6 +16,7 @@ COPY ./refiner/assets ./assets
 # Copy refiner modules
 COPY ./refiner/app/core app/core
 COPY ./refiner/app/services app/services
+COPY ./refiner/app/db app/db
 
 # Handler entrypoint
 CMD [ "app.lambda.lambda_function.lambda_handler" ]
