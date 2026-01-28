@@ -449,10 +449,9 @@ describe('Config builder page', () => {
     await userEvent.tab(); // triggers onBlur
 
     expect(
-      await screen.findByText(
-        'The code "123456" already exists in the condition code set.',
-        { selector: 'p' }
-      )
+      await screen.findByText('The code "123456" already exists.', {
+        selector: 'p',
+      })
     ).toBeInTheDocument();
     expect(
       screen.getByText('Add custom code', { selector: 'button' })

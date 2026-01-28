@@ -225,7 +225,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .click();
     await page
       .getByRole('heading', {
-        name: 'Your reportable condition configurations',
+        name: 'Configurations',
       })
       .click();
     await page.getByTestId('table').getByText(configurationToTest).click();

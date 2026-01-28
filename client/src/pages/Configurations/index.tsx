@@ -66,10 +66,11 @@ export function Configurations() {
   return (
     <section className="mx-auto p-3">
       <div className="flex flex-col gap-4 py-10">
-        <Title>Your reportable condition configurations</Title>
+        <Title>Configurations</Title>
         <p>
-          Set up reportable condition configurations here to specify the data
-          you'd like to retain in the refined eCRs for that condition.
+          Configurations define which patient data is included in reports, such
+          as conditions, timeframes, and sections, for each reportable
+          condition.
         </p>
       </div>
       <div

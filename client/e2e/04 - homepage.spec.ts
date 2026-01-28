@@ -13,7 +13,7 @@ test.describe('Viewing the application sign in content', () => {
       page.getByRole('link', { name: 'Configurations', exact: true })
     ).toBeVisible();
     await expect(
-      page.getByText('Your reportable condition configurations')
+      page.getByRole('heading', { name: 'Configurations' })
     ).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
