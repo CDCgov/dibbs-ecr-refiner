@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euo pipefail # exit on failure
 
 # Ensure both expected variables are present
 if [[ -z "${DB_URL:-}" || -z "${DB_PASSWORD:-}" ]]; then
@@ -17,8 +17,6 @@ if [[ "$DB_URL" == *\?* ]]; then
 else
     DATABASE_URL="${DB_URL}?password=${ENCODED_PASSWORD}&sslmode=disable"
 fi
-
-# echo "DATABASE_URL composed: ${DATABASE_URL}"
 
 # Backup if no command is given
 if [ $# -eq 0 ]; then
