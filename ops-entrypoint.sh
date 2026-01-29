@@ -24,9 +24,7 @@ if [ $# -eq 0 ]; then
     exec bash
 fi
 
-# -----------------------------
 # Run migrate or python scripts
-# -----------------------------
 COMMAND="$1"
 shift || true
 
