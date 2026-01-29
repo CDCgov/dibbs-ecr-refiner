@@ -1,4 +1,4 @@
-# ---- Stage 1: get golang-migrate ----
+# Install migration dependencies
 FROM alpine:3.22 AS migrate
 
 ARG MIGRATE_VERSION=4.19.1
@@ -10,13 +10,13 @@ RUN curl -L \
     https://github.com/golang-migrate/migrate/releases/download/v${MIGRATE_VERSION}/migrate.linux-${TARGETARCH}.tar.gz \
     | tar -xz -C /usr/local/bin
 
-# ---- Stage 2: python runtime ----
+# Install Python dependencies
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# System deps (DB drivers etc)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
@@ -29,14 +29,15 @@ COPY --from=migrate /usr/local/bin/migrate /usr/local/bin/migrate
 
 WORKDIR /app
 
-# Python deps
+# Python files
 COPY ./refiner/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Scripts & migrations
+# Python scripts and migration files
 COPY ./refiner/migrations ./migrations
 COPY ./refiner/scripts ./scripts
 COPY ./ops-entrypoint.sh ./entrypoint.sh
 
+# Start this file, fall back to bash
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["bash"]
