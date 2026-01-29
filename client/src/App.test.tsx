@@ -39,11 +39,11 @@ const renderApp = () => {
 };
 
 describe('App', () => {
-  it('Should render expected text', async () => {
+  it('Should render expected text', () => {
     renderApp();
 
     expect(
-      await screen.findByText('Your reportable condition configurations')
+      screen.getByRole('heading', { name: 'Configurations' })
     ).toBeInTheDocument();
   });
 

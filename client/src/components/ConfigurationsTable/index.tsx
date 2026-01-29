@@ -11,7 +11,7 @@ interface ConfigurationsTableProps {
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
   const navigate = useNavigate();
 
-  const reportableConditionHeader = 'Reportable condition';
+  const reportableConditionHeader = 'Reportable Condition Configurations';
   const statusHeader = 'Status';
 
   if (!data.length) {
