@@ -38,6 +38,8 @@ COPY ./refiner/migrations ./migrations
 COPY ./refiner/scripts ./scripts
 COPY ./ops-entrypoint.sh ./entrypoint.sh
 
+RUN chmod +x ./entrypoint.sh
+
 # Start this file, fall back to bash
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["bash"]
