@@ -1,5 +1,12 @@
 # Operations
 
+## Environment variables
+
+| Name | Description | Required | Default value |
+| --- | --- | --- | --- |
+| `DB_URL` | The PostgreSQL connection string | Yes | N/A |
+| `DB_PASSWORD` | The PostgreSQL password | Yes | N/A |
+
 ## entrypoint.sh
 
 The `entrypoint.sh` file in this directory is used as the entrypoint for the `Dockerfile.ops` container image. This exists to create an `ops` container that is cable of running Refiner operational tasks in CI, such as:
