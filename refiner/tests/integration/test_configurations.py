@@ -6,7 +6,7 @@ from psycopg.rows import dict_row
 
 from tests.test_conditions import TEST_SESSION_TOKEN
 
-LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/SDDH"
+LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_RSG_CODE = "212962007"
 
 

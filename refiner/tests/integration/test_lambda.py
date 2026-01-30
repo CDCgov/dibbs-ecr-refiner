@@ -7,6 +7,10 @@ import pytest
 import pytest_asyncio
 from botocore.client import Config
 
+from app.services.aws.s3_keys import (
+    get_active_file_key,
+    get_current_file_key,
+)
 from tests.fixtures.loader import load_fixture_str
 
 LAMBDA_BASE_URL = "http://localhost:9000/2015-03-31/functions/function/invocations"
@@ -41,7 +45,10 @@ def default_setup(s3_client):
     except s3_client.exceptions.BucketAlreadyOwnedByYou:
         pass
 
-    activation_key = "SDDH/840539006/1/active.json"
+    activation_key = get_active_file_key(
+        jurisdiction_id="SDDH", rsg_code="840539006", version=1
+    )
+    # activation_key = "configurations/SDDH/840539006/1/active.json"
     activation_content = load_fixture_str("lambda/active.json")
 
     # Upload activation file to S3
@@ -52,7 +59,8 @@ def default_setup(s3_client):
         ContentType="application/json",
     )
 
-    current_key = "SDDH/840539006/current.json"
+    # current_key = "configurations/SDDH/840539006/current.json"
+    current_key = get_current_file_key(jurisdiction_id="SDDH", rsg_code="840539006")
     current_content = {"version": 1}
 
     # Upload current file to S3
@@ -235,7 +243,7 @@ class TestLambda:
         error_message = resp_json["errorMessage"]
         assert (
             error_message
-            == "Activated configuration file could not be read at: SDDH/840539006/2/active.json"
+            == "Activated configuration file could not be read at: configurations/SDDH/840539006/2/active.json"
         )
 
     async def test_lambda_missing_current_file(
