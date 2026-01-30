@@ -48,7 +48,6 @@ def default_setup(s3_client):
     activation_key = get_active_file_key(
         jurisdiction_id="SDDH", rsg_code="840539006", version=1
     )
-    # activation_key = "configurations/SDDH/840539006/1/active.json"
     activation_content = load_fixture_str("lambda/active.json")
 
     # Upload activation file to S3
@@ -59,7 +58,6 @@ def default_setup(s3_client):
         ContentType="application/json",
     )
 
-    # current_key = "configurations/SDDH/840539006/current.json"
     current_key = get_current_file_key(jurisdiction_id="SDDH", rsg_code="840539006")
     current_content = {"version": 1}
 
