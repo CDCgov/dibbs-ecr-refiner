@@ -62,7 +62,7 @@ export async function login({
   await page.getByRole('button', { name: 'Sign In' }).click();
   // check that we are on the logged-in home screen
   await expect(
-    page.getByText('Your reportable condition configurations')
+    page.getByRole('heading', { name: 'Configurations' })
   ).toBeVisible();
 }
 

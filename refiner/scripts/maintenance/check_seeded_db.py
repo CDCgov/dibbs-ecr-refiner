@@ -144,13 +144,16 @@ def get_db_connection(console: Console) -> Connection:
 
     try:
         db_url = os.getenv("DB_URL")
+        db_password = os.getenv("DB_PASSWORD")
         if not db_url:
             raise ValueError("😓 Missing required environment variable: DB_URL")
-        return psycopg.connect(db_url, row_factory=dict_row, autocommit=True)
+        return psycopg.connect(
+            db_url, password=db_password, row_factory=dict_row, autocommit=True
+        )
     except (psycopg.OperationalError, ValueError) as error:
         console.print(
             "[bold red]💥 FATAL: Could not connect to the database.[/bold red]\n"
-            "Please ensure the Docker container is running and the DB_URL is set correctly in the .env file.\n"
+            "Please ensure the Docker container is running and the DB_URL/DB_PASSWORD are set correctly.\n"
             f"💬 Error: {error}",
         )
         sys.exit(1)

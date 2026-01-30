@@ -179,7 +179,9 @@ export function EicrSectionReview({
           {sectionProcessing.map((section, index) => (
             <tr key={section.name}>
               <td className="cursor-default! font-bold! wrap-break-word! whitespace-normal!">
-                <span className="font-bold!">{section.name}</span>
+                <span className="font-bold!">
+                  {castToSentenceCase(section.name)}
+                </span>
                 <br />
                 <span className="font-normal!">
                   <VersionsList versions={section.versions} />
@@ -216,4 +218,8 @@ export function EicrSectionReview({
       </Table>
     </section>
   );
+}
+
+function castToSentenceCase(str: string) {
+  return str.charAt(0).toUpperCase() + str.slice(1, str.length).toLowerCase();
 }
