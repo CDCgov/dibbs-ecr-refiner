@@ -170,7 +170,7 @@ def test_lambda_one_active(
     covid_current = {"version": 1}
     s3_client.put_object(
         Bucket=config_bucket,
-        Key="SDDH/840539006/current.json",
+        Key="configurations/SDDH/840539006/current.json",
         Body=json.dumps(covid_current, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -183,7 +183,7 @@ def test_lambda_one_active(
     }
     s3_client.put_object(
         Bucket=config_bucket,
-        Key=f"SDDH/840539006/{covid_current['version']}/active.json",
+        Key=f"configurations/SDDH/840539006/{covid_current['version']}/active.json",
         Body=json.dumps(covid_activation, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -244,7 +244,7 @@ def test_lambda_all_active(
     covid_current = {"version": 1}
     s3_client.put_object(
         Bucket=config_bucket,
-        Key="SDDH/840539006/current.json",
+        Key="configurations/SDDH/840539006/current.json",
         Body=json.dumps(covid_current, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -256,7 +256,7 @@ def test_lambda_all_active(
     }
     s3_client.put_object(
         Bucket=config_bucket,
-        Key=f"SDDH/840539006/{covid_current['version']}/active.json",
+        Key=f"configurations/SDDH/840539006/{covid_current['version']}/active.json",
         Body=json.dumps(covid_activation, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -265,7 +265,7 @@ def test_lambda_all_active(
     flu_current = {"version": 1}
     s3_client.put_object(
         Bucket=config_bucket,
-        Key="SDDH/772828001/current.json",
+        Key="configurations/SDDH/772828001/current.json",
         Body=json.dumps(flu_current, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -277,7 +277,7 @@ def test_lambda_all_active(
     }
     s3_client.put_object(
         Bucket=config_bucket,
-        Key=f"SDDH/772828001/{flu_current['version']}/active.json",
+        Key=f"configurations/SDDH/772828001/{flu_current['version']}/active.json",
         Body=json.dumps(flu_activation, indent=2).encode("utf-8"),
         ContentType="application/json",
     )

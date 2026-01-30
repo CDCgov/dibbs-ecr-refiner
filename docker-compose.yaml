@@ -8,8 +8,6 @@ services:
     command: sh -c "npm i && npm run dev"
     ports:
       - "8081:8081"
-    environment:
-      - VITE_GIT_BRANCH
     depends_on:
       - refiner-service
   refiner-service:
@@ -46,6 +44,19 @@ services:
     depends_on:
       - db
       - auth
+      - localstack
+  lambda:
+    build:
+      context: .
+      dockerfile: Dockerfile.lambda
+    ports:
+      - "9000:8080"
+    environment:
+      - AWS_ACCESS_KEY_ID=refiner
+      - AWS_SECRET_ACCESS_KEY=refiner
+      - S3_ENDPOINT_URL=http://localstack:4566
+      - S3_BUCKET_CONFIG=local-config-bucket
+    depends_on:
       - localstack
   auth:
     image: quay.io/keycloak/keycloak:26.5.2

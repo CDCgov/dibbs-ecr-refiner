@@ -13,6 +13,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
+from ..services.aws.s3_keys import get_active_file_key, get_current_file_key
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
@@ -32,6 +33,7 @@ REFINER_INPUT_PREFIX = os.getenv("REFINER_INPUT_PREFIX", "RefinerInput/")
 REFINER_OUTPUT_PREFIX = os.getenv("REFINER_OUTPUT_PREFIX", "RefinerOutput/")
 REFINER_COMPLETE_PREFIX = os.getenv("REFINER_COMPLETE_PREFIX", "RefinerComplete/")
 S3_BUCKET_CONFIG = os.getenv("S3_BUCKET_CONFIG")
+S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
 
 class RefinerCompleteFile(TypedDict):
@@ -183,7 +185,9 @@ def process_refiner(
         for condition in jurisdiction_group.conditions:
             condition_code = condition.code
 
-            current_file_key = f"{jurisdiction_code}/{condition_code}/current.json"
+            current_file_key = get_current_file_key(
+                jurisdiction_id=jurisdiction_code, rsg_code=condition_code
+            )
             config_version_to_use = read_current_version(
                 s3_client=s3_client,
                 bucket=config_bucket,
@@ -209,8 +213,12 @@ def process_refiner(
             output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/{condition_code}"
 
             # Read active configuration
-            # example: /jurisdiction_code/condition_code/version/active.json
-            serialized_configuration_key = f"{jurisdiction_code}/{condition_code}/{config_version_to_use}/active.json"
+            # example: configurations/<jurisdiction_code>/<condition_code>/<version>/active.json
+            serialized_configuration_key = get_active_file_key(
+                jurisdiction_id=jurisdiction_code,
+                rsg_code=condition_code,
+                version=config_version_to_use,
+            )
             serialized_configuration = read_configuration_file(
                 s3_client=s3_client,
                 bucket=config_bucket,
@@ -300,7 +308,11 @@ def lambda_handler(event, context):
 
             # Initialize the S3 client
             region = record["awsRegion"]
-            s3_client = boto3.client("s3", region_name=region)
+            s3_client = boto3.client(
+                "s3",
+                region_name=region,
+                endpoint_url=S3_ENDPOINT_URL,
+            )
 
             # Parse the EventBridge S3 event from the SQS message body
             s3_event = json.loads(record["body"])

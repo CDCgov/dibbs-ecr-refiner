@@ -16,6 +16,11 @@ from app.db.configurations.model import (
 )
 
 from ...core.config import ENVIRONMENT
+from .s3_keys import (
+    get_active_file_key,
+    get_metadata_file_key,
+    get_parent_directory_key,
+)
 
 S3_CONFIGURATION_BUCKET_NAME = ENVIRONMENT["S3_BUCKET_CONFIG"]
 
@@ -87,28 +92,39 @@ def upload_configuration_payload(
     metadata_data = metadata.to_dict()
 
     for child_rsg_code in metadata.child_rsg_snomed_codes:
-        parent_directory = f"{metadata.jurisdiction_id}/{child_rsg_code}"
+        parent_directory = get_parent_directory_key(
+            jurisdiction_id=metadata.jurisdiction_id, rsg_code=child_rsg_code
+        )
 
         # Write active.json
-        path_with_version = f"{parent_directory}/{metadata.configuration_version}"
+        active_key = get_active_file_key(
+            jurisdiction_id=metadata.jurisdiction_id,
+            rsg_code=child_rsg_code,
+            version=metadata.configuration_version,
+        )
         s3_client.put_object(
             Bucket=S3_CONFIGURATION_BUCKET_NAME,
-            Key=f"{path_with_version}/active.json",
+            Key=active_key,
             Body=json.dumps(payload_data, indent=2).encode("utf-8"),
             ContentType="application/json",
         )
 
         # Write metadata.json
+        metadata_key = get_metadata_file_key(
+            jurisdiction_id=metadata.jurisdiction_id,
+            rsg_code=child_rsg_code,
+            version=metadata.configuration_version,
+        )
         s3_client.put_object(
             Bucket=S3_CONFIGURATION_BUCKET_NAME,
-            Key=f"{path_with_version}/metadata.json",
+            Key=metadata_key,
             Body=json.dumps(metadata_data, indent=2).encode("utf-8"),
             ContentType="application/json",
         )
 
         s3_condition_code_paths.append(parent_directory)
-        logger.debug(f"Writing file to: {path_with_version}/active.json")
-        logger.debug(f"Writing file to: {path_with_version}/metadata.json")
+        logger.debug(f"Writing file to: {active_key}")
+        logger.debug(f"Writing file to: {metadata_key}")
 
     return s3_condition_code_paths
 
