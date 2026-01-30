@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Python scripts and migration files
 COPY ./refiner/migrations ./migrations
 COPY ./refiner/scripts ./scripts
-COPY ./ops-entrypoint.sh ./entrypoint.sh
+COPY ./ops/entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh
 
