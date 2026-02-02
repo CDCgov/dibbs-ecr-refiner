@@ -412,7 +412,7 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
 @pytest.mark.asyncio
 async def test_inline_example_file_success(authed_client, monkeypatch):
     def mock_s3_upload(*args, **kwargs):
-        return "http://fake-s3-url.com"
+        return "refiner-test-suite/2026-01-29/test-user-id/test-file.zip"
 
     app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
@@ -458,7 +458,7 @@ async def test_inline_allow_custom_zip(
     covid_influenza_v1_1_zip_path: Path, authed_client, monkeypatch
 ):
     def mock_s3_upload(*args, **kwargs):
-        return "http://fake-s3-url.com"
+        return "refiner-test-suite/2026-01-29/test-user-id/test-file.zip"
 
     app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 

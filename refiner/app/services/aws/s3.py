@@ -117,7 +117,7 @@ def upload_refined_ecr(
     user_id: UUID, file_buffer: BytesIO, filename: str, logger: Logger
 ) -> str:
     """
-    Uploads a refined ZIP file to AWS S3 and provides the uploader with a pre-signed link.
+    Uploads a refined ZIP file to AWS S3.
 
     Args:
         user_id (UUID): Logged-in user ID
@@ -126,10 +126,9 @@ def upload_refined_ecr(
         logger (Logger): The standard logger
 
     Returns:
-        str: The pre-signed S3 URL to download the uploaded file
+        str: The S3 key of the uploaded file (or empty string on error)
     """
-
-    expires = 3600  # 1 hour
+    key = ""
 
     try:
         today = date.today().isoformat()  # YYYY-MM-DD
@@ -137,19 +136,7 @@ def upload_refined_ecr(
 
         s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, key)
 
-        presigned_url = s3_client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": S3_CONFIGURATION_BUCKET_NAME, "Key": key},
-            ExpiresIn=expires,
-        )
-
-        # for local dev, boto3 creates a URL with the internal hostname ('localstack')
-        # We must replace it with the public hostname ('localhost') before sending it
-        # to the browser
-        if ENVIRONMENT["ENV"] == "local":
-            presigned_url = presigned_url.replace("localstack:4566", "localhost:4566")
-
-        return presigned_url
+        return key
 
     except ClientError as e:
         logger.error(

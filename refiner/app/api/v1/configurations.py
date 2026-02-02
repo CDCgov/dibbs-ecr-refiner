@@ -1254,7 +1254,7 @@ class ConfigurationTestResponse:
     """
 
     original_eicr: str
-    refined_download_url: str
+    refined_download_key: str
     condition: Condition
 
 
@@ -1479,7 +1479,7 @@ async def run_configuration_test(
             detail="Internal error creating the results ZIP file during S3 packaging process.",
         )
     try:
-        presigned_s3_url = await run_in_threadpool(
+        s3_key = await run_in_threadpool(
             upload_refined_files_to_s3,
             user.id,
             output_zip_buffer,
@@ -1503,7 +1503,7 @@ async def run_configuration_test(
 
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
-        refined_download_url=presigned_s3_url,
+        refined_download_key=s3_key,
         condition=Condition(
             code=condition_obj.code,
             display_name=condition_obj.display_name,

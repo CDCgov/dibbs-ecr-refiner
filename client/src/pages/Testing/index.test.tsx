@@ -32,7 +32,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_url: 'http://s3-standard.com',
+  refined_download_key: 'refiner-test-suite/2026-01-29/test-user-id/file.zip',
 };
 
 const mockCustomUploadResponse: IndependentTestUploadResponse = {
@@ -49,7 +49,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_url: 'http://s3-custom.com',
+  refined_download_key: 'refiner-test-suite/2026-01-29/test-user-id/custom.zip',
 };
 
 const renderView = () =>

@@ -36,7 +36,8 @@ const mockSuccessfulInlineTestResponse = {
   data: {
     condition: mockMatchedCondition,
     original_eicr: '<xml>unrefined covid</xml>',
-    refined_download_url: 'http://mocks3download.com',
+    refined_download_key:
+      'refiner-test-suite/2026-01-29/test-user-id/covid.zip',
   },
 };
 
@@ -73,7 +74,8 @@ vi.mock('../../../api/configurations/configurations', async () => {
         data: {
           condition: mockMatchedCondition,
           original_eicr: '<xml>unrefined covid</xml>',
-          refined_download_url: 'http://mocks3download.com',
+          refined_download_key:
+            'refiner-test-suite/2026-01-29/test-user-id/covid.zip',
         },
       },
     })),

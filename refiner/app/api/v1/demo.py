@@ -241,7 +241,7 @@ async def demo_upload(
     output_file_name, output_zip_buffer = create_output_zip(
         files=refined_files_to_zip,
     )
-    presigned_s3_url = await run_in_threadpool(
+    s3_key = await run_in_threadpool(
         upload_refined_files_to_s3,
         user.id,
         output_zip_buffer,
@@ -260,7 +260,7 @@ async def demo_upload(
         refined_conditions=conditions,
         conditions_without_matching_configs=conditions_without_matching_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
-        refined_download_url=presigned_s3_url,
+        refined_download_key=s3_key,
     )
 
 
