@@ -377,4 +377,4 @@ if __name__ == "__main__":
     if not db_url or not db_password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
     else:
-        seed_database(dburl=db_url, db_password=db_password)
+        seed_database(db_url=db_url, db_password=db_password)
