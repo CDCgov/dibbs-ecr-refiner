@@ -65,7 +65,7 @@
     "eslint-plugin-testing-library": "^7.15.4",
     "focus-trap-react": "^11.0.4",
     "globals": "^17.1.0",
-    "jsdom": "^27.4.0",
+    "jsdom": "^28.0.0",
     "nodemon": "^3.1.10",
     "orval": "^8.2.0",
     "prettier": "^3.7.4",
