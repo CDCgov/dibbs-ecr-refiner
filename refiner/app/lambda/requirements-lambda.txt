@@ -1,4 +1,4 @@
-boto3==1.42.39
-lxml
+boto3==1.42.34
 chardet
-python-json-logger==4.0.0
+lxml
+pydantic>=2.0.0
