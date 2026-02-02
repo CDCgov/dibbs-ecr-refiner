@@ -105,4 +105,5 @@ jobs:
           context: .
           file: Dockerfile.lambda
           push: true
+          platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
