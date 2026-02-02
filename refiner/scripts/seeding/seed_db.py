@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -377,4 +378,7 @@ if __name__ == "__main__":
     if not db_url or not db_password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
     else:
+        start = time.perf_counter()
         seed_database(db_url=db_url, db_password=db_password)
+        end = time.perf_counter()
+        print(f"Took {end - start:.3f} seconds")
