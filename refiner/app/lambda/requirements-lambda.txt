@@ -1,3 +1,4 @@
 boto3==1.42.39
 lxml
 chardet
+python-json-logger==4.0.0
