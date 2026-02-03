@@ -112,10 +112,6 @@ def test_demo_file_not_found(test_user_id, test_username):
     assert response.status_code == 404
     assert response.json() == {"detail": "Unable to find demo zip file to download."}
 
-    response = client.get(f"{api_route_base}/download")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Unable to find demo zip file to download."}
-
     app.dependency_overrides.clear()
 
 

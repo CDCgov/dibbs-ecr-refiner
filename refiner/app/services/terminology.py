@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -138,7 +139,7 @@ class ProcessedConfiguration:
         # STEP 3:
         # convert the list of DbConfigurationSectionProcessing objects into
         # a simple list of dictionaries
-        section_processing_as_dicts: list[dict[str, str]] = [
+        section_processing_as_dicts: list[dict[str, Any]] = [
             {
                 "code": section_process.code,
                 "name": section_process.name,

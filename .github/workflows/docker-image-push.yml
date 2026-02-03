@@ -107,8 +107,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          provenance: false
           file: Dockerfile.lambda
           push: true
+          platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
 
       - name: Build and push Refiner Ops image
