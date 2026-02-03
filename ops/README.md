@@ -4,8 +4,9 @@
 
 | Name | Description | Required | Default value |
 | --- | --- | --- | --- |
-| `DB_URL` | The PostgreSQL connection string | Yes | N/A |
+| `DB_URL` | The PostgreSQL database URL | Yes | N/A |
 | `DB_PASSWORD` | The PostgreSQL password | Yes | N/A |
+| `SSL_MODE` | PostgreSQL `sslmode` value | No | `require` |
 
 ## entrypoint.sh
 

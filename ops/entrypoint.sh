@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail # exit on failure
 
+# default sslmode to "require"
+SSL_MODE="${SSL_MODE:-require}"
+
 # Ensure both expected variables are present
 if [[ -z "${DB_URL:-}" || -z "${DB_PASSWORD:-}" ]]; then
   echo "ERROR: DB_URL and DB_PASSWORD must be set"
@@ -13,9 +16,9 @@ ENCODED_PASSWORD=$(python3 -c 'import urllib.parse, os; print(urllib.parse.quote
 # Compose DATABASE_URL for migrations
 if [[ "$DB_URL" == *\?* ]]; then
     # Already has query params, append password and sslmode
-    DATABASE_URL="${DB_URL}&password=${ENCODED_PASSWORD}&sslmode=disable"
+    DATABASE_URL="${DB_URL}&password=${ENCODED_PASSWORD}&sslmode=${SSL_MODE}"
 else
-    DATABASE_URL="${DB_URL}?password=${ENCODED_PASSWORD}&sslmode=disable"
+    DATABASE_URL="${DB_URL}?password=${ENCODED_PASSWORD}&sslmode=${SSL_MODE}"
 fi
 
 # Backup if no command is given
