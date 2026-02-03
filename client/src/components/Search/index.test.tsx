@@ -1,13 +1,13 @@
 import { describe, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import { Search } from '.';
 
 const renderComponentView = (text?: string) =>
   render(
-    <BrowserRouter>
+    <MemoryRouter>
       <Search placeholder={text} id="test" name="test" />
-    </BrowserRouter>
+    </MemoryRouter>
   );
 
 describe('Search component', () => {

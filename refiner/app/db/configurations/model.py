@@ -143,7 +143,7 @@ class ConfigurationStoragePayload:
     """
 
     codes: set[str]
-    sections: list[dict[str, str]]
+    sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
 
     def to_dict(self) -> dict:

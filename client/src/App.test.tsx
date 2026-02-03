@@ -1,19 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { App } from './App';
-import { BrowserRouter } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import { TestQueryClientProvider } from './test-utils';
 
 // Set up a mock user
-vi.mock('./hooks/Login', async () => {
-  const actual = await vi.importActual('./hooks/Login');
-  return {
-    ...actual,
-    useLogin: vi.fn(() => [
-      { id: '1', username: 'test', jurisdiction_id: 'jd' },
-      false,
-    ]),
-  };
-});
+vi.mock('./hooks/Login', () => ({
+  useLogin: vi.fn(() => [
+    { id: '1', username: 'test', jurisdiction_id: 'jd' },
+    false,
+  ]),
+}));
 
 // Mock configurations request
 vi.mock('./api/configurations/configurations', async () => {
@@ -30,18 +26,17 @@ vi.mock('./api/configurations/configurations', async () => {
 
 const renderApp = () => {
   return render(
-    <BrowserRouter>
+    <MemoryRouter initialEntries={['/']}>
       <TestQueryClientProvider>
         <App />
       </TestQueryClientProvider>
-    </BrowserRouter>
+    </MemoryRouter>
   );
 };
 
 describe('App', () => {
   it('Should render expected text', () => {
     renderApp();
-
     expect(
       screen.getByRole('heading', { name: 'Configurations' })
     ).toBeInTheDocument();
