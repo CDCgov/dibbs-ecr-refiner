@@ -7,6 +7,7 @@ const createTestQueryClient = () =>
     defaultOptions: {
       queries: {
         retry: false,
+        enabled: false,
       },
     },
   });

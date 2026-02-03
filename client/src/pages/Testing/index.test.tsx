@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Testing } from '.';
-import { BrowserRouter } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
 import { useGetEnv } from '../../hooks/useGetEnv.ts';
@@ -54,9 +54,9 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
 
 const renderView = () =>
   render(
-    <BrowserRouter>
+    <MemoryRouter>
       <Testing />
-    </BrowserRouter>
+    </MemoryRouter>
   );
 
 describe('Testing', () => {

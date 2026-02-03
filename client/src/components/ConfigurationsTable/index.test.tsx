@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { BrowserRouter } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 import userEvent from '@testing-library/user-event';
 import { GetConfigurationsResponseStatus } from '../../api/schemas';
@@ -42,9 +42,9 @@ describe('Configurations Table component', () => {
 
   it('should render a table when supplied with data', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter>
         <ConfigurationsTable data={tableData.data} />
-      </BrowserRouter>
+      </MemoryRouter>
     );
 
     expect(
@@ -66,9 +66,9 @@ describe('Configurations Table component', () => {
 
   it('should render an error message if no data is supplied', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter>
         <ConfigurationsTable data={[]} />
-      </BrowserRouter>
+      </MemoryRouter>
     );
 
     expect(screen.getByText(/reportable condition/i)).toBeInTheDocument();
@@ -79,9 +79,9 @@ describe('Configurations Table component', () => {
     const user = userEvent.setup();
 
     render(
-      <BrowserRouter>
+      <MemoryRouter>
         <ConfigurationsTable data={tableData.data} />
-      </BrowserRouter>
+      </MemoryRouter>
     );
 
     // This ensures the aria-label is correct
@@ -104,9 +104,9 @@ describe('Configurations Table component', () => {
     const user = userEvent.setup();
 
     render(
-      <BrowserRouter>
+      <MemoryRouter>
         <ConfigurationsTable data={tableData.data} />
-      </BrowserRouter>
+      </MemoryRouter>
     );
 
     const rowButton = within(
