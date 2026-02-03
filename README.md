@@ -62,12 +62,15 @@ The eCR Refiner requires the following environment variables to be specified in 
 | S3_BUCKET_CONFIG | Name of the S3 bucket holding condition configurations | Yes | N/A |
 | LOG_LEVEL | Controls application log output verbosity | No | N/A |
 
-
 Examples of the required environment variables can be seen in the project's [docker-compose.yaml](./docker-compose.yaml) file under `refiner-service`.
 
 ### Lambda
 
 Please refer to the [Lambda README](./refiner/app/lambda/README.md).
+
+### Ops (Maintenance tasks)
+
+Please refer to the [Ops README](./ops/README.md).
 
 ## Creating a production build
 

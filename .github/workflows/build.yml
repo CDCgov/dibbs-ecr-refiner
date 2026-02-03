@@ -46,3 +46,20 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  ops-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test Refiner Ops build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ops
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -74,18 +74,22 @@ jobs:
           # GHCR URLs
           GHCR_APP="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner"
           GHCR_LAMBDA="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda"
+          GHCR_OPS="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/ops"
 
           # ECR URLs
           ECR_APP="$ECR_REGISTRY/dibbs-dev-refiner/refiner"
           ECR_LAMBDA="$ECR_REGISTRY/dibbs-dev-refiner/lambda"
+          ECR_OPS="$ECR_REGISTRY/dibbs-dev-refiner/ops"
 
           # If building `main`, include a `latest` tag
           if [ "$REF_NAME" = "main" ]; then
             echo "app_tags=$GHCR_APP:$TAG,$GHCR_APP:latest,$ECR_APP:$TAG,$ECR_APP:latest" >> $GITHUB_OUTPUT
             echo "lambda_tags=$GHCR_LAMBDA:$TAG,$GHCR_LAMBDA:latest,$ECR_LAMBDA:$TAG,$ECR_LAMBDA:latest" >> $GITHUB_OUTPUT
+            echo "ops_tags=$GHCR_OPS:$TAG,$GHCR_OPS:latest,$ECR_OPS:$TAG,$ECR_OPS:latest" >> $GITHUB_OUTPUT
           else
             echo "app_tags=$GHCR_APP:$TAG,$ECR_APP:$TAG" >> $GITHUB_OUTPUT
             echo "lambda_tags=$GHCR_LAMBDA:$TAG,$ECR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
+            echo "ops_tags=$GHCR_OPS:$TAG,$ECR_OPS:$TAG" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push Refiner app image
@@ -108,3 +112,11 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
+
+      - name: Build and push Refiner Ops image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ops
+          push: true
+          tags: ${{ steps.vars.outputs.ops_tags }}
