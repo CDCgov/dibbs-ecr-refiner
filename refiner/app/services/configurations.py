@@ -1,4 +1,5 @@
 from logging import Logger
+from typing import Any
 
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.model import (
@@ -61,7 +62,7 @@ async def convert_config_to_storage_payload(
         ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
     """
     codes: set[str] = set()
-    sections: list[dict[str, str]] = []
+    sections: list[dict[str, Any]] = []
     included_condition_rsg_codes: set[str] = set()
 
     # custom codes
