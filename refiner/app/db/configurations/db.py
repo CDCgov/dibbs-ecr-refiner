@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import TypedDict
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -780,6 +781,22 @@ class SectionUpdate:
     action: str
 
 
+class SectionProcessingDict(TypedDict):
+    """Typed dict for section processing entries stored in configurations.
+
+    Fields:
+        name: human-readable section name
+        code: LOINC code for the section
+        action: processing action ('retain'|'refine'|'remove')
+        versions: list of spec version strings this section appears in
+    """
+
+    name: str
+    code: str
+    action: str
+    versions: list[str]
+
+
 async def update_section_processing_db(
     config: DbConfiguration,
     section_updates: list[SectionUpdate],
@@ -815,12 +832,17 @@ async def update_section_processing_db(
     update_map = {su.code: su.action for su in section_updates}
 
     # Start from the existing section_processing entries on the config
-    existing_sections = [
-        {"name": sp.name, "code": sp.code, "action": sp.action}
+    existing_sections: list[SectionProcessingDict] = [
+        {
+            "name": sp.name,
+            "code": sp.code,
+            "action": sp.action,
+            "versions": sp.versions,
+        }
         for sp in config.section_processing
     ]
 
-    updated_sections = []
+    updated_sections: list[SectionProcessingDict] = []
     section_events = []
 
     for sec in existing_sections:
@@ -853,10 +875,18 @@ async def update_section_processing_db(
                     "name": sec["name"],
                     "code": sec["code"],
                     "action": new_action,
+                    "versions": sec["versions"] if "versions" in sec else [],
                 }
             )
         else:
-            updated_sections.append(sec)
+            updated_sections.append(
+                {
+                    "name": sec["name"],
+                    "code": sec["code"],
+                    "action": sec["action"],
+                    "versions": sec["versions"] if "versions" in sec else [],
+                }
+            )
 
     # If any update codes were not present in the existing sections, ignore them.
     # Persist the updated list back to the database
