@@ -46,7 +46,6 @@ jobs:
 
       - name: Log into GitHub Container Registry
         uses: docker/login-action@v3
-        if: env.PUSH_GHCR == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -54,7 +53,6 @@ jobs:
 
       - name: Configure AIMS dev AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
-        if: env.PUSH_ECR == 'true'
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AIMS_DEV_AWS_ACCESS_KEY_ID }}
