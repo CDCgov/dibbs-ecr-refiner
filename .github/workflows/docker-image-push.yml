@@ -82,113 +82,67 @@ jobs:
             TAG="$VERSION_TAG"
           fi
 
-          # GHCR URLs
-          GHCR_APP="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner"
-          GHCR_LAMBDA="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda"
-          GHCR_OPS="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/ops"
+          # Define image base URLs
+          declare -A BASES=(
+            [APP]="refiner"
+            [LAMBDA]="lambda"
+            [OPS]="ops"
+          )
 
-          # ECR URLs
-          ECR_APP="$ECR_REGISTRY/dibbs-dev-refiner/refiner"
-          ECR_LAMBDA="$ECR_REGISTRY/dibbs-dev-refiner/lambda"
-          ECR_OPS="$ECR_REGISTRY/dibbs-dev-refiner/ops"
+          for IMAGE in APP LAMBDA OPS; do
+            TAGS=()
 
-          # If building `main`, include a `latest` tag
-          if [ "$REF_NAME" = "main" ]; then
+            # GHCR
+            if [ "$PUSH_GHCR" = "true" ]; then
+              TAGS+=("ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/${BASES[$IMAGE]}:$TAG")
+            fi
 
-            # Tags to push to GHCR
-            echo "ghcr_app_tags=$GHCR_APP:$TAG,$GHCR_APP:latest" >> $GITHUB_OUTPUT
-            echo "ghcr_lambda_tags=$GHCR_LAMBDA:$TAG,$GHCR_LAMBDA:latest" >> $GITHUB_OUTPUT
-            echo "ghcr_ops_tags=$GHCR_OPS:$TAG,$GHCR_OPS:latest" >> $GITHUB_OUTPUT
+            # ECR
+            if [ "$PUSH_ECR" = "true" ]; then
+              TAGS+=("$ECR_REGISTRY/dibbs-dev-refiner/${BASES[$IMAGE]}:$TAG")
+            fi
 
-            # Tags to push to AWS ECR
-            echo "ecr_app_tags=$ECR_APP:$TAG,$ECR_APP:latest" >> $GITHUB_OUTPUT
-            echo "ecr_lambda_tags=$ECR_LAMBDA:$TAG,$ECR_LAMBDA:latest" >> $GITHUB_OUTPUT
-            echo "ecr_ops_tags=$ECR_OPS:$TAG,$ECR_OPS:latest" >> $GITHUB_OUTPUT
+            # Add 'latest' if on main
+            if [ "$REF_NAME" = "main" ]; then
+              [ "$PUSH_GHCR" = "true" ] && TAGS+=("ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/${BASES[$IMAGE]}:latest")
+              [ "$PUSH_ECR" = "true" ] && TAGS+=("$ECR_REGISTRY/dibbs-dev-refiner/${BASES[$IMAGE]}:latest")
+            fi
 
-          else
-            # Tags to push to GHCR
-            echo "ghcr_app_tags=$GHCR_APP:$TAG" >> $GITHUB_OUTPUT
-            echo "ghcr_lambda_tags=$GHCR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
-            echo "ghcr_ops_tags=$GHCR_OPS:$TAG" >> $GITHUB_OUTPUT
+            # Output as comma-separated string
+            echo "${IMAGE,,}_tags=$(IFS=, ; echo "${TAGS[*]}")" >> $GITHUB_OUTPUT
+          done
 
-            # Tags to push to AWS ECR
-            echo "ecr_app_tags=$ECR_APP:$TAG" >> $GITHUB_OUTPUT
-            echo "ecr_lambda_tags=$ECR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
-            echo "ecr_ops_tags=$ECR_OPS:$TAG" >> $GITHUB_OUTPUT
-          fi
+      - name: Debug Docker tags
+        run: |
+          echo "APP_TAGS: ${{ steps.vars.outputs.app_tags }}"
+          echo "LAMBDA_TAGS: ${{ steps.vars.outputs.lambda_tags }}"
+          echo "OPS_TAGS: ${{ steps.vars.outputs.ops_tags }}"
 
-      - name: Build and push Refiner app image (GHCR)
-        uses: docker/build-push-action@v6
-        if: env.PUSH_GHCR == 'true'
-        with:
-          context: .
-          file: Dockerfile.app
-          push: true
-          tags: ${{ steps.vars.outputs.ghcr_app_tags }}
-          build-args: |
-            VITE_GIT_HASH=${{ github.sha }}
-            VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
-          cache-from: type=gha,scope=refiner-cache
-          cache-to: type=gha,scope=refiner-cache,mode=max
+      # - name: Build and push Refiner app image
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     file: Dockerfile.app
+      #     push: true
+      #     tags: ${{ steps.vars.outputs.app_tags }}
+      #     build-args: |
+      #       VITE_GIT_HASH=${{ github.sha }}
+      #       VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
 
-      - name: Build and push Refiner Lambda image (GHCR)
-        uses: docker/build-push-action@v6
-        if: env.PUSH_GHCR == 'true'
-        with:
-          context: .
-          provenance: false
-          file: Dockerfile.lambda
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.vars.outputs.ghcr_lambda_tags }}
-          cache-from: type=gha,scope=refiner-cache
-          cache-to: type=gha,scope=refiner-cache,mode=max
+      # - name: Build and push Refiner Lambda image
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     provenance: false
+      #     file: Dockerfile.lambda
+      #     push: true
+      #     platforms: linux/amd64
+      #     tags: ${{ steps.vars.outputs.lambda_tags }}
 
-      - name: Build and push Refiner Ops image (GHCR)
-        uses: docker/build-push-action@v6
-        if: env.PUSH_GHCR == 'true'
-        with:
-          context: .
-          file: Dockerfile.ops
-          push: true
-          tags: ${{ steps.vars.outputs.ghcr_ops_tags }}
-          cache-from: type=gha,scope=refiner-cache
-          cache-to: type=gha,scope=refiner-cache,mode=max
-
-      - name: Build and push Refiner app image (AWS ECR)
-        uses: docker/build-push-action@v6
-        if: env.PUSH_ECR == 'true'
-        with:
-          context: .
-          file: Dockerfile.app
-          push: true
-          tags: ${{ steps.vars.outputs.ecr_app_tags }}
-          build-args: |
-            VITE_GIT_HASH=${{ github.sha }}
-            VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
-          cache-from: type=gha,scope=refiner-cache
-          cache-to: type=gha,scope=refiner-cache,mode=max
-
-      - name: Build and push Refiner Lambda image (AWS ECR)
-        uses: docker/build-push-action@v6
-        if: env.PUSH_ECR == 'true'
-        with:
-          context: .
-          provenance: false
-          file: Dockerfile.lambda
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.vars.outputs.ecr_lambda_tags }}
-          cache-from: type=gha,scope=refiner-cache
-          cache-to: type=gha,scope=refiner-cache,mode=max
-
-      - name: Build and push Refiner Ops image (AWS ECR)
-        uses: docker/build-push-action@v6
-        if: env.PUSH_ECR == 'true'
-        with:
-          context: .
-          file: Dockerfile.ops
-          push: true
-          tags: ${{ steps.vars.outputs.ecr_ops_tags }}
-          cache-from: type=gha,scope=refiner-cache
-          cache-to: type=gha,scope=refiner-cache,mode=max
+      # - name: Build and push Refiner Ops image
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     file: Dockerfile.ops
+      #     push: true
+      #     tags: ${{ steps.vars.outputs.ops_tags }}
