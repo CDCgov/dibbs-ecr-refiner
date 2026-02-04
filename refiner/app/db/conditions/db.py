@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from packaging.version import parse
 from psycopg.rows import class_row, dict_row
 
 from app.db.configurations.model import DbConfigurationCondition
@@ -8,19 +9,12 @@ from app.db.configurations.model import DbConfigurationCondition
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase
 
-# TES and refiner are currently using version 4.0.0 for CGs and its child RSGs
-CURRENT_VERSION = "4.0.0"
 
-
-async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase]:
+async def get_conditions_by_version_db(
+    db: AsyncDatabaseConnection, version: str
+) -> list[DbConditionBase]:
     """
-    Queries the database and retrieves a list of conditions matching CURRENT_VERSION. This query does not include related code set information.
-
-    Args:
-        db (AsyncDatabaseConnection): Database connection.
-
-    Returns:
-        list[DbConditionBasicInfo]: List containing information about conditions.
+    Queries the database and retrieves a list of all conditions matching a specific version string.
     """
 
     query = """
@@ -34,17 +28,70 @@ async def get_conditions_db(db: AsyncDatabaseConnection) -> list[DbConditionBase
             ORDER BY display_name ASC;
             """
 
-    params = (CURRENT_VERSION,)
+    params = (version,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
-    if not rows:
-        raise Exception(f"No conditions found for version {CURRENT_VERSION}.")
-
     return rows
+
+
+async def get_latest_conditions_db(
+    db: AsyncDatabaseConnection,
+) -> list[DbConditionBase]:
+    """
+    For each unique condition, retrieves the one with the highest semantic version.
+
+    This function fetches all conditions and performs the version filtering in
+    Python to ensure correct semantic versioning. It is used to populate the
+    "Set up new configuration" dropdown so that users can only create
+    configurations based on the most up-to-date value sets.
+    """
+
+    # STEP 1: FETCH ALL CONDITIONS
+    # this query is simple, fast, and offloads the complex logic to python
+    query = """
+        SELECT
+            id,
+            display_name,
+            canonical_url,
+            version
+        FROM conditions;
+    """
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConditionBase)) as cur:
+            await cur.execute(query)
+            all_conditions = await cur.fetchall()
+
+    if not all_conditions:
+        return []
+
+    # STEP 2: GROUP CONDITIONS BY CANONICAL URL
+    # this creates a dictionary where each key is a unique `canonical_url`
+    # and the value is a list of all condition objects with that URL
+    grouped_conditions: dict[str, list[DbConditionBase]] = {}
+    for cond in all_conditions:
+        if cond.canonical_url not in grouped_conditions:
+            grouped_conditions[cond.canonical_url] = []
+        grouped_conditions[cond.canonical_url].append(cond)
+
+    # STEP 3: HIGHLIGHT LATEST VERSION FOR EACH GROUP
+    # iterate through the dictionary and use `max()` with `packaging.version.parse`
+    # as the key to correctly identify the latest version for each condition
+    latest_conditions: list[DbConditionBase] = []
+    for url, cond_group in grouped_conditions.items():
+        latest_in_group = max(cond_group, key=lambda c: parse(c.version))
+        latest_conditions.append(latest_in_group)
+
+    # STEP 4: SORT/PACKAGE FINAL LIST
+    # sort the final list alphabetically by `display_name` for a
+    # consistent and user-friendly order in the ui dropdown
+    latest_conditions.sort(key=lambda c: c.display_name)
+
+    return latest_conditions
 
 
 async def get_condition_by_id_db(
@@ -66,10 +113,10 @@ async def get_condition_by_id_db(
                 icd10_codes,
                 rxnorm_codes
             FROM conditions
-            WHERE id = %s AND version = %s
+            WHERE id = %s
             """
 
-    params = (id, CURRENT_VERSION)
+    params = (id,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -171,8 +218,8 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     """
     Given a list of RC SNOMED codes, find their assocaited CG rows.
 
-    Finds all conditions that are associated with the given list of child RSG SNOMED codes,
-    matching CURRENT_VERSION.
+    Finds all conditions that are associated with the given list of child RSG SNOMED codes
+    for any potential version of that condition data.
 
     This uses the GIN index on the `child_rsg_snomed_codes` array column for performance.
 
@@ -199,14 +246,10 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             icd10_codes,
             rxnorm_codes
         FROM conditions
-        WHERE child_rsg_snomed_codes && %s::text[]
-        AND version = %s;
+        WHERE child_rsg_snomed_codes && %s::text[];
     """
 
-    params = (
-        codes,
-        CURRENT_VERSION,
-    )
+    params = (codes,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
