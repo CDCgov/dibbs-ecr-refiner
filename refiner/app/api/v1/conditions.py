@@ -7,7 +7,7 @@ from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
-    get_conditions_db,
+    get_latest_conditions_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
 
@@ -42,7 +42,8 @@ async def get_conditions(
     Returns:
         list[Condition]: List of all conditions.
     """
-    conditions = await get_conditions_db(db=db)
+
+    conditions = await get_latest_conditions_db(db=db)
     return [
         GetConditionsResponse(id=condition.id, display_name=condition.display_name)
         for condition in conditions
