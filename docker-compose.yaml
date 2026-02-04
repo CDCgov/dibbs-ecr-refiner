@@ -119,7 +119,7 @@ services:
     image: python:3.14-slim
     working_dir: /app
     command: >
-      sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv fhir.resources &&
+      sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv &&
              python refiner/scripts/seeding/seed_db.py"
     profiles: ["seed"]
     depends_on:

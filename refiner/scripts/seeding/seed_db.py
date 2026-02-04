@@ -1,13 +1,13 @@
 import json
 import logging
 import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import psycopg
 from dotenv import load_dotenv
-from fhir.resources.valueset import ValueSet
 from psycopg import Connection, sql
 
 # configuration
@@ -48,8 +48,8 @@ class ConditionData:
     Represents a single, processed condition grouper ready for database insertion.
     """
 
-    parent_vs: ValueSet
-    all_vs_map: dict[tuple[str, str], ValueSet]
+    parent_vs: dict
+    all_vs_map: dict[tuple[str, str], dict]
 
     child_codes: set[FhirCodeTuple] = field(init=False, default_factory=set)
     """
@@ -80,8 +80,9 @@ class ConditionData:
         """
 
         for child_vs in get_child_rsg_valuesets(self.parent_vs, self.all_vs_map):
-            if snomed_code := parse_snomed_from_url(child_vs.url or ""):
+            if snomed_code := parse_snomed_from_url(child_vs.get("url", "")):
                 self.child_rsg_snomed_codes.add(snomed_code)
+
             self.child_codes.update(extract_codes_from_compose(child_vs))
 
     def _aggregate_sibling_codes(self):
@@ -101,12 +102,13 @@ class ConditionData:
         # combine all codes; the union operator `|` correctly merges the sets
         all_codes = self.child_codes | self.sibling_codes
         categorized = categorize_codes_by_system(all_codes)
+
         return {
-            "canonical_url": self.parent_vs.url,
-            "version": self.parent_vs.version,
-            "display_name": (self.parent_vs.title or self.parent_vs.name or "").replace(
-                "_", " "
-            ),
+            "canonical_url": self.parent_vs.get("url"),
+            "version": self.parent_vs.get("version"),
+            "display_name": (
+                self.parent_vs.get("title") or self.parent_vs.get("name") or ""
+            ).replace("_", " "),
             "child_rsg_snomed_codes": list(self.child_rsg_snomed_codes),
             "loinc_codes": json.dumps(categorized["loinc_codes"]),
             "snomed_codes": json.dumps(categorized["snomed_codes"]),
@@ -127,109 +129,142 @@ def get_db_connection(db_url: str, db_password: str) -> Connection:
         raise
 
 
-def load_valuesets_from_all_files() -> dict[tuple[str, str], ValueSet]:
+def load_valuesets_from_all_files() -> dict[tuple[str, str], dict]:
     """
     Loads all ValueSet resources from JSON files in the TES data directory.
     """
 
-    vs_map: dict[tuple[str, str], ValueSet] = {}
+    vs_map: dict[tuple[str, str], dict] = {}
     json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
-    for file_path in json_files:
+
+    for idx, file_path in enumerate(json_files, start=1):
+        logger.info(
+            "📝 Loading TES file %d / %d: %s",
+            idx,
+            len(json_files),
+            file_path.name,
+        )
+
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
+
         for vs_dict in data.get("valuesets", []):
-            if (url := vs_dict.get("url")) and (version := vs_dict.get("version")):
-                try:
-                    vs_map[(url, version)] = ValueSet.model_validate(vs_dict)
-                except Exception as e:
-                    logger.warning(f"Failed to parse ValueSet {url}|{version}: {e}")
+            url = vs_dict.get("url")
+            version = vs_dict.get("version")
+            if url and version:
+                vs_map[(url, version)] = vs_dict
+            else:
+                logger.warning(f"Failed to parse ValueSet {url}|{version}")
+
     logger.info(f"Loaded {len(vs_map)} unique ValueSets from all TES files.")
     return vs_map
 
 
-def is_condition_grouper(vs: ValueSet) -> bool:
+def is_condition_grouper(vs: dict) -> bool:
     """
     Checks if a ValueSet is a 'ConditionGrouper' via its metadata profile.
     """
 
-    profiles = getattr(getattr(vs, "meta", None), "profile", []) or []
-    # we have to cast the return to make mypy happy
-    return bool(any("conditiongroupervalueset" in str(prof) for prof in profiles))
+    profiles = vs.get("meta", {}).get("profile", []) or []
+    return any("conditiongroupervalueset" in str(prof).lower() for prof in profiles)
 
 
-def is_reporting_spec_grouper(vs: ValueSet) -> bool:
+def is_reporting_spec_grouper(vs: dict) -> bool:
     """
     Checks if a ValueSet is a 'ReportingSpecGrouper' by its URL.
     """
 
-    # we have to cast the return to make mypy happy
-    return bool(vs.url and "rs-grouper" in vs.url.lower())
+    url = vs.get("url", "")
+    return "rs-grouper" in url.lower()
 
 
-def is_additional_context_grouper(vs: ValueSet) -> bool:
+def is_additional_context_grouper(vs: dict) -> bool:
     """
     Checks if a ValueSet is for 'Additional Context' by its name or title.
     """
 
-    name = (vs.name or "").lower()
-    title = (vs.title or "").lower()
+    name = (vs.get("name") or "").lower()
+    title = (vs.get("title") or "").lower()
     return "additional" in name or "additional" in title
 
 
-def extract_codes_from_compose(vs: ValueSet) -> set[FhirCodeTuple]:
+def extract_codes_from_compose(vs: dict) -> set[FhirCodeTuple]:
     """
     Extracts all (system, code, display) tuples from a ValueSet's compose section.
     """
 
     codes: set[FhirCodeTuple] = set()
-    if vs.compose:
-        for inc in vs.compose.include or []:
-            if inc.system and inc.concept:
-                for concept in inc.concept:
-                    if concept.code:
-                        codes.add((inc.system, concept.code, concept.display))
+
+    compose = vs.get("compose")
+    if not compose:
+        return codes
+
+    for inc in compose.get("include", []):
+        system = inc.get("system")
+        if not system:
+            continue
+
+        for concept in inc.get("concept", []):
+            code = concept.get("code")
+            if code:
+                codes.add((system, code, concept.get("display")))
+
     return codes
 
 
 def get_child_rsg_valuesets(
-    parent: ValueSet, all_vs_map: dict[tuple[str, str], ValueSet]
-) -> list[ValueSet]:
+    parent: dict,
+    all_vs_map: dict[tuple[str, str], dict],
+) -> list[dict]:
     """
     Finds all 'ReportingSpecGrouper' children of a parent ValueSet.
     """
 
-    children: list[ValueSet] = []
-    if parent.compose:
-        for inc in parent.compose.include or []:
-            for ref in inc.valueSet or []:
-                url, sep, version = str(ref).partition("|")
-                if sep and (child_vs := all_vs_map.get((url, version))):
-                    if is_reporting_spec_grouper(child_vs):
-                        children.append(child_vs)
+    children: list[dict] = []
+
+    compose = parent.get("compose")
+    if not compose:
+        return children
+
+    for inc in compose.get("include", []):
+        for ref in inc.get("valueSet", []):
+            url, sep, version = str(ref).partition("|")
+            if sep and (child_vs := all_vs_map.get((url, version))):
+                if is_reporting_spec_grouper(child_vs):
+                    children.append(child_vs)
+
     return children
 
 
 def get_sibling_context_valuesets(
-    parent: ValueSet, all_vs_map: dict[tuple[str, str], ValueSet]
-) -> list[ValueSet]:
+    parent: dict,
+    all_vs_map: dict[tuple[str, str], dict],
+) -> list[dict]:
     """
     Finds sibling 'Additional Context' ValueSets by matching name and version.
     """
 
-    siblings: list[ValueSet] = []
-    parent_name = (parent.name or "").lower().replace("_", "")
+    siblings: list[dict] = []
+
+    parent_name = (parent.get("name") or "").lower().replace("_", "")
+    parent_version = parent.get("version")
+    parent_url = parent.get("url")
+
     for vs in all_vs_map.values():
         if (
             is_additional_context_grouper(vs)
-            and vs.version == parent.version
-            and vs.url != parent.url
-            and parent_name in (vs.name or "").lower().replace("_", "")
+            and vs.get("version") == parent_version
+            and vs.get("url") != parent_url
+            and parent_name in (vs.get("name") or "").lower().replace("_", "")
         ):
             siblings.append(vs)
+
     return siblings
 
 
-def categorize_codes_by_system(all_codes: set[FhirCodeTuple]) -> ConditionCodePayload:
+def categorize_codes_by_system(
+    all_codes: set[FhirCodeTuple],
+) -> ConditionCodePayload:
     """
     Categorizes a set of codes into a dictionary based on their system.
     """
@@ -238,9 +273,11 @@ def categorize_codes_by_system(all_codes: set[FhirCodeTuple]) -> ConditionCodePa
     result: ConditionCodePayload = {
         system_name: [] for system_name in SYSTEM_MAP.values()
     }
+
     for system, code, display in all_codes:
         if system_key := SYSTEM_MAP.get(system):
             result[system_key].append({"code": code, "display": display})
+
     return result
 
 
@@ -261,7 +298,9 @@ def seed_database(db_url: str, db_password: str) -> None:
     all_vs_map = load_valuesets_from_all_files()
 
     condition_groupers = [vs for vs in all_vs_map.values() if is_condition_grouper(vs)]
-    logger.info(f"Identified {len(condition_groupers)} condition groupers to process.")
+    logger.info(
+        f"🔎 Identified {len(condition_groupers)} condition groupers to process."
+    )
 
     processed_conditions = [
         ConditionData(parent, all_vs_map) for parent in condition_groupers
@@ -273,17 +312,18 @@ def seed_database(db_url: str, db_password: str) -> None:
         return
 
     logger.info(f"✅ Prepared {len(conditions_to_insert)} records for insertion.")
+
     try:
         with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
             logger.info("🧹 Clearing specified data tables...")
-            tables_to_truncate = [
+
+            for table in [
                 "conditions",
                 "jurisdictions",
                 "configurations",
                 "sessions",
                 "users",
-            ]
-            for table in tables_to_truncate:
+            ]:
                 try:
                     cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;")
                 except psycopg.errors.UndefinedTable:
@@ -292,18 +332,38 @@ def seed_database(db_url: str, db_password: str) -> None:
             logger.info("⏳ Inserting condition records...")
             insert_query = sql.SQL(
                 """
-                INSERT INTO public.conditions (canonical_url, version, display_name, child_rsg_snomed_codes, loinc_codes, snomed_codes, icd10_codes, rxnorm_codes)
-                VALUES (%(canonical_url)s, %(version)s, %(display_name)s, %(child_rsg_snomed_codes)s, %(loinc_codes)s, %(snomed_codes)s, %(icd10_codes)s, %(rxnorm_codes)s)
+                INSERT INTO public.conditions (
+                    canonical_url,
+                    version,
+                    display_name,
+                    child_rsg_snomed_codes,
+                    loinc_codes,
+                    snomed_codes,
+                    icd10_codes,
+                    rxnorm_codes
+                )
+                VALUES (
+                    %(canonical_url)s,
+                    %(version)s,
+                    %(display_name)s,
+                    %(child_rsg_snomed_codes)s,
+                    %(loinc_codes)s,
+                    %(snomed_codes)s,
+                    %(icd10_codes)s,
+                    %(rxnorm_codes)s
+                )
                 """
             )
+
             cursor.executemany(insert_query, conditions_to_insert)
             conn.commit()
 
             logger.info("🎉 SUCCESS: Database seeding complete!")
 
-    except (psycopg.Error, Exception):
+    except Exception:
         logger.error(
-            "❌ A critical error occurred during the seeding process.", exc_info=True
+            "❌ A critical error occurred during the seeding process.",
+            exc_info=True,
         )
         logger.error("Make sure migrations have been run prior to seeding!")
         raise
@@ -311,9 +371,14 @@ def seed_database(db_url: str, db_password: str) -> None:
 
 if __name__ == "__main__":
     load_dotenv(dotenv_path=ENV_PATH)
-    if not (db_url := os.getenv("DB_URL")) or not (
-        db_password := os.getenv("DB_PASSWORD")
-    ):
+
+    db_url = os.getenv("DB_URL")
+    db_password = os.getenv("DB_PASSWORD")
+
+    if not db_url or not db_password:
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
     else:
+        start = time.perf_counter()
         seed_database(db_url=db_url, db_password=db_password)
+        end = time.perf_counter()
+        print(f"Took {end - start:.3f} seconds")
