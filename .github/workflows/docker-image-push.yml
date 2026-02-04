@@ -118,31 +118,31 @@ jobs:
           echo "LAMBDA_TAGS: ${{ steps.vars.outputs.lambda_tags }}"
           echo "OPS_TAGS: ${{ steps.vars.outputs.ops_tags }}"
 
-      # - name: Build and push Refiner app image
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     context: .
-      #     file: Dockerfile.app
-      #     push: true
-      #     tags: ${{ steps.vars.outputs.app_tags }}
-      #     build-args: |
-      #       VITE_GIT_HASH=${{ github.sha }}
-      #       VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
+      - name: Build and push Refiner app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.app
+          push: true
+          tags: ${{ steps.vars.outputs.app_tags }}
+          build-args: |
+            VITE_GIT_HASH=${{ github.sha }}
+            VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
 
-      # - name: Build and push Refiner Lambda image
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     context: .
-      #     provenance: false
-      #     file: Dockerfile.lambda
-      #     push: true
-      #     platforms: linux/amd64
-      #     tags: ${{ steps.vars.outputs.lambda_tags }}
+      - name: Build and push Refiner Lambda image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          provenance: false
+          file: Dockerfile.lambda
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.vars.outputs.lambda_tags }}
 
-      # - name: Build and push Refiner Ops image
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     context: .
-      #     file: Dockerfile.ops
-      #     push: true
-      #     tags: ${{ steps.vars.outputs.ops_tags }}
+      - name: Build and push Refiner Ops image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ops
+          push: true
+          tags: ${{ steps.vars.outputs.ops_tags }}
