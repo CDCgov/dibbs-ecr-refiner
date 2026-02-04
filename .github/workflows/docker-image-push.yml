@@ -128,8 +128,8 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=refiner-cache
+          cache-to: type=gha,scope=refiner-cache,mode=max
 
       - name: Build and push Refiner Lambda image (GHCR)
         uses: docker/build-push-action@v6
@@ -141,8 +141,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.ghcr_lambda_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=refiner-cache
+          cache-to: type=gha,scope=refiner-cache,mode=max
 
       - name: Build and push Refiner Ops image (GHCR)
         uses: docker/build-push-action@v6
@@ -152,8 +152,8 @@ jobs:
           file: Dockerfile.ops
           push: true
           tags: ${{ steps.vars.outputs.ghcr_ops_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=refiner-cache
+          cache-to: type=gha,scope=refiner-cache,mode=max
 
       - name: Build and push Refiner app image (AWS ECR)
         uses: docker/build-push-action@v6
@@ -166,8 +166,8 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=refiner-cache
+          cache-to: type=gha,scope=refiner-cache,mode=max
 
       - name: Build and push Refiner Lambda image (AWS ECR)
         uses: docker/build-push-action@v6
@@ -179,8 +179,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.ecr_lambda_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=refiner-cache
+          cache-to: type=gha,scope=refiner-cache,mode=max
 
       - name: Build and push Refiner Ops image (AWS ECR)
         uses: docker/build-push-action@v6
@@ -190,5 +190,5 @@ jobs:
           file: Dockerfile.ops
           push: true
           tags: ${{ steps.vars.outputs.ecr_ops_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=refiner-cache
+          cache-to: type=gha,scope=refiner-cache,mode=max
