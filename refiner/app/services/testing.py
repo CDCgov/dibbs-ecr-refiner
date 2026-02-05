@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass, field
 from logging import Logger
 from typing import TypedDict
@@ -153,7 +154,7 @@ async def independent_testing(
         xml_files, jurisdiction_id
     )
     rc_codes_for_jurisdiction = reportability_data["rc_codes_for_jurisdiction"]
-    rc_to_conditions_list = await _map_rc_codes_to_conditions(
+    rc_to_conditions_map = await _map_rc_codes_to_conditions(
         db=db, rc_codes=rc_codes_for_jurisdiction
     )
 
@@ -179,9 +180,9 @@ async def independent_testing(
     # group all found condition versions by their conceptual group (canonical_url)
     # to treat all versions of a condition (e.g., all "Influenza" versions) as a single entity
     conditions_grouped_by_url: dict[str, list[DbCondition]] = defaultdict(list)
-    seen_ids_by_url: dict[str, set[str]] = defaultdict(set)
+    seen_ids_by_url: dict[str, set[UUID]] = defaultdict(set)
 
-    for conditions_list in rc_to_conditions_list.values():
+    for conditions_list in rc_to_conditions_map.values():
         for condition in conditions_list:
             url = condition.canonical_url
             if condition.id not in seen_ids_by_url[url]:
@@ -220,7 +221,7 @@ async def independent_testing(
         # collect all snomed codes that led to detecting this conceptual condition
         snomed_codes_for_this_group = [
             code
-            for code, cond_list in rc_to_conditions_list.items()
+            for code, cond_list in rc_to_conditions_map.items()
             if any(c.canonical_url == canonical_url for c in cond_list)
         ]
 
