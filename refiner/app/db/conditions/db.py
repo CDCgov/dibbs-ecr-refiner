@@ -80,10 +80,10 @@ async def get_latest_conditions_db(
     # STEP 3: HIGHLIGHT LATEST VERSION FOR EACH GROUP
     # iterate through the dictionary and use `max()` with `packaging.version.parse`
     # as the key to correctly identify the latest version for each condition
-    latest_conditions: list[DbConditionBase] = []
-    for url, cond_group in grouped_conditions.items():
-        latest_in_group = max(cond_group, key=lambda c: parse(c.version))
-        latest_conditions.append(latest_in_group)
+    latest_conditions: list[DbConditionBase] = [
+        max(cond_group, key=lambda c: parse(c.version))
+        for cond_group in grouped_conditions.values()
+    ]
 
     # STEP 4: SORT/PACKAGE FINAL LIST
     # sort the final list alphabetically by `display_name` for a
