@@ -116,7 +116,7 @@ def load_tes_data(db_url: str, db_password: str) -> None:
     """
     Determines which condition groupers from the TES need to be inserted into the database and performs the insert.
 
-    It will skip any data that has already been found in the database by default.
+    It will skip any data that has already been found in the database.
 
     Args:
         db_url (str): The database URL
