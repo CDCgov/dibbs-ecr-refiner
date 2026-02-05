@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from lib import (
     get_db_connection,
 )
-from tes_update import run_tes_update
+from load_tes_data import load_tes_data
 
 
 def seed_database(db_url: str, db_password: str) -> None:
@@ -38,24 +38,8 @@ def seed_database(db_url: str, db_password: str) -> None:
         )
         logger.error("Make sure migrations have been run prior to seeding!")
         raise
-    # all_vs_map = load_valuesets_from_all_files()
 
-    # condition_groupers = [vs for vs in all_vs_map.values() if is_condition_grouper(vs)]
-    # logger.info(
-    #     f"🔎 Identified {len(condition_groupers)} condition groupers to process."
-    # )
-
-    # processed_conditions = [
-    #     ConditionData(parent, all_vs_map) for parent in condition_groupers
-    # ]
-    # conditions_to_insert = [cond.payload for cond in processed_conditions]
-
-    # if not conditions_to_insert:
-    #     logger.warning("⚠️ No conditions were processed. Aborting database write.")
-    #     return
-
-    # logger.info(f"✅ Prepared {len(conditions_to_insert)} records for insertion.")
-    run_tes_update(db_url=db_url, db_password=db_password, skip_existing_versions=False)
+    load_tes_data(db_url=db_url, db_password=db_password)
 
 
 if __name__ == "__main__":
@@ -70,4 +54,4 @@ if __name__ == "__main__":
         start = time.perf_counter()
         seed_database(db_url=db_url, db_password=db_password)
         end = time.perf_counter()
-        print(f"Took {end - start:.3f} seconds")
+        logger.info(f"⏱️  Took {end - start:.3f} seconds")

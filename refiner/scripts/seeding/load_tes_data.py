@@ -14,6 +14,10 @@ from psycopg import sql
 
 
 def _get_existing_versions(db_url: str, db_password: str) -> set[str]:
+    """
+    Returns a list of TES versions already present in the database.
+    """
+
     query = """
     SELECT DISTINCT(version)
     FROM conditions
@@ -48,9 +52,9 @@ def _build_processed_conditions(
         conditions.append(ConditionData(parent, valuesets_map))
 
     for v in versions_seen:
-        logger.info(f"🏃‍♂️ TES version {v} data found, skipping import...")
+        logger.info(f"💡 TES version {v} data already found in DB, skipping import...")
 
-    logger.info(f"🏁 Total condition rows skipped during processing: {skipped_count}")
+    logger.info(f"⏭️  Total condition rows skipped during processing: {skipped_count}")
     return conditions
 
 
@@ -108,9 +112,7 @@ def _build_condition_groupers(valuesets_map: dict[tuple[str, str], dict]) -> lis
     return groupers
 
 
-def run_tes_update(
-    db_url: str, db_password: str, skip_existing_versions: bool = True
-) -> None:
+def load_tes_data(db_url: str, db_password: str) -> None:
     """
     Determines which condition groupers from the TES need to be inserted into the database and performs the insert.
 
@@ -119,13 +121,11 @@ def run_tes_update(
     Args:
         db_url (str): The database URL
         db_password (str): The database password
-        skip_existing_versions (bool, optional): Whether or not to skip existing data. Defaults to True.
     """
     # Get versions that already exist in DB
     versions_in_db: set[str] = set()
-    if skip_existing_versions:
-        logger.info("🏃‍♂️ Previously loaded TES version data will be skipped.")
-        versions_in_db = _get_existing_versions(db_url=db_url, db_password=db_password)
+    versions_in_db = _get_existing_versions(db_url=db_url, db_password=db_password)
+    logger.info("🏃 Previously loaded TES condition data will be skipped.")
 
     all_vs_map = load_valuesets_from_all_files()
 
@@ -139,13 +139,15 @@ def run_tes_update(
 
     insertable_conditions = _build_insertable_conditions(processed_conditions)
     if not insertable_conditions:
-        logger.info("⚠️ No conditions to add. Skipping insert step.")
+        logger.info("⚠️  All conditions found already exist. Skipping insert step.")
         return
 
     logger.info(f"⬆️  Total conditions to insert: {len(insertable_conditions)}")
     _insert_processed_conditions(
         db_url=db_url, db_password=db_password, conditions=insertable_conditions
     )
+
+    logger.info("🏁 Done!")
 
 
 if __name__ == "__main__":
@@ -158,6 +160,6 @@ if __name__ == "__main__":
         logger.critical("DB_URL and DB_PASSWORD environment variables must be set.")
     else:
         start = time.perf_counter()
-        run_tes_update(db_url=db_url, db_password=db_password)
+        load_tes_data(db_url=db_url, db_password=db_password)
         end = time.perf_counter()
-        print(f"Took {end - start:.3f} seconds")
+        logger.info(f"⏱️  Took {end - start:.3f} seconds")

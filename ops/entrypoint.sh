@@ -38,7 +38,7 @@ case "$COMMAND" in
         ;;
     import)
         echo "Importing condition data"
-        exec python3 ./scripts/seeding/tes_update.py
+        exec python3 ./scripts/seeding/load_tes_data.py
         ;;
     python|python3)
         echo "Running Python script: $*"
@@ -47,7 +47,7 @@ case "$COMMAND" in
     prepare-db)
         echo "Running migration scripts and updating condition data"
         migrate -path ./migrations -database "$DATABASE_URL" up
-        exec python3 ./scripts/seeding/tes_update.py
+        exec python3 ./scripts/seeding/load_tes_data.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"
