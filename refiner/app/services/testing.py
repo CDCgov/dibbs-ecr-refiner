@@ -178,13 +178,15 @@ async def independent_testing(
     # STEP 3:
     # group all found condition versions by their conceptual group (canonical_url)
     # to treat all versions of a condition (e.g., all "Influenza" versions) as a single entity
-    conditions_grouped_by_url: dict[str, list[DbCondition]] = {}
+    conditions_grouped_by_url: dict[str, list[DbCondition]] = defaultdict(list)
+    seen_ids_by_url: dict[str, set[str]] = defaultdict(set)
+
     for conditions_list in rc_to_conditions_list.values():
         for condition in conditions_list:
-            group = conditions_grouped_by_url.setdefault(condition.canonical_url, [])
-            # only add if we haven't seen this specific version (by uuid) yet
-            if not any(c.id == condition.id for c in group):
-                group.append(condition)
+            url = condition.canonical_url
+            if condition.id not in seen_ids_by_url[url]:
+                seen_ids_by_url[url].add(condition.id)
+                conditions_grouped_by_url[url].append(condition)
 
     # STEP 4:
     # build a trace for each conceptual condition, determining if it is configured
