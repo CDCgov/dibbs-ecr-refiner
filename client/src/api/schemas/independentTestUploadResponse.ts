@@ -13,5 +13,5 @@ export interface IndependentTestUploadResponse {
   refined_conditions_found: number;
   refined_conditions: Condition[];
   unrefined_eicr: string;
-  refined_download_url: string;
+  refined_download_key: string;
 }

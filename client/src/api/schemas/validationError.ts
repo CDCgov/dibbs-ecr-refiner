@@ -5,9 +5,12 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { ValidationErrorCtx } from './validationErrorCtx';
 
 export interface ValidationError {
   loc: (string | number)[];
   msg: string;
   type: string;
+  input?: unknown;
+  ctx?: ValidationErrorCtx;
 }

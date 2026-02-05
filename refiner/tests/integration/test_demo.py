@@ -51,13 +51,13 @@ async def test_demo_upload_smoke(
     assert "refined_conditions" in data
     assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
-    assert "refined_download_url" in data
+    assert "refined_download_key" in data
 
 
 def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     from app.services.aws.s3 import upload_refined_ecr
 
-    def fake_upload_refined_ecr(user_id, file_buffer, filename, expires=3600):
+    def fake_upload_refined_ecr(user_id, file_buffer, filename, logger):
         return ""
 
     def mock_get_logged_in_user():
@@ -82,8 +82,8 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     response = client.post(f"{api_route_base}/upload")
 
     assert response.status_code == 200
-    assert "refined_download_url" in response.json()
-    assert response.json()["refined_download_url"] == ""
+    assert "refined_download_key" in response.json()
+    assert response.json()["refined_download_key"] == ""
 
     app.dependency_overrides.clear()
 
