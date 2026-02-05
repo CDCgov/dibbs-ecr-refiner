@@ -72,10 +72,8 @@ async def get_latest_conditions_db(
     # STEP 2: GROUP CONDITIONS BY CANONICAL URL
     # this creates a dictionary where each key is a unique `canonical_url`
     # and the value is a list of all condition objects with that URL
-    grouped_conditions: dict[str, list[DbConditionBase]] = {}
+    grouped_conditions: dict[str, list[DbConditionBase]] = defaultdict(list)
     for cond in all_conditions:
-        if cond.canonical_url not in grouped_conditions:
-            grouped_conditions[cond.canonical_url] = []
         grouped_conditions[cond.canonical_url].append(cond)
 
     # STEP 3: HIGHLIGHT LATEST VERSION FOR EACH GROUP
