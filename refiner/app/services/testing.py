@@ -155,17 +155,15 @@ async def independent_testing(
     )
 
     # STEP 2:
-    # group RR codes by their matched DbCondition (by .id)
+    # group RR codes by their matched DbCondition versions
     condition_map: dict[UUID, IndependentTestingTrace] = {}
-    for rc_code, primary_condition in rc_to_condition.items():
-        if primary_condition is None:
-            continue
-        if primary_condition.id not in condition_map:
-            condition_map[primary_condition.id] = IndependentTestingTrace(
-                matching_condition=primary_condition
+    for rc_code, candidate_conditions in rc_to_condition.items():
+        # we have multiple versions of conditions; will pick the right one after checking configs
+        for condition in candidate_conditions:
+            trace = condition_map.setdefault(
+                condition.id, IndependentTestingTrace(matching_condition=condition)
             )
-        trace = condition_map[primary_condition.id]
-        trace.rc_snomed_codes.append(rc_code)
+            trace.rc_snomed_codes.append(rc_code)
 
     # STEP 3:
     # map conditions to configurations
@@ -480,23 +478,24 @@ async def _map_rc_codes_to_conditions(
     )
 
     # STEP 2:
-    # build a reverse index: from a RC SNOMED code to the condition it belongs to
-    rc_code_to_condition_map: dict[str, DbCondition] = {
-        rc_code: condition
-        for condition in possible_conditions
-        for rc_code in condition.child_rsg_snomed_codes
-    }
+    # build a reverse index: from a RC SNOMED code to ALL conditions (keeping all versions)
+    rc_code_to_conditions_map: dict[str, list[DbCondition]] = {}
+    for condition in possible_conditions:
+        for rc_code in condition.child_rsg_snomed_codes:
+            if rc_code not in rc_code_to_conditions_map:
+                rc_code_to_conditions_map[rc_code] = []
+            rc_code_to_conditions_map[rc_code].append(condition)
 
     # STEP 3:
     # find the intersection between the codes from the file and all known RC SNOMED codes
     # this gives us only the codes that are both in the file AND are valid for the related condition
     rr_codes_set = set(rc_codes)
-    condition_rsg_codes_set = set(rc_code_to_condition_map.keys())
+    condition_rsg_codes_set = set(rc_code_to_conditions_map.keys())
     matched_codes = rr_codes_set.intersection(condition_rsg_codes_set)
 
     # STEP 4:
-    # build the final map from the file's code to its corresponding condition object
-    return {code: rc_code_to_condition_map[code] for code in matched_codes}
+    # build the final map from the file's code to its corresponding condition objects (all versions)
+    return {code: rc_code_to_conditions_map[code] for code in matched_codes}
 
 
 async def _map_conditions_to_configurations(
