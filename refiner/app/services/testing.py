@@ -463,7 +463,7 @@ def _extract_reportable_conditions_for_jurisdiction(
 async def _map_rc_codes_to_conditions(
     db: AsyncDatabaseConnection,
     rc_codes: list[str],
-) -> dict[str, DbCondition | None]:
+) -> dict[str, list[DbCondition]]:
     """
     Map each RC SNOMED code to a matching DbCondition, or None if not found.
     """
