@@ -253,12 +253,7 @@ def load_valuesets_from_all_files() -> dict[tuple[str, str], dict]:
     json_files = [f for f in TES_DATA_DIR.glob("*.json") if f.name != "manifest.json"]
 
     for idx, file_path in enumerate(json_files, start=1):
-        logger.info(
-            "📝 Loading TES file %d / %d: %s",
-            idx,
-            len(json_files),
-            file_path.name,
-        )
+        logger.info(f"📝 Loading TES file {idx} / {len(json_files)}: {file_path.name}")
 
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
