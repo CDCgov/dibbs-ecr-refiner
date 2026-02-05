@@ -522,11 +522,10 @@ async def _map_rc_codes_to_conditions(
 
     # STEP 2:
     # build a reverse index: from a RC SNOMED code to ALL conditions (keeping all versions)
-    rc_code_to_conditions_map: dict[str, list[DbCondition]] = {}
+    rc_code_to_conditions_map: dict[str, list[DbCondition]] = defaultdict(list)
+
     for condition in possible_conditions:
         for rc_code in condition.child_rsg_snomed_codes:
-            if rc_code not in rc_code_to_conditions_map:
-                rc_code_to_conditions_map[rc_code] = []
             rc_code_to_conditions_map[rc_code].append(condition)
 
     # STEP 3:
