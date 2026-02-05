@@ -117,7 +117,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
         AsyncMock(return_value=[]),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_conditions_db",
+        "app.api.v1.configurations.get_conditions_by_version_db",
         AsyncMock(return_value=[]),
     )
     # Mock ConfigurationLock
