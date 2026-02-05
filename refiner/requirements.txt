@@ -4,14 +4,15 @@ chardet
 fastapi>=0.109.1
 fhir.resources
 httpx
+itsdangerous
 lxml
+packaging
 psycopg[binary]
 psycopg[pool]
 pydantic-settings
 pydantic>=2.0.0
+python-json-logger==4.0.0
 python-multipart
 requests
 rich
 uvicorn
-itsdangerous
-python-json-logger==4.0.0

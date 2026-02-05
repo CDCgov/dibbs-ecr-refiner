@@ -105,7 +105,7 @@ def mock_db_functions(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_conditions_db",
+        "app.api.v1.configurations.get_conditions_by_version_db",
         AsyncMock(return_value=[fake_condition]),
     )
 
@@ -115,7 +115,7 @@ def mock_db_functions(monkeypatch):
         name="test config",
         jurisdiction_id="SDDH",
         condition_id=MOCK_CONDITION_ID,
-        included_conditions=[],
+        included_conditions=[DbConfigurationCondition(id=MOCK_CONDITION_ID)],
         custom_codes=[],
         local_codes=[],
         section_processing=[],
@@ -131,7 +131,10 @@ def mock_db_functions(monkeypatch):
         "app.api.v1.configurations.get_configuration_by_id_db",
         AsyncMock(return_value=config_by_id_mock),
     )
-
+    monkeypatch.setattr(
+        "app.api.v1.configurations.get_included_conditions_db",
+        AsyncMock(return_value=[condition_mock]),
+    )
     monkeypatch.setattr(
         "app.api.v1.configurations.get_latest_config_db",
         AsyncMock(return_value=config_by_id_mock),

@@ -49,12 +49,12 @@ def mock_logged_in_user():
 
 
 @pytest.mark.asyncio
-async def test_get_conditions(monkeypatch, authed_client):
+async def test_get_latest_conditions(monkeypatch, authed_client):
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
         canonical_url="http://url.com",
-        version="3.0.0",
+        version="4.0.0",
         child_rsg_snomed_codes=["11111"],
         snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
         loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
@@ -62,11 +62,11 @@ async def test_get_conditions(monkeypatch, authed_client):
         rxnorm_codes=[make_db_condition_coding("33333", "Hypertension RXNORM")],
     )
 
-    async def fake_get_conditions_db(db):
+    async def fake_get_latest_conditions_db(db):
         return [fake_condition]
 
     monkeypatch.setattr(
-        "app.api.v1.conditions.get_conditions_db", fake_get_conditions_db
+        "app.api.v1.conditions.get_latest_conditions_db", fake_get_latest_conditions_db
     )
 
     response = await authed_client.get("/api/v1/conditions/")
@@ -87,7 +87,7 @@ async def test_get_condition_found(monkeypatch, authed_client):
         id=condition_id,
         display_name="Asthma",
         canonical_url="http://asthma.com",
-        version="3.0.0",
+        version="4.0.0",
         child_rsg_snomed_codes=["67890"],
         snomed_codes=[make_db_condition_coding("67890", "Asthma SNOMED")],
         loinc_codes=[make_db_condition_coding("1234-5", "Asthma LOINC")],
