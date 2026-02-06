@@ -79,6 +79,8 @@ jobs:
           echo "lambda_tags=$GHCR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
           echo "ops_tags=$GHCR_OPS:$TAG" >> $GITHUB_OUTPUT
 
+          echo "version_tag=$TAG" >> $GITHUB_OUTPUT
+
       - name: Print RC Docker image tags
         run: |
           echo "===== RC IMAGE TAGS ====="
@@ -89,16 +91,14 @@ jobs:
 
       - name: Create and push RC Git tag
         if: ${{ github.event.inputs.dry_run == 'false' }}
-        id: rc_git_tag
         run: |
-          GIT_TAG="v${{ github.event.inputs.version }}-${{ github.event.inputs.rc }}"
+          GIT_TAG="${{ steps.vars.outputs.version_tag }}"
           if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
             echo "Tag $GIT_TAG already exists, skipping"
           else
             git tag -a "$GIT_TAG" -m "Release candidate $GIT_TAG"
             git push origin "$GIT_TAG"
           fi
-          echo "git_tag=$GIT_TAG" >> $GITHUB_OUTPUT
 
       - name: Build/push Refiner App RC image to GHCR
         uses: docker/build-push-action@v6
@@ -110,6 +110,7 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.event.inputs.ref }}
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build/push Refiner Lambda RC image to GHCR
         uses: docker/build-push-action@v6
@@ -120,6 +121,8 @@ jobs:
           push: ${{ github.event.inputs.dry_run == 'false' }}
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build/push Refiner Ops RC image to GHCR
         uses: docker/build-push-action@v6
@@ -128,13 +131,15 @@ jobs:
           file: Dockerfile.ops
           push: ${{ github.event.inputs.dry_run == 'false' }}
           tags: ${{ steps.vars.outputs.ops_tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Create draft pre-release GitHub release notes
         if: ${{ github.event.inputs.dry_run == 'false' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.rc_git_tag.outputs.git_tag }}
-          name: ${{ steps.rc_git_tag.outputs.git_tag }}
+          tag_name: ${{ steps.vars.outputs.version_tag }}
+          name: ${{ steps.vars.outputs.version_tag }}
           draft: true
           prerelease: true
           generate_release_notes: true
