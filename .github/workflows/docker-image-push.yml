@@ -14,12 +14,23 @@ on:
       version_tag:
         description: "Optional Docker tag to use instead of branch name (`1.2.3`)"
         required: false
+      push_ghcr:
+        description: "Push images to GitHub Container Registry (GHCR)"
+        type: boolean
+        default: true
+      push_ecr:
+        description: "Push images to AWS ECR"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
 jobs:
   build-and-push:
+    env:
+      PUSH_GHCR: ${{ github.event_name == 'push' || github.event.inputs.push_ghcr }}
+      PUSH_ECR: ${{ github.event_name == 'push' || github.event.inputs.push_ecr }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -71,26 +82,41 @@ jobs:
             TAG="$VERSION_TAG"
           fi
 
-          # GHCR URLs
-          GHCR_APP="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner"
-          GHCR_LAMBDA="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda"
-          GHCR_OPS="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/ops"
+          # Define image base URLs
+          declare -A BASES=(
+            [APP]="refiner"
+            [LAMBDA]="lambda"
+            [OPS]="ops"
+          )
 
-          # ECR URLs
-          ECR_APP="$ECR_REGISTRY/dibbs-dev-refiner/refiner"
-          ECR_LAMBDA="$ECR_REGISTRY/dibbs-dev-refiner/lambda"
-          ECR_OPS="$ECR_REGISTRY/dibbs-dev-refiner/ops"
+          for IMAGE in APP LAMBDA OPS; do
+            TAGS=()
 
-          # If building `main`, include a `latest` tag
-          if [ "$REF_NAME" = "main" ]; then
-            echo "app_tags=$GHCR_APP:$TAG,$GHCR_APP:latest,$ECR_APP:$TAG,$ECR_APP:latest" >> $GITHUB_OUTPUT
-            echo "lambda_tags=$GHCR_LAMBDA:$TAG,$GHCR_LAMBDA:latest,$ECR_LAMBDA:$TAG,$ECR_LAMBDA:latest" >> $GITHUB_OUTPUT
-            echo "ops_tags=$GHCR_OPS:$TAG,$GHCR_OPS:latest,$ECR_OPS:$TAG,$ECR_OPS:latest" >> $GITHUB_OUTPUT
-          else
-            echo "app_tags=$GHCR_APP:$TAG,$ECR_APP:$TAG" >> $GITHUB_OUTPUT
-            echo "lambda_tags=$GHCR_LAMBDA:$TAG,$ECR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
-            echo "ops_tags=$GHCR_OPS:$TAG,$ECR_OPS:$TAG" >> $GITHUB_OUTPUT
-          fi
+            # GHCR
+            if [ "$PUSH_GHCR" = "true" ]; then
+              TAGS+=("ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/${BASES[$IMAGE]}:$TAG")
+            fi
+
+            # ECR
+            if [ "$PUSH_ECR" = "true" ]; then
+              TAGS+=("$ECR_REGISTRY/dibbs-dev-refiner/${BASES[$IMAGE]}:$TAG")
+            fi
+
+            # Add 'latest' if on main
+            if [ "$REF_NAME" = "main" ]; then
+              [ "$PUSH_GHCR" = "true" ] && TAGS+=("ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/${BASES[$IMAGE]}:latest")
+              [ "$PUSH_ECR" = "true" ] && TAGS+=("$ECR_REGISTRY/dibbs-dev-refiner/${BASES[$IMAGE]}:latest")
+            fi
+
+            # Output as comma-separated string
+            echo "${IMAGE,,}_tags=$(IFS=, ; echo "${TAGS[*]}")" >> $GITHUB_OUTPUT
+          done
+
+      - name: Debug Docker tags
+        run: |
+          echo "APP_TAGS: ${{ steps.vars.outputs.app_tags }}"
+          echo "LAMBDA_TAGS: ${{ steps.vars.outputs.lambda_tags }}"
+          echo "OPS_TAGS: ${{ steps.vars.outputs.ops_tags }}"
 
       - name: Build and push Refiner app image
         uses: docker/build-push-action@v6
@@ -101,7 +127,7 @@ jobs:
           tags: ${{ steps.vars.outputs.app_tags }}
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
-            VITE_GIT_BRANCH=${{ github.ref_name }}
+            VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
 
       - name: Build and push Refiner Lambda image
         uses: docker/build-push-action@v6
