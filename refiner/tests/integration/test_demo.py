@@ -3,8 +3,11 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import pytest
+from botocore.exceptions import ClientError
 from fastapi import HTTPException, UploadFile
 from fastapi.datastructures import Headers
 from fastapi.testclient import TestClient
@@ -230,3 +233,146 @@ def test_create_refined_ecr_zip():
         assert "covid_condition.xml" in namelist
         assert "flu_condition.xml" in namelist
         assert "CDA_eICR.xml" in namelist
+
+
+api_route_base_downloads = "/api/v1/demo/download"
+
+
+@pytest.fixture
+def mock_user():
+    return DbUser(
+        id=UUID("673da667-6f92-4a50-a40d-f44c5bc6a2d8"),
+        username="test-user",
+        email="test@test.com",
+        jurisdiction_id="SDDH",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+
+@pytest.fixture
+def different_user():
+    return DbUser(
+        id=UUID("11111111-1111-1111-1111-111111111111"),
+        username="other-user",
+        email="other@test.com",
+        jurisdiction_id="SDDH",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+
+def create_mock_s3_response(content: bytes = b"mock zip content"):
+    mock_body = MagicMock()
+    mock_body.iter_chunks.return_value = iter([content])
+    return {"Body": mock_body}
+
+
+class TestDownloadRefinedEcr:
+    def test_successful_download(self, mock_user):
+        app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+        s3_key = f"refiner-test-suite/2026-01-29/{mock_user.id}/test-file.zip"
+        with patch("app.services.aws.s3.fetch_zip_from_s3") as mock_fetch_zip_from_s3:
+            mock_fetch_zip_from_s3.return_value = create_mock_s3_response()
+            client = TestClient(app)
+            response = client.get(f"{api_route_base_downloads}/{s3_key}")
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "application/zip"
+            assert (
+                response.headers["content-disposition"]
+                == 'attachment; filename="test-file.zip"'
+            )
+            assert response.content == b"mock zip content"
+            mock_fetch_zip_from_s3.assert_called_once()
+        app.dependency_overrides.clear()
+
+    def test_forbidden_when_user_doesnt_own_file(self, mock_user, different_user):
+        app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+        s3_key = f"refiner-test-suite/2026-01-29/{different_user.id}/other-file.zip"
+        client = TestClient(app)
+        response = client.get(f"{api_route_base_downloads}/{s3_key}")
+        assert response.status_code == 403
+        assert response.json() == {
+            "detail": "You do not have permission to download this file."
+        }
+        app.dependency_overrides.clear()
+
+    def test_forbidden_when_key_has_invalid_user_id(self, mock_user):
+        app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+        s3_key = "refiner-test-suite/2026-01-29/not-a-valid-uuid/file.zip"
+        client = TestClient(app)
+        response = client.get(f"{api_route_base_downloads}/{s3_key}")
+        assert response.status_code == 403
+        assert response.json() == {
+            "detail": "You do not have permission to download this file."
+        }
+        app.dependency_overrides.clear()
+
+    def test_forbidden_when_key_has_wrong_format(self, mock_user):
+        app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+        s3_key = f"wrong-prefix/2026-01-29/{mock_user.id}/file.zip"
+        client = TestClient(app)
+        response = client.get(f"{api_route_base_downloads}/{s3_key}")
+        assert response.status_code == 403
+        assert response.json() == {
+            "detail": "You do not have permission to download this file."
+        }
+        app.dependency_overrides.clear()
+
+    def test_not_found_when_s3_key_doesnt_exist(self, mock_user):
+        app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+        s3_key = f"refiner-test-suite/2026-01-29/{mock_user.id}/nonexistent.zip"
+        with patch("app.services.aws.s3.fetch_zip_from_s3") as mock_fetch_zip_from_s3:
+            mock_fetch_zip_from_s3.side_effect = ClientError(
+                {
+                    "Error": {
+                        "Code": "NoSuchKey",
+                        "Message": "The specified key does not exist.",
+                    }
+                },
+                "GetObject",
+            )
+            client = TestClient(app)
+            response = client.get(f"{api_route_base_downloads}/{s3_key}")
+            assert response.status_code == 404
+            assert response.json() == {"detail": "File not found."}
+        app.dependency_overrides.clear()
+
+    def test_server_error_on_s3_failure(self, mock_user):
+        app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+        s3_key = f"refiner-test-suite/2026-01-29/{mock_user.id}/file.zip"
+        with patch("app.services.aws.s3.fetch_zip_from_s3") as mock_fetch_zip_from_s3:
+            mock_fetch_zip_from_s3.side_effect = ClientError(
+                {"Error": {"Code": "InternalError", "Message": "Internal error"}},
+                "GetObject",
+            )
+            client = TestClient(app)
+            response = client.get(f"{api_route_base_downloads}/{s3_key}")
+            assert response.status_code == 500
+            assert response.json() == {
+                "detail": "An error occurred while retrieving the file."
+            }
+        app.dependency_overrides.clear()
+
+    def test_requires_authentication(self):
+        app.dependency_overrides.clear()
+        client = TestClient(app)
+        s3_key = "refiner-test-suite/2026-01-29/some-user-id/file.zip"
+        response = client.get(f"{api_route_base_downloads}/{s3_key}")
+        assert response.status_code == 401
+
+
+class TestGetFilenameFromKey:
+    def test_extracts_filename(self):
+        from app.api.v1.demo import _get_filename_from_key
+
+        key = "refiner-test-suite/2026-01-29/user-id/my-refined-ecr.zip"
+        result = _get_filename_from_key(key)
+        assert result == "my-refined-ecr.zip"
+
+    def test_handles_key_without_slashes(self):
+        from app.api.v1.demo import _get_filename_from_key
+
+        key = "just-a-filename.zip"
+        result = _get_filename_from_key(key)
+        assert result == "just-a-filename.zip"

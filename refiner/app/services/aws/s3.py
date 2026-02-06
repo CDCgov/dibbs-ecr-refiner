@@ -144,11 +144,8 @@ def upload_refined_ecr(
     Returns:
         str: The S3 key of the uploaded file (or empty string on error)
     """
-    key = ""
-
     try:
-        today = date.today().isoformat()  # YYYY-MM-DD
-        key = f"refiner-test-suite/{today}/{user_id}/{filename}"
+        key = get_refined_user_zip_key(user_id=user_id, filename=filename)
 
         s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, key)
 
@@ -165,3 +162,23 @@ def upload_refined_ecr(
             },
         )
         return ""
+
+
+def fetch_zip_from_s3(key: str, logger: Logger) -> dict:
+    """
+    Fetch file from s3, return botocore response dict.
+    """
+    resp = s3_client.get_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=key,
+    )
+    return resp
+
+
+def get_refined_user_zip_key(user_id: UUID, filename: str) -> str:
+    """
+    Creates a refiner user zip file key.
+    """
+    today = date.today().isoformat()
+    key = f"refiner-test-suite/{today}/{user_id}/{filename}"
+    return key
