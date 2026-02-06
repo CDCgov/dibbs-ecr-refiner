@@ -97,6 +97,17 @@ jobs:
             echo "ops_tags=$GHCR_OPS:$TAG,$ECR_OPS:$TAG" >> $GITHUB_OUTPUT
           fi
 
+      - name: Create and push Git tag for release
+        if: ${{ github.event.inputs.create_release_notes == 'true' && (github.event.inputs.version_tag != '') }}
+        run: |
+          GIT_TAG="${{ github.event.inputs.version_tag }}"
+          if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
+            echo "Tag $GIT_TAG already exists, skipping"
+          else
+            git tag -a "$GIT_TAG" -m "Release $GIT_TAG"
+            git push origin "$GIT_TAG"
+          fi
+
       - name: Build and push Refiner app image
         uses: docker/build-push-action@v6
         with:
@@ -107,7 +118,7 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.ref_name }}
-            VERSION=${{ steps.vars.outputs.version_tag }}
+            VERSION=${{ github.event.inputs.version_tag }}
 
       - name: Build and push Refiner Lambda image
         uses: docker/build-push-action@v6
@@ -119,7 +130,7 @@ jobs:
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
           build-args: |
-            VERSION=${{ steps.vars.outputs.version_tag }}
+            VERSION=${{ github.event.inputs.version_tag }}
 
       - name: Build and push Refiner Ops image
         uses: docker/build-push-action@v6
@@ -129,14 +140,14 @@ jobs:
           push: true
           tags: ${{ steps.vars.outputs.ops_tags }}
           build-args: |
-            VERSION=${{ steps.vars.outputs.version_tag }}
+            VERSION=${{ github.event.inputs.version_tag }}
 
       - name: Create draft GitHub release notes
         if: ${{ github.event.inputs.create_release_notes == 'true' && (github.event.inputs.version_tag != '') }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.vars.outputs.version_tag }}
-          name: ${{ steps.vars.outputs.version_tag }}
+          tag_name: ${{ github.event.inputs.version_tag }}
+          name: ${{ github.event.inputs.version_tag }}
           draft: true
           prerelease: false
           generate_release_notes: true
