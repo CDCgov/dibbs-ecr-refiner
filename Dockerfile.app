@@ -19,6 +19,12 @@ RUN npm run build
 # Runtime image
 FROM python:3.14-slim
 
+# default VERSION is 0.0.0 if not passed at build time
+ARG VERSION="0.0.0"
+
+# make it available as an environment variable inside the container
+ENV VERSION=$VERSION
+
 WORKDIR /code
 
 RUN python -m pip install --upgrade pip
