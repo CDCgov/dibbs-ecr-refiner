@@ -1,9 +1,6 @@
-name: Build release candidate (`-rc`) images
+name: Build release candidate images
 
 on:
-  push:
-    branches:
-      - jw/release-doc
   workflow_dispatch:
     inputs:
       ref:
@@ -11,16 +8,14 @@ on:
         default: main
       version:
         description: "Release version (e.g. 1.4.0)"
-        # required: true
-        default: "1.4.0"
+        required: true
       rc:
         description: "RC number (e.g. rc.1)"
-        # required: true
-        default: "rc.1"
+        required: true
       dry_run:
-        description: "If true, skip pushing images and creating release"
+        description: "If true, skip pushing images and creating GitHub release"
         type: boolean
-        default: true
+        default: true # TODO: change to `false` once validated
 
 jobs:
   rc-release:
@@ -68,7 +63,7 @@ jobs:
         run: |
           echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-      - name: Determine RC image tags
+      - name: Determine RC Docker image tags
         id: vars
         run: |
           VERSION="${{ github.event.inputs.version }}"
@@ -84,14 +79,26 @@ jobs:
           echo "lambda_tags=$GHCR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
           echo "ops_tags=$GHCR_OPS:$TAG" >> $GITHUB_OUTPUT
 
-      - name: Debug RC tags
-        if: ${{ github.event.inputs.dry_run == 'true' }}
+      - name: Print RC Docker image tags
         run: |
-          echo "===== RC IMAGE TAGS (DRY RUN) ====="
+          echo "===== RC IMAGE TAGS ====="
           echo "App:    ${{ steps.vars.outputs.app_tags }}"
           echo "Lambda: ${{ steps.vars.outputs.lambda_tags }}"
           echo "Ops:    ${{ steps.vars.outputs.ops_tags }}"
           echo "=================================="
+
+      - name: Create and push RC Git tag
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        id: rc_git_tag
+        run: |
+          GIT_TAG="v${{ github.event.inputs.version }}-${{ github.event.inputs.rc }}"
+          if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
+            echo "Tag $GIT_TAG already exists, skipping"
+          else
+            git tag -a "$GIT_TAG" -m "Release candidate $GIT_TAG"
+            git push origin "$GIT_TAG"
+          fi
+          echo "git_tag=$GIT_TAG" >> $GITHUB_OUTPUT
 
       - name: Build/push Refiner App RC image to GHCR
         uses: docker/build-push-action@v6
@@ -122,12 +129,12 @@ jobs:
           push: ${{ github.event.inputs.dry_run == 'false' }}
           tags: ${{ steps.vars.outputs.ops_tags }}
 
-      - name: Create draft GitHub release
+      - name: Create draft pre-release GitHub release notes
         if: ${{ github.event.inputs.dry_run == 'false' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}-${{ github.event.inputs.rc }}
-          name: v${{ github.event.inputs.version }}-${{ github.event.inputs.rc }}
+          tag_name: ${{ steps.rc_git_tag.outputs.git_tag }}
+          name: ${{ steps.rc_git_tag.outputs.git_tag }}
           draft: true
           prerelease: true
           generate_release_notes: true
