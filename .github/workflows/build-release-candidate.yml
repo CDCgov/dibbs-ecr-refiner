@@ -1,0 +1,128 @@
+name: Build release candidate (`-rc`) images
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build from"
+        default: main
+      version:
+        description: "Release version (e.g. 1.4.0)"
+        required: true
+      rc:
+        description: "RC number (e.g. rc.1)"
+        required: true
+      dry_run:
+        description: "If true, skip pushing images and creating release"
+        type: boolean
+        default: false
+
+jobs:
+  rc-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate semantic version
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: $VERSION"
+            echo "Version must be semantic: MAJOR.MINOR.PATCH (e.g. 1.4.0)"
+            exit 1
+          fi
+
+      - name: Validate RC format
+        run: |
+          if [[ ! "${{ inputs.rc }}" =~ ^rc\.[0-9]+$ ]]; then
+            echo "RC must be in format rc.N (e.g. rc.1)"
+            exit 1
+          fi
+
+      - name: Make repo owner lowercase
+        id: repo
+        run: |
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Determine RC image tags
+        id: vars
+        run: |
+          VERSION="${{ inputs.version }}"
+          RC="${{ inputs.rc }}"
+          TAG="${VERSION}-${RC}"
+
+          # GHCR URLs
+          GHCR_APP="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner"
+          GHCR_LAMBDA="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda"
+          GHCR_OPS="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/ops"
+
+          echo "app_tags=$GHCR_APP:$TAG" >> $GITHUB_OUTPUT
+          echo "lambda_tags=$GHCR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
+          echo "ops_tags=$GHCR_OPS:$TAG" >> $GITHUB_OUTPUT
+
+      - name: Debug RC tags
+        if: ${{ inputs.dry_run == 'true' }}
+        run: |
+          echo "===== RC IMAGE TAGS (DRY RUN) ====="
+          echo "App:    ${{ steps.vars.outputs.app_tags }}"
+          echo "Lambda: ${{ steps.vars.outputs.lambda_tags }}"
+          echo "Ops:    ${{ steps.vars.outputs.ops_tags }}"
+          echo "=================================="
+
+      - name: Build/push Refiner App RC image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.app
+          push: ${{ inputs.dry_run == 'false' }}
+          tags: ${{ steps.vars.outputs.app_tags }}
+          build-args: |
+            VITE_GIT_HASH=${{ github.sha }}
+            VITE_GIT_BRANCH=${{ inputs.ref }}
+
+      - name: Build/push Refiner Lambda RC image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          provenance: false
+          file: Dockerfile.lambda
+          push: ${{ inputs.dry_run == 'false' }}
+          platforms: linux/amd64
+          tags: ${{ steps.vars.outputs.lambda_tags }}
+
+      - name: Build/push Refiner Ops RC image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ops
+          push: ${{ inputs.dry_run == 'false' }}
+          tags: ${{ steps.vars.outputs.ops_tags }}
+
+      - name: Create draft GitHub release
+        if: ${{ inputs.dry_run == 'false' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}-${{ inputs.rc }}
+          name: v${{ inputs.version }}-${{ inputs.rc }}
+          draft: true
+          prerelease: true
+          generate_release_notes: true
