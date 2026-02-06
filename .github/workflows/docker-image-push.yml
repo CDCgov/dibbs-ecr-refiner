@@ -14,6 +14,11 @@ on:
       version_tag:
         description: "Optional Docker tag to use instead of branch name (`1.2.3`)"
         required: false
+      create_release_notes:
+        description: "Create draft release notes for this build. Must also provide version_tag."
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -102,6 +107,7 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.ref_name }}
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build and push Refiner Lambda image
         uses: docker/build-push-action@v6
@@ -112,6 +118,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build and push Refiner Ops image
         uses: docker/build-push-action@v6
@@ -120,3 +128,15 @@ jobs:
           file: Dockerfile.ops
           push: true
           tags: ${{ steps.vars.outputs.ops_tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version_tag }}
+
+      - name: Create draft GitHub release notes
+        if: ${{ github.event.inputs.create_release_notes == 'true' && (github.event.inputs.version_tag != '') }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.version_tag }}
+          name: ${{ steps.vars.outputs.version_tag }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
