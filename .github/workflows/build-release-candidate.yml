@@ -12,11 +12,11 @@ on:
       version:
         description: "Release version (e.g. 1.4.0)"
         # required: true
-        default: 1.4.0
+        default: "1.4.0"
       rc:
         description: "RC number (e.g. rc.1)"
         # required: true
-        default: rc.1
+        default: "rc.1"
       dry_run:
         description: "If true, skip pushing images and creating release"
         type: boolean
