@@ -41,7 +41,7 @@ Communicate with partners to get the release candidate containers deployed to te
 
 TBD
 
-## Publish the release (engineer)
+## Build final release images (engineer)
 
 This step will be performed by an **engineer**.
 
@@ -55,7 +55,7 @@ With the containers deployed and the testing completed, we can now create the fi
     3. Make sure the images will be pushed to both GHCR and ECR
 4. Let partners know images have been built and are ready for deployment
 
-## Wrapping up (engineer)
+## Publish the release (engineer)
 
 This step will be performed by an **engineer**.
 
