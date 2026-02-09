@@ -105,24 +105,24 @@ async def test_update_section_processing_success(authed_client, monkeypatch):
 
     # Monkeypatch DB calls
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_by_id_db",
+        "app.api.v1.configurations.sections.get_configuration_by_id_db",
         AsyncMock(return_value=initial_config),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.update_section_processing_db",
+        "app.api.v1.configurations.sections.update_section_processing_db",
         AsyncMock(return_value=updated_config),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_total_condition_code_counts_by_configuration_db",
+        "app.api.v1.configurations.base.get_total_condition_code_counts_by_configuration_db",
         AsyncMock(return_value=[]),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_conditions_by_version_db",
+        "app.api.v1.configurations.base.get_conditions_by_version_db",
         AsyncMock(return_value=[]),
     )
     # Mock ConfigurationLock
     monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.get_lock",
+        "app.api.v1.configurations.base.ConfigurationLock.get_lock",
         AsyncMock(return_value=None),
     )
 
@@ -170,16 +170,16 @@ async def test_update_section_processing_db_returns_none(authed_client, monkeypa
 
     # Monkeypatch DB calls: update returns None to simulate failure
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_by_id_db",
+        "app.api.v1.configurations.sections.get_configuration_by_id_db",
         AsyncMock(return_value=initial_config),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.update_section_processing_db",
+        "app.api.v1.configurations.sections.update_section_processing_db",
         AsyncMock(return_value=None),
     )
     # Mock ConfigurationLock
     monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.get_lock",
+        "app.api.v1.configurations.sections.ConfigurationLock.get_lock",
         AsyncMock(return_value=None),
     )
 

@@ -1,14 +1,4 @@
 import os
-from copy import deepcopy
-from pathlib import Path
-from zipfile import ZipFile
-
-import pytest
-from lxml import etree
-from lxml.etree import _Element
-
-from app.core.models.types import XMLFiles
-from tests.fixtures.loader import load_fixture_str, load_fixture_xml
 
 os.environ["ENV"] = "local"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
@@ -17,7 +7,7 @@ os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
 os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
 os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
 os.environ["AUTH_ISSUER"] = "http://mock.com"
-os.environ["SESSION_SECRET_KEY"] = "mock-session-secret"
+os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 
 os.environ["AWS_REGION"] = "us-east-1"
 os.environ["AWS_ACCESS_KEY_ID"] = "refiner"
@@ -26,9 +16,106 @@ os.environ["S3_ENDPOINT_URL"] = "http://localhost:4566"
 os.environ["S3_BUCKET_CONFIG"] = "mock-bucket"
 os.environ["LOG_LEVEL"] = "debug"
 
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
+from uuid import UUID, uuid4
+from zipfile import ZipFile
+
+import pytest
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from lxml import etree
+from lxml.etree import _Element
+
+from app.api.auth.middleware import get_logged_in_user
+from app.core.models.types import XMLFiles
+from app.db.conditions.model import DbCondition, DbConditionCoding
+from app.db.configurations.model import DbConfiguration, DbConfigurationCondition
+from app.db.users.model import DbUser
+from app.main import app
+from tests.fixtures.loader import load_fixture_str, load_fixture_xml
 
 type NamespaceMap = dict[str, str]
 NAMESPACES: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
+
+# User info
+TEST_SESSION_TOKEN = "test-token"
+MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
+MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
+MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
+MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
+
+
+@pytest.fixture
+def mock_user():
+    return DbUser(
+        id=MOCK_LOGGED_IN_USER_ID,
+        username="tester",
+        email="tester@test.com",
+        jurisdiction_id="JD-1",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
+
+@pytest.fixture
+def mock_condition():
+    return DbCondition(
+        id=uuid4(),
+        display_name="Hypertension",
+        canonical_url="http://url.com",
+        version="3.0.0",
+        child_rsg_snomed_codes=["11111"],
+        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
+        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
+        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
+        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+    )
+
+
+@pytest.fixture
+def mock_configuration():
+    return DbConfiguration(
+        id=MOCK_CONFIGURATION_ID,
+        name="test config",
+        jurisdiction_id="SDDH",
+        condition_id=MOCK_CONDITION_ID,
+        included_conditions=[DbConfigurationCondition(id=MOCK_CONDITION_ID)],
+        custom_codes=[],
+        local_codes=[],
+        section_processing=[],
+        version=1,
+        status="draft",
+        last_activated_at=None,
+        last_activated_by=None,
+        created_by=MOCK_LOGGED_IN_USER_ID,
+        condition_canonical_url="url-1",
+        s3_urls=[],
+    )
+
+
+@pytest_asyncio.fixture
+async def authed_client(mock_logged_in_user, mock_db_functions):
+    """
+    Mock an authenticated client.
+    """
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
+        yield client
+
+
+@pytest.fixture
+def mock_logged_in_user(mock_user):
+    """
+    Mock the logged-in user dependency
+    """
+
+    app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+    yield
+    app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +124,7 @@ def fixtures_path() -> Path:
     Returns the absolute path to the test fixtures directory.
     """
 
-    return Path(__file__).parent / "fixtures"
+    return Path(__file__).parent.parent / "fixtures"
 
 
 @pytest.fixture

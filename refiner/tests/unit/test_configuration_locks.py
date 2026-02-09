@@ -6,9 +6,7 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-import tests.test_configuration_locks as test_module
-from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations import GetConfigurationsResponse
+from app.api.v1.configurations.models import GetConfigurationsResponse
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.db import GetConfigurationResponseVersion
 from app.db.configurations.model import (
@@ -54,17 +52,6 @@ async def authed_client(mock_logged_in_user, mock_db_functions):
 
 
 @pytest.fixture(autouse=True)
-def mock_logged_in_user():
-    """
-    Mock the logged-in user dependency
-    """
-
-    app.dependency_overrides[get_logged_in_user] = mock_user
-    yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
-
-
-@pytest.fixture(autouse=True)
 def mock_db_functions(monkeypatch):
     """
     Mock return values of the `_db` functions called by the routes.
@@ -83,7 +70,7 @@ def mock_db_functions(monkeypatch):
         rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_condition_by_id_db",
+        "app.api.v1.configurations.base.get_condition_by_id_db",
         AsyncMock(return_value=condition_mock),
     )
 
@@ -100,7 +87,7 @@ def mock_db_functions(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_conditions_by_version_db",
+        "app.api.v1.configurations.base.get_conditions_by_version_db",
         AsyncMock(return_value=[fake_condition]),
     )
 
@@ -123,12 +110,12 @@ def mock_db_functions(monkeypatch):
         s3_urls=[],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_by_id_db",
+        "app.api.v1.configurations.base.get_configuration_by_id_db",
         AsyncMock(return_value=config_by_id_mock),
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_latest_config_db",
+        "app.api.v1.configurations.base.get_latest_config_db",
         AsyncMock(return_value=config_by_id_mock),
     )
 
@@ -146,19 +133,19 @@ def mock_db_functions(monkeypatch):
     ]
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_versions_db",
+        "app.api.v1.configurations.base.get_configuration_versions_db",
         AsyncMock(return_value=versions_mock),
     )
 
     # Mock get_configurations_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configurations_db",
+        "app.api.v1.configurations.base.get_configurations_db",
         AsyncMock(return_value=[config_by_id_mock]),
     )
 
     # Mock is_config_valid_to_insert_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.is_config_valid_to_insert_db",
+        "app.api.v1.configurations.base.is_config_valid_to_insert_db",
         AsyncMock(return_value=True),
     )
 
@@ -169,7 +156,7 @@ def mock_db_functions(monkeypatch):
         status="draft",
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.insert_configuration_db",
+        "app.api.v1.configurations.base.insert_configuration_db",
         AsyncMock(return_value=new_config_mock),
     )
 
@@ -196,7 +183,7 @@ def mock_db_functions(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.associate_condition_codeset_with_configuration_db",
+        "app.api.v1.configurations.codesets.associate_condition_codeset_with_configuration_db",
         AsyncMock(return_value=updated_config_mock),
     )
 
@@ -206,13 +193,13 @@ def mock_db_functions(monkeypatch):
     updated_config_mock_disassoc.included_conditions = []
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.disassociate_condition_codeset_with_configuration_db",
+        "app.api.v1.configurations.codesets.disassociate_condition_codeset_with_configuration_db",
         AsyncMock(return_value=updated_config_mock_disassoc),
     )
 
     # for get_total_condition_code_counts_by_configuration_db, could use a list of count objects if needed
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_total_condition_code_counts_by_configuration_db",
+        "app.api.v1.configurations.base.get_total_condition_code_counts_by_configuration_db",
         AsyncMock(return_value=[]),
     )
 
@@ -288,7 +275,7 @@ def mock_db_functions(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_acquire_and_release_lock(authed_client):
+async def test_acquire_and_release_lock(authed_client, mock_logged_in_user):
     configuration_id = uuid4()
     user_id = uuid4()
     db = None
@@ -314,7 +301,7 @@ async def test_acquire_and_release_lock(authed_client):
 
 
 @pytest.mark.asyncio
-async def test_lock_contention(authed_client):
+async def test_lock_contention(authed_client, mock_logged_in_user):
     configuration_id = uuid4()
     user1 = uuid4()
     user2 = uuid4()
@@ -337,7 +324,7 @@ async def test_lock_contention(authed_client):
 
 
 @pytest.mark.asyncio
-async def test_lock_renewal_and_expiry(authed_client):
+async def test_lock_renewal_and_expiry(authed_client, mock_logged_in_user):
     configuration_id = uuid4()
     user_id = uuid4()
     db = None
@@ -354,7 +341,7 @@ async def test_lock_renewal_and_expiry(authed_client):
     assert lock.expires_at > expires_at_initial
 
     # Simulate expiry by directly manipulating the mocked storage
-    locks_storage = test_module._locks_storage
+    locks_storage = _locks_storage
     if configuration_id in locks_storage:
         locks_storage[configuration_id]["expires_at"] = datetime.now(UTC) - timedelta(
             minutes=1

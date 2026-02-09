@@ -4,8 +4,6 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from psycopg.rows import dict_row
 
-from tests.test_conditions import TEST_SESSION_TOKEN
-
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_RSG_CODE = "212962007"
 
@@ -201,7 +199,9 @@ class TestConfigurations:
         assert validation_response_data["id"] == initial_configuration_id
         assert validation_response_data["status"] == "inactive"
 
-    async def test_activate_rollback(self, setup, authed_client, db_conn):
+    async def test_activate_rollback(
+        self, setup, authed_client, db_conn, test_session_token
+    ):
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
@@ -228,7 +228,7 @@ class TestConfigurations:
             async with AsyncClient(
                 transport=transport, base_url="http://testserver"
             ) as client:
-                client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
+                client.cookies.update({"refiner-session": test_session_token})
 
                 response = await client.patch(
                     f"/api/v1/configurations/{initial_configuration_id}/activate"
