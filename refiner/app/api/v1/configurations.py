@@ -52,7 +52,7 @@ from ...api.validation.file_validation import validate_zip_file
 from ...db.conditions.db import (
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
-    get_conditions_db,
+    get_conditions_by_version_db,
     get_included_conditions_db,
 )
 from ...db.conditions.model import DbConditionCoding
@@ -446,8 +446,11 @@ async def get_configuration(
     # precomputed set of included_conditions ids
     included_ids = {c.id for c in config.included_conditions}
 
-    # Fetch all conditions from the database
-    all_conditions = await get_conditions_db(db=db)
+    # fetch all conditions from the db based on the primary condition's version
+    condition_version_to_use = conditions[0].version
+    all_conditions = await get_conditions_by_version_db(
+        db=db, version=condition_version_to_use
+    )
 
     latest_config = await get_latest_config_db(
         jurisdiction_id=jd,

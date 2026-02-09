@@ -100,7 +100,7 @@ def mock_db_functions(monkeypatch):
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_conditions_db",
+        "app.api.v1.configurations.get_conditions_by_version_db",
         AsyncMock(return_value=[fake_condition]),
     )
 
