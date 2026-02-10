@@ -28,16 +28,20 @@ A boolean indicating whether the refiner skipped processing entirely. When `fals
 {
   "RefinerMetadata": {
     "CA": {
-      "27836007": true
+      "27836007": true,
+      "840539006": false
     },
     "NY": {
-      "840539006": false
+      "27836007": false,
+      "840539006": true
     }
   },
   "RefinerSkip": false,
   "RefinerOutputFiles": [
     "RefinerOutput/<persistence_id>/CA/27836007/refined_eICR.xml",
-    "RefinerOutput/<persistence_id>/CA/27836007/refined_RR.xml"
+    "RefinerOutput/<persistence_id>/CA/27836007/refined_RR.xml",
+    "RefinerOutput/<persistence_id>/NY/840539006/refined_eICR.xml",
+    "RefinerOutput/<persistence_id>/NY/840539006/refined_RR.xml"
   ]
 }
 ```
