@@ -1,5 +1,5 @@
 # Install migration dependencies
-FROM alpine:3.22 AS migrate
+FROM alpine:3.23 AS migrate
 
 ARG MIGRATE_VERSION=4.19.1
 ARG TARGETARCH=amd64
