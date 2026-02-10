@@ -41,6 +41,7 @@ class RefinerCompleteFile(TypedDict):
     Represents the completion file written after all refinement is done.
     """
 
+    RefinerMetadata: dict[str, dict[str, bool]]
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
 
@@ -155,31 +156,40 @@ def process_refiner(
     bucket: str,
     config_bucket: str,
     persistence_id: str,
-) -> list[str]:
+) -> tuple[list[str], dict[str, dict[str, bool]]]:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
 
     This function:
     1. Extracts all reportable conditions grouped by jurisdiction from the RR
     2. For each jurisdiction/condition combination, processes the refinement
-    3. Returns a list of S3 paths for the refined output files
+    3. Returns a list of S3 paths for the refined output files and metadata
+       indicating which jurisdiction/condition combinations were processed
 
     Args:
         xml_files: Container with eICR and RR XML strings
         s3_client: Boto3 S3 client
         bucket: S3 bucket name
+        config_bucket: S3 configuration bucket name
         persistence_id: The persistence ID for constructing output paths
 
     Returns:
-        list[str]: List of S3 paths for refined output files
+        tuple: A tuple containing:
+            - list[str]: List of S3 paths for refined output files
+            - dict[str, dict[str, bool]]: Metadata mapping jurisdiction codes
+              to condition codes with True (refined) or False (skipped)
     """
     # Extract reportable conditions by jurisdiction from RR
     reportability_result = determine_reportability(xml_files)
     refiner_output_files: list[str] = []
+    metadata: dict[str, dict[str, bool]] = {}
 
     # Process each jurisdiction
     for jurisdiction_group in reportability_result["reportable_conditions"]:
         jurisdiction_code = jurisdiction_group.jurisdiction.upper()
+
+        if jurisdiction_code not in metadata:
+            metadata[jurisdiction_code] = {}
 
         # Process each condition for this jurisdiction
         for condition in jurisdiction_group.conditions:
@@ -196,6 +206,7 @@ def process_refiner(
 
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
+                metadata[jurisdiction_code][condition_code] = False
                 logger.info(
                     f"No active configuration identified at key={current_file_key} while processing jurisdiction={jurisdiction_code}, condition={condition_code}, skipping"
                 )
@@ -274,7 +285,9 @@ def process_refiner(
             refiner_output_files.append(rr_output_key)
             logger.info(f"Created refined RR output: {rr_output_key}")
 
-    return refiner_output_files
+            metadata[jurisdiction_code][condition_code] = True
+
+    return refiner_output_files, metadata
 
 
 def lambda_handler(event, context):
@@ -345,7 +358,7 @@ def lambda_handler(event, context):
 
             # Process Refiner (eICR, RR) -> Refiner Output []
             logger.info("Starting refinement process")
-            refiner_output_files = process_refiner(
+            refiner_output_files, refiner_metadata = process_refiner(
                 xml_files,
                 s3_client,
                 s3_bucket_name,
@@ -355,6 +368,7 @@ def lambda_handler(event, context):
 
             # Create RefinerComplete file
             complete_file: RefinerCompleteFile = {
+                "RefinerMetadata": refiner_metadata,
                 "RefinerSkip": False,
                 "RefinerOutputFiles": refiner_output_files,
             }
