@@ -54,6 +54,14 @@ NAMESPACES: Final[NamespaceMap] = {
     "cda": "urn:hl7-org:v3",
 }
 
+# for CDA sections that we should not refine; in the future we may
+# decide to implement new ways to handle these sections but for now;
+# skipping them is easier and produces valid (based on schematron) output
+SECTION_PROCESSING_SKIP: Final[set[str]] = {
+    "83910-0",  # emergency outbreak information section
+    "88085-6",  # reportability response information section
+}
+
 # the static source of truth for eICR specifications
 EICR_SPECS_DATA: Final[EicrSpecsData] = {
     "1.1": {
