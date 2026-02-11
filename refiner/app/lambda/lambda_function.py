@@ -17,6 +17,7 @@ from ..services.aws.s3_keys import get_active_file_key, get_current_file_key
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
+    get_file_size_reduction_percentage,
     refine_eicr,
     refine_rr,
 )
@@ -100,7 +101,7 @@ def parse_s3_content_to_dict(body: str) -> dict:
         data = json.loads(body)
         return data
     except json.JSONDecodeError as e:
-        logger.info("Decoding S3 string to JSON failed", e)
+        logger.error("Decoding S3 string to JSON failed", e)
         raise
 
 
@@ -198,19 +199,19 @@ def process_refiner(
                 logger.info(
                     "No active configuration identified, skipping.",
                     key=current_file_key,
-                    jurisdiction=jurisdiction_code,
-                    condition=condition_code,
-                    status="skipped",
+                    jurisdiction_code=jurisdiction_code,
+                    condition_code=condition_code,
+                    operation="skipped",
                 )
                 continue
 
             logger.info(
                 "Active configuration version identified.",
                 key=current_file_key,
-                jurisdiction=jurisdiction_code,
-                condition=condition_code,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
                 config_version=config_version_to_use,
-                status="active version found",
+                operation="config_version_found",
             )
 
             # Construct output path: RefinerOutput/<persistance_id>/<jurisdiction_code>/<condition_code>
@@ -232,10 +233,10 @@ def process_refiner(
             logger.info(
                 "Using activated configuration file",
                 key=serialized_configuration_key,
-                jurisdiction=jurisdiction_code,
-                condition=condition_code,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
                 config_version=config_version_to_use,
-                status="activation file read",
+                operation="activation_file_read",
             )
 
             processed_configuration = ProcessedConfiguration.from_dict(
@@ -274,9 +275,9 @@ def process_refiner(
             logger.info(
                 "Created refined eICR output.",
                 key=eicr_output_key,
-                jurisdiction=jurisdiction_code,
-                condition=condition_code,
-                status="eICR written",
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                operation="eicr_written",
             )
 
             rr_output_key = f"{output_key}/refined_RR.xml"
@@ -290,18 +291,22 @@ def process_refiner(
             logger.info(
                 "Created refined RR output.",
                 key=rr_output_key,
-                jurisdiction=jurisdiction_code,
-                condition=condition_code,
-                status="RR written",
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                operation="rr_written",
             )
 
+            eicr_size_reduction_percentage = get_file_size_reduction_percentage(
+                unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr_content
+            )
             logger.info(
                 "Refinement complete.",
                 eicr_key=eicr_output_key,
                 rr_key=rr_output_key,
-                jurisdiction=jurisdiction_code,
-                condition=condition_code,
-                status="successfully refined",
+                eicr_size_reduction_percentage=eicr_size_reduction_percentage,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                operation="refinement_complete",
             )
 
     return refiner_output_files
@@ -410,5 +415,5 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "message": "Refiner processed successfully"}
 
     except Exception as e:
-        logger.error(f"Error processing: {str(e)}", exc_info=True)
+        logger.error(f"Error processing: {str(e)}", exception=e)
         raise
