@@ -13,7 +13,6 @@ from app.db.configurations.model import (
     DbConfigurationSectionProcessing,
 )
 from app.db.users.model import DbUser
-from app.main import app
 
 TEST_SESSION_TOKEN = "test-token"
 TEST_LOGGED_IN_USER_ID = "5deb43c2-6a82-4052-9918-616e01d255c7"
@@ -31,15 +30,15 @@ def mock_user():
 
 
 @pytest.fixture(autouse=True)
-def _override_user():
-    app.dependency_overrides[get_logged_in_user] = mock_user
+def _override_user(test_app):
+    test_app.dependency_overrides[get_logged_in_user] = mock_user
     yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
+    test_app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest_asyncio.fixture
-async def authed_client():
-    transport = ASGITransport(app=app)
+async def authed_client(test_app):
+    transport = ASGITransport(app=test_app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
         yield client

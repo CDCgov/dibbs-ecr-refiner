@@ -2,9 +2,9 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import psycopg
+from fastapi import Request
 from psycopg_pool import AsyncConnectionPool
 
-from app.core.config import ENVIRONMENT
 from app.core.exceptions import (
     DatabaseConnectionError,
 )
@@ -16,7 +16,12 @@ class AsyncDatabaseConnection:
     """
 
     def __init__(
-        self, db_url: str, db_password: str, min_size: int = 1, max_size: int = 10
+        self,
+        db_url: str,
+        db_password: str,
+        min_size: int = 1,
+        max_size: int = 10,
+        prepare_threshold: int | None = 5,
     ) -> None:
         """
         Initializes the connection pool with the given database URL and size limits.
@@ -26,6 +31,7 @@ class AsyncDatabaseConnection:
             db_password (str): The PostgreSQL password.
             min_size (int, optional): Minimum number of connections to maintain in the pool. Defaults to 1.
             max_size (int, optional): Maximum number of connections allowed in the pool. Defaults to 10.
+            prepare_threshold (int, optional): Number of times a query is executed before it is prepared. Defaults to 5.
         """
         self.connection_url = db_url
         self.db_password = db_password
@@ -37,6 +43,7 @@ class AsyncDatabaseConnection:
             open=False,
             kwargs={
                 "password": self.db_password,
+                "prepare_threshold": prepare_threshold,
             },
         )
 
@@ -89,16 +96,36 @@ class AsyncDatabaseConnection:
             )
 
 
-db = AsyncDatabaseConnection(
-    db_url=ENVIRONMENT["DB_URL"], db_password=ENVIRONMENT["DB_PASSWORD"]
-)
+def create_db(
+    db_url: str, db_password: str, prepare_threshold: int | None = 5
+) -> AsyncDatabaseConnection:
+    """
+    Creates a new database connection.
+
+    Args:
+        db_url (str): The database connection URL
+        db_password (str): The database password
+        prepare_threshold (int | None): Number of times a query is executed before it is prepared. Defaults to 5.
+
+    Returns:
+        AsyncDatabaseConnection: The database connection
+    """
+    return AsyncDatabaseConnection(
+        db_url=db_url, db_password=db_password, prepare_threshold=prepare_threshold
+    )
 
 
-async def get_db() -> AsyncDatabaseConnection:
+def get_db(request: Request) -> AsyncDatabaseConnection:
     """
     Gets a connection to the database.
+
+    Raises:
+        RuntimeError: Database has not yet been initialized.
 
     Returns:
         AsyncDatabaseConnection: connection to the database
     """
+    db = getattr(request.app.state, "db", None)
+    if db is None:
+        raise RuntimeError("Database not initialized. Ensure the lifespan has started.")
     return db

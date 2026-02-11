@@ -32,4 +32,4 @@ COPY ./refiner/README.md ./README.md
 COPY --from=client-builder /src/dist ./dist
 
 EXPOSE 8080
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8080"]

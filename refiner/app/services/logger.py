@@ -6,7 +6,7 @@ from pythonjsonlogger.json import JsonFormatter
 
 from ..core.config import ENVIRONMENT
 
-logger = logging.getLogger("refiner")
+_logger = logging.getLogger("refiner")
 
 # https://docs.python.org/3/library/contextvars.html#asyncio-support
 request_id_ctx_var: ContextVar[str | None] = ContextVar("request_id", default=None)
@@ -45,11 +45,11 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-def setup_logger() -> None:
+def setup_logger() -> logging.Logger:
     """
     Called to initially configure the logger.
     """
-    logger.setLevel(logging.INFO)
+    _logger.setLevel(logging.INFO)
 
     handler = logging.StreamHandler()
     handler.setFormatter(
@@ -58,9 +58,11 @@ def setup_logger() -> None:
 
     handler.addFilter(RequestIdFilter())
 
-    logger.addHandler(handler)
+    _logger.addHandler(handler)
 
-    logger.info("Logger initialized.")
+    _logger.info("Logger initialized.")
+
+    return _logger
 
 
 def get_logger() -> logging.Logger:
@@ -70,4 +72,4 @@ def get_logger() -> logging.Logger:
     Returns:
         logging.Logger: An instance of a configured Logger.
     """
-    return logger
+    return _logger

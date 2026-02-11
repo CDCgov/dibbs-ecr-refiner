@@ -200,7 +200,7 @@ class TestConfigurations:
         assert validation_response_data["status"] == "inactive"
 
     async def test_activate_rollback(
-        self, setup, authed_client, db_conn, test_session_token
+        self, setup, authed_client, db_conn, test_session_token, test_app
     ):
         async with db_conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
@@ -222,9 +222,7 @@ class TestConfigurations:
             new_callable=AsyncMock,
             side_effect=Exception("Simulated failure"),
         ):
-            from app.main import app as patched_app
-
-            transport = ASGITransport(app=patched_app)
+            transport = ASGITransport(app=test_app)
             async with AsyncClient(
                 transport=transport, base_url="http://testserver"
             ) as client:

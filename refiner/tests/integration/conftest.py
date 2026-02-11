@@ -4,6 +4,7 @@ from pathlib import Path
 import psycopg
 import pytest
 import pytest_asyncio
+from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from lxml import etree
 from saxonche import PySaxonProcessor
@@ -31,6 +32,10 @@ os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 from rich.console import Console
 
 from app.api.auth.session import get_hashed_token
+from app.core.config import ENVIRONMENT
+from app.db.pool import create_db
+from app.main import _create_lifespan, create_fastapi_app
+from app.services.logger import setup_logger
 from scripts.validation.validate_ecr_data import (
     STANDARDS_MAP,
     display_svrl_results,
@@ -51,6 +56,23 @@ TEST_USER_ID = "673da667-6f92-4a50-a40d-f44c5bc6a2d8"
 TEST_JD_ID = "SDDH"
 TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
+
+
+@pytest.fixture
+def test_app():
+    db = create_db(
+        db_url=ENVIRONMENT["DB_URL"],
+        db_password=ENVIRONMENT["DB_PASSWORD"],
+        prepare_threshold=None,
+    )
+
+    logger = setup_logger()
+
+    app = create_fastapi_app(lifespan=_create_lifespan(db=db, logger=logger))
+
+    # TestClient triggers the lifespan
+    with TestClient(app) as client:
+        yield client.app  # or yield client directly
 
 
 @pytest.fixture
@@ -358,15 +380,15 @@ def setup(request):
 
     # Define the default section processing that matches production behavior
     section_processing_default = """[
-        {"code": "46240-8", "name": "History of encounters", "action": "refine"},
-        {"code": "10164-2", "name": "History of Present Illness", "action": "refine"},
-        {"code": "11369-6", "name": "History of Immunizations", "action": "refine"},
-        {"code": "29549-3", "name": "Medications Administered", "action": "refine"},
-        {"code": "18776-5", "name": "Plan of Treatment", "action": "refine"},
-        {"code": "11450-4", "name": "Problem List", "action": "refine"},
-        {"code": "29299-5", "name": "Reason For Visit", "action": "refine"},
-        {"code": "30954-2", "name": "Relevant diagnostic tests and/or laboratory data", "action": "refine"},
-        {"code": "29762-2", "name": "Social History", "action": "refine"}
+        {"code": "46240-8", "name": "History of encounters", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "10164-2", "name": "History of Present Illness", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "11369-6", "name": "History of Immunizations", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "29549-3", "name": "Medications Administered", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "18776-5", "name": "Plan of Treatment", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "11450-4", "name": "Problem List", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "29299-5", "name": "Reason For Visit", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "30954-2", "name": "Relevant diagnostic tests and/or laboratory data", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
+        {"code": "29762-2", "name": "Social History", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]}
     ]"""
 
     config_insert = f"""

@@ -8,7 +8,6 @@ from httpx import ASGITransport, AsyncClient
 from app.api.auth.middleware import get_logged_in_user
 from app.db.conditions.db import GetConditionCode
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.main import app
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
@@ -19,18 +18,18 @@ def make_db_condition_coding(code, display):
 
 
 @pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user):
+async def authed_client(mock_logged_in_user, test_app):
     """
     Mock an authenticated client.
     """
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=test_app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
         yield client
 
 
 @pytest.fixture(autouse=True)
-def mock_logged_in_user():
+def mock_logged_in_user(test_app):
     """
     Mock the logged-in user dependency
     """
@@ -43,9 +42,9 @@ def mock_logged_in_user():
             "jurisdiction_id": "JD-1",
         }
 
-    app.dependency_overrides[get_logged_in_user] = mock_user
+    test_app.dependency_overrides[get_logged_in_user] = mock_user
     yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
+    test_app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest.mark.asyncio

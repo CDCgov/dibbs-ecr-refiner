@@ -14,7 +14,6 @@ from app.db.configurations.model import (
     DbConfigurationCondition,
 )
 from app.db.users.model import DbUser
-from app.main import app
 from app.services.configuration_locks import ConfigurationLock
 
 # User info
@@ -41,11 +40,11 @@ def mock_user():
 
 
 @pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user, mock_db_functions):
+async def authed_client(mock_logged_in_user, mock_db_functions, test_app):
     """
     Mock an authenticated client.
     """
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=test_app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
         yield client

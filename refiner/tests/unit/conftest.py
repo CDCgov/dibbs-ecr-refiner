@@ -1,4 +1,5 @@
 import os
+from unittest.mock import AsyncMock, MagicMock
 
 os.environ["ENV"] = "local"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
@@ -32,8 +33,9 @@ from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration, DbConfigurationCondition
+from app.db.pool import get_db
 from app.db.users.model import DbUser
-from app.main import app
+from app.main import create_fastapi_app
 from tests.fixtures.loader import load_fixture_str, load_fixture_xml
 
 type NamespaceMap = dict[str, str]
@@ -45,6 +47,56 @@ MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
 MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
 MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
 MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
+
+
+class AsyncContextManagerMock:
+    """Helper to create async context manager mocks."""
+
+    def __init__(self, return_value=None):
+        self.return_value = return_value or AsyncMock()
+
+    async def __aenter__(self):
+        return self.return_value
+
+    async def __aexit__(self, *args):
+        return None
+
+
+@pytest.fixture
+def mock_db():
+    """Create a mock database with proper async support."""
+    db = MagicMock()
+
+    # Create mock cursor
+    mock_cursor = AsyncMock()
+    mock_cursor.fetchone = AsyncMock(return_value=None)
+    mock_cursor.fetchall = AsyncMock(return_value=[])
+    mock_cursor.execute = AsyncMock()
+
+    # Create mock connection
+    mock_conn = AsyncMock()
+    mock_conn.cursor = MagicMock(return_value=AsyncContextManagerMock(mock_cursor))
+
+    # Setup get_connection with proper async context manager
+    db.get_connection = MagicMock(return_value=AsyncContextManagerMock(mock_conn))
+
+    # Store references for easy access in tests
+    db._mock_conn = mock_conn
+    db._mock_cursor = mock_cursor
+
+    return db
+
+
+@pytest.fixture
+def test_app(mock_db):
+    """Create a test app with mocked dependencies."""
+    # Create app without lifespan (no real DB connection)
+    app = create_fastapi_app(lifespan=None)
+
+    # Override the get_db dependency with mock
+    app.dependency_overrides[get_db] = lambda: mock_db
+
+    return app
 
 
 @pytest.fixture
@@ -96,26 +148,26 @@ def mock_configuration():
 
 
 @pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user, mock_db_functions):
+async def authed_client(mock_logged_in_user, mock_db_functions, test_app):
     """
     Mock an authenticated client.
     """
 
-    transport = ASGITransport(app=app)
+    transport = ASGITransport(app=test_app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
         yield client
 
 
 @pytest.fixture
-def mock_logged_in_user(mock_user):
+def mock_logged_in_user(mock_user, test_app):
     """
     Mock the logged-in user dependency
     """
 
-    app.dependency_overrides[get_logged_in_user] = lambda: mock_user
+    test_app.dependency_overrides[get_logged_in_user] = lambda: mock_user
     yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
+    test_app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest.fixture(scope="session")

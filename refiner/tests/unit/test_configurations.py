@@ -16,7 +16,6 @@ from app.db.configurations.model import (
     DbConfigurationCondition,
     DbConfigurationCustomCode,
 )
-from app.main import app
 from app.services.ecr.models import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 
@@ -359,7 +358,7 @@ async def test_edit_custom_code_from_configuration(
 
 @pytest.mark.asyncio
 async def test_inline_example_file_success(
-    authed_client, monkeypatch, mock_configuration, mock_condition
+    authed_client, monkeypatch, mock_configuration, mock_condition, test_app
 ):
     monkeypatch.setattr(
         "app.api.v1.configurations.testing.get_configuration_by_id_db",
@@ -373,7 +372,7 @@ async def test_inline_example_file_success(
     def mock_s3_upload(*args, **kwargs):
         return "http://fake-s3-url.com"
 
-    app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
@@ -409,7 +408,7 @@ async def test_inline_example_file_success(
         == "<xml>refined eicr for Condition A</xml>"
     )
 
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
@@ -419,6 +418,7 @@ async def test_inline_allow_custom_zip(
     monkeypatch,
     mock_configuration,
     mock_condition,
+    test_app,
 ):
     monkeypatch.setattr(
         "app.api.v1.configurations.testing.get_configuration_by_id_db",
@@ -432,7 +432,7 @@ async def test_inline_allow_custom_zip(
     def mock_s3_upload(*args, **kwargs):
         return "http://fake-s3-url.com"
 
-    app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
@@ -478,4 +478,4 @@ async def test_inline_allow_custom_zip(
         == "<xml>COVID-19 refined RR doc</xml>"
     )
 
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
