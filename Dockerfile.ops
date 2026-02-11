@@ -13,6 +13,12 @@ RUN curl -L \
 # Install Python dependencies
 FROM python:3.14-slim
 
+# default VERSION is 0.0.0 if not passed at build time
+ARG VERSION="0.0.0"
+
+# make it available as an environment variable inside the container
+ENV VERSION=$VERSION
+
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
