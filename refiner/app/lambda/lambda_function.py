@@ -5,11 +5,11 @@
 # See here: https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html#python-handler-naming
 
 import json
-import logging
 import os
 from typing import TypedDict
 
 import boto3
+from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
@@ -24,8 +24,7 @@ from ..services.ecr.reportability import determine_reportability
 from ..services.terminology import ProcessedConfiguration
 
 # Initialize the logger
-logger = logging.getLogger()
-logger.setLevel("INFO")
+logger = Logger(service="refiner")
 
 # Environment variables
 EICR_INPUT_PREFIX = os.getenv("EICR_INPUT_PREFIX", "eCRMessageV2/")
@@ -197,16 +196,21 @@ def process_refiner(
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
                 logger.info(
-                    f"No active configuration identified at key={current_file_key} while processing jurisdiction={jurisdiction_code}, condition={condition_code}, skipping"
+                    "No active configuration identified, skipping.",
+                    key=current_file_key,
+                    jurisdiction=jurisdiction_code,
+                    condition=condition_code,
+                    status="skipped",
                 )
                 continue
 
             logger.info(
-                f"Current file found key={current_file_key} version={config_version_to_use}"
-            )
-
-            logger.info(
-                f"Processing jurisdiction={jurisdiction_code}, condition={condition_code}"
+                "Active configuration version identified.",
+                key=current_file_key,
+                jurisdiction=jurisdiction_code,
+                condition=condition_code,
+                config_version=config_version_to_use,
+                status="active version found",
             )
 
             # Construct output path: RefinerOutput/<persistance_id>/<jurisdiction_code>/<condition_code>
@@ -226,7 +230,12 @@ def process_refiner(
             )
 
             logger.info(
-                f"Using activated configuration file key={serialized_configuration_key}"
+                "Using activated configuration file",
+                key=serialized_configuration_key,
+                jurisdiction=jurisdiction_code,
+                condition=condition_code,
+                config_version=config_version_to_use,
+                status="activation file read",
             )
 
             processed_configuration = ProcessedConfiguration.from_dict(
@@ -262,7 +271,13 @@ def process_refiner(
                 ContentType="application/xml",
             )
             refiner_output_files.append(eicr_output_key)
-            logger.info(f"Created refined eICR output: {eicr_output_key}")
+            logger.info(
+                "Created refined eICR output.",
+                key=eicr_output_key,
+                jurisdiction=jurisdiction_code,
+                condition=condition_code,
+                status="eICR written",
+            )
 
             rr_output_key = f"{output_key}/refined_RR.xml"
             s3_client.put_object(
@@ -272,7 +287,22 @@ def process_refiner(
                 ContentType="application/xml",
             )
             refiner_output_files.append(rr_output_key)
-            logger.info(f"Created refined RR output: {rr_output_key}")
+            logger.info(
+                "Created refined RR output.",
+                key=rr_output_key,
+                jurisdiction=jurisdiction_code,
+                condition=condition_code,
+                status="RR written",
+            )
+
+            logger.info(
+                "Refinement complete.",
+                eicr_key=eicr_output_key,
+                rr_key=rr_output_key,
+                jurisdiction=jurisdiction_code,
+                condition=condition_code,
+                status="successfully refined",
+            )
 
     return refiner_output_files
 
