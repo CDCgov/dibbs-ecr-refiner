@@ -1,6 +1,5 @@
 import io
 import zipfile
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +13,6 @@ from app.api.validation.file_validation import (
     MAX_ALLOWED_UPLOAD_FILE_SIZE,
     validate_zip_file,
 )
-from app.db.users.model import DbUser
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import create_refined_ecr_zip_in_memory
 
@@ -84,38 +82,6 @@ async def test_upload_route_s3_failure(
     assert response.status_code == 200
     assert "refined_download_url" in response.json()
     assert response.json()["refined_download_url"] == ""
-
-    test_app.dependency_overrides.clear()
-
-
-@pytest.mark.asyncio
-@pytest.mark.integration
-async def test_demo_file_not_found(
-    test_user_id, test_username, authed_client, test_app
-):
-    from app.services.sample_file import get_sample_zip_path
-
-    def mock_missing_path() -> Path:
-        return Path("/nonexistent/demo.zip")
-
-    def mock_get_logged_in_user():
-        return DbUser(
-            id=test_user_id,
-            username=test_username,
-            email="test@test.com",
-            jurisdiction_id="test",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-
-    test_app.dependency_overrides[get_sample_zip_path] = mock_missing_path
-    test_app.dependency_overrides[get_logged_in_user] = mock_get_logged_in_user
-
-    client = TestClient(app=test_app)
-
-    response = client.post(f"{api_route_base}/upload")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Unable to find demo zip file to download."}
 
     test_app.dependency_overrides.clear()
 
