@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
@@ -11,21 +10,9 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
 )
-from app.db.users.model import DbUser
 
 TEST_SESSION_TOKEN = "test-token"
 TEST_LOGGED_IN_USER_ID = "5deb43c2-6a82-4052-9918-616e01d255c7"
-
-
-def mock_user():
-    return DbUser(
-        id=TEST_LOGGED_IN_USER_ID,
-        username="tester",
-        email="tester@test.com",
-        jurisdiction_id="JD-1",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    )
 
 
 @pytest_asyncio.fixture
