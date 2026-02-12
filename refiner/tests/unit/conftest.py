@@ -148,7 +148,7 @@ def mock_configuration():
 
 
 @pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user, mock_db_functions, test_app):
+async def authed_client(mock_logged_in_user, test_app):
     """
     Mock an authenticated client.
     """
