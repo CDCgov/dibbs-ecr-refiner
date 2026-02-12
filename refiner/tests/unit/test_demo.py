@@ -105,9 +105,11 @@ async def test_file_too_large():
 @pytest.mark.parametrize(
     "unrefined, refined, expected",
     [
-        ("this is a test", "this is a test", 0),  # Same doc
-        ("", "", 0),  # Empty docs
-        ("A" * 20_000, "A" * 10_000, 50),  # 50% reduction
+        pytest.param("this is a test", "this is a test", 0, id="same_doc"),  # Same doc
+        pytest.param("", "", 0, id="empty_doc"),  # Empty docs
+        pytest.param(
+            "A" * 20_000, "A" * 10_000, 50, id="50_percent_reduction"
+        ),  # 50% reduction
     ],
 )
 def test_file_size_difference_percentage(

@@ -3,7 +3,7 @@ import json
 import time
 import uuid
 from collections.abc import Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import UTC
 from datetime import datetime as dt
 from logging import Logger
@@ -31,7 +31,9 @@ from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
 
 
-def _create_lifespan(db: AsyncDatabaseConnection, logger: Logger):
+def create_lifespan(
+    db: AsyncDatabaseConnection, logger: Logger
+) -> Callable[[FastAPI], AbstractAsyncContextManager]:
     """
     Creates a FastAPI lifespan.
 

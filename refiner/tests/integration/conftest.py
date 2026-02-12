@@ -33,7 +33,7 @@ from rich.console import Console
 from app.api.auth.session import get_hashed_token
 from app.core.config import ENVIRONMENT
 from app.db.pool import AsyncDatabaseConnection, create_db
-from app.main import _create_lifespan, create_fastapi_app
+from app.main import create_fastapi_app, create_lifespan
 from app.services.logger import setup_logger
 from scripts.validation.validate_ecr_data import (
     STANDARDS_MAP,
@@ -92,7 +92,7 @@ def test_app():
     )
 
     logger = setup_logger()
-    app = create_fastapi_app(lifespan=_create_lifespan(db=db, logger=logger))
+    app = create_fastapi_app(lifespan=create_lifespan(db=db, logger=logger))
 
     with TestClient(app) as client:
         yield client.app
