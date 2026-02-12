@@ -57,6 +57,8 @@ TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
 
+# USE `db_pool` or `db_conn` in a test, not both!
+# If they both attempt to grab connections tests can fail.
 @pytest_asyncio.fixture(scope="session")
 async def db_pool():
     db = create_db(
@@ -73,6 +75,8 @@ async def db_pool():
     await db.close()
 
 
+# USE `db_pool` or `db_conn` in a test, not both!
+# If they both attempt to grab connections tests can fail.
 @pytest_asyncio.fixture
 async def db_conn(db_pool: AsyncDatabaseConnection):
     async with db_pool.get_connection() as conn:
@@ -81,7 +85,6 @@ async def db_conn(db_pool: AsyncDatabaseConnection):
 
 @pytest.fixture(scope="session")
 def test_app():
-    # Create a separate pool just for the app
     db = create_db(
         db_url=ENVIRONMENT["DB_URL"],
         db_password=ENVIRONMENT["DB_PASSWORD"],
