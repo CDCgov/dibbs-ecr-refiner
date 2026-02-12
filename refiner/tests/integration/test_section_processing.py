@@ -7,7 +7,6 @@ import pytest_asyncio
 from fastapi import status
 from httpx import ASGITransport, AsyncClient
 
-from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -27,13 +26,6 @@ def mock_user():
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
-
-
-@pytest.fixture(autouse=True)
-def _override_user(test_app):
-    test_app.dependency_overrides[get_logged_in_user] = mock_user
-    yield
-    test_app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest_asyncio.fixture

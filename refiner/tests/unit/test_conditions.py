@@ -29,18 +29,13 @@ async def authed_client(mock_logged_in_user, test_app):
 
 
 @pytest.fixture(autouse=True)
-def mock_logged_in_user(test_app):
+def mock_logged_in_user(test_app, mock_user):
     """
     Mock the logged-in user dependency
     """
 
     def mock_user():
-        return {
-            "id": "5deb43c2-6a82-4052-9918-616e01d255c7",
-            "username": "tester",
-            "email": "tester@test.com",
-            "jurisdiction_id": "JD-1",
-        }
+        return mock_user
 
     test_app.dependency_overrides[get_logged_in_user] = mock_user
     yield

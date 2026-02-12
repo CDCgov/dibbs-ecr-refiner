@@ -32,7 +32,6 @@ def mock_db_functions(
     mock_configuration,
     mock_condition,
     new_config_id,
-    mock_logged_in_user,
 ):
     """
     Mock return values of the `_db` functions called by the routes.
