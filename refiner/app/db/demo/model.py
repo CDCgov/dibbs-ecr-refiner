@@ -25,4 +25,4 @@ class IndependentTestUploadResponse:
     refined_conditions_found: int
     refined_conditions: list[Condition]
     unrefined_eicr: str
-    refined_download_url: str
+    refined_download_key: str
