@@ -122,45 +122,45 @@ export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
       return useMutation(getUploadEcrMutationOptions(options), queryClient);
     }
     /**
- * Stream refined eCR zip from S3 for download by key.
+ * Stream refined eCR zip from S3 for download by filename (server resolves date/key).
  * @summary Download Refined Ecr
  */
 export const downloadRefinedEcr = (
-    key: string, options?: AxiosRequestConfig
+    filename: string, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<unknown>> => {
     
     
     return axios.default.get(
-      `/api/v1/demo/download/${key}`,options
+      `/api/v1/demo/download/${filename}`,options
     );
   }
 
 
 
 
-export const getDownloadRefinedEcrQueryKey = (key: string,) => {
+export const getDownloadRefinedEcrQueryKey = (filename: string,) => {
     return [
-    `/api/v1/demo/download/${key}`
+    `/api/v1/demo/download/${filename}`
     ] as const;
     }
 
     
-export const getDownloadRefinedEcrQueryOptions = <TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(key: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
+export const getDownloadRefinedEcrQueryOptions = <TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
 ) => {
 
 const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getDownloadRefinedEcrQueryKey(key);
+  const queryKey =  queryOptions?.queryKey ?? getDownloadRefinedEcrQueryKey(filename);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadRefinedEcr>>> = ({ signal }) => downloadRefinedEcr(key, { signal, ...axiosOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadRefinedEcr>>> = ({ signal }) => downloadRefinedEcr(filename, { signal, ...axiosOptions });
 
       
 
       
 
-   return  { queryKey, queryFn, enabled: !!(key), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: !!(filename), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type DownloadRefinedEcrQueryResult = NonNullable<Awaited<ReturnType<typeof downloadRefinedEcr>>>
@@ -168,7 +168,7 @@ export type DownloadRefinedEcrQueryError = AxiosError<HTTPValidationError>
 
 
 export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
- key: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>> & Pick<
+ filename: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof downloadRefinedEcr>>,
           TError,
@@ -178,7 +178,7 @@ export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof download
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
- key: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>> & Pick<
+ filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof downloadRefinedEcr>>,
           TError,
@@ -188,7 +188,7 @@ export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof download
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
- key: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
+ filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -196,11 +196,11 @@ export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof download
  */
 
 export function useDownloadRefinedEcr<TData = Awaited<ReturnType<typeof downloadRefinedEcr>>, TError = AxiosError<HTTPValidationError>>(
- key: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
+ filename: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData>>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getDownloadRefinedEcrQueryOptions(key,options)
+  const queryOptions = getDownloadRefinedEcrQueryOptions(filename,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

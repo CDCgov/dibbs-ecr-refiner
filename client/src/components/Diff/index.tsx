@@ -20,9 +20,14 @@ export function Diff({
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
 
+  function extractFilename(key: string) {
+    return key.split('/').pop() ?? key;
+  }
+
   function downloadFile(key: string) {
     try {
-      const downloadUrl = `/api/v1/downloads/${key}`;
+      const filename = extractFilename(key);
+      const downloadUrl = `/api/v1/demo/download/${filename}`;
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = '';

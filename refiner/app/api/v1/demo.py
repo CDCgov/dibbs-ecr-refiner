@@ -272,43 +272,23 @@ def _get_filename_from_key(key: str) -> str:
 
 
 @router.get(
-    "/download/{key:path}",
+    "/download/{filename}",
     tags=["demo"],
     operation_id="downloadRefinedEcr",
 )
 async def download_refined_ecr(
-    key: str,
+    filename: str,
     user: DbUser = Depends(get_logged_in_user),
     logger: Logger = Depends(get_logger),
 ) -> StreamingResponse:
     """
-    Stream refined eCR zip from S3 for download by key.
+    Stream refined eCR zip from S3 for download by filename (server resolves date/key).
     """
-    from uuid import UUID
 
-    s3_prefix = "refiner-test-suite"
-
-    # enforce prefix
-    parts = key.split("/")
-    if len(parts) < 4 or parts[0] != s3_prefix:
-        raise HTTPException(
-            status_code=403,
-            detail="You do not have permission to download this file.",
-        )
-    # enforce uuid
-    try:
-        UUID(parts[2])
-    except Exception:
-        raise HTTPException(
-            status_code=403,
-            detail="You do not have permission to download this file.",
-        )
-    # enforce ownership
-    if str(user.id) != parts[2]:
-        raise HTTPException(
-            status_code=403,
-            detail="You do not have permission to download this file.",
-        )
+    # Look up S3 key from user.id and filename
+    key = s3.find_user_file_key_by_filename(user.id, filename, logger)
+    if not key:
+        raise HTTPException(status_code=404, detail="File not found.")
     try:
         s3_response = s3.fetch_zip_from_s3(key, logger)
     except ClientError as e:
