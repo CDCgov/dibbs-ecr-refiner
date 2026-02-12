@@ -64,7 +64,7 @@ def _create_lifespan(db: AsyncDatabaseConnection, logger: Logger):
     return _lifespan
 
 
-def create_fastapi_app(lifespan: Lifespan[FastAPI] = None) -> FastAPI:
+def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
     """
     Configures and initializes the FastAPI application.
 
