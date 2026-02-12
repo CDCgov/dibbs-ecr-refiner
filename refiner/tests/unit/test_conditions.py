@@ -6,9 +6,6 @@ from fastapi import status
 from app.db.conditions.db import GetConditionCode
 from app.db.conditions.model import DbCondition, DbConditionCoding
 
-# User info
-TEST_SESSION_TOKEN = "test-token"
-
 
 @pytest.mark.asyncio
 async def test_get_latest_conditions(monkeypatch, authed_client):

@@ -43,7 +43,6 @@ NAMESPACES: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
-MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
 MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
 MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
 MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
@@ -102,7 +101,7 @@ def test_app(mock_db):
 @pytest.fixture
 def mock_user():
     return DbUser(
-        id=MOCK_LOGGED_IN_USER_ID,
+        id="5deb43c2-6a82-4052-9918-616e01d255c7",
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -127,7 +126,7 @@ def mock_condition():
 
 
 @pytest.fixture
-def mock_configuration():
+def mock_configuration(mock_user):
     return DbConfiguration(
         id=MOCK_CONFIGURATION_ID,
         name="test config",
@@ -141,7 +140,7 @@ def mock_configuration():
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        created_by=MOCK_LOGGED_IN_USER_ID,
+        created_by=mock_user.id,
         condition_canonical_url="url-1",
         s3_urls=[],
     )
