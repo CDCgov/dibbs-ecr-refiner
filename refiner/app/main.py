@@ -69,7 +69,7 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
     Configures and initializes the FastAPI application.
 
     Args:
-        lifespan (Lifespan[FastAPI], optional): A FastAPI Lifespan object
+        lifespan (Lifespan[FastAPI]): A FastAPI Lifespan object
 
     Returns:
         FastAPI: the app
