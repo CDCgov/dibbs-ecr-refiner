@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import psycopg
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
@@ -11,8 +10,8 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 os.environ["ENV"] = "local"
-os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
-os.environ["DB_PASSWORD"] = "mock"
+os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
+os.environ["DB_PASSWORD"] = "refiner"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
 os.environ["AUTH_CLIENT_ID"] = "mock-refiner-client"
 os.environ["AUTH_CLIENT_SECRET"] = "mock-secret"
@@ -33,7 +32,7 @@ from rich.console import Console
 
 from app.api.auth.session import get_hashed_token
 from app.core.config import ENVIRONMENT
-from app.db.pool import create_db
+from app.db.pool import AsyncDatabaseConnection, create_db
 from app.main import _create_lifespan, create_fastapi_app
 from app.services.logger import setup_logger
 from scripts.validation.validate_ecr_data import (
@@ -58,8 +57,31 @@ TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session")
+async def db_pool():
+    db = create_db(
+        db_url=ENVIRONMENT["DB_URL"],
+        db_password=ENVIRONMENT["DB_PASSWORD"],
+        prepare_threshold=None,
+    )
+    await db.connect()
+
+    # wait for pool to be ready
+    await db.pool.wait()
+
+    yield db
+    await db.close()
+
+
+@pytest_asyncio.fixture
+async def db_conn(db_pool: AsyncDatabaseConnection):
+    async with db_pool.get_connection() as conn:
+        yield conn
+
+
+@pytest.fixture(scope="session")
 def test_app():
+    # Create a separate pool just for the app
     db = create_db(
         db_url=ENVIRONMENT["DB_URL"],
         db_password=ENVIRONMENT["DB_PASSWORD"],
@@ -67,12 +89,10 @@ def test_app():
     )
 
     logger = setup_logger()
-
     app = create_fastapi_app(lifespan=_create_lifespan(db=db, logger=logger))
 
-    # TestClient triggers the lifespan
     with TestClient(app) as client:
-        yield client.app  # or yield client directly
+        yield client.app
 
 
 @pytest.fixture
@@ -88,17 +108,6 @@ def test_username():
 @pytest.fixture
 def test_session_token():
     return TEST_SESSION_TOKEN
-
-
-@pytest_asyncio.fixture(scope="session")
-async def db_conn():
-    conn = await psycopg.AsyncConnection.connect(
-        "postgresql://postgres:refiner@localhost:5432/refiner", prepare_threshold=0
-    )
-    try:
-        yield conn
-    finally:
-        await conn.close()
 
 
 @pytest.fixture
