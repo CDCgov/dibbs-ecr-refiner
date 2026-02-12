@@ -119,7 +119,7 @@ def mock_db_functions(
 
 
 @pytest.mark.asyncio
-async def test_get_configurations_returns_list(authed_client, mock_logged_in_user):
+async def test_get_configurations_returns_list(authed_client):
     response = await authed_client.get("/api/v1/configurations/")
     assert response.status_code == 200
     data = response.json()
@@ -128,9 +128,7 @@ async def test_get_configurations_returns_list(authed_client, mock_logged_in_use
 
 
 @pytest.mark.asyncio
-async def test_create_configuration_success(
-    authed_client, mock_condition, mock_logged_in_user
-):
+async def test_create_configuration_success(authed_client, mock_condition):
     payload = {"condition_id": str(mock_condition.id)}
     response = await authed_client.post("/api/v1/configurations/", json=payload)
     assert response.status_code == 200
@@ -139,9 +137,7 @@ async def test_create_configuration_success(
 
 
 @pytest.mark.asyncio
-async def test_get_configuration_by_id(
-    authed_client, mock_configuration, mock_logged_in_user
-):
+async def test_get_configuration_by_id(authed_client, mock_configuration):
     config_id = str(mock_configuration.id)
     response = await authed_client.get(f"/api/v1/configurations/{config_id}")
     assert response.status_code == 200
