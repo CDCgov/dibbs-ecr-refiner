@@ -117,9 +117,8 @@ async def test_zip_upload_zika_v3_1_1(
 
         # validate eICR is well-formed
         validate_refined_xml(condition["refined_eicr"], "eICR", item_label, test_name)
-        # TODO: enable once v3.1.1 eICR refinement is working
-        # eicr_result = validate_xml_string(condition["refined_eicr"], "eicr")
-        # assert_schematron_valid(eicr_result, f"{item_label} eICR", test_name)
+        eicr_result = validate_xml_string(condition["refined_eicr"], "eicr")
+        assert_schematron_valid(eicr_result, f"{item_label} eICR", test_name)
 
         print(f"[{test_name}] ✅ {item_label} passed well-formedness checks")
 
