@@ -188,6 +188,11 @@ class TestLambda:
             Bucket=bucket, Key=default_setup["complete_key"]
         )
         complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
+
+        # COVID was refined and the flu was not
+        expected_refiner_metadata = {"SDDH": {"840539006": True, "772828001": False}}
+        assert complete_body["RefinerMetadata"] == expected_refiner_metadata
+
         assert expected_refined_eicr_key in complete_body["RefinerOutputFiles"]
         assert expected_refined_rr_key in complete_body["RefinerOutputFiles"]
         assert not complete_body["RefinerSkip"]
