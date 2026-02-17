@@ -309,8 +309,8 @@ def main() -> None:
     }
 
     if not filtered_conditions:
-        logger.warning("No target conditions found. Exiting.")
-        return
+        logger.warning("No target conditions found. Use all conditions.")
+        filtered_conditions = parents_by_condition
 
     for name, vs_by_ver in filtered_conditions.items():
         logger.info(f"Processing condition: {name}")

@@ -19,7 +19,7 @@ from .process_eicr import (
     get_section_loinc_codes,
     process_section,
 )
-from .specification import detect_eicr_version, load_spec
+from .specification import SECTION_PROCESSING_SKIP, detect_eicr_version, load_spec
 
 # NOTE:
 # PUBLIC API FUNCTIONS
@@ -83,6 +83,11 @@ def create_eicr_refinement_plan(
         rule["code"]: rule["action"]
         for rule in processed_configuration.section_processing
     }
+
+    # inject the skip logic for the sections
+    # defined in the specification file
+    for code in SECTION_PROCESSING_SKIP:
+        rules_map[code] = "retain"
 
     # build the final instruction set: for each section in the document,
     # find its rule, defaulting to "remove" if no rule is specified
