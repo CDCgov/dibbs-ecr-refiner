@@ -15,8 +15,7 @@ export function useGetEnv(): 'local' | 'live' {
     return 'live';
   }
 
-  if (env === placeholder) return 'local';
+  if (env === placeholder || env === 'local') return 'local';
 
-  if (env !== 'local') return 'live';
-  return 'local';
+  return 'live';
 }
