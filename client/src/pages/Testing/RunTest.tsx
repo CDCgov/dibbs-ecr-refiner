@@ -19,8 +19,6 @@ export function RunTest({
   selectedFile,
   setSelectedFile,
 }: RunTestProps) {
-  const env = useGetEnv();
-
   // if we are in ci, use the dynamic branch name from .env step of the workflow
   // if we are local, this will be undefined
   const dynamicBranch = import.meta.env.VITE_GIT_BRANCH;
@@ -55,7 +53,7 @@ export function RunTest({
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
               </p>
-              {env !== 'prod' ? <UploadFileWarning /> : null}
+              <UploadFileWarning />
               <div>
                 <UploadZipFile
                   onClick={onClickCustomFile}

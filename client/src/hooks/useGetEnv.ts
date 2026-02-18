@@ -3,7 +3,8 @@
  * during a request.
  * @returns the environment in which the app is running (`local`, `demo`, `prod`, etc.)
  */
-export function useGetEnv(): 'local' | 'demo' | 'prod' {
+export function useGetEnv(): 'local' | 'live' {
+  const placeholder = '%APP_ENV%'.toLowerCase(); // see `serve_index` server middleware
   const env = document
     .querySelector('meta[name="app-env"]')
     ?.getAttribute('content')
@@ -11,14 +12,11 @@ export function useGetEnv(): 'local' | 'demo' | 'prod' {
 
   if (!env) {
     console.error('No environment found in index.html.');
-    return 'local';
+    return 'live';
   }
 
-  if (env === 'prod') {
-    return 'prod';
-  } else if (env === 'demo') {
-    return 'demo';
-  } else {
-    return 'local';
-  }
+  if (env === placeholder) return 'local';
+
+  if (env !== 'local') return 'live';
+  return 'local';
 }
