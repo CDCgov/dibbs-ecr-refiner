@@ -67,6 +67,19 @@ While Option 1 presents a quicker, more isolated fix for the `displayName` probl
 
 Option 2 is the more strategic choice because it establishes a single, robust architecture that solves both problems. By creating a pipeline that extracts clinical data into structured Python objects (e.g., `ResultFinding`, `MedicationFinding`), we gain a clean, intermediate representation. This model can be enriched with the `displayName` from our database and can then be used to generate a contextually-aware, section-specific HTML table for the `<text>` element.
 
+### Key Implementation Details: Passing the Code Map
+
+To enable enrichment, the `displayName` information, which is currently discarded during terminology processing, must be preserved and passed down to the refinement logic. This will be achieved through the following model changes:
+
+1. **Modify `ProcessedConfiguration`:** The `ProcessedConfiguration.from_payload` method in `terminology.py` will be updated. In addition to creating the `codes: set[str]`, it will also create a new `code_display_map: dict[str, str]` attribute. This map will be populated from the `DbCondition` and `DbConfiguration` custom code objects.
+
+2. **Modify `EICRRefinementPlan`:** The `EICRRefinementPlan` object in `ecr/models.py` will be extended to include the `code_display_map`. The `create_eicr_refinement_plan` function will be responsible for passing this map from the `ProcessedConfiguration` into the plan.
+
+3. **Update Function Signatures:** The `refine_eicr` and `process_section` functions will be updated to accept this map (likely via the plan object) so it is available where the XML enrichment occurs.
+
+> [!NOTE]
+> Regardless of the solution selected, this architectural change is a prerequisite for the chosen solution to be possible by providing the necessary data to the core refinement functions.
+
 ### Implementation Strategy: Together or Sequentially?
 
 It is highly recommended to implement both `displayName` enrichment and the initial framework for section-specific `<text>` generation **together**.
