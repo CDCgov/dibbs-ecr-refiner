@@ -1274,7 +1274,7 @@ async def run_configuration_test(
         lambda: create_refined_ecr_zip_in_memory
     ),
     upload_refined_files_to_s3: Callable[
-        [UUID, io.BytesIO, str, Logger], str
+        [UUID, str, io.BytesIO, str, Logger], str
     ] = Depends(_upload_to_s3),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
@@ -1485,6 +1485,7 @@ async def run_configuration_test(
         s3_key = await run_in_threadpool(
             upload_refined_files_to_s3,
             user.id,
+            user.jurisdiction_id,
             output_zip_buffer,
             output_file_name,
             logger,

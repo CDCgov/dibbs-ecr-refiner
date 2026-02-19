@@ -42,45 +42,6 @@ def _build_s3_client_kwargs() -> dict[str, Any]:
 s3_client = boto3.client("s3", **_build_s3_client_kwargs())
 
 
-# Everything above here is original. Adding the S3 listing helper:
-def find_user_file_key_by_filename(
-    user_id: UUID, filename: str, logger: Logger
-) -> str | None:
-    """
-    Search S3 for the file uploaded by this user with this filename, checking all date folders under the standard refiner-test-suite prefix.
-
-    Returns the first matching key found, or None if not found.
-    """
-    prefix = "refiner-test-suite/"
-    paginator = s3_client.get_paginator("list_objects_v2")
-    try:
-        # List all 'date' folders below the base prefix
-        list_prefixes_resp = s3_client.list_objects_v2(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME, Prefix=prefix, Delimiter="/"
-        )
-        date_prefixes = []
-        for cp in list_prefixes_resp.get("CommonPrefixes", []):
-            folder = cp.get("Prefix")  # ex: 'refiner-test-suite/2026-01-29/'
-            date_prefixes.append(folder)
-        for date_folder in date_prefixes:
-            user_prefix = f"{date_folder}{user_id}/"
-            for page in paginator.paginate(
-                Bucket=S3_CONFIGURATION_BUCKET_NAME, Prefix=user_prefix
-            ):
-                for obj in page.get("Contents", []):
-                    key = obj["Key"]
-                    if key.endswith(f"/{filename}"):
-                        logger.info(
-                            "Found matching key for user and filename",
-                            extra={"key": key},
-                        )
-                        return key
-        return None
-    except ClientError as e:
-        logger.error("Error during S3 listing", extra={"error": str(e)})
-        return None
-
-
 def upload_current_version_file(
     directory_keys: list[str], active_version: int | None, logger: Logger
 ) -> None:
@@ -169,13 +130,18 @@ def upload_configuration_payload(
 
 
 def upload_refined_ecr(
-    user_id: UUID, file_buffer: BytesIO, filename: str, logger: Logger
+    user_id: UUID,
+    jurisdiction_id: str,
+    file_buffer: BytesIO,
+    filename: str,
+    logger: Logger,
 ) -> str:
     """
     Uploads a refined ZIP file to AWS S3.
 
     Args:
         user_id (UUID): Logged-in user ID
+        jurisdiction_id (str): Logged-in user's ID.
         file_buffer (BytesIO): ZIP file in memory
         filename (str): The filename that will be written to S3
         logger (Logger): The standard logger
@@ -184,7 +150,9 @@ def upload_refined_ecr(
         str: The S3 key of the uploaded file (or empty string on error)
     """
     try:
-        key = get_refined_user_zip_key(user_id=user_id, filename=filename)
+        key = get_refined_user_zip_key(
+            user_id=user_id, jurisdiction_id=jurisdiction_id, filename=filename
+        )
 
         s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, key)
 
@@ -214,20 +182,10 @@ def fetch_zip_from_s3(key: str, logger: Logger) -> dict:
     return resp
 
 
-def get_refined_user_zip_key(user_id: UUID, filename: str) -> str:
+def get_refined_user_zip_key(user_id: UUID, jurisdiction_id: str, filename: str) -> str:
     """
     Creates a refiner user zip file key.
     """
     today = date.today().isoformat()
-    key = f"refiner-test-suite/{today}/{user_id}/{filename}"
+    key = f"test-artifacts/{jurisdiction_id}/{today}/{user_id}/{filename}"
     return key
-
-
-__all__ = [
-    "upload_current_version_file",
-    "upload_configuration_payload",
-    "upload_refined_ecr",
-    "fetch_zip_from_s3",
-    "get_refined_user_zip_key",
-    "find_user_file_key_by_filename",
-]
