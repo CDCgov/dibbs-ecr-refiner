@@ -80,6 +80,12 @@ jobs:
           ignore-unfixed: true
           timeout: "10m"
 
+      - name: Display Trivy results as table
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.check.outputs.image }}
+          format: "table"
+
       - name: Upload Trivy scan results to GitHub Security tab
         if: steps.check.outputs.exists == 'true'
         uses: github/codeql-action/upload-sarif@v4
