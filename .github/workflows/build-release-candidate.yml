@@ -133,13 +133,3 @@ jobs:
           tags: ${{ steps.vars.outputs.ops_tags }}
           build-args: |
             VERSION=${{ steps.vars.outputs.version_tag }}
-
-      - name: Create draft pre-release GitHub release notes
-        if: ${{ github.event.inputs.dry_run == 'false' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.vars.outputs.version_tag }}
-          name: ${{ steps.vars.outputs.version_tag }}
-          draft: true
-          prerelease: true
-          generate_release_notes: true
