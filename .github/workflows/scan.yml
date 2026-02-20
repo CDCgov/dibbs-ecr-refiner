@@ -35,6 +35,8 @@ jobs:
             path: "refiner"
           - name: "refiner-lambda"
             path: "lambda"
+          - name: "refiner-ops"
+            path: "ops"
       fail-fast: false # Continue scanning other images if one fails
 
     steps:
