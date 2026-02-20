@@ -1,4 +1,4 @@
-name: Build and push Refiner Docker images to GHCR and AWS ECR
+name: Build and push images (dev)
 
 on:
   push:
@@ -14,11 +14,6 @@ on:
       version_tag:
         description: "Optional Docker tag to use instead of branch name (`1.2.3`)"
         required: false
-      create_release_notes:
-        description: "Create draft release notes for this build. Must also provide version_tag."
-        type: boolean
-        required: false
-        default: false
       push_ghcr:
         description: "Push images to GitHub Container Registry (GHCR)"
         type: boolean
@@ -123,17 +118,6 @@ jobs:
           echo "LAMBDA_TAGS: ${{ steps.vars.outputs.lambda_tags }}"
           echo "OPS_TAGS: ${{ steps.vars.outputs.ops_tags }}"
 
-      - name: Create and push Git tag for release
-        if: ${{ github.event.inputs.create_release_notes == 'true' && (github.event.inputs.version_tag != '') }}
-        run: |
-          GIT_TAG="${{ github.event.inputs.version_tag }}"
-          if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
-            echo "Tag $GIT_TAG already exists, skipping"
-          else
-            git tag -a "$GIT_TAG" -m "Release $GIT_TAG"
-            git push origin "$GIT_TAG"
-          fi
-
       - name: Build and push Refiner app image
         uses: docker/build-push-action@v6
         with:
@@ -167,13 +151,3 @@ jobs:
           tags: ${{ steps.vars.outputs.ops_tags }}
           build-args: |
             VERSION=${{ github.event.inputs.version_tag }}
-
-      - name: Create draft GitHub release notes
-        if: ${{ github.event.inputs.create_release_notes == 'true' && (github.event.inputs.version_tag != '') }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.version_tag }}
-          name: ${{ github.event.inputs.version_tag }}
-          draft: true
-          prerelease: false
-          generate_release_notes: true
