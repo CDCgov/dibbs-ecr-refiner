@@ -1,30 +1,20 @@
 const fs = require("fs");
 
-async function generateSecuritySummary(github, context, core) {
-  const prNumber = context.payload.pull_request?.number;
-
-  if (!prNumber) {
-    console.log("Not a PR, skipping summary");
-    return;
-  }
-
-  const images = ["refiner-app", "refiner-lambda", "refiner-ops"];
-  let message = `## 🔒 Security Scan Results\n\n`;
-
+/**
+ * Parse Trivy scan results and count vulnerabilities
+ */
+function parseScanResults(images) {
   let totalCritical = 0;
   let totalHigh = 0;
   let totalMedium = 0;
   let totalLow = 0;
-
-  let detailsMessage = "";
+  const imageResults = [];
 
   for (const image of images) {
     try {
       const results = JSON.parse(
         fs.readFileSync(`trivy-${image}-results.json`, "utf8"),
       );
-
-      detailsMessage += `### 📦 ${image}\n\n`;
 
       let imageCritical = 0,
         imageHigh = 0,
@@ -59,28 +49,50 @@ async function generateSecuritySummary(github, context, core) {
       totalMedium += imageMedium;
       totalLow += imageLow;
 
-      const total = imageCritical + imageHigh + imageMedium + imageLow;
-
-      if (total === 0) {
-        detailsMessage += `✅ **No vulnerabilities found**\n\n`;
-      } else {
-        detailsMessage += `| Severity | Count |\n|----------|-------|\n`;
-        if (imageCritical > 0)
-          detailsMessage += `| 🔴 Critical | ${imageCritical} |\n`;
-        if (imageHigh > 0) detailsMessage += `| 🟠 High | ${imageHigh} |\n`;
-        if (imageMedium > 0)
-          detailsMessage += `| 🟡 Medium | ${imageMedium} |\n`;
-        if (imageLow > 0) detailsMessage += `| ⚪ Low | ${imageLow} |\n`;
-        detailsMessage += `\n`;
-      }
+      imageResults.push({
+        name: image,
+        critical: imageCritical,
+        high: imageHigh,
+        medium: imageMedium,
+        low: imageLow,
+        total: imageCritical + imageHigh + imageMedium + imageLow,
+      });
     } catch (error) {
-      detailsMessage += `⚠️ Could not parse results for ${image}\n\n`;
       console.error(`Error parsing ${image}:`, error);
+      imageResults.push({
+        name: image,
+        error: true,
+        errorMessage: error.message,
+      });
     }
   }
 
+  return {
+    totalCritical,
+    totalHigh,
+    totalMedium,
+    totalLow,
+    totalVulns: totalCritical + totalHigh + totalMedium + totalLow,
+    imageResults,
+  };
+}
+
+/**
+ * Format results as GitHub markdown comment
+ */
+function formatGitHubComment(scanResults, repoOwner, repoName) {
+  const {
+    totalCritical,
+    totalHigh,
+    totalMedium,
+    totalLow,
+    totalVulns,
+    imageResults,
+  } = scanResults;
+
+  let message = `## 🔒 Security Scan Results\n\n`;
+
   // Summary at the top
-  const totalVulns = totalCritical + totalHigh + totalMedium + totalLow;
   if (totalVulns > 0) {
     message += `### ⚠️ Found ${totalVulns} vulnerabilities\n\n`;
     message += `| Severity | Total |\n|----------|-------|\n`;
@@ -93,22 +105,178 @@ async function generateSecuritySummary(github, context, core) {
     message += `### ✅ No vulnerabilities found!\n\n`;
   }
 
-  message += detailsMessage;
+  // Per-image breakdown
+  for (const result of imageResults) {
+    message += `### 📦 ${result.name}\n\n`;
+
+    if (result.error) {
+      message += `⚠️ Could not parse results for ${result.name}\n\n`;
+    } else if (result.total === 0) {
+      message += `✅ **No vulnerabilities found**\n\n`;
+    } else {
+      message += `| Severity | Count |\n|----------|-------|\n`;
+      if (result.critical > 0)
+        message += `| 🔴 Critical | ${result.critical} |\n`;
+      if (result.high > 0) message += `| 🟠 High | ${result.high} |\n`;
+      if (result.medium > 0) message += `| 🟡 Medium | ${result.medium} |\n`;
+      if (result.low > 0) message += `| ⚪ Low | ${result.low} |\n`;
+      message += `\n`;
+    }
+  }
+
   message += `\n---\n`;
-  message += `**View detailed results**: [Security tab](https://github.com/${context.repo.owner}/${context.repo.repo}/security/code-scanning)\n`;
+  message += `**View detailed results**: [Security tab](https://github.com/${repoOwner}/${repoName}/security/code-scanning)\n`;
   message += `*Last updated: ${new Date()
     .toISOString()
     .replace("T", " ")
     .replace(/\.\d{3}Z$/, " UTC")}*`;
 
-  // Warn if critical or high vulnerabilities found
-  if (totalCritical > 0 || totalHigh > 0) {
-    core.warning(
-      `Found ${totalCritical} critical and ${totalHigh} high severity vulnerabilities`,
-    );
+  return message;
+}
+
+/**
+ * Format results as Slack message for scheduled scans
+ */
+function formatSlackMessage(scanResults, repoUrl, branch = "main") {
+  const {
+    totalCritical,
+    totalHigh,
+    totalMedium,
+    totalLow,
+    totalVulns,
+    imageResults,
+  } = scanResults;
+
+  let color = "good"; // green
+  let emoji = "✅";
+  let statusText = "No vulnerabilities found";
+
+  if (totalCritical > 0) {
+    color = "danger"; // red
+    emoji = "🔴";
+    statusText = `${totalCritical} Critical vulnerabilities detected!`;
+  } else if (totalHigh > 0) {
+    color = "warning"; // yellow
+    emoji = "🟠";
+    statusText = `${totalHigh} High vulnerabilities detected`;
+  } else if (totalVulns > 0) {
+    color = "#808080"; // gray
+    emoji = "ℹ️";
+    statusText = `${totalVulns} Medium/Low vulnerabilities`;
   }
 
-  // Update or create comment
+  const blocks = [
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: `${emoji} Security Scan: ${branch}`,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*${statusText}*`,
+      },
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `🔴 *Critical:* ${totalCritical}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `🟠 *High:* ${totalHigh}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `🟡 *Medium:* ${totalMedium}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `⚪ *Low:* ${totalLow}`,
+        },
+      ],
+    },
+  ];
+
+  // Add per-image breakdown
+  const imageFields = imageResults
+    .filter((r) => !r.error)
+    .map((r) => {
+      const icon = r.total === 0 ? "✅" : "⚠️";
+      return {
+        type: "mrkdwn",
+        text: `${icon} *${r.name}:* ${r.critical}C / ${r.high}H / ${r.medium}M / ${r.low}L`,
+      };
+    });
+
+  if (imageFields.length > 0) {
+    blocks.push({
+      type: "section",
+      fields: imageFields,
+    });
+  }
+
+  // Add link to GitHub Security tab
+  blocks.push({
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: `<${repoUrl}/security/code-scanning|View detailed results in GitHub Security tab>`,
+    },
+  });
+
+  return {
+    attachments: [
+      {
+        color: color,
+        blocks: blocks,
+      },
+    ],
+  };
+}
+
+/**
+ * Send notification to Slack
+ */
+async function sendSlackNotification(scanResults, repoUrl, branch, webhookUrl) {
+  const payload = formatSlackMessage(scanResults, repoUrl, branch);
+
+  const response = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    console.error("Failed to send Slack notification:", await response.text());
+    throw new Error(`Slack notification failed: ${response.status}`);
+  } else {
+    console.log("Slack notification sent successfully");
+  }
+}
+
+/**
+ * Post or update PR comment
+ */
+async function postGitHubComment(scanResults, github, context) {
+  const prNumber = context.payload.pull_request?.number;
+
+  if (!prNumber) {
+    console.log("Not a PR, skipping GitHub comment");
+    return;
+  }
+
+  const message = formatGitHubComment(
+    scanResults,
+    context.repo.owner,
+    context.repo.repo,
+  );
+
   const comments = await github.rest.issues.listComments({
     issue_number: prNumber,
     owner: context.repo.owner,
@@ -140,4 +308,60 @@ async function generateSecuritySummary(github, context, core) {
   }
 }
 
-module.exports = { generateSecuritySummary };
+/**
+ * For PR scans - posts comment to PR
+ */
+async function generatePRSummary(github, context, core) {
+  const images = ["refiner-app", "refiner-lambda", "refiner-ops"];
+
+  // Parse all scan results
+  const scanResults = parseScanResults(images);
+
+  // Warn if critical or high vulnerabilities found
+  if (scanResults.totalCritical > 0 || scanResults.totalHigh > 0) {
+    core.warning(
+      `Found ${scanResults.totalCritical} critical and ${scanResults.totalHigh} high severity vulnerabilities`,
+    );
+  }
+
+  // Post GitHub comment
+  await postGitHubComment(scanResults, github, context);
+}
+
+/**
+ * For scheduled scans - sends Slack notification
+ */
+async function generateScheduledSummary(github, context, core) {
+  const images = ["refiner-app", "refiner-lambda", "refiner-ops"];
+
+  // Parse all scan results
+  const scanResults = parseScanResults(images);
+
+  // Warn if critical or high vulnerabilities found
+  if (scanResults.totalCritical > 0 || scanResults.totalHigh > 0) {
+    core.warning(
+      `Found ${scanResults.totalCritical} critical and ${scanResults.totalHigh} high severity vulnerabilities`,
+    );
+  }
+
+  // Send Slack notification if webhook is configured
+  const slackWebhook = process.env.SLACK_WEBHOOK_URL;
+  if (slackWebhook) {
+    try {
+      const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+      const branch = context.ref.replace("refs/heads/", "");
+
+      await sendSlackNotification(scanResults, repoUrl, branch, slackWebhook);
+    } catch (error) {
+      console.error("Failed to send Slack notification:", error);
+      core.setFailed(`Slack notification failed: ${error.message}`);
+    }
+  } else {
+    console.log("SLACK_WEBHOOK_URL not configured, skipping notification");
+  }
+}
+
+module.exports = {
+  generatePRSummary,
+  generateScheduledSummary,
+};

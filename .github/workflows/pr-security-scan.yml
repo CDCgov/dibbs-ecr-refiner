@@ -123,4 +123,4 @@ jobs:
         with:
           script: |
             const script = require('./.github/scripts/security-summary.js');
-            await script.generateSecuritySummary(github, context, core);
+            await script.generatePRSummary(github, context, core);
