@@ -28,6 +28,8 @@ jobs:
             dockerfile: "Dockerfile.app"
           - name: "refiner-lambda"
             dockerfile: "Dockerfile.lambda"
+          - name: "refiner-ops"
+            dockerfile: "Dockerfile.ops"
       fail-fast: false
 
     steps:
@@ -56,6 +58,12 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
           ignore-unfixed: true
           timeout: "10m"
+
+      - name: Display Trivy results as table
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
+          format: "table"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
