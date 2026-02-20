@@ -1,7 +1,6 @@
 const fs = require("fs");
-const core = require("@actions/core");
 
-async function generateSecuritySummary(github, context) {
+async function generateSecuritySummary(github, context, core) {
   const prNumber = context.payload.pull_request?.number;
 
   if (!prNumber) {
