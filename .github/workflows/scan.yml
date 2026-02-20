@@ -17,8 +17,8 @@ on:
           - "CRITICAL,HIGH"
           - "CRITICAL,HIGH,MEDIUM"
   schedule:
-    # Run every 12 hours (6 AM and 6 PM UTC)
-    - cron: "0 6,18 * * *"
+    # Run once daily at 2 PM UTC
+    - cron: "0 14 * * *"
 
 permissions:
   contents: read
