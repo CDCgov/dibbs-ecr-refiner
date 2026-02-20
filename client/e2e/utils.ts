@@ -59,7 +59,18 @@ export async function login({
   await page.getByRole('textbox', { name: 'Username or email' }).fill(username);
   await page.getByRole('textbox', { name: 'Username or email' }).press('Tab');
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
-  await page.getByRole('button', { name: 'Sign In' }).click();
+
+  // wait for navigation after clicking sign in button
+  await Promise.all([
+    page.waitForURL((url) => !url.hostname.includes('localhost:8082'), {
+      timeout: 30000,
+    }),
+    page.getByRole('button', { name: 'Sign In' }).click(),
+  ]);
+
+  // wait for network to be idle after login
+  await page.waitForLoadState('networkidle');
+
   // check that we are on the logged-in home screen
   await expect(
     page.getByRole('heading', { name: 'Configurations' })
