@@ -30,7 +30,7 @@ We recommend running the Message Refiner from a container, but if that isn't fea
 4. Make a fresh virtual environment with `python -m venv .venv`.
 5. Activate the virtual environment with `source .venv/bin/activate` (MacOS and Linux), `venv\Scripts\activate` (Windows Command Prompt), or `.venv\Scripts\Activate.ps1` (Windows Power Shell).
 6. Install all of the Python dependencies for the Message Refiner with `pip install -r requirements.txt` into your virtual environment.
-7. Run the Message Refiner on `localhost:8080` with `python -m uvicorn app.main:app --host 0.0.0.0 --port 8080`.
+7. Run the Message Refiner on `localhost:8080` with `python -m uvicorn app.asgi:app --host 0.0.0.0 --port 8080`.
 
 ## Building the Docker Image
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from .conditions import router as conditions_router
-from .configurations import router as configurations_router
+from .configurations.router import router as configurations_router
 from .demo import router as demo_router
 from .events import router as events_router
 
