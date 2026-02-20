@@ -138,10 +138,14 @@ def test_lambda_inactive(
     assert "RefinerComplete/persistence/id" in created_files
 
     # Load RefinerComplete/persistence/id and ensure it contains expected paths
-    resp = s3_client.get_object(
-        Bucket=data_bucket, Key=f"RefinerComplete/{s3_input_objects}"
+    complete_json = get_refiner_complete_content(
+        s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
     )
-    complete_json = json.loads(resp["Body"].read().decode("utf-8"))
+
+    # Neither condition was refined
+    expected_refiner_metadata = {"SDDH": {"840539006": False, "772828001": False}}
+    assert complete_json["RefinerMetadata"] == expected_refiner_metadata
+
     assert not complete_json["RefinerSkip"]
 
     # Skipped due to no current.json files found
@@ -208,6 +212,11 @@ def test_lambda_one_active(
     complete_json = get_refiner_complete_content(
         s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
     )
+
+    # Only COVID should be marked as refined
+    expected_refiner_metadata = {"SDDH": {"840539006": True, "772828001": False}}
+    assert complete_json["RefinerMetadata"] == expected_refiner_metadata
+
     assert not complete_json["RefinerSkip"]
     assert (
         f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
@@ -314,6 +323,11 @@ def test_lambda_all_active(
     complete_json = get_refiner_complete_content(
         s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
     )
+
+    # Both COVID and Flu should be marked as refined
+    expected_refiner_metadata = {"SDDH": {"840539006": True, "772828001": True}}
+    assert complete_json["RefinerMetadata"] == expected_refiner_metadata
+
     assert not complete_json["RefinerSkip"]
 
     # Expect COVID

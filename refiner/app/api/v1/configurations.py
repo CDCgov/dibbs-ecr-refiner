@@ -1434,6 +1434,7 @@ async def run_configuration_test(
         condition_code=condition_obj.code,
     )
 
+    s3_file_package.append((eicr_filename, refined_document.refined_eicr))
     s3_file_package.append((rr_filename, refined_document.refined_rr))
     # Generate HTML from refined XML
     try:

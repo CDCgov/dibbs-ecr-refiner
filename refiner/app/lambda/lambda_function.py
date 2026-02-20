@@ -5,11 +5,11 @@
 # See here: https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html#python-handler-naming
 
 import json
-import logging
 import os
 from typing import TypedDict
 
 import boto3
+from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
@@ -17,6 +17,7 @@ from ..services.aws.s3_keys import get_active_file_key, get_current_file_key
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
+    get_file_size_reduction_percentage,
     refine_eicr,
     refine_rr,
 )
@@ -24,8 +25,7 @@ from ..services.ecr.reportability import determine_reportability
 from ..services.terminology import ProcessedConfiguration
 
 # Initialize the logger
-logger = logging.getLogger()
-logger.setLevel("INFO")
+logger = Logger(service="refiner")
 
 # Environment variables
 EICR_INPUT_PREFIX = os.getenv("EICR_INPUT_PREFIX", "eCRMessageV2/")
@@ -41,6 +41,7 @@ class RefinerCompleteFile(TypedDict):
     Represents the completion file written after all refinement is done.
     """
 
+    RefinerMetadata: dict[str, dict[str, bool]]
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
 
@@ -101,7 +102,7 @@ def parse_s3_content_to_dict(body: str) -> dict:
         data = json.loads(body)
         return data
     except json.JSONDecodeError as e:
-        logger.info("Decoding S3 string to JSON failed", e)
+        logger.error("Decoding S3 string to JSON failed", e)
         raise
 
 
@@ -155,31 +156,40 @@ def process_refiner(
     bucket: str,
     config_bucket: str,
     persistence_id: str,
-) -> list[str]:
+) -> tuple[list[str], dict[str, dict[str, bool]]]:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
 
     This function:
     1. Extracts all reportable conditions grouped by jurisdiction from the RR
     2. For each jurisdiction/condition combination, processes the refinement
-    3. Returns a list of S3 paths for the refined output files
+    3. Returns a list of S3 paths for the refined output files and metadata
+       indicating which jurisdiction/condition combinations were processed
 
     Args:
         xml_files: Container with eICR and RR XML strings
         s3_client: Boto3 S3 client
         bucket: S3 bucket name
+        config_bucket: S3 configuration bucket name
         persistence_id: The persistence ID for constructing output paths
 
     Returns:
-        list[str]: List of S3 paths for refined output files
+        tuple: A tuple containing:
+            - list[str]: List of S3 paths for refined output files
+            - dict[str, dict[str, bool]]: Metadata mapping jurisdiction codes
+              to condition codes with True (refined) or False (skipped)
     """
     # Extract reportable conditions by jurisdiction from RR
     reportability_result = determine_reportability(xml_files)
     refiner_output_files: list[str] = []
+    metadata: dict[str, dict[str, bool]] = {}
 
     # Process each jurisdiction
     for jurisdiction_group in reportability_result["reportable_conditions"]:
         jurisdiction_code = jurisdiction_group.jurisdiction.upper()
+
+        if jurisdiction_code not in metadata:
+            metadata[jurisdiction_code] = {}
 
         # Process each condition for this jurisdiction
         for condition in jurisdiction_group.conditions:
@@ -196,17 +206,23 @@ def process_refiner(
 
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
+                metadata[jurisdiction_code][condition_code] = False
                 logger.info(
-                    f"No active configuration identified at key={current_file_key} while processing jurisdiction={jurisdiction_code}, condition={condition_code}, skipping"
+                    "No active configuration identified, skipping.",
+                    key=current_file_key,
+                    jurisdiction_code=jurisdiction_code,
+                    condition_code=condition_code,
+                    operation="skipped",
                 )
                 continue
 
             logger.info(
-                f"Current file found key={current_file_key} version={config_version_to_use}"
-            )
-
-            logger.info(
-                f"Processing jurisdiction={jurisdiction_code}, condition={condition_code}"
+                "Active configuration version identified.",
+                key=current_file_key,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                config_version=config_version_to_use,
+                operation="config_version_found",
             )
 
             # Construct output path: RefinerOutput/<persistance_id>/<jurisdiction_code>/<condition_code>
@@ -226,7 +242,12 @@ def process_refiner(
             )
 
             logger.info(
-                f"Using activated configuration file key={serialized_configuration_key}"
+                "Using activated configuration file",
+                key=serialized_configuration_key,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                config_version=config_version_to_use,
+                operation="activation_file_read",
             )
 
             processed_configuration = ProcessedConfiguration.from_dict(
@@ -262,7 +283,13 @@ def process_refiner(
                 ContentType="application/xml",
             )
             refiner_output_files.append(eicr_output_key)
-            logger.info(f"Created refined eICR output: {eicr_output_key}")
+            logger.info(
+                "Created refined eICR output.",
+                key=eicr_output_key,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                operation="eicr_written",
+            )
 
             rr_output_key = f"{output_key}/refined_RR.xml"
             s3_client.put_object(
@@ -272,9 +299,30 @@ def process_refiner(
                 ContentType="application/xml",
             )
             refiner_output_files.append(rr_output_key)
-            logger.info(f"Created refined RR output: {rr_output_key}")
+            logger.info(
+                "Created refined RR output.",
+                key=rr_output_key,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                operation="rr_written",
+            )
 
-    return refiner_output_files
+            eicr_size_reduction_percentage = get_file_size_reduction_percentage(
+                unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr_content
+            )
+            logger.info(
+                "Refinement complete.",
+                eicr_key=eicr_output_key,
+                rr_key=rr_output_key,
+                eicr_size_reduction_percentage=eicr_size_reduction_percentage,
+                jurisdiction_code=jurisdiction_code,
+                condition_code=condition_code,
+                operation="refinement_complete",
+            )
+
+            metadata[jurisdiction_code][condition_code] = True
+
+    return refiner_output_files, metadata
 
 
 def lambda_handler(event, context):
@@ -345,7 +393,7 @@ def lambda_handler(event, context):
 
             # Process Refiner (eICR, RR) -> Refiner Output []
             logger.info("Starting refinement process")
-            refiner_output_files = process_refiner(
+            refiner_output_files, refiner_metadata = process_refiner(
                 xml_files,
                 s3_client,
                 s3_bucket_name,
@@ -355,6 +403,7 @@ def lambda_handler(event, context):
 
             # Create RefinerComplete file
             complete_file: RefinerCompleteFile = {
+                "RefinerMetadata": refiner_metadata,
                 "RefinerSkip": False,
                 "RefinerOutputFiles": refiner_output_files,
             }
@@ -380,5 +429,5 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "message": "Refiner processed successfully"}
 
     except Exception as e:
-        logger.error(f"Error processing: {str(e)}", exc_info=True)
+        logger.error(f"Error processing: {str(e)}", exception=e)
         raise
