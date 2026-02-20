@@ -1,1 +1,2 @@
 moto[s3]
+aws-lambda-powertools[aws-sdk]
