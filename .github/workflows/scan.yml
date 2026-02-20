@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to scan (e.g., latest, main, v1.0.0)"
+        description: "Image tag to scan (e.g., latest, main, 1.0.0)"
         required: false
         default: "latest"
       severity_level:
@@ -16,6 +16,11 @@ on:
           - "CRITICAL"
           - "CRITICAL,HIGH"
           - "CRITICAL,HIGH,MEDIUM"
+      send_slack_notification:
+        description: "Send Slack notification"
+        required: false
+        default: false
+        type: boolean
   schedule:
     # Run once daily at 2 PM UTC
     - cron: "0 14 * * *"
@@ -146,7 +151,8 @@ jobs:
   notify-slack:
     runs-on: ubuntu-latest
     needs: scan-images
-    if: always()
+    # Always send message during a scheduled run but allow user to choose when running manually
+    if: always() && (github.event_name == 'schedule' || github.event.inputs.send_slack_notification == 'true')
 
     steps:
       - name: Checkout repository
