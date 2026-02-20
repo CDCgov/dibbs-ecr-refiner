@@ -4,9 +4,10 @@ from logging import Logger
 from pathlib import Path
 from uuid import UUID
 
+from botocore.response import StreamingBody
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import StreamingBody, StreamingResponse
+from fastapi.responses import StreamingResponse
 
 from app.services.testing import independent_testing
 
