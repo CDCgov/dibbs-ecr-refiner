@@ -4,8 +4,10 @@ from logging import Logger
 from pathlib import Path
 from uuid import UUID
 
+from botocore.response import StreamingBody
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 
 from app.services.testing import independent_testing
 
@@ -19,7 +21,10 @@ from ...db.demo.model import Condition, IndependentTestUploadResponse
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
 from ...services import file_io, format
-from ...services.aws.s3 import upload_refined_ecr
+from ...services.aws.s3 import (
+    fetch_zip_from_s3,
+    upload_refined_ecr,
+)
 from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
 from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
@@ -59,7 +64,7 @@ async def demo_upload(
     ),
     user: DbUser = Depends(get_logged_in_user),
     upload_refined_files_to_s3: Callable[
-        [UUID, io.BytesIO, str, Logger], str
+        [UUID, str, io.BytesIO, str, Logger], str
     ] = Depends(lambda: upload_refined_ecr),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
@@ -240,9 +245,10 @@ async def demo_upload(
     output_file_name, output_zip_buffer = create_output_zip(
         files=refined_files_to_zip,
     )
-    presigned_s3_url = await run_in_threadpool(
+    output_filename = await run_in_threadpool(
         upload_refined_files_to_s3,
         user.id,
+        user.jurisdiction_id,
         output_zip_buffer,
         output_file_name,
         logger,
@@ -259,5 +265,34 @@ async def demo_upload(
         refined_conditions=conditions,
         conditions_without_matching_configs=conditions_without_matching_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
-        refined_download_url=presigned_s3_url,
+        refined_download_key=output_filename,
+    )
+
+
+@router.get(
+    "/download/{filename}",
+    tags=["demo"],
+    operation_id="downloadRefinedEcr",
+)
+async def download_refined_ecr(
+    filename: str,
+    user: DbUser = Depends(get_logged_in_user),
+    s3_download: Callable[[UUID, str, Logger], StreamingBody | None] = Depends(
+        lambda: fetch_zip_from_s3
+    ),
+    logger: Logger = Depends(get_logger),
+) -> StreamingResponse:
+    """
+    Stream refined eCR zip from S3 for download by filename (server resolves date/key).
+    """
+
+    body = await run_in_threadpool(s3_download, user.id, filename, logger)
+    if not body:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="File not found."
+        )
+    return StreamingResponse(
+        content=body.iter_chunks(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

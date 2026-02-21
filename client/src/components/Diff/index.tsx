@@ -6,13 +6,13 @@ import { Button } from '../Button';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
-  'refined_download_url' | 'unrefined_eicr'
+  'refined_download_key' | 'unrefined_eicr'
 > & {
   condition: IndependentTestUploadResponse['refined_conditions'][0];
 };
 
 export function Diff({
-  refined_download_url,
+  refined_download_key,
   unrefined_eicr,
   condition,
 }: DiffProps) {
@@ -20,10 +20,11 @@ export function Diff({
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
 
-  function downloadFile(presignedUrl: string) {
+  function downloadFile(filename: string) {
     try {
+      const downloadUrl = `/api/v1/demo/download/${filename}`;
       const link = document.createElement('a');
-      link.href = presignedUrl;
+      link.href = downloadUrl;
       link.download = '';
       document.body.appendChild(link);
       link.click();
@@ -50,7 +51,7 @@ export function Diff({
             <div className="gapx-2 flex flex-col items-start py-1">
               <Button
                 variant="tertiary"
-                onClick={() => downloadFile(refined_download_url)}
+                onClick={() => downloadFile(refined_download_key)}
               >
                 Download results
               </Button>
