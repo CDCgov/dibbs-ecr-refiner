@@ -161,6 +161,11 @@ jobs:
             echo ""
           done
 
+      - name: Configure Git username and email
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Create and push stable Git tag
         if: ${{ github.event.inputs.dry_run == 'false' }}
         run: |
