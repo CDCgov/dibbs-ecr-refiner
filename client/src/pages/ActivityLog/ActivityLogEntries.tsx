@@ -16,13 +16,7 @@ export function ActivityLogEntries({
   const formatDatetime = useDatetimeFormatter();
 
   return (
-    <Table striped>
-      <colgroup>
-        <col className="w-full sm:w-1/6" />
-        <col className="w-2/6" />
-        <col className="w-2/6" />
-        <col className="w-1/6" />
-      </colgroup>
+    <Table striped fullWidth>
       <thead>
         <tr>
           <th scope="col">{nameHeader} </th>
@@ -40,7 +34,7 @@ export function ActivityLogEntries({
               <tr key={r.id} aria-label="Log entry">
                 <td
                   data-label={nameHeader}
-                  className="text-gray-cool-90! font-bold!"
+                  className="text-gray-cool-90! font-bold! break-all"
                 >
                   {r.username}
                 </td>

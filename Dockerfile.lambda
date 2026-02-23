@@ -2,6 +2,12 @@ FROM public.ecr.aws/lambda/python:3.13
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
+# default VERSION is 0.0.0 if not passed at build time
+ARG VERSION="0.0.0"
+
+# make it available as an environment variable inside the container
+ENV VERSION=$VERSION
+
 # Install dependencies
 COPY ./refiner/app/lambda/requirements-lambda.txt .
 RUN pip install --no-cache-dir -r requirements-lambda.txt
