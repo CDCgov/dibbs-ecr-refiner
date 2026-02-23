@@ -953,13 +953,16 @@ async def add_custom_code(
         custom_codes=updated_config.custom_codes,
     )
 
+
 class UploadCustomCodesResponse(BaseModel):
     """
     Custom Code CSV response model.
     """
+
     message: str
     codes_processed: int
     total_custom_codes_in_configuration: int
+
 
 @router.post(
     "/{configuration_id}/upload-custom-codes",
@@ -1010,20 +1013,20 @@ async def upload_custom_codes_csv(
         decoded = contents.decode("utf-8")
         csv_reader = csv.DictReader(io.StringIO(decoded))
 
-        required_columns = {"code_system", "name", "number"}
+        required_columns = {"code_number", "code_system", "display_name"}
         if not required_columns.issubset(set(csv_reader.fieldnames or [])):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="CSV must contain headers: code_system,name,number",
+                detail="CSV must contain headers: code_number,code_system,display_name",
             )
 
         custom_codes: list[DbConfigurationCustomCode] = []
 
         for row_number, row in enumerate(csv_reader, start=2):
             try:
+                code = row["code_number"].strip()
                 code_system = row["code_system"].strip()
-                name = row["name"].strip()
-                code = row["number"].strip()
+                name = row["display_name"].strip()
 
                 if not code or not code_system:
                     raise ValueError("Missing required values.")

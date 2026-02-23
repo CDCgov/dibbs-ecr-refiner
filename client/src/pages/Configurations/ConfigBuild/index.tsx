@@ -1104,7 +1104,6 @@ export const ImportCustomCodes = ({
   onSuccess,
 }: ImportCustomCodesProps) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const queryClient = useQueryClient();
   const showToast = useToast();
 
   const [error, setError] = useState<string | null>(null);
@@ -1142,23 +1141,48 @@ export const ImportCustomCodes = ({
           credentials: 'include',
         }
       );
-
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text);
       }
 
-      await queryClient.invalidateQueries({
-        queryKey: getGetConfigurationQueryKey(configurationId),
-      });
+      const data = await res.json();
 
-      showToast({ heading: 'Custom codes imported', body: file.name });
+      showToast({
+        heading: 'CSV successfully imported',
+        body: `${data.codes_processed} codes.`,
+      });
 
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       onSuccess?.();
-    } catch {
-      setError('Failed to upload CSV. Please try again.');
+    } catch (e: any) {
+      let message =
+        typeof e?.message === 'string' && e.message.length > 0
+          ? e.message
+          : 'Failed to upload CSV. Please try again.';
+
+      // If message is JSON like {"detail":"..."} parse it
+      try {
+        const parsed = JSON.parse(message);
+        const detail = parsed?.detail;
+
+        message =
+          typeof detail === 'string'
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d: any) => d?.msg ?? JSON.stringify(d)).join(', ')
+              : (parsed?.message ?? message);
+      } catch {
+        // not JSON, keep message as-is
+      }
+
+      setError(message);
+      showToast({
+        variant: 'error',
+        heading: 'Error Importing CSV',
+        body: message,
+      });
     } finally {
       setIsUploading(false);
     }
