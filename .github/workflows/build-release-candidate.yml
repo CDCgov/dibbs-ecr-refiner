@@ -41,6 +41,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Configure AIMS dev AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AIMS_DEV_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AIMS_DEV_AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to AIMS dev ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Validate semantic version
         run: |
           VERSION="${{ github.event.inputs.version }}"
@@ -70,14 +81,21 @@ jobs:
           RC="${{ github.event.inputs.rc }}"
           TAG="${VERSION}-${RC}"
 
+          ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
+
           # GHCR URLs
           GHCR_APP="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/refiner"
           GHCR_LAMBDA="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/lambda"
           GHCR_OPS="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner/ops"
 
-          echo "app_tags=$GHCR_APP:$TAG" >> $GITHUB_OUTPUT
-          echo "lambda_tags=$GHCR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
-          echo "ops_tags=$GHCR_OPS:$TAG" >> $GITHUB_OUTPUT
+          # ECR URLs
+          ECR_APP="$ECR_REGISTRY/dibbs-dev-refiner/refiner"
+          ECR_LAMBDA="$ECR_REGISTRY/dibbs-dev-refiner/lambda"
+          ECR_OPS="$ECR_REGISTRY/dibbs-dev-refiner/ops"
+
+          echo "app_tags=$GHCR_APP:$TAG,$ECR_APP:$TAG" >> $GITHUB_OUTPUT
+          echo "lambda_tags=$GHCR_LAMBDA:$TAG,$ECR_LAMBDA:$TAG" >> $GITHUB_OUTPUT
+          echo "ops_tags=$GHCR_OPS:$TAG,$ECR_OPS:$TAG" >> $GITHUB_OUTPUT
 
           echo "version_tag=$TAG" >> $GITHUB_OUTPUT
 
@@ -100,7 +118,7 @@ jobs:
             git push origin "$GIT_TAG"
           fi
 
-      - name: Build/push Refiner App RC image to GHCR
+      - name: Build/push Refiner App RC image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -112,7 +130,7 @@ jobs:
             VITE_GIT_BRANCH=${{ github.event.inputs.ref }}
             VERSION=${{ steps.vars.outputs.version_tag }}
 
-      - name: Build/push Refiner Lambda RC image to GHCR
+      - name: Build/push Refiner Lambda RC image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -124,7 +142,7 @@ jobs:
           build-args: |
             VERSION=${{ steps.vars.outputs.version_tag }}
 
-      - name: Build/push Refiner Ops RC image to GHCR
+      - name: Build/push Refiner Ops RC image
         uses: docker/build-push-action@v6
         with:
           context: .
