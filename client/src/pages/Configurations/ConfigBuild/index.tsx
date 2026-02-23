@@ -174,7 +174,7 @@ function Builder({
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
-    'none' | 'codeset' | 'custom' | 'sections'
+    'none' | 'codeset' | 'custom' | 'sections' | 'csv_import'
   >('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
@@ -203,6 +203,12 @@ function Builder({
     setSelectedCodesetName(null);
     setSelectedCodesetId(null);
     setTableView('custom');
+  }
+
+  function onCsvImportClick() {
+    setSelectedCodesetName(null);
+    setSelectedCodesetId(null);
+    setTableView('csv_import');
   }
 
   function setCodesetListItemFocus(deletedId: string) {
@@ -350,16 +356,21 @@ function Builder({
             <>
               <h3 className="mb-2 text-xl font-bold">Custom codes</h3>
               <CustomCodeGroupingParagraph />
-              <ModalToggleButton
-                modalRef={modalRef}
-                opener
-                variant="secondary"
-                className={classNames('mt-4!')}
-                aria-label="Add new custom code"
-                disabled={disabled}
-              >
-                Add code
-              </ModalToggleButton>
+              <div className="mt-4! flex items-center gap-3">
+                <ModalToggleButton
+                  modalRef={modalRef}
+                  opener
+                  variant="primary"
+                  aria-label="Add new custom code"
+                  disabled={disabled}
+                >
+                  Add code
+                </ModalToggleButton>
+
+                <Button onClick={() => onCsvImportClick()} variant="secondary">
+                  Import from CSV
+                </Button>
+              </div>
               <CustomCodesDetail
                 configurationId={id}
                 modalRef={modalRef}
@@ -373,6 +384,14 @@ function Builder({
               configurationId={id}
               sectionProcessing={section_processing}
               disabled={disabled}
+            />
+          ) : tableView === 'csv_import' ? (
+            <ImportCustomCodes
+              configurationId={id}
+              disabled={disabled}
+              onSuccess={() => {
+                setTableView('custom');
+              }}
             />
           ) : null}
         </div>
@@ -1072,3 +1091,189 @@ function normalizeSystem(
 ): AddCustomCodeInputSystem {
   return system.toLowerCase() as AddCustomCodeInputSystem;
 }
+
+interface ImportCustomCodesProps {
+  configurationId: string;
+  disabled?: boolean;
+  onSuccess?: () => void; // 👈 add this
+}
+
+export const ImportCustomCodes = ({
+  configurationId,
+  disabled = false,
+  onSuccess,
+}: ImportCustomCodesProps) => {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const queryClient = useQueryClient();
+  const showToast = useToast();
+
+  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleButtonClick = () => {
+    if (!disabled && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setError('Please upload a valid CSV file.');
+      return;
+    }
+
+    setError(null);
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append('uploaded_file', file);
+
+    try {
+      const res = await fetch(
+        `/api/v1/configurations/${configurationId}/upload-custom-codes`,
+        {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: getGetConfigurationQueryKey(configurationId),
+      });
+
+      showToast({ heading: 'Custom codes imported', body: file.name });
+
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+      onSuccess?.();
+    } catch {
+      setError('Failed to upload CSV. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-xl space-y-6">
+      {isUploading ? (
+        /* =======================
+               Uploading State
+            ======================== */
+        <>
+          <button
+            type="button"
+            onClick={() => setIsUploading(false)}
+            className="text-sm text-gray-600 hover:underline"
+          >
+            ← Back
+          </button>
+
+          <div>
+            <h2 className="text-2xl font-semibold">Import from CSV</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Easily add multiple codes by uploading a spreadsheet in CSV
+              format.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
+            <div className="mb-4 flex justify-center text-5xl text-blue-400">
+              📄
+            </div>
+
+            <h3 className="mb-4 text-lg font-semibold">CSV uploading...</h3>
+
+            <div className="mx-auto mb-6 h-1 w-3/4 overflow-hidden rounded bg-blue-200">
+              <div className="h-full w-1/3 animate-pulse bg-blue-600" />
+            </div>
+
+            <Button variant="secondary" onClick={() => setIsUploading(false)}>
+              Cancel
+            </Button>
+          </div>
+        </>
+      ) : (
+        /* =======================
+               Normal Import UI
+            ======================== */
+        <div className="w-full max-w-xl space-y-6">
+          {/* Back */}
+          <button
+            type="button"
+            onClick={onSuccess} // or a dedicated onBack if you prefer
+            className="text-sm text-gray-600 hover:underline"
+          >
+            ← Back
+          </button>
+
+          {/* Title */}
+          <div>
+            <h2 className="text-2xl font-semibold">Import from CSV</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Easily add multiple codes by uploading a spreadsheet in CSV
+              format.
+            </p>
+          </div>
+
+          {/* Step 1 */}
+          <div className="flex items-start gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
+              1
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm">
+                Your spreadsheet must follow the format of this template.
+              </p>
+              <Button variant="secondary">Download template</Button>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="flex items-start gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
+              2
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm">
+                Once you have your codes in the right format, upload the CSV.
+                <br />
+                We will validate the codes and let you know if you need to
+                change anything.
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                hidden
+                onChange={handleFileChange}
+              />
+
+              <Button
+                type="button"
+                onClick={handleButtonClick}
+                disabled={disabled}
+                variant="primary"
+              >
+                Upload CSV
+              </Button>
+
+              {error && <div className="text-sm text-red-600">{error}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

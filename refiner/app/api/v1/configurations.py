@@ -60,6 +60,7 @@ from ...db.configurations.db import (
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
     SectionUpdate,
+    add_bulk_custom_codes_to_configuration_db,
     add_custom_code_to_configuration_db,
     associate_condition_codeset_with_configuration_db,
     delete_custom_code_from_configuration_db,
@@ -950,6 +951,134 @@ async def add_custom_code(
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+    )
+
+class UploadCustomCodesResponse(BaseModel):
+    """
+    Custom Code CSV response model.
+    """
+    message: str
+    codes_processed: int
+    total_custom_codes_in_configuration: int
+
+@router.post(
+    "/{configuration_id}/upload-custom-codes",
+    tags=["configurations"],
+    operation_id="uploadCustomCodesCsv",
+)
+async def upload_custom_codes_csv(
+    configuration_id: UUID,
+    uploaded_file: UploadFile = File(...),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
+) -> UploadCustomCodesResponse:
+    """
+    Accepts a CSV file with format.
+
+        code_system,name,number
+
+    and bulk inserts custom codes into a configuration.
+
+    Returns:
+        UploadCustomCodesResponse
+    """
+
+    # Validate file type
+    if not uploaded_file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a CSV.",
+        )
+
+    # get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+
+    try:
+        contents = await uploaded_file.read()
+        decoded = contents.decode("utf-8")
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+
+        required_columns = {"code_system", "name", "number"}
+        if not required_columns.issubset(set(csv_reader.fieldnames or [])):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="CSV must contain headers: code_system,name,number",
+            )
+
+        custom_codes: list[DbConfigurationCustomCode] = []
+
+        for row_number, row in enumerate(csv_reader, start=2):
+            try:
+                code_system = row["code_system"].strip()
+                name = row["name"].strip()
+                code = row["number"].strip()
+
+                if not code or not code_system:
+                    raise ValueError("Missing required values.")
+
+                custom_codes.append(
+                    DbConfigurationCustomCode(
+                        code=code,
+                        system=code_system,
+                        name=name,
+                    )
+                )
+            except Exception as e:
+                logger.error(
+                    "Invalid CSV row",
+                    extra={"row_number": row_number, "error": str(e)},
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid data in CSV at row {row_number}",
+                )
+
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV file must be UTF-8 encoded.",
+        )
+
+    if not custom_codes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV file contains no valid rows.",
+        )
+
+    # 🔥 BULK INSERT HERE
+    try:
+        updated_config = await add_bulk_custom_codes_to_configuration_db(
+            config=config,
+            custom_codes=custom_codes,
+            user_id=user.id,
+            db=db,
+        )
+    except Exception as e:
+        logger.error(
+            "Bulk custom code insert failed",
+            extra={"error": str(e)},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to insert custom codes.",
+        )
+
+    return UploadCustomCodesResponse(
+        message="Successfully uploaded custom codes.",
+        codes_processed=len(custom_codes),
+        total_custom_codes_in_configuration=len(updated_config.custom_codes),
     )
 
 

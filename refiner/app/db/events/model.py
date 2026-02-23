@@ -20,6 +20,7 @@ class _EventBase:
         "lock_acquire",
         "lock_release",
         "lock_renew",
+        "bulk_add_custom_code",
     ]
     action_text: str
 
