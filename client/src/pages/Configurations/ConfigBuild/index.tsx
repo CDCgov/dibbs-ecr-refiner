@@ -1156,25 +1156,38 @@ export const ImportCustomCodes = ({
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       onSuccess?.();
-    } catch (e: any) {
-      let message =
-        typeof e?.message === 'string' && e.message.length > 0
-          ? e.message
-          : 'Failed to upload CSV. Please try again.';
+    } catch (e: unknown) {
+      let message = "Failed to upload CSV. Please try again.";
 
-      // If message is JSON like {"detail":"..."} parse it
+      if (e instanceof Error) {
+        message = e.message;
+      }
+
+      // Try to parse JSON error bodies like {"detail": "..."} or {"detail": [...]}
       try {
-        const parsed = JSON.parse(message);
-        const detail = parsed?.detail;
+        const parsed = JSON.parse(message) as unknown;
 
-        message =
-          typeof detail === 'string'
-            ? detail
-            : Array.isArray(detail)
-              ? detail.map((d: any) => d?.msg ?? JSON.stringify(d)).join(', ')
-              : (parsed?.message ?? message);
+        if (
+            typeof parsed === "object" &&
+            parsed !== null &&
+            "detail" in parsed
+        ) {
+          const detail = (parsed as { detail: unknown }).detail;
+
+          if (typeof detail === "string") {
+            message = detail;
+          } else if (Array.isArray(detail)) {
+            message = detail
+                .map((d) =>
+                    typeof d === "object" && d !== null && "msg" in d
+                        ? String((d as { msg?: unknown }).msg)
+                        : JSON.stringify(d)
+                )
+                .join(", ");
+          }
+        }
       } catch {
-        // not JSON, keep message as-is
+        // not JSON, keep original message
       }
 
       setError(message);
