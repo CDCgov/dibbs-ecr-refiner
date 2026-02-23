@@ -64,7 +64,7 @@
     "eslint-plugin-react-refresh": "^0.5.0",
     "eslint-plugin-testing-library": "^7.15.4",
     "focus-trap-react": "^11.0.4",
-    "globals": "^17.1.0",
+    "globals": "^17.3.0",
     "jsdom": "^28.1.0",
     "nodemon": "^3.1.10",
     "orval": "^8.4.0",
