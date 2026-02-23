@@ -32,7 +32,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_key: 'refiner-test-suite/2026-01-29/test-user-id/file.zip',
+  refined_download_key: '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
 };
 
 const mockCustomUploadResponse: IndependentTestUploadResponse = {
@@ -49,7 +49,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_key: 'refiner-test-suite/2026-01-29/test-user-id/custom.zip',
+  refined_download_key: 'de3858c7-28a7-487c-ad7a-3853a8356811_refined_ecr.zip',
 };
 
 const renderView = () =>

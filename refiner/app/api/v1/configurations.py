@@ -1508,7 +1508,7 @@ async def run_configuration_test(
 
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
-        refined_download_key=s3_key,
+        refined_download_key=output_file_name if s3_key else "",
         condition=Condition(
             code=condition_obj.code,
             display_name=condition_obj.display_name,

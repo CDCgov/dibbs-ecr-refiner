@@ -4,7 +4,6 @@ from logging import Logger
 from pathlib import Path
 from uuid import UUID
 
-from botocore.response import StreamingBody
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
@@ -23,6 +22,7 @@ from ...db.users.model import DbUser
 from ...services import file_io, format
 from ...services.aws.s3 import (
     fetch_zip_from_s3,
+    get_refined_user_zip_key,
     upload_refined_ecr,
 )
 from ...services.ecr.refine import get_file_size_reduction_percentage
@@ -245,7 +245,7 @@ async def demo_upload(
     output_file_name, output_zip_buffer = create_output_zip(
         files=refined_files_to_zip,
     )
-    output_filename = await run_in_threadpool(
+    output_key = await run_in_threadpool(
         upload_refined_files_to_s3,
         user.id,
         user.jurisdiction_id,
@@ -265,7 +265,7 @@ async def demo_upload(
         refined_conditions=conditions,
         conditions_without_matching_configs=conditions_without_matching_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
-        refined_download_key=output_filename,
+        refined_download_key=output_file_name if output_key else "",
     )
 
 
@@ -277,22 +277,61 @@ async def demo_upload(
 async def download_refined_ecr(
     filename: str,
     user: DbUser = Depends(get_logged_in_user),
-    s3_download: Callable[[UUID, str, Logger], StreamingBody | None] = Depends(
-        lambda: fetch_zip_from_s3
-    ),
+    s3_download: Callable[[str, Logger], dict] = Depends(lambda: fetch_zip_from_s3),
     logger: Logger = Depends(get_logger),
 ) -> StreamingResponse:
-    """
-    Stream refined eCR zip from S3 for download by filename (server resolves date/key).
+    """Stream refined eCR zip from S3 by filename.
+
+    The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
+    server constructs the S3 object key based on the authenticated user.
     """
 
-    body = await run_in_threadpool(s3_download, user.id, filename, logger)
-    if not body:
+    if "/" in filename or "\\" in filename:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="File not found."
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename."
         )
+    if not filename.endswith("_refined_ecr.zip"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename."
+        )
+
+    uuid_prefix = filename.removesuffix("_refined_ecr.zip")
+    try:
+        UUID(uuid_prefix)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename.",
+        )
+
+    key = get_refined_user_zip_key(
+        user_id=user.id,
+        jurisdiction_id=user.jurisdiction_id,
+        filename=filename,
+    )
+
+    try:
+        resp = await run_in_threadpool(s3_download, key, logger)
+    except Exception as e:
+        logger.error(
+            "Failed to fetch refined zip from S3",
+            extra={"error": str(e), "key": key, "filename": filename},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found.",
+        )
+
+    body = resp.get("Body")
+    if body is None or not hasattr(body, "iter_chunks"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found.",
+        )
+
+    download_name = filename
     return StreamingResponse(
         content=body.iter_chunks(),
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{download_name}"'},
     )

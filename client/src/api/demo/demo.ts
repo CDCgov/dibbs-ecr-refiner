@@ -122,7 +122,10 @@ export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
       return useMutation(getUploadEcrMutationOptions(options), queryClient);
     }
     /**
- * Stream refined eCR zip from S3 for download by filename (server resolves date/key).
+ * Stream refined eCR zip from S3 by filename.
+
+The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
+server constructs the S3 object key based on the authenticated user.
  * @summary Download Refined Ecr
  */
 export const downloadRefinedEcr = (

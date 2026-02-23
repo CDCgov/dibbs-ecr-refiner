@@ -149,6 +149,7 @@ def upload_refined_ecr(
     Returns:
         str: The S3 key of the uploaded file (or empty string on error)
     """
+    key = ""
     try:
         key = get_refined_user_zip_key(
             user_id=user_id, jurisdiction_id=jurisdiction_id, filename=filename
