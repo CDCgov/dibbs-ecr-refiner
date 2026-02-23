@@ -73,7 +73,7 @@ async def insert_configuration_db(
 
     # use the new specification system in the ecr service
     # * default to version 1.1 for backward compatibility
-    spec = load_spec("1.1")
+    spec = load_spec("3.1.1")
 
     # build loinc->versions dict once per import
 
