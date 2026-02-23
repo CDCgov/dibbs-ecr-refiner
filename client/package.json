@@ -24,7 +24,7 @@
     "@fontsource-variable/merriweather": "^5.2.6",
     "@fontsource-variable/public-sans": "^5.2.7",
     "@headlessui/react": "^2.2.9",
-    "@tailwindcss/vite": "^4.1.18",
+    "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.90.20",
     "@trussworks/react-uswds": "^11.0.0",
     "axios": "^1.13.5",
