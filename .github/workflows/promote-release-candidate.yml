@@ -177,8 +177,8 @@ jobs:
         if: ${{ github.event.inputs.dry_run == 'false' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.vars.outputs.version_tag }}
-          name: Release v${{ steps.vars.outputs.version_tag }}
+          tag_name: ${{ steps.vars.outputs.version_tag }}
+          name: Release ${{ steps.vars.outputs.version_tag }}
           draft: true
           prerelease: false
           generate_release_notes: true
