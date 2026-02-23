@@ -1198,7 +1198,7 @@ export const ImportCustomCodes = ({
           <button
             type="button"
             onClick={() => setIsUploading(false)}
-            className="text-sm text-gray-600 hover:underline"
+            className="text-sm text-blue-cool-50 hover:underline"
           >
             ← Back
           </button>
@@ -1236,7 +1236,7 @@ export const ImportCustomCodes = ({
           <button
             type="button"
             onClick={onSuccess} // or a dedicated onBack if you prefer
-            className="text-sm text-gray-600 hover:underline"
+            className="text-sm text-blue-cool-50 hover:underline"
           >
             ← Back
           </button>
