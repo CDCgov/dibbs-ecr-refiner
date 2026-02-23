@@ -149,20 +149,23 @@ jobs:
             docker tag "$GHCR/$IMAGE:$RC" "$GHCR/$IMAGE:$STABLE"
             docker tag "$GHCR/$IMAGE:$RC" "$GHCR/$IMAGE:latest"
 
-            # Tag for ECR (stable version and latest)
-            echo "Tagging for ECR..."
-            docker tag "$GHCR/$IMAGE:$RC" "$ECR/$IMAGE:$STABLE"
-            docker tag "$GHCR/$IMAGE:$RC" "$ECR/$IMAGE:latest"
 
-            # Push to GHCR
-            echo "Pushing to GHCR..."
-            docker push "$GHCR/$IMAGE:$STABLE"
-            docker push "$GHCR/$IMAGE:latest"
+            ## REVERT THIS
 
-            # Push to ECR
-            echo "Pushing to ECR..."
-            docker push "$ECR/$IMAGE:$STABLE"
-            docker push "$ECR/$IMAGE:latest"
+            # # Tag for ECR (stable version and latest)
+            # echo "Tagging for ECR..."
+            # docker tag "$GHCR/$IMAGE:$RC" "$ECR/$IMAGE:$STABLE"
+            # docker tag "$GHCR/$IMAGE:$RC" "$ECR/$IMAGE:latest"
+
+            # # Push to GHCR
+            # echo "Pushing to GHCR..."
+            # docker push "$GHCR/$IMAGE:$STABLE"
+            # docker push "$GHCR/$IMAGE:latest"
+
+            # # Push to ECR
+            # echo "Pushing to ECR..."
+            # docker push "$ECR/$IMAGE:$STABLE"
+            # docker push "$ECR/$IMAGE:latest"
 
             echo "✓ $IMAGE promoted successfully"
             echo ""
