@@ -604,6 +604,82 @@ async def add_custom_code_to_configuration_db(
 
             return updated_config
 
+async def add_bulk_custom_codes_to_configuration_db(
+    config: DbConfiguration,
+    custom_codes: list[DbConfigurationCustomCode],
+    user_id: UUID,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Adds multiple custom codes to a configuration in a single update.
+    """
+
+    query = """
+        UPDATE configurations
+        SET custom_codes = %s::jsonb
+        WHERE id = %s
+        RETURNING
+            id,
+            name,
+            status,
+            jurisdiction_id,
+            condition_id,
+            included_conditions,
+            custom_codes,
+            local_codes,
+            section_processing,
+            version,
+            last_activated_at,
+            last_activated_by,
+            created_by,
+            condition_canonical_url,
+            s3_urls;
+    """
+
+    existing_codes = config.custom_codes or []
+
+    # Build a set of (code, system) for fast lookup
+    existing_keys = {(c.code, c.system) for c in existing_codes}
+
+    new_codes_added = []
+
+    for code in custom_codes:
+        key = (code.code, code.system)
+        if key not in existing_keys:
+            existing_codes.append(code)
+            existing_keys.add(key)
+            new_codes_added.append(code)
+
+    json_payload = [
+        {"code": cc.code, "system": cc.system, "name": cc.name} for cc in existing_codes
+    ]
+
+    params = (Jsonb(json_payload), config.id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+            if not row:
+                return None
+
+            updated_config = DbConfiguration.from_db_row(row)
+
+            # Optional: single event instead of per-row
+            if new_codes_added:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=updated_config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=updated_config.id,
+                        event_type="bulk_add_custom_code",
+                        action_text=f"Added {len(new_codes_added)} custom codes",
+                    ),
+                    cursor=cur,
+                )
+
+            return updated_config
 
 async def delete_custom_code_from_configuration_db(
     config: DbConfiguration,
