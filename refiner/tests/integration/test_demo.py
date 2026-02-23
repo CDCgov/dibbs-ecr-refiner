@@ -3,6 +3,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -18,6 +19,19 @@ from app.db.users.model import DbUser
 from app.main import app
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import create_refined_ecr_zip_in_memory
+
+
+@pytest.fixture
+def mock_user():
+    return DbUser(
+        id=uuid4(),
+        username="mockuser",
+        email="mockuser@test.com",
+        jurisdiction_id="test",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
+
 
 api_route_base = "/api/v1/demo"
 
@@ -51,13 +65,13 @@ async def test_demo_upload_smoke(
     assert "refined_conditions" in data
     assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
-    assert "refined_download_url" in data
+    assert "refined_download_key" in data
 
 
 def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     from app.services.aws.s3 import upload_refined_ecr
 
-    def fake_upload_refined_ecr(user_id, file_buffer, filename, expires=3600):
+    def fake_upload_refined_ecr(user_id, file_buffer, filename, logger):
         return ""
 
     def mock_get_logged_in_user():
@@ -82,8 +96,8 @@ def test_upload_route_s3_failure(test_user_id, test_username, monkeypatch):
     response = client.post(f"{api_route_base}/upload")
 
     assert response.status_code == 200
-    assert "refined_download_url" in response.json()
-    assert response.json()["refined_download_url"] == ""
+    assert "refined_download_key" in response.json()
+    assert response.json()["refined_download_key"] == ""
 
     app.dependency_overrides.clear()
 
@@ -213,11 +227,11 @@ def test_file_size_difference_percentage(
 
 def test_create_refined_ecr_zip():
     refined_files = [
-        ("covid_condition.xml", "<eICR>Covid Data</eICR>"),
-        ("flu_condition.xml", "<eICR>Flu Data</eICR>"),
+        ("covid_condition.xml", b"<eICR>Covid Data</eICR>"),
+        ("flu_condition.xml", b"<eICR>Flu Data</eICR>"),
     ]
 
-    eicr = "<eICR>Some RR Data</eICR>"
+    eicr = b"<eICR>Some RR Data</eICR>"
 
     refined_files.append(("CDA_eICR.xml", eicr))
 

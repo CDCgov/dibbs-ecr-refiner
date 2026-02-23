@@ -115,7 +115,7 @@ function Tester({ config }: TesterProps) {
       {status === 'success' && uploadResponseData?.data && (
         <Diff
           condition={uploadResponseData.data.condition}
-          refined_download_url={uploadResponseData.data.refined_download_url}
+          refined_download_key={uploadResponseData.data.refined_download_key}
           unrefined_eicr={uploadResponseData.data.original_eicr}
         />
       )}
