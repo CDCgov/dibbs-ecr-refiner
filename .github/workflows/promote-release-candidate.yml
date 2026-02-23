@@ -3,10 +3,6 @@ name: Promote RC to stable release
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: "Git ref to use (branch/tag/commit)"
-        default: main
-        required: false
       rc_version:
         description: "RC version to promote (e.g. 1.4.0-rc.1)"
         required: true
@@ -29,8 +25,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.ref }}
 
       - name: Log into GitHub Container Registry
         uses: docker/login-action@v3
@@ -111,7 +105,6 @@ jobs:
       - name: Print promotion plan
         run: |
           echo "===== PROMOTION PLAN ====="
-          echo "Git Ref:        ${{ github.event.inputs.ref }}"
           echo "RC Version:     ${{ steps.vars.outputs.rc_version }}"
           echo "Stable Version: ${{ steps.vars.outputs.stable_version }}"
           echo "Git Tag:        ${{ steps.vars.outputs.git_tag }}"
