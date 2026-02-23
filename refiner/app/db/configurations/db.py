@@ -604,6 +604,7 @@ async def add_custom_code_to_configuration_db(
 
             return updated_config
 
+
 async def add_bulk_custom_codes_to_configuration_db(
     config: DbConfiguration,
     custom_codes: list[DbConfigurationCustomCode],
@@ -680,6 +681,7 @@ async def add_bulk_custom_codes_to_configuration_db(
                 )
 
             return updated_config
+
 
 async def delete_custom_code_from_configuration_db(
     config: DbConfiguration,

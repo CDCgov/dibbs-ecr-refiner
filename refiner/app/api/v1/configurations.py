@@ -953,6 +953,7 @@ async def add_custom_code(
         custom_codes=updated_config.custom_codes,
     )
 
+
 class UploadCustomCodesResponse(BaseModel):
     """
     Custom Code CSV response model.
@@ -1082,6 +1083,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(custom_codes),
         total_custom_codes_in_configuration=len(updated_config.custom_codes),
     )
+
 
 @router.delete(
     "/{configuration_id}/custom-codes/{system}/{code}",
