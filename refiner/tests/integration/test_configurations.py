@@ -15,20 +15,21 @@ EXPECTED_DROWNING_RSG_CODE = "212962007"
 @pytest.mark.asyncio
 class TestConfigurations:
     async def test_create_configuration(
-        self, setup, authed_client, test_username, db_conn
+        self, setup, authed_client, test_username, db_pool
     ):
         # Get a condition to use to create a config
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, display_name
-                FROM conditions
-                WHERE display_name = 'Drowning and Submersion'
-                AND version = '4.0.0'
-                """
-            )
-            condition = await cur.fetchone()
-            assert condition is not None
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, display_name
+                    FROM conditions
+                    WHERE display_name = 'Drowning and Submersion'
+                    AND version = '4.0.0'
+                    """
+                )
+                condition = await cur.fetchone()
+                assert condition is not None
 
         # Create config
         payload = {"condition_id": str(condition["id"])}
@@ -59,32 +60,33 @@ class TestConfigurations:
         failure_audit_events = response.json()["audit_events"]
         assert len(failure_audit_events) == 1
 
-    async def test_activate_configuration(self, setup, authed_client, db_conn):
+    async def test_activate_configuration(self, setup, authed_client, db_pool):
         # Ensure the condition exists
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, display_name, version, canonical_url
-                FROM conditions
-                WHERE display_name = 'Drowning and Submersion'
-                AND version = '4.0.0'
-                """
-            )
-            condition = await cur.fetchone()
-            assert condition is not None
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, display_name, version, canonical_url
+                    FROM conditions
+                    WHERE display_name = 'Drowning and Submersion'
+                    AND version = '4.0.0'
+                    """
+                )
+                condition = await cur.fetchone()
+                assert condition is not None
 
-        # Activate any existing draft configuration for this condition
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, jurisdiction_id, version
-                FROM configurations
-                WHERE name = 'Drowning and Submersion'
-                AND status = 'draft';
-                """
-            )
-            draft_config = await cur.fetchone()
-            assert draft_config is not None
+            # Activate any existing draft configuration for this condition
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, jurisdiction_id, version
+                    FROM configurations
+                    WHERE name = 'Drowning and Submersion'
+                    AND status = 'draft';
+                    """
+                )
+                draft_config = await cur.fetchone()
+                assert draft_config is not None
 
             draft_id = draft_config["id"]
             response = await authed_client.patch(
@@ -262,18 +264,19 @@ class TestConfigurations:
             )
             assert new_config.status == "inactive"  # Should remain inactive
 
-    async def test_deactivate_configuration(self, setup, authed_client, db_conn):
+    async def test_deactivate_configuration(self, setup, authed_client, db_pool):
         # Get the activated configuration from the previous tests
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, condition_canonical_url, condition_id
-                FROM configurations
-                WHERE name = 'Drowning and Submersion' AND status = 'active';
-                """
-            )
-            configuration = await cur.fetchone()
-            assert configuration is not None
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, condition_canonical_url, condition_id
+                    FROM configurations
+                    WHERE name = 'Drowning and Submersion' AND status = 'active';
+                    """
+                )
+                configuration = await cur.fetchone()
+                assert configuration is not None
 
         initial_configuration_id = str(configuration["id"])
 

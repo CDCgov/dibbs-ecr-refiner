@@ -32,7 +32,7 @@ from rich.console import Console
 
 from app.api.auth.session import get_hashed_token
 from app.core.config import ENVIRONMENT
-from app.db.pool import AsyncDatabaseConnection, create_db
+from app.db.pool import create_db
 from app.main import create_fastapi_app, create_lifespan
 from app.services.logger import setup_logger
 from scripts.validation.validate_ecr_data import (
@@ -57,8 +57,6 @@ TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
 
-# USE `db_pool` or `db_conn` in a test, not both!
-# If they both attempt to grab connections tests can fail.
 @pytest_asyncio.fixture(scope="session")
 async def db_pool():
     db = create_db(
@@ -73,14 +71,6 @@ async def db_pool():
 
     yield db
     await db.close()
-
-
-# USE `db_pool` or `db_conn` in a test, not both!
-# If they both attempt to grab connections tests can fail.
-@pytest_asyncio.fixture
-async def db_conn(db_pool: AsyncDatabaseConnection):
-    async with db_pool.get_connection() as conn:
-        yield conn
 
 
 @pytest.fixture(scope="session")
