@@ -76,9 +76,6 @@ async def insert_configuration_db(
 
     params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
     if config_to_clone:
-        cloned_sections = clone_section_selections(
-            config_to_clone.section_processing, get_default_sections()
-        )
         params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
@@ -106,7 +103,15 @@ async def insert_configuration_db(
                 ]
             ),
             # section_processing
-            Jsonb([asdict(c) for c in cloned_sections]),
+            Jsonb(
+                [
+                    asdict(c)
+                    for c in clone_section_selections(
+                        clone_from=config_to_clone.section_processing,
+                        clone_to=get_default_sections(),
+                    )
+                ]
+            ),
         )
     else:
         params = (
