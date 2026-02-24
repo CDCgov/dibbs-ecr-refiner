@@ -162,7 +162,7 @@ class ConfigurationTestResponse:
     """
 
     original_eicr: str
-    refined_download_url: str
+    refined_download_key: str
     condition: Condition
 
 

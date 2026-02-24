@@ -44,8 +44,8 @@ async def test_upload_route_s3_failure(test_app, authed_client):
     response = await authed_client.post(f"{api_route_base}/upload")
 
     assert response.status_code == 200
-    assert "refined_download_url" in response.json()
-    assert response.json()["refined_download_url"] == ""
+    assert "refined_download_key" in response.json()
+    assert response.json()["refined_download_key"] == ""
 
     test_app.dependency_overrides.clear()
 
