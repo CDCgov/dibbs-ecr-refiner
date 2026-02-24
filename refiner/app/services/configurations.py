@@ -50,7 +50,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     return section_processing_defaults
 
 
-def clone_section_selections(
+def clone_section_actions(
     clone_from: list[DbConfigurationSectionProcessing],
     clone_to: list[DbConfigurationSectionProcessing],
 ) -> list[DbConfigurationSectionProcessing]:
