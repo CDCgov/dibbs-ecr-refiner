@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import TypedDict
 from uuid import UUID
@@ -13,9 +13,72 @@ from app.db.events.model import EventInput
 from ...services.ecr.specification import load_spec
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import DbConfiguration, DbConfigurationCustomCode, DbConfigurationStatus
+from .model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+    DbConfigurationSectionProcessing,
+    DbConfigurationStatus,
+)
 
 EMPTY_JSONB = Jsonb([])
+
+
+def _get_default_sections() -> list[DbConfigurationSectionProcessing]:
+    # use the new specification system in the ecr service
+    spec = load_spec("3.1.1")
+
+    # build loinc->versions dict once per import
+
+    _LOINC_VERSIONS_MAP: dict[str, set[str]] = {}
+    for v, vdata in spec_mod.EICR_SPECS_DATA.items():
+        for loinc in vdata.keys():
+            _LOINC_VERSIONS_MAP.setdefault(loinc, set()).add(v)
+    _LOINC_VERSIONS_FLAT = {k: sorted(v) for k, v in _LOINC_VERSIONS_MAP.items()}
+
+    section_processing_defaults = [
+        DbConfigurationSectionProcessing(
+            name=section_spec.display_name,
+            code=loinc_code,
+            action="refine",
+            versions=_LOINC_VERSIONS_FLAT.get(loinc_code, []),
+        )
+        for loinc_code, section_spec in spec.sections.items()
+    ]
+
+    return section_processing_defaults
+
+
+def _clone_section_selections(
+    sections_to_clone: list[DbConfigurationSectionProcessing],
+    default_sections: list[DbConfigurationSectionProcessing],
+) -> list[dict]:
+    updated_sections: list[DbConfigurationSectionProcessing] = []
+    map = {}
+    for section in sections_to_clone:
+        if section.code not in map:
+            map[section.code] = section.action
+
+    for ds in default_sections:
+        if ds.code in map:
+            updated_sections.append(
+                DbConfigurationSectionProcessing(
+                    name=ds.name,
+                    code=ds.code,
+                    action=map[ds.code],
+                    versions=ds.versions,
+                )
+            )
+        else:
+            updated_sections.append(
+                DbConfigurationSectionProcessing(
+                    name=ds.name,
+                    code=ds.code,
+                    action=ds.action,
+                    versions=ds.versions,
+                )
+            )
+
+    return updated_sections
 
 
 async def insert_configuration_db(
@@ -71,30 +134,11 @@ async def insert_configuration_db(
         s3_urls
     """
 
-    # use the new specification system in the ecr service
-    # * default to version 1.1 for backward compatibility
-    spec = load_spec("3.1.1")
-
-    # build loinc->versions dict once per import
-
-    _LOINC_VERSIONS_MAP: dict[str, set[str]] = {}
-    for v, vdata in spec_mod.EICR_SPECS_DATA.items():
-        for loinc in vdata.keys():
-            _LOINC_VERSIONS_MAP.setdefault(loinc, set()).add(v)
-    _LOINC_VERSIONS_FLAT = {k: sorted(v) for k, v in _LOINC_VERSIONS_MAP.items()}
-
-    section_processing_defaults = [
-        {
-            "name": section_spec.display_name,
-            "code": loinc_code,
-            "action": "refine",
-            "versions": _LOINC_VERSIONS_FLAT.get(loinc_code, []),
-        }
-        for loinc_code, section_spec in spec.sections.items()
-    ]
-
     params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
     if config_to_clone:
+        cloned_sections = _clone_section_selections(
+            config_to_clone.section_processing, _get_default_sections()
+        )
         params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
@@ -122,17 +166,7 @@ async def insert_configuration_db(
                 ]
             ),
             # section_processing
-            Jsonb(
-                [
-                    {
-                        "name": c.name,
-                        "code": c.code,
-                        "action": c.action,
-                        "versions": c.versions,
-                    }
-                    for c in config_to_clone.section_processing
-                ]
-            ),
+            Jsonb([asdict(c) for c in cloned_sections]),
         )
     else:
         params = (
@@ -150,7 +184,7 @@ async def insert_configuration_db(
             # local_codes
             EMPTY_JSONB,
             # section_processing
-            Jsonb(section_processing_defaults),
+            Jsonb(_get_default_sections()),
         )
 
     async with db.get_connection() as conn:
