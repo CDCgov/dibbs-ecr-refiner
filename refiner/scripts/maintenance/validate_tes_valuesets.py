@@ -10,7 +10,7 @@ from fhir.resources.valueset import ValueSet
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# to check against specific conditions then pass them to this list like ["COVID-19", "Influenza"]
+# to check against specific conditions then pass them to this list like ["covid-19", "influenza"]
 TARGET_CONDITIONS: list[str] = []
 DATA_DIR = Path(__file__).parent.parent / "data" / "source-tes-groupers"
 
@@ -228,7 +228,7 @@ def get_filtered_conditions(
     filtered = {
         name: versions
         for name, versions in parents_by_condition.items()
-        if any(t.lower() in name.lower() for t in targets)
+        if name.lower() in (t.lower() for t in targets)
     }
     if not filtered:
         logger.warning("No target conditions matched. Processing all conditions.")
