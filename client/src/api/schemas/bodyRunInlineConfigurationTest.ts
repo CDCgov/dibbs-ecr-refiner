@@ -8,5 +8,5 @@
 
 export interface BodyRunInlineConfigurationTest {
   id: string;
-  uploaded_file?: string | null;
+  uploaded_file?: Blob | null;
 }
