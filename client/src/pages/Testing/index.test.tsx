@@ -4,7 +4,6 @@ import { Testing } from '.';
 import { MemoryRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
-import { useGetEnv } from '../../hooks/useGetEnv.ts';
 import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 import { ERROR_UPLOAD_MESSAGE } from '../../components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
@@ -32,7 +31,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_url: 'http://s3-standard.com',
+  refined_download_key: '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
 };
 
 const mockCustomUploadResponse: IndependentTestUploadResponse = {
@@ -49,7 +48,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_url: 'http://s3-custom.com',
+  refined_download_key: 'de3858c7-28a7-487c-ad7a-3853a8356811_refined_ecr.zip',
 };
 
 const renderView = () =>
@@ -86,6 +85,9 @@ describe('Testing', () => {
       screen.getByText('Want to refine your own eCR file?')
     ).toBeInTheDocument();
 
+    expect(
+      screen.getByText('This environment is not approved to handle PHI/PII.')
+    ).toBeInTheDocument();
     await uploadTestFile(user);
 
     expect(useUploadEcr).toHaveBeenCalled();
@@ -203,51 +205,6 @@ describe('Testing', () => {
     expect(
       await screen.findByText('Refine .zip file', { selector: 'button' })
     ).toBeInTheDocument();
-  });
-
-  it('should show PHI/PII banner in the "local" environment', () => {
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn().mockImplementation(() => {}),
-        reset: vi.fn(),
-      };
-    });
-
-    const bannerText = 'This environment is not approved to handle PHI/PII.';
-    (useGetEnv as unknown as Mock).mockReturnValue('local');
-
-    renderView();
-    expect(screen.getByText(bannerText)).toBeInTheDocument();
-  });
-
-  it('should show PHI/PII banner in the "demo" environment', () => {
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn().mockImplementation(() => {}),
-        reset: vi.fn(),
-      };
-    });
-
-    const bannerText = 'This environment is not approved to handle PHI/PII.';
-    (useGetEnv as unknown as Mock).mockReturnValue('demo');
-
-    renderView();
-    expect(screen.getByText(bannerText)).toBeInTheDocument();
-  });
-
-  it('should NOT show PHI/PII banner in the "prod" environment', () => {
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn().mockImplementation(() => {}),
-        reset: vi.fn(),
-      };
-    });
-
-    const bannerText = 'This environment is not approved to handle PHI/PII.';
-    (useGetEnv as unknown as Mock).mockReturnValue('prod');
-
-    renderView();
-    expect(screen.queryByText(bannerText)).not.toBeInTheDocument();
   });
 
   it('should let the user know that no conditions reportable to their JD ID were found in the RR', async () => {

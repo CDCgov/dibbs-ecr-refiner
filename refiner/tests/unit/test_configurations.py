@@ -369,7 +369,7 @@ async def test_inline_example_file_success(
     )
 
     def mock_s3_upload(*args, **kwargs):
-        return "http://fake-s3-url.com"
+        return "5dae47a7-2d5c-405d-b16d-3d2d1320c79d_refined_ecr.zip"
 
     test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
@@ -429,7 +429,7 @@ async def test_inline_allow_custom_zip(
     )
 
     def mock_s3_upload(*args, **kwargs):
-        return "http://fake-s3-url.com"
+        return "5dae47a7-2d5c-405d-b16d-3d2d1320c79d_refined_ecr.zip"
 
     test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 

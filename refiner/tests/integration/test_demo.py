@@ -33,4 +33,4 @@ async def test_demo_upload_smoke(
     assert "refined_conditions" in data
     assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
-    assert "refined_download_url" in data
+    assert "refined_download_key" in data
