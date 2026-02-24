@@ -1,4 +1,4 @@
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from typing import TypedDict
 from uuid import UUID
@@ -51,34 +51,13 @@ def _get_default_sections() -> list[DbConfigurationSectionProcessing]:
 def _clone_section_selections(
     sections_to_clone: list[DbConfigurationSectionProcessing],
     default_sections: list[DbConfigurationSectionProcessing],
-) -> list[dict]:
-    updated_sections: list[DbConfigurationSectionProcessing] = []
-    map = {}
-    for section in sections_to_clone:
-        if section.code not in map:
-            map[section.code] = section.action
+) -> list[DbConfigurationSectionProcessing]:
+    action_map = {section.code: section.action for section in sections_to_clone}
 
-    for ds in default_sections:
-        if ds.code in map:
-            updated_sections.append(
-                DbConfigurationSectionProcessing(
-                    name=ds.name,
-                    code=ds.code,
-                    action=map[ds.code],
-                    versions=ds.versions,
-                )
-            )
-        else:
-            updated_sections.append(
-                DbConfigurationSectionProcessing(
-                    name=ds.name,
-                    code=ds.code,
-                    action=ds.action,
-                    versions=ds.versions,
-                )
-            )
-
-    return updated_sections
+    return [
+        replace(ds, action=action_map.get(ds.code, ds.action))
+        for ds in default_sections
+    ]
 
 
 async def insert_configuration_db(
