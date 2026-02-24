@@ -162,9 +162,11 @@ def is_additional_context_grouper(vs: ValueSet) -> bool:
         return False
     for context in vs.useContext:
         if context.valueCodeableConcept and context.valueCodeableConcept.coding:
-            for coding in context.valueCodeableConcept.coding:
-                if coding.code == "additional-context-grouper":
-                    return True
+            if any(
+                coding.code == "additional-context-grouper"
+                for coding in context.valueCodeableConcept.coding
+            ):
+                return True
     return False
 
 
