@@ -130,42 +130,34 @@ def upload_configuration_payload(
 
 
 def upload_refined_ecr(
-    user_id: UUID, file_buffer: BytesIO, filename: str, logger: Logger
+    user_id: UUID,
+    jurisdiction_id: str,
+    file_buffer: BytesIO,
+    filename: str,
+    logger: Logger,
 ) -> str:
     """
-    Uploads a refined ZIP file to AWS S3 and provides the uploader with a pre-signed link.
+    Uploads a refined ZIP file to AWS S3.
 
     Args:
         user_id (UUID): Logged-in user ID
+        jurisdiction_id (str): Logged-in user's ID.
         file_buffer (BytesIO): ZIP file in memory
         filename (str): The filename that will be written to S3
         logger (Logger): The standard logger
 
     Returns:
-        str: The pre-signed S3 URL to download the uploaded file
+        str: The S3 key of the uploaded file (or empty string on error)
     """
-
-    expires = 3600  # 1 hour
-
+    key = ""
     try:
-        today = date.today().isoformat()  # YYYY-MM-DD
-        key = f"refiner-test-suite/{today}/{user_id}/{filename}"
+        key = get_refined_user_zip_key(
+            user_id=user_id, jurisdiction_id=jurisdiction_id, filename=filename
+        )
 
         s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, key)
 
-        presigned_url = s3_client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": S3_CONFIGURATION_BUCKET_NAME, "Key": key},
-            ExpiresIn=expires,
-        )
-
-        # for local dev, boto3 creates a URL with the internal hostname ('localstack')
-        # We must replace it with the public hostname ('localhost') before sending it
-        # to the browser
-        if ENVIRONMENT["ENV"] == "local":
-            presigned_url = presigned_url.replace("localstack:4566", "localhost:4566")
-
-        return presigned_url
+        return key
 
     except ClientError as e:
         logger.error(
@@ -178,3 +170,23 @@ def upload_refined_ecr(
             },
         )
         return ""
+
+
+def fetch_zip_from_s3(key: str, logger: Logger) -> dict:
+    """
+    Fetch file from s3, return botocore response dict.
+    """
+    resp = s3_client.get_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=key,
+    )
+    return resp
+
+
+def get_refined_user_zip_key(user_id: UUID, jurisdiction_id: str, filename: str) -> str:
+    """
+    Creates a refiner user zip file key.
+    """
+    today = date.today().isoformat()
+    key = f"test-artifacts/{jurisdiction_id}/{today}/{user_id}/{filename}"
+    return key

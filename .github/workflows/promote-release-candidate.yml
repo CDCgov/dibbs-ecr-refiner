@@ -1,0 +1,184 @@
+name: Promote RC to stable release
+
+on:
+  workflow_dispatch:
+    inputs:
+      rc_version:
+        description: "RC version to promote (e.g. 1.4.0-rc.1)"
+        required: true
+      version:
+        description: "Stable version (e.g. 1.4.0)"
+        required: true
+      dry_run:
+        description: "If true, skip creating git tag and promoting images"
+        type: boolean
+        default: true
+
+jobs:
+  promote-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log into GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure AIMS dev AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AIMS_DEV_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AIMS_DEV_AWS_SECRET_ACCESS_KEY }}
+
+      - name: Login to AIMS dev ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Validate versions
+        run: |
+          RC_VERSION="${{ github.event.inputs.rc_version }}"
+          VERSION="${{ github.event.inputs.version }}"
+
+          # Validate RC format
+          if [[ ! "$RC_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            echo "Invalid RC version: $RC_VERSION"
+            echo "Must be in format X.Y.Z-rc.N (e.g. 1.4.0-rc.1)"
+            exit 1
+          fi
+
+          # Validate stable version format
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: $VERSION"
+            echo "Version must be semantic: MAJOR.MINOR.PATCH (e.g. 1.4.0)"
+            exit 1
+          fi
+
+          # Ensure RC and stable versions match base version
+          RC_BASE="${RC_VERSION%-rc.*}"
+          if [[ "$RC_BASE" != "$VERSION" ]]; then
+            echo "RC base version ($RC_BASE) doesn't match stable version ($VERSION)"
+            exit 1
+          fi
+
+      - name: Check if stable tag already exists
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Error: Tag v$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Make repo owner lowercase
+        id: repo
+        run: |
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Set image names
+        id: vars
+        run: |
+          RC_VERSION="${{ github.event.inputs.rc_version }}"
+          VERSION="${{ github.event.inputs.version }}"
+          ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
+
+          # Base image paths
+          GHCR_BASE="ghcr.io/${{ steps.repo.outputs.owner }}/dibbs-ecr-refiner"
+          ECR_BASE="$ECR_REGISTRY/dibbs-dev-refiner"
+
+          # Set all the variables we need
+          echo "rc_version=$RC_VERSION" >> $GITHUB_OUTPUT
+          echo "stable_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "git_tag=v$VERSION" >> $GITHUB_OUTPUT
+
+          echo "ghcr_base=$GHCR_BASE" >> $GITHUB_OUTPUT
+          echo "ecr_base=$ECR_BASE" >> $GITHUB_OUTPUT
+
+      - name: Print promotion plan
+        run: |
+          echo "===== PROMOTION PLAN ====="
+          echo "RC Version:     ${{ steps.vars.outputs.rc_version }}"
+          echo "Stable Version: ${{ steps.vars.outputs.stable_version }}"
+          echo "Git Tag:        ${{ steps.vars.outputs.git_tag }}"
+          echo ""
+          echo "Images to promote:"
+          echo "  - refiner (app)"
+          echo "  - lambda"
+          echo "  - ops"
+          echo ""
+          echo "Source:      ${{ steps.vars.outputs.ghcr_base }}"
+          echo "Destinations:"
+          echo "  - GHCR: ${{ steps.vars.outputs.ghcr_base }}"
+          echo "  - ECR:  ${{ steps.vars.outputs.ecr_base }}"
+          echo "=========================="
+
+      - name: Promote images
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        run: |
+          RC="${{ steps.vars.outputs.rc_version }}"
+          STABLE="${{ steps.vars.outputs.stable_version }}"
+          GHCR="${{ steps.vars.outputs.ghcr_base }}"
+          ECR="${{ steps.vars.outputs.ecr_base }}"
+
+          for IMAGE in refiner lambda ops; do
+            echo "========================================="
+            echo "Promoting $IMAGE..."
+            echo "========================================="
+
+            # Pull RC image from GHCR
+            echo "Pulling from GHCR..."
+            docker pull "$GHCR/$IMAGE:$RC"
+
+            # Tag for GHCR (stable version and latest)
+            echo "Tagging for GHCR..."
+            docker tag "$GHCR/$IMAGE:$RC" "$GHCR/$IMAGE:$STABLE"
+            docker tag "$GHCR/$IMAGE:$RC" "$GHCR/$IMAGE:latest"
+
+            # Tag for ECR (stable version and latest)
+            echo "Tagging for ECR..."
+            docker tag "$GHCR/$IMAGE:$RC" "$ECR/$IMAGE:$STABLE"
+            docker tag "$GHCR/$IMAGE:$RC" "$ECR/$IMAGE:latest"
+
+            # Push to GHCR
+            echo "Pushing to GHCR..."
+            docker push "$GHCR/$IMAGE:$STABLE"
+            docker push "$GHCR/$IMAGE:latest"
+
+            # Push to ECR
+            echo "Pushing to ECR..."
+            docker push "$ECR/$IMAGE:$STABLE"
+            docker push "$ECR/$IMAGE:latest"
+
+            echo "✓ $IMAGE promoted successfully"
+            echo ""
+          done
+
+      - name: Configure Git username and email
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push stable Git tag
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        run: |
+          GIT_TAG="${{ steps.vars.outputs.git_tag }}"
+          git tag -a "$GIT_TAG" -m "Release $GIT_TAG (promoted from ${{ steps.vars.outputs.rc_version }})"
+          git push origin "$GIT_TAG"
+
+      - name: Create draft GitHub release notes
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.git_tag }}
+          name: Release ${{ steps.vars.outputs.git_tag }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true

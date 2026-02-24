@@ -1,4 +1,4 @@
-name: Build and push Refiner Docker images to GHCR and AWS ECR
+name: Build and push images (dev)
 
 on:
   push:
@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -81,6 +83,8 @@ jobs:
           else
             TAG="$VERSION_TAG"
           fi
+
+          echo "version_tag=$TAG" >> $GITHUB_OUTPUT
 
           # Define image base URLs
           declare -A BASES=(
@@ -128,6 +132,7 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build and push Refiner Lambda image
         uses: docker/build-push-action@v6
@@ -138,6 +143,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.vars.outputs.lambda_tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build and push Refiner Ops image
         uses: docker/build-push-action@v6
@@ -146,3 +153,5 @@ jobs:
           file: Dockerfile.ops
           push: true
           tags: ${{ steps.vars.outputs.ops_tags }}
+          build-args: |
+            VERSION=${{ steps.vars.outputs.version_tag }}

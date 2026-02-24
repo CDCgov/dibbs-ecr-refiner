@@ -92,7 +92,7 @@ export function Testing() {
           <Success
             refined_conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
-            refined_download_url={response.data.refined_download_url}
+            refined_download_key={response.data.refined_download_key}
           />
         )}
         {status === 'error' && (
