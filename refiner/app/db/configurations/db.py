@@ -124,7 +124,7 @@ async def insert_configuration_db(
             # local_codes
             EMPTY_JSONB,
             # section_processing
-            Jsonb(get_default_sections()),
+            Jsonb([asdict(s) for s in get_default_sections()]),
         )
 
     async with db.get_connection() as conn:
