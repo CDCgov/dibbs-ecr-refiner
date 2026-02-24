@@ -161,6 +161,11 @@ jobs:
             echo ""
           done
 
+      - name: Configure Git username and email
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Create and push stable Git tag
         if: ${{ github.event.inputs.dry_run == 'false' }}
         run: |
@@ -172,8 +177,8 @@ jobs:
         if: ${{ github.event.inputs.dry_run == 'false' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.vars.outputs.version_tag }}
-          name: Release v${{ steps.vars.outputs.version_tag }}
+          tag_name: ${{ steps.vars.outputs.git_tag }}
+          name: Release ${{ steps.vars.outputs.git_tag }}
           draft: true
           prerelease: false
           generate_release_notes: true
