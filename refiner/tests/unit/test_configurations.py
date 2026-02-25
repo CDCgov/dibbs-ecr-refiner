@@ -125,7 +125,6 @@ def mock_db_functions(
         condition_id=mock_condition.id,
         included_conditions=[assoc_condition],
         custom_codes=[],
-        local_codes=[],
         section_processing=[],
         version=1,
         status="draft",
@@ -320,7 +319,6 @@ async def test_edit_custom_code_from_configuration(
                 code="test-code", name="test-name", system="LOINC"
             )
         ],
-        local_codes=[],
         section_processing=[],
         version=1,
         status="draft",

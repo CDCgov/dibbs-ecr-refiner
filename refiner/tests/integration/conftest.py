@@ -397,7 +397,7 @@ def setup(request):
     DO $$
     BEGIN
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, section_processing, version
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -406,14 +406,13 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{covid_id}"]'::jsonb,
             '[]'::jsonb,
-            '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
             1
         )
         ON CONFLICT DO NOTHING;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, section_processing, version
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -422,14 +421,13 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{flu_id}"]'::jsonb,
             '[]'::jsonb,
-            '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
             1
         )
         ON CONFLICT DO NOTHING;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, local_codes, section_processing, version
+            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, section_processing, version
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -438,7 +436,6 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{zika_id}"]'::jsonb,
             '[]'::jsonb,
-            '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
             1
         )

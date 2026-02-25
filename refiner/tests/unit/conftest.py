@@ -134,7 +134,6 @@ def mock_configuration(mock_user):
         condition_id=MOCK_CONDITION_ID,
         included_conditions=[DbConfigurationCondition(id=MOCK_CONDITION_ID)],
         custom_codes=[],
-        local_codes=[],
         section_processing=[],
         version=1,
         status="draft",
