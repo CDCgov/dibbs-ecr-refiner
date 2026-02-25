@@ -40,7 +40,6 @@ async def insert_configuration_db(
         created_by,
         included_conditions,
         custom_codes,
-        local_codes,
         section_processing
     )
     VALUES (
@@ -48,7 +47,6 @@ async def insert_configuration_db(
         %s,
         %s,
         %s,
-        %s::jsonb,
         %s::jsonb,
         %s::jsonb,
         %s::jsonb
@@ -61,7 +59,6 @@ async def insert_configuration_db(
         condition_id,
         included_conditions,
         custom_codes,
-        local_codes,
         section_processing,
         version,
         last_activated_at,
@@ -114,13 +111,6 @@ async def insert_configuration_db(
                     for c in config_to_clone.custom_codes
                 ]
             ),
-            # local_codes
-            Jsonb(
-                [
-                    {"name": c.name, "code": c.code, "system": c.system}
-                    for c in config_to_clone.local_codes
-                ]
-            ),
             # section_processing
             Jsonb(
                 [
@@ -146,8 +136,6 @@ async def insert_configuration_db(
             # included_conditions: always start with primary
             Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
             # custom_codes
-            EMPTY_JSONB,
-            # local_codes
             EMPTY_JSONB,
             # section_processing
             Jsonb(section_processing_defaults),
@@ -190,7 +178,6 @@ async def get_configurations_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
 			last_activated_at,
@@ -228,7 +215,6 @@ async def get_configuration_by_id_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
 			last_activated_at,
@@ -336,7 +322,6 @@ async def associate_condition_codeset_with_configuration_db(
                 condition_id,
                 included_conditions,
                 custom_codes,
-                local_codes,
                 section_processing,
                 version,
                 last_activated_at,
@@ -415,7 +400,6 @@ async def disassociate_condition_codeset_with_configuration_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
 			last_activated_at,
@@ -555,7 +539,6 @@ async def add_custom_code_to_configuration_db(
                 condition_id,
                 included_conditions,
                 custom_codes,
-                local_codes,
                 section_processing,
                 version,
                 last_activated_at,
@@ -628,7 +611,6 @@ async def delete_custom_code_from_configuration_db(
                 condition_id,
                 included_conditions,
                 custom_codes,
-                local_codes,
                 section_processing,
                 version,
                 last_activated_at,
@@ -698,7 +680,6 @@ async def edit_custom_code_from_configuration_db(
                 condition_id,
                 included_conditions,
                 custom_codes,
-                local_codes,
                 section_processing,
                 version,
                 last_activated_at,
@@ -902,7 +883,6 @@ async def update_section_processing_db(
                 condition_id,
                 included_conditions,
                 custom_codes,
-                local_codes,
                 section_processing,
                 version,
                 last_activated_at,
@@ -954,7 +934,6 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
 			last_activated_at,
@@ -1017,7 +996,6 @@ async def get_latest_config_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
 			last_activated_at,
@@ -1060,7 +1038,6 @@ async def get_active_config_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
 			last_activated_at,

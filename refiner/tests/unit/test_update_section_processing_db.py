@@ -72,7 +72,6 @@ async def test_update_section_processing_valid():
         condition_id="mock_condition",
         included_conditions=[],
         custom_codes=[],
-        local_codes=[],
         section_processing=[
             DbConfigurationSectionProcessing(
                 name="Section A", code="A", action="retain", versions=[]
@@ -99,7 +98,6 @@ async def test_update_section_processing_valid():
         "condition_id": mock_config.condition_id,
         "included_conditions": [],
         "custom_codes": [],
-        "local_codes": [],
         "section_processing": updated_sections,
         "version": 2,
         "status": mock_config.status,
@@ -148,7 +146,6 @@ async def test_update_section_processing_invalid_action():
         condition_id="mock_condition",
         included_conditions=[],
         custom_codes=[],
-        local_codes=[],
         section_processing=[
             DbConfigurationSectionProcessing(
                 name="Section A", code="A", action="retain", versions=[]
@@ -175,7 +172,6 @@ async def test_update_section_processing_invalid_action():
         "condition_id": mock_config.condition_id,
         "included_conditions": [],
         "custom_codes": [],
-        "local_codes": [],
         "section_processing": existing_sections,
         "version": 1,
         "status": mock_config.status,
@@ -226,7 +222,6 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
         condition_id=UUID(int=0),
         included_conditions=[],
         custom_codes=[],
-        local_codes=[],
         section_processing=existing_sections,
         version=1,
         status="draft",
@@ -253,7 +248,6 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
         condition_id=initial_config.condition_id,
         included_conditions=initial_config.included_conditions,
         custom_codes=initial_config.custom_codes,
-        local_codes=initial_config.local_codes,
         section_processing=updated_sections,
         version=2,
         status=initial_config.status,
@@ -320,7 +314,6 @@ async def test_update_section_processing_db_returns_none(
         condition_id=UUID(int=0),
         included_conditions=[],
         custom_codes=[],
-        local_codes=[],
         section_processing=existing_sections,
         version=1,
         status="draft",
