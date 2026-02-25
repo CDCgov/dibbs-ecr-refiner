@@ -222,6 +222,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await page.getByTestId('close-drawer').click();
 
+    // Wait for prior notifications to clear
+    await page.waitForSelector('[role="alert"]', { state: 'detached' });
+
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
 
