@@ -30,18 +30,19 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     spec = load_spec("3.1.1")
 
     # build loinc->versions dict once per import
-    _LOINC_VERSIONS_MAP: dict[str, set[str]] = defaultdict(set)
+    loinc_version_map: dict[str, set[str]] = defaultdict(set)
     for version, version_data in EICR_SPECS_DATA.items():
         for loinc in version_data.keys():
-            _LOINC_VERSIONS_MAP[loinc].add(version)
-    _LOINC_VERSIONS_FLAT = {k: sorted(v) for k, v in _LOINC_VERSIONS_MAP.items()}
+            loinc_version_map[loinc].add(version)
+
+    loinc_versions_flat = {k: sorted(v) for k, v in loinc_version_map.items()}
 
     section_processing_defaults = [
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
             action="refine",
-            versions=_LOINC_VERSIONS_FLAT.get(loinc_code, []),
+            versions=loinc_versions_flat.get(loinc_code, []),
         )
         for loinc_code, section_spec in spec.sections.items()
         if loinc_code
