@@ -8,8 +8,9 @@ from logging import Logger
 
 from psycopg.rows import dict_row
 
+from app.db.pool import AsyncDatabaseConnection
+
 from ...core.config import ENVIRONMENT
-from ...db.pool import db
 from ...db.users.model import DbUser
 
 SESSION_EXPIRY_SECONDS = 3600  # one hour
@@ -32,12 +33,13 @@ def get_hashed_token(token: str) -> str:
     ).hexdigest()
 
 
-async def create_session(user_id: str) -> str:
+async def create_session(user_id: str, db: AsyncDatabaseConnection) -> str:
     """
     Upon log in, create a session and associate it with a user ID.
 
     Args:
         user_id (str): The ID of the user to create a session for.
+        db (AsyncDatabaseConnection): The database connection.
 
     Returns:
         str: Session token
@@ -60,12 +62,15 @@ async def create_session(user_id: str) -> str:
     return token
 
 
-async def get_user_from_session(token: str) -> DbUser | None:
+async def get_user_from_session(
+    token: str, db: AsyncDatabaseConnection
+) -> DbUser | None:
     """
     Given a session token, find the user associated with the session.
 
     Args:
         token (str): Token of the session connected to the user.
+        db (AsyncDatabaseConnection): The database connection.
     """
     token_hash = get_hashed_token(token)
     now = dt.now(UTC)
@@ -85,7 +90,7 @@ async def get_user_from_session(token: str) -> DbUser | None:
             return DbUser(**user)
 
 
-async def _delete_expired_sessions() -> None:
+async def _delete_expired_sessions(db: AsyncDatabaseConnection) -> None:
     """
     Removes expired sessions from the database.
 
@@ -99,14 +104,16 @@ async def _delete_expired_sessions() -> None:
             await cur.execute(query, params)
 
 
-async def run_expired_session_cleanup_task(logger: Logger) -> None:
+async def run_expired_session_cleanup_task(
+    logger: Logger, db: AsyncDatabaseConnection
+) -> None:
     """
     Task that can be scheduled to run session cleanup once per hour.
     """
     cleanup_interval_seconds = SESSION_EXPIRY_SECONDS  # Run once per hour
     while True:
         try:
-            await _delete_expired_sessions()
+            await _delete_expired_sessions(db=db)
             logger.info("Expired sessions cleaned up.")
         except Exception as e:
             logger.error(
@@ -115,12 +122,13 @@ async def run_expired_session_cleanup_task(logger: Logger) -> None:
         await asyncio.sleep(cleanup_interval_seconds)
 
 
-async def delete_session(token: str) -> None:
+async def delete_session(token: str, db: AsyncDatabaseConnection) -> None:
     """
     Given a token, deletes a session from the database.
 
     Args:
         token (str): Token of the session to be deleted
+        db (AsyncDatabaseConnection): The database connection
     """
     token_hash = get_hashed_token(token)
     query = "DELETE FROM sessions WHERE token_hash = %s"
