@@ -202,6 +202,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await page.getByTestId('close-drawer').click();
 
+    // Pause here for all prior notifications to complete.
+    await page.waitForTimeout(5000);
+
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
 
