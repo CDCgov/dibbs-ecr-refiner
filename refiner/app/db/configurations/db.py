@@ -90,7 +90,6 @@ async def insert_configuration_db(
         for loinc_code, section_spec in spec.sections.items()
     ]
 
-    params: tuple[str, UUID, str, UUID, Jsonb, Jsonb, Jsonb, Jsonb]
     if config_to_clone:
         params = (
             jurisdiction_id,
