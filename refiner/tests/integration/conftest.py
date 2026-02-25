@@ -406,7 +406,6 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{covid_id}"]'::jsonb,
             '[]'::jsonb,
-            '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
             1
         )
@@ -422,7 +421,6 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{flu_id}"]'::jsonb,
             '[]'::jsonb,
-            '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
             1
         )
@@ -438,7 +436,6 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{zika_id}"]'::jsonb,
             '[]'::jsonb,
-            '{{}}'::jsonb,
             '{section_processing_default}'::jsonb,
             1
         )
