@@ -119,7 +119,6 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         condition_id=UUID("22222222-2222-2222-2222-222222222222"),
         included_conditions=[assoc_condition],
         custom_codes=[],
-        local_codes=[],
         section_processing=[],
         version=1,
         status="draft",
