@@ -68,7 +68,10 @@ def clone_section_actions(
     """
     action_map = {section.code: section.action for section in clone_from}
 
-    return [replace(ds, action=action_map.get(ds.code, ds.action)) for ds in clone_to]
+    return [
+        replace(section, action=action_map.get(section.code, section.action))
+        for section in clone_to
+    ]
 
 
 async def get_config_payload_metadata(
