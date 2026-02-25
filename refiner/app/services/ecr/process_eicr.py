@@ -243,8 +243,15 @@ def _find_condition_relevant_elements(
 
     try:
         # find all clinical elements matching our SNOMED condition codes
-        xpath_result = section.xpath(combined_xpath, namespaces=namespaces)
-
+        candidates = section.xpath(
+            ".//*[self::hl7:code or self::hl7:translation or self::hl7:value][@code]",
+            namespaces=namespaces,
+        )
+        codes_to_match = frozenset(combined_xpath.split(","))
+        # print(codes_to_match)
+        # print("these are the codes to match: ")
+        # print(codes_to_match)
+        xpath_result = [el for el in candidates if el.get("code") in codes_to_match]
         if not isinstance(xpath_result, list):
             return []
 

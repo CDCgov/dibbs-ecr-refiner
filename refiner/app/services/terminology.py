@@ -186,12 +186,14 @@ class ProcessedConfiguration:
         if not self.codes:
             return ""
 
-        code_conditions = " or ".join(f'@code="{code}"' for code in self.codes)
+        code_conditions = ",".join(f"{code}" for code in self.codes)
 
         # xpath matches codes in <code>, <value>, and <translation> elements, in any context
-        return (
-            f".//hl7:*[hl7:code[{code_conditions}] or hl7:translation[{code_conditions}] or hl7:value[{code_conditions}]] | "
-            f".//hl7:code[{code_conditions}] | "
-            f".//hl7:translation[{code_conditions}] | "
-            f".//hl7:value[{code_conditions}]"
-        )
+        return code_conditions
+
+    # (
+    #         f".//hl7:*[hl7:code/@code = ({code_conditions}) or hl7:translation/@code = ({code_conditions}) or hl7:value/@code = ({code_conditions})] | "
+    #         f".//hl7:code[@code = ({code_conditions})] | "
+    #         f".//hl7:translation[@code = ({code_conditions})] | "
+    #         f".//hl7:value[@code = ({code_conditions})]"
+    #     )

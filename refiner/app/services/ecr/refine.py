@@ -95,9 +95,10 @@ def create_eicr_refinement_plan(
         code: cast(Literal["retain", "refine", "remove"], rules_map.get(code, "remove"))
         for code in present_section_codes
     }
+    xpath = processed_configuration.build_xpath()
 
     return EICRRefinementPlan(
-        xpath=processed_configuration.build_xpath(),
+        xpath=xpath,
         section_instructions=final_instructions,
     )
 
