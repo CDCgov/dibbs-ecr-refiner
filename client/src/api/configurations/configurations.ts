@@ -296,95 +296,6 @@ export function useGetConfiguration<TData = Awaited<ReturnType<typeof getConfigu
 
 
 /**
- * Create a CSV export of a configuration and all associated codes.
- * @summary Get Configuration Export
- */
-export const getConfigurationExport = (
-    configurationId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<void>> => {
-    
-    
-    return axios.default.get(
-      `/api/v1/configurations/${configurationId}/export`,options
-    );
-  }
-
-
-
-
-export const getGetConfigurationExportQueryKey = (configurationId: string,) => {
-    return [
-    `/api/v1/configurations/${configurationId}/export`
-    ] as const;
-    }
-
-    
-export const getGetConfigurationExportQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
-) => {
-
-const {query: queryOptions, axios: axiosOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationExportQueryKey(configurationId);
-
-  
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationExport>>> = ({ signal }) => getConfigurationExport(configurationId, { signal, ...axiosOptions });
-
-      
-
-      
-
-   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetConfigurationExportQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationExport>>>
-export type GetConfigurationExportQueryError = AxiosError<HTTPValidationError>
-
-
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getConfigurationExport>>,
-          TError,
-          Awaited<ReturnType<typeof getConfigurationExport>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getConfigurationExport>>,
-          TError,
-          Awaited<ReturnType<typeof getConfigurationExport>>
-        > , 'initialData'
-      >, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get Configuration Export
- */
-
-export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
- configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient 
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getGetConfigurationExportQueryOptions(configurationId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-/**
  * Associate a specified code set with the given configuration.
 
 Args:
@@ -774,6 +685,95 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
       return useMutation(getDeleteCustomCodeFromConfigurationMutationOptions(options), queryClient);
     }
     /**
+ * Create a CSV export of a configuration and all associated codes.
+ * @summary Get Configuration Export
+ */
+export const getConfigurationExport = (
+    configurationId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<void>> => {
+    
+    
+    return axios.default.get(
+      `/api/v1/configurations/${configurationId}/export`,options
+    );
+  }
+
+
+
+
+export const getGetConfigurationExportQueryKey = (configurationId: string,) => {
+    return [
+    `/api/v1/configurations/${configurationId}/export`
+    ] as const;
+    }
+
+    
+export const getGetConfigurationExportQueryOptions = <TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConfigurationExportQueryKey(configurationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConfigurationExport>>> = ({ signal }) => getConfigurationExport(configurationId, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetConfigurationExportQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationExport>>>
+export type GetConfigurationExportQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationExport>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationExport>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConfigurationExport>>,
+          TError,
+          Awaited<ReturnType<typeof getConfigurationExport>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Configuration Export
+ */
+
+export function useGetConfigurationExport<TData = Awaited<ReturnType<typeof getConfigurationExport>>, TError = AxiosError<HTTPValidationError>>(
+ configurationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetConfigurationExportQueryOptions(configurationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+/**
  * Runs an inline test of a given configuration against an eICR/RR pair.
 
 This endpoint orchestrates the validation and refinement process by:

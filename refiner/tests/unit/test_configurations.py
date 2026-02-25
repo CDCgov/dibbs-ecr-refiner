@@ -5,12 +5,10 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
-import pytest_asyncio
 from fastapi import status
-from httpx import ASGITransport, AsyncClient
 
-from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations import GetConfigurationsResponse, _upload_to_s3
+from app.api.v1.configurations.models import GetConfigurationsResponse
+from app.api.v1.configurations.testing import _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.db import GetConfigurationResponseVersion
 from app.db.configurations.model import (
@@ -18,78 +16,31 @@ from app.db.configurations.model import (
     DbConfigurationCondition,
     DbConfigurationCustomCode,
 )
-from app.db.users.model import DbUser
-from app.main import app
 from app.services.ecr.models import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 
-# User info
-TEST_SESSION_TOKEN = "test-token"
-MOCK_LOGGED_IN_USER_ID = UUID("5deb43c2-6a82-4052-9918-616e01d255c7")
-MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
-MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
-MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
 
-
-def make_db_condition_coding(code, display):
-    return DbConditionCoding(code=code, display=display)
-
-
-def mock_user():
-    return DbUser(
-        id=MOCK_LOGGED_IN_USER_ID,
-        username="tester",
-        email="tester@test.com",
-        jurisdiction_id="JD-1",
-        created_at=datetime.now(),
-        updated_at=datetime.now(),
-    )
-
-
-@pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user, mock_db_functions):
-    """
-    Mock an authenticated client.
-    """
-
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
-        yield client
+@pytest.fixture
+def new_config_id():
+    return UUID("33333333-3333-3333-3333-333333333333")
 
 
 @pytest.fixture(autouse=True)
-def mock_logged_in_user():
-    """
-    Mock the logged-in user dependency
-    """
-
-    app.dependency_overrides[get_logged_in_user] = mock_user
-    yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
-
-
-@pytest.fixture(autouse=True)
-def mock_db_functions(monkeypatch):
+def mock_db_functions(
+    monkeypatch,
+    mock_user,
+    mock_configuration,
+    mock_condition,
+    new_config_id,
+):
     """
     Mock return values of the `_db` functions called by the routes.
     """
 
     # prepare a fake condition with codes
-    condition_mock = DbCondition(
-        id=MOCK_CONDITION_ID,
-        display_name="Condition A",
-        canonical_url="url-1",
-        version="3.0.0",
-        child_rsg_snomed_codes=["12345"],
-        snomed_codes=[make_db_condition_coding("12345", "SNOMED Description")],
-        loinc_codes=[make_db_condition_coding("54321", "LOINC Description")],
-        icd10_codes=[make_db_condition_coding("A00", "ICD10 Description")],
-        rxnorm_codes=[make_db_condition_coding("99999", "RXNORM Description")],
-    )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_condition_by_id_db",
-        AsyncMock(return_value=condition_mock),
+        "app.api.v1.configurations.base.get_condition_by_id_db",
+        AsyncMock(return_value=mock_condition),
     )
 
     fake_condition = DbCondition(
@@ -98,55 +49,37 @@ def mock_db_functions(monkeypatch):
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
-        snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
-        loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
-        icd10_codes=[make_db_condition_coding("I10", "Essential hypertension")],
-        rxnorm_codes=[make_db_condition_coding("33333", "Hypertension RXNORM")],
+        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
+        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
+        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
+        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_conditions_by_version_db",
+        "app.api.v1.configurations.base.get_conditions_by_version_db",
         AsyncMock(return_value=[fake_condition]),
     )
 
-    # mock get_configuration_by_id_db with default: no custom codes
-    config_by_id_mock = DbConfiguration(
-        id=MOCK_CONFIGURATION_ID,
-        name="test config",
-        jurisdiction_id="SDDH",
-        condition_id=MOCK_CONDITION_ID,
-        included_conditions=[DbConfigurationCondition(id=MOCK_CONDITION_ID)],
-        custom_codes=[],
-        local_codes=[],
-        section_processing=[],
-        version=1,
-        status="draft",
-        last_activated_at=None,
-        last_activated_by=None,
-        created_by=MOCK_LOGGED_IN_USER_ID,
-        condition_canonical_url="url-1",
-        s3_urls=[],
+    monkeypatch.setattr(
+        "app.api.v1.configurations.base.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_by_id_db",
-        AsyncMock(return_value=config_by_id_mock),
+        "app.api.v1.configurations.base.get_included_conditions_db",
+        AsyncMock(return_value=[mock_condition]),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_included_conditions_db",
-        AsyncMock(return_value=[condition_mock]),
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.get_latest_config_db",
-        AsyncMock(return_value=config_by_id_mock),
+        "app.api.v1.configurations.base.get_latest_config_db",
+        AsyncMock(return_value=mock_configuration),
     )
 
     versions_mock = [
         GetConfigurationResponseVersion(
-            id=MOCK_CONFIGURATION_ID,
+            id=mock_configuration.id,
             status="draft",
             version=1,
             condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
-            created_by=MOCK_LOGGED_IN_USER_ID,
+            created_by=mock_user.id,
             created_at=datetime.now(),
             last_activated_at=None,
             last_activated_by=None,
@@ -154,42 +87,42 @@ def mock_db_functions(monkeypatch):
     ]
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_versions_db",
+        "app.api.v1.configurations.base.get_configuration_versions_db",
         AsyncMock(return_value=versions_mock),
     )
 
     # Mock get_configurations_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configurations_db",
-        AsyncMock(return_value=[config_by_id_mock]),
+        "app.api.v1.configurations.base.get_configurations_db",
+        AsyncMock(return_value=[mock_configuration]),
     )
 
     # Mock is_config_valid_to_insert_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.is_config_valid_to_insert_db",
+        "app.api.v1.configurations.base.is_config_valid_to_insert_db",
         AsyncMock(return_value=True),
     )
 
     # Mock insert_configuration_db
     new_config_mock = GetConfigurationsResponse(
-        id=MOCK_NEW_CONFIGURATION_ID,
+        id=new_config_id,
         name="New Config",
         status="draft",
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.insert_configuration_db",
+        "app.api.v1.configurations.base.insert_configuration_db",
         AsyncMock(return_value=new_config_mock),
     )
 
     # mock associate_condition_codeset_with_configuration_db
     assoc_condition = DbConfigurationCondition(
-        MOCK_CONDITION_ID,
+        mock_condition.id,
     )
     updated_config_mock = DbConfiguration(
-        id=MOCK_NEW_CONFIGURATION_ID,
+        id=new_config_id,
         name="New Config",
         jurisdiction_id="JD-1",
-        condition_id=MOCK_CONDITION_ID,
+        condition_id=mock_condition.id,
         included_conditions=[assoc_condition],
         custom_codes=[],
         local_codes=[],
@@ -198,81 +131,43 @@ def mock_db_functions(monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        created_by=MOCK_LOGGED_IN_USER_ID,
+        created_by=mock_user.id,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.associate_condition_codeset_with_configuration_db",
+        "app.api.v1.configurations.codesets.associate_condition_codeset_with_configuration_db",
         AsyncMock(return_value=updated_config_mock),
     )
 
     # Mock disassociate_condition_codeset_with_configuration_db
     updated_config_mock_disassoc = AsyncMock()
-    updated_config_mock_disassoc.id = MOCK_NEW_CONFIGURATION_ID
+    updated_config_mock_disassoc.id = new_config_id
     updated_config_mock_disassoc.included_conditions = []
 
     monkeypatch.setattr(
-        "app.api.v1.configurations.disassociate_condition_codeset_with_configuration_db",
+        "app.api.v1.configurations.codesets.disassociate_condition_codeset_with_configuration_db",
         AsyncMock(return_value=updated_config_mock_disassoc),
     )
 
     # for get_total_condition_code_counts_by_configuration_db, could use a list of count objects if needed
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_total_condition_code_counts_by_configuration_db",
+        "app.api.v1.configurations.custom_codes.get_total_condition_code_counts_by_configuration_db",
         AsyncMock(return_value=[]),
-    )
-
-    # Mock adding custom code to a config
-    custom_code_config_mock = replace(
-        config_by_id_mock,
-        custom_codes=[
-            DbConfigurationCustomCode(
-                code="test-code", name="test-name", system="LOINC"
-            )
-        ],
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.add_custom_code_to_configuration_db",
-        AsyncMock(return_value=custom_code_config_mock),
-    )
-
-    # Mock deleting a custom code from a config
-    custom_code_deletion_mock = replace(
-        config_by_id_mock,
-        custom_codes=[],
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.delete_custom_code_from_configuration_db",
-        AsyncMock(return_value=custom_code_deletion_mock),
-    )
-
-    # Mock editing a custom code from a config
-    custom_code_edit_mock = replace(
-        config_by_id_mock,
-        custom_codes=[
-            DbConfigurationCustomCode(
-                code="edited-code", name="updated-name", system="SNOMED"
-            )
-        ],
-    )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.edit_custom_code_from_configuration_db",
-        AsyncMock(return_value=custom_code_edit_mock),
     )
 
     # Mock ConfigurationLock methods
     monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.acquire_lock",
+        "app.api.v1.configurations.base.ConfigurationLock.acquire_lock",
         AsyncMock(return_value=True),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.get_lock",
+        "app.api.v1.configurations.base.ConfigurationLock.get_lock",
         AsyncMock(return_value=None),
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.ConfigurationLock.release_if_owned",
+        "app.api.v1.configurations.base.ConfigurationLock.release_if_owned",
         AsyncMock(return_value=None),
     )
 
@@ -280,49 +175,45 @@ def mock_db_functions(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_get_configurations_returns_list(authed_client):
-    response = await authed_client.get("/api/v1/configurations/")
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-    assert data[0]["name"] == "test config"
+async def test_associate_codeset_with_configuration(
+    authed_client, mock_condition, new_config_id, monkeypatch, mock_configuration
+):
+    monkeypatch.setattr(
+        "app.api.v1.configurations.codesets.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.codesets.get_condition_by_id_db",
+        AsyncMock(return_value=mock_condition),
+    )
 
-
-@pytest.mark.asyncio
-async def test_create_configuration_success(authed_client):
-    payload = {"condition_id": str(MOCK_CONDITION_ID)}
-    response = await authed_client.post("/api/v1/configurations/", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["name"] == "New Config"
-
-
-@pytest.mark.asyncio
-async def test_get_configuration_by_id(authed_client):
-    config_id = str(MOCK_CONFIGURATION_ID)
-    response = await authed_client.get(f"/api/v1/configurations/{config_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["display_name"] == "test config"
-
-
-@pytest.mark.asyncio
-async def test_associate_codeset_with_configuration(authed_client):
-    config_id = str(MOCK_NEW_CONFIGURATION_ID)
-    payload = {"condition_id": str(MOCK_CONDITION_ID)}
+    config_id = str(new_config_id)
+    payload = {"condition_id": str(mock_condition.id)}
     response = await authed_client.put(
         f"/api/v1/configurations/{config_id}/code-sets", json=payload
     )
     assert response.status_code == 200
     data = response.json()
     assert len(data["included_conditions"]) == 1
-    assert data["included_conditions"][0]["id"] == str(MOCK_CONDITION_ID)
+    assert data["included_conditions"][0]["id"] == str(mock_condition.id)
 
 
 @pytest.mark.asyncio
-async def test_disassociate_codeset_with_configuration(authed_client):
-    config_id = str(MOCK_NEW_CONFIGURATION_ID)
-    payload = {"condition_id": str(MOCK_CONDITION_ID)}
+async def test_disassociate_codeset_with_configuration(
+    authed_client, mock_condition, new_config_id, mock_configuration, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.api.v1.configurations.codesets.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
+    )
+
+    monkeypatch.setattr(
+        "app.api.v1.configurations.codesets.get_condition_by_id_db",
+        AsyncMock(return_value=mock_condition),
+    )
+
+    config_id = str(new_config_id)
+    payload = {"condition_id": str(mock_condition.id)}
     response = await authed_client.delete(
         f"/api/v1/configurations/{config_id}/code-sets/{payload['condition_id']}",
     )
@@ -331,12 +222,32 @@ async def test_disassociate_codeset_with_configuration(authed_client):
     # After disassociation, included_conditions should be empty or not contain the removed condition
     included_conditions = data.get("included_conditions", [])
     assert isinstance(included_conditions, list)
-    assert all(c.get("id") != str(MOCK_CONDITION_ID) for c in included_conditions)
+    assert all(c.get("id") != str(mock_condition.id) for c in included_conditions)
 
 
 @pytest.mark.asyncio
-async def test_add_custom_code_to_configuration(authed_client):
-    config_id = str(MOCK_CONFIGURATION_ID)
+async def test_add_custom_code_to_configuration(
+    authed_client, mock_configuration, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
+    )
+    # Mock adding custom code to a config
+    custom_code_config_mock = replace(
+        mock_configuration,
+        custom_codes=[
+            DbConfigurationCustomCode(
+                code="test-code", name="test-name", system="LOINC"
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.add_custom_code_to_configuration_db",
+        AsyncMock(return_value=custom_code_config_mock),
+    )
+
+    config_id = str(mock_configuration.id)
     payload = {"code": "test-code", "name": "test-name", "system": "loinc"}
     response = await authed_client.post(
         f"/api/v1/configurations/{config_id}/custom-codes", json=payload
@@ -349,8 +260,24 @@ async def test_add_custom_code_to_configuration(authed_client):
 
 
 @pytest.mark.asyncio
-async def test_delete_custom_code_from_configuration(authed_client):
-    config_id = str(MOCK_CONFIGURATION_ID)
+async def test_delete_custom_code_from_configuration(
+    authed_client, mock_configuration, monkeypatch
+):
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
+    )
+    # Mock deleting a custom code from a config
+    custom_code_deletion_mock = replace(
+        mock_configuration,
+        custom_codes=[],
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.delete_custom_code_from_configuration_db",
+        AsyncMock(return_value=custom_code_deletion_mock),
+    )
+
+    config_id = str(mock_configuration.id)
     system = "LOINC"
     code = "test-code"
 
@@ -363,14 +290,30 @@ async def test_delete_custom_code_from_configuration(authed_client):
 
 
 @pytest.mark.asyncio
-async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
-    config_id = str(MOCK_CONFIGURATION_ID)
+async def test_edit_custom_code_from_configuration(
+    authed_client, monkeypatch, mock_configuration, mock_condition, mock_user
+):
+    # Mock editing a custom code from a config
+    custom_code_edit_mock = replace(
+        mock_configuration,
+        custom_codes=[
+            DbConfigurationCustomCode(
+                code="edited-code", name="updated-name", system="SNOMED"
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.custom_codes.edit_custom_code_from_configuration_db",
+        AsyncMock(return_value=custom_code_edit_mock),
+    )
+
+    config_id = str(mock_configuration.id)
     # explicitly monkeypatch to ensure the code to edit is present
     mock_config = DbConfiguration(
         id=UUID(config_id),
         name="test config",
         jurisdiction_id="SDDH",
-        condition_id=MOCK_CONDITION_ID,
+        condition_id=mock_condition.id,
         included_conditions=[],
         custom_codes=[
             DbConfigurationCustomCode(
@@ -383,12 +326,12 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
         status="draft",
         last_activated_at=None,
         last_activated_by=None,
-        created_by=MOCK_LOGGED_IN_USER_ID,
+        created_by=mock_user.id,
         condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_config),
     )
 
@@ -413,11 +356,22 @@ async def test_edit_custom_code_from_configuration(authed_client, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_inline_example_file_success(authed_client, monkeypatch):
+async def test_inline_example_file_success(
+    authed_client, monkeypatch, mock_configuration, mock_condition, test_app
+):
+    monkeypatch.setattr(
+        "app.api.v1.configurations.testing.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.testing.get_condition_by_id_db",
+        AsyncMock(return_value=mock_condition),
+    )
+
     def mock_s3_upload(*args, **kwargs):
         return "5dae47a7-2d5c-405d-b16d-3d2d1320c79d_refined_ecr.zip"
 
-    app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
@@ -432,11 +386,11 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
         configuration_does_not_match_conditions=None,
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.inline_testing",
+        "app.api.v1.configurations.testing.inline_testing",
         AsyncMock(return_value=mock_result),
     )
 
-    payload = {"id": str(MOCK_CONFIGURATION_ID)}
+    payload = {"id": str(mock_configuration.id)}
 
     # it tests the fallback mechanism where the API uses the default sample file;
     # we just send the data payload
@@ -453,17 +407,31 @@ async def test_inline_example_file_success(authed_client, monkeypatch):
         == "<xml>refined eicr for Condition A</xml>"
     )
 
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
 async def test_inline_allow_custom_zip(
-    covid_influenza_v1_1_zip_path: Path, authed_client, monkeypatch
+    covid_influenza_v1_1_zip_path: Path,
+    authed_client,
+    monkeypatch,
+    mock_configuration,
+    mock_condition,
+    test_app,
 ):
+    monkeypatch.setattr(
+        "app.api.v1.configurations.testing.get_configuration_by_id_db",
+        AsyncMock(return_value=mock_configuration),
+    )
+    monkeypatch.setattr(
+        "app.api.v1.configurations.testing.get_condition_by_id_db",
+        AsyncMock(return_value=mock_condition),
+    )
+
     def mock_s3_upload(*args, **kwargs):
         return "5dae47a7-2d5c-405d-b16d-3d2d1320c79d_refined_ecr.zip"
 
-    app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
@@ -477,11 +445,11 @@ async def test_inline_allow_custom_zip(
         configuration_does_not_match_conditions=None,
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.inline_testing",
+        "app.api.v1.configurations.testing.inline_testing",
         AsyncMock(return_value=mock_result),
     )
 
-    payload = {"id": str(MOCK_CONFIGURATION_ID)}
+    payload = {"id": str(mock_configuration.id)}
 
     uploaded_file = covid_influenza_v1_1_zip_path
     with open(uploaded_file, "rb") as file_data:
@@ -509,4 +477,4 @@ async def test_inline_allow_custom_zip(
         == "<xml>COVID-19 refined RR doc</xml>"
     )
 
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
