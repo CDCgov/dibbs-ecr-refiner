@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import replace
 from logging import Logger
 from typing import Any
@@ -29,10 +30,10 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     spec = load_spec("3.1.1")
 
     # build loinc->versions dict once per import
-    _LOINC_VERSIONS_MAP: dict[str, set[str]] = {}
-    for v, vdata in EICR_SPECS_DATA.items():
-        for loinc in vdata.keys():
-            _LOINC_VERSIONS_MAP.setdefault(loinc, set()).add(v)
+    _LOINC_VERSIONS_MAP: dict[str, set[str]] = defaultdict(set)
+    for version, version_data in EICR_SPECS_DATA.items():
+        for loinc in version_data.keys():
+            _LOINC_VERSIONS_MAP[loinc].add(version)
     _LOINC_VERSIONS_FLAT = {k: sorted(v) for k, v in _LOINC_VERSIONS_MAP.items()}
 
     section_processing_defaults = [
