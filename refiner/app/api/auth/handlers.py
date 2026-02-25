@@ -162,7 +162,7 @@ async def auth_callback(
         user_id = await upsert_user_db(oidc_user_info=user, db=db)
 
         # Create a session for the user
-        session_token = await create_session(user_id)
+        session_token = await create_session(user_id=user_id, db=db)
 
         env = ENVIRONMENT["ENV"]
         redirect_uri = "/" if env != "local" else "http://localhost:8081"
@@ -198,7 +198,10 @@ class UserResponse(BaseModel):
 @auth_router.get(
     "/user", response_model=(UserResponse | None), tags=["user"], operation_id="getUser"
 )
-async def get_user(request: Request) -> UserResponse | None:
+async def get_user(
+    request: Request,
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> UserResponse | None:
     """
     Returns the current logged-in user's information.
 
@@ -215,7 +218,7 @@ async def get_user(request: Request) -> UserResponse | None:
     if not session_token:
         return None
 
-    user = await get_user_from_session(session_token)
+    user = await get_user_from_session(token=session_token, db=db)
 
     if not user:
         return None
@@ -227,7 +230,9 @@ async def get_user(request: Request) -> UserResponse | None:
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
 async def logout(
-    request: Request, logger: Logger = Depends(get_logger)
+    request: Request,
+    logger: Logger = Depends(get_logger),
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> RedirectResponse:
     """
     Logs the user out by clearing the session and redirecting to the auth provider logout endpoint.
@@ -235,6 +240,7 @@ async def logout(
     Args:
         request (Request): The incoming HTTP request.
         logger (Logger): The standard logger.
+        db (AsyncDatabaseConnection): The database connection.
 
     Returns:
         RedirectResponse: A redirect to the auth provider logout endpoint and back to the frontend.
@@ -247,12 +253,12 @@ async def logout(
     session_token = request.cookies.get("refiner-session")
 
     if session_token:
-        user = await get_user_from_session(session_token)
+        user = await get_user_from_session(token=session_token, db=db)
 
         if user:
             logger.info("Logging out user", extra={"user_id": user.id})
 
-        await delete_session(session_token)
+        await delete_session(token=session_token, db=db)
 
     response = RedirectResponse(url=post_logout_redirect_uri)
     response.delete_cookie(

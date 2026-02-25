@@ -6,8 +6,9 @@ from logging import Logger
 from fastapi import Depends, HTTPException, Request, status
 from psycopg.rows import dict_row
 
+from app.db.pool import AsyncDatabaseConnection, get_db
+
 from ...core.exceptions import DatabaseConnectionError, DatabaseQueryError
-from ...db.pool import db
 from ...db.users.model import DbUser
 from ...services.logger import get_logger
 from .session import SESSION_TTL, get_hashed_token
@@ -37,7 +38,9 @@ class DbUserWithSessionExpiryTime(DbUser):
 
 # This function can be used as an auth check for handlers or routers
 async def get_logged_in_user(
-    request: Request, logger: Logger = Depends(get_logger)
+    request: Request,
+    logger: Logger = Depends(get_logger),
+    db: AsyncDatabaseConnection = Depends(get_db),
 ) -> DbUser:
     """
     Gets the current user from the session. Throws an error if the user is unauthenticated.
@@ -45,6 +48,7 @@ async def get_logged_in_user(
     Args:
         request (Request): Request to check for user info
         logger (Logger): The standard logger
+        db (AsyncDatabaseConnection): The database connection
 
     Raises:
         HTTPException: 401 Unauthorized is thrown if no user info exists
@@ -97,7 +101,7 @@ async def get_logged_in_user(
 
     # Renew session if it's close to expiring
     await update_session_expiry_time(
-        expires_at=expires_at, token_hash=token_hash, logger=logger
+        expires_at=expires_at, token_hash=token_hash, logger=logger, db=db
     )
 
     # Create a DbUser from the DbUserWithSessionExpiryTime to return
@@ -105,7 +109,7 @@ async def get_logged_in_user(
 
 
 async def update_session_expiry_time(
-    expires_at: datetime, token_hash: str, logger: Logger
+    expires_at: datetime, token_hash: str, logger: Logger, db: AsyncDatabaseConnection
 ) -> None:
     """
     Updates a user's session expiration if it is set to expire soon.
@@ -114,6 +118,7 @@ async def update_session_expiry_time(
         expires_at (datetime): Current expiration time
         token_hash (str): Hashed session token
         logger (Logger): Standard logger
+        db (AsyncDatabaseConnection): The database connection
 
     Raises:
         HTTPException: 500 if there is an error while updating the session
