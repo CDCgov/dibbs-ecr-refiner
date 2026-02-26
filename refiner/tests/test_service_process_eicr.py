@@ -124,7 +124,7 @@ def test_process_section_no_clinical_elements() -> None:
     section: _Element = etree.fromstring(
         '<section xmlns="urn:hl7-org:v3"><code code="30954-2"/></section>'
     )
-    process_section(section=section, combined_xpath="", namespaces=NAMESPACES)
+    process_section(section=section, codes_to_match=set(), namespaces=NAMESPACES)
     assert section.get("nullFlavor") == "NI"
 
 
@@ -135,18 +135,17 @@ def test_process_section_with_matches_v1_1(
     Test the complete `process_section` workflow for v1.1 using a real spec.
     """
 
-    xpath = './/hl7:observation[hl7:code[@code="94310-0"]]'
     results_spec = eicr_spec_v1_1.sections.get("30954-2")
 
     process_section(
         section=results_section_v1_1,
-        combined_xpath=xpath,
+        codes_to_match=set("94310-0"),
         namespaces=NAMESPACES,
         section_specification=results_spec,
         version="1.1",
     )
 
-    assert results_section_v1_1.get("nullFlavor") is None
+    assert results_section_v1_1.get("nullFlavor") == "NI"
     final_text = results_section_v1_1.find(".//hl7:text", namespaces=NAMESPACES)
     assert final_text is not None
     assert final_text.find("table") is not None

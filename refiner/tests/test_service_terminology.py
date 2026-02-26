@@ -62,11 +62,6 @@ def test_processed_configuration_from_payload_and_xpath():
     payload = ConfigurationPayload(conditions=[cond1], configuration=config)
     processed = ProcessedConfiguration.from_payload(payload)
     assert processed.codes == {"A", "B"}
-    xpath = processed.build_xpath()
-    assert '@code="A"' in xpath
-    assert '@code="B"' in xpath
-    assert ".//hl7:code[" in xpath
-    assert " | " in xpath
 
 
 def test_processed_configuration_empty_codes():
@@ -75,7 +70,6 @@ def test_processed_configuration_empty_codes():
     payload = ConfigurationPayload(conditions=[cond], configuration=config)
     processed = ProcessedConfiguration.from_payload(payload)
     assert processed.codes == set()
-    assert processed.build_xpath() == ""
 
 
 def test_processed_configuration_duplicate_codes():

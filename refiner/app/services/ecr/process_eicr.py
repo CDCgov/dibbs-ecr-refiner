@@ -206,10 +206,9 @@ def process_section(
             )
 
         except etree.XPathEvalError as e:
-            # TODO: redo this error
             raise XMLParsingError(
                 message="Invalid XPath expression",
-                details={"xpath": codes_to_match, "error": str(e)},
+                details={"section_details": section.attrib, "error": str(e)},
             )
     finally:
         # always restore the original code attribute to maintain spec compliance
@@ -245,7 +244,8 @@ def _find_condition_relevant_elements(
     try:
         codes_to_check = frozenset(codes_to_match)
 
-        # Pattern 1: parent hl7:* elements that have matching children
+        # Pattern 1: parent code, translation, and value elements that might have
+        # direct codes
         candidates_parents = cast(
             list[_Element],
             section.xpath(
@@ -254,7 +254,8 @@ def _find_condition_relevant_elements(
             ),
         )
 
-        # Pattern 2: the child elements directly
+        # Pattern 2: elements with code, translation, or value children that might
+        # have matching codes
         candidates_children = cast(
             list[_Element],
             section.xpath(
@@ -284,10 +285,9 @@ def _find_condition_relevant_elements(
         return _deduplicate_clinical_elements(clinical_elements)
 
     except etree.XPathEvalError as e:
-        # TODO: make this accurate
         raise XMLParsingError(
-            message="Failed to evaluate XPath for condition-relevant elements",
-            details={"xpath": codes_to_match, "error": str(e)},
+            message="Failed to generate candidate elements for code matching",
+            details={"section_details": section.attrib, "error": str(e)},
         )
 
 

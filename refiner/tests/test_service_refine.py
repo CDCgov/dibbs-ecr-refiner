@@ -121,7 +121,9 @@ def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
     Tests the 'retain' action, which should not modify the section.
     """
 
-    plan = EICRRefinementPlan(xpath="", section_instructions={"29762-2": "retain"})
+    plan = EICRRefinementPlan(
+        codes_to_check=(), section_instructions={"29762-2": "retain"}
+    )
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 
     doc_refined = etree.fromstring(refined_xml.encode("utf-8"))
@@ -143,7 +145,7 @@ def test_refine_action_with_no_matches_v1_1(covid_influenza_v1_1_files: XMLFiles
     """
 
     plan = EICRRefinementPlan(
-        xpath=".//hl7:code[@code='NON_EXISTENT_CODE']",
+        codes_to_check=set("NON_EXISTENT_CODE"),
         section_instructions={"11450-4": "refine"},
     )
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
@@ -167,9 +169,11 @@ def test_refine_action_with_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
     payload = ConfigurationPayload(conditions=[condition], configuration=config)
 
     processed_config = ProcessedConfiguration.from_payload(payload)
-    xpath = processed_config.build_xpath()
 
-    plan = EICRRefinementPlan(xpath=xpath, section_instructions={"30954-2": "refine"})
+    plan = EICRRefinementPlan(
+        codes_to_check=processed_config.codes,
+        section_instructions={"30954-2": "refine"},
+    )
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 
     doc = etree.fromstring(refined_xml.encode("utf-8"))
