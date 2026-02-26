@@ -1,3 +1,5 @@
+from collections import defaultdict
+from dataclasses import replace
 from logging import Logger
 from typing import Any
 
@@ -6,8 +8,70 @@ from app.db.configurations.model import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
     DbConfiguration,
+    DbConfigurationSectionProcessing,
 )
 from app.db.pool import AsyncDatabaseConnection
+from app.services.ecr.specification import (
+    EICR_SPECS_DATA,
+    SECTION_PROCESSING_SKIP,
+    load_spec,
+)
+
+
+def get_default_sections() -> list[DbConfigurationSectionProcessing]:
+    """
+    Constructs and returns a list of default sections for the latest spec.
+
+    Returns:
+        list[DbConfigurationSectionProcessing]: List of sections with default values set.
+    """
+
+    # use the new specification system in the ecr service
+    spec = load_spec("3.1.1")
+
+    # build loinc->versions dict once per import
+    loinc_version_map: dict[str, set[str]] = defaultdict(set)
+    for version, version_data in EICR_SPECS_DATA.items():
+        for loinc in version_data.keys():
+            loinc_version_map[loinc].add(version)
+
+    loinc_versions_flat = {k: sorted(v) for k, v in loinc_version_map.items()}
+
+    section_processing_defaults = [
+        DbConfigurationSectionProcessing(
+            name=section_spec.display_name,
+            code=loinc_code,
+            action="refine",
+            versions=loinc_versions_flat.get(loinc_code, []),
+        )
+        for loinc_code, section_spec in spec.sections.items()
+        if loinc_code
+        not in SECTION_PROCESSING_SKIP  # Skipping emergency outbreak and reportability response sections
+    ]
+
+    return section_processing_defaults
+
+
+def clone_section_actions(
+    clone_from: list[DbConfigurationSectionProcessing],
+    clone_to: list[DbConfigurationSectionProcessing],
+) -> list[DbConfigurationSectionProcessing]:
+    """
+    Clones section actions from one list of sections into another.
+
+    Args:
+        clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone actions from.
+        clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone actions into.
+
+    Returns:
+        list[DbConfigurationSectionProcessing]: The new list of sections.
+    """
+    action_map = {section.code: section.action for section in clone_from}
+
+    return [
+        replace(section, action=action_map.get(section.code, section.action))
+        for section in clone_to
+    ]
 
 
 async def get_config_payload_metadata(
