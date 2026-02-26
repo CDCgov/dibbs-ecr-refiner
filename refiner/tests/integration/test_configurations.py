@@ -1,10 +1,11 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
+from uuid import uuid4
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 from psycopg.rows import dict_row
 
-from tests.test_conditions import TEST_SESSION_TOKEN
+from app.db.configurations.activations.db import activate_configuration_db
+from app.db.configurations.db import get_configuration_by_id_db
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_RSG_CODE = "212962007"
@@ -14,20 +15,21 @@ EXPECTED_DROWNING_RSG_CODE = "212962007"
 @pytest.mark.asyncio
 class TestConfigurations:
     async def test_create_configuration(
-        self, setup, authed_client, test_username, db_conn
+        self, setup, authed_client, test_username, db_pool
     ):
         # Get a condition to use to create a config
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, display_name
-                FROM conditions
-                WHERE display_name = 'Drowning and Submersion'
-                AND version = '4.0.0'
-                """
-            )
-            condition = await cur.fetchone()
-            assert condition is not None
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, display_name
+                    FROM conditions
+                    WHERE display_name = 'Drowning and Submersion'
+                    AND version = '4.0.0'
+                    """
+                )
+                condition = await cur.fetchone()
+                assert condition is not None
 
         # Create config
         payload = {"condition_id": str(condition["id"])}
@@ -58,32 +60,33 @@ class TestConfigurations:
         failure_audit_events = response.json()["audit_events"]
         assert len(failure_audit_events) == 1
 
-    async def test_activate_configuration(self, setup, authed_client, db_conn):
+    async def test_activate_configuration(self, setup, authed_client, db_pool):
         # Ensure the condition exists
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, display_name, version, canonical_url
-                FROM conditions
-                WHERE display_name = 'Drowning and Submersion'
-                AND version = '4.0.0'
-                """
-            )
-            condition = await cur.fetchone()
-            assert condition is not None
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, display_name, version, canonical_url
+                    FROM conditions
+                    WHERE display_name = 'Drowning and Submersion'
+                    AND version = '4.0.0'
+                    """
+                )
+                condition = await cur.fetchone()
+                assert condition is not None
 
-        # Activate any existing draft configuration for this condition
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, jurisdiction_id, version
-                FROM configurations
-                WHERE name = 'Drowning and Submersion'
-                AND status = 'draft';
-                """
-            )
-            draft_config = await cur.fetchone()
-            assert draft_config is not None
+            # Activate any existing draft configuration for this condition
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, jurisdiction_id, version
+                    FROM configurations
+                    WHERE name = 'Drowning and Submersion'
+                    AND status = 'draft';
+                    """
+                )
+                draft_config = await cur.fetchone()
+                assert draft_config is not None
 
             draft_id = draft_config["id"]
             response = await authed_client.patch(
@@ -201,74 +204,79 @@ class TestConfigurations:
         assert validation_response_data["id"] == initial_configuration_id
         assert validation_response_data["status"] == "inactive"
 
-    async def test_activate_rollback(self, setup, authed_client, db_conn):
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
+    async def test_transaction_rollback_on_activation_failure(self, db_pool):
+        """
+        Verifies rollback when activation fails after deactivation.
+        """
+        # Set the config to be active
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    UPDATE configurations
+                    SET status = 'active'
+                    WHERE name = 'Drowning and Submersion'
+                    AND version = 3
+                    RETURNING id, condition_canonical_url, condition_id;
+                    """
+                )
+                configuration = await cur.fetchone()
+                assert configuration is not None
+            old_config_id = str(configuration["id"])
+
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
                     SELECT id, condition_canonical_url, condition_id
                     FROM configurations
-                    WHERE name = 'Drowning and Submersion';
+                    WHERE name = 'Drowning and Submersion'
+                    AND version = 2;
                     """
-            )
-            configuration = await cur.fetchone()
-            assert configuration is not None
-        initial_configuration_id = str(configuration["id"])
-
-        # create a new test client with a mocked deactivate function that throws
-        # an error to test the rollback. The existing fixture has the real function bundled in it
-        # that doesn't allow us to hotswap it at runtime
-        with patch(
-            "app.db.configurations.activations.db._deactivate_configuration_db",
-            new_callable=AsyncMock,
-            side_effect=Exception("Simulated failure"),
-        ):
-            from app.main import app as patched_app
-
-            transport = ASGITransport(app=patched_app)
-            async with AsyncClient(
-                transport=transport, base_url="http://testserver"
-            ) as client:
-                client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
-
-                response = await client.patch(
-                    f"/api/v1/configurations/{initial_configuration_id}/activate"
                 )
+                configuration = await cur.fetchone()
+                assert configuration is not None
+            new_config_id = str(configuration["id"])
 
-                async with db_conn.cursor(row_factory=dict_row) as cur:
-                    query = """
-                            SELECT id, condition_canonical_url, condition_id, status
-                            FROM configurations
-                            WHERE id = %s;
-                        """
-
-                    await cur.execute(query, (initial_configuration_id,))
-                    configuration = await cur.fetchone()
-                    assert configuration is not None
-                    assert configuration["status"] == "inactive"
-
-                    # Expect previous version to still be the active version
-                    current_file_resp = await authed_client.get(
-                        f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
-                    )
-                    assert current_file_resp.status_code == 200
-
-                    # This is the previously activated version from the test above
-                    assert current_file_resp.json()["version"] == 3
-
-                assert response.status_code == 500
-
-    async def test_deactivate_configuration(self, setup, authed_client, db_conn):
-        # Get the activated configuration from the previous tests
-        async with db_conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT id, condition_canonical_url, condition_id
-                FROM configurations
-                WHERE name = 'Drowning and Submersion' AND status = 'active';
-                """
+        # Patch _activate_configuration_db to fail after deactivation
+        with patch(
+            "app.db.configurations.activations.db._activate_configuration_db",
+            return_value=None,
+        ):
+            result = await activate_configuration_db(
+                configuration_id=new_config_id,
+                activated_by_user_id=uuid4(),
+                canonical_url="https://mock.com",
+                jurisdiction_id="SDDH",
+                s3_urls=["s3://bucket/key"],
+                db=db_pool,
             )
-            configuration = await cur.fetchone()
-            assert configuration is not None
+
+            assert result is None  # activation failed
+
+            old_config = await get_configuration_by_id_db(
+                id=old_config_id, jurisdiction_id="SDDH", db=db_pool
+            )
+
+            assert old_config.status == "active"  # Should remain active due to rollback
+
+            new_config = await get_configuration_by_id_db(
+                id=new_config_id, jurisdiction_id="SDDH", db=db_pool
+            )
+            assert new_config.status == "inactive"  # Should remain inactive
+
+    async def test_deactivate_configuration(self, setup, authed_client, db_pool):
+        # Get the activated configuration from the previous tests
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id, condition_canonical_url, condition_id
+                    FROM configurations
+                    WHERE name = 'Drowning and Submersion' AND status = 'active';
+                    """
+                )
+                configuration = await cur.fetchone()
+                assert configuration is not None
 
         initial_configuration_id = str(configuration["id"])
 

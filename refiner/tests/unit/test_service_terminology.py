@@ -36,7 +36,6 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
         "condition_id": uuid4(),
         "included_conditions": [],
         "custom_codes": [],
-        "local_codes": [],
         "section_processing": [],
         "version": 1,
         "status": "draft",

@@ -1,51 +1,10 @@
 from uuid import uuid4
 
 import pytest
-import pytest_asyncio
 from fastapi import status
-from httpx import ASGITransport, AsyncClient
 
-from app.api.auth.middleware import get_logged_in_user
 from app.db.conditions.db import GetConditionCode
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.main import app
-
-# User info
-TEST_SESSION_TOKEN = "test-token"
-
-
-def make_db_condition_coding(code, display):
-    return DbConditionCoding(code=code, display=display)
-
-
-@pytest_asyncio.fixture
-async def authed_client(mock_logged_in_user):
-    """
-    Mock an authenticated client.
-    """
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        client.cookies.update({"refiner-session": TEST_SESSION_TOKEN})
-        yield client
-
-
-@pytest.fixture(autouse=True)
-def mock_logged_in_user():
-    """
-    Mock the logged-in user dependency
-    """
-
-    def mock_user():
-        return {
-            "id": "5deb43c2-6a82-4052-9918-616e01d255c7",
-            "username": "tester",
-            "email": "tester@test.com",
-            "jurisdiction_id": "JD-1",
-        }
-
-    app.dependency_overrides[get_logged_in_user] = mock_user
-    yield
-    app.dependency_overrides.pop(get_logged_in_user, None)
 
 
 @pytest.mark.asyncio
@@ -56,10 +15,10 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
         canonical_url="http://url.com",
         version="4.0.0",
         child_rsg_snomed_codes=["11111"],
-        snomed_codes=[make_db_condition_coding("11111", "Hypertension SNOMED")],
-        loinc_codes=[make_db_condition_coding("22222", "Hypertension LOINC")],
-        icd10_codes=[make_db_condition_coding("I10", "Essential hypertension")],
-        rxnorm_codes=[make_db_condition_coding("33333", "Hypertension RXNORM")],
+        snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
+        loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
+        icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
+        rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
     )
 
     async def fake_get_latest_conditions_db(db):
@@ -89,10 +48,10 @@ async def test_get_condition_found(monkeypatch, authed_client):
         canonical_url="http://asthma.com",
         version="4.0.0",
         child_rsg_snomed_codes=["67890"],
-        snomed_codes=[make_db_condition_coding("67890", "Asthma SNOMED")],
-        loinc_codes=[make_db_condition_coding("1234-5", "Asthma LOINC")],
-        icd10_codes=[make_db_condition_coding("J45", "Asthma ICD10")],
-        rxnorm_codes=[make_db_condition_coding("55555", "Asthma RXNORM")],
+        snomed_codes=[DbConditionCoding("67890", "Asthma SNOMED")],
+        loinc_codes=[DbConditionCoding("1234-5", "Asthma LOINC")],
+        icd10_codes=[DbConditionCoding("J45", "Asthma ICD10")],
+        rxnorm_codes=[DbConditionCoding("55555", "Asthma RXNORM")],
     )
 
     fake_codes = [
