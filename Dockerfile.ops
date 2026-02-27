@@ -25,9 +25,14 @@ WORKDIR /app
 COPY ./refiner/requirements-scripts.txt ./
 RUN pip install --no-cache-dir -r requirements-scripts.txt
 
-# Python scripts and migration files
+# Copy migration files
 COPY ./refiner/migrations ./migrations
-COPY ./refiner/scripts ./scripts
+
+# Copy TES update files
+COPY ./refiner/scripts/seeding ./scripts/seeding
+COPY ./refiner/scripts/data/source-tes-groupers ./scripts/data/source-tes-groupers
+
+# Copy entrypoint script
 COPY ./ops/entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./entrypoint.sh
