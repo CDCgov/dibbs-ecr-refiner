@@ -210,7 +210,7 @@ def setup(request):
         [
             "sh",
             "-c",
-            "migrate -path /app/refiner/migrations -database $(./.justscripts/sh/get_db_url.sh local) up",
+            "dbmate --no-dump-schema --migrations-dir /app/refiner/migrations --url $(./.justscripts/sh/get_db_url.sh local) migrate",
         ],
         "migrate",
     )

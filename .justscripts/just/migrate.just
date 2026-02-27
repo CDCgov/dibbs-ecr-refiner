@@ -8,28 +8,17 @@ alias help := _default
 # Database migrations
 # ---------------------
 
-[group('migrate')]
 [doc('Run migrations with migrate for a given environment (local, demo, prod)')]
-run ENV +ARGS='up':
-    sh -c '../sh/get_db_url.sh {{ENV}} | xargs -I {} docker compose exec -T migrate migrate -path /app/refiner/migrations -database {} {{ARGS}}'
-
-
 [group('migrate')]
+run ENV +ARGS='migrate':
+    sh -c '../sh/get_db_url.sh {{ ENV }} | xargs -I {} docker compose exec -T migrate dbmate --migrations-dir /app/refiner/migrations --schema-file /app/refiner/schema.sql --url {} {{ ARGS }}'
+
 [doc('Shortcut: migrate local')]
-local +ARGS='up':
-    just -f migrate.just run local {{ARGS}}
-
 [group('migrate')]
-[doc('Shortcut: migrate demo')]
-demo +ARGS='up':
-    just -f migrate.just run demo {{ARGS}}
+local +ARGS='migrate':
+    just -f migrate.just run local {{ ARGS }}
 
-[group('migrate')]
-[doc('Shortcut: migrate prod')]
-prod +ARGS='up':
-    just -f migrate.just run prod {{ARGS}}
-
-[group('migrate')]
 [doc('Create a new migration script')]
+[group('migrate')]
 create NAME:
-    docker compose exec migrate migrate create -ext sql -dir /app/refiner/migrations -seq {{NAME}}
+    docker compose exec migrate dbmate --migrations-dir /app/refiner/migrations new {{ NAME }}
