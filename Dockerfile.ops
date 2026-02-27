@@ -1,8 +1,6 @@
 # Install Python dependencies
 FROM python:3.14-slim
 
-ARG DBMATE_TAG=2
-
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
 
@@ -19,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dbmate binary from dbmate base image
-COPY --from=ghcr.io/amacneil/dbmate:${DBMATE_TAG} /usr/local/bin/dbmate /usr/local/bin/dbmate
+COPY --from=ghcr.io/amacneil/dbmate:2 /usr/local/bin/dbmate /usr/local/bin/dbmate
 
 WORKDIR /app
 
