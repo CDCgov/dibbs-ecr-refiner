@@ -22,15 +22,9 @@ concurrency:
 jobs:
   run-linter:
     uses: ./.github/workflows/lint.yml
-    with:
-      python_runner_version: 3.13
   run-tests:
     uses: ./.github/workflows/tests.yml
-    with:
-      python_runner_version: 3.13
   run-type-checking:
     uses: ./.github/workflows/typecheck.yml
-    with:
-      python_runner_version: 3.13
   run-build:
     uses: ./.github/workflows/build.yml
