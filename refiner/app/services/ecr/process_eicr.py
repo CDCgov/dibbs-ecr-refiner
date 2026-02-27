@@ -119,7 +119,7 @@ def get_section_loinc_codes(
 
 def process_section(
     section: _Element,
-    combined_xpath: str,
+    codes_to_match: set[str],
     namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
     section_specification: SectionSpecification | None = None,
     version: EicrVersion = "1.1",
@@ -143,7 +143,7 @@ def process_section(
 
     Args:
         section: The XML section element to process.
-        combined_xpath: XPath query from ProcessedCondition codes.
+        codes_to_match: The list of codes to retain for the given eICR.
         namespaces: XML namespaces for XPath evaluation.
         section_specification: Static specification for this section. Contains the
             set of valid trigger code OIDs for the specific eICR version.
@@ -170,7 +170,7 @@ def process_section(
         text_element.clear()
 
     try:
-        if not combined_xpath:
+        if not codes_to_match:
             # no condition codes provided -> create a minimal section and exit
             create_minimal_section(section=section, removal_reason="no_match")
             return
@@ -183,7 +183,7 @@ def process_section(
             # * find all clinical elements matching our condition codes
             # * this is our primary filter; only contextually relevant elements proceed
             contextual_matches = _find_condition_relevant_elements(
-                section, combined_xpath, namespaces
+                section, codes_to_match, namespaces
             )
 
             if not contextual_matches:
@@ -208,7 +208,7 @@ def process_section(
         except etree.XPathEvalError as e:
             raise XMLParsingError(
                 message="Invalid XPath expression",
-                details={"xpath": combined_xpath, "error": str(e)},
+                details={"section_details": section.attrib, "error": str(e)},
             )
     finally:
         # always restore the original code attribute to maintain spec compliance
@@ -217,7 +217,7 @@ def process_section(
 
 
 def _find_condition_relevant_elements(
-    section: _Element, combined_xpath: str, namespaces: NamespaceMap
+    section: _Element, codes_to_match: set[str], namespaces: NamespaceMap
 ) -> list[_Element]:
     """
     STEP 1: Find clinical elements matching SNOMED condition codes.
@@ -227,7 +227,7 @@ def _find_condition_relevant_elements(
 
     Args:
         section: The XML section element to search within
-        combined_xpath: XPath query from ProcessedCondition codes
+        codes_to_match: The list of codes to match for the relevant elements
         namespaces: XML namespaces for XPath evaluation
 
     Returns:
@@ -237,14 +237,44 @@ def _find_condition_relevant_elements(
         XMLParsingError: If XPath evaluation fails
     """
 
-    # handle empty XPath early
-    if not combined_xpath or not combined_xpath.strip():
+    # handle empty code matches early
+    if not codes_to_match:
         return []
 
     try:
-        # find all clinical elements matching our SNOMED condition codes
-        xpath_result = section.xpath(combined_xpath, namespaces=namespaces)
+        codes_to_check = frozenset(codes_to_match)
 
+        # Pattern 1: parent code, translation, and value elements that might have
+        # direct codes
+        candidates_parents = cast(
+            list[_Element],
+            section.xpath(
+                ".//hl7:*[hl7:code/@code or hl7:translation/@code or hl7:value/@code]",
+                namespaces=namespaces,
+            ),
+        )
+
+        # Pattern 2: elements with code, translation, or value children that might
+        # have matching codes
+        candidates_children = cast(
+            list[_Element],
+            section.xpath(
+                ".//*[self::hl7:code or self::hl7:translation or self::hl7:value][@code]",
+                namespaces=namespaces,
+            ),
+        )
+
+        matched_parents = [
+            el
+            for el in candidates_parents
+            if any(child.get("code") in codes_to_check for child in el)
+        ]
+
+        matched_children = [
+            el for el in candidates_children if el.get("code") in codes_to_check
+        ]
+
+        xpath_result = matched_children + matched_parents
         if not isinstance(xpath_result, list):
             return []
 
@@ -256,8 +286,8 @@ def _find_condition_relevant_elements(
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(
-            message="Failed to evaluate XPath for condition-relevant elements",
-            details={"xpath": combined_xpath, "error": str(e)},
+            message="Failed to generate candidate elements for code matching",
+            details={"section_details": section.attrib, "error": str(e)},
         )
 
 
