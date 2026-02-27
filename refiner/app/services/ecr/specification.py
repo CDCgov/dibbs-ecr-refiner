@@ -35,7 +35,7 @@ class RawSectionData(TypedDict):
 
 
 # map of version -> map of loinc -> section data
-type EicrSpecsData = dict[str, dict[str, RawSectionData]]
+type EicrSpecsData = dict[EicrVersion, dict[str, RawSectionData]]
 
 
 # NOTE:
@@ -535,7 +535,7 @@ def detect_eicr_version(xml_root: _Element) -> EicrVersion:
     return "1.1"
 
 
-def load_spec(version: str) -> EICRSpecification:
+def load_spec(version: EicrVersion) -> EICRSpecification:
     """
     Loads the static configuration for a specific eICR version.
 

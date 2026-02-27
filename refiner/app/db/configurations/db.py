@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import TypedDict
 from uuid import UUID
@@ -6,14 +6,17 @@ from uuid import UUID
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
-import app.services.ecr.specification as spec_mod
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
+from app.services.configurations import clone_section_actions, get_default_sections
 
-from ...services.ecr.specification import load_spec
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
-from .model import DbConfiguration, DbConfigurationCustomCode, DbConfigurationStatus
+from .model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+    DbConfigurationStatus,
+)
 
 EMPTY_JSONB = Jsonb([])
 
@@ -68,28 +71,6 @@ async def insert_configuration_db(
         s3_urls
     """
 
-    # use the new specification system in the ecr service
-    # * default to version 1.1 for backward compatibility
-    spec = load_spec("1.1")
-
-    # build loinc->versions dict once per import
-
-    _LOINC_VERSIONS_MAP: dict[str, set[str]] = {}
-    for v, vdata in spec_mod.EICR_SPECS_DATA.items():
-        for loinc in vdata.keys():
-            _LOINC_VERSIONS_MAP.setdefault(loinc, set()).add(v)
-    _LOINC_VERSIONS_FLAT = {k: sorted(v) for k, v in _LOINC_VERSIONS_MAP.items()}
-
-    section_processing_defaults = [
-        {
-            "name": section_spec.display_name,
-            "code": loinc_code,
-            "action": "refine",
-            "versions": _LOINC_VERSIONS_FLAT.get(loinc_code, []),
-        }
-        for loinc_code, section_spec in spec.sections.items()
-    ]
-
     if config_to_clone:
         params = (
             jurisdiction_id,
@@ -113,13 +94,11 @@ async def insert_configuration_db(
             # section_processing
             Jsonb(
                 [
-                    {
-                        "name": c.name,
-                        "code": c.code,
-                        "action": c.action,
-                        "versions": c.versions,
-                    }
-                    for c in config_to_clone.section_processing
+                    asdict(c)
+                    for c in clone_section_actions(
+                        clone_from=config_to_clone.section_processing,
+                        clone_to=get_default_sections(),
+                    )
                 ]
             ),
         )
@@ -137,7 +116,7 @@ async def insert_configuration_db(
             # custom_codes
             EMPTY_JSONB,
             # section_processing
-            Jsonb(section_processing_defaults),
+            Jsonb([asdict(s) for s in get_default_sections()]),
         )
 
     async with db.get_connection() as conn:

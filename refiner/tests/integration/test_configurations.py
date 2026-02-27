@@ -101,7 +101,7 @@ class TestConfigurations:
             activation_file_json = activation_file.json()
 
             TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
-            TOTAL_EXPECTED_SECTION_COUNT = 9
+            TOTAL_EXPECTED_SECTION_COUNT = 19
             TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
                 1  # No other conditions were included
             )
