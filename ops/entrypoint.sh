@@ -34,7 +34,7 @@ shift || true
 case "$COMMAND" in
     migrate)
         echo "Running migrations with args: $*"
-        exec migrate -path ./migrations -database "$DATABASE_URL" "$@"
+        exec dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" "$@"
         ;;
     import)
         echo "Importing condition data"
@@ -46,7 +46,7 @@ case "$COMMAND" in
         ;;
     prepare-db)
         echo "Running migration scripts and updating condition data"
-        migrate -path ./migrations -database "$DATABASE_URL" up
+        dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         exec python3 ./scripts/seeding/load_tes_data.py
         ;;
     *)
