@@ -55,7 +55,7 @@ jobs:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "sarif"
           output: "trivy-${{ matrix.image.name }}-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM"
+          severity: "CRITICAL,HIGH,MEDIUM,LOW"
           ignore-unfixed: true
           timeout: "10m"
 
@@ -65,7 +65,7 @@ jobs:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "json"
           output: "trivy-${{ matrix.image.name }}-results.json"
-          severity: "CRITICAL,HIGH,MEDIUM"
+          severity: "CRITICAL,HIGH,MEDIUM,LOW"
           ignore-unfixed: true
           timeout: "10m"
 
