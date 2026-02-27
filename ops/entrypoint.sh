@@ -47,6 +47,7 @@ case "$COMMAND" in
     prepare-db)
         echo "Running migration scripts and updating condition data"
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
+        echo "Migration step complete"
         exec python3 ./scripts/seeding/load_tes_data.py
         ;;
     *)
