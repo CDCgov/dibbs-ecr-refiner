@@ -1,3 +1,4 @@
+import datetime as dtlib
 import hashlib
 import json
 import os
@@ -7,6 +8,20 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fetch_api_data import run_fetch_pipeline
+
+
+def _convert_datetimes_to_iso(obj):
+    """
+    Recursively convert all datetime objects to ISO strings.
+    """
+    if isinstance(obj, dict):
+        return {k: _convert_datetimes_to_iso(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_convert_datetimes_to_iso(i) for i in obj]
+    if isinstance(obj, datetime | dtlib.datetime):
+        return obj.isoformat()
+    return obj
+
 
 # configuration
 load_dotenv()
@@ -23,6 +38,7 @@ MANIFEST_PATH = TES_DATA_DIR / "manifest.json"
 
 API_KEY = os.getenv("TES_API_KEY")
 API_SLEEP_INTERVAL = float(os.getenv("API_SLEEP_INTERVAL", "1.0"))
+TES_VALIDATE = os.getenv("TES_VALIDATE", "true").lower() in ("1", "true", "yes")
 
 
 def calculate_sha256(filepath: Path) -> str:
@@ -51,6 +67,54 @@ def calculate_sha256(filepath: Path) -> str:
         while chunk := file.read(8192):
             sha256.update(chunk)
     return sha256.hexdigest()
+
+
+def _validate_valuesets_file(filepath: Path) -> tuple[int, int]:
+    """
+    Validate each resource in a staged valueset file using fhir.resources.ValueSet.
+
+    Overwrites the file with only the validated ValueSet dicts.
+
+    Returns (valid_count, invalid_count).
+    """
+    # lazy import so this script can still run if not validating
+    try:
+        from fhir.resources.valueset import ValueSet
+    except Exception as e:
+        raise ImportError(
+            "fhir.resources is required for TES validation. Install it (pip install fhir.resources)."
+        ) from e
+
+    with open(filepath, encoding="utf-8") as fh:
+        data = json.load(fh)
+
+    valuesets = data.get("valuesets", []) or []
+    valid_vs: list[dict] = []
+    invalid_count = 0
+
+    for idx, vs in enumerate(valuesets, start=1):
+        try:
+            # support pydantic v2 and v1 usage in fhir.resources
+            if hasattr(ValueSet, "model_validate"):
+                validated = ValueSet.model_validate(vs)
+                vs_dict = validated.model_dump()
+            else:
+                validated = ValueSet.parse_obj(vs)
+                vs_dict = validated.dict()
+            valid_vs.append(_convert_datetimes_to_iso(vs_dict))
+        except Exception as e:
+            invalid_count += 1
+            print(
+                f"    ⚠️  Validation failed for resource #{idx} in {filepath.name}: {e}"
+            )
+
+    # rewrite file with validated valuesets (preserve metadata)
+    data["valuesets"] = valid_vs
+    with open(filepath, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, indent=2)
+        fh.write("\n")
+
+    return len(valid_vs), invalid_count
 
 
 def main() -> None:
@@ -102,13 +166,54 @@ def main() -> None:
         return
 
     print("🧐 Analyzing new files and generating new manifest...")
-    new_manifest_files = {
-        json_file.name: {
-            "hash": calculate_sha256(json_file),
-            "record_count": record_counts.get(json_file.name.replace(".json", ""), 0),
+
+    # Validate staged files (optional toggle)
+    validated_summary: dict[str, dict] = {}
+    for json_file in list(new_files_in_staging):
+        if TES_VALIDATE:
+            print(f"🔬 Validating staged file: {json_file.name}")
+            try:
+                valid_count, invalid_count = _validate_valuesets_file(json_file)
+            except ImportError as ie:
+                print(f"❌ Validation failed (missing dependency): {ie}")
+                raise
+            except Exception:
+                print(
+                    f"❌ Unexpected error validating {json_file.name}. See traceback."
+                )
+                raise
+
+            if valid_count == 0:
+                # nothing valid — remove staged file to avoid polluting data dir
+                json_file.unlink()
+                print(
+                    f"    ❌ {json_file.name} contained 0 valid valuesets; removed from staging."
+                )
+                continue
+
+            validated_summary[json_file.name] = {
+                "valid": valid_count,
+                "invalid": invalid_count,
+            }
+        else:
+            # validation disabled — trust counts from fetch pipeline
+            validated_summary[json_file.name] = {
+                "valid": record_counts.get(json_file.name.replace(".json", ""), 0),
+                "invalid": 0,
+            }
+
+    # recompute list of staged files (some may have been removed)
+    new_files_in_staging = list(TES_DATA_STAGING_DIR.glob("*.json"))
+
+    new_manifest_files = {}
+    for json_file in new_files_in_staging:
+        # compute hash of the (possibly rewritten) file
+        file_hash = calculate_sha256(json_file)
+        rec_count = validated_summary.get(json_file.name, {}).get("valid", 0)
+        new_manifest_files[json_file.name] = {
+            "hash": file_hash,
+            "record_count": rec_count,
         }
-        for json_file in new_files_in_staging
-    }
 
     # 4: compare using set operations for clarity
     old_filenames = set(old_manifest.get("files", {}).keys())
