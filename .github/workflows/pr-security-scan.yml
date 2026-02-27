@@ -17,6 +17,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  TRIVY_SEVERITY: "CRITICAL,HIGH,MEDIUM,LOW"
+
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
@@ -55,7 +58,7 @@ jobs:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "sarif"
           output: "trivy-${{ matrix.image.name }}-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM,LOW"
+          severity: ${{ env.TRIVY_SEVERITY }}
           ignore-unfixed: true
           timeout: "10m"
 
@@ -65,7 +68,7 @@ jobs:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "json"
           output: "trivy-${{ matrix.image.name }}-results.json"
-          severity: "CRITICAL,HIGH,MEDIUM,LOW"
+          severity: ${{ env.TRIVY_SEVERITY }}
           ignore-unfixed: true
           timeout: "10m"
 

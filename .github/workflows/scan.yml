@@ -10,12 +10,13 @@ on:
       severity_level:
         description: "Vulnerability severity threshold"
         required: false
-        default: "CRITICAL,HIGH"
+        default: "CRITICAL,HIGH,MEDIUM,LOW"
         type: choice
         options:
-          - "CRITICAL"
-          - "CRITICAL,HIGH"
+          - "CRITICAL,HIGH,MEDIUM,LOW"
           - "CRITICAL,HIGH,MEDIUM"
+          - "CRITICAL,HIGH"
+          - "CRITICAL"
       send_slack_notification:
         description: "Send Slack notification"
         required: false
