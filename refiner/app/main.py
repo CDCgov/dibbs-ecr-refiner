@@ -30,16 +30,6 @@ from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
 
-# Define a set of text-based media types that commonly use charset
-TEXT_TYPES = {
-    "text/html",
-    "text/css",
-    "text/javascript",
-    "text/plain",
-    "application/json",
-    "application/xml",
-}
-
 
 class CharsetStaticFiles(StaticFiles):
     """
@@ -55,8 +45,7 @@ class CharsetStaticFiles(StaticFiles):
         response = await super().get_response(path, scope)
         content_type = response.headers.get("content-type", "")
 
-        # Check if the content type is text-based and lacks a charset
-        if content_type.split(";")[0] in TEXT_TYPES and "charset" not in content_type:
+        if content_type and "charset" not in content_type:
             response.headers["content-type"] = f"{content_type}; charset=utf-8"
 
         return response
@@ -168,7 +157,7 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
     app.mount(
         "/dist/assets",
         CharsetStaticFiles(
-            directory="dist/assets", html=True, check_dir=ENVIRONMENT["ENV"] == "prod"
+            directory="dist/assets", html=True, check_dir=ENVIRONMENT["ENV"] != "local"
         ),
         name="assets",
     )
@@ -268,22 +257,17 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=63072000; includeSubDomains"
             )
-            # SecureAttribute
-            response.set_cookie(
-                key="session_secure_value",
-                value=get_session_secret_key(),
-                secure=True,
-                samesite="lax",
-            )
+
             # BrowserCacheCheck, BrowserCacheInfoCheck
-            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
+            if request.url.path.startswith("/api"):
+                response.headers["Cache-Control"] = (
+                    "no-cache, no-store, must-revalidate"
+                )
 
             # X-Content-Type-Options
             response.headers["X-Content-Type-Options"] = "nosniff"
             response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none';"
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; img-src 'self' data:;"
             )
 
         return response
