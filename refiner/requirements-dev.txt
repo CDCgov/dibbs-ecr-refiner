@@ -1,4 +1,4 @@
-fhir.resources
+fhir.resources==8.2.0
 httpx
 pre-commit
 pytest

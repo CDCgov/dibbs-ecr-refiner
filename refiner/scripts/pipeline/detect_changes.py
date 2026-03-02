@@ -94,13 +94,8 @@ def _validate_valuesets_file(filepath: Path) -> tuple[int, int]:
 
     for idx, vs in enumerate(valuesets, start=1):
         try:
-            # support pydantic v2 and v1 usage in fhir.resources
-            if hasattr(ValueSet, "model_validate"):
-                validated = ValueSet.model_validate(vs)
-                vs_dict = validated.model_dump()
-            else:
-                validated = ValueSet.parse_obj(vs)
-                vs_dict = validated.dict()
+            validated = ValueSet.model_validate(vs)
+            vs_dict = validated.model_dump()
             valid_vs.append(_convert_datetimes_to_iso(vs_dict))
         except Exception as e:
             invalid_count += 1
