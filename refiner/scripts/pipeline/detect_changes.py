@@ -194,12 +194,14 @@ def main() -> None:
             validated_summary[json_file.name] = {
                 "valid": valid_count,
                 "invalid": invalid_count,
+                "validation_ran": True,
             }
         else:
-            # validation disabled — trust counts from fetch pipeline
+            # skipped validation — trust pipeline counts
             validated_summary[json_file.name] = {
                 "valid": record_counts.get(json_file.name.replace(".json", ""), 0),
                 "invalid": 0,
+                "validation_ran": False,
             }
 
     # recompute list of staged files (some may have been removed)
@@ -210,9 +212,15 @@ def main() -> None:
         # compute hash of the (possibly rewritten) file
         file_hash = calculate_sha256(json_file)
         rec_count = validated_summary.get(json_file.name, {}).get("valid", 0)
+        err_count = validated_summary.get(json_file.name, {}).get("invalid", 0)
+        validation_ran = validated_summary.get(json_file.name, {}).get(
+            "validation_ran", False
+        )
         new_manifest_files[json_file.name] = {
             "hash": file_hash,
             "record_count": rec_count,
+            "error_count": err_count,
+            "validation_ran": validation_ran,
         }
 
     # 4: compare using set operations for clarity
