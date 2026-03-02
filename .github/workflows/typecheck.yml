@@ -2,17 +2,10 @@ name: Run type checking
 
 on:
   workflow_call:
-    inputs:
-      python_runner_version:
-        default: 3.13
-        required: true
-        type: number
   workflow_dispatch:
-    inputs:
-      python_runner_version:
-        default: 3.13
-        required: true
-        type: number
+
+env:
+  PYTHON_RUNNER_VERSION: "3.14"
 
 permissions:
   contents: read
@@ -27,10 +20,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Setup python ${{inputs.python_runner_version}}
+      - name: Setup python ${{env.PYTHON_RUNNER_VERSION}}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{inputs.python_runner_version}}
+          python-version: ${{env.PYTHON_RUNNER_VERSION}}
           cache: pip
       - name: Install dependencies
         run: |

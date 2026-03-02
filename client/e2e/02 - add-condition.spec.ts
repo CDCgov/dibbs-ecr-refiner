@@ -97,6 +97,26 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// Test that section modification works as expected
     /// ==========================================================================
     await page.getByRole('button', { name: 'Sections' }).click();
+
+    const latestSpecRowCount = 19; // spec: 3.1.1
+    await expect(page.locator('table tbody tr')).toHaveCount(
+      latestSpecRowCount
+    );
+
+    // Check that a couple of expected options are visible
+    await expect(
+      page.getByRole('cell', {
+        name: 'Reason for visit section Versions 1.1, 3.1, and 3.1.1',
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', {
+        name: 'Medications section Versions 3.1 and 3.1.1',
+        exact: true,
+      })
+    ).toBeVisible();
+
     await expect(
       page.getByLabel('Include and refine section Encounters Section')
     ).toBeChecked();

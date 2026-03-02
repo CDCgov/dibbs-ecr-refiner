@@ -1,8 +1,8 @@
-boto3==1.42.54
-Authlib==1.6.8
+boto3==1.42.59
+Authlib==1.6.9
 chardet
 fastapi==0.129.0
-fhir.resources==8.2.0
+fhir.resources
 httpx
 itsdangerous
 lxml
