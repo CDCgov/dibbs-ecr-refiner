@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.1",
     "@tanstack/eslint-plugin-query": "^5.91.4",
     "@testing-library/jest-dom": "^6.9.1",
