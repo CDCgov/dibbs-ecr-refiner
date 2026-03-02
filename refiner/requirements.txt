@@ -1,7 +1,7 @@
 boto3==1.42.54
-Authlib==1.6.8
+Authlib==1.6.9
 chardet
-fastapi==0.129.0
+fastapi==0.135.1
 fhir.resources
 httpx
 itsdangerous
