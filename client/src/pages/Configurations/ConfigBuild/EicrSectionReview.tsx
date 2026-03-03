@@ -29,23 +29,23 @@ export function EicrSectionReview({
   return (
     <table className="w-full">
       <thead>
-        <tr>
-          <th scope="col" className="w-1/3">
+        <tr className="border-gray-cool-20 border-b">
+          <th scope="col" className="w-1/6 pb-3">
             Include
           </th>
-          <th scope="col" className="w-1/3">
+          <th scope="col" className="w-3/6 pb-3 text-left">
             Section name
           </th>
-          <th scope="col" className="w-1/3">
+          <th scope="col" className="w-1/3 pb-3">
             Data handling approach
           </th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className="divide-gray-cool-20 divide-y">
         {sectionProcessing.map((section) => (
           <tr key={section.code}>
             <td>
-              <div className="flex justify-center">
+              <div className="flex justify-center p-8">
                 <IncludeCheckbox
                   configurationId={configurationId}
                   currentSection={section}
@@ -54,20 +54,28 @@ export function EicrSectionReview({
                 />
               </div>
             </td>
-            <td className="px-3 py-2">
-              <div>
-                <span>{castToSentenceCase(section.name)}</span>
-              </div>
+            <td className="px-3 py-3">
+              {section.include ? (
+                <span className="font-bold">
+                  {castToSentenceCase(section.name)}
+                </span>
+              ) : (
+                <span className="text-gray-cool-70 italic">
+                  {castToSentenceCase(section.name)}
+                </span>
+              )}
             </td>
             <td className="px-3 py-2">
-              <div className="flex justify-center">
-                <RefineSwitch
-                  configurationId={configurationId}
-                  currentSection={section}
-                  sections={sectionProcessing}
-                  disabled={disabled}
-                />
-              </div>
+              {section.include ? (
+                <div className="flex justify-center">
+                  <RefineSwitch
+                    configurationId={configurationId}
+                    currentSection={section}
+                    sections={sectionProcessing}
+                    disabled={disabled}
+                  />
+                </div>
+              ) : null}
             </td>
           </tr>
         ))}
