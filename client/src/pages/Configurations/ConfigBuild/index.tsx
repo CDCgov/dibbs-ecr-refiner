@@ -1157,7 +1157,7 @@ export const ImportCustomCodes = ({
 
       onSuccess?.();
     } catch (e: unknown) {
-      let message = "Failed to upload CSV. Please try again.";
+      let message = 'Failed to upload CSV. Please try again.';
 
       if (e instanceof Error) {
         message = e.message;
@@ -1168,22 +1168,22 @@ export const ImportCustomCodes = ({
         const parsed = JSON.parse(message) as unknown;
 
         if (
-            typeof parsed === "object" &&
-            parsed !== null &&
-            "detail" in parsed
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          'detail' in parsed
         ) {
           const detail = (parsed as { detail: unknown }).detail;
 
-          if (typeof detail === "string") {
+          if (typeof detail === 'string') {
             message = detail;
           } else if (Array.isArray(detail)) {
             message = detail
-                .map((d) =>
-                    typeof d === "object" && d !== null && "msg" in d
-                        ? String((d as { msg?: unknown }).msg)
-                        : JSON.stringify(d)
-                )
-                .join(", ");
+              .map((d) =>
+                typeof d === 'object' && d !== null && 'msg' in d
+                  ? String((d as { msg?: unknown }).msg)
+                  : JSON.stringify(d)
+              )
+              .join(', ');
           }
         }
       } catch {

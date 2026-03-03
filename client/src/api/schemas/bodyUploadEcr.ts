@@ -7,5 +7,5 @@
  */
 
 export interface BodyUploadEcr {
-  uploaded_file?: Blob | null;
+  uploaded_file?: string | null;
 }
