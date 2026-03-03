@@ -129,7 +129,7 @@ test.describe('should be able to access independent testing', () => {
       page.getByRole('heading', { name: 'Configurations' })
     ).toBeVisible();
 
-    // configure influenza
+    // configure and activate influenza
     await createNewConfiguration('Influenza', page);
     await page.getByRole('link', { name: 'Activate' }).click();
     await page.getByRole('button', { name: 'Turn on configuration' }).click();
