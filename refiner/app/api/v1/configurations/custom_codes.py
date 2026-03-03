@@ -248,16 +248,21 @@ async def upload_custom_codes_csv(
     for row_number, row in enumerate(csv_reader, start=2):
         try:
             code = (row.get("code_number") or "").strip()
-            code_system = (row.get("code_system") or "").strip()
+            code_system_raw = (row.get("code_system") or "").strip()
+            sanitized_system_name = _get_sanitized_system_name(code_system_raw)
             name = (row.get("display_name") or "").strip()
 
-            if not code or not code_system:
-                raise ValueError("Missing required values.")
+            allowed_systems = ["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+            if sanitized_system_name not in allowed_systems:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"System must be one of {allowed_systems}. Got: {sanitized_system_name}",
+                )
 
             custom_codes.append(
                 DbConfigurationCustomCode(
                     code=code,
-                    system=code_system,
+                    system=_get_literal_system(sanitized_system_name),  # ✅ mypy-safe
                     name=name,
                 )
             )
