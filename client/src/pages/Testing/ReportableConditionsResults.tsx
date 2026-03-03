@@ -51,18 +51,12 @@ export function ReportableConditionsResults({
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
-          {hasMissingConditions ? (
-            <>
-              <hr className="border-gray-cool-20" />
-              <MissingConditions missingConditions={unmatchedConditions} />
-            </>
-          ) : null}
-          {hasInactiveConditions ? (
-            <>
-              <hr className="border-gray-cool-20" />
-              <InactiveConditions inactiveConditions={inactiveConditions} />
-            </>
-          ) : null}
+          <hr className="border-gray-cool-20" />
+
+          <ConditionWarnings
+            missingConditions={unmatchedConditions}
+            inactiveConditions={inactiveConditions}
+          />
         </ConditionsContainer>
         <div className="flex flex-col gap-4 md:w-full">
           <p>Would you like to refine the eCR?</p>
@@ -82,12 +76,14 @@ export function ReportableConditionsResults({
     );
   }
 
-  // Display only missing conditions
+  // Display only condition warnings
   return (
-    <Container className="max-w-[47rem]">
+    <Container className="max-w-188">
       <ConditionsContainer>
-        <InactiveConditions inactiveConditions={inactiveConditions} />
-        <MissingConditions missingConditions={unmatchedConditions} />
+        <ConditionWarnings
+          missingConditions={unmatchedConditions}
+          inactiveConditions={inactiveConditions}
+        />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
         <p>
@@ -142,10 +138,37 @@ function FoundConditions({ foundConditions }: FoundConditionsProps) {
   );
 }
 
+interface ConditionWarningsProps {
+  missingConditions: string[];
+  inactiveConditions: string[];
+}
+function ConditionWarnings({
+  missingConditions,
+  inactiveConditions,
+}: ConditionWarningsProps) {
+  const hasMissingConditions = missingConditions.length > 0;
+  const hasInactiveConditions = inactiveConditions.length > 0;
+  return (
+    <>
+      {hasMissingConditions ? (
+        <>
+          <MissingConditions missingConditions={missingConditions} />
+        </>
+      ) : null}
+      {hasMissingConditions && hasInactiveConditions ? (
+        <hr className="border-gray-cool-20" />
+      ) : null}
+      {hasInactiveConditions ? (
+        <>
+          <InactiveConditions inactiveConditions={inactiveConditions} />
+        </>
+      ) : null}
+    </>
+  );
+}
 interface MissingConditionsProps {
   missingConditions: string[];
 }
-
 function MissingConditions({ missingConditions }: MissingConditionsProps) {
   return (
     <div className="flex flex-col gap-4">
