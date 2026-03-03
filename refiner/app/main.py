@@ -17,7 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from psycopg.rows import dict_row
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.types import Lifespan
+from starlette.types import Lifespan, Scope
 
 from .api.auth.config import get_session_secret_key
 from .api.auth.handlers import auth_router
@@ -29,6 +29,26 @@ from .core.app.openapi import create_custom_openapi
 from .core.config import ENVIRONMENT
 from .db.pool import AsyncDatabaseConnection, get_db
 from .services.logger import get_logger, set_request_id
+
+
+class CharsetStaticFiles(StaticFiles):
+    """
+    Custom class to fill in charset information for Static Files.
+
+    Created to mitigate an issue that got flagged during the DAST scan from APHL.
+    """
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        """
+        Method that checks and adds charset information if it doesn't exist.
+        """
+        response = await super().get_response(path, scope)
+        content_type = response.headers.get("content-type", "")
+
+        if content_type and "charset" not in content_type:
+            response.headers["content-type"] = f"{content_type}; charset=utf-8"
+
+        return response
 
 
 def create_lifespan(
@@ -132,10 +152,12 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
 
     # include the router in the app
     app.include_router(router)
+    # Use custom CharsetStaticFiles class to fill in charset information
+    # in the Content-Type HTTP header for HTTPHeaders (Charset / Content-Type Issues)
     app.mount(
         "/dist/assets",
-        StaticFiles(
-            directory="dist/assets", html=True, check_dir=ENVIRONMENT["ENV"] == "prod"
+        CharsetStaticFiles(
+            directory="dist/assets", html=True, check_dir=ENVIRONMENT["ENV"] != "local"
         ),
         name="assets",
     )
@@ -222,6 +244,32 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
                 "duration_ms": round(duration_ms, 2),
             },
         )
+        return response
+
+    @app.middleware("http")
+    async def add_security_response_headers(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response: Response = await call_next(request)
+
+        if ENVIRONMENT["ENV"] != "local":
+            # HSTS Policy
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=63072000; includeSubDomains"
+            )
+
+            # BrowserCacheCheck, BrowserCacheInfoCheck
+            if request.url.path.startswith("/api"):
+                response.headers["Cache-Control"] = (
+                    "no-cache, no-store, must-revalidate"
+                )
+
+            # X-Content-Type-Options
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; img-src 'self' data:;"
+            )
+
         return response
 
     return app
