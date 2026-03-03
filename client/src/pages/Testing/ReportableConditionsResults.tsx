@@ -20,7 +20,6 @@ export function ReportableConditionsResults({
   const hasFoundConditions = matchedConditions.length > 0;
   const hasMissingConditions = unmatchedConditions.length > 0;
   const hasInactiveConditions = inactiveConditions.length > 0;
-  console.log(hasInactiveConditions);
 
   // TODO: This is placeholder design and copy.
   // No conditions to display.
