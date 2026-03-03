@@ -592,7 +592,6 @@ async def add_bulk_custom_codes_to_configuration_db(
             condition_id,
             included_conditions,
             custom_codes,
-            local_codes,
             section_processing,
             version,
             last_activated_at,
