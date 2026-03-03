@@ -66,16 +66,15 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
         )
 
 
-def _get_sanitized_system_name(system: str):
-    lower_system = system.lower()
-    if system in ["loinc", "snomed"]:
-        return system.upper()
-    elif lower_system == "icd-10":
+def _get_sanitized_system_name(system: str) -> str:
+    lower_system = system.strip().lower()
+
+    if lower_system in ("loinc", "snomed"):
+        return lower_system.upper()
+    if lower_system == "icd-10":
         return "ICD-10"
-    elif lower_system == "rxnorm":
+    if lower_system == "rxnorm":
         return "RxNorm"
-    elif lower_system == "other":
-        return "Other"
 
     raise Exception(f"System name provided: {system} is invalid.")
 
@@ -249,27 +248,27 @@ async def upload_custom_codes_csv(
         try:
             code = (row.get("code_number") or "").strip()
             code_system_raw = (row.get("code_system") or "").strip()
-            sanitized_system_name = _get_sanitized_system_name(code_system_raw)
             name = (row.get("display_name") or "").strip()
 
-            allowed_systems = ["LOINC", "SNOMED", "ICD-10", "RxNorm"]
-            if sanitized_system_name not in allowed_systems:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"System must be one of {allowed_systems}. Got: {sanitized_system_name}",
-                )
+            if not code or not code_system_raw:
+                raise ValueError("Missing required values.")
+
+            sanitized_system_name = _get_sanitized_system_name(code_system_raw)
+            system_literal = _get_literal_system(sanitized_system_name)
 
             custom_codes.append(
                 DbConfigurationCustomCode(
                     code=code,
-                    system=_get_literal_system(sanitized_system_name),  # ✅ mypy-safe
+                    system=system_literal,
                     name=name,
                 )
             )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(
                 "Invalid CSV row",
-                extra={"row_number": row_number, "error": str(e)},
+                extra={"row_number": row_number, "error": str(e), "row": row},
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

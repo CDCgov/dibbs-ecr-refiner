@@ -1104,6 +1104,7 @@ export const ImportCustomCodes = ({
   disabled = false,
   onSuccess,
 }: ImportCustomCodesProps) => {
+  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const showToast = useToast();
 
@@ -1145,8 +1146,12 @@ export const ImportCustomCodes = ({
         },
       },
       {
-        onSuccess: (res: any) => {
+        onSuccess: async (res: any) => {
           const payload = res?.data ?? res;
+
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
 
           showToast({
             heading: 'CSV successfully imported',
