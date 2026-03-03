@@ -1,3 +1,0 @@
--- cannot drop enum values safely in PG. doc: https://www.postgresql.org/docs/12/sql-altertype.html
--- workaround: create new enum type, migrate data, drop/recreate event_type_enum. prefer manual. safe drop not supported for enum values.
--- migration does nothing.
