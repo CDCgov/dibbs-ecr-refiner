@@ -58,7 +58,7 @@ class EICRRefinementPlan:
     in the eICR document after an initial scan.
     """
 
-    xpath: str
+    codes_to_check: set[str]
     section_instructions: dict[str, Literal["retain", "refine", "remove"]]
 
 

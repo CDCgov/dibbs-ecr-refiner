@@ -30,19 +30,6 @@ class DbConfigurationCustomCode:
 
 
 @dataclass(frozen=True)
-class DbConfigurationLocalCode:
-    """
-    Local code associated with a Configuration.
-
-    Similar to CustomCode but allows for nonstandard code systems and local codes.
-    """
-
-    code: str
-    system: str
-    name: str
-
-
-@dataclass(frozen=True)
 class DbConfigurationSectionProcessing:
     """
     Section Processing instructions for a Configuration.
@@ -85,7 +72,6 @@ class DbConfiguration:
     condition_id: UUID
     included_conditions: list[DbConfigurationCondition]
     custom_codes: list[DbConfigurationCustomCode]
-    local_codes: list[DbConfigurationLocalCode]
     section_processing: list[DbConfigurationSectionProcessing]
     version: int
     last_activated_at: datetime | None
@@ -117,7 +103,6 @@ class DbConfiguration:
                 for cond in row.get("included_conditions", []) or []
             ],
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
-            local_codes=[DbConfigurationLocalCode(**lc) for lc in row["local_codes"]],
             section_processing=[
                 DbConfigurationSectionProcessing(
                     name=sp.get("name"),

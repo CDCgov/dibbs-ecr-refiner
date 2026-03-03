@@ -1,6 +1,6 @@
 # pre-commit configuration
 default_language_version:
-    python: python3.13
+    python: python3.14
 
 repos:
 # core formatting and check hooks

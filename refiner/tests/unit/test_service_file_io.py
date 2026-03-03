@@ -231,7 +231,6 @@ def test_get_asset_path_empty():
     assert isinstance(path, Path)
 
 
-@pytest.mark.integration
 def test_zip_contains_only_xml_when_html_fails() -> None:
     """
     Integration test: ZIP contains only XML if HTML transformation fails for a condition.
