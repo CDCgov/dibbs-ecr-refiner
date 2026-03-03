@@ -38,6 +38,7 @@ import {
   DbConfigurationCustomCode,
   DbConfigurationCustomCodeSystem,
   GetConfigurationResponse,
+  UploadCustomCodesResponse,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
@@ -1133,21 +1134,19 @@ export const ImportCustomCodes = ({
     setError(null);
     setIsUploading(true);
 
-    // ✅ New endpoint expects JSON body, not FormData
     const csvText = await file.text();
 
     uploadCsvMutation(
       {
         configurationId,
-        // Orval usually names this `data` for the request body.
         data: {
           csv_text: csvText,
           filename: file.name,
         },
       },
       {
-        onSuccess: async (res: any) => {
-          const payload = res?.data ?? res;
+        onSuccess: async (res) => {
+          const payload = res.data;
 
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
@@ -1157,8 +1156,6 @@ export const ImportCustomCodes = ({
             heading: 'CSV successfully imported',
             body: `${payload.codes_processed} codes.`,
           });
-
-          if (fileInputRef.current) fileInputRef.current.value = '';
 
           onSuccess?.();
         },
