@@ -38,7 +38,6 @@ import {
   DbConfigurationCustomCode,
   DbConfigurationCustomCodeSystem,
   GetConfigurationResponse,
-  UploadCustomCodesResponse,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';

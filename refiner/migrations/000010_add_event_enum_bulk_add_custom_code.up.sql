@@ -1,1 +1,0 @@
-ALTER TYPE event_type_enum ADD VALUE 'bulk_add_custom_code';

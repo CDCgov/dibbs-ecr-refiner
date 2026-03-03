@@ -15,7 +15,8 @@ CREATE TYPE event_type_enum AS ENUM (
     'section_update',
     'lock_acquire',
     'lock_release',
-    'lock_renew'
+    'lock_renew',
+    'bulk_add_custom_code'
 );
 
 CREATE FUNCTION configurations_set_condition_canonical_url_on_insert() RETURNS trigger
