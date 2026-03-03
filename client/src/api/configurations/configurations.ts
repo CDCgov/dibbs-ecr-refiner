@@ -867,7 +867,7 @@ export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidation
       return useMutation(getRunInlineConfigurationTestMutationOptions(options), queryClient);
     }
     /**
- * Update one or more section_processing entries for a configuration.
+ * Update a section entry for a configuration.
 
 Args:
     configuration_id (UUID): ID of the configuration to update

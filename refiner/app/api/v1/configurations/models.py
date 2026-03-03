@@ -4,14 +4,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, field_validator
 
-from app.db.configurations.db import (
-    DbTotalConditionCodeCount,
-    GetConfigurationResponseVersion,
-)
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
+    DbSectionAction,
+    DbTotalConditionCodeCount,
+    GetConfigurationResponseVersion,
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
@@ -172,7 +171,8 @@ class UpdateSectionProcessingEntry(BaseModel):
     """
 
     code: str
-    action: Literal["retain", "refine", "remove"]
+    include: bool
+    action: DbSectionAction
 
 
 class UpdateSectionProcessingPayload(BaseModel):
@@ -180,7 +180,7 @@ class UpdateSectionProcessingPayload(BaseModel):
     Payload for updating section processing entries.
     """
 
-    sections: list[UpdateSectionProcessingEntry]
+    section: UpdateSectionProcessingEntry
 
 
 @dataclass(frozen=True)

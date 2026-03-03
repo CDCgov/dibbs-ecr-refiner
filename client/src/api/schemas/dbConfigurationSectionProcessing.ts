@@ -5,10 +5,13 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { DbSectionAction } from './dbSectionAction';
 
 export interface DbConfigurationSectionProcessing {
   name: string;
   code: string;
-  action: string;
+  include: boolean;
+  narrative: boolean;
+  action: DbSectionAction;
   versions: string[];
 }

@@ -41,6 +41,8 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
+            narrative=False,
+            include=True,
             action="refine",
             versions=loinc_versions_flat.get(loinc_code, []),
         )

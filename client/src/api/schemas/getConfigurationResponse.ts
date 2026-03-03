@@ -7,8 +7,8 @@
  */
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 import type { DbConfigurationSectionProcessing } from './dbConfigurationSectionProcessing';
+import type { DbConfigurationStatus } from './dbConfigurationStatus';
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
-import type { GetConfigurationResponseStatus } from './getConfigurationResponseStatus';
 import type { GetConfigurationResponseVersion } from './getConfigurationResponseVersion';
 import type { IncludedCondition } from './includedCondition';
 import type { LockedByUser } from './lockedByUser';
@@ -20,7 +20,7 @@ export interface GetConfigurationResponse {
   condition_id: string;
   condition_canonical_url: string;
   display_name: string;
-  status: GetConfigurationResponseStatus;
+  status: DbConfigurationStatus;
   code_sets: DbTotalConditionCodeCount[];
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];

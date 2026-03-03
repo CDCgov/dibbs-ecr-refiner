@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import { EicrSectionReview } from './EicrSectionReview';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
+import { DbSectionAction } from '../../../api/schemas';
 
 const mockMutate = vi.fn();
 const mockShowToast = vi.fn();
@@ -41,12 +42,28 @@ describe('EicrSectionReview accessibility & behavior', () => {
   it('shows correct versions text for each section row', () => {
     const configurationId = 'conf-test';
     const sampleSections = [
-      { name: 'A', code: 'A01', action: 'refine', versions: ['1.0'] },
-      { name: 'B', code: 'B01', action: 'refine', versions: ['1.0', '2.0'] },
+      {
+        name: 'A',
+        code: 'A01',
+        narrative: false,
+        include: true,
+        action: DbSectionAction.refine,
+        versions: ['1.0'],
+      },
+      {
+        name: 'B',
+        code: 'B01',
+        narrative: false,
+        include: true,
+        action: DbSectionAction.refine,
+        versions: ['1.0', '2.0'],
+      },
       {
         name: 'C',
         code: 'C01',
-        action: 'refine',
+        narrative: false,
+        include: true,
+        action: DbSectionAction.refine,
         versions: ['1.0', '2.0', '3.0'],
       },
     ];
@@ -67,7 +84,14 @@ describe('EicrSectionReview accessibility & behavior', () => {
   it('optimistically updates UI and calls mutate on radio activation via cell click', async () => {
     const configurationId = 'config-1';
     const sections: DbConfigurationSectionProcessing[] = [
-      { name: 'Section X', code: 'X01', action: 'refine', versions: ['1.1'] },
+      {
+        name: 'Section X',
+        code: 'X01',
+        include: true,
+        narrative: false,
+        action: 'refine',
+        versions: ['1.1'],
+      },
     ];
 
     renderWithClient(
@@ -97,7 +121,14 @@ describe('EicrSectionReview accessibility & behavior', () => {
   it('reverts optimistic UI and shows toast on API error', async () => {
     const configurationId = 'config-3';
     const sections = [
-      { name: 'Section Z', code: 'Z01', action: 'refine', versions: ['1.1'] },
+      {
+        name: 'Section Z',
+        code: 'Z01',
+        include: true,
+        narrative: false,
+        action: DbSectionAction.refine,
+        versions: ['1.1'],
+      },
     ];
 
     mockMutate.mockImplementation((_payload: any, options: any) => {

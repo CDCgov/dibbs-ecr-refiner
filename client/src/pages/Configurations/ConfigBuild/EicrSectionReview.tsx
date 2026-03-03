@@ -1,39 +1,18 @@
-import { useState } from 'react';
-import { Table } from '../../../components/Table';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
+import { useToast } from '../../../hooks/useToast';
+import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { Switch, Checkbox } from '@headlessui/react';
+import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
   useUpdateConfigurationSectionProcessing,
 } from '../../../api/configurations/configurations';
-import { useToast } from '../../../hooks/useToast';
-import { UpdateSectionProcessingEntryAction } from '../../../api/schemas';
-import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { RadioCell } from '../../../components/Button/RadioCell';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
   disabled: boolean;
-}
-
-/**
- * VersionsList displays the versions in a grammatical list.
- */
-function VersionsList({ versions }: { versions: string[] }) {
-  if (versions.length === 1) return <span>Version {versions[0]}</span>;
-  if (versions.length === 2)
-    return (
-      <span>
-        Versions {versions[0]} and {versions[1]}
-      </span>
-    );
-  return (
-    <span>
-      Versions {versions.slice(0, -1).join(', ')}, and{' '}
-      {versions[versions.length - 1]}
-    </span>
-  );
 }
 
 /**
@@ -47,176 +26,185 @@ export function EicrSectionReview({
   sectionProcessing,
   disabled,
 }: EicrSectionReviewProps) {
-  // Store selected action for each section in state
-  const [selectedActions, setSelectedActions] = useState<string[]>(
-    sectionProcessing.map((section) => section.action ?? 'retain')
+  return (
+    <table className="w-full">
+      <thead>
+        <tr>
+          <th scope="col" className="w-1/3">
+            Include
+          </th>
+          <th scope="col" className="w-1/3">
+            Section name
+          </th>
+          <th scope="col" className="w-1/3">
+            Data handling approach
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {sectionProcessing.map((section) => (
+          <tr key={section.code}>
+            <td>
+              <div className="flex justify-center">
+                <IncludeCheckbox
+                  configurationId={configurationId}
+                  currentSection={section}
+                  sections={sectionProcessing}
+                  disabled={disabled}
+                />
+              </div>
+            </td>
+            <td className="px-3 py-2">
+              <div>
+                <span>{castToSentenceCase(section.name)}</span>
+              </div>
+            </td>
+            <td className="px-3 py-2">
+              <div className="flex justify-center">
+                <RefineSwitch
+                  configurationId={configurationId}
+                  currentSection={section}
+                  sections={sectionProcessing}
+                  disabled={disabled}
+                />
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
+}
 
-  const showToast = useToast();
-  const formatError = useApiErrorFormatter();
+interface RefineSwitchProps {
+  configurationId: string;
+  currentSection: DbConfigurationSectionProcessing;
+  sections: DbConfigurationSectionProcessing[];
+  disabled: boolean;
+}
 
+function IncludeCheckbox({
+  currentSection,
+  configurationId,
+  disabled,
+}: RefineSwitchProps) {
   const { mutate: updateSectionProcessing } =
     useUpdateConfigurationSectionProcessing();
   const queryClient = useQueryClient();
-
-  /**
-   * Central helper that updates local state and calls the backend API for a
-   * single section action change.
-   */
-  const applyAction = (
-    index: number,
-    action: UpdateSectionProcessingEntryAction
-  ) => {
-    if (disabled) {
-      return;
-    }
-    // Capture previous action so we can revert if the mutation fails
-    const previousAction = selectedActions[index] ?? 'retain';
-
-    // Optimistically update UI for immediate feedback
-    setSelectedActions((prev) => {
-      const next = [...prev];
-      next[index] = action;
-      return next;
-    });
-
-    updateSectionProcessing(
-      {
-        configurationId: configurationId,
-        data: {
-          sections: [
-            {
-              code: sectionProcessing[index].code,
-              action: action,
-            },
-          ],
-        },
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationId),
-          });
-        },
-        onError: (error) => {
-          // Revert the optimistic UI change only if the UI still shows the
-          // attempted (failed) action. This prevents clobbering newer user
-          // changes that may have occurred while the request was in-flight.
-          setSelectedActions((prev) => {
-            if (prev[index] !== action) {
-              return prev;
-            }
-            const next = [...prev];
-            next[index] = previousAction;
-            return next;
-          });
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            heading: 'Section failed to update',
-            body: errorDetail,
-            variant: 'error',
-          });
-        },
-      }
-    );
-  };
+  const formatError = useApiErrorFormatter();
+  const showToast = useToast();
 
   return (
-    <section
-      id="sections-table"
-      aria-label="Choose what you'd like to do with the sections in your eICR"
-    >
-      <h1 className="mb-4! text-lg leading-10 font-bold">
-        Choose what you'd like to do with the sections in your eICR
-      </h1>
-      <p className="mb-4!">
-        Choose whether to refine, include fully, or omit sections of your eICR
-        to save space and protect patient privacy.
-      </p>
-      <p className="mb-2! leading-8">Options:</p>
-      <ul className="mb-4! list-inside list-disc pl-4">
-        <li>
-          <span className="font-bold">Include & refine section:</span> Includes
-          only the coded data you've chosen to retain in your configuration.
-        </li>
-        <li>
-          <span className="font-bold">Include entire section:</span> Includes
-          everything from this section, ignoring your configuration.
-        </li>
-        <li>
-          <span className="font-bold">Remove section:</span> Excludes this
-          section from the eICR entirely.
-        </li>
-      </ul>
-      <Table className="mt-2 max-w-185! border-separate! border-spacing-0 rounded-full border-l-0">
-        <colgroup>
-          <col className="w-65" />
-          <col className="w-40" />
-          <col className="w-40" />
-          <col className="w-40" />
-        </colgroup>
-        <caption className="usa-sr-only">
-          Choose actions for each eICR section
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col" className="text-gray-cool-60!">
-              Section name
-            </th>
-            <th scope="col" className="text-gray-cool-60! text-center">
-              Include &amp; <br /> refine section
-            </th>
-            <th scope="col" className="text-gray-cool-60!text-center">
-              Include <br /> entire section
-            </th>
-            <th scope="col" className="text-gray-cool-60! text-center">
-              Remove section
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {sectionProcessing.map((section, index) => (
-            <tr key={section.name}>
-              <td className="cursor-default! font-bold! wrap-break-word! whitespace-normal!">
-                <span className="font-bold!">
-                  {castToSentenceCase(section.name)}
-                </span>
-                <br />
-                <span className="font-normal!">
-                  <VersionsList versions={section.versions} />
-                </span>
-              </td>
-              <RadioCell
-                index={index}
-                action="refine"
-                checked={selectedActions[index] === 'refine'}
-                ariaLabel={`Include and refine section ${section.name}`}
-                applyAction={applyAction}
-                disabled={disabled}
-              />
-              <RadioCell
-                index={index}
-                action="retain"
-                checked={selectedActions[index] === 'retain'}
-                ariaLabel={`Include entire section ${section.name}`}
-                applyAction={applyAction}
-                disabled={disabled}
-              />
+    <Checkbox
+      className="group block size-5 rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
+      id={`${currentSection.name}-include`}
+      checked={currentSection.include}
+      onChange={(checked) => {
+        const include = checked;
+        const updatedSection: DbConfigurationSectionProcessing = {
+          ...currentSection,
+          include,
+        };
 
-              <RadioCell
-                index={index}
-                action="remove"
-                checked={selectedActions[index] === 'remove'}
-                ariaLabel={`Remove section ${section.name}`}
-                applyAction={applyAction}
-                disabled={disabled}
-              />
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </section>
+        updateSectionProcessing(
+          {
+            configurationId,
+            data: {
+              section: {
+                action: updatedSection.action,
+                code: updatedSection.code,
+                include: updatedSection.include,
+              },
+            },
+          },
+          {
+            onSuccess: async () => {
+              await queryClient.invalidateQueries({
+                queryKey: getGetConfigurationQueryKey(configurationId),
+              });
+            },
+            onError: (error) => {
+              const errorDetail =
+                formatError(error) || error.message || 'Unknown error';
+              showToast({
+                heading: 'Section failed to update',
+                body: errorDetail,
+                variant: 'error',
+              });
+            },
+          }
+        );
+      }}
+      disabled={disabled}
+    >
+      <svg
+        className="group-data-checked:bg-blue-cool-50 hidden stroke-white group-data-checked:block"
+        viewBox="0 0 14 14"
+        fill="none"
+      >
+        <path
+          d="M3 8L6 11L11 3.5"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </Checkbox>
+  );
+}
+
+function RefineSwitch({ currentSection, configurationId }: RefineSwitchProps) {
+  const { mutate: updateSectionProcessing } =
+    useUpdateConfigurationSectionProcessing();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+  const showToast = useToast();
+
+  return (
+    <Switch
+      checked={currentSection.action === DbSectionAction.refine}
+      onChange={(checked) => {
+        const action: DbSectionAction = checked
+          ? DbSectionAction.refine
+          : DbSectionAction.retain;
+        const updatedSection: DbConfigurationSectionProcessing = {
+          ...currentSection,
+          action,
+        };
+
+        updateSectionProcessing(
+          {
+            configurationId,
+            data: {
+              section: {
+                action: updatedSection.action,
+                code: updatedSection.code,
+                include: updatedSection.include,
+              },
+            },
+          },
+          {
+            onSuccess: async () => {
+              await queryClient.invalidateQueries({
+                queryKey: getGetConfigurationQueryKey(configurationId),
+              });
+            },
+            onError: (error) => {
+              const errorDetail =
+                formatError(error) || error.message || 'Unknown error';
+              showToast({
+                heading: 'Section failed to update',
+                body: errorDetail,
+                variant: 'error',
+              });
+            },
+          }
+        );
+      }}
+      className="group data-checked:bg-violet-warm-60 inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition"
+    >
+      <span className="data-disabled:bg-gray-cool-60 size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
+    </Switch>
   );
 }
 

@@ -11,5 +11,5 @@ import type { UpdateSectionProcessingEntry } from './updateSectionProcessingEntr
  * Payload for updating section processing entries.
  */
 export interface UpdateSectionProcessingPayload {
-  sections: UpdateSectionProcessingEntry[];
+  section: UpdateSectionProcessingEntry;
 }

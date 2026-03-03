@@ -32,7 +32,7 @@ async def update_section_processing(
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> UpdateSectionProcessingResponse:
     """
-    Update one or more section_processing entries for a configuration.
+    Update a section entry for a configuration.
 
     Args:
         configuration_id (UUID): ID of the configuration to update
@@ -75,14 +75,18 @@ async def update_section_processing(
         db=db,
     )
 
+    new_section = payload.section
     # convert payload to DB-friendly format (SectionUpdate dataclasses)
-    section_updates = [
-        SectionUpdate(code=s.code, action=s.action) for s in payload.sections
-    ]
+    section_update = SectionUpdate(
+        code=new_section.code,
+        action=new_section.action,
+        narrative=False,
+        include=new_section.include,
+    )
 
     try:
         updated_config = await update_section_processing_db(
-            config=config, section_updates=section_updates, user_id=user.id, db=db
+            config=config, section_update=section_update, user_id=user.id, db=db
         )
     except ValueError as e:
         # DB layer validation error -> bad request

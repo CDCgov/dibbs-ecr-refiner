@@ -3,6 +3,37 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+type DbSectionAction = Literal["retain", "refine"]
+
+type DbConfigurationStatus = Literal["draft", "inactive", "active"]
+
+
+@dataclass(frozen=True)
+class GetConfigurationResponseVersion:
+    """
+    Model representing a version of a configuration.
+    """
+
+    id: UUID
+    version: int
+    condition_canonical_url: str
+    status: DbConfigurationStatus
+    created_at: datetime
+    created_by: str
+    last_activated_at: datetime | None
+    last_activated_by: str | None
+
+
+@dataclass(frozen=True)
+class DbTotalConditionCodeCount:
+    """
+    Total code count model.
+    """
+
+    condition_id: UUID
+    display_name: str
+    total_codes: int
+
 
 @dataclass(frozen=True)
 class DbConfigurationCondition:
@@ -42,11 +73,10 @@ class DbConfigurationSectionProcessing:
 
     name: str
     code: str
-    action: str
+    include: bool
+    narrative: bool
+    action: DbSectionAction
     versions: list[str]
-
-
-DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
 
 @dataclass(frozen=True)
@@ -108,6 +138,8 @@ class DbConfiguration:
                     name=sp.get("name"),
                     code=sp.get("code"),
                     action=sp.get("action"),
+                    narrative=sp.get("narrative"),
+                    include=sp.get("include"),
                     versions=sp.get("versions", []),
                 )
                 for sp in row.get("section_processing", []) or []

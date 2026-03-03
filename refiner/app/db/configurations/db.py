@@ -1,5 +1,4 @@
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from typing import TypedDict
 from uuid import UUID
 
@@ -15,7 +14,10 @@ from ..pool import AsyncDatabaseConnection
 from .model import (
     DbConfiguration,
     DbConfigurationCustomCode,
-    DbConfigurationStatus,
+    DbConfigurationSectionProcessing,
+    DbSectionAction,
+    DbTotalConditionCodeCount,
+    GetConfigurationResponseVersion,
 )
 
 EMPTY_JSONB = Jsonb([])
@@ -413,17 +415,6 @@ async def disassociate_condition_codeset_with_configuration_db(
             return updated_config
 
 
-@dataclass(frozen=True)
-class DbTotalConditionCodeCount:
-    """
-    Total code count model.
-    """
-
-    condition_id: UUID
-    display_name: str
-    total_codes: int
-
-
 async def get_total_condition_code_counts_by_configuration_db(
     config_id: UUID, db: AsyncDatabaseConnection
 ) -> list[DbTotalConditionCodeCount]:
@@ -737,7 +728,9 @@ class SectionUpdate:
     """
 
     code: str
-    action: str
+    include: bool
+    narrative: bool
+    action: DbSectionAction
 
 
 class SectionProcessingDict(TypedDict):
@@ -752,13 +745,13 @@ class SectionProcessingDict(TypedDict):
 
     name: str
     code: str
-    action: str
+    action: DbSectionAction
     versions: list[str]
 
 
 async def update_section_processing_db(
     config: DbConfiguration,
-    section_updates: list[SectionUpdate],
+    section_update: SectionUpdate,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -767,7 +760,7 @@ async def update_section_processing_db(
 
     Args:
         config: The configuration to update
-        section_updates: List of section updates with code and action
+        section_update: Section to update
         user_id: ID of the user
         db: Database connection
 
@@ -776,76 +769,61 @@ async def update_section_processing_db(
     """
     # Map internal action → display label
     ACTION_LABELS = {
-        "refine": "Include & refine",
-        "retain": "Include entire",
-        "remove": "Remove",
+        "refine": "Refine & optimize",
+        "retain": "Preserve & retain all data",
     }
 
     # Validate input actions
-    valid_actions = {"retain", "refine", "remove"}
-    for su in section_updates:
-        if su.action not in valid_actions:
-            raise ValueError(f"Invalid action '{su.action}' for section update.")
+    valid_actions: set[DbSectionAction] = {"retain", "refine"}
+    if section_update.action not in valid_actions:
+        raise ValueError(
+            f"Invalid action '{section_update.action}' for section update."
+        )
 
-    # Build a mapping from code -> action for quick lookup
-    update_map = {su.code: su.action for su in section_updates}
+    prev_section = None
+    for section in config.section_processing:
+        if section.code == section_update.code:
+            prev_section = section
 
-    # Start from the existing section_processing entries on the config
-    existing_sections: list[SectionProcessingDict] = [
-        {
-            "name": sp.name,
-            "code": sp.code,
-            "action": sp.action,
-            "versions": sp.versions,
-        }
-        for sp in config.section_processing
+    if not prev_section:
+        raise ValueError(
+            f"No existing section with code {section_update.code} to update"
+        )
+
+    updated_sections: list[DbConfigurationSectionProcessing] = [
+        section
+        for section in config.section_processing
+        if section.code != section_update.code
     ]
 
-    updated_sections: list[SectionProcessingDict] = []
-    section_events = []
+    updated_sections = updated_sections + [
+        DbConfigurationSectionProcessing(
+            name=prev_section.name,
+            code=prev_section.code,
+            versions=prev_section.versions,
+            # updates
+            action=section_update.action,
+            include=section_update.include,
+            narrative=False,
+        )
+    ]
 
-    for sec in existing_sections:
-        code = sec["code"]
-        old_action = sec["action"]
+    action_changed = prev_section.action != section_update.action
+    # include_changed = prev_section.include != section_update.include
 
-        if code in update_map:
-            new_action = update_map[code]
-
-            # If action changed, record event
-            if new_action != old_action:
-                old_label = ACTION_LABELS.get(old_action, old_action)
-                new_label = ACTION_LABELS.get(new_action, new_action)
-
-                section_events.append(
-                    EventInput(
-                        jurisdiction_id=config.jurisdiction_id,
-                        user_id=user_id,
-                        configuration_id=config.id,
-                        event_type="section_update",
-                        action_text=(
-                            f"Updated section '{sec['name']}' from '{old_label}' to '{new_label}'"
-                        ),
-                    )
-                )
-
-            # Append updated section
-            updated_sections.append(
-                {
-                    "name": sec["name"],
-                    "code": sec["code"],
-                    "action": new_action,
-                    "versions": sec["versions"] if "versions" in sec else [],
-                }
+    section_events: list[EventInput] = []
+    if action_changed:
+        section_events.append(
+            EventInput(
+                jurisdiction_id=config.jurisdiction_id,
+                user_id=user_id,
+                configuration_id=config.id,
+                event_type="section_update",
+                action_text=(
+                    f"Updated section '{prev_section.name}' from '{ACTION_LABELS.get(prev_section.action, prev_section.action)}' to '{ACTION_LABELS.get(section_update.action, section_update.action)}'"
+                ),
             )
-        else:
-            updated_sections.append(
-                {
-                    "name": sec["name"],
-                    "code": sec["code"],
-                    "action": sec["action"],
-                    "versions": sec["versions"] if "versions" in sec else [],
-                }
-            )
+        )
 
     # If any update codes were not present in the existing sections, ignore them.
     # Persist the updated list back to the database
@@ -870,7 +848,7 @@ async def update_section_processing_db(
                 s3_urls;
             """
 
-    params = (Jsonb(updated_sections), config.id)
+    params = (Jsonb([asdict(section) for section in updated_sections]), config.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -941,22 +919,6 @@ async def get_configurations_by_condition_ids_and_jurisdiction_db(
         result[cond_id] = configs_by_condition_id.get(cond_id)
 
     return result
-
-
-@dataclass(frozen=True)
-class GetConfigurationResponseVersion:
-    """
-    Model representing a version of a configuration.
-    """
-
-    id: UUID
-    version: int
-    condition_canonical_url: str
-    status: DbConfigurationStatus
-    created_at: datetime
-    created_by: str
-    last_activated_at: datetime | None
-    last_activated_by: str | None
 
 
 async def get_latest_config_db(

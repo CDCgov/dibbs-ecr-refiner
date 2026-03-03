@@ -350,7 +350,9 @@ async def get_configuration(
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
-        section_processing=config.section_processing,
+        section_processing=sorted(
+            config.section_processing, key=lambda r: r.name.lower()
+        ),
         deduplicated_codes=deduplicated_codes,
         all_versions=all_versions,
         version=config.version,

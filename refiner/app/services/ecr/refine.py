@@ -1,8 +1,9 @@
-from typing import Literal, cast
+from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
 
+from app.api.v1.configurations.models import DbSectionAction
 from app.services.ecr.models import EICRRefinementPlan
 from app.services.terminology import ProcessedConfiguration
 
@@ -91,8 +92,8 @@ def create_eicr_refinement_plan(
 
     # build the final instruction set: for each section in the document,
     # find its rule, defaulting to "remove" if no rule is specified
-    final_instructions: dict[str, Literal["retain", "refine", "remove"]] = {
-        code: cast(Literal["retain", "refine", "remove"], rules_map.get(code, "remove"))
+    final_instructions: dict[str, DbSectionAction] = {
+        code: cast(DbSectionAction, rules_map.get(code, "remove"))
         for code in present_section_codes
     }
 

@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Literal, TypedDict
 
+from app.api.v1.configurations.models import DbSectionAction
+
 type NamespaceMap = dict[str, str]
 type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
 
@@ -59,7 +61,7 @@ class EICRRefinementPlan:
     """
 
     xpath: str
-    section_instructions: dict[str, Literal["retain", "refine", "remove"]]
+    section_instructions: dict[str, DbSectionAction]
 
 
 @dataclass

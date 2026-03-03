@@ -66,6 +66,8 @@ const baseMockConfig: GetConfigurationResponse = {
     {
       name: 'Encounters Section',
       code: 'some code',
+      narrative: false,
+      include: true,
       action: 'refine',
       versions: ['1.1'],
     },
