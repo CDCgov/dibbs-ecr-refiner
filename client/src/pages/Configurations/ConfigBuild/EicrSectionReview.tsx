@@ -27,60 +27,70 @@ export function EicrSectionReview({
   disabled,
 }: EicrSectionReviewProps) {
   return (
-    <table className="w-full">
-      <thead>
-        <tr className="border-gray-cool-20 border-b">
-          <th scope="col" className="w-1/6 pb-3">
-            Include
-          </th>
-          <th scope="col" className="w-3/6 pb-3 text-left">
-            Section name
-          </th>
-          <th scope="col" className="w-1/3 pb-3">
-            Data handling approach
-          </th>
-        </tr>
-      </thead>
-      <tbody className="divide-gray-cool-20 divide-y">
-        {sectionProcessing.map((section) => (
-          <tr key={section.code}>
-            <td>
-              <div className="flex justify-center p-8">
-                <IncludeCheckbox
-                  configurationId={configurationId}
-                  currentSection={section}
-                  sections={sectionProcessing}
-                  disabled={disabled}
-                />
-              </div>
-            </td>
-            <td className="px-3 py-3">
-              {section.include ? (
-                <span className="font-bold">
-                  {castToSentenceCase(section.name)}
-                </span>
-              ) : (
-                <span className="text-gray-cool-70 italic">
-                  {castToSentenceCase(section.name)}
-                </span>
-              )}
-            </td>
-            <td className="px-3 py-2">
-              {section.include ? (
-                <div className="flex justify-center">
-                  <RefineSwitch
+    <section className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+        <p className="italic">
+          Choose which sections of your eICR to include, as well as whether to
+          refine or retain each section.
+        </p>
+      </div>
+
+      <table className="w-full">
+        <thead>
+          <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
+            <th scope="col" className="w-1/6 pb-3">
+              Include
+            </th>
+            <th scope="col" className="w-3/6 pb-3 text-left">
+              Section name
+            </th>
+            <th scope="col" className="w-1/3 pb-3">
+              Data handling approach
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-gray-cool-20 divide-y">
+          {sectionProcessing.map((section) => (
+            <tr key={section.code} className="text-gray-cool-60">
+              <td>
+                <div className="flex justify-center p-8">
+                  <IncludeCheckbox
                     configurationId={configurationId}
                     currentSection={section}
                     sections={sectionProcessing}
                     disabled={disabled}
                   />
                 </div>
-              ) : null}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+              </td>
+              <td className="px-3 py-3">
+                {section.include ? (
+                  <span className="font-bold">
+                    {castToSentenceCase(section.name)}
+                  </span>
+                ) : (
+                  <span className="text-gray-cool-70 italic">
+                    {castToSentenceCase(section.name)}
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2">
+                {section.include ? (
+                  <div className="flex justify-center">
+                    <RefineSwitch
+                      configurationId={configurationId}
+                      currentSection={section}
+                      sections={sectionProcessing}
+                      disabled={disabled}
+                    />
+                  </div>
+                ) : null}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
