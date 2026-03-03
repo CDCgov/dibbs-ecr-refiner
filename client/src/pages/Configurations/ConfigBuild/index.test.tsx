@@ -613,14 +613,19 @@ describe('Config builder page', () => {
       reset: vi.fn(),
     });
 
-    // ✅ Mock the CSV upload mutation
     const uploadMutate = vi.fn((_vars, opts) => {
-      // simulate successful server response
       opts?.onSuccess?.({
-        message: 'Successfully uploaded custom codes.',
-        codes_processed: 2,
-        total_custom_codes_in_configuration: 2,
+        data: {
+          message: 'Successfully uploaded custom codes.',
+          codes_processed: 2,
+          total_custom_codes_in_configuration: 2,
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {},
       });
+
       opts?.onSettled?.();
     });
 
