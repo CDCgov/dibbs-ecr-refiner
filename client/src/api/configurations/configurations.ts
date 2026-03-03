@@ -608,6 +608,13 @@ export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValid
       return useMutation(getEditCustomCodeFromConfigurationMutationOptions(options), queryClient);
     }
     /**
+ * Accepts a CSV payload in JSON body.
+
+Expected CSV headers:
+    code_number,code_system,display_name
+
+Returns:
+    UploadCustomCodesResponse
  * @summary Upload Custom Codes Csv
  */
 export const uploadCustomCodesCsv = (

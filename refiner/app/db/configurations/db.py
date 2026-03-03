@@ -13,6 +13,7 @@ from app.services.configurations import clone_section_actions, get_default_secti
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
+    BulkAddCustomCodesResult,
     DbConfiguration,
     DbConfigurationCustomCode,
     DbConfigurationStatus,
@@ -571,9 +572,12 @@ async def add_bulk_custom_codes_to_configuration_db(
     custom_codes: list[DbConfigurationCustomCode],
     user_id: UUID,
     db: AsyncDatabaseConnection,
-) -> DbConfiguration | None:
+) -> BulkAddCustomCodesResult | None:
     """
     Adds multiple custom codes to a configuration in a single update.
+
+    Returns:
+        BulkAddCustomCodesResult | None
     """
 
     query = """
@@ -603,7 +607,7 @@ async def add_bulk_custom_codes_to_configuration_db(
     # Build a set of (code, system) for fast lookup
     existing_keys = {(c.code, c.system) for c in existing_codes}
 
-    new_codes_added = []
+    new_codes_added: list[DbConfigurationCustomCode] = []
 
     for code in custom_codes:
         key = (code.code, code.system)
@@ -628,7 +632,7 @@ async def add_bulk_custom_codes_to_configuration_db(
 
             updated_config = DbConfiguration.from_db_row(row)
 
-            # Optional: single event instead of per-row
+            # Insert a single audit event if codes were added
             if new_codes_added:
                 await insert_event_db(
                     event=EventInput(
@@ -641,7 +645,10 @@ async def add_bulk_custom_codes_to_configuration_db(
                     cursor=cur,
                 )
 
-            return updated_config
+            return BulkAddCustomCodesResult(
+                config=updated_config,
+                added_count=len(new_codes_added),
+            )
 
 
 async def delete_custom_code_from_configuration_db(

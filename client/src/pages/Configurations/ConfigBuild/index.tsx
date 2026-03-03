@@ -31,6 +31,7 @@ import {
   useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
   useGetConfiguration,
+  useUploadCustomCodesCsv,
 } from '../../../api/configurations/configurations';
 import {
   AddCustomCodeInputSystem,
@@ -1109,6 +1110,8 @@ export const ImportCustomCodes = ({
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const { mutate: uploadCsvMutation, isPending } = useUploadCustomCodesCsv();
+
   const handleButtonClick = () => {
     if (!disabled && fileInputRef.current) {
       fileInputRef.current.click();
@@ -1129,84 +1132,85 @@ export const ImportCustomCodes = ({
     setError(null);
     setIsUploading(true);
 
-    const formData = new FormData();
-    formData.append('uploaded_file', file);
+    // ✅ New endpoint expects JSON body, not FormData
+    const csvText = await file.text();
 
-    try {
-      const res = await fetch(
-        `/api/v1/configurations/${configurationId}/upload-custom-codes`,
-        {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-        }
-      );
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
-      }
+    uploadCsvMutation(
+      {
+        configurationId,
+        // Orval usually names this `data` for the request body.
+        data: {
+          csv_text: csvText,
+          filename: file.name,
+        },
+      },
+      {
+        onSuccess: (res: any) => {
+          const payload = res?.data ?? res;
 
-      const data = await res.json();
+          showToast({
+            heading: 'CSV successfully imported',
+            body: `${payload.codes_processed} codes.`,
+          });
 
-      showToast({
-        heading: 'CSV successfully imported',
-        body: `${data.codes_processed} codes.`,
-      });
+          if (fileInputRef.current) fileInputRef.current.value = '';
 
-      if (fileInputRef.current) fileInputRef.current.value = '';
+          onSuccess?.();
+        },
+        onError: (err: unknown) => {
+          // Orval/axios style error commonly has `response.data.detail`
+          let message = 'Failed to upload CSV. Please try again.';
 
-      onSuccess?.();
-    } catch (e: unknown) {
-      let message = 'Failed to upload CSV. Please try again.';
-
-      if (e instanceof Error) {
-        message = e.message;
-      }
-
-      // Try to parse JSON error bodies like {"detail": "..."} or {"detail": [...]}
-      try {
-        const parsed = JSON.parse(message) as unknown;
-
-        if (
-          typeof parsed === 'object' &&
-          parsed !== null &&
-          'detail' in parsed
-        ) {
-          const detail = (parsed as { detail: unknown }).detail;
-
-          if (typeof detail === 'string') {
-            message = detail;
-          } else if (Array.isArray(detail)) {
-            message = detail
-              .map((d) =>
-                typeof d === 'object' && d !== null && 'msg' in d
-                  ? String((d as { msg?: unknown }).msg)
-                  : JSON.stringify(d)
-              )
-              .join(', ');
+          if (typeof err === 'object' && err !== null && 'response' in err) {
+            const response = (err as { response?: unknown }).response;
+            if (
+              typeof response === 'object' &&
+              response !== null &&
+              'data' in response
+            ) {
+              const data = (response as { data?: unknown }).data;
+              if (
+                typeof data === 'object' &&
+                data !== null &&
+                'detail' in data
+              ) {
+                const detail = (data as { detail?: unknown }).detail;
+                if (typeof detail === 'string') {
+                  message = detail;
+                } else if (Array.isArray(detail)) {
+                  message = detail
+                    .map((d) =>
+                      typeof d === 'object' && d !== null && 'msg' in d
+                        ? String((d as { msg?: unknown }).msg)
+                        : JSON.stringify(d)
+                    )
+                    .join(', ');
+                }
+              }
+            }
+          } else if (err instanceof Error && err.message) {
+            message = err.message;
           }
-        }
-      } catch {
-        // not JSON, keep original message
-      }
 
-      setError(message);
-      showToast({
-        variant: 'error',
-        heading: 'Error Importing CSV',
-        body: message,
-      });
-    } finally {
-      setIsUploading(false);
-    }
+          setError(message);
+          showToast({
+            variant: 'error',
+            heading: 'Error Importing CSV',
+            body: message,
+          });
+        },
+        onSettled: () => {
+          setIsUploading(false);
+        },
+      }
+    );
   };
+
+  const uploading = isUploading || isPending;
 
   return (
     <div className="w-full max-w-xl space-y-6">
-      {isUploading ? (
-        /* =======================
-                   Uploading State
-                ======================== */
+      {uploading ? (
         <>
           <button
             type="button"
@@ -1235,26 +1239,25 @@ export const ImportCustomCodes = ({
               <div className="h-full w-1/3 animate-pulse bg-blue-600" />
             </div>
 
-            <Button variant="secondary" onClick={() => setIsUploading(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => setIsUploading(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
           </div>
         </>
       ) : (
-        /* =======================
-                   Normal Import UI
-                ======================== */
         <div className="w-full max-w-xl space-y-6">
-          {/* Back */}
           <button
             type="button"
-            onClick={onSuccess} // or a dedicated onBack if you prefer
+            onClick={onSuccess}
             className="text-blue-cool-50 text-sm hover:underline"
           >
             ← Back
           </button>
 
-          {/* Title */}
           <div>
             <h2 className="text-2xl font-semibold">Import from CSV</h2>
             <p className="mt-2 text-sm text-gray-600">
@@ -1263,7 +1266,6 @@ export const ImportCustomCodes = ({
             </p>
           </div>
 
-          {/* Step 1 */}
           <div className="flex items-start gap-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
               1
@@ -1276,7 +1278,6 @@ export const ImportCustomCodes = ({
             </div>
           </div>
 
-          {/* Step 2 */}
           <div className="flex items-start gap-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
               2

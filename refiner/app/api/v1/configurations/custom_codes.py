@@ -1,7 +1,10 @@
+import csv
+import io
+from logging import Logger
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
@@ -11,6 +14,7 @@ from app.api.v1.configurations.models import (
     UploadCustomCodesCsvInput,
 )
 from app.db.configurations.db import (
+    add_bulk_custom_codes_to_configuration_db,
     add_custom_code_to_configuration_db,
     delete_custom_code_from_configuration_db,
     edit_custom_code_from_configuration_db,
@@ -172,6 +176,7 @@ async def add_custom_code(
         custom_codes=updated_config.custom_codes,
     )
 
+
 class UploadCustomCodesResponse(BaseModel):
     """
     Custom Code CSV response model.
@@ -180,6 +185,7 @@ class UploadCustomCodesResponse(BaseModel):
     message: str
     codes_processed: int
     total_custom_codes_in_configuration: int
+
 
 @router.post(
     "/upload",
@@ -194,17 +200,31 @@ async def upload_custom_codes_csv(
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> UploadCustomCodesResponse:
-    # optional filename check (purely cosmetic now)
+    """
+    Accepts a CSV payload in JSON body.
+
+    Expected CSV headers:
+        code_number,code_system,display_name
+
+    Returns:
+        UploadCustomCodesResponse
+    """
+
+    # Optional filename check (cosmetic)
     if body.filename and not body.filename.lower().endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File must be a CSV.",
         )
 
+    # Get user jurisdiction
     jd = user.jurisdiction_id
 
+    # Find config
     config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+        id=configuration_id,
+        jurisdiction_id=jd,
+        db=db,
     )
     if not config:
         raise HTTPException(
@@ -235,7 +255,11 @@ async def upload_custom_codes_csv(
                 raise ValueError("Missing required values.")
 
             custom_codes.append(
-                DbConfigurationCustomCode(code=code, system=code_system, name=name)
+                DbConfigurationCustomCode(
+                    code=code,
+                    system=code_system,
+                    name=name,
+                )
             )
         except Exception as e:
             logger.error(
@@ -253,8 +277,9 @@ async def upload_custom_codes_csv(
             detail="CSV file contains no valid rows.",
         )
 
+    # Bulk insert (dedupe happens inside the DB function)
     try:
-        updated_config = await add_bulk_custom_codes_to_configuration_db(
+        result = await add_bulk_custom_codes_to_configuration_db(
             config=config,
             custom_codes=custom_codes,
             user_id=user.id,
@@ -267,10 +292,16 @@ async def upload_custom_codes_csv(
             detail="Failed to insert custom codes.",
         )
 
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
     return UploadCustomCodesResponse(
         message="Successfully uploaded custom codes.",
-        codes_processed=len(custom_codes),
-        total_custom_codes_in_configuration=len(updated_config.custom_codes),
+        codes_processed=result.added_count,
+        total_custom_codes_in_configuration=len(result.config.custom_codes),
     )
 
 

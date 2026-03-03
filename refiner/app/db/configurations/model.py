@@ -173,3 +173,13 @@ class ConfigurationStorageMetadata:
             "configuration_version": self.configuration_version,
             "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
         }
+
+
+@dataclass
+class BulkAddCustomCodesResult:
+    """
+    Response model for Custom Code CSV input.
+    """
+
+    config: DbConfiguration
+    added_count: int

@@ -201,9 +201,11 @@ class ConfigurationStatusUpdateResponse:
     configuration_id: UUID
     status: DbConfigurationStatus
 
+
 class UploadCustomCodesCsvInput(BaseModel):
+    """
+    Input model for Custom Code CSV.
+    """
+
     csv_text: str = Field(..., description="Full CSV contents as UTF-8 text")
     filename: str | None = None
-
-# ✅ resolves forward refs in Pydantic v2
-UploadCustomCodesCsvInput.model_rebuild()
