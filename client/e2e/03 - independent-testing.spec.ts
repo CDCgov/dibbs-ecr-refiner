@@ -74,8 +74,13 @@ test.describe('should be able to access independent testing', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    // configure covid-19
+    // configure and activate covid-19
     await createNewConfiguration('COVID-19', page);
+    await page.getByRole('link', { name: 'Activate' }).click();
+    await page.getByRole('button', { name: 'Turn on configuration' }).click();
+    await page
+      .getByRole('button', { name: 'Yes, turn on configuration' })
+      .click();
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
@@ -126,6 +131,11 @@ test.describe('should be able to access independent testing', () => {
 
     // configure influenza
     await createNewConfiguration('Influenza', page);
+    await page.getByRole('link', { name: 'Activate' }).click();
+    await page.getByRole('button', { name: 'Turn on configuration' }).click();
+    await page
+      .getByRole('button', { name: 'Yes, turn on configuration' })
+      .click();
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
