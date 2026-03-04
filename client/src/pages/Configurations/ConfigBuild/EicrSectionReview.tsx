@@ -1,7 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { Switch, Checkbox } from '@headlessui/react';
+import { Switch, Checkbox, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -29,7 +29,7 @@ export function EicrSectionReview({
   disabled,
 }: EicrSectionReviewProps) {
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
         <p className="italic">
@@ -44,10 +44,10 @@ export function EicrSectionReview({
             <th scope="col" className="w-1/6 pb-3">
               Include
             </th>
-            <th scope="col" className="w-3/6 pb-3 text-left">
+            <th scope="col" className="w-2/6 pb-3 text-left">
               Section name
             </th>
-            <th scope="col" className="w-1/3 pb-3">
+            <th scope="col" className="w-3/6 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
                 {/* TODO: What text should go here? */}
@@ -188,52 +188,63 @@ function RefineSwitch({
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
 
-  return (
-    <Switch
-      disabled={disabled}
-      checked={currentSection.action === DbSectionAction.refine}
-      onChange={(checked) => {
-        const action: DbSectionAction = checked
-          ? DbSectionAction.refine
-          : DbSectionAction.retain;
-        const updatedSection: DbConfigurationSectionProcessing = {
-          ...currentSection,
-          action,
-        };
+  const isRefineToggled = currentSection.action === DbSectionAction.refine;
 
-        updateSectionProcessing(
-          {
-            configurationId,
-            data: {
-              section: {
-                action: updatedSection.action,
-                code: updatedSection.code,
-                include: updatedSection.include,
+  return (
+    <Field className="flex items-center">
+      <Label passive className="w-48">
+        {isRefineToggled ? (
+          <span>Refine & optimize</span>
+        ) : (
+          <span className="italic">Preserve & retain all data</span>
+        )}
+      </Label>
+      <Switch
+        disabled={disabled}
+        checked={isRefineToggled}
+        onChange={(checked) => {
+          const action: DbSectionAction = checked
+            ? DbSectionAction.refine
+            : DbSectionAction.retain;
+          const updatedSection: DbConfigurationSectionProcessing = {
+            ...currentSection,
+            action,
+          };
+
+          updateSectionProcessing(
+            {
+              configurationId,
+              data: {
+                section: {
+                  action: updatedSection.action,
+                  code: updatedSection.code,
+                  include: updatedSection.include,
+                },
               },
             },
-          },
-          {
-            onSuccess: async () => {
-              await queryClient.invalidateQueries({
-                queryKey: getGetConfigurationQueryKey(configurationId),
-              });
-            },
-            onError: (error) => {
-              const errorDetail =
-                formatError(error) || error.message || 'Unknown error';
-              showToast({
-                heading: 'Section failed to update',
-                body: errorDetail,
-                variant: 'error',
-              });
-            },
-          }
-        );
-      }}
-      className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
-    >
-      <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
-    </Switch>
+            {
+              onSuccess: async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: getGetConfigurationQueryKey(configurationId),
+                });
+              },
+              onError: (error) => {
+                const errorDetail =
+                  formatError(error) || error.message || 'Unknown error';
+                showToast({
+                  heading: 'Section failed to update',
+                  body: errorDetail,
+                  variant: 'error',
+                });
+              },
+            }
+          );
+        }}
+        className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
+      >
+        <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
+      </Switch>
+    </Field>
   );
 }
 
