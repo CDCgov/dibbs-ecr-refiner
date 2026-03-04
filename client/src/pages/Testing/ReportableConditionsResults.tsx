@@ -52,6 +52,7 @@ export function ReportableConditionsResults({
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
 
+<<<<<<< HEAD
           {(hasInactiveConditions || hasMissingConditions) && (
             <>
               <hr className="border-gray-cool-20" />
@@ -62,6 +63,19 @@ export function ReportableConditionsResults({
               />
             </>
           )}
+=======
+          {hasInactiveConditions ||
+            (hasInactiveConditions && (
+              <>
+                <hr className="border-gray-cool-20" />
+
+                <ConditionWarnings
+                  missingConditions={unmatchedConditions}
+                  inactiveConditions={inactiveConditions}
+                />
+              </>
+            ))}
+>>>>>>> a4ad65892374aae5f8db6047c043935a22ae120a
         </ConditionsContainer>
         <div className="flex flex-col gap-4 md:w-full">
           <p>Would you like to refine the eCR?</p>
