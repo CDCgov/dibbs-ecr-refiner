@@ -354,7 +354,7 @@ function Builder({
               />
             </>
           ) : tableView === 'custom' ? (
-            <>
+            <div className="min-h-full min-w-full">
               <h3 className="mb-2 text-xl font-bold">Custom codes</h3>
               <CustomCodeGroupingParagraph />
               <div className="mt-4! flex items-center gap-3">
@@ -379,7 +379,7 @@ function Builder({
                 deduplicated_codes={deduplicated_codes}
                 disabled={disabled}
               />
-            </>
+            </div>
           ) : tableView === 'sections' ? (
             <EicrSectionReview
               configurationId={id}
@@ -592,7 +592,7 @@ function CustomCodesDetail({
   }
 
   return (
-    <>
+    <div role="region">
       <table id="custom-table" className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
@@ -676,7 +676,7 @@ function CustomCodesDetail({
         modalRef={modalRef}
         onClose={toggleModal}
       />
-    </>
+    </div>
   );
 }
 
