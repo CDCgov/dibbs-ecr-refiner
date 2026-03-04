@@ -77,10 +77,13 @@ class IndependentTestingResult(TypedDict):
         - 'refined_documents': list of RefinedDocument objects for successfully refined conditions.
         - 'no_matching_configuration_for_conditions': A list of conditions that were found but had
            no matching configuration for the jurisdiction.
+        - 'no_active_configuration_for_conditions': A list of conditions that were found but had
+           no active configuration for the jurisdiction.
     """
 
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
+    no_active_configuration_for_conditions: list[NoMatchEntry]
 
 
 @dataclass
@@ -163,6 +166,7 @@ async def independent_testing(
         return {
             "refined_documents": [],
             "no_matching_configuration_for_conditions": [],
+            "no_active_configuration_for_conditions": [],
         }
 
     # STEP 2:
@@ -208,14 +212,19 @@ async def independent_testing(
             all_versions, key=lambda c: parse(c.version)
         )
 
-        # find the full configuration object that links to the representative condition's id
+        # find the all the relevant configs and check to see if any one is active
+        condition_configs = sorted(
+            [
+                c
+                for c in all_jurisdiction_configs
+                if c.condition_id == representative_condition.id
+            ],
+            key=lambda c: c.version,
+        )
+
         matching_config = next(
-            (
-                config
-                for config in all_jurisdiction_configs
-                if config.condition_id == representative_condition.id
-            ),
-            None,
+            (c for c in condition_configs if c.status == "active"),
+            condition_configs[-1] if condition_configs else None,
         )
 
         # collect all snomed codes that led to detecting this conceptual condition
@@ -224,7 +233,6 @@ async def independent_testing(
             for code, cond_list in rc_to_conditions_map.items()
             if any(c.canonical_url == canonical_url for c in cond_list)
         ]
-
         trace = IndependentTestingTrace(
             matching_condition=representative_condition,
             matching_configuration=matching_config,
@@ -233,13 +241,24 @@ async def independent_testing(
         all_traces.append(trace)
 
     no_matching_configurations: list[NoMatchEntry] = []
+    no_active_configurations: list[NoMatchEntry] = []
 
     # STEP 5:
     # process each trace; if a configuration exists, refine the eICR
+    # if it exists but isn't active, add it to the list of non-active configurations
     # otherwise, add it to the list of non-matches
     for trace in all_traces:
         if not trace.matching_configuration:
             no_matching_configurations.append(
+                {
+                    "display_name": trace.matching_condition.display_name,
+                    "rc_snomed_codes": trace.rc_snomed_codes,
+                }
+            )
+            continue
+
+        if trace.matching_configuration.status != "active":
+            no_active_configurations.append(
                 {
                     "display_name": trace.matching_condition.display_name,
                     "rc_snomed_codes": trace.rc_snomed_codes,
@@ -317,6 +336,7 @@ async def independent_testing(
     return {
         "refined_documents": refined_documents,
         "no_matching_configuration_for_conditions": no_matching_configurations,
+        "no_active_configuration_for_conditions": no_active_configurations,
     }
 
 

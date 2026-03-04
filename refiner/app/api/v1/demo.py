@@ -159,6 +159,10 @@ async def demo_upload(
         missing_condition["display_name"]
         for missing_condition in result["no_matching_configuration_for_conditions"]
     ]
+    conditions_without_active_config_names = [
+        missing_condition["display_name"]
+        for missing_condition in result["no_active_configuration_for_conditions"]
+    ]
 
     # STEP 4:
     # for each unique reportable condition code found in the RR (with a config),
@@ -264,6 +268,7 @@ async def demo_upload(
         refined_conditions_found=len(conditions),
         refined_conditions=conditions,
         conditions_without_matching_configs=conditions_without_matching_config_names,
+        conditions_without_active_configs=conditions_without_active_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
         refined_download_key=output_file_name if output_key else "",
     )
