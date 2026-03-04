@@ -28,6 +28,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
     },
   ],
   conditions_without_matching_configs: [],
+  conditions_without_active_configs: [],
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
@@ -45,6 +46,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
     },
   ],
   conditions_without_matching_configs: [],
+  conditions_without_active_configs: [],
   refined_conditions_found: 1,
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
@@ -217,6 +219,7 @@ describe('Testing', () => {
           data: {
             refined_conditions: [],
             conditions_without_matching_configs: [],
+            conditions_without_active_configs: [],
           },
         },
       };
@@ -246,6 +249,7 @@ describe('Testing', () => {
           data: {
             refined_conditions: [],
             conditions_without_matching_configs: ['Influenza'],
+            conditions_without_active_configs: [],
           },
         },
       };
@@ -269,7 +273,46 @@ describe('Testing', () => {
       screen.queryByText('Would you like to refine the eCR?')
     ).not.toBeInTheDocument();
   });
+  it('should display both reportable conditions with missing configurations and inactive configurations', async () => {
+    const user = userEvent.setup();
 
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [],
+            conditions_without_matching_configs: ['Influenza'],
+            conditions_without_active_configs: ['COVID-19'],
+          },
+        },
+      };
+    });
+
+    renderView();
+    await uploadTestFile(user);
+
+    // only start over button is available
+    expect(await screen.findByText('Start over')).toBeInTheDocument();
+    expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
+
+    // only missing condition text is in the doc
+    expect(
+      screen.getByText(
+        'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
+      )
+    ).toBeInTheDocument();
+    // Inactive config warning should be present
+    expect(
+      screen.queryByText(
+        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText('Influenza')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Would you like to refine the eCR?')
+    ).not.toBeInTheDocument();
+  });
   it('should display only reportable conditions that have a matching configuration', async () => {
     const user = userEvent.setup();
 
@@ -287,6 +330,7 @@ describe('Testing', () => {
               },
             ],
             conditions_without_matching_configs: [],
+            conditions_without_active_configs: [],
           },
         },
       };
@@ -310,7 +354,6 @@ describe('Testing', () => {
       screen.queryByText('Would you like to refine the eCR?')
     ).toBeInTheDocument();
   });
-
   it('should display reportable conditions with both missing and matching configurations', async () => {
     const user = userEvent.setup();
 
@@ -328,6 +371,7 @@ describe('Testing', () => {
               },
             ],
             conditions_without_matching_configs: ['Influenza'],
+            conditions_without_active_configs: [],
           },
         },
       };
@@ -348,6 +392,104 @@ describe('Testing', () => {
     expect(
       screen.queryByText(
         'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
+      )
+    ).toBeInTheDocument();
+
+    // Text asking to refine should be available
+    expect(
+      screen.queryByText('Would you like to refine the eCR?')
+    ).toBeInTheDocument();
+  });
+  it('should display reportable conditions with both inactive and matching configurations', async () => {
+    const user = userEvent.setup();
+
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [
+              {
+                code: '840539006',
+                display_name: 'COVID-19',
+                refined_eicr: '<xml>mock</xml>',
+                stats: ['eICR reduced by XY%'],
+              },
+            ],
+            conditions_without_matching_configs: [],
+            conditions_without_active_configs: ['Influenza'],
+          },
+        },
+      };
+    });
+
+    renderView();
+
+    const input = screen.getByTestId('zip-upload-input');
+    await user.upload(input, mockTestFile);
+
+    // Both buttons should be available
+    expect(screen.getByText('Change file')).toBeInTheDocument();
+    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Refine .zip file'));
+
+    // Inactive config warning should be present
+    expect(
+      screen.queryByText(
+        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
+      )
+    ).toBeInTheDocument();
+    // Text asking to refine should be available
+    expect(
+      screen.queryByText('Would you like to refine the eCR?')
+    ).toBeInTheDocument();
+  });
+
+  it('should display reportable conditions with inactive, missing, and matching configurations', async () => {
+    const user = userEvent.setup();
+
+    (useUploadEcr as unknown as Mock).mockImplementation(() => {
+      return {
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            refined_conditions: [
+              {
+                code: '840539006',
+                display_name: 'COVID-19',
+                refined_eicr: '<xml>mock</xml>',
+                stats: ['eICR reduced by XY%'],
+              },
+            ],
+            conditions_without_matching_configs: ['Influenza'],
+            conditions_without_active_configs: ['Syphilis'],
+          },
+        },
+      };
+    });
+
+    renderView();
+
+    const input = screen.getByTestId('zip-upload-input');
+    await user.upload(input, mockTestFile);
+
+    // Both buttons should be available
+    expect(screen.getByText('Change file')).toBeInTheDocument();
+    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Refine .zip file'));
+
+    // Missing config warning should be present
+    expect(
+      screen.queryByText(
+        'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
+      )
+    ).toBeInTheDocument();
+    // Inactive config warning should be present
+    expect(
+      screen.queryByText(
+        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
       )
     ).toBeInTheDocument();
 

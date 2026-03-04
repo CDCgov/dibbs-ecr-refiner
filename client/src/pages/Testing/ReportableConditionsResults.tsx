@@ -4,6 +4,7 @@ import { WarningIcon } from '../../components/WarningIcon';
 
 interface ReportableConditionsResultsProps {
   matchedConditions: string[];
+  inactiveConditions: string[];
   unmatchedConditions: string[];
   startOver: () => void;
   goToSuccessScreen: () => void;
@@ -12,16 +13,18 @@ interface ReportableConditionsResultsProps {
 export function ReportableConditionsResults({
   matchedConditions,
   unmatchedConditions,
+  inactiveConditions,
   startOver,
   goToSuccessScreen,
 }: ReportableConditionsResultsProps) {
   const hasFoundConditions = matchedConditions.length > 0;
   const hasMissingConditions = unmatchedConditions.length > 0;
+  const hasInactiveConditions = inactiveConditions.length > 0;
 
   // TODO: This is placeholder design and copy.
   // No conditions to display.
   // This is when a valid eICR/RR zip is uploaded but doesn't contain the uploader's jurisdiction ID for any reportable conditions.
-  if (!hasFoundConditions && !hasMissingConditions) {
+  if (!hasFoundConditions && !hasMissingConditions && !hasInactiveConditions) {
     return (
       <Container>
         <ConditionsContainer>
@@ -48,12 +51,17 @@ export function ReportableConditionsResults({
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
-          {hasMissingConditions ? (
+
+          {(hasInactiveConditions || hasMissingConditions) && (
             <>
               <hr className="border-gray-cool-20" />
-              <MissingConditions missingConditions={unmatchedConditions} />
+
+              <ConditionWarnings
+                missingConditions={unmatchedConditions}
+                inactiveConditions={inactiveConditions}
+              />
             </>
-          ) : null}
+          )}
         </ConditionsContainer>
         <div className="flex flex-col gap-4 md:w-full">
           <p>Would you like to refine the eCR?</p>
@@ -73,11 +81,14 @@ export function ReportableConditionsResults({
     );
   }
 
-  // Display only missing conditions
+  // Display only condition warnings
   return (
-    <Container className="max-w-[47rem]">
+    <Container className="max-w-188">
       <ConditionsContainer>
-        <MissingConditions missingConditions={unmatchedConditions} />
+        <ConditionWarnings
+          missingConditions={unmatchedConditions}
+          inactiveConditions={inactiveConditions}
+        />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
         <p>
@@ -132,10 +143,33 @@ function FoundConditions({ foundConditions }: FoundConditionsProps) {
   );
 }
 
+interface ConditionWarningsProps {
+  missingConditions: string[];
+  inactiveConditions: string[];
+}
+function ConditionWarnings({
+  missingConditions,
+  inactiveConditions,
+}: ConditionWarningsProps) {
+  const hasMissingConditions = missingConditions.length > 0;
+  const hasInactiveConditions = inactiveConditions.length > 0;
+  return (
+    <>
+      {hasMissingConditions ? (
+        <MissingConditions missingConditions={missingConditions} />
+      ) : null}
+      {hasMissingConditions && hasInactiveConditions ? (
+        <hr className="border-gray-cool-20" />
+      ) : null}
+      {hasInactiveConditions ? (
+        <InactiveConditions inactiveConditions={inactiveConditions} />
+      ) : null}
+    </>
+  );
+}
 interface MissingConditionsProps {
   missingConditions: string[];
 }
-
 function MissingConditions({ missingConditions }: MissingConditionsProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -149,6 +183,31 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
       <ul className="ml-2 list-inside list-disc">
         {missingConditions.map((missingCondition) => (
           <li key={missingCondition}>{missingCondition}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+interface InactiveConditionsProps {
+  inactiveConditions: string[];
+}
+function InactiveConditions({ inactiveConditions }: InactiveConditionsProps) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex gap-4">
+        <WarningIcon aria-label="Warning" size={3} />
+        <p className="text-state-error-dark">
+          No active configuration was detected for the following conditions.
+          Please ensure there is an active configuration for each condition in
+          order to receive a refined output for it.
+        </p>
+      </div>
+      <ul className="ml-2 list-inside list-disc">
+        {inactiveConditions.map((inactiveConditions) => (
+          <li className="text-blue-cool-50 font-bold" key={inactiveConditions}>
+            {inactiveConditions}
+          </li>
         ))}
       </ul>
     </div>
