@@ -114,7 +114,7 @@ function IncludeCheckbox({
 
   return (
     <Checkbox
-      className="group block size-5 rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
+      className="group block size-5 cursor-pointer rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
       id={`${currentSection.name}-include`}
       checked={currentSection.include}
       onChange={(checked) => {
@@ -224,9 +224,9 @@ function RefineSwitch({
           }
         );
       }}
-      className="group data-checked:bg-violet-warm-60 inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
+      className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
     >
-      <span className="data-disabled:bg-gray-cool-60 size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
+      <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
     </Switch>
   );
 }
