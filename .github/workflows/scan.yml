@@ -30,6 +30,10 @@ permissions:
   contents: read
   security-events: write
 
+env:
+  DEFAULT_SEVERITY: "CRITICAL,HIGH,MEDIUM,LOW"
+  DEFAULT_TAG: "latest"
+
 jobs:
   scan-images:
     runs-on: ubuntu-latest
@@ -57,8 +61,8 @@ jobs:
       - name: Set scan parameters
         id: params
         run: |
-          TAG="${{ github.event.inputs.image_tag || 'latest' }}"
-          SEVERITY="${{ github.event.inputs.severity_level || 'CRITICAL,HIGH' }}"
+          TAG="${{ github.event.inputs.image_tag || env.DEFAULT_TAG }}"
+          SEVERITY="${{ github.event.inputs.severity_level || env.DEFAULT_SEVERITY }}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
 
@@ -143,8 +147,8 @@ jobs:
         run: |
           echo "Image vulnerability scanning completed"
           echo "Scan timestamp: $(date -u)"
-          echo "Scanned tag: ${{ github.event.inputs.image_tag || 'latest' }}"
-          echo "Severity threshold: ${{ github.event.inputs.severity_level || 'CRITICAL,HIGH' }}"
+          echo "Scanned tag: ${{ github.event.inputs.image_tag || env.DEFAULT_TAG }}"
+          echo "Severity threshold: ${{ github.event.inputs.severity_level || env.DEFAULT_SEVERITY }}"
           echo ""
           echo "Check the Security tab for detailed vulnerability reports"
           echo "Navigate to: Repository → Security → Code scanning alerts"
