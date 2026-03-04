@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, Mock } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { ConfigBuild } from '.';
+import { ConfigBuild, ImportCustomCodes } from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
@@ -694,5 +694,115 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Custom codes', { selector: 'h3' })
     ).toBeInTheDocument();
+  });
+
+  it('downloads the custom code upload template CSV', async () => {
+    // Mock config load (must include whatever ConfigBuild expects)
+    (useGetConfiguration as unknown as Mock).mockReturnValue({
+      data: { data: baseMockConfig },
+    });
+
+    // Mock mutations used by the page so rendering doesn’t blow up
+    (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn(),
+      reset: vi.fn(),
+    });
+    (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn(),
+      reset: vi.fn(),
+    });
+    (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    renderPage();
+
+    // Navigate to Custom codes tab
+    const customCodesTab = await screen.findByRole('button', {
+      name: /custom codes/i,
+    });
+    await userEvent.click(customCodesTab);
+
+    // Click "Import from CSV" to show ImportCustomCodes
+    const importBtn = await screen.findByRole('button', {
+      name: /import from csv/i,
+    });
+    await userEvent.click(importBtn);
+
+    // Confirm import view heading is present
+    expect(
+      await screen.findByRole('heading', { name: /import from csv/i })
+    ).toBeInTheDocument();
+
+    // ---- Mock download plumbing ----
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const originalCreateElement = document.createElement.bind(document);
+
+    let createdAnchor!: HTMLAnchorElement; // definite assignment
+    let anchorWasCreated = false;
+
+    let anchorClickSpy: ReturnType<typeof vi.fn> | null = null;
+
+    URL.createObjectURL = vi.fn(() => 'blob:mock-url');
+    URL.revokeObjectURL = vi.fn();
+
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation((tagName: string) => {
+        if (tagName.toLowerCase() !== 'a') {
+          return originalCreateElement(tagName);
+        }
+
+        const a = originalCreateElement('a') as HTMLAnchorElement;
+
+        anchorClickSpy = vi.fn();
+        // assign spy to click (typed cast avoids TS whining)
+        (a as unknown as { click: ReturnType<typeof vi.fn> }).click =
+          anchorClickSpy;
+
+        createdAnchor = a;
+        anchorWasCreated = true;
+
+        return a;
+      });
+
+    // Click "Download template"
+    const downloadBtn = await screen.findByRole('button', {
+      name: /download template/i,
+    });
+    await userEvent.click(downloadBtn);
+
+    expect(anchorWasCreated).toBe(true);
+
+    expect(createdAnchor.download).toBe('custom_code_upload_template.csv');
+    expect(createdAnchor.href).toBe('blob:mock-url');
+
+    expect(anchorClickSpy).not.toBeNull();
+    expect(anchorClickSpy!).toHaveBeenCalledTimes(1);
+
+    if (!anchorClickSpy) throw new Error('Anchor click spy was not set');
+    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+
+    // Assert blob created with correct content
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+
+    const createUrlMock = URL.createObjectURL as unknown as {
+      mock: { calls: unknown[][] };
+    };
+    const blobArg = createUrlMock.mock.calls[0]?.[0] as Blob;
+
+    const text = await blobArg.text();
+    expect(text).toBe(
+      `code_number,code_system,display_name
+[CODE_NUMBER],[CODE_SYSTEM],[DISPLAY_NAME]
+`
+    );
+
+    // cleanup for other tests
+    createElementSpy.mockRestore();
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 });

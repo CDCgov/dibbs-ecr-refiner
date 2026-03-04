@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/fixtures';
+import { readFile } from 'node:fs/promises';
 
 test.describe('Adding/modifying configurations by initial condition', () => {
   test('should be able to create a configuration', async ({
@@ -102,7 +103,35 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page.getByRole('heading', { name: 'Import from CSV' })
     ).toBeVisible();
 
-    // CSV content (match server headers)
+    // Test download Template first
+    await expect(
+      page.getByRole('heading', { name: 'Import from CSV' })
+    ).toBeVisible();
+
+    // Trigger download and wait for the download event
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Download template' }).click(),
+    ]);
+
+    // Assert file name
+    expect(download.suggestedFilename()).toBe(
+      'custom_code_upload_template.csv'
+    );
+
+    // Read file contents and assert exact template
+    const path = await download.path();
+    expect(path).toBeTruthy();
+
+    const contents = await readFile(path!, 'utf-8');
+
+    expect(contents).toBe(
+      `code_number,code_system,display_name
+[CODE_NUMBER],[CODE_SYSTEM],[DISPLAY_NAME]
+`
+    );
+
+    // CSV for upload (match server headers)
     const csv = `code_number,code_system,display_name
 10001,LOINC,TEST 1
 10002,LOINC,TEST 2
