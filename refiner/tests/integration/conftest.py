@@ -382,15 +382,15 @@ def setup(request):
 
     # Define the default section processing that matches production behavior
     section_processing_default = """[
-        {"code": "46240-8", "name": "History of encounters", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "10164-2", "name": "History of Present Illness", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "11369-6", "name": "History of Immunizations", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "29549-3", "name": "Medications Administered", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "18776-5", "name": "Plan of Treatment", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "11450-4", "name": "Problem List", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "29299-5", "name": "Reason For Visit", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "30954-2", "name": "Relevant diagnostic tests and/or laboratory data", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]},
-        {"code": "29762-2", "name": "Social History", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"]}
+        {"code": "46240-8", "name": "History of encounters", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "10164-2", "name": "History of Present Illness", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "11369-6", "name": "History of Immunizations", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "29549-3", "name": "Medications Administered", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "18776-5", "name": "Plan of Treatment", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "11450-4", "name": "Problem List", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "29299-5", "name": "Reason For Visit", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "30954-2", "name": "Relevant diagnostic tests and/or laboratory data", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
+        {"code": "29762-2", "name": "Social History", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false}
     ]"""
 
     config_insert = f"""

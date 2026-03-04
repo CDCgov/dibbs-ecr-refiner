@@ -80,6 +80,12 @@ def create_eicr_refinement_plan(
     else:
         present_section_codes = get_section_loinc_codes(structured_body)
 
+    DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
+        include=True,
+        narrative=False,  # TODO: Decide a default
+        action="refine",
+    )
+
     # create a map of the rules from the configuration for efficient lookup
     rules_map: dict[str, DbConfigurationSectionInstructions] = {
         rule["code"]: DbConfigurationSectionInstructions(
@@ -93,10 +99,18 @@ def create_eicr_refinement_plan(
     # inject the skip logic for the sections
     # defined in the specification file
     for code in SECTION_PROCESSING_SKIP:
-        rules_map[code] = replace(rules_map[code], action="retain")
+        if code in rules_map:
+            rules_map[code] = replace(rules_map[code], include=True, action="retain")
+        else:
+            rules_map[code] = DbConfigurationSectionInstructions(
+                include=True,
+                narrative=False,  # TODO: Decide a default
+                action="retain",
+            )
 
     final_instructions: dict[str, DbConfigurationSectionInstructions] = {
-        code: rules_map[code] for code in present_section_codes
+        code: rules_map.get(code, DEFAULT_SECTION_INSTRUCTIONS)
+        for code in present_section_codes
     }
 
     return EICRRefinementPlan(

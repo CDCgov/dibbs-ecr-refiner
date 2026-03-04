@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ..db.conditions.model import DbCondition
-from ..db.configurations.model import DbConfiguration
+from ..db.configurations.model import DbConfiguration, DbConfigurationSectionProcessing
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -53,6 +52,8 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
+    narrative: bool
+    include: bool
 
 
 class ProcessedConfigurationData(BaseModel):
@@ -139,11 +140,13 @@ class ProcessedConfiguration:
         # STEP 3:
         # convert the list of DbConfigurationSectionProcessing objects into
         # a simple list of dictionaries
-        section_processing_as_dicts: list[dict[str, Any]] = [
+        section_processing_as_dicts: list[DbConfigurationSectionProcessing] = [
             {
                 "code": section_process.code,
                 "name": section_process.name,
                 "action": section_process.action,
+                "include": section_process.include,
+                "narrative": section_process.narrative,
             }
             for section_process in payload.configuration.section_processing
         ]

@@ -809,7 +809,6 @@ async def update_section_processing_db(
     ]
 
     action_changed = prev_section.action != section_update.action
-    # include_changed = prev_section.include != section_update.include
 
     section_events: list[EventInput] = []
     if action_changed:

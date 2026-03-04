@@ -80,7 +80,7 @@ async def update_section_processing(
     section_update = SectionUpdate(
         code=new_section.code,
         action=new_section.action,
-        narrative=False,
+        narrative=False,  # TODO: do something with this
         include=new_section.include,
     )
 
