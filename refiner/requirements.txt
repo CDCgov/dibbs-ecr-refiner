@@ -1,7 +1,7 @@
 boto3==1.42.59
 Authlib==1.6.9
 chardet
-fastapi==0.135.1
+fastapi==0.129.0
 fhir.resources
 httpx
 itsdangerous
@@ -14,5 +14,6 @@ pydantic>=2.0.0
 python-json-logger==4.0.0
 python-multipart
 requests
+types-requests
 rich
 uvicorn

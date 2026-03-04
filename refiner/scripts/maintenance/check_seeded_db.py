@@ -62,8 +62,8 @@ DB_CHECKS: list[dict[str, Any]] = [
     {
         "title": "Expected Condition Grouper Versions Present",
         "query": "SELECT version FROM conditions GROUP BY version;",
-        "failure_condition": lambda res: not all(
-            v in [r["version"] for r in res] for v in TES_CG_VERSIONS
+        "failure_condition": lambda res: (
+            not all(v in [r["version"] for r in res] for v in TES_CG_VERSIONS)
         ),
         "failure_message": "One or more expected condition grouper versions are missing.",
     },
