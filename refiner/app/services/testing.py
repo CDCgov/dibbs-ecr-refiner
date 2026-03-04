@@ -218,6 +218,7 @@ async def independent_testing(
                 config
                 for config in all_jurisdiction_configs
                 if config.condition_id == representative_condition.id
+                and config.status == "active"
             ),
             None,
         )
