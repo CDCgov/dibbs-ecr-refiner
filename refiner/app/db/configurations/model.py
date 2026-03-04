@@ -61,7 +61,18 @@ class DbConfigurationCustomCode:
 
 
 @dataclass(frozen=True)
-class DbConfigurationSectionProcessing:
+class DbConfigurationSectionInstructions:
+    """
+    Properties of a section that describe how it should be processed during refining.
+    """
+
+    include: bool
+    narrative: bool
+    action: DbSectionAction
+
+
+@dataclass(frozen=True)
+class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
     """
     Section Processing instructions for a Configuration.
 
@@ -73,9 +84,6 @@ class DbConfigurationSectionProcessing:
 
     name: str
     code: str
-    include: bool
-    narrative: bool
-    action: DbSectionAction
     versions: list[str]
 
 

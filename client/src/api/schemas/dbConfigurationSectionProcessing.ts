@@ -8,10 +8,10 @@
 import type { DbSectionAction } from './dbSectionAction';
 
 export interface DbConfigurationSectionProcessing {
-  name: string;
-  code: string;
   include: boolean;
   narrative: boolean;
   action: DbSectionAction;
+  name: string;
+  code: string;
   versions: string[];
 }

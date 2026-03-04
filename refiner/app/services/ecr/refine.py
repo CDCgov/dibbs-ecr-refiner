@@ -1,9 +1,10 @@
+from dataclasses import replace
 from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
 
-from app.api.v1.configurations.models import DbSectionAction
+from app.db.configurations.model import DbConfigurationSectionInstructions
 from app.services.ecr.models import EICRRefinementPlan
 from app.services.terminology import ProcessedConfiguration
 
@@ -80,21 +81,22 @@ def create_eicr_refinement_plan(
         present_section_codes = get_section_loinc_codes(structured_body)
 
     # create a map of the rules from the configuration for efficient lookup
-    rules_map: dict[str, str] = {
-        rule["code"]: rule["action"]
+    rules_map: dict[str, DbConfigurationSectionInstructions] = {
+        rule["code"]: DbConfigurationSectionInstructions(
+            include=rule.get("include", False),
+            narrative=rule.get("narrative", False),  # TODO: Decide a default
+            action=rule.get("action", "refine"),
+        )
         for rule in processed_configuration.section_processing
     }
 
     # inject the skip logic for the sections
     # defined in the specification file
     for code in SECTION_PROCESSING_SKIP:
-        rules_map[code] = "retain"
+        rules_map[code] = replace(rules_map[code], action="retain")
 
-    # build the final instruction set: for each section in the document,
-    # find its rule, defaulting to "remove" if no rule is specified
-    final_instructions: dict[str, DbSectionAction] = {
-        code: cast(DbSectionAction, rules_map.get(code, "remove"))
-        for code in present_section_codes
+    final_instructions: dict[str, DbConfigurationSectionInstructions] = {
+        code: rules_map[code] for code in present_section_codes
     }
 
     return EICRRefinementPlan(
@@ -152,30 +154,33 @@ def refine_eicr(
         # 2. load specification
         specification = load_spec(version)
 
-        for section_code, action in plan.section_instructions.items():
+        for section_code, section_rules in plan.section_instructions.items():
             section = get_section_by_code(
                 structured_body=structured_body,
                 loinc_code=section_code,
                 namespaces=namespaces,
             )
+
             if section is None:
                 continue
 
-            if action == "retain":
-                # retain means that we're not processing this section so we continue
-                continue
-            if action == "remove":
+            if not section_rules.include:
                 # we will just force a minimal section
                 create_minimal_section(section=section, removal_reason="configured")
-            elif action == "refine":
-                section_specification = specification.sections.get(section_code)
-                process_section(
-                    section=section,
-                    codes_to_match=plan.codes_to_check,
-                    namespaces=namespaces,
-                    section_specification=section_specification,
-                    version=version,
-                )
+                continue
+
+            if section_rules.action == "retain":
+                # retain means that we're not processing this section so we continue
+                continue
+
+            section_specification = specification.sections.get(section_code)
+            process_section(
+                section=section,
+                codes_to_match=plan.codes_to_check,
+                namespaces=namespaces,
+                section_specification=section_specification,
+                version=version,
+            )
 
         # format and return the result
         return etree.tostring(eicr_root, encoding="unicode")
