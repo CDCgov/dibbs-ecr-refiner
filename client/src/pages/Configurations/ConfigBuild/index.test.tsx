@@ -712,12 +712,13 @@ describe('Config builder page', () => {
       await screen.findByRole('heading', { name: /import from csv/i })
     ).toBeInTheDocument();
 
-    // ---- Mock download plumbing (no <a> assertions) ----
-    const originalCreateObjectURL = URL.createObjectURL.bind(URL);
-    const originalRevokeObjectURL = URL.revokeObjectURL.bind(URL);
+    const createObjectUrlSpy = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:mock-url');
 
-    URL.createObjectURL = vi.fn(() => 'blob:mock-url');
-    URL.revokeObjectURL = vi.fn();
+    const revokeObjectUrlSpy = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => {});
 
     // Click "Download template"
     await user.click(
@@ -725,12 +726,9 @@ describe('Config builder page', () => {
     );
 
     // Assert blob created with correct content
-    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
-    const blobArg = (
-      URL.createObjectURL as unknown as {
-        mock: { calls: unknown[][] };
-      }
-    ).mock.calls[0][0] as Blob;
+    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
+
+    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
 
     const text = await blobArg.text();
     expect(text).toBe(
@@ -739,11 +737,8 @@ describe('Config builder page', () => {
 `
     );
 
-    // Optional: if your implementation revokes, assert it. If not, remove this too.
-    // expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-
     // cleanup
-    URL.createObjectURL = originalCreateObjectURL;
-    URL.revokeObjectURL = originalRevokeObjectURL;
+    createObjectUrlSpy.mockRestore();
+    revokeObjectUrlSpy.mockRestore();
   });
 });
