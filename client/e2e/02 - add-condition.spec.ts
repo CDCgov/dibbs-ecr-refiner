@@ -119,11 +119,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       'custom_code_upload_template.csv'
     );
 
-    // Read file contents and assert exact template
     const path = await download.path();
-    expect(path).toBeTruthy();
-
-    const contents = await readFile(path!, 'utf-8');
+    if (!path) throw new Error('Download path was null');
+    const contents = await readFile(path, 'utf-8');
 
     expect(contents).toBe(
       `code_number,code_system,display_name

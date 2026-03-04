@@ -736,8 +736,8 @@ describe('Config builder page', () => {
     ).toBeInTheDocument();
 
     // ---- Mock download plumbing ----
-    const originalCreateObjectURL = URL.createObjectURL;
-    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const originalCreateObjectURL = URL.createObjectURL.bind(URL);
+    const originalRevokeObjectURL = URL.revokeObjectURL.bind(URL);
     const originalCreateElement = document.createElement.bind(document);
 
     let createdAnchor!: HTMLAnchorElement; // definite assignment
@@ -755,8 +755,7 @@ describe('Config builder page', () => {
           return originalCreateElement(tagName);
         }
 
-        const a = originalCreateElement('a') as HTMLAnchorElement;
-
+        const a = originalCreateElement('a');
         anchorClickSpy = vi.fn();
         // assign spy to click (typed cast avoids TS whining)
         (a as unknown as { click: ReturnType<typeof vi.fn> }).click =
