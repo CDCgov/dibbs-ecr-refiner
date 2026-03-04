@@ -8,6 +8,8 @@ import {
   useUpdateConfigurationSectionProcessing,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
+import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
+import React, { JSX } from 'react';
 
 interface EicrSectionReviewProps {
   configurationId: string;
@@ -46,7 +48,11 @@ export function EicrSectionReview({
               Section name
             </th>
             <th scope="col" className="w-1/3 pb-3">
-              Data handling approach
+              <div className="flex items-center justify-center gap-1">
+                <span>Data handling approach</span>
+                {/* TODO: What text should go here? */}
+                <Tooltip text="This options tells the refiner how to process the section. Either retain it as-is or refine it." />
+              </div>
             </th>
           </tr>
         </thead>
@@ -228,6 +234,50 @@ function RefineSwitch({
     >
       <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
     </Switch>
+  );
+}
+
+function InfoIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M9.16675 5.83366H10.8334V7.50033H9.16675V5.83366ZM9.16675 9.16699H10.8334V14.167H9.16675V9.16699ZM10.0001 1.66699C5.40008 1.66699 1.66675 5.40033 1.66675 10.0003C1.66675 14.6003 5.40008 18.3337 10.0001 18.3337C14.6001 18.3337 18.3334 14.6003 18.3334 10.0003C18.3334 5.40033 14.6001 1.66699 10.0001 1.66699ZM10.0001 16.667C6.32508 16.667 3.33341 13.6753 3.33341 10.0003C3.33341 6.32533 6.32508 3.33366 10.0001 3.33366C13.6751 3.33366 16.6667 6.32533 16.6667 10.0003C16.6667 13.6753 13.6751 16.667 10.0001 16.667Z"
+        fill="#3A7D95"
+      />
+    </svg>
+  );
+}
+
+type CustomTooltipProps = JSX.IntrinsicElements['div'] &
+  React.RefAttributes<HTMLDivElement>;
+
+const CustomLinkForwardRef: React.ForwardRefRenderFunction<
+  HTMLDivElement,
+  CustomTooltipProps
+> = ({ ...tooltipProps }: CustomTooltipProps, ref) => (
+  <div {...tooltipProps} ref={ref}>
+    <InfoIcon />
+  </div>
+);
+
+const CustomTooltip = React.forwardRef(CustomLinkForwardRef);
+
+interface TooltipProps {
+  text: string;
+}
+function Tooltip({ text }: TooltipProps) {
+  return (
+    <USWDSTooltip<CustomTooltipProps> label={text} asCustom={CustomTooltip}>
+      Data handling approach tooltip
+    </USWDSTooltip>
   );
 }
 
