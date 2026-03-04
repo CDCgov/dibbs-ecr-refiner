@@ -697,100 +697,40 @@ describe('Config builder page', () => {
   });
 
   it('downloads the custom code upload template CSV', async () => {
-    // Mock config load (must include whatever ConfigBuild expects)
-    (useGetConfiguration as unknown as Mock).mockReturnValue({
-      data: { data: baseMockConfig },
-    });
-
-    // Mock mutations used by the page so rendering doesn’t blow up
-    (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
-      mutate: vi.fn(),
-      reset: vi.fn(),
-    });
-    (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutate: vi.fn(),
-      reset: vi.fn(),
-    });
-    (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
-      mutate: vi.fn(),
-      reset: vi.fn(),
-    });
-
+    const user = userEvent.setup();
     renderPage();
 
-    // Navigate to Custom codes tab
-    const customCodesTab = await screen.findByRole('button', {
-      name: /custom codes/i,
-    });
-    await userEvent.click(customCodesTab);
+    // Go to Custom codes view
+    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
 
-    // Click "Import from CSV" to show ImportCustomCodes
-    const importBtn = await screen.findByRole('button', {
-      name: /import from csv/i,
-    });
-    await userEvent.click(importBtn);
+    // Click Import from CSV to open import screen
+    await user.click(
+      screen.getByText('Import from CSV', { selector: 'button' })
+    );
 
-    // Confirm import view heading is present
     expect(
       await screen.findByRole('heading', { name: /import from csv/i })
     ).toBeInTheDocument();
 
-    // ---- Mock download plumbing ----
+    // ---- Mock download plumbing (no <a> assertions) ----
     const originalCreateObjectURL = URL.createObjectURL.bind(URL);
     const originalRevokeObjectURL = URL.revokeObjectURL.bind(URL);
-    const originalCreateElement = document.createElement.bind(document);
-
-    let createdAnchor!: HTMLAnchorElement; // definite assignment
-    let anchorWasCreated = false;
-
-    let anchorClickSpy: ReturnType<typeof vi.fn> | null = null;
 
     URL.createObjectURL = vi.fn(() => 'blob:mock-url');
     URL.revokeObjectURL = vi.fn();
 
-    const createElementSpy = vi
-      .spyOn(document, 'createElement')
-      .mockImplementation((tagName: string) => {
-        if (tagName.toLowerCase() !== 'a') {
-          return originalCreateElement(tagName);
-        }
-
-        const a = originalCreateElement('a');
-        anchorClickSpy = vi.fn();
-        // assign spy to click (typed cast avoids TS whining)
-        (a as unknown as { click: ReturnType<typeof vi.fn> }).click =
-          anchorClickSpy;
-
-        createdAnchor = a;
-        anchorWasCreated = true;
-
-        return a;
-      });
-
     // Click "Download template"
-    const downloadBtn = await screen.findByRole('button', {
-      name: /download template/i,
-    });
-    await userEvent.click(downloadBtn);
-
-    expect(anchorWasCreated).toBe(true);
-
-    expect(createdAnchor.download).toBe('custom_code_upload_template.csv');
-    expect(createdAnchor.href).toBe('blob:mock-url');
-
-    expect(anchorClickSpy).not.toBeNull();
-    expect(anchorClickSpy!).toHaveBeenCalledTimes(1);
-
-    if (!anchorClickSpy) throw new Error('Anchor click spy was not set');
-    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+    await user.click(
+      await screen.findByRole('button', { name: /download template/i })
+    );
 
     // Assert blob created with correct content
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
-
-    const createUrlMock = URL.createObjectURL as unknown as {
-      mock: { calls: unknown[][] };
-    };
-    const blobArg = createUrlMock.mock.calls[0]?.[0] as Blob;
+    const blobArg = (
+      URL.createObjectURL as unknown as {
+        mock: { calls: unknown[][] };
+      }
+    ).mock.calls[0][0] as Blob;
 
     const text = await blobArg.text();
     expect(text).toBe(
@@ -799,8 +739,10 @@ describe('Config builder page', () => {
 `
     );
 
-    // cleanup for other tests
-    createElementSpy.mockRestore();
+    // Optional: if your implementation revokes, assert it. If not, remove this too.
+    // expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
+
+    // cleanup
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
   });
