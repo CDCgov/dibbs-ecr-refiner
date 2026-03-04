@@ -246,7 +246,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
         .getByRole('row')
         .filter({ hasText: 'refiner' })
         .filter({ hasText: configurationToTest })
-        .filter({ hasText: "Added 2 custom codes" })
+        .filter({ hasText: 'Added 2 custom codes' })
     ).toBeVisible();
   });
 
