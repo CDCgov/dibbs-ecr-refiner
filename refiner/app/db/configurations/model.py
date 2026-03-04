@@ -78,7 +78,6 @@ class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
 
     Name is the section's name.
     Code is the LOINC code for the section.
-    Action is either: retain, refine, or remove.
     Versions is a list of versions this section appears in.
     """
 

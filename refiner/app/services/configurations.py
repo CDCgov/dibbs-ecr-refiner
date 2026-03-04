@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import replace
+from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
@@ -71,7 +71,10 @@ def clone_section_actions(
     action_map = {section.code: section.action for section in clone_from}
 
     return [
-        replace(section, action=action_map.get(section.code, section.action))
+        replace(
+            section,
+            action=action_map.get(section.code, section.action),
+        )
         for section in clone_to
     ]
 
@@ -150,12 +153,7 @@ async def convert_config_to_storage_payload(
             codes.update(code.code for code in code_list)
 
     sections = [
-        {
-            "code": section_process.code,
-            "name": section_process.name,
-            "action": section_process.action,
-        }
-        for section_process in configuration.section_processing
+        asdict(section_process) for section_process in configuration.section_processing
     ]
 
     for c in conditions:
