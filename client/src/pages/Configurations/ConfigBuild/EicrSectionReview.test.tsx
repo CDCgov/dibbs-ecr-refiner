@@ -49,7 +49,9 @@ describe('EicrSectionReview', () => {
 
     const rows = screen.getAllByRole('row');
 
-    // Skipping header row
+    expect(rows).toHaveLength(4); // including header
+
+    // get the table rows
     const firstRow = rows[1];
     const firstRowCells = within(firstRow).getAllByRole('cell');
 
@@ -59,6 +61,7 @@ describe('EicrSectionReview', () => {
     const thirdRow = rows[3];
     const thirdRowCells = within(thirdRow).getAllByRole('cell');
 
+    // check the contents of each row
     expect(within(firstRow).getByRole('checkbox')).toBeChecked();
     expect(firstRowCells[1]).toHaveTextContent('History section');
     expect(within(firstRow).getByRole('switch')).toBeChecked();
