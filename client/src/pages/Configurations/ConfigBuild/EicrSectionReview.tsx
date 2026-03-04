@@ -171,7 +171,11 @@ function IncludeCheckbox({
   );
 }
 
-function RefineSwitch({ currentSection, configurationId }: RefineSwitchProps) {
+function RefineSwitch({
+  currentSection,
+  configurationId,
+  disabled,
+}: RefineSwitchProps) {
   const { mutate: updateSectionProcessing } =
     useUpdateConfigurationSectionProcessing();
   const queryClient = useQueryClient();
@@ -180,6 +184,7 @@ function RefineSwitch({ currentSection, configurationId }: RefineSwitchProps) {
 
   return (
     <Switch
+      disabled={disabled}
       checked={currentSection.action === DbSectionAction.refine}
       onChange={(checked) => {
         const action: DbSectionAction = checked
@@ -219,7 +224,7 @@ function RefineSwitch({ currentSection, configurationId }: RefineSwitchProps) {
           }
         );
       }}
-      className="group data-checked:bg-violet-warm-60 inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition"
+      className="group data-checked:bg-violet-warm-60 inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
     >
       <span className="data-disabled:bg-gray-cool-60 size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
     </Switch>
