@@ -51,12 +51,17 @@ export function ReportableConditionsResults({
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
-          <hr className="border-gray-cool-20" />
 
-          <ConditionWarnings
-            missingConditions={unmatchedConditions}
-            inactiveConditions={inactiveConditions}
-          />
+          {(hasInactiveConditions || hasMissingConditions) && (
+            <>
+              <hr className="border-gray-cool-20" />
+
+              <ConditionWarnings
+                missingConditions={unmatchedConditions}
+                inactiveConditions={inactiveConditions}
+              />
+            </>
+          )}
         </ConditionsContainer>
         <div className="flex flex-col gap-4 md:w-full">
           <p>Would you like to refine the eCR?</p>
@@ -151,17 +156,13 @@ function ConditionWarnings({
   return (
     <>
       {hasMissingConditions ? (
-        <>
-          <MissingConditions missingConditions={missingConditions} />
-        </>
+        <MissingConditions missingConditions={missingConditions} />
       ) : null}
       {hasMissingConditions && hasInactiveConditions ? (
         <hr className="border-gray-cool-20" />
       ) : null}
       {hasInactiveConditions ? (
-        <>
-          <InactiveConditions inactiveConditions={inactiveConditions} />
-        </>
+        <InactiveConditions inactiveConditions={inactiveConditions} />
       ) : null}
     </>
   );

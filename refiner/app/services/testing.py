@@ -212,14 +212,19 @@ async def independent_testing(
             all_versions, key=lambda c: parse(c.version)
         )
 
-        # find the full configuration object that links to the representative condition's id
+        # find the all the relevant configs and check to see if any one is active
+        condition_configs = sorted(
+            [
+                c
+                for c in all_jurisdiction_configs
+                if c.condition_id == representative_condition.id
+            ],
+            key=lambda c: c.version,
+        )
+
         matching_config = next(
-            (
-                config
-                for config in all_jurisdiction_configs
-                if config.condition_id == representative_condition.id
-            ),
-            None,
+            (c for c in condition_configs if c.status == "active"),
+            condition_configs[-1] if condition_configs else None,
         )
 
         # collect all snomed codes that led to detecting this conceptual condition
