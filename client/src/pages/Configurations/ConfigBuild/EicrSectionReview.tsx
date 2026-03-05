@@ -120,6 +120,7 @@ function IncludeCheckbox({
     <Checkbox
       className="group block size-5 cursor-pointer rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
       id={`${currentSection.name}-include`}
+      aria-label={`Include ${currentSection.name} section rules in refined document.`}
       checked={currentSection.include}
       onChange={(checked) => {
         const include = checked;
@@ -187,17 +188,26 @@ function RefineSwitch({
   const showToast = useToast();
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
+  const refineLabelText = 'Refine & optimize';
+  const preserveLabelText = 'Preserve & retain all data';
 
   return (
     <Field className="flex items-center">
       <Label passive className="w-48">
         {isRefineToggled ? (
-          <span>Refine & optimize</span>
+          <span>{refineLabelText}</span>
         ) : (
-          <span className="italic">Preserve & retain all data</span>
+          <span className="italic">{refineLabelText}</span>
         )}
       </Label>
       <Switch
+        aria-label={
+          isRefineToggled
+            ? // "Refine & optimize Admission Diagnosis section"
+              `${refineLabelText} ${currentSection.name} section`
+            : // "Preserve & retain all data for Admission Diagnosis section"
+              `${preserveLabelText} for ${currentSection.name} section`
+        }
         disabled={disabled}
         checked={isRefineToggled}
         onChange={(checked) => {

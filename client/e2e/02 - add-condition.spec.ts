@@ -106,23 +106,25 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     // Check that a couple of expected options are visible
     await expect(
       page.getByRole('cell', {
-        name: 'Reason for visit section Versions 1.1, 3.1, and 3.1.1',
+        name: 'Reason For Visit',
         exact: true,
       })
     ).toBeVisible();
     await expect(
       page.getByRole('cell', {
-        name: 'Medications section Versions 3.1 and 3.1.1',
+        name: 'Medications',
         exact: true,
       })
     ).toBeVisible();
 
     await expect(
-      page.getByLabel('Include and refine section Encounters Section')
+      page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
 
-    const radio = page.getByLabel('Include entire section Encounters Section');
-    const parent = radio.locator('..');
+    const encountersSwitch = page.getByLabel(
+      'Refine & optimize Encounters section'
+    );
+    const parent = encountersSwitch.locator('..');
     await parent.click();
 
     // Wait for saving to show up
@@ -136,7 +138,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await page.getByRole('button', { name: 'Sections' }).click();
     await expect(
-      page.getByLabel('Include entire section Encounters Section')
+      page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
 
     /// ==========================================================================
