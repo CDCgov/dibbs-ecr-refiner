@@ -134,11 +134,10 @@ function IncludeCheckbox({
           {
             configurationId,
             data: {
-              section: {
-                action: updatedSection.action,
-                code: updatedSection.code,
-                include: updatedSection.include,
-              },
+              action: updatedSection.action,
+              code: updatedSection.code,
+              include: updatedSection.include,
+              narrative: false, // TODO: Update later
             },
           },
           {
@@ -228,11 +227,10 @@ function RefineSwitch({
             {
               configurationId,
               data: {
-                section: {
-                  action: updatedSection.action,
-                  code: updatedSection.code,
-                  include: updatedSection.include,
-                },
+                action: updatedSection.action,
+                code: updatedSection.code,
+                include: updatedSection.include,
+                narrative: false, // TODO: Update later
               },
             },
             {

@@ -165,31 +165,15 @@ class ConfigurationTestResponse:
     condition: Condition
 
 
-class UpdateSectionProcessingEntry(BaseModel):
+class UpdateSectionInput(BaseModel):
     """
     Model for a single section processing update.
     """
 
     code: str
     include: bool
+    narrative: bool
     action: DbSectionAction
-
-
-class UpdateSectionProcessingPayload(BaseModel):
-    """
-    Payload for updating section processing entries.
-    """
-
-    section: UpdateSectionProcessingEntry
-
-
-@dataclass(frozen=True)
-class UpdateSectionProcessingResponse:
-    """
-    Response model for updating section processing entries.
-    """
-
-    message: str
 
 
 @dataclass(frozen=True)

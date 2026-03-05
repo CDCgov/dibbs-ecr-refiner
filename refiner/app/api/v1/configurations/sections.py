@@ -4,14 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.models import (
-    UpdateSectionProcessingPayload,
-    UpdateSectionProcessingResponse,
+    UpdateSectionInput,
 )
 from app.db.configurations.db import (
-    SectionUpdate,
     get_configuration_by_id_db,
     update_section_processing_db,
 )
+from app.db.configurations.model import DbConfigurationSectionProcessing
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
@@ -21,22 +20,22 @@ router = APIRouter(prefix="/{configuration_id}/section-processing")
 
 @router.patch(
     "",
-    response_model=UpdateSectionProcessingResponse,
+    response_model=str,
     tags=["configurations"],
     operation_id="updateConfigurationSectionProcessing",
 )
 async def update_section_processing(
     configuration_id: UUID,
-    payload: UpdateSectionProcessingPayload,
+    section: UpdateSectionInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> UpdateSectionProcessingResponse:
+) -> str:
     """
     Update a section entry for a configuration.
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        payload (UpdateSectionProcessingPayload): List of section updates with code and action
+        section (UpdateSectionInput): Updated section info
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
@@ -67,6 +66,7 @@ async def update_section_processing(
             status_code=status.HTTP_409_CONFLICT,
             detail="Trying to update a non-draft configuration",
         )
+
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,
@@ -75,12 +75,27 @@ async def update_section_processing(
         db=db,
     )
 
-    new_section = payload.section
-    section_update = SectionUpdate(
-        code=new_section.code,
-        action=new_section.action,
-        narrative=False,  # TODO: do something with this
-        include=new_section.include,
+    # Can't update a section unless it exists
+    updated_code = section.code
+    prev_section = None
+    for s in config.section_processing:
+        if s.code == updated_code:
+            prev_section = s
+            break
+
+    if not prev_section:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Section with code {updated_code} is invalid and can't be updated.",
+        )
+
+    section_update = DbConfigurationSectionProcessing(
+        code=section.code,
+        action=section.action,
+        narrative=section.narrative,
+        include=section.include,
+        name=prev_section.name,
+        versions=prev_section.versions,
     )
 
     try:
@@ -99,4 +114,4 @@ async def update_section_processing(
             detail="Failed to update configuration.",
         )
 
-    return UpdateSectionProcessingResponse(message="Section processed successfully.")
+    return section_update.code

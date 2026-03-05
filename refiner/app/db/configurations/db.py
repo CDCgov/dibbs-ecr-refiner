@@ -1,5 +1,4 @@
-from dataclasses import asdict, dataclass
-from typing import TypedDict
+from dataclasses import asdict
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
@@ -724,37 +723,9 @@ async def edit_custom_code_from_configuration_db(
             return updated_config
 
 
-@dataclass(frozen=True)
-class SectionUpdate:
-    """
-    Represents a section processing update for a configuration.
-    """
-
-    code: str
-    include: bool
-    narrative: bool
-    action: DbSectionAction
-
-
-class SectionProcessingDict(TypedDict):
-    """Typed dict for section processing entries stored in configurations.
-
-    Fields:
-        name: human-readable section name
-        code: LOINC code for the section
-        action: processing action ('retain'|'refine'|'remove')
-        versions: list of spec version strings this section appears in
-    """
-
-    name: str
-    code: str
-    action: DbSectionAction
-    versions: list[str]
-
-
 async def update_section_processing_db(
     config: DbConfiguration,
-    section_update: SectionUpdate,
+    section_update: DbConfigurationSectionProcessing,
     user_id: UUID,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
