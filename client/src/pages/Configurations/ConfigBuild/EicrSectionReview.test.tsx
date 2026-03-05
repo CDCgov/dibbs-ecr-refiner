@@ -12,7 +12,6 @@ function renderWithClient(ui: React.ReactElement) {
 describe('EicrSectionReview', () => {
   it('should display sections based on stored section data', () => {
     const testId = 'test-id';
-    // const user = userEvent.setup();
     const sections: DbConfigurationSectionProcessing[] = [
       {
         name: 'History section',
