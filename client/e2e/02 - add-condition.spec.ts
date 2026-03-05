@@ -121,11 +121,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
 
-    const encountersSwitch = page.getByLabel(
-      'Refine & optimize Encounters section'
-    );
-    const parent = encountersSwitch.locator('..');
-    await parent.click();
+    // click the switch to toggle it
+    await page.getByLabel('Refine & optimize Encounters section').click();
 
     // Wait for saving to show up
     await page.getByText('Saving').waitFor({ state: 'visible' });
