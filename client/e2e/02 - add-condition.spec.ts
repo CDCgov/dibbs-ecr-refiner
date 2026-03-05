@@ -103,6 +103,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       latestSpecRowCount
     );
 
+    // This is the default setting for the skipped sections (see specification.py)
+    await expect(page.getByText('Preserve & retain all data')).toHaveCount(2);
+
     // Check that a couple of expected options are visible
     await expect(
       page.getByRole('cell', {
@@ -110,6 +113,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
         exact: true,
       })
     ).toBeVisible();
+
     await expect(
       page.getByRole('cell', {
         name: 'Medications',
@@ -141,8 +145,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
 
-    // switch was previously toggled off
-    await expect(page.getByText('Preserve & retain all data')).toBeInViewport();
+    // switch was previously toggled off which adds one more to the total count
+    await expect(page.getByText('Preserve & retain all data')).toHaveCount(3);
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
