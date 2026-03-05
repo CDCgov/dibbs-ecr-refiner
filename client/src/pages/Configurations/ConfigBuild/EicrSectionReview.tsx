@@ -11,6 +11,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
 import React, { JSX } from 'react';
 
+// TODO: Do we want to do this forever? Will folks know why this is disabled?
+const disabledSections = new Set(['88085-6', '83910-0']);
+
 interface EicrSectionReviewProps {
   configurationId: string;
   sectionProcessing: DbConfigurationSectionProcessing[];
@@ -66,7 +69,7 @@ export function EicrSectionReview({
                     configurationId={configurationId}
                     currentSection={section}
                     sections={sectionProcessing}
-                    disabled={disabled}
+                    disabled={disabled || disabledSections.has(section.code)}
                   />
                 </div>
               </td>
@@ -86,7 +89,7 @@ export function EicrSectionReview({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={disabled}
+                      disabled={disabled || disabledSections.has(section.code)}
                     />
                   </div>
                 ) : null}
@@ -123,6 +126,7 @@ function IncludeCheckbox({
       id={`${currentSection.name}-include`}
       aria-label={`Include ${currentSection.name} section rules in refined document.`}
       checked={currentSection.include}
+      disabled={disabled}
       onChange={(checked) => {
         const include = checked;
         const updatedSection: DbConfigurationSectionProcessing = {
@@ -158,7 +162,6 @@ function IncludeCheckbox({
           }
         );
       }}
-      disabled={disabled}
     >
       <svg
         className="group-data-checked:bg-blue-cool-50 hidden stroke-white group-data-checked:block"
