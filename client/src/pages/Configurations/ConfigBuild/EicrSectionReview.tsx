@@ -50,8 +50,9 @@ export function EicrSectionReview({
             <th scope="col" className="w-3/6 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
-                {/* TODO: What text should go here? */}
-                <Tooltip text="This options tells the refiner how to process the section. Either retain it as-is or refine it." />
+                <Tooltip
+                  text={`Set to "Refine & optimize" if you'd like to filter the content of this section down to coded elements matching the codes in your configuration in your refined output. Set to "Preserve & retain" if you'd like to keep the information in this section in its entirety in the refined output.`}
+                />
               </div>
             </th>
           </tr>
