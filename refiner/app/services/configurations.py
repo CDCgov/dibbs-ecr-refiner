@@ -13,7 +13,6 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.specification import (
     EICR_SPECS_DATA,
-    SECTION_PROCESSING_SKIP,
     load_spec,
 )
 
@@ -41,14 +40,12 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
-            narrative=False,
+            narrative=False,  # TODO: Decide on a default value for narrative.
             include=True,
             action="refine",
             versions=loinc_versions_flat.get(loinc_code, []),
         )
         for loinc_code, section_spec in spec.sections.items()
-        if loinc_code
-        not in SECTION_PROCESSING_SKIP  # Skipping emergency outbreak and reportability response sections
     ]
 
     return section_processing_defaults
