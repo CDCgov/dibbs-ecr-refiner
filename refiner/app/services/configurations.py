@@ -13,6 +13,7 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.specification import (
     EICR_SPECS_DATA,
+    SECTION_PROCESSING_SKIP,
     load_spec,
 )
 
@@ -42,7 +43,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
             code=loinc_code,
             narrative=False,  # TODO: Decide on a default value for narrative.
             include=True,
-            action="refine",
+            action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
             versions=loinc_versions_flat.get(loinc_code, []),
         )
         for loinc_code, section_spec in spec.sections.items()
