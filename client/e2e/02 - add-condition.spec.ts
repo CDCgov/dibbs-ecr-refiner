@@ -96,30 +96,26 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// ==========================================================================
     /// Test that CSV upload for custom codes works
     /// ==========================================================================
-    // open Import from CSV
     await page.getByRole('button', { name: 'Import from CSV' }).click();
     await expect(
       page.getByRole('heading', { name: 'Import from CSV' })
     ).toBeVisible();
 
-    // CSV content (match server headers)
     const csv = `code_number,code_system,display_name
 10001,LOINC,TEST 1
 10002,LOINC,TEST 2
 `;
 
-    // scope the file input to the import panel for safety
     const importPanel = page.locator('div', {
       has: page.getByRole('heading', { name: 'Import from CSV' }),
     });
     const fileInput = importPanel.locator('input[type="file"]');
 
-    // Wait for the POST response and upload in parallel
     const [uploadResponse] = await Promise.all([
       page.waitForResponse(
         (resp) =>
           resp.request().method() === 'POST' &&
-          resp.url().includes('/custom-codes/upload') // or '/upload' if your path differs
+          resp.url().includes('/custom-codes/upload')
       ),
       fileInput.setInputFiles({
         name: 'custom_codes.csv',
@@ -128,26 +124,18 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       }),
     ]);
 
-    // Ensure server returned success
     expect(uploadResponse.ok(), 'upload POST returned non-2xx').toBeTruthy();
 
-    // Now wait for the parent view to be set and the new rows visible
     await expect(
       page.getByRole('heading', { name: 'Custom codes' })
-    ).toBeVisible({
-      timeout: 30_000,
-    });
+    ).toBeVisible();
 
     await expect(
       page.getByRole('cell', { name: 'TEST 1', exact: true })
-    ).toBeVisible({
-      timeout: 30_000,
-    });
+    ).toBeVisible();
     await expect(
       page.getByRole('cell', { name: '10001', exact: true })
-    ).toBeVisible({
-      timeout: 30_000,
-    });
+    ).toBeVisible();
 
     await expect(
       page.getByRole('cell', { name: 'TEST 2', exact: true })

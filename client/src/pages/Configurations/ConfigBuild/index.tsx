@@ -368,7 +368,7 @@ function Builder({
                   Add code
                 </ModalToggleButton>
 
-                <Button onClick={() => onCsvImportClick()} variant="secondary">
+                <Button onClick={onCsvImportClick} variant="secondary">
                   Import from CSV
                 </Button>
               </div>
@@ -390,9 +390,7 @@ function Builder({
             <ImportCustomCodes
               configurationId={id}
               disabled={disabled}
-              onSuccess={() => {
-                setTableView('custom');
-              }}
+              onSuccess={() => setTableView('custom')}
             />
           ) : null}
         </div>
@@ -1096,17 +1094,18 @@ function normalizeSystem(
 interface ImportCustomCodesProps {
   configurationId: string;
   disabled?: boolean;
-  onSuccess?: () => void; // 👈 add this
+  onSuccess?: () => void;
 }
 
-export const ImportCustomCodes = ({
+function ImportCustomCodes({
   configurationId,
   disabled = false,
   onSuccess,
-}: ImportCustomCodesProps) => {
+}: ImportCustomCodesProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const showToast = useToast();
+  const formatApiError = useApiErrorFormatter();
 
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -1159,41 +1158,10 @@ export const ImportCustomCodes = ({
           onSuccess?.();
         },
         onError: (err: unknown) => {
-          // Orval/axios style error commonly has `response.data.detail`
-          let message = 'Failed to upload CSV. Please try again.';
-
-          if (typeof err === 'object' && err !== null && 'response' in err) {
-            const response = (err as { response?: unknown }).response;
-            if (
-              typeof response === 'object' &&
-              response !== null &&
-              'data' in response
-            ) {
-              const data = (response as { data?: unknown }).data;
-              if (
-                typeof data === 'object' &&
-                data !== null &&
-                'detail' in data
-              ) {
-                const detail = (data as { detail?: unknown }).detail;
-                if (typeof detail === 'string') {
-                  message = detail;
-                } else if (Array.isArray(detail)) {
-                  message = detail
-                    .map((d) =>
-                      typeof d === 'object' && d !== null && 'msg' in d
-                        ? String((d as { msg?: unknown }).msg)
-                        : JSON.stringify(d)
-                    )
-                    .join(', ');
-                }
-              }
-            }
-          } else if (err instanceof Error && err.message) {
-            message = err.message;
-          }
+          const message = formatApiError(err);
 
           setError(message);
+
           showToast({
             variant: 'error',
             heading: 'Error Importing CSV',
@@ -1315,4 +1283,4 @@ export const ImportCustomCodes = ({
       )}
     </div>
   );
-};
+}

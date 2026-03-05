@@ -599,7 +599,6 @@ describe('Config builder page', () => {
     const user = userEvent.setup();
     renderPage();
 
-    // keep your other mocks if renderPage expects them
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
       reset: vi.fn(),
@@ -635,15 +634,12 @@ describe('Config builder page', () => {
       isPending: false,
     });
 
-    // Go to Custom codes view
     await user.click(screen.getByText('Custom codes', { selector: 'span' }));
 
-    // Click Import from CSV to open import screen
     await user.click(
       screen.getByText('Import from CSV', { selector: 'button' })
     );
 
-    // Verify import screen appears
     expect(
       screen.getByText('Import from CSV', { selector: 'h2' })
     ).toBeInTheDocument();
@@ -651,31 +647,23 @@ describe('Config builder page', () => {
       screen.getByText('Upload CSV', { selector: 'button' })
     ).toBeInTheDocument();
 
-    // Prepare a CSV File (matches your expected headers)
     const csv = `code_number,code_system,display_name
 12345,LOINC,TEST 1
 6789,LOINC,TEST 2
 `;
     const file = new File([csv], 'custom_codes.csv', { type: 'text/csv' });
 
-    // Find the hidden input and upload the file
-    // const input = screen.getByLabelText(/file/i, {
-    //   selector: 'input[type="file"]',
-    // });
-    // If your input has no accessible label, use:
     const input = document.querySelector(
       'input[type="file"]'
     ) as HTMLInputElement;
 
     await user.upload(input, file);
 
-    // ✅ Verify mutate was called with the expected shape
     expect(uploadMutate).toHaveBeenCalledTimes(1);
 
     const call = uploadMutate.mock.calls[0];
     const vars = call[0];
 
-    // Vars shape depends on your Orval generator. This matches your latest usage:
     expect(vars).toMatchObject({
       configurationId: expect.anything(),
       data: {
@@ -684,13 +672,11 @@ describe('Config builder page', () => {
       },
     });
 
-    // Optional: ensure the CSV content made it through
     expect(vars.data.csv_text).toContain(
       'code_number,code_system,display_name'
     );
     expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
 
-    // After onSuccess, component should return to Custom codes view
     expect(
       screen.getByText('Custom codes', { selector: 'h3' })
     ).toBeInTheDocument();

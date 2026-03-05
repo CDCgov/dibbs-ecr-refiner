@@ -209,7 +209,6 @@ async def upload_custom_codes_csv(
         UploadCustomCodesResponse
     """
 
-    # Optional filename check (cosmetic)
     if body.filename and not body.filename.lower().endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -263,8 +262,6 @@ async def upload_custom_codes_csv(
                     name=name,
                 )
             )
-        except HTTPException:
-            raise
         except Exception as e:
             logger.error(
                 "Invalid CSV row",
