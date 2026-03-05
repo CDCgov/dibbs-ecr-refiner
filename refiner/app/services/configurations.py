@@ -51,26 +51,30 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     return section_processing_defaults
 
 
-def clone_section_actions(
+def clone_section_processing_instructions(
     clone_from: list[DbConfigurationSectionProcessing],
     clone_to: list[DbConfigurationSectionProcessing],
 ) -> list[DbConfigurationSectionProcessing]:
     """
-    Clones section actions from one list of sections into another.
+    Clones section processing instruction info from one list of sections into another.
 
     Args:
-        clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone actions from.
-        clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone actions into.
+        clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info from.
+        clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info into.
 
     Returns:
         list[DbConfigurationSectionProcessing]: The new list of sections.
     """
     action_map = {section.code: section.action for section in clone_from}
+    include_map = {section.code: section.include for section in clone_from}
+    narrative_map = {section.code: section.narrative for section in clone_from}
 
     return [
         replace(
             section,
             action=action_map.get(section.code, section.action),
+            include=include_map.get(section.code, section.include),
+            narrative=narrative_map.get(section.code, section.narrative),
         )
         for section in clone_to
     ]

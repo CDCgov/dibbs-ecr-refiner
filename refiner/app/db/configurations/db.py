@@ -7,7 +7,10 @@ from psycopg.types.json import Jsonb
 
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
-from app.services.configurations import clone_section_actions, get_default_sections
+from app.services.configurations import (
+    clone_section_processing_instructions,
+    get_default_sections,
+)
 
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
@@ -97,7 +100,7 @@ async def insert_configuration_db(
             Jsonb(
                 [
                     asdict(c)
-                    for c in clone_section_actions(
+                    for c in clone_section_processing_instructions(
                         clone_from=config_to_clone.section_processing,
                         clone_to=get_default_sections(),
                     )
