@@ -6,6 +6,7 @@
 
 import json
 import os
+from collections import defaultdict
 from typing import TypedDict
 
 import boto3
@@ -14,6 +15,7 @@ from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
 from ..services.aws.s3_keys import get_active_file_key, get_current_file_key
+from ..services.ecr.models import RRRefinementPlan
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
@@ -184,14 +186,15 @@ def process_refiner(
     refiner_output_files: list[str] = []
     metadata: dict[str, dict[str, bool]] = {}
 
+    # Process each condition for this jurisdiction
+    non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
+
     # Process each jurisdiction
     for jurisdiction_group in reportability_result["reportable_conditions"]:
         jurisdiction_code = jurisdiction_group.jurisdiction.upper()
-
         if jurisdiction_code not in metadata:
             metadata[jurisdiction_code] = {}
 
-        # Process each condition for this jurisdiction
         for condition in jurisdiction_group.conditions:
             condition_code = condition.code
 
@@ -207,6 +210,7 @@ def process_refiner(
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
                 metadata[jurisdiction_code][condition_code] = False
+                non_active_reportable_conditions[jurisdiction_code].add(condition_code)
                 logger.info(
                     "No active configuration identified, skipping.",
                     key=current_file_key,
@@ -322,6 +326,27 @@ def process_refiner(
 
             metadata[jurisdiction_code][condition_code] = True
 
+    for jurisdiction_code, condition_codes in non_active_reportable_conditions.items():
+        non_active_rr_refinement_plan = RRRefinementPlan(condition_codes)
+
+        inactive_condition_refined_rr_content = refine_rr(
+            xml_files=xml_files,
+            jurisdiction_id=jurisdiction_code,
+            plan=non_active_rr_refinement_plan,
+        )
+        output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/inactive-codes"
+
+        shadow_rr_output_key = f"{output_key}/refined_RR.xml"
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=shadow_rr_output_key,
+            Body=inactive_condition_refined_rr_content.encode("utf-8"),
+            ContentType="application/xml",
+        )
+
+        logger.info("Shadow RR uploaded", output_key=shadow_rr_output_key)
+
+    # do a secondary refinement step for the inactive reportable conditions?
     return refiner_output_files, metadata
 
 
