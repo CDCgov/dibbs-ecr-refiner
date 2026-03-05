@@ -70,7 +70,7 @@ export function EicrSectionReview({
                   />
                 </div>
               </td>
-              <td className="px-3 py-3">
+              <td>
                 {section.include ? (
                   <span className="font-bold">{section.name}</span>
                 ) : (
@@ -79,7 +79,7 @@ export function EicrSectionReview({
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2">
+              <td>
                 {section.include ? (
                   <div className="flex justify-center">
                     <RefineSwitch
