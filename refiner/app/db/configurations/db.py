@@ -770,17 +770,7 @@ async def update_section_processing_db(
         if section.code != section_update.code
     ]
 
-    updated_sections = updated_sections + [
-        DbConfigurationSectionProcessing(
-            name=prev_section.name,
-            code=prev_section.code,
-            versions=prev_section.versions,
-            # updates
-            action=section_update.action,
-            include=section_update.include,
-            narrative=False,
-        )
-    ]
+    updated_sections = updated_sections + [section_update]
 
     action_changed = prev_section.action != section_update.action
 
