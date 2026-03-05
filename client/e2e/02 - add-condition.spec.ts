@@ -98,7 +98,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// ==========================================================================
     await page.getByRole('button', { name: 'Sections' }).click();
 
-    const latestSpecRowCount = 19; // spec: 3.1.1
+    const latestSpecRowCount = 21; // spec: 3.1.1, including skipped sections
     await expect(page.locator('table tbody tr')).toHaveCount(
       latestSpecRowCount
     );
