@@ -208,7 +208,7 @@ function RefineSwitch({
         {isRefineToggled ? (
           <span>{refineLabelText}</span>
         ) : (
-          <span className="italic">{refineLabelText}</span>
+          <span className="italic">{preserveLabelText}</span>
         )}
       </Label>
       <Switch
