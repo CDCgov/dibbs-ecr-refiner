@@ -136,9 +136,13 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: configurationToTest }).click();
 
     await page.getByRole('button', { name: 'Sections' }).click();
+
     await expect(
       page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
+
+    // switch was previously toggled off
+    await expect(page.getByText('Preserve & retain all data')).toBeInViewport();
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
