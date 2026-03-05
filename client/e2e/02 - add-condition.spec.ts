@@ -122,7 +122,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     ).toBeChecked();
 
     // click the switch to toggle it
-    await page.getByLabel('Refine & optimize Encounters section').click();
+    await page
+      .getByRole('switch', { name: 'Refine & optimize Encounters section' })
+      .click();
 
     // Wait for saving to show up
     await page.getByText('Saving').waitFor({ state: 'visible' });
