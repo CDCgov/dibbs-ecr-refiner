@@ -76,7 +76,6 @@ async def update_section_processing(
     )
 
     new_section = payload.section
-    # convert payload to DB-friendly format (SectionUpdate dataclasses)
     section_update = SectionUpdate(
         code=new_section.code,
         action=new_section.action,
@@ -88,9 +87,11 @@ async def update_section_processing(
         updated_config = await update_section_processing_db(
             config=config, section_update=section_update, user_id=user.id, db=db
         )
-    except ValueError as e:
-        # DB layer validation error -> bad request
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provided section is not valid.",
+        )
 
     if not updated_config:
         raise HTTPException(

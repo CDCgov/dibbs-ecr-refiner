@@ -71,12 +71,10 @@ export function EicrSectionReview({
               </td>
               <td className="px-3 py-3">
                 {section.include ? (
-                  <span className="font-bold">
-                    {castToSentenceCase(section.name)}
-                  </span>
+                  <span className="font-bold">{section.name}</span>
                 ) : (
                   <span className="text-gray-cool-70 italic">
-                    {castToSentenceCase(section.name)}
+                    {section.name}
                   </span>
                 )}
               </td>
@@ -290,8 +288,4 @@ function Tooltip({ text }: TooltipProps) {
       Data handling approach tooltip
     </USWDSTooltip>
   );
-}
-
-function castToSentenceCase(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1, str.length).toLowerCase();
 }
