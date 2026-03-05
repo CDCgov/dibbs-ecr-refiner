@@ -194,14 +194,7 @@ function RefineSwitch({
 
   return (
     <Field className="flex items-center">
-      <Label passive className="w-48">
-        {isRefineToggled ? (
-          <span>{refineLabelText}</span>
-        ) : (
-          <span className="italic">{refineLabelText}</span>
-        )}
-      </Label>
-      <Switch
+      <Label
         aria-label={
           isRefineToggled
             ? // "Refine & optimize Admission Diagnosis section"
@@ -209,6 +202,16 @@ function RefineSwitch({
             : // "Preserve & retain all data for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
+        passive
+        className="w-48"
+      >
+        {isRefineToggled ? (
+          <span>{refineLabelText}</span>
+        ) : (
+          <span className="italic">{refineLabelText}</span>
+        )}
+      </Label>
+      <Switch
         disabled={disabled}
         checked={isRefineToggled}
         onChange={(checked) => {
