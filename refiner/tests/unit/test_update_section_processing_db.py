@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
-from app.db.configurations.db import SectionUpdate, update_section_processing_db
+from app.db.configurations.db import update_section_processing_db
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -91,9 +91,23 @@ async def test_update_section_processing_valid():
         s3_urls=[],
     )
     # The DB should return the updated row; build that row dict
-    updated_sections = [
-        {"name": "Section A", "code": "A", "action": "refine"},
-        {"name": "Section B", "code": "B", "action": "retain"},
+    updated_sections: list[DbConfigurationSectionProcessing] = [
+        {
+            "name": "Section A",
+            "code": "A",
+            "action": "refine",
+            "narrative": False,
+            "include": True,
+            "versions": [],
+        },
+        {
+            "name": "Section B",
+            "code": "B",
+            "action": "retain",
+            "narrative": False,
+            "include": True,
+            "versions": [],
+        },
     ]
 
     row = {
@@ -117,8 +131,13 @@ async def test_update_section_processing_valid():
 
     updated_config = await update_section_processing_db(
         config=mock_config,
-        section_update=SectionUpdate(
-            code="A", action="refine", narrative=False, include=True
+        section_update=DbConfigurationSectionProcessing(
+            code="A",
+            action="refine",
+            narrative=False,
+            include=True,
+            versions=[],
+            name="A",
         ),
         user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
         db=fake_db,
@@ -199,8 +218,13 @@ async def test_update_section_processing_invalid_action():
     with pytest.raises(ValueError, match="No existing section with code Unknown"):
         await update_section_processing_db(
             config=mock_config,
-            section_update=SectionUpdate(
-                code="Unknown", action="refine", narrative=False, include=True
+            section_update=DbConfigurationSectionProcessing(
+                code="Unknown",
+                action="refine",
+                narrative=False,
+                include=True,
+                name="Unknown",
+                versions=[],
             ),
             user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
             db=fake_db,
@@ -214,7 +238,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
     existing_sections = [
         DbConfigurationSectionProcessing(
             name="Sec A",
-            code="A",
+            code="updated code",
             action="retain",
             versions=[],
             narrative=False,
@@ -251,7 +275,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
     updated_sections = [
         DbConfigurationSectionProcessing(
             name="Sec A",
-            code="A",
+            code="updated code",
             action="refine",
             versions=[],
             narrative=False,
@@ -306,18 +330,24 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
         AsyncMock(return_value=None),
     )
 
-    payload = {"section": {"code": "A", "action": "refine", "include": False}}
+    payload = {
+        "code": "updated code",
+        "action": "refine",
+        "include": False,
+        "narrative": False,
+    }
 
     # Act
     response = await authed_client.patch(
         f"/api/v1/configurations/{config_id}/section-processing",
         json=payload,
     )
+    print(response.text)
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["message"] == "Section processed successfully."
+    assert data == "updated code"
 
 
 @pytest.mark.asyncio
@@ -370,12 +400,10 @@ async def test_update_section_processing_db_returns_none(
     )
 
     payload = {
-        "section": {
-            "code": "A",
-            "action": "retain",
-            "include": False,
-            "narrative": False,
-        }
+        "code": "A",
+        "action": "retain",
+        "include": False,
+        "narrative": False,
     }
 
     # Act
