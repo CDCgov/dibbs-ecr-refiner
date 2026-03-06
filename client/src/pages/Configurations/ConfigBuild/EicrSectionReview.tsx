@@ -11,7 +11,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
 import React, { JSX } from 'react';
 
-// TODO: Do we want to do this forever? Will folks know why this is disabled?
+/**
+ * TODO: please refer to specification.py
+ *
+ * These sections are "skipped" so we don't allow users to make selections for them.
+ * This will change in the future when we know how the sections will be used.
+ * Ask @robertmitchellv about this for more detail.
+ */
+
 const disabledSections = new Set(['88085-6', '83910-0']);
 
 interface EicrSectionReviewProps {
