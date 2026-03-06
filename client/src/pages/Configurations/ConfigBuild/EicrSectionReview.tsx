@@ -308,9 +308,7 @@ function Tooltip({ text }: TooltipProps) {
   return (
     <USWDSTooltip<CustomTooltipProps>
       position="left"
-      label={
-        <div className="w-max max-w-75 whitespace-normal">{text}</div>
-      }
+      label={<div className="w-max max-w-75 whitespace-normal">{text}</div>}
       asCustom={CustomTooltip}
     >
       Data handling approach tooltip
