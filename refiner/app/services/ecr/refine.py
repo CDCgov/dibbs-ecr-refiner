@@ -92,14 +92,16 @@ def create_eicr_refinement_plan(
     )
 
     # create a map of the rules from the configuration for efficient lookup
-    rules_map: dict[str, DbConfigurationSectionInstructions] = {
-        rule["code"]: DbConfigurationSectionInstructions(
+    rules_map: dict[str, DbConfigurationSectionInstructions] = {}
+    for rule in processed_configuration.section_processing:
+        code = rule.get("code")
+        if not code:
+            continue  # TODO: do we need to do something if it's not present?
+        rules_map[code] = DbConfigurationSectionInstructions(
             include=rule.get("include", DEFAULT_SECTION_INSTRUCTIONS.include),
             narrative=rule.get("narrative", DEFAULT_SECTION_INSTRUCTIONS.narrative),
             action=rule.get("action", DEFAULT_SECTION_INSTRUCTIONS.action),
         )
-        for rule in processed_configuration.section_processing
-    }
 
     # inject the skip logic for the sections
     # defined in the specification file
