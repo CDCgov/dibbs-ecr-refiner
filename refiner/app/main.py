@@ -197,7 +197,14 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
             ],  # Allow all headers (Authorization, Content-Type, etc.)
         )
 
-    app.add_middleware(SessionMiddleware, secret_key=get_session_secret_key())
+    app.add_middleware(
+        SessionMiddleware,
+        session_cookie="oidc",
+        secret_key=get_session_secret_key(),
+        https_only=ENVIRONMENT["ENV"] != "local",
+        same_site="lax",
+        max_age=600,
+    )
     app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
     @app.middleware("http")
