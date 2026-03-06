@@ -342,7 +342,6 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
         f"/api/v1/configurations/{config_id}/section-processing",
         json=payload,
     )
-    print(response.text)
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
