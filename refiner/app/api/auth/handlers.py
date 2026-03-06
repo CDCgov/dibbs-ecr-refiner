@@ -1,3 +1,4 @@
+import secrets
 from logging import Logger
 from uuid import UUID
 
@@ -47,7 +48,11 @@ async def login(
 
     logger.info(f"Login redirect URI: {redirect_uri}")
 
-    return await get_oauth_provider().authorize_redirect(request, redirect_uri)
+    nonce = secrets.token_urlsafe(16)
+    request.session["nonce"] = nonce
+    return await get_oauth_provider().authorize_redirect(
+        request, redirect_uri, nonce=nonce
+    )
 
 
 @auth_router.get(
@@ -79,7 +84,17 @@ async def auth_callback(
     try:
         token = await get_oauth_provider().authorize_access_token(request)
         nonce = request.session.get("nonce")
+
+        # This should be set during the login flow
+        if not nonce:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Missing login nonce"
+            )
+
         oidc_user = await get_oauth_provider().parse_id_token(token, nonce)
+
+        # Clear Starlette session once logged in
+        request.session.clear()
 
         idp_user_id = oidc_user.get("sub", None)
         idp_username = oidc_user.get("preferred_username", None)
@@ -180,9 +195,9 @@ async def auth_callback(
         )
         return response
 
-    except Exception as e:
-        logger.error("IdP callback error", extra={"error": str(e)})
-        raise e
+    except Exception:
+        logger.error("IdP callback error")
+        raise
 
 
 class UserResponse(BaseModel):
@@ -261,6 +276,10 @@ async def logout(
         await delete_session(token=session_token, db=db)
 
     response = RedirectResponse(url=post_logout_redirect_uri)
+
+    # Starlette's session shouldn't exist by this point but just to be safe we'll clear it.
+    request.session.clear()
+
     response.delete_cookie(
         key="refiner-session",
         httponly=True,
