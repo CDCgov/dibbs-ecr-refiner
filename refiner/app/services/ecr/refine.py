@@ -1,4 +1,3 @@
-from dataclasses import replace
 from typing import cast
 
 from lxml import etree
@@ -86,12 +85,18 @@ def create_eicr_refinement_plan(
         action="refine",
     )
 
+    SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
+        include=True,
+        narrative=False,  # TODO: Decide a default
+        action="retain",
+    )
+
     # create a map of the rules from the configuration for efficient lookup
     rules_map: dict[str, DbConfigurationSectionInstructions] = {
         rule["code"]: DbConfigurationSectionInstructions(
-            include=rule.get("include", False),
-            narrative=rule.get("narrative", False),  # TODO: Decide a default
-            action=rule.get("action", "refine"),
+            include=rule.get("include", DEFAULT_SECTION_INSTRUCTIONS.include),
+            narrative=rule.get("narrative", DEFAULT_SECTION_INSTRUCTIONS.narrative),
+            action=rule.get("action", DEFAULT_SECTION_INSTRUCTIONS.action),
         )
         for rule in processed_configuration.section_processing
     }
@@ -99,14 +104,7 @@ def create_eicr_refinement_plan(
     # inject the skip logic for the sections
     # defined in the specification file
     for code in SECTION_PROCESSING_SKIP:
-        if code in rules_map:
-            rules_map[code] = replace(rules_map[code], include=True, action="retain")
-        else:
-            rules_map[code] = DbConfigurationSectionInstructions(
-                include=True,
-                narrative=False,  # TODO: Decide a default
-                action="retain",
-            )
+        rules_map[code] = SKIP_SECTION_INSTRUCTIONS
 
     final_instructions: dict[str, DbConfigurationSectionInstructions] = {
         code: rules_map.get(code, DEFAULT_SECTION_INSTRUCTIONS)
