@@ -352,14 +352,6 @@ def refine_rr(
             if id_element is None:
                 continue
 
-            jurisdiction_code = id_element.get("extension")
-            if not jurisdiction_code:
-                continue
-
-            # remove any that don't match the specified JID
-            if jurisdiction_code != jurisdiction_id:
-                remove_element(component)
-
         # Similarly, if component / observation doesn't have a tagged RRVS1 entry,
         # it's not reportable, so throw out the whole thing
         reportable_observation_tags = cast(

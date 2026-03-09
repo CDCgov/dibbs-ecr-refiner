@@ -185,9 +185,9 @@ def process_refiner(
     reportability_result = determine_reportability(xml_files)
     refiner_output_files: list[str] = []
     metadata: dict[str, dict[str, bool]] = {}
+    non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
 
     # Process each condition for this jurisdiction
-    non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
 
     # Process each jurisdiction
     for jurisdiction_group in reportability_result["reportable_conditions"]:
@@ -210,6 +210,8 @@ def process_refiner(
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
                 metadata[jurisdiction_code][condition_code] = False
+
+                # keep track of non active conditions for final processing
                 non_active_reportable_conditions[jurisdiction_code].add(condition_code)
                 logger.info(
                     "No active configuration identified, skipping.",
@@ -315,17 +317,19 @@ def process_refiner(
                 unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr_content
             )
             logger.info(
-                "Refinement complete.",
+                "Condition refinement complete.",
                 eicr_key=eicr_output_key,
                 rr_key=rr_output_key,
                 eicr_size_reduction_percentage=eicr_size_reduction_percentage,
                 jurisdiction_code=jurisdiction_code,
                 condition_code=condition_code,
-                operation="refinement_complete",
+                operation="condition_refinement_complete",
             )
 
             metadata[jurisdiction_code][condition_code] = True
 
+    # Process reportable conditions that don't have an active Refiner configuration
+    # and create a followup RR
     for jurisdiction_code, condition_codes in non_active_reportable_conditions.items():
         non_active_rr_refinement_plan = RRRefinementPlan(condition_codes)
 
@@ -344,9 +348,20 @@ def process_refiner(
             ContentType="application/xml",
         )
 
-        logger.info("Shadow RR uploaded", output_key=shadow_rr_output_key)
+        logger.info(
+            "Created refined shadow RR output",
+            output_key=shadow_rr_output_key,
+            jurisdiction_code=jurisdiction_code,
+            operation="shadow_rr_written",
+        )
 
-    # do a secondary refinement step for the inactive reportable conditions?
+    logger.info(
+        "Refinement complete.",
+        persistence_id=persistence_id,
+        output_file_urls=refiner_output_files,
+        jurisdiction_codes=metadata.keys(),
+        operation="refinement_complete",
+    )
     return refiner_output_files, metadata
 
 
