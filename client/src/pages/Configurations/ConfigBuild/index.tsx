@@ -1178,6 +1178,24 @@ function ImportCustomCodes({
 
   const uploading = isUploading || isPending;
 
+  const handleDownloadTemplate = () => {
+    const csv = `code_number,code_system,display_name
+[CODE_NUMBER],[CODE_SYSTEM],[DISPLAY_NAME]
+`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'custom_code_upload_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="w-full max-w-xl space-y-6">
       {uploading ? (
@@ -1249,7 +1267,13 @@ function ImportCustomCodes({
               <p className="text-sm">
                 Your spreadsheet must follow the format of this template.
               </p>
-              <Button variant="secondary">Download template</Button>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={handleDownloadTemplate}
+              >
+                Download template
+              </Button>
             </div>
           </div>
 
