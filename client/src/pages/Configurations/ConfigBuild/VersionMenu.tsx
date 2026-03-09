@@ -2,8 +2,8 @@ import { MenuButton, MenuItems, MenuItem, Menu } from '@headlessui/react';
 import { Icon } from '@trussworks/react-uswds';
 import { Link } from 'react-router';
 import {
-  GetConfigurationsResponseStatus,
   GetConfigurationResponseVersion,
+  DbConfigurationStatus,
 } from '../../../api/schemas';
 import { Fragment } from 'react';
 import { useDatetimeFormatter } from '../../../hooks/UseDatetimeFormatter';
@@ -11,7 +11,7 @@ import { useDatetimeFormatter } from '../../../hooks/UseDatetimeFormatter';
 interface VersionMenuProps {
   id: string;
   currentVersion: number;
-  status: GetConfigurationsResponseStatus;
+  status: DbConfigurationStatus;
   versions: GetConfigurationResponseVersion[];
   step: 'build' | 'test' | 'activate';
 }

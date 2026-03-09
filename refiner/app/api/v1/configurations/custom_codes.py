@@ -1,3 +1,6 @@
+import csv
+import io
+from logging import Logger
 from typing import Literal
 from uuid import UUID
 
@@ -8,8 +11,10 @@ from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.models import (
     AddCustomCodeInput,
     ConfigurationCustomCodeResponse,
+    UploadCustomCodesCsvInput,
 )
 from app.db.configurations.db import (
+    add_bulk_custom_codes_to_configuration_db,
     add_custom_code_to_configuration_db,
     delete_custom_code_from_configuration_db,
     edit_custom_code_from_configuration_db,
@@ -23,6 +28,7 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
+from app.services.logger import get_logger
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
@@ -60,16 +66,15 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
         )
 
 
-def _get_sanitized_system_name(system: str):
-    lower_system = system.lower()
-    if system in ["loinc", "snomed"]:
-        return system.upper()
-    elif lower_system == "icd-10":
+def _get_sanitized_system_name(system: str) -> str:
+    lower_system = system.strip().lower()
+
+    if lower_system in ("loinc", "snomed"):
+        return lower_system.upper()
+    if lower_system == "icd-10":
         return "ICD-10"
-    elif lower_system == "rxnorm":
+    if lower_system == "rxnorm":
         return "RxNorm"
-    elif lower_system == "other":
-        return "Other"
 
     raise Exception(f"System name provided: {system} is invalid.")
 
@@ -168,6 +173,136 @@ async def add_custom_code(
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+    )
+
+
+class UploadCustomCodesResponse(BaseModel):
+    """
+    Custom Code CSV response model.
+    """
+
+    message: str
+    codes_processed: int
+    total_custom_codes_in_configuration: int
+
+
+@router.post(
+    "/upload",
+    tags=["configurations"],
+    operation_id="uploadCustomCodesCsv",
+    response_model=UploadCustomCodesResponse,
+)
+async def upload_custom_codes_csv(
+    configuration_id: UUID,
+    body: UploadCustomCodesCsvInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
+) -> UploadCustomCodesResponse:
+    """
+    Accepts a CSV payload in JSON body.
+
+    Expected CSV headers:
+        code_number,code_system,display_name
+
+    Returns:
+        UploadCustomCodesResponse
+    """
+
+    if body.filename and not body.filename.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a CSV.",
+        )
+
+    # Get user jurisdiction
+    jd = user.jurisdiction_id
+
+    # Find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=jd,
+        db=db,
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+
+    # Parse CSV from text
+    decoded = body.csv_text
+    csv_reader = csv.DictReader(io.StringIO(decoded))
+
+    required_columns = {"code_number", "code_system", "display_name"}
+    if not required_columns.issubset(set(csv_reader.fieldnames or [])):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV must contain headers: code_number,code_system,display_name",
+        )
+
+    custom_codes: list[DbConfigurationCustomCode] = []
+
+    for row_number, row in enumerate(csv_reader, start=2):
+        try:
+            code = (row.get("code_number") or "").strip()
+            code_system_raw = (row.get("code_system") or "").strip()
+            name = (row.get("display_name") or "").strip()
+
+            if not code or not code_system_raw:
+                raise ValueError("Missing required values.")
+
+            sanitized_system_name = _get_sanitized_system_name(code_system_raw)
+            system_literal = _get_literal_system(sanitized_system_name)
+
+            custom_codes.append(
+                DbConfigurationCustomCode(
+                    code=code,
+                    system=system_literal,
+                    name=name,
+                )
+            )
+        except Exception as e:
+            logger.error(
+                "Invalid CSV row",
+                extra={"row_number": row_number, "error": str(e), "row": row},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid data in CSV at row {row_number}",
+            )
+
+    if not custom_codes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV file contains no valid rows.",
+        )
+
+    # Bulk insert (dedupe happens inside the DB function)
+    try:
+        result = await add_bulk_custom_codes_to_configuration_db(
+            config=config,
+            custom_codes=custom_codes,
+            user_id=user.id,
+            db=db,
+        )
+    except Exception as e:
+        logger.error("Bulk custom code insert failed", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to insert custom codes.",
+        )
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+    return UploadCustomCodesResponse(
+        message="Successfully uploaded custom codes.",
+        codes_processed=result.added_count,
+        total_custom_codes_in_configuration=len(result.config.custom_codes),
     )
 
 

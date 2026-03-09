@@ -3,6 +3,37 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+type DbSectionAction = Literal["retain", "refine"]
+
+type DbConfigurationStatus = Literal["draft", "inactive", "active"]
+
+
+@dataclass(frozen=True)
+class GetConfigurationResponseVersion:
+    """
+    Model representing a version of a configuration.
+    """
+
+    id: UUID
+    version: int
+    condition_canonical_url: str
+    status: DbConfigurationStatus
+    created_at: datetime
+    created_by: str
+    last_activated_at: datetime | None
+    last_activated_by: str | None
+
+
+@dataclass(frozen=True)
+class DbTotalConditionCodeCount:
+    """
+    Total code count model.
+    """
+
+    condition_id: UUID
+    display_name: str
+    total_codes: int
+
 
 @dataclass(frozen=True)
 class DbConfigurationCondition:
@@ -30,23 +61,29 @@ class DbConfigurationCustomCode:
 
 
 @dataclass(frozen=True)
-class DbConfigurationSectionProcessing:
+class DbConfigurationSectionInstructions:
+    """
+    Properties of a section that describe how it should be processed during refining.
+    """
+
+    include: bool
+    narrative: bool
+    action: DbSectionAction
+
+
+@dataclass(frozen=True)
+class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
     """
     Section Processing instructions for a Configuration.
 
     Name is the section's name.
     Code is the LOINC code for the section.
-    Action is either: retain, refine, or remove.
     Versions is a list of versions this section appears in.
     """
 
     name: str
     code: str
-    action: str
     versions: list[str]
-
-
-DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
 
 @dataclass(frozen=True)
@@ -104,13 +141,8 @@ class DbConfiguration:
             ],
             custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
             section_processing=[
-                DbConfigurationSectionProcessing(
-                    name=sp.get("name"),
-                    code=sp.get("code"),
-                    action=sp.get("action"),
-                    versions=sp.get("versions", []),
-                )
-                for sp in row.get("section_processing", []) or []
+                DbConfigurationSectionProcessing(**sp)
+                for sp in (row.get("section_processing") or [])
             ],
             version=row["version"],
             last_activated_at=row["last_activated_at"],
@@ -173,3 +205,13 @@ class ConfigurationStorageMetadata:
             "configuration_version": self.configuration_version,
             "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
         }
+
+
+@dataclass
+class BulkAddCustomCodesResult:
+    """
+    Response model for Custom Code CSV input.
+    """
+
+    config: DbConfiguration
+    added_count: int
