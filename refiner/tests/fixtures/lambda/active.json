@@ -1746,49 +1746,156 @@
   ],
   "sections": [
     {
-      "code": "46240-8",
-      "name": "History of encounters",
-      "action": "refine"
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Review of Systems Section",
+      "code": "10187-3",
+      "versions": ["3.1", "3.1.1"]
     },
     {
-      "code": "10164-2",
-      "name": "History of Present Illness",
-      "action": "refine"
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Chief Complaint Section",
+      "code": "10154-3",
+      "versions": ["3.1", "3.1.1"]
     },
     {
-      "code": "11369-6",
-      "name": "History of Immunizations",
-      "action": "refine"
-    },
-    {
-      "code": "29549-3",
-      "name": "Medications Administered",
-      "action": "refine"
-    },
-    {
-      "code": "18776-5",
-      "name": "Plan of Treatment",
-      "action": "refine"
-    },
-    {
-      "code": "11450-4",
-      "name": "Problem List",
-      "action": "refine"
-    },
-    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Reason for Visit Section",
       "code": "29299-5",
-      "name": "Reason For Visit",
-      "action": "refine"
+      "versions": ["1.1", "3.1", "3.1.1"]
     },
     {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "History of Present Illness Section",
+      "code": "10164-2",
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Medications Section",
+      "code": "10160-0",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Plan of Treatment Section",
+      "code": "18776-5",
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Medications Administered Section",
+      "code": "29549-3",
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Procedures Section",
+      "code": "47519-4",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Admission Diagnosis Section",
+      "code": "46241-6",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Immunizations Section",
+      "code": "11369-6",
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Discharge Diagnosis Section",
+      "code": "11535-2",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Results Section",
       "code": "30954-2",
-      "name": "Relevant diagnostic tests and/or laboratory data",
-      "action": "refine"
+      "versions": ["1.1", "3.1", "3.1.1"]
     },
     {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Admission Medications Section",
+      "code": "42346-7",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Past Medical History",
+      "code": "11348-0",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Vital Signs Section",
+      "code": "8716-3",
+      "versions": ["3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Problem Section",
+      "code": "11450-4",
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Social History Section",
       "code": "29762-2",
-      "name": "Social History",
-      "action": "refine"
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Encounters Section",
+      "code": "46240-8",
+      "versions": ["1.1", "3.1", "3.1.1"]
+    },
+    {
+      "include": true,
+      "narrative": false,
+      "action": "refine",
+      "name": "Pregnancy Section",
+      "code": "90767-5",
+      "versions": ["3.1", "3.1.1"]
     }
   ],
   "included_condition_rsg_codes": ["186747009", "840539006"]

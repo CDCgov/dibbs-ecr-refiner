@@ -98,32 +98,37 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// ==========================================================================
     await page.getByRole('button', { name: 'Sections' }).click();
 
-    const latestSpecRowCount = 19; // spec: 3.1.1
+    const latestSpecRowCount = 21; // spec: 3.1.1, including skipped sections
     await expect(page.locator('table tbody tr')).toHaveCount(
       latestSpecRowCount
     );
 
+    // This is the default setting for the skipped sections (see specification.py)
+    await expect(page.getByText('Preserve & retain all data')).toHaveCount(2);
+
     // Check that a couple of expected options are visible
     await expect(
       page.getByRole('cell', {
-        name: 'Reason for visit section Versions 1.1, 3.1, and 3.1.1',
+        name: 'Reason For Visit',
         exact: true,
       })
     ).toBeVisible();
+
     await expect(
       page.getByRole('cell', {
-        name: 'Medications section Versions 3.1 and 3.1.1',
+        name: 'Medications',
         exact: true,
       })
     ).toBeVisible();
 
     await expect(
-      page.getByLabel('Include and refine section Encounters Section')
+      page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
 
-    const radio = page.getByLabel('Include entire section Encounters Section');
-    const parent = radio.locator('..');
-    await parent.click();
+    // click the switch to toggle it
+    await page
+      .getByRole('switch', { name: 'Refine & optimize Encounters section' })
+      .click();
 
     // Wait for saving to show up
     await page.getByText('Saving').waitFor({ state: 'visible' });
@@ -135,9 +140,13 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: configurationToTest }).click();
 
     await page.getByRole('button', { name: 'Sections' }).click();
+
     await expect(
-      page.getByLabel('Include entire section Encounters Section')
+      page.getByLabel('Include Encounters section rules in refined document.')
     ).toBeChecked();
+
+    // switch was previously toggled off which adds one more to the total count
+    await expect(page.getByText('Preserve & retain all data')).toHaveCount(3);
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log

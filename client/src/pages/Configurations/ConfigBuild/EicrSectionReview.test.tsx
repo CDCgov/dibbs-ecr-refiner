@@ -1,125 +1,76 @@
-// @vitest-environment jsdom
 import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { describe, it, expect } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
 import { TestQueryClientProvider } from '../../../test-utils';
 import { EicrSectionReview } from './EicrSectionReview';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 
-const mockMutate = vi.fn();
-const mockShowToast = vi.fn();
-const mockFormatError = vi.fn(
-  (err: any) => (err && err.message) || 'formatted'
-);
-
-vi.mock('../../../api/configurations/configurations', () => ({
-  useUpdateConfigurationSectionProcessing: () => ({ mutate: mockMutate }),
-}));
-vi.mock('../../../hooks/useToast', () => ({ useToast: () => mockShowToast }));
-vi.mock('../../../hooks/useErrorFormatter', () => ({
-  useApiErrorFormatter: () => mockFormatError,
-}));
-
-/**
- * Helper for rendering with a fresh QueryClient per test.
- */
 function renderWithClient(ui: React.ReactElement) {
   return render(<TestQueryClientProvider>{ui}</TestQueryClientProvider>);
 }
 
-describe('EicrSectionReview accessibility & behavior', () => {
-  beforeEach(() => {
-    mockMutate.mockReset();
-    mockShowToast.mockReset();
-    mockFormatError.mockReset();
-  });
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('shows correct versions text for each section row', () => {
-    const configurationId = 'conf-test';
-    const sampleSections = [
-      { name: 'A', code: 'A01', action: 'refine', versions: ['1.0'] },
-      { name: 'B', code: 'B01', action: 'refine', versions: ['1.0', '2.0'] },
+describe('EicrSectionReview', () => {
+  it('should display sections based on stored section data', () => {
+    const testId = 'test-id';
+    const sections: DbConfigurationSectionProcessing[] = [
       {
-        name: 'C',
-        code: 'C01',
+        name: 'History section',
         action: 'refine',
-        versions: ['1.0', '2.0', '3.0'],
+        include: true,
+        code: 'hist',
+        narrative: false,
+        versions: ['1.1', '3.1'],
+      },
+      {
+        name: 'Med section',
+        action: 'refine',
+        include: false,
+        code: 'med',
+        narrative: false,
+        versions: ['1.1', '3.1', '3.1.1'],
+      },
+      {
+        name: 'Immuizations section',
+        action: 'retain',
+        include: true,
+        code: 'imm',
+        narrative: false,
+        versions: ['3.1', '3.1.1'],
       },
     ];
-
     renderWithClient(
       <EicrSectionReview
-        sectionProcessing={sampleSections}
-        configurationId={configurationId}
+        configurationId={testId}
         disabled={false}
-      />
-    );
-
-    expect(screen.getByText('Version 1.0')).toBeInTheDocument();
-    expect(screen.getByText('Versions 1.0 and 2.0')).toBeInTheDocument();
-    expect(screen.getByText('Versions 1.0, 2.0, and 3.0')).toBeInTheDocument();
-  });
-
-  it('optimistically updates UI and calls mutate on radio activation via cell click', async () => {
-    const configurationId = 'config-1';
-    const sections: DbConfigurationSectionProcessing[] = [
-      { name: 'Section X', code: 'X01', action: 'refine', versions: ['1.1'] },
-    ];
-
-    renderWithClient(
-      <EicrSectionReview
         sectionProcessing={sections}
-        configurationId={configurationId}
-        disabled={false}
       />
     );
 
-    const input = screen.getByLabelText('Include entire section Section X');
-    expect(input).not.toBeChecked();
+    const rows = screen.getAllByRole('row');
 
-    await userEvent.click(input);
+    expect(rows).toHaveLength(4); // including header
 
-    expect(mockMutate).toHaveBeenCalledTimes(1);
-    expect(mockMutate.mock.calls[0][0]).toMatchObject({
-      configurationId,
-      data: { sections: [{ code: 'X01', action: 'retain' }] },
-    });
+    // get the table rows
+    const firstRow = rows[1];
+    const firstRowCells = within(firstRow).getAllByRole('cell');
 
-    expect(
-      await screen.findByLabelText('Include entire section Section X')
-    ).toBeChecked();
-  });
+    const secondRow = rows[2];
+    const secondRowCells = within(secondRow).getAllByRole('cell');
 
-  it('reverts optimistic UI and shows toast on API error', async () => {
-    const configurationId = 'config-3';
-    const sections = [
-      { name: 'Section Z', code: 'Z01', action: 'refine', versions: ['1.1'] },
-    ];
+    const thirdRow = rows[3];
+    const thirdRowCells = within(thirdRow).getAllByRole('cell');
 
-    mockMutate.mockImplementation((_payload: any, options: any) => {
-      options?.onError?.(new Error('Server error'));
-    });
+    // check the contents of each row
+    expect(within(firstRow).getByRole('checkbox')).toBeChecked();
+    expect(firstRowCells[1]).toHaveTextContent('History section');
+    expect(within(firstRow).getByRole('switch')).toBeChecked();
 
-    renderWithClient(
-      <EicrSectionReview
-        sectionProcessing={sections}
-        configurationId={configurationId}
-        disabled={false}
-      />
-    );
+    expect(within(secondRow).getByRole('checkbox')).not.toBeChecked();
+    expect(secondRowCells[1]).toHaveTextContent('Med section');
+    expect(within(secondRow).queryByRole('switch')).not.toBeInTheDocument();
 
-    // Click the RADIO, not the <td>
-    const radio = screen.getByLabelText('Include entire section Section Z');
-
-    await userEvent.click(radio);
-
-    await waitFor(() => {
-      expect(mockShowToast).toHaveBeenCalledTimes(1);
-      expect(mockFormatError).toHaveBeenCalled();
-    });
+    expect(within(thirdRow).getByRole('checkbox')).toBeChecked();
+    expect(thirdRowCells[1]).toHaveTextContent('Immuizations section');
+    expect(within(thirdRow).getByRole('switch')).not.toBeChecked();
   });
 });
