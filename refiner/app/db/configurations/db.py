@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import asdict
 from uuid import UUID
 
@@ -144,6 +145,44 @@ async def insert_configuration_db(
             return config
 
 
+async def get_configuration_sections_db(
+    configuration_ids: list[UUID], db: AsyncDatabaseConnection
+) -> list[DbConfigurationSectionProcessing]:
+    """
+    Fetch all sections for a given configuration.
+
+    Args:
+        configuration_ids (UUID): ID of the configuration
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list(DbConfigurationSectionProcessing): List of sections
+    """
+
+    query = """
+    SELECT
+        id,
+        name,
+        code,
+        action,
+        include,
+        narrative,
+        versions
+    FROM configuration_sections
+    WHERE configuration_id = ANY(%s)
+    ORDER BY name;
+    """
+    params = (configuration_ids,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(
+            row_factory=class_row(DbConfigurationSectionProcessing)
+        ) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return rows
+
+
 async def get_configurations_db(
     jurisdiction_id: str, db: AsyncDatabaseConnection
 ) -> list[DbConfiguration]:
@@ -155,30 +194,50 @@ async def get_configurations_db(
         SELECT
             id,
             name,
-			status,
+            status,
             jurisdiction_id,
             condition_id,
             included_conditions,
             custom_codes,
-            section_processing,
             version,
-			last_activated_at,
-			last_activated_by,
+            last_activated_at,
+            last_activated_by,
             created_by,
             condition_canonical_url,
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
-        ORDER BY name asc;
-        """
+        ORDER BY name ASC;
+    """
 
     params = (jurisdiction_id,)
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            rows = await cur.fetchall()
+            config_rows = await cur.fetchall()
 
-    return [DbConfiguration.from_db_row(row) for row in rows]
+    if not config_rows:
+        return []
+
+    # config_ids = [row["id"] for row in config_rows]
+    # sections = await get_configuration_sections_db(configuration_ids=config_ids, db=db)
+    sections_by_config: dict[str, list[dict]] = defaultdict(list)
+
+    # for section in sections:
+    #     sections_by_config[section.].append(
+    #         {
+    #             "code": section["code"],
+    #             "name": section["name"],
+    #             "action": section["action"],
+    #             "include": section["include"],
+    #             "versions": section["versions"],
+    #             "narrative": section["narrative"],
+    #         }
+    #     )
+    for row in config_rows:
+        row["section_processing"] = sections_by_config.get(row["id"], [])
+
+    return [DbConfiguration.from_db_row(row) for row in config_rows]
 
 
 async def get_configuration_by_id_db(
@@ -187,27 +246,65 @@ async def get_configuration_by_id_db(
     """
     Fetch a configuration by the given ID.
     """
-
     query = """
-        SELECT
-            id,
-            name,
-			status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
-        FROM configurations
-        WHERE id = %s
-        AND jurisdiction_id = %s
-        """
+    SELECT
+        c.id,
+        c.name,
+        c.status,
+        c.jurisdiction_id,
+        c.condition_id,
+        c.included_conditions,
+        c.custom_codes,
+
+        -- build section_processing from configuration_sections
+        COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
+
+        c.version,
+        c.last_activated_at,
+        c.last_activated_by,
+        c.created_by,
+        c.condition_canonical_url,
+        c.s3_urls
+    FROM configurations c
+    LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+                   jsonb_build_object(
+                       'code', s.code,
+                       'name', s.name,
+                       'action', s.action::text,
+                       'include', s.include,
+                       'versions', to_jsonb(s.versions),
+                       'narrative', s.narrative
+                   )
+                   ORDER BY s.code
+               ) AS section_processing
+        FROM configuration_sections s
+        WHERE s.configuration_id = c.id
+    ) secs ON TRUE
+    WHERE c.id = %s
+    AND c.jurisdiction_id = %s;
+    """
+
+    # query = """
+    #     SELECT
+    #         id,
+    #         name,
+    # 		status,
+    #         jurisdiction_id,
+    #         condition_id,
+    #         included_conditions,
+    #         custom_codes,
+    #         section_processing,
+    #         version,
+    # 		last_activated_at,
+    # 		last_activated_by,
+    #         created_by,
+    #         condition_canonical_url,
+    #         s3_urls
+    #     FROM configurations
+    #     WHERE id = %s
+    #     AND jurisdiction_id = %s
+    #     """
 
     params = (
         id,

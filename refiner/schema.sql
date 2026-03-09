@@ -59,6 +59,16 @@ CREATE TYPE public.event_type_enum AS ENUM (
 
 
 --
+-- Name: section_action; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.section_action AS ENUM (
+    'refine',
+    'retain'
+);
+
+
+--
 -- Name: configurations_set_condition_canonical_url_on_insert(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -163,6 +173,24 @@ CREATE TABLE public.conditions (
 
 
 --
+-- Name: configuration_sections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configuration_sections (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    configuration_id uuid NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    action public.section_action NOT NULL,
+    include boolean NOT NULL,
+    narrative boolean NOT NULL,
+    versions text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: configurations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -176,14 +204,12 @@ CREATE TABLE public.configurations (
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     condition_id uuid NOT NULL,
-    section_processing jsonb DEFAULT '[]'::jsonb,
     status public.configuration_status DEFAULT 'draft'::public.configuration_status NOT NULL,
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
     condition_canonical_url text NOT NULL,
     created_by uuid NOT NULL,
-    s3_urls text[],
-    CONSTRAINT section_processing_must_be_json_array CHECK ((jsonb_typeof(section_processing) = 'array'::text))
+    s3_urls text[]
 );
 
 
@@ -276,6 +302,22 @@ ALTER TABLE ONLY public.conditions
 
 
 --
+-- Name: configuration_sections configuration_sections_configuration_id_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configuration_sections
+    ADD CONSTRAINT configuration_sections_configuration_id_code_key UNIQUE (configuration_id, code);
+
+
+--
+-- Name: configuration_sections configuration_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configuration_sections
+    ADD CONSTRAINT configuration_sections_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: configurations configurations_condition_canonical_url_jurisdiction_id_vers_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -356,6 +398,20 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: configuration_sections_code_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configuration_sections_code_idx ON public.configuration_sections USING btree (code);
+
+
+--
+-- Name: configuration_sections_configuration_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configuration_sections_configuration_id_idx ON public.configuration_sections USING btree (configuration_id);
+
+
+--
 -- Name: configurations_one_active_per_pair_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -416,6 +472,14 @@ CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configur
 --
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: configuration_sections configuration_sections_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configuration_sections
+    ADD CONSTRAINT configuration_sections_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -511,4 +575,5 @@ ALTER TABLE ONLY public.users
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260226212322'),
-    ('20260305221859');
+    ('20260305221859'),
+    ('20260309151338');
