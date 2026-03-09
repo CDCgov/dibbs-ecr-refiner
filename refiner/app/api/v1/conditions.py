@@ -22,6 +22,7 @@ class GetConditionsResponse:
 
     id: UUID
     display_name: str
+    output_name: str
 
 
 @router.get(
@@ -45,7 +46,11 @@ async def get_conditions(
 
     conditions = await get_latest_conditions_db(db=db)
     return [
-        GetConditionsResponse(id=condition.id, display_name=condition.display_name)
+        GetConditionsResponse(
+            id=condition.id,
+            display_name=condition.display_name,
+            output_name=condition.output_name,
+        )
         for condition in conditions
     ]
 
@@ -58,6 +63,7 @@ class GetConditionResponse:
 
     id: UUID
     display_name: str
+    output_name: str
     available_systems: list[str]
     codes: list[GetConditionCode]
 
@@ -101,6 +107,7 @@ async def get_condition(
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
+        output_name=condition.output_name,
         available_systems=available_systems,
         codes=condition_codes,
     )
