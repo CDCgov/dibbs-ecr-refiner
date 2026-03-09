@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import replace
+from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
@@ -41,35 +41,42 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
-            action="refine",
+            narrative=False,  # TODO: Decide on a default value for narrative.
+            include=True,
+            action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
             versions=loinc_versions_flat.get(loinc_code, []),
         )
         for loinc_code, section_spec in spec.sections.items()
-        if loinc_code
-        not in SECTION_PROCESSING_SKIP  # Skipping emergency outbreak and reportability response sections
     ]
 
     return section_processing_defaults
 
 
-def clone_section_actions(
+def clone_section_processing_instructions(
     clone_from: list[DbConfigurationSectionProcessing],
     clone_to: list[DbConfigurationSectionProcessing],
 ) -> list[DbConfigurationSectionProcessing]:
     """
-    Clones section actions from one list of sections into another.
+    Clones section processing instruction info from one list of sections into another.
 
     Args:
-        clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone actions from.
-        clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone actions into.
+        clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info from.
+        clone_to (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info into.
 
     Returns:
         list[DbConfigurationSectionProcessing]: The new list of sections.
     """
     action_map = {section.code: section.action for section in clone_from}
+    include_map = {section.code: section.include for section in clone_from}
+    narrative_map = {section.code: section.narrative for section in clone_from}
 
     return [
-        replace(section, action=action_map.get(section.code, section.action))
+        replace(
+            section,
+            action=action_map.get(section.code, section.action),
+            include=include_map.get(section.code, section.include),
+            narrative=narrative_map.get(section.code, section.narrative),
+        )
         for section in clone_to
     ]
 
@@ -148,12 +155,7 @@ async def convert_config_to_storage_payload(
             codes.update(code.code for code in code_list)
 
     sections = [
-        {
-            "code": section_process.code,
-            "name": section_process.name,
-            "action": section_process.action,
-        }
-        for section_process in configuration.section_processing
+        asdict(section_process) for section_process in configuration.section_processing
     ]
 
     for c in conditions:

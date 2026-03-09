@@ -5,13 +5,13 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { GetConfigurationResponseVersionStatus } from './getConfigurationResponseVersionStatus';
+import type { DbConfigurationStatus } from './dbConfigurationStatus';
 
 export interface GetConfigurationResponseVersion {
   id: string;
   version: number;
   condition_canonical_url: string;
-  status: GetConfigurationResponseVersionStatus;
+  status: DbConfigurationStatus;
   created_at: string;
   created_by: string;
   last_activated_at: string | null;
