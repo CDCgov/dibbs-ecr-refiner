@@ -1,5 +1,6 @@
 import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
+import UploadSvg from '../../../assets/upload.svg';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -1198,8 +1199,13 @@ function ImportCustomCodes({
           </div>
 
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
-            <div className="mb-4 flex justify-center text-5xl text-blue-400">
-              📄
+            <div className="mb-4 flex justify-center">
+              <img
+                src={UploadSvg}
+                alt=""
+                className="h-[68px] w-[54px]"
+                aria-hidden="true"
+              />
             </div>
 
             <h3 className="mb-4 text-lg font-semibold">CSV uploading...</h3>
