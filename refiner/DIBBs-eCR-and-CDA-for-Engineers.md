@@ -88,7 +88,7 @@
 <patient>
   <id>12345</id>
   <name>John Doe</name>
-  <birthTime value="1975-05-01" />  <!-- Attribute! -->
+  <birthDate value="1975-05-01" />  <!-- Attribute! -->
 </patient>
 ```
 
