@@ -331,7 +331,7 @@ def process_refiner(
     for jurisdiction_code, condition_codes in non_active_reportable_conditions.items():
         non_active_rr_refinement_plan = RRRefinementPlan(condition_codes)
 
-        inactive_condition_refined_rr_content = refine_rr(
+        shadow_refined_rr_content = refine_rr(
             xml_files=xml_files,
             jurisdiction_id=jurisdiction_code,
             plan=non_active_rr_refinement_plan,
@@ -342,7 +342,7 @@ def process_refiner(
         s3_client.put_object(
             Bucket=bucket,
             Key=shadow_rr_output_key,
-            Body=inactive_condition_refined_rr_content.encode("utf-8"),
+            Body=shadow_refined_rr_content.encode("utf-8"),
             ContentType="application/xml",
         )
 
