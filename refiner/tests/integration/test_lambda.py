@@ -173,6 +173,15 @@ class TestLambda:
         rr_response = s3_client.get_object(Bucket=bucket, Key=expected_refined_rr_key)
 
         assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        # Assert shadow refined RR was created
+        expected_shadow_rr_key = (
+            "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+        )
+        shadow_rr_response = s3_client.get_object(
+            Bucket=bucket, Key=expected_shadow_rr_key
+        )
+
+        assert shadow_rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
         # Assert refined eICR was created
         expected_refined_eicr_key = (
@@ -195,6 +204,8 @@ class TestLambda:
 
         assert expected_refined_eicr_key in complete_body["RefinerOutputFiles"]
         assert expected_refined_rr_key in complete_body["RefinerOutputFiles"]
+        assert expected_shadow_rr_key in complete_body["RefinerOutputFiles"]
+
         assert not complete_body["RefinerSkip"]
 
     async def test_lambda_current_file_null_version(

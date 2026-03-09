@@ -345,6 +345,7 @@ def process_refiner(
             Body=shadow_refined_rr_content.encode("utf-8"),
             ContentType="application/xml",
         )
+        refiner_output_files.append(shadow_rr_output_key)
 
         logger.info(
             "Created refined shadow RR output",
