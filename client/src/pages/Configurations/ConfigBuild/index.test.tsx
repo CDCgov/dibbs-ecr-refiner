@@ -679,4 +679,46 @@ describe('Config builder page', () => {
       screen.getByText('Custom codes', { selector: 'h3' })
     ).toBeInTheDocument();
   });
+
+  it('downloads the custom code upload template CSV', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
+
+    await user.click(
+      screen.getByText('Import from CSV', { selector: 'button' })
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: /import from csv/i })
+    ).toBeInTheDocument();
+
+    const createObjectUrlSpy = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:mock-url');
+
+    const revokeObjectUrlSpy = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => {});
+
+    await user.click(
+      await screen.findByRole('button', { name: /download template/i })
+    );
+
+    expect(createObjectUrlSpy).toHaveBeenCalledTimes(1);
+
+    const blobArg = createObjectUrlSpy.mock.calls[0][0] as Blob;
+
+    const text = await blobArg.text();
+    expect(text).toBe(
+      `code_number,code_system,display_name
+[CODE_NUMBER],[CODE_SYSTEM],[DISPLAY_NAME]
+`
+    );
+
+    // cleanup
+    createObjectUrlSpy.mockRestore();
+    revokeObjectUrlSpy.mockRestore();
+  });
 });
