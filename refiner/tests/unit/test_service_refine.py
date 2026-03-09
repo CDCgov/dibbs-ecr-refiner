@@ -2,7 +2,10 @@ from lxml import etree
 
 from app.core.models.types import XMLFiles
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.db.configurations.model import DbConfiguration
+from app.db.configurations.model import (
+    DbConfiguration,
+    DbConfigurationSectionInstructions,
+)
 from app.services.ecr.models import EICRRefinementPlan
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
@@ -120,7 +123,12 @@ def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
     """
 
     plan = EICRRefinementPlan(
-        codes_to_check=(), section_instructions={"29762-2": "retain"}
+        codes_to_check=(),
+        section_instructions={
+            "29762-2": DbConfigurationSectionInstructions(
+                action="retain", include=True, narrative=False
+            )
+        },
     )
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 
@@ -144,7 +152,11 @@ def test_refine_action_with_no_matches_v1_1(covid_influenza_v1_1_files: XMLFiles
 
     plan = EICRRefinementPlan(
         codes_to_check=set("NON_EXISTENT_CODE"),
-        section_instructions={"11450-4": "refine"},
+        section_instructions={
+            "11450-4": DbConfigurationSectionInstructions(
+                action="refine", include=True, narrative=False
+            )
+        },
     )
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
     doc = etree.fromstring(refined_xml.encode("utf-8"))
@@ -170,7 +182,11 @@ def test_refine_action_with_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
 
     plan = EICRRefinementPlan(
         codes_to_check=processed_config.codes,
-        section_instructions={"30954-2": "refine"},
+        section_instructions={
+            "30954-2": DbConfigurationSectionInstructions(
+                action="refine", include=True, narrative=False
+            )
+        },
     )
     refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
 

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import {
+  DbConfigurationStatus,
   GetConfigurationsResponse,
-  GetConfigurationsResponseStatus,
 } from '../../api/schemas';
 import { Table } from '../Table';
 interface ConfigurationsTableProps {
@@ -46,7 +46,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
           return (
             <tr
               key={id}
-              aria-label={`View ${status === GetConfigurationsResponseStatus.draft || status === GetConfigurationsResponseStatus.inactive ? 'inactive' : 'active'} configuration for ${name}`}
+              aria-label={`View ${status === DbConfigurationStatus.draft || status === DbConfigurationStatus.inactive ? 'inactive' : 'active'} configuration for ${name}`}
             >
               <td
                 data-label={reportableConditionHeader}
@@ -81,7 +81,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                     void navigate(`/configurations/${id}/build`);
                   }}
                 >
-                  {status === GetConfigurationsResponseStatus.active ? (
+                  {status === DbConfigurationStatus.active ? (
                     <span className="text-success-dark">
                       <span className="text-color-success not-sr-only pr-1">
                         ⏺︎

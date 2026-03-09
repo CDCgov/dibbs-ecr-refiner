@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 import userEvent from '@testing-library/user-event';
-import { GetConfigurationsResponseStatus } from '../../api/schemas';
+import { DbConfigurationStatus } from '../../api/schemas';
 
 const mockNavigate = vi.fn();
 
@@ -20,17 +20,17 @@ const tableData = {
     {
       id: 'chlamydia-config-id',
       name: 'Chlamydia trachomatis infection',
-      status: GetConfigurationsResponseStatus.active,
+      status: DbConfigurationStatus.active,
     },
     {
       id: 'asdf-zxcv-qwer-hjkl',
       name: 'Disease caused by Enterovirus',
-      status: GetConfigurationsResponseStatus.inactive,
+      status: DbConfigurationStatus.inactive,
     },
     {
       id: '1234-5678-9101-1121',
       name: 'Acanthamoeba',
-      status: GetConfigurationsResponseStatus.draft,
+      status: DbConfigurationStatus.draft,
     },
   ],
 };
