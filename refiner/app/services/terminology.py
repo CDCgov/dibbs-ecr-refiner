@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import asdict, dataclass
 
 from pydantic import BaseModel, Field
 
@@ -53,6 +52,8 @@ class Section(BaseModel):
     code: str
     name: str
     action: str
+    narrative: bool
+    include: bool
 
 
 class ProcessedConfigurationData(BaseModel):
@@ -136,24 +137,14 @@ class ProcessedConfiguration:
             custom_code.code for custom_code in payload.configuration.custom_codes
         )
 
-        # STEP 3:
-        # convert the list of DbConfigurationSectionProcessing objects into
-        # a simple list of dictionaries
-        section_processing_as_dicts: list[dict[str, Any]] = [
-            {
-                "code": section_process.code,
-                "name": section_process.name,
-                "action": section_process.action,
-            }
-            for section_process in payload.configuration.section_processing
-        ]
-
         included_condition_rsg_codes = set()
         for c in payload.conditions:
             included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
         return cls(
             codes=all_codes,
-            section_processing=section_processing_as_dicts,
+            section_processing=[
+                asdict(section) for section in payload.configuration.section_processing
+            ],
             included_condition_rsg_codes=included_condition_rsg_codes,
         )
