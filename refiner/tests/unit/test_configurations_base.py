@@ -6,7 +6,7 @@ import pytest
 
 from app.api.v1.configurations.models import GetConfigurationsResponse
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.db.configurations.db import GetConfigurationResponseVersion
+from app.db.configurations.model import GetConfigurationResponseVersion
 
 
 @pytest.fixture

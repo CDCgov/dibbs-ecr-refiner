@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
-from app.db.configurations.db import SectionUpdate, update_section_processing_db
+from app.db.configurations.db import update_section_processing_db
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -74,7 +74,12 @@ async def test_update_section_processing_valid():
         custom_codes=[],
         section_processing=[
             DbConfigurationSectionProcessing(
-                name="Section A", code="A", action="retain", versions=[]
+                name="Section A",
+                code="A",
+                action="retain",
+                versions=[],
+                narrative=False,
+                include=True,
             ),
         ],
         version=1,
@@ -86,9 +91,23 @@ async def test_update_section_processing_valid():
         s3_urls=[],
     )
     # The DB should return the updated row; build that row dict
-    updated_sections = [
-        {"name": "Section A", "code": "A", "action": "refine"},
-        {"name": "Section B", "code": "B", "action": "retain"},
+    updated_sections: list[DbConfigurationSectionProcessing] = [
+        {
+            "name": "Section A",
+            "code": "A",
+            "action": "refine",
+            "narrative": False,
+            "include": True,
+            "versions": [],
+        },
+        {
+            "name": "Section B",
+            "code": "B",
+            "action": "retain",
+            "narrative": False,
+            "include": True,
+            "versions": [],
+        },
     ]
 
     row = {
@@ -110,15 +129,16 @@ async def test_update_section_processing_valid():
 
     fake_db = _FakeDB(row=row)
 
-    # Payload for updates
-    section_updates = [
-        SectionUpdate(code="A", action="refine"),
-        SectionUpdate(code="B", action="retain"),
-    ]
-
     updated_config = await update_section_processing_db(
         config=mock_config,
-        section_updates=section_updates,
+        section_update=DbConfigurationSectionProcessing(
+            code="A",
+            action="refine",
+            narrative=False,
+            include=True,
+            versions=[],
+            name="A",
+        ),
         user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
         db=fake_db,
     )
@@ -148,7 +168,12 @@ async def test_update_section_processing_invalid_action():
         custom_codes=[],
         section_processing=[
             DbConfigurationSectionProcessing(
-                name="Section A", code="A", action="retain", versions=[]
+                name="Section A",
+                code="A",
+                action="retain",
+                versions=[],
+                narrative=False,
+                include=True,
             ),
         ],
         version=1,
@@ -162,7 +187,13 @@ async def test_update_section_processing_invalid_action():
 
     # The DB should return the same existing sections because unknown update codes are ignored.
     existing_sections = [
-        {"name": "Section A", "code": "A", "action": "retain"},
+        {
+            "name": "Section A",
+            "code": "A",
+            "action": "retain",
+            "include": True,
+            "narrative": False,
+        },
     ]
 
     row = {
@@ -184,22 +215,20 @@ async def test_update_section_processing_invalid_action():
 
     fake_db = _FakeDB(row=row)
 
-    # Payload with unknown code
-    section_updates = [
-        SectionUpdate(code="Unknown", action="refine"),
-    ]
-
-    updated_config = await update_section_processing_db(
-        config=mock_config,
-        section_updates=section_updates,
-        user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
-        db=fake_db,
-    )
-
-    # Assert existing entries remain unchanged
-    assert len(updated_config.section_processing) == 1
-    assert updated_config.section_processing[0].code == "A"
-    assert updated_config.section_processing[0].action == "retain"
+    with pytest.raises(ValueError, match="No existing section with code Unknown"):
+        await update_section_processing_db(
+            config=mock_config,
+            section_update=DbConfigurationSectionProcessing(
+                code="Unknown",
+                action="refine",
+                narrative=False,
+                include=True,
+                name="Unknown",
+                versions=[],
+            ),
+            user_id="673da667-6f92-4a50-a40d-f44c5bc6a2d8",
+            db=fake_db,
+        )
 
 
 @pytest.mark.asyncio
@@ -208,10 +237,20 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
     config_id = UUID(str(uuid4()))
     existing_sections = [
         DbConfigurationSectionProcessing(
-            name="Sec A", code="A", action="retain", versions=[]
+            name="Sec A",
+            code="updated code",
+            action="retain",
+            versions=[],
+            narrative=False,
+            include=True,
         ),
         DbConfigurationSectionProcessing(
-            name="Sec B", code="B", action="refine", versions=[]
+            name="Sec B",
+            code="B",
+            action="refine",
+            versions=[],
+            narrative=False,
+            include=True,
         ),
     ]
 
@@ -235,10 +274,20 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
     # Updated config returned by DB helper
     updated_sections = [
         DbConfigurationSectionProcessing(
-            name="Sec A", code="A", action="remove", versions=[]
+            name="Sec A",
+            code="updated code",
+            action="refine",
+            versions=[],
+            narrative=False,
+            include=False,
         ),
         DbConfigurationSectionProcessing(
-            name="Sec B", code="B", action="refine", versions=[]
+            name="Sec B",
+            code="B",
+            action="refine",
+            versions=[],
+            narrative=False,
+            include=True,
         ),
     ]
     updated_config = DbConfiguration(
@@ -281,7 +330,12 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
         AsyncMock(return_value=None),
     )
 
-    payload = {"sections": [{"code": "A", "action": "remove"}]}
+    payload = {
+        "code": "updated code",
+        "action": "refine",
+        "include": False,
+        "narrative": False,
+    }
 
     # Act
     response = await authed_client.patch(
@@ -292,7 +346,7 @@ async def test_update_section_processing_success(authed_client, monkeypatch, moc
     # Assert
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["message"] == "Section processed successfully."
+    assert data == "updated code"
 
 
 @pytest.mark.asyncio
@@ -303,7 +357,12 @@ async def test_update_section_processing_db_returns_none(
     config_id = uuid4()
     existing_sections = [
         DbConfigurationSectionProcessing(
-            name="Sec A", code="A", action="retain", versions=[]
+            name="Sec A",
+            code="A",
+            action="retain",
+            versions=[],
+            narrative=False,
+            include=True,
         ),
     ]
 
@@ -339,7 +398,12 @@ async def test_update_section_processing_db_returns_none(
         AsyncMock(return_value=None),
     )
 
-    payload = {"sections": [{"code": "A", "action": "remove"}]}
+    payload = {
+        "code": "A",
+        "action": "retain",
+        "include": False,
+        "narrative": False,
+    }
 
     # Act
     response = await authed_client.patch(

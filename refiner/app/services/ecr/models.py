@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Literal, TypedDict
 
+from app.db.configurations.model import DbConfigurationSectionInstructions
+
 type NamespaceMap = dict[str, str]
 type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
 
@@ -59,7 +61,7 @@ class EICRRefinementPlan:
     """
 
     codes_to_check: set[str]
-    section_instructions: dict[str, Literal["retain", "refine", "remove"]]
+    section_instructions: dict[str, DbConfigurationSectionInstructions]
 
 
 @dataclass

@@ -67,6 +67,8 @@ const baseMockConfig: GetConfigurationResponse = {
     {
       name: 'Encounters Section',
       code: 'some code',
+      narrative: false,
+      include: true,
       action: 'refine',
       versions: ['1.1'],
     },
@@ -275,11 +277,7 @@ describe('Config builder page', () => {
     ).toBeDisabled();
 
     await userEvent.click(screen.getByText('Sections'));
-    expect(
-      screen.getByRole('radio', {
-        name: /include and refine section encounters section/i,
-      })
-    ).toBeDisabled();
+    expect(screen.getByRole('checkbox')).toHaveAttribute('data-disabled'); // headless UI's checkbox uses this attribute to say its disabled
     expect(
       await screen.findByRole('button', { name: 'Draft a new version' })
     ).toBeInTheDocument();
