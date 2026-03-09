@@ -146,7 +146,7 @@ async def insert_configuration_db(
 
 
 async def get_configurations_db(
-    jurisdiction_id: str, db: AsyncDatabaseConnection
+    jurisdiction_id: str, db: AsyncDatabaseConnection, status: str | None = None
 ) -> list[DbConfiguration]:
     """
     Fetch all configurations from the DB for a given jurisdiction.
@@ -170,10 +170,16 @@ async def get_configurations_db(
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
-        ORDER BY name asc;
         """
 
     params = (jurisdiction_id,)
+
+    if status is not None:
+        query += " AND status = %s"
+        params += (status,)
+
+    query += " ORDER BY name ASC;"
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)

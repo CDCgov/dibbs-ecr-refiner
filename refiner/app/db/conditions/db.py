@@ -258,6 +258,32 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
+async def get_conditions_by_ids(
+    ids: list[UUID], db: AsyncDatabaseConnection
+) -> list[DbCondition]:
+    """
+    Given a list of condition IDs, returns a list of condition records.
+    """
+
+    if not ids:
+        return []
+
+    query = """
+        SELECT *
+        FROM conditions
+        WHERE id = ANY(%s);
+    """
+
+    params = (ids,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return [DbCondition.from_db_row(row) for row in rows]
+
+
 async def get_included_conditions_db(
     included_conditions: list[DbConfigurationCondition], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:

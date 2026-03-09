@@ -14,12 +14,14 @@ from app.db.configurations.model import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
 )
+from app.services.conditions import ConditionMappingPayload
 
 from ...core.config import ENVIRONMENT
 from .s3_keys import (
     get_active_file_key,
     get_metadata_file_key,
     get_parent_directory_key,
+    get_rsg_cd_mapping_file_key,
 )
 
 S3_CONFIGURATION_BUCKET_NAME = ENVIRONMENT["S3_BUCKET_CONFIG"]
@@ -91,42 +93,75 @@ def upload_configuration_payload(
     payload_data = payload.to_dict()
     metadata_data = metadata.to_dict()
 
-    for child_rsg_code in metadata.child_rsg_snomed_codes:
-        parent_directory = get_parent_directory_key(
-            jurisdiction_id=metadata.jurisdiction_id, rsg_code=child_rsg_code
-        )
+    canonical_url = metadata.canonical_url
+    jurisdiction_id = metadata.jurisdiction_id
 
-        # Write active.json
-        active_key = get_active_file_key(
-            jurisdiction_id=metadata.jurisdiction_id,
-            rsg_code=child_rsg_code,
-            version=metadata.configuration_version,
-        )
-        s3_client.put_object(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME,
-            Key=active_key,
-            Body=json.dumps(payload_data, indent=2).encode("utf-8"),
-            ContentType="application/json",
-        )
+    parent_directory = get_parent_directory_key(
+        jurisdiction_id=jurisdiction_id, canonical_url=canonical_url
+    )
 
-        # Write metadata.json
-        metadata_key = get_metadata_file_key(
-            jurisdiction_id=metadata.jurisdiction_id,
-            rsg_code=child_rsg_code,
-            version=metadata.configuration_version,
-        )
-        s3_client.put_object(
-            Bucket=S3_CONFIGURATION_BUCKET_NAME,
-            Key=metadata_key,
-            Body=json.dumps(metadata_data, indent=2).encode("utf-8"),
-            ContentType="application/json",
-        )
+    # Write active.json
+    active_key = get_active_file_key(
+        jurisdiction_id=jurisdiction_id,
+        canonical_url=canonical_url,
+        version=metadata.configuration_version,
+    )
+    s3_client.put_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=active_key,
+        Body=json.dumps(payload_data, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
 
-        s3_condition_code_paths.append(parent_directory)
-        logger.debug(f"Writing file to: {active_key}")
-        logger.debug(f"Writing file to: {metadata_key}")
+    # Write metadata.json
+    metadata_key = get_metadata_file_key(
+        jurisdiction_id=jurisdiction_id,
+        canonical_url=canonical_url,
+        version=metadata.configuration_version,
+    )
+    s3_client.put_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=metadata_key,
+        Body=json.dumps(metadata_data, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+    s3_condition_code_paths.append(parent_directory)
+    logger.debug(f"Writing file to: {active_key}")
+    logger.debug(f"Writing file to: {metadata_key}")
 
     return s3_condition_code_paths
+
+
+def upload_condition_mapping_payload(
+    mapping_payload: ConditionMappingPayload, jurisdiction_id: str, logger: Logger
+) -> str:
+    """
+    Writes the RSG -> CG mapping file to the jurisdiction directory.
+
+    Args:
+        mapping_payload (ConditionMappingPayload): The mapping payload to write as JSON
+        jurisdiction_id (str): The jurisdiction ID
+        logger (Logger): The standard logger
+
+    Returns:
+        str: The key where the file was written to.
+    """
+    condition_mapping_key = get_rsg_cd_mapping_file_key(jurisdiction_id=jurisdiction_id)
+
+    s3_client.put_object(
+        Bucket=S3_CONFIGURATION_BUCKET_NAME,
+        Key=condition_mapping_key,
+        Body=json.dumps(mapping_payload, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+    logger.info(
+        f"Condition mapping file written to {condition_mapping_key}",
+        extra={"jurisdiction_id": jurisdiction_id},
+    )
+
+    return condition_mapping_key
 
 
 def upload_refined_ecr(

@@ -5,17 +5,21 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.conditions.db import get_conditions_by_ids
+from app.db.conditions.model import DbCondition
 from app.db.configurations.activations.db import (
     activate_configuration_db,
     deactivate_configuration_db,
 )
-from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.db import get_configuration_by_id_db, get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import (
+    upload_condition_mapping_payload,
     upload_configuration_payload,
     upload_current_version_file,
 )
+from app.services.conditions import create_condition_mapping_payload
 from app.services.configurations import (
     convert_config_to_storage_payload,
     get_config_payload_metadata,
@@ -25,6 +29,19 @@ from app.services.logger import get_logger
 from .models import ConfigurationStatusUpdateResponse
 
 router = APIRouter(prefix="/{configuration_id}")
+
+
+async def _get_conditions_with_active_config(
+    jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbCondition]:
+    # Get all active configurations
+    active_configs_in_jd = await get_configurations_db(
+        jurisdiction_id=jurisdiction_id, status="active", db=db
+    )
+
+    # Get the conditions from the active configs
+    active_config_ids = [active.condition_id for active in active_configs_in_jd]
+    return await get_conditions_by_ids(ids=active_config_ids, db=db)
 
 
 @router.patch(
@@ -57,9 +74,11 @@ async def activate_configuration(
         ActivateConfigurationResponse: Metadata about the activated condition for confirmation
     """
 
+    jd = user.jurisdiction_id
+
     config_to_activate = await get_configuration_by_id_db(
         id=configuration_id,
-        jurisdiction_id=user.jurisdiction_id,
+        jurisdiction_id=jd,
         db=db,
     )
 
@@ -119,6 +138,19 @@ async def activate_configuration(
             detail="Configuration could not be activated.",
         )
 
+    # Get all conditions that have an active config
+    active_conditions = await _get_conditions_with_active_config(
+        jurisdiction_id=jd, db=db
+    )
+    condition_mapping_payload = create_condition_mapping_payload(
+        conditions=active_conditions
+    )
+
+    # Write the mapping file to the jurisdiction's directory
+    await run_in_threadpool(
+        upload_condition_mapping_payload, condition_mapping_payload, jd, logger
+    )
+
     # Activation files have been written to S3 and the database record has been updated.
     # We can now make a new current.json file for the newly activated version.
     await run_in_threadpool(
@@ -159,9 +191,12 @@ async def deactivate_configuration(
     Returns:
         ConfigurationStatusUpdateResponse: Metadata about the activated condition for confirmation
     """
+
+    jd = user.jurisdiction_id
+
     config_to_deactivate = await get_configuration_by_id_db(
         id=configuration_id,
-        jurisdiction_id=user.jurisdiction_id,
+        jurisdiction_id=jd,
         db=db,
     )
 
@@ -199,6 +234,19 @@ async def deactivate_configuration(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Configuration can't be deactivated.",
         )
+
+    # Get all conditions that have an active config
+    active_conditions = await _get_conditions_with_active_config(
+        jurisdiction_id=jd, db=db
+    )
+    condition_mapping_payload = create_condition_mapping_payload(
+        conditions=active_conditions
+    )
+
+    # Write the mapping file to the jurisdiction's directory
+    await run_in_threadpool(
+        upload_condition_mapping_payload, condition_mapping_payload, jd, logger
+    )
 
     return ConfigurationStatusUpdateResponse(
         configuration_id=deactivated_config.id, status=deactivated_config.status
