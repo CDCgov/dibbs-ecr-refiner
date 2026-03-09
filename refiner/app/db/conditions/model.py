@@ -23,6 +23,7 @@ class DbConditionBase:
 
     id: UUID
     display_name: str
+    output_name: str
     canonical_url: str
     version: str
 
@@ -41,11 +42,12 @@ class DbCondition(DbConditionBase):
     child_rsg_snomed_codes: list[str]
     # jsonb columns storing code/display pairs
     # this data is extracted from flat files from the TES
-    # and seeded from CG's RSG children
+    # and seeded from CG's RSG and ACG children
     snomed_codes: list[DbConditionCoding]
     loinc_codes: list[DbConditionCoding]
     icd10_codes: list[DbConditionCoding]
     rxnorm_codes: list[DbConditionCoding]
+    cvx_codes: list[DbConditionCoding]
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbCondition":
@@ -61,6 +63,7 @@ class DbCondition(DbConditionBase):
         return cls(
             id=row["id"],
             display_name=row["display_name"],
+            output_name=row["output_name"],
             canonical_url=row["canonical_url"],
             version=row["version"],
             child_rsg_snomed_codes=row["child_rsg_snomed_codes"],
@@ -68,6 +71,7 @@ class DbCondition(DbConditionBase):
             loinc_codes=[DbConditionCoding(**c) for c in row["loinc_codes"]],
             icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],
             rxnorm_codes=[DbConditionCoding(**c) for c in row["rxnorm_codes"]],
+            cvx_codes=[DbConditionCoding(**c) for c in row["cvx_codes"]],
         )
 
 
