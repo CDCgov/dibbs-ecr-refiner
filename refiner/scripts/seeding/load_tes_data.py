@@ -70,21 +70,25 @@ def _insert_processed_conditions(
                     canonical_url,
                     version,
                     display_name,
+                    output_name,
                     child_rsg_snomed_codes,
                     loinc_codes,
                     snomed_codes,
                     icd10_codes,
-                    rxnorm_codes
+                    rxnorm_codes,
+                    cvx_codes
                 )
                 VALUES (
                     %(canonical_url)s,
                     %(version)s,
                     %(display_name)s,
+                    %(output_name)s,
                     %(child_rsg_snomed_codes)s,
                     %(loinc_codes)s,
                     %(snomed_codes)s,
                     %(icd10_codes)s,
-                    %(rxnorm_codes)s
+                    %(rxnorm_codes)s,
+                    %(cvx_codes)s
                 )
                 """
             )
