@@ -15,6 +15,7 @@ import {
   useEditCustomCodeFromConfiguration,
   useDeleteCustomCodeFromConfiguration,
   useGetConfiguration,
+  useUploadCustomCodesCsv,
 } from '../../../api/configurations/configurations';
 
 // Mock all API requests.
@@ -95,6 +96,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
     useAddCustomCodeToConfiguration: vi.fn(),
     useDeleteCustomCodeFromConfiguration: vi.fn(),
     useEditCustomCodeFromConfiguration: vi.fn(),
+    useUploadCustomCodesCsv: vi.fn(),
     useGetConfiguration: vi.fn(() => ({
       data: {
         data: baseMockConfig,
@@ -588,6 +590,93 @@ describe('Config builder page', () => {
     renderPage();
     expect(
       screen.getByText('Export configuration', { selector: 'a' })
+    ).toBeInTheDocument();
+  });
+
+  it('should bulk upload custom codes from a CSV file', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    (useEditCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+    (useDeleteCustomCodeFromConfiguration as unknown as Mock).mockReturnValue({
+      mutate: vi.fn().mockReturnValue({ data: {} }),
+      reset: vi.fn(),
+    });
+
+    const uploadMutate = vi.fn((_vars, opts) => {
+      opts?.onSuccess?.({
+        data: {
+          message: 'Successfully uploaded custom codes.',
+          codes_processed: 2,
+          total_custom_codes_in_configuration: 2,
+        },
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {},
+      });
+
+      opts?.onSettled?.();
+    });
+
+    (useUploadCustomCodesCsv as unknown as Mock).mockReturnValue({
+      mutate: uploadMutate,
+      reset: vi.fn(),
+      isPending: false,
+    });
+
+    await user.click(screen.getByText('Custom codes', { selector: 'span' }));
+
+    await user.click(
+      screen.getByText('Import from CSV', { selector: 'button' })
+    );
+
+    expect(
+      screen.getByText('Import from CSV', { selector: 'h2' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Upload CSV', { selector: 'button' })
+    ).toBeInTheDocument();
+
+    const csv = `code_number,code_system,display_name
+12345,LOINC,TEST 1
+6789,LOINC,TEST 2
+`;
+    const file = new File([csv], 'custom_codes.csv', { type: 'text/csv' });
+
+    const input = document.querySelector(
+      'input[type="file"]'
+    ) as HTMLInputElement;
+
+    await user.upload(input, file);
+
+    expect(uploadMutate).toHaveBeenCalledTimes(1);
+
+    const call = uploadMutate.mock.calls[0];
+    const vars = call[0];
+
+    expect(vars).toMatchObject({
+      configurationId: expect.anything(),
+      data: {
+        csv_text: expect.any(String),
+        filename: 'custom_codes.csv',
+      },
+    });
+
+    expect(vars.data.csv_text).toContain(
+      'code_number,code_system,display_name'
+    );
+    expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
+
+    expect(
+      screen.getByText('Custom codes', { selector: 'h3' })
     ).toBeInTheDocument();
   });
 });

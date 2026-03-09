@@ -45,7 +45,9 @@ import type {
   GetConfigurationsResponse,
   HTTPValidationError,
   UpdateCustomCodeInput,
-  UpdateSectionInput
+  UpdateSectionInput,
+  UploadCustomCodesCsvInput,
+  UploadCustomCodesResponse
 } from '../schemas';
 
 
@@ -603,6 +605,74 @@ export const useEditCustomCodeFromConfiguration = <TError = AxiosError<HTTPValid
         TContext
       > => {
       return useMutation(getEditCustomCodeFromConfigurationMutationOptions(options), queryClient);
+    }
+    /**
+ * Accepts a CSV payload in JSON body.
+
+Expected CSV headers:
+    code_number,code_system,display_name
+
+Returns:
+    UploadCustomCodesResponse
+ * @summary Upload Custom Codes Csv
+ */
+export const uploadCustomCodesCsv = (
+    configurationId: string,
+    uploadCustomCodesCsvInput: UploadCustomCodesCsvInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<UploadCustomCodesResponse>> => {
+    
+    
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/custom-codes/upload`,
+      uploadCustomCodesCsvInput,options
+    );
+  }
+
+
+
+export const getUploadCustomCodesCsvMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadCustomCodesCsv>>, TError,{configurationId: string;data: UploadCustomCodesCsvInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadCustomCodesCsv>>, TError,{configurationId: string;data: UploadCustomCodesCsvInput}, TContext> => {
+
+const mutationKey = ['uploadCustomCodesCsv'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadCustomCodesCsv>>, {configurationId: string;data: UploadCustomCodesCsvInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  uploadCustomCodesCsv(configurationId,data,axiosOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadCustomCodesCsvMutationResult = NonNullable<Awaited<ReturnType<typeof uploadCustomCodesCsv>>>
+    export type UploadCustomCodesCsvMutationBody = UploadCustomCodesCsvInput
+    export type UploadCustomCodesCsvMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Upload Custom Codes Csv
+ */
+export const useUploadCustomCodesCsv = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadCustomCodesCsv>>, TError,{configurationId: string;data: UploadCustomCodesCsvInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof uploadCustomCodesCsv>>,
+        TError,
+        {configurationId: string;data: UploadCustomCodesCsvInput},
+        TContext
+      > => {
+      return useMutation(getUploadCustomCodesCsvMutationOptions(options), queryClient);
     }
     /**
  * Delete a custom code from a configuration.

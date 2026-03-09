@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
@@ -184,3 +184,12 @@ class ConfigurationStatusUpdateResponse:
 
     configuration_id: UUID
     status: DbConfigurationStatus
+
+
+class UploadCustomCodesCsvInput(BaseModel):
+    """
+    Input model for Custom Code CSV.
+    """
+
+    csv_text: str = Field(..., description="Full CSV contents as UTF-8 text")
+    filename: str | None = None

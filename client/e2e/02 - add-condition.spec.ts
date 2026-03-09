@@ -94,6 +94,57 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByText('Custom code added').click();
 
     /// ==========================================================================
+    /// Test that CSV upload for custom codes works
+    /// ==========================================================================
+    await page.getByRole('button', { name: 'Import from CSV' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Import from CSV' })
+    ).toBeVisible();
+
+    const csv = `code_number,code_system,display_name
+10001,LOINC,TEST 1
+10002,LOINC,TEST 2
+`;
+
+    const importPanel = page.locator('div', {
+      has: page.getByRole('heading', { name: 'Import from CSV' }),
+    });
+    const fileInput = importPanel.locator('input[type="file"]');
+
+    const [uploadResponse] = await Promise.all([
+      page.waitForResponse(
+        (resp) =>
+          resp.request().method() === 'POST' &&
+          resp.url().includes('/custom-codes/upload')
+      ),
+      fileInput.setInputFiles({
+        name: 'custom_codes.csv',
+        mimeType: 'text/csv',
+        buffer: Buffer.from(csv),
+      }),
+    ]);
+
+    expect(uploadResponse.ok(), 'upload POST returned non-2xx').toBeTruthy();
+
+    await expect(
+      page.getByRole('heading', { name: 'Custom codes' })
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole('cell', { name: 'TEST 1', exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: '10001', exact: true })
+    ).toBeVisible();
+
+    await expect(
+      page.getByRole('cell', { name: 'TEST 2', exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: '10002', exact: true })
+    ).toBeVisible();
+
+    /// ==========================================================================
     /// Test that section modification works as expected
     /// ==========================================================================
     await page.getByRole('button', { name: 'Sections' }).click();
@@ -185,6 +236,14 @@ test.describe('Adding/modifying configurations by initial condition', () => {
         .filter({ hasText: 'refiner' })
         .filter({ hasText: configurationToTest })
         .filter({ hasText: "Added custom code '1234'" })
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: configurationToTest })
+        .filter({ hasText: 'Added 2 custom codes' })
     ).toBeVisible();
   });
 

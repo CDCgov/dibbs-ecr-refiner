@@ -41,6 +41,8 @@ export * from './independentTestUploadResponse';
 export * from './lockedByUser';
 export * from './updateCustomCodeInput';
 export * from './updateSectionInput';
+export * from './uploadCustomCodesCsvInput';
+export * from './uploadCustomCodesResponse';
 export * from './userResponse';
 export * from './validationError';
 export * from './validationErrorCtx';
