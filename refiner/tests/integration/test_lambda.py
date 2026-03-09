@@ -6,21 +6,16 @@ import httpx
 import pytest
 import pytest_asyncio
 from botocore.client import Config
-
-from app.services.aws.s3_keys import (
+from refiner.app.services.aws.s3_keys import (
     get_active_file_key,
     get_current_file_key,
 )
-from tests.fixtures.loader import load_fixture_str
+from refiner.tests.fixtures.loader import load_fixture_str
 
 LAMBDA_BASE_URL = "http://localhost:9000/2015-03-31/functions/function/invocations"
 
 
-@pytest.fixture
-def s3_client():
-    """
-    Creates an S3 client for manual interaction with Localstack within the tests.
-    """
+def setup_s3_client():
     s3_client = boto3.client(
         "s3",
         endpoint_url="http://localhost:4566",  # localstack URL
@@ -32,8 +27,7 @@ def s3_client():
     return s3_client
 
 
-@pytest.fixture
-def default_setup(s3_client):
+def configure_default_setup(s3_client, auto_teardown_resources=True):
     """
     Creates a default test configuration in S3 for Lambda to consume.
     Cleans up after the test if needed.
@@ -135,10 +129,27 @@ def default_setup(s3_client):
     }
 
     # cleanup after test
-    s3_client.delete_object(Bucket=BUCKET, Key=activation_key)
-    s3_client.delete_object(Bucket=BUCKET, Key=current_key)
-    s3_client.delete_object(Bucket=BUCKET, Key=rr_key)
-    s3_client.delete_object(Bucket=BUCKET, Key=eicr_key)
+    if auto_teardown_resources:
+        s3_client.delete_object(Bucket=BUCKET, Key=activation_key)
+        s3_client.delete_object(Bucket=BUCKET, Key=current_key)
+        s3_client.delete_object(Bucket=BUCKET, Key=rr_key)
+        s3_client.delete_object(Bucket=BUCKET, Key=eicr_key)
+
+
+@pytest.fixture
+def s3_client():
+    """
+    Creates an S3 client for manual interaction with Localstack within the tests.
+    """
+
+    return setup_s3_client()
+
+
+@pytest.fixture
+def default_setup(s3_client, auto_teardown_resources=True):
+    return configure_default_setup(
+        s3_client=s3_client, auto_teardown_resources=auto_teardown_resources
+    )
 
 
 @pytest_asyncio.fixture
