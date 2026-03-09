@@ -187,8 +187,6 @@ def process_refiner(
     metadata: dict[str, dict[str, bool]] = {}
     non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
 
-    # Process each condition for this jurisdiction
-
     # Process each jurisdiction
     for jurisdiction_group in reportability_result["reportable_conditions"]:
         jurisdiction_code = jurisdiction_group.jurisdiction.upper()
