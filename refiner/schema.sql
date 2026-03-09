@@ -54,8 +54,7 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'section_update',
     'lock_acquire',
     'lock_release',
-    'lock_renew',
-    'bulk_add_custom_code'
+    'lock_renew'
 );
 
 
@@ -174,24 +173,6 @@ CREATE TABLE public.conditions (
 
 
 --
--- Name: configuration_sections; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.configuration_sections (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    configuration_id uuid NOT NULL,
-    code text NOT NULL,
-    name text NOT NULL,
-    action public.section_action NOT NULL,
-    include boolean NOT NULL,
-    narrative boolean NOT NULL,
-    versions text[] DEFAULT '{}'::text[] NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
 -- Name: configurations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -222,6 +203,24 @@ CREATE TABLE public.configurations_locks (
     configuration_id uuid NOT NULL,
     user_id uuid NOT NULL,
     expires_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: configurations_sections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_sections (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    configuration_id uuid NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    action public.section_action NOT NULL,
+    include boolean NOT NULL,
+    narrative boolean NOT NULL,
+    versions text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -303,22 +302,6 @@ ALTER TABLE ONLY public.conditions
 
 
 --
--- Name: configuration_sections configuration_sections_configuration_id_code_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configuration_sections
-    ADD CONSTRAINT configuration_sections_configuration_id_code_key UNIQUE (configuration_id, code);
-
-
---
--- Name: configuration_sections configuration_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configuration_sections
-    ADD CONSTRAINT configuration_sections_pkey PRIMARY KEY (id);
-
-
---
 -- Name: configurations configurations_condition_canonical_url_jurisdiction_id_vers_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -340,6 +323,22 @@ ALTER TABLE ONLY public.configurations_locks
 
 ALTER TABLE ONLY public.configurations
     ADD CONSTRAINT configurations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: configurations_sections configurations_sections_configuration_id_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_code_key UNIQUE (configuration_id, code);
+
+
+--
+-- Name: configurations_sections configurations_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_pkey PRIMARY KEY (id);
 
 
 --
@@ -399,20 +398,6 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: configuration_sections_code_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX configuration_sections_code_idx ON public.configuration_sections USING btree (code);
-
-
---
--- Name: configuration_sections_configuration_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX configuration_sections_configuration_id_idx ON public.configuration_sections USING btree (configuration_id);
-
-
---
 -- Name: configurations_one_active_per_pair_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -424,6 +409,20 @@ CREATE UNIQUE INDEX configurations_one_active_per_pair_idx ON public.configurati
 --
 
 CREATE UNIQUE INDEX configurations_one_draft_per_pair_idx ON public.configurations USING btree (condition_canonical_url, jurisdiction_id) WHERE (status = 'draft'::public.configuration_status);
+
+
+--
+-- Name: configurations_sections_code_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configurations_sections_code_idx ON public.configurations_sections USING btree (code);
+
+
+--
+-- Name: configurations_sections_configuration_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configurations_sections_configuration_id_idx ON public.configurations_sections USING btree (configuration_id);
 
 
 --
@@ -476,14 +475,6 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 
 
 --
--- Name: configuration_sections configuration_sections_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configuration_sections
-    ADD CONSTRAINT configuration_sections_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
-
-
---
 -- Name: configurations configurations_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -532,6 +523,14 @@ ALTER TABLE ONLY public.configurations_locks
 
 
 --
+-- Name: configurations_sections configurations_sections_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
 -- Name: events fk_configuration; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -577,5 +576,4 @@ ALTER TABLE ONLY public.users
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260226212322'),
     ('20260305221859'),
-    ('20260309143000'),
     ('20260309151338');

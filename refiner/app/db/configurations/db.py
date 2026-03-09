@@ -168,7 +168,7 @@ async def get_configuration_sections_db(
         include,
         narrative,
         versions
-    FROM configuration_sections
+    FROM configurations_sections
     WHERE configuration_id = ANY(%s)
     ORDER BY name;
     """
@@ -256,7 +256,7 @@ async def get_configuration_by_id_db(
         c.included_conditions,
         c.custom_codes,
 
-        -- build section_processing from configuration_sections
+        -- build section_processing from configurations_sections
         COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
 
         c.version,
@@ -278,7 +278,7 @@ async def get_configuration_by_id_db(
                    )
                    ORDER BY s.code
                ) AS section_processing
-        FROM configuration_sections s
+        FROM configurations_sections s
         WHERE s.configuration_id = c.id
     ) secs ON TRUE
     WHERE c.id = %s

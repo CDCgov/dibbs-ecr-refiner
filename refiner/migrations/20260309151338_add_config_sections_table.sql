@@ -6,7 +6,7 @@ BEGIN
   END IF;
 END $$;
 
-CREATE TABLE IF NOT EXISTS configuration_sections (
+CREATE TABLE IF NOT EXISTS configurations_sections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   configuration_id uuid NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
 
@@ -23,14 +23,14 @@ CREATE TABLE IF NOT EXISTS configuration_sections (
   UNIQUE (configuration_id, code)
 );
 
-CREATE INDEX IF NOT EXISTS configuration_sections_configuration_id_idx
-  ON configuration_sections(configuration_id);
+CREATE INDEX IF NOT EXISTS configurations_sections_configuration_id_idx
+  ON configurations_sections(configuration_id);
 
-CREATE INDEX IF NOT EXISTS configuration_sections_code_idx
-  ON configuration_sections(code);
+CREATE INDEX IF NOT EXISTS configurations_sections_code_idx
+  ON configurations_sections(code);
 
 -- backfill data
-INSERT INTO configuration_sections (
+INSERT INTO configurations_sections (
   configuration_id, code, name, action, include, narrative, versions
 )
 SELECT
@@ -83,14 +83,14 @@ SET section_processing = COALESCE((
            )
            ORDER BY s.code
          )
-  FROM configuration_sections s
+  FROM configurations_sections s
   WHERE s.configuration_id = c.id
 ), '[]'::jsonb);
 
 
-DROP INDEX IF EXISTS configuration_sections_code_idx;
-DROP INDEX IF EXISTS configuration_sections_configuration_id_idx;
+DROP INDEX IF EXISTS configurations_sections_code_idx;
+DROP INDEX IF EXISTS configurations_sections_configuration_id_idx;
 
-DROP TABLE IF EXISTS configuration_sections;
+DROP TABLE IF EXISTS configurations_sections;
 
 DROP TYPE IF EXISTS section_action;
