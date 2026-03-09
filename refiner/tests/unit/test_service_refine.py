@@ -233,7 +233,7 @@ def test_refine_rr_by_condition_v1_1(covid_influenza_v1_1_files: XMLFiles):
 
 def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
     """
-    Tests RR refinement for v1.1: removes observations not for the given jurisdiction.
+    Tests RR refinement for v1.1: doesn't touch observations not for the given jurisdiction.
     """
 
     covid_condition = _make_condition_v1_1(child_rsg_snomed_codes=["840539006"])
@@ -254,7 +254,7 @@ def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
     )
 
-    assert "840539006" not in doc_string
+    assert "840539006" in doc_string
 
 
 def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
@@ -283,8 +283,8 @@ def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
 
 def test_refine_rr_by_jurisdiction_v3_1_1(zika_v3_1_1_files: XMLFiles):
     """
-    Tests RR refinement on the Zika file: confirms the Zika observation is
-    removed when the jurisdiction does not match.
+    Tests RR refinement on the Zika file: confirms the Zika observation is still
+    present even when jursidiction is different.
     """
 
     zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
@@ -305,4 +305,4 @@ def test_refine_rr_by_jurisdiction_v3_1_1(zika_v3_1_1_files: XMLFiles):
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
     )
 
-    assert "3928002" not in doc_string
+    assert "3928002" in doc_string
