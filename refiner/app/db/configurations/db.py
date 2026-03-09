@@ -989,20 +989,7 @@ async def get_latest_config_db(
     """
     query = """
         SELECT
-            id,
-            name,
-			status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
+            id
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -1015,12 +1002,14 @@ async def get_latest_config_db(
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
-    configs = [DbConfiguration.from_db_row(row) for row in rows]
-
-    if len(configs) < 1:
+    if len(rows) < 1:
         return None
 
-    return configs[0]
+    config_id = rows[0]["id"]
+
+    return await get_configuration_by_id_db(
+        id=config_id, jurisdiction_id=jurisdiction_id, db=db
+    )
 
 
 async def get_active_config_db(
