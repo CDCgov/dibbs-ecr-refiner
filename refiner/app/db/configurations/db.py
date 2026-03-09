@@ -1,7 +1,9 @@
 from collections import defaultdict
 from dataclasses import asdict
+from typing import Any
 from uuid import UUID
 
+from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
@@ -25,6 +27,51 @@ from .model import (
 
 EMPTY_JSONB = Jsonb([])
 
+type CursorType = dict[str, Any]
+
+
+async def insert_configuration_sections_db(
+    configuration_id: UUID,
+    sections_to_insert: list[DbConfigurationSectionProcessing],
+    cur: AsyncCursor[CursorType],
+) -> list[DbConfigurationSectionProcessing]:
+    """
+    Inserts sections into configurations_sections table.
+    """
+    query = """
+        INSERT INTO configuration_sections (
+            configuration_id, code, name, action, include, narrative, versions
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (configuration_id, code) DO UPDATE SET
+            name = EXCLUDED.name,
+            action = EXCLUDED.action,
+            include = EXCLUDED.include,
+            narrative = EXCLUDED.narrative,
+            versions = EXCLUDED.versions,
+            updated_at = now();
+    """
+
+    params = [
+        (
+            configuration_id,
+            s.code,
+            s.name,
+            s.action,  # if enum, pass string label or adapt type
+            s.include,
+            s.narrative,
+            s.versions,  # text[]
+        )
+        for s in sections_to_insert
+    ]
+
+    await cur.executemany(query, params)
+    rows = await cur.fetchall()
+    if not rows:
+        return None
+
+    return rows
+
 
 async def insert_configuration_db(
     condition: DbCondition,
@@ -47,8 +94,7 @@ async def insert_configuration_db(
         name,
         created_by,
         included_conditions,
-        custom_codes,
-        section_processing
+        custom_codes
     )
     VALUES (
         %s,
@@ -56,24 +102,10 @@ async def insert_configuration_db(
         %s,
         %s,
         %s::jsonb,
-        %s::jsonb,
         %s::jsonb
     )
     RETURNING
-        id,
-        name,
-        status,
-        jurisdiction_id,
-        condition_id,
-        included_conditions,
-        custom_codes,
-        section_processing,
-        version,
-        last_activated_at,
-        last_activated_by,
-        created_by,
-        condition_canonical_url,
-        s3_urls
+        id
     """
 
     if config_to_clone:
