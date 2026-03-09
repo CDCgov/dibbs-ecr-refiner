@@ -13,7 +13,7 @@ When setting up a local environment, the easiest way to run the migration script
 `dbmate` has the ability to generate new migration scripts that will be automatically ordered appropriately. You can create a new script by running:
 
 ```sh
-just migrate new my_script_name
+just migrate create my_script_name
 ```
 
 You'll see output like:
