@@ -34,6 +34,7 @@ class ConditionMapValue(TypedDict):
 
     condition_grouper_id: str
     name: str
+    tes_version: str
 
 
 type ConditionMappingPayload = dict[str, ConditionMapValue]
@@ -55,12 +56,14 @@ def create_condition_mapping_payload(
     for condition in conditions:
         cg_uuid = extract_uuid_from_canonical_url(condition.canonical_url)
         name = condition.display_name
+        tes_version = condition.version
 
         for rsg in condition.child_rsg_snomed_codes:
             exists = mapping.get(rsg)
             value: ConditionMapValue = {
                 "condition_grouper_id": str(cg_uuid),
                 "name": _replace_spaces_with_underscores(name),
+                "tes_version": tes_version,
             }
 
             if exists is not None and exists != value:
