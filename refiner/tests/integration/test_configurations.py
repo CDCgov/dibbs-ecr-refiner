@@ -8,6 +8,7 @@ from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
+EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
 EXPECTED_DROWNING_RSG_CODE = "212962007"
 
 
@@ -94,9 +95,28 @@ class TestConfigurations:
             )
             assert response.status_code == 200
 
+            # Mapping file and content
+            mapping_file = await authed_client.get(
+                f"{LOCALSTACK_BASE_URL}/rsg_cg_mapping.json"
+            )
+
+            mapping_file_json = mapping_file.json()
+            assert EXPECTED_DROWNING_RSG_CODE in mapping_file_json
+            assert (
+                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["canonical_url"]
+                == f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{EXPECTED_DROWNING_CG_UUID}"
+            )
+            assert (
+                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["name"]
+                == "Drowning_and_Submersion"
+            )
+            assert (
+                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["tes_version"] is not None
+            )
+
             # Activation file and content
             activation_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/active.json"
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/active.json"
             )
             activation_file_json = activation_file.json()
 
@@ -122,7 +142,7 @@ class TestConfigurations:
 
             # Metadata file and content
             metadata_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/1/metadata.json"
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/metadata.json"
             )
             metadata_file_json = metadata_file.json()
             assert metadata_file_json["condition_name"] == condition["display_name"]
@@ -142,7 +162,7 @@ class TestConfigurations:
 
             # Current file and content
             current_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
             )
             assert current_file.json()["version"] == 1
 
@@ -166,12 +186,12 @@ class TestConfigurations:
 
         # Check that new files exist in S3
         activation_file = await authed_client.get(
-            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/2/active.json"
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/2/active.json"
         )
         activation_file_json = activation_file.json()
 
         current_file = await authed_client.get(
-            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
         )
         assert current_file.json()["version"] == 2
 
@@ -289,9 +309,17 @@ class TestConfigurations:
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "inactive"
 
+        mapping_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/rsg_cg_mapping.json"
+        )
+
+        # Drowning mapping should be removed from the file on deactivation
+        mapping_file_json = mapping_file.json()
+        assert EXPECTED_DROWNING_RSG_CODE not in mapping_file_json
+
         # Expect null version when deactivated
         current_file_resp = await authed_client.get(
-            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_RSG_CODE}/current.json"
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
         )
         assert current_file_resp.status_code == 200
 
