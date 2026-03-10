@@ -45,7 +45,7 @@ class ConditionMapValue(TypedDict):
     Condition data mapped to an RSG.
     """
 
-    condition_grouper_id: str
+    canonical_url: str
     name: str
     tes_version: str
 
@@ -67,14 +67,13 @@ def create_condition_mapping_payload(
     """
     mapping: ConditionMappingPayload = {}
     for condition in conditions:
-        cg_uuid = extract_uuid_from_canonical_url(condition.canonical_url)
         name = condition.display_name
         tes_version = condition.version
 
         for rsg in condition.child_rsg_snomed_codes:
             exists = mapping.get(rsg)
             value: ConditionMapValue = {
-                "condition_grouper_id": str(cg_uuid),
+                "canonical_url": condition.canonical_url,
                 "name": _get_computed_name(name),
                 "tes_version": tes_version,
             }
@@ -82,7 +81,7 @@ def create_condition_mapping_payload(
             if exists is not None and exists != value:
                 raise ValueError(
                     f"Collision for RSG code {rsg}: "
-                    f"{exists['condition_grouper_id']} vs {cg_uuid}"
+                    f"{exists['canonical_url']} vs {condition.canonical_url}"
                 )
 
             mapping[rsg] = value
