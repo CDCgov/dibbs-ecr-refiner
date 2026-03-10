@@ -72,6 +72,7 @@ class TestLambda:
 
         assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
         # Assert shadow refined RR was created
+        # TODO: swap this out with the actual value once we get it from APHL
         expected_shadow_rr_key = (
             "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
         )
