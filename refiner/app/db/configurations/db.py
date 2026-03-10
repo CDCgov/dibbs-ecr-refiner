@@ -172,7 +172,7 @@ async def get_configurations_db(
         WHERE jurisdiction_id = %s
         """
 
-    params = (jurisdiction_id,)
+    params: tuple[str, ...] = (jurisdiction_id,)
 
     if status is not None:
         query += " AND status = %s"
