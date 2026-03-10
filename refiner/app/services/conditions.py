@@ -134,6 +134,20 @@ class ConditionMappingPayload:
             }
         )
 
+    def to_dict(self) -> dict[str, ConditionMapValueDict]:
+        """
+        Converts the payload object back into a dictionary.
+        """
+
+        return {
+            rsg: {
+                "canonical_url": value.canonical_url,
+                "name": value.name,
+                "tes_version": value.tes_version,
+            }
+            for rsg, value in self.mappings.items()
+        }
+
 
 def create_condition_mapping_payload(
     conditions: list[DbCondition],

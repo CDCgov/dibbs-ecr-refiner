@@ -149,10 +149,12 @@ def upload_condition_mapping_payload(
     """
     condition_mapping_key = get_rsg_cd_mapping_file_key(jurisdiction_id=jurisdiction_id)
 
+    mapping_payload_dict = mapping_payload.to_dict()
+
     s3_client.put_object(
         Bucket=S3_CONFIGURATION_BUCKET_NAME,
         Key=condition_mapping_key,
-        Body=json.dumps(mapping_payload, indent=2).encode("utf-8"),
+        Body=json.dumps(mapping_payload_dict, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
 
