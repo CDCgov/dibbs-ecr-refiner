@@ -147,25 +147,29 @@ def create_condition_mapping_payload(
     Returns:
         ConditionMappingPayload: Typed dictionary containing condition mapping info
     """
-    mapping: ConditionMappingPayload = {}
+    payload = ConditionMappingPayload()
     for condition in conditions:
         name = condition.display_name
         tes_version = condition.version
 
         for rsg in condition.child_rsg_snomed_codes:
-            exists = mapping.get(rsg)
-            value: ConditionMapValue = {
-                "canonical_url": condition.canonical_url,
-                "name": _get_computed_name(name),
-                "tes_version": tes_version,
-            }
+            if not rsg or not rsg.strip():
+                continue
 
+            rsg = rsg.strip()
+            value = ConditionMapValue(
+                canonical_url=condition.canonical_url,
+                name=_get_computed_name(name),
+                tes_version=tes_version,
+            )
+
+            exists = payload.mappings.get(rsg)
             if exists is not None and exists != value:
                 raise ValueError(
                     f"Collision for RSG code {rsg}: "
-                    f"{exists['canonical_url']} vs {condition.canonical_url}"
+                    f"{exists.canonical_url} vs {condition.canonical_url}"
                 )
 
-            mapping[rsg] = value
+            payload.mappings[rsg] = value
 
-    return mapping
+    return payload
