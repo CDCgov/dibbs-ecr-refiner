@@ -274,7 +274,6 @@ def process_refiner(
 
             refined_rr_content = refine_rr(
                 xml_files=xml_files,
-                jurisdiction_id=jurisdiction_code,
                 plan=rr_refinement_plan,
             )
 
@@ -333,7 +332,6 @@ def process_refiner(
 
         shadow_refined_rr_content = refine_rr(
             xml_files=xml_files,
-            jurisdiction_id=jurisdiction_code,
             plan=non_active_rr_refinement_plan,
         )
         # TODO: swap this out with the actual value once we get it from APHL

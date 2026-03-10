@@ -219,7 +219,6 @@ def test_refine_rr_by_condition_v1_1(covid_influenza_v1_1_files: XMLFiles):
         processed_configuration=processed_configuration
     )
     refined_xml = refine_rr(
-        jurisdiction_id="SDDH",
         xml_files=covid_influenza_v1_1_files,
         plan=rr_refinement_plan,
     )
@@ -237,7 +236,7 @@ def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
     """
 
     covid_condition = _make_condition_v1_1(child_rsg_snomed_codes=["840539006"])
-    config = _make_db_configuration_v1_1()
+    config = _make_db_configuration_v1_1(jurisdiction_id="SOME-OTHER-JD")
     payload = ConfigurationPayload(conditions=[covid_condition], configuration=config)
 
     processed_configuration = ProcessedConfiguration.from_payload(payload)
@@ -246,7 +245,6 @@ def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
     )
 
     refined_xml = refine_rr(
-        jurisdiction_id="SOME_OTHER_JD",
         xml_files=covid_influenza_v1_1_files,
         plan=rr_refinement_plan,
     )
@@ -259,7 +257,7 @@ def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
 
 def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
     """
-    Tests RR refinement on the Zika file: confirms the Zika observation is kept.
+    Tests RR refinement on the Zika file: confirms the Zika observation is kept even if config is for another jurisdiction.
     """
 
     zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
@@ -271,9 +269,7 @@ def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
         processed_configuration=processed_configuration
     )
 
-    refined_xml = refine_rr(
-        jurisdiction_id="SDDH", xml_files=zika_v3_1_1_files, plan=rr_refinement_plan
-    )
+    refined_xml = refine_rr(xml_files=zika_v3_1_1_files, plan=rr_refinement_plan)
     doc_string = etree.tostring(
         etree.fromstring(refined_xml.encode("utf-8")), encoding="unicode"
     )
@@ -284,11 +280,11 @@ def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
 def test_refine_rr_by_jurisdiction_v3_1_1(zika_v3_1_1_files: XMLFiles):
     """
     Tests RR refinement on the Zika file: confirms the Zika observation is still
-    present even when jursidiction is different.
+    present even when jurisdiction is different.
     """
 
     zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
-    config = _make_db_configuration_v3_1_1()
+    config = _make_db_configuration_v3_1_1(jurisdiction_id="SOME-OTHER-JD")
     payload = ConfigurationPayload(conditions=[zika_condition], configuration=config)
 
     processed_configuration = ProcessedConfiguration.from_payload(payload)
@@ -297,7 +293,6 @@ def test_refine_rr_by_jurisdiction_v3_1_1(zika_v3_1_1_files: XMLFiles):
     )
 
     refined_xml = refine_rr(
-        jurisdiction_id="SOME_OTHER_JD",
         xml_files=zika_v3_1_1_files,
         plan=rr_refinement_plan,
     )
