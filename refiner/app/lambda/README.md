@@ -45,7 +45,7 @@ The Lambda Docker container starts up as part of the project's [Docker Compose f
 
 This endpoint can be requested using an HTTP client of your choice in order to invoke the Lambda function. Note that the Lambda function expects an SQS-style JSON event as part of the request. Please refer to the [Lambda integration tests](../../tests/integration/test_lambda.py) for an example event.
 
-## Seeding localstack for manual testing
+## Seeding Localstack for manual testing
 
 A script accessible via `just cloud seed-localstack` is available to put Localstack in a state suitable for local testing (ie hitting the `localhost:9000` endpoint with a POST command simulating an SQS event). The same code is used by Pytest to set up our integration tests.
 
