@@ -1,11 +1,11 @@
 import re
-from dataclasses import dataclass, field
-from typing import TypedDict
-from urllib.parse import urlparse
-from uuid import UUID
 
 from app.db.conditions.db import get_conditions_by_ids
-from app.db.conditions.model import DbCondition
+from app.db.conditions.model import (
+    ConditionMappingPayload,
+    ConditionMapValue,
+    DbCondition,
+)
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection
 
@@ -34,24 +34,6 @@ async def get_conditions_with_active_config(
     return await get_conditions_by_ids(ids=active_config_ids, db=db)
 
 
-def extract_uuid_from_canonical_url(url: str) -> UUID:
-    """
-    Given a `canonical_url`, extracts and returns the UUID at the end of it.
-
-    For example, given `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/c435a017-41e6-4030-b6d1-0bda2eb05b1f`
-    the function returns `c435a017-41e6-4030-b6d1-0bda2eb05b1f`
-
-    Args:
-        url (str): The canonical URL
-
-    Returns:
-        UUID: The UUID at the end of the canonical URL
-    """
-    parsed = urlparse(url)
-    last_segment = parsed.path.rstrip("/").split("/")[-1]
-    return UUID(last_segment)
-
-
 # TODO: Collect this from the TES data directly instead?
 def _get_computed_name(text: str) -> str:
     normalized = re.sub(r"\s+", "_", text.strip())
@@ -66,87 +48,6 @@ def _get_computed_name(text: str) -> str:
     }
 
     return overrides.get(normalized, normalized)
-
-
-class ConditionMapValueDict(TypedDict):
-    """
-    Typed dictionary version of a ConditionMapValue.
-    """
-
-    canonical_url: str
-    name: str
-    tes_version: str
-
-
-@dataclass(frozen=True)
-class ConditionMapValue:
-    """
-    Condition data mapped to an RSG.
-    """
-
-    canonical_url: str
-    name: str
-    tes_version: str
-
-    @classmethod
-    def from_dict(cls, data: ConditionMapValueDict) -> "ConditionMapValue":
-        """
-        Converts a payload map value dictionary into an object.
-
-        Args:
-            data (ConditionMapValueDict): Payload map data as a dict
-
-        Returns:
-            ConditionMapValue: Payload value as an object.
-        """
-        return cls(
-            canonical_url=data["canonical_url"],
-            name=data["name"],
-            tes_version=data["tes_version"],
-        )
-
-
-# Map an RSG to CG data
-@dataclass
-class ConditionMappingPayload:
-    """
-    Maps RSG code -> ConditionMapValue.
-    """
-
-    mappings: dict[str, ConditionMapValue] = field(default_factory=dict)
-
-    @classmethod
-    def from_dict(
-        cls, data: dict[str, ConditionMapValueDict]
-    ) -> "ConditionMappingPayload":
-        """
-        Converts a payload dictionary into an object.
-
-        Args:
-            data (dict[str, ConditionMapValueDict]): The payload as a dictionary.
-
-        Returns:
-            ConditionMappingPayload: The payload object.
-        """
-        return cls(
-            mappings={
-                rsg: ConditionMapValue.from_dict(value) for rsg, value in data.items()
-            }
-        )
-
-    def to_dict(self) -> dict[str, ConditionMapValueDict]:
-        """
-        Converts the payload object back into a dictionary.
-        """
-
-        return {
-            rsg: {
-                "canonical_url": value.canonical_url,
-                "name": value.name,
-                "tes_version": value.tes_version,
-            }
-            for rsg, value in self.mappings.items()
-        }
 
 
 def create_condition_mapping_payload(
