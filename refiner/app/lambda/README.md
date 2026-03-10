@@ -14,14 +14,14 @@ These images are built based on [Dockerfile.lambda](../../../Dockerfile.lambda).
 
 The Lambda accepts the following environment variables, some of which are required.
 
-| Name                      | Description                                                                                                                     | Required | Default value      |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------ |
-| `S3_BUCKET_CONFIG`        | S3 directory containing jurisdiction configuration files                                                                        | Yes      | N/A                |
-| `S3_ENDPOINT_URL`         | Endpoint to use when configuring the S3 client. Primarily used for testing purposes and should not need to be set in production | No       | N/A                |
-| `EICR_INPUT_PREFIX`       | S3 directory containing eICR files                                                                                              | No       | `eCRMessageV2/`    |
-| `REFINER_INPUT_PREFIX`    | S3 directory containing RR files                                                                                                | No       | `RefinerInput/`    |
-| `REFINER_OUTPUT_PREFIX`   | S3 directory where refined files are written                                                                                    | No       | `RefinerOutput/`   |
-| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success                                              | No       | `RefinerComplete/` |
+| Name | Description | Required | Default value |
+| --- | --- | --- | --- |
+| `S3_BUCKET_CONFIG` | S3 directory containing jurisdiction configuration files | Yes | N/A |
+| `S3_ENDPOINT_URL` | Endpoint to use when configuring the S3 client. Primarily used for testing purposes and should not need to be set in production | No | N/A |
+| `EICR_INPUT_PREFIX` | S3 directory containing eICR files | No | `eCRMessageV2/` |
+| `REFINER_INPUT_PREFIX` | S3 directory containing RR files | No | `RefinerInput/` |
+| `REFINER_OUTPUT_PREFIX` | S3 directory where refined files are written | No | `RefinerOutput/` |
+| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success | No | `RefinerComplete/` |
 
 ## File structure and build
 
@@ -47,9 +47,9 @@ This endpoint can be requested using an HTTP client of your choice in order to i
 
 ## Seeding Localstack for manual testing
 
-A script accessible via `just cloud seed-localstack` is available to put Localstack in a state suitable for local testing (ie hitting the `localhost:9000` endpoint with a POST command simulating an SQS event). The same code is used by Pytest to set up our integration tests.
+A script accessible via `just server seed-localstack` is available to put Localstack in a state suitable for local testing (ie hitting the `localhost:9000` endpoint with a POST command simulating an SQS event). The same code is used by Pytest to set up our integration tests.
 
-After containers are spun up, run `just cloud seed-localstack` to seed Localstack accordingly. If all goes well, you should see an example POST body that you can use to further invoke / manually test the Lambda.
+After containers are spun up, run `just server seed-localstack` to seed Localstack accordingly. If all goes well, you should see an example POST body that you can use to further invoke / manually test the Lambda.
 
 ```json
 Seeding complete. Bucket: local-config-bucket

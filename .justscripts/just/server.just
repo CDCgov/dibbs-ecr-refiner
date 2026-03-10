@@ -45,3 +45,8 @@ install: _venv
 [doc('Install all dependencies locally')]
 install-dev: _venv
       .venv/bin/pip install -r requirements-dev.txt -r requirements.txt
+
+[doc('Seed Localstack with the infra needed for manual tests')]
+[group('localstack')]
+seed-localstack:
+    python ../../refiner/tests/localstack/seed.py

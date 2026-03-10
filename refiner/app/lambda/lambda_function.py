@@ -336,6 +336,7 @@ def process_refiner(
             jurisdiction_id=jurisdiction_code,
             plan=non_active_rr_refinement_plan,
         )
+        # TODO: swap this out with the actual value once we get it from APHL
         output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/inactive-codes"
 
         shadow_rr_output_key = f"{output_key}/refined_RR.xml"
