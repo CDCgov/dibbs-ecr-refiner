@@ -28,12 +28,6 @@ os.environ["LOG_LEVEL"] = "debug"
 # ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 
-from refiner.scripts.validation.validate_document import (
-    STANDARDS_MAP,
-    display_svrl_results,
-    get_document_template_info,
-    parse_svrl,
-)
 from rich.console import Console
 
 from app.api.auth.session import get_hashed_token
@@ -41,6 +35,12 @@ from app.core.config import ENVIRONMENT
 from app.db.pool import create_db
 from app.main import create_fastapi_app, create_lifespan
 from app.services.logger import setup_logger
+from scripts.validation.validate_document import (
+    STANDARDS_MAP,
+    display_svrl_results,
+    get_document_template_info,
+    parse_svrl,
+)
 
 # Session info
 TEST_SESSION_TOKEN = "test-token"
