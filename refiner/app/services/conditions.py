@@ -1,3 +1,4 @@
+import re
 from typing import TypedDict
 from urllib.parse import urlparse
 from uuid import UUID
@@ -23,8 +24,20 @@ def extract_uuid_from_canonical_url(url: str) -> UUID:
     return UUID(last_segment)
 
 
-def _replace_spaces_with_underscores(text: str) -> str:
-    return text.replace(" ", "_")
+# TODO: Collect this from the TES data directly instead?
+def _get_computed_name(text: str) -> str:
+    normalized = re.sub(r"\s+", "_", text.strip())
+    normalized = re.sub(r"[^A-Za-z0-9_]", "", normalized)
+
+    # !!NOTE!!
+    # TES versions 1-3 have the computed name `Tickborne_relapsing_feverTBRF` and
+    # version 4 has the computed name `Tickborne_relapsing_fever_TBRF` which is probably a bug
+    overrides = {
+        "NonStreptococcal_Toxic_Shock_Syndrome": "NonStreptococcal_ToxicShock_Syndrome",
+        "Tickborne_relapsing_fever_TBRF": "Tickborne_relapsing_feverTBRF",
+    }
+
+    return overrides.get(normalized, normalized)
 
 
 class ConditionMapValue(TypedDict):
@@ -62,7 +75,7 @@ def create_condition_mapping_payload(
             exists = mapping.get(rsg)
             value: ConditionMapValue = {
                 "condition_grouper_id": str(cg_uuid),
-                "name": _replace_spaces_with_underscores(name),
+                "name": _get_computed_name(name),
                 "tes_version": tes_version,
             }
 
