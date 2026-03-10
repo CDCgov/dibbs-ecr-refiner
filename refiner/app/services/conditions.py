@@ -3,7 +3,34 @@ from typing import TypedDict
 from urllib.parse import urlparse
 from uuid import UUID
 
+from app.db.conditions.db import get_conditions_by_ids
 from app.db.conditions.model import DbCondition
+from app.db.configurations.db import get_configurations_db
+from app.db.pool import AsyncDatabaseConnection
+
+
+async def get_conditions_with_active_config(
+    jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbCondition]:
+    """
+    Given a jurisdiction ID, returns a list of conditions that have an active configuration.
+
+    Args:
+        jurisdiction_id (str): The jurisdiction ID
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list[DbCondition]: List of DbCondition with an active configuration within the JD.
+    """
+
+    # Get all active configurations
+    active_configs_in_jd = await get_configurations_db(
+        jurisdiction_id=jurisdiction_id, status="active", db=db
+    )
+
+    # Get the conditions from the active configs
+    active_config_ids = [active.condition_id for active in active_configs_in_jd]
+    return await get_conditions_by_ids(ids=active_config_ids, db=db)
 
 
 def extract_uuid_from_canonical_url(url: str) -> UUID:

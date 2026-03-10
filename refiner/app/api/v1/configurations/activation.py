@@ -5,13 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.conditions.db import get_conditions_by_ids
-from app.db.conditions.model import DbCondition
 from app.db.configurations.activations.db import (
     activate_configuration_db,
     deactivate_configuration_db,
 )
-from app.db.configurations.db import get_configuration_by_id_db, get_configurations_db
+from app.db.configurations.db import get_configuration_by_id_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import (
@@ -19,7 +17,10 @@ from app.services.aws.s3 import (
     upload_configuration_payload,
     upload_current_version_file,
 )
-from app.services.conditions import create_condition_mapping_payload
+from app.services.conditions import (
+    create_condition_mapping_payload,
+    get_conditions_with_active_config,
+)
 from app.services.configurations import (
     convert_config_to_storage_payload,
     get_config_payload_metadata,
@@ -29,19 +30,6 @@ from app.services.logger import get_logger
 from .models import ConfigurationStatusUpdateResponse
 
 router = APIRouter(prefix="/{configuration_id}")
-
-
-async def _get_conditions_with_active_config(
-    jurisdiction_id: str, db: AsyncDatabaseConnection
-) -> list[DbCondition]:
-    # Get all active configurations
-    active_configs_in_jd = await get_configurations_db(
-        jurisdiction_id=jurisdiction_id, status="active", db=db
-    )
-
-    # Get the conditions from the active configs
-    active_config_ids = [active.condition_id for active in active_configs_in_jd]
-    return await get_conditions_by_ids(ids=active_config_ids, db=db)
 
 
 @router.patch(
@@ -139,7 +127,7 @@ async def activate_configuration(
         )
 
     # Get all conditions that have an active config
-    active_conditions = await _get_conditions_with_active_config(
+    active_conditions = await get_conditions_with_active_config(
         jurisdiction_id=jd, db=db
     )
     condition_mapping_payload = create_condition_mapping_payload(
@@ -236,7 +224,7 @@ async def deactivate_configuration(
         )
 
     # Get all conditions that have an active config
-    active_conditions = await _get_conditions_with_active_config(
+    active_conditions = await get_conditions_with_active_config(
         jurisdiction_id=jd, db=db
     )
     condition_mapping_payload = create_condition_mapping_payload(
