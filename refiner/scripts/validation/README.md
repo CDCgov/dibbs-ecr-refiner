@@ -75,7 +75,7 @@ This script finds all Schematron (`.sch`) files in the subdirectories and compil
 python validation/generate_xslt_from_sch.py
 ```
 
-### `validate_source_data.py` - Validating Documents
+### `validate_document.py` - Validating Documents
 
 This is the main interactive script for validating a single eICR or RR document. It automatically detects the standard and version of the selected XML file and runs the appropriate validation artifact against it.
 
@@ -84,7 +84,7 @@ This is the main interactive script for validating a single eICR or RR document.
 **How to Run:**
 
 ```bash
-python validation/validate_source_data.py
+python validation/validate_document.py
 ```
 
 The script will open an `fzf` prompt, allowing you to select an XML file from the `refiner/scripts/data/source-ecr-files/` directory to validate.
