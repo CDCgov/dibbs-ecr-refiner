@@ -49,4 +49,4 @@ install-dev: _venv
 [doc('Seed Localstack with the infra needed for manual tests')]
 [group('localstack')]
 seed-localstack:
-    python ../../refiner/tests/localstack/seed.py
+    python ./tests/localstack/seed.py
