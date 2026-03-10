@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass, field
 from typing import TypedDict
 from urllib.parse import urlparse
 from uuid import UUID
@@ -67,7 +68,18 @@ def _get_computed_name(text: str) -> str:
     return overrides.get(normalized, normalized)
 
 
-class ConditionMapValue(TypedDict):
+class ConditionMapValueDict(TypedDict):
+    """
+    Typed dictionary version of a ConditionMapValue.
+    """
+
+    canonical_url: str
+    name: str
+    tes_version: str
+
+
+@dataclass(frozen=True)
+class ConditionMapValue:
     """
     Condition data mapped to an RSG.
     """
@@ -76,8 +88,51 @@ class ConditionMapValue(TypedDict):
     name: str
     tes_version: str
 
+    @classmethod
+    def from_dict(cls, data: ConditionMapValueDict) -> "ConditionMapValue":
+        """
+        Converts a payload map value dictionary into an object.
 
-type ConditionMappingPayload = dict[str, ConditionMapValue]
+        Args:
+            data (ConditionMapValueDict): Payload map data as a dict
+
+        Returns:
+            ConditionMapValue: Payload value as an object.
+        """
+        return cls(
+            canonical_url=data["canonical_url"],
+            name=data["name"],
+            tes_version=data["tes_version"],
+        )
+
+
+# Map an RSG to CG data
+@dataclass
+class ConditionMappingPayload:
+    """
+    Maps RSG code -> ConditionMapValue.
+    """
+
+    mappings: dict[str, ConditionMapValue] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, ConditionMapValueDict]
+    ) -> "ConditionMappingPayload":
+        """
+        Converts a payload dictionary into an object.
+
+        Args:
+            data (dict[str, ConditionMapValueDict]): The payload as a dictionary.
+
+        Returns:
+            ConditionMappingPayload: The payload object.
+        """
+        return cls(
+            mappings={
+                rsg: ConditionMapValue.from_dict(value) for rsg, value in data.items()
+            }
+        )
 
 
 def create_condition_mapping_payload(

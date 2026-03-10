@@ -18,6 +18,7 @@ from ..services.aws.s3_keys import (
     get_current_file_key,
     get_rsg_cd_mapping_file_key,
 )
+from ..services.conditions import ConditionMappingPayload
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
@@ -227,7 +228,12 @@ def process_refiner(
                     jurisdiction_code=jurisdiction_code,
                     operation="skipped",
                 )
-                break
+                continue
+
+            # Create the RSG -> CG payload
+            rsg_cg_payload = ConditionMappingPayload.from_dict(rsg_cg_mapping)
+
+            print("Do something with this", rsg_cg_payload)
 
         # Process each condition for this jurisdiction
         for condition in jurisdiction_group.conditions:
