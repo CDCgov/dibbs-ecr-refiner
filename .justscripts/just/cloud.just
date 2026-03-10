@@ -17,3 +17,8 @@ demo-db-url:
 [group('azure')]
 demo-jurisdiction-authored:
     psql $(just cloud demo-db-url) -c "SELECT c.jurisdiction_id, c.name FROM configurations AS c ORDER BY c.jurisdiction_id;"
+
+[doc('Seed Localstack with the infra needed for manual tests')]
+[group('localstack')]
+seed-localstack:
+    python ../../refiner/tests/localstack/seed.py
