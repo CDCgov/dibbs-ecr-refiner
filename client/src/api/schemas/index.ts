@@ -43,6 +43,7 @@ export * from './updateCustomCodeInput';
 export * from './updateSectionInput';
 export * from './uploadCustomCodesCsvInput';
 export * from './uploadCustomCodesResponse';
+export * from './uploadCustomCodesResponseErrors';
 export * from './userResponse';
 export * from './validationError';
 export * from './validationErrorCtx';

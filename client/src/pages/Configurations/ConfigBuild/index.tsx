@@ -1109,6 +1109,9 @@ function ImportCustomCodes({
   const formatApiError = useApiErrorFormatter();
 
   const [error, setError] = useState<string | null>(null);
+  const [apiErrors, setApiErrors] = useState<
+    { row: number; error: string }[] | null
+  >(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const { mutate: uploadCsvMutation, isPending } = useUploadCustomCodesCsv();
@@ -1127,10 +1130,12 @@ function ImportCustomCodes({
 
     if (!file.name.toLowerCase().endsWith('.csv')) {
       setError('Please upload a valid CSV file.');
+      setApiErrors(null);
       return;
     }
 
     setError(null);
+    setApiErrors(null);
     setIsUploading(true);
 
     const csvText = await file.text();
@@ -1146,6 +1151,28 @@ function ImportCustomCodes({
       {
         onSuccess: async (res) => {
           const payload = res.data;
+          // show errors if present
+          if (
+            payload.errors &&
+            Array.isArray(payload.errors) &&
+            payload.errors.length > 0
+          ) {
+            setApiErrors(
+              Array.isArray(payload.errors)
+                ? payload.errors.map(({ row, error }) => ({
+                    row: Number(row),
+                    error: String(error),
+                  }))
+                : null
+            );
+            setIsUploading(false); // immediately stop
+            showToast({
+              variant: 'error',
+              heading: 'Error importing CSV',
+              body: `${payload.errors.length} errors`,
+            });
+            return;
+          }
 
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
@@ -1156,16 +1183,16 @@ function ImportCustomCodes({
             body: `${payload.codes_processed} codes.`,
           });
 
+          setApiErrors(null);
           onSuccess?.();
         },
         onError: (err: unknown) => {
           const message = formatApiError(err);
-
           setError(message);
-
+          setApiErrors(null);
           showToast({
             variant: 'error',
-            heading: 'Error Importing CSV',
+            heading: 'Error uploading CSV',
             body: message,
           });
         },
@@ -1303,10 +1330,20 @@ function ImportCustomCodes({
                 disabled={disabled}
                 variant="primary"
               >
-                Upload CSV
+                {apiErrors ? 'Re-upload CSV' : 'Upload CSV'}
               </Button>
 
               {error && <div className="text-sm text-red-600">{error}</div>}
+
+              {apiErrors && apiErrors.length > 0 && (
+                <ul className="text-state-error-dark mt-4 w-full text-sm">
+                  {apiErrors.map(({ row, error }) => (
+                    <li className="block px-4" key={row}>
+                      <strong className="pr-8">Row {row}</strong> {error}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

@@ -5,12 +5,14 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { UploadCustomCodesResponseErrors } from './uploadCustomCodesResponseErrors';
 
 /**
- * Custom Code CSV response model.
+ * CSV response model. If errors: errors arr with row+error.
  */
 export interface UploadCustomCodesResponse {
-  message: string;
-  codes_processed: number;
-  total_custom_codes_in_configuration: number;
+  message?: string | null;
+  codes_processed?: number | null;
+  total_custom_codes_in_configuration?: number | null;
+  errors?: UploadCustomCodesResponseErrors;
 }

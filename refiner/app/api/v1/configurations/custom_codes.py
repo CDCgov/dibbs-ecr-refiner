@@ -33,18 +33,23 @@ from app.services.logger import get_logger
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
 
-def _get_literal_system(system: str) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]:
+def _get_literal_system(
+    system: str,
+) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm", "Other"]:
     """
-    Helper to ensure Literal type for custom code system.
+    Helper, returns allowed code system as Literal; raises ValueError if not allowed. Allowed: LOINC, SNOMED, ICD-10, RxNorm, Other. Case-insensitive.
     """
-    if system == "LOINC":
+    s = system.strip().lower()
+    if s == "loinc":
         return "LOINC"
-    if system == "SNOMED":
+    if s == "snomed":
         return "SNOMED"
-    if system == "ICD-10":
+    if s == "icd-10":
         return "ICD-10"
-    if system == "RxNorm":
+    if s == "rxnorm":
         return "RxNorm"
+    if s == "other":
+        return "Other"
     raise ValueError(f"Invalid system: {system}")
 
 
@@ -177,13 +182,12 @@ async def add_custom_code(
 
 
 class UploadCustomCodesResponse(BaseModel):
-    """
-    Custom Code CSV response model.
-    """
+    """CSV response model. If errors: errors arr with row+error."""
 
-    message: str
-    codes_processed: int
-    total_custom_codes_in_configuration: int
+    message: str | None = None
+    codes_processed: int | None = None
+    total_custom_codes_in_configuration: int | None = None
+    errors: list[dict] | None = None
 
 
 @router.post(
@@ -242,49 +246,59 @@ async def upload_custom_codes_csv(
         )
 
     custom_codes: list[DbConfigurationCustomCode] = []
-
+    errors: list[dict] = []
+    code_keys = [(cc.code.lower(), cc.system.lower()) for cc in config.custom_codes]
+    batch_keys = set()
+    allowed_systems = ["loinc", "snomed", "icd-10", "rxnorm", "other"]
     for row_number, row in enumerate(csv_reader, start=2):
+        code = (row.get("code_number") or "").strip()
+        code_system_raw = (row.get("code_system") or "").strip()
+        name = (row.get("display_name") or "").strip()
+        row_errors = []
+        if not code:
+            row_errors.append("Missing code_number")
+        if not code_system_raw:
+            row_errors.append("Missing code_system")
+        if not name:
+            row_errors.append("Missing display_name")
+        sys_l = code_system_raw.lower()
+        if sys_l not in allowed_systems:
+            row_errors.append(f"Invalid system: {code_system_raw}")
+        code_key = (code.lower(), sys_l)
+        if code_key in code_keys:
+            row_errors.append("Duplicate: matches existing custom code")
+        if code_key in batch_keys:
+            row_errors.append("Duplicate: matches uploaded batch code")
+        if row_errors:
+            errors.append({"row": row_number, "error": ", ".join(row_errors)})
+            continue
+        batch_keys.add(code_key)
         try:
-            code = (row.get("code_number") or "").strip()
-            code_system_raw = (row.get("code_system") or "").strip()
-            name = (row.get("display_name") or "").strip()
-
-            if not code or not code_system_raw:
-                raise ValueError("Missing required values.")
-
             sanitized_system_name = _get_sanitized_system_name(code_system_raw)
             system_literal = _get_literal_system(sanitized_system_name)
-
             custom_codes.append(
-                DbConfigurationCustomCode(
-                    code=code,
-                    system=system_literal,
-                    name=name,
-                )
+                DbConfigurationCustomCode(code=code, system=system_literal, name=name)
             )
         except Exception as e:
-            logger.error(
-                "Invalid CSV row",
-                extra={"row_number": row_number, "error": str(e), "row": row},
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid data in CSV at row {row_number}",
-            )
-
-    if not custom_codes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSV file contains no valid rows.",
+            errors.append({"row": row_number, "error": str(e)})
+    if errors:
+        logger.error("CSV upload errors", extra={"errors": errors})
+        return UploadCustomCodesResponse(
+            message=None,
+            codes_processed=None,
+            total_custom_codes_in_configuration=None,
+            errors=errors,
         )
-
-    # Bulk insert (dedupe happens inside the DB function)
+    if not custom_codes:
+        return UploadCustomCodesResponse(
+            message=None,
+            codes_processed=None,
+            total_custom_codes_in_configuration=None,
+            errors=[{"row": 0, "error": "No valid rows"}],
+        )
     try:
         result = await add_bulk_custom_codes_to_configuration_db(
-            config=config,
-            custom_codes=custom_codes,
-            user_id=user.id,
-            db=db,
+            config=config, custom_codes=custom_codes, user_id=user.id, db=db
         )
     except Exception as e:
         logger.error("Bulk custom code insert failed", extra={"error": str(e)})
@@ -292,17 +306,16 @@ async def upload_custom_codes_csv(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to insert custom codes.",
         )
-
     if not result:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update configuration.",
         )
-
     return UploadCustomCodesResponse(
         message="Successfully uploaded custom codes.",
         codes_processed=result.added_count,
         total_custom_codes_in_configuration=len(result.config.custom_codes),
+        errors=None,
     )
 
 
