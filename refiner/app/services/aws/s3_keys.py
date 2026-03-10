@@ -50,7 +50,7 @@ def get_parent_directory_key(jurisdiction_id: str, canonical_url: str) -> str:
     return f"{get_jurisdiction_directory(jurisdiction_id=jurisdiction_id)}/{uuid}"
 
 
-def get_rsg_cd_mapping_file_key(jurisdiction_id: str) -> str:
+def get_rsg_cg_mapping_file_key(jurisdiction_id: str) -> str:
     """
     Constructs and returns the key to a jurisdiction's condition mapping file.
 

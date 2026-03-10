@@ -16,7 +16,7 @@ from ..core.models.types import XMLFiles
 from ..services.aws.s3_keys import (
     get_active_file_key,
     get_current_file_key,
-    get_rsg_cd_mapping_file_key,
+    get_rsg_cg_mapping_file_key,
 )
 from ..services.conditions import ConditionMappingPayload
 from ..services.ecr.refine import (
@@ -213,7 +213,7 @@ def process_refiner(
             metadata[jurisdiction_code] = {}
 
             # if mapping file is non-existant or empty there is nothing to process for the JD
-            rsg_cg_mapping_file_key = get_rsg_cd_mapping_file_key(
+            rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(
                 jurisdiction_id=jurisdiction_code
             )
             rsg_cg_mapping = read_rsg_cg_mapping_file(

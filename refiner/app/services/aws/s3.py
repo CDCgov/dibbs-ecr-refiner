@@ -21,7 +21,7 @@ from .s3_keys import (
     get_active_file_key,
     get_metadata_file_key,
     get_parent_directory_key,
-    get_rsg_cd_mapping_file_key,
+    get_rsg_cg_mapping_file_key,
 )
 
 S3_CONFIGURATION_BUCKET_NAME = ENVIRONMENT["S3_BUCKET_CONFIG"]
@@ -147,7 +147,7 @@ def upload_condition_mapping_payload(
     Returns:
         str: The key where the file was written to.
     """
-    condition_mapping_key = get_rsg_cd_mapping_file_key(jurisdiction_id=jurisdiction_id)
+    condition_mapping_key = get_rsg_cg_mapping_file_key(jurisdiction_id=jurisdiction_id)
 
     mapping_payload_dict = mapping_payload.to_dict()
 
