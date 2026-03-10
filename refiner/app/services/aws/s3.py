@@ -67,7 +67,7 @@ def upload_current_version_file(
             Body=json.dumps(data, indent=2).encode("utf-8"),
             ContentType="application/json",
         )
-        logger.debug(
+        logger.info(
             f"Updating current.json to version {active_version}: {key}/current.json"
         )
 
@@ -127,8 +127,8 @@ def upload_configuration_payload(
     )
 
     s3_condition_code_paths.append(parent_directory)
-    logger.debug(f"Writing file to: {active_key}")
-    logger.debug(f"Writing file to: {metadata_key}")
+    logger.info(f"Writing file to: {active_key}")
+    logger.info(f"Writing file to: {metadata_key}")
 
     return s3_condition_code_paths
 
