@@ -21,7 +21,8 @@ def s3_client():
     return create_s3_client()
 
 
-def configure_default_setup(s3_client, auto_teardown_resources=True):
+@pytest.fixture
+def default_setup(s3_client):
     """
     Creates a default test configuration in S3 for Lambda to consume.
     Cleans up after the test if needed.
