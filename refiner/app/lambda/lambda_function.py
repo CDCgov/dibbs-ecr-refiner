@@ -195,8 +195,9 @@ def process_refiner(
         for condition in jurisdiction_group.conditions:
             condition_code = condition.code
 
+            # TODO: get canonical_url from rsg_cg_mapping.json
             current_file_key = get_current_file_key(
-                jurisdiction_id=jurisdiction_code, rsg_code=condition_code
+                jurisdiction_id=jurisdiction_code, canonical_url=condition_code
             )
             config_version_to_use = read_current_version(
                 s3_client=s3_client,
@@ -230,9 +231,11 @@ def process_refiner(
 
             # Read active configuration
             # example: configurations/<jurisdiction_code>/<condition_code>/<version>/active.json
+
+            # TODO: get canonical_url from rsg_cg_mapping.json
             serialized_configuration_key = get_active_file_key(
                 jurisdiction_id=jurisdiction_code,
-                rsg_code=condition_code,
+                canonical_url=condition_code,
                 version=config_version_to_use,
             )
             serialized_configuration = read_configuration_file(
