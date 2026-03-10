@@ -13,7 +13,11 @@ from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
 from ..core.models.types import XMLFiles
-from ..services.aws.s3_keys import get_active_file_key, get_current_file_key
+from ..services.aws.s3_keys import (
+    get_active_file_key,
+    get_current_file_key,
+    get_rsg_cd_mapping_file_key,
+)
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
@@ -106,6 +110,22 @@ def parse_s3_content_to_dict(body: str) -> dict:
         raise
 
 
+def read_rsg_cg_mapping_file(s3_client, bucket: str, key: str) -> dict | None:
+    # Check that mapping file exists
+    mapping_exists = check_s3_object_exists(s3_client=s3_client, bucket=bucket, key=key)
+
+    if not mapping_exists:
+        return None
+
+    # Read the file content, return it as a dict
+    mapping_file_content = get_s3_object_content(s3_client, bucket=bucket, key=key)
+    content_dict = parse_s3_content_to_dict(mapping_file_content)
+    if not content_dict:
+        return None
+
+    return content_dict
+
+
 def read_current_version(s3_client, bucket: str, key: str) -> int | None:
     """
     Fetches the current active configuration version from `current.json` in the
@@ -190,6 +210,24 @@ def process_refiner(
 
         if jurisdiction_code not in metadata:
             metadata[jurisdiction_code] = {}
+
+            # if mapping file is non-existant or empty there is nothing to process for the JD
+            rsg_cg_mapping_file_key = get_rsg_cd_mapping_file_key(
+                jurisdiction_id=jurisdiction_code
+            )
+            rsg_cg_mapping = read_rsg_cg_mapping_file(
+                s3_client=s3_client, bucket=config_bucket, key=rsg_cg_mapping_file_key
+            )
+
+            # TODO: Do the right thing here instead!
+            if not rsg_cg_mapping:
+                logger.info(
+                    "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
+                    key=rsg_cg_mapping_file_key,
+                    jurisdiction_code=jurisdiction_code,
+                    operation="skipped",
+                )
+                break
 
         # Process each condition for this jurisdiction
         for condition in jurisdiction_group.conditions:
