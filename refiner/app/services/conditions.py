@@ -23,6 +23,10 @@ def extract_uuid_from_canonical_url(url: str) -> UUID:
     return UUID(last_segment)
 
 
+def _replace_spaces_with_underscores(text: str) -> str:
+    return text.replace(" ", "_")
+
+
 class ConditionMapValue(TypedDict):
     """
     Condition data mapped to an RSG.
@@ -56,7 +60,7 @@ def create_condition_mapping_payload(
             exists = mapping.get(rsg)
             value: ConditionMapValue = {
                 "condition_grouper_id": str(cg_uuid),
-                "name": name,
+                "name": _replace_spaces_with_underscores(name),
             }
 
             if exists is not None and exists != value:
