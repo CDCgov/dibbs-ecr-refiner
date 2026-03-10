@@ -1,5 +1,6 @@
 import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
+import UploadSvg from '../../../assets/upload.svg';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -31,6 +32,7 @@ import {
   useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
   useGetConfiguration,
+  useUploadCustomCodesCsv,
 } from '../../../api/configurations/configurations';
 import {
   AddCustomCodeInputSystem,
@@ -174,7 +176,7 @@ function Builder({
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [tableView, setTableView] = useState<
-    'none' | 'codeset' | 'custom' | 'sections'
+    'none' | 'codeset' | 'custom' | 'sections' | 'csv_import'
   >('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
@@ -203,6 +205,12 @@ function Builder({
     setSelectedCodesetName(null);
     setSelectedCodesetId(null);
     setTableView('custom');
+  }
+
+  function onCsvImportClick() {
+    setSelectedCodesetName(null);
+    setSelectedCodesetId(null);
+    setTableView('csv_import');
   }
 
   function setCodesetListItemFocus(deletedId: string) {
@@ -347,19 +355,24 @@ function Builder({
               />
             </>
           ) : tableView === 'custom' ? (
-            <>
+            <div className="min-h-full min-w-full">
               <h3 className="mb-2 text-xl font-bold">Custom codes</h3>
               <CustomCodeGroupingParagraph />
-              <ModalToggleButton
-                modalRef={modalRef}
-                opener
-                variant="secondary"
-                className={classNames('mt-4!')}
-                aria-label="Add new custom code"
-                disabled={disabled}
-              >
-                Add code
-              </ModalToggleButton>
+              <div className="mt-4! flex items-center gap-3">
+                <ModalToggleButton
+                  modalRef={modalRef}
+                  opener
+                  variant="primary"
+                  aria-label="Add new custom code"
+                  disabled={disabled}
+                >
+                  Add code
+                </ModalToggleButton>
+
+                <Button onClick={onCsvImportClick} variant="secondary">
+                  Import from CSV
+                </Button>
+              </div>
               <CustomCodesDetail
                 configurationId={id}
                 modalRef={modalRef}
@@ -367,12 +380,18 @@ function Builder({
                 deduplicated_codes={deduplicated_codes}
                 disabled={disabled}
               />
-            </>
+            </div>
           ) : tableView === 'sections' ? (
             <EicrSectionReview
               configurationId={id}
               sectionProcessing={section_processing}
               disabled={disabled}
+            />
+          ) : tableView === 'csv_import' ? (
+            <ImportCustomCodes
+              configurationId={id}
+              disabled={disabled}
+              onSuccess={() => setTableView('custom')}
             />
           ) : null}
         </div>
@@ -572,7 +591,7 @@ function CustomCodesDetail({
   }
 
   return (
-    <>
+    <div role="region">
       <table id="custom-table" className="mt-6! w-full border-separate">
         <thead className="sr-only">
           <tr>
@@ -656,7 +675,7 @@ function CustomCodesDetail({
         modalRef={modalRef}
         onClose={toggleModal}
       />
-    </>
+    </div>
   );
 }
 
@@ -1071,4 +1090,227 @@ function normalizeSystem(
   system: DbConfigurationCustomCodeSystem | string
 ): AddCustomCodeInputSystem {
   return system.toLowerCase() as AddCustomCodeInputSystem;
+}
+
+interface ImportCustomCodesProps {
+  configurationId: string;
+  disabled?: boolean;
+  onSuccess?: () => void;
+}
+
+function ImportCustomCodes({
+  configurationId,
+  disabled = false,
+  onSuccess,
+}: ImportCustomCodesProps) {
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const showToast = useToast();
+  const formatApiError = useApiErrorFormatter();
+
+  const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { mutate: uploadCsvMutation, isPending } = useUploadCustomCodesCsv();
+
+  const handleButtonClick = () => {
+    if (!disabled && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setError('Please upload a valid CSV file.');
+      return;
+    }
+
+    setError(null);
+    setIsUploading(true);
+
+    const csvText = await file.text();
+
+    uploadCsvMutation(
+      {
+        configurationId,
+        data: {
+          csv_text: csvText,
+          filename: file.name,
+        },
+      },
+      {
+        onSuccess: async (res) => {
+          const payload = res.data;
+
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+
+          showToast({
+            heading: 'CSV successfully imported',
+            body: `${payload.codes_processed} codes.`,
+          });
+
+          onSuccess?.();
+        },
+        onError: (err: unknown) => {
+          const message = formatApiError(err);
+
+          setError(message);
+
+          showToast({
+            variant: 'error',
+            heading: 'Error Importing CSV',
+            body: message,
+          });
+        },
+        onSettled: () => {
+          setIsUploading(false);
+        },
+      }
+    );
+  };
+
+  const uploading = isUploading || isPending;
+
+  const handleDownloadTemplate = () => {
+    const csv = `code_number,code_system,display_name
+[CODE_NUMBER],[CODE_SYSTEM],[DISPLAY_NAME]
+`;
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'custom_code_upload_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="w-full max-w-xl space-y-6">
+      {uploading ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setIsUploading(false)}
+            className="text-blue-cool-50 text-sm hover:underline"
+          >
+            ← Back
+          </button>
+
+          <div>
+            <h2 className="text-2xl font-semibold">Import from CSV</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Easily add multiple codes by uploading a spreadsheet in CSV
+              format.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
+            <div className="mb-4 flex justify-center">
+              <img
+                src={UploadSvg}
+                alt=""
+                className="h-[68px] w-[54px]"
+                aria-hidden="true"
+              />
+            </div>
+
+            <h3 className="mb-4 text-lg font-semibold">CSV uploading...</h3>
+
+            <div className="mx-auto mb-6 h-1 w-3/4 overflow-hidden rounded bg-blue-200">
+              <div className="h-full w-1/3 animate-pulse bg-blue-600" />
+            </div>
+
+            <Button
+              variant="secondary"
+              onClick={() => setIsUploading(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="w-full max-w-xl space-y-6">
+          <button
+            type="button"
+            onClick={onSuccess}
+            className="text-blue-cool-50 text-sm hover:underline"
+          >
+            ← Back
+          </button>
+
+          <div>
+            <h2 className="text-2xl font-semibold">Import from CSV</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Easily add multiple codes by uploading a spreadsheet in CSV
+              format.
+            </p>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
+              1
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm">
+                Your spreadsheet must follow the format of this template.
+              </p>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={handleDownloadTemplate}
+              >
+                Download template
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
+              2
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm">
+                Once you have your codes in the right format, upload the CSV.
+                <br />
+                We will validate the codes and let you know if you need to
+                change anything.
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                hidden
+                onChange={handleFileChange}
+              />
+
+              <Button
+                type="button"
+                onClick={handleButtonClick}
+                disabled={disabled}
+                variant="primary"
+              >
+                Upload CSV
+              </Button>
+
+              {error && <div className="text-sm text-red-600">{error}</div>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

@@ -16,20 +16,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS '';
-
-
---
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -54,7 +40,8 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'section_update',
     'lock_acquire',
     'lock_release',
-    'lock_renew'
+    'lock_renew',
+    'bulk_add_custom_code'
 );
 
 
@@ -511,4 +498,5 @@ ALTER TABLE ONLY public.users
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260226212322'),
-    ('20260305221859');
+    ('20260305221859'),
+    ('20260309143000');
