@@ -20,7 +20,7 @@ We have decided to make three major modifications to what exists today in order 
 
 1. Write S3 files to a CG level key instead of RSG level keys
 2. Introduce an RSG -> CG mapping file
-3. Modify Lambda to make use of new the new file locations, the mapping file, and write CG level outputs
+3. Modify Lambda to make use of the new file locations, the mapping file, and write CG level outputs
 
 ### S3 file storage
 
