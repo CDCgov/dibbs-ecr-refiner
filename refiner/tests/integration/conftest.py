@@ -35,7 +35,7 @@ from app.core.config import ENVIRONMENT
 from app.db.pool import create_db
 from app.main import create_fastapi_app, create_lifespan
 from app.services.logger import setup_logger
-from scripts.validation.validate_ecr_data import (
+from scripts.validation.validate_document import (
     STANDARDS_MAP,
     display_svrl_results,
     get_document_template_info,

@@ -44,3 +44,29 @@ The Lambda Docker container starts up as part of the project's [Docker Compose f
 `http://localhost:9000/2015-03-31/functions/function/invocations`
 
 This endpoint can be requested using an HTTP client of your choice in order to invoke the Lambda function. Note that the Lambda function expects an SQS-style JSON event as part of the request. Please refer to the [Lambda integration tests](../../tests/integration/test_lambda.py) for an example event.
+
+## Seeding Localstack for manual testing
+
+A script accessible via `just server seed-localstack` is available to put Localstack in a state suitable for local testing (ie hitting the `localhost:9000` endpoint with a POST command simulating an SQS event). The same code is used by Pytest to set up our integration tests.
+
+After containers are spun up, run `just server seed-localstack` to seed Localstack accordingly. If all goes well, you should see an example POST body that you can use to further invoke / manually test the Lambda.
+
+```json
+Seeding complete. Bucket: local-config-bucket
+Sample SQS Event to trigger Lambda:
+{
+  "Records": [
+    {
+      "messageId": "72c00f4d-ab8a-45ad-b312-b40cba7bf70d",
+      "receiptHandle": "3eb200c6-9291-4074-b7d8-e5e057f6f7b1",
+      "body": "{\"version\": \"0\", \"id\": \"c2739b79-e0c4-44c1-b241-b1be983ef146\", \"detail-type\": \"Object Created\", \"source\": \"aws.s3\", \"account\": \"123456789012\", \"time\": \"2026-01-27T00:00:00Z\", \"region\": \"us-east-1\", \"resources\": [\"arn:aws:s3:::local-config-bucket\"], \"detail\": {\"version\": \"0\", \"bucket\": {\"name\": \"local-config-bucket\"}, \"object\": {\"key\": \"RefinerInput/persistence/id\"}, \"size\": 123}}",
+      "attributes": {},
+      "messageAttributes": {},
+      "md5OfBody": "",
+      "eventSource": "aws:sqs",
+      "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:local-queue",
+      "awsRegion": "us-east-1"
+    }
+  ]
+}
+```

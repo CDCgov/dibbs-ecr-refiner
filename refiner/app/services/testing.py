@@ -294,7 +294,6 @@ async def independent_testing(
             processed_configuration=processed_configuration
         )
         refined_rr_str = refine_rr(
-            jurisdiction_id=jurisdiction_id,
             xml_files=xml_files,
             plan=rr_refinement_plan,
         )
@@ -441,7 +440,6 @@ async def inline_testing(
         processed_configuration=processed_configuration
     )
     refined_rr_str = refine_rr(
-        jurisdiction_id=jurisdiction_id,
         xml_files=xml_files,
         plan=rr_refinement_plan,
     )

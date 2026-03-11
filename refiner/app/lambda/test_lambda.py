@@ -129,10 +129,15 @@ def test_lambda_inactive(
     # Expected eICR output files created by Refiner
     full_flu_path = "RefinerOutput/persistence/id/SDDH/772828001/refined_eICR.xml"
     full_covid_path = "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
+    # TODO: swap these out with the actual value once we get it from APHL
+    full_shadow_rr_path = (
+        "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+    )
 
     # Skipped due to no current.json files found
     assert full_flu_path not in created_files
     assert full_covid_path not in created_files
+    assert full_shadow_rr_path in created_files
 
     # Expected completion file for pipeline
     assert "RefinerComplete/persistence/id" in created_files
@@ -198,6 +203,11 @@ def test_lambda_one_active(
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
+
+    full_shadow_rr_path = (
+        "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+    )
+
     assert f"RefinerComplete/{s3_input_objects}" in created_files
     assert (
         f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
@@ -207,6 +217,9 @@ def test_lambda_one_active(
         f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
         in created_files
     )
+    # since one reportable condition didn't have an active config, a shadow RR
+    # should have gotten written
+    assert full_shadow_rr_path in created_files
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
@@ -297,6 +310,9 @@ def test_lambda_all_active(
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
+    full_shadow_rr_path = (
+        "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+    )
     assert f"RefinerComplete/{s3_input_objects}" in created_files
 
     # Expect COVID outputs
@@ -318,6 +334,10 @@ def test_lambda_all_active(
         f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_RR.xml"
         in created_files
     )
+
+    # Shouldn't have shadow RR since all reportable conditions have corresponding
+    # active configs
+    assert full_shadow_rr_path not in created_files
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
