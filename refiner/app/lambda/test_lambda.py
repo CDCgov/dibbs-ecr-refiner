@@ -31,7 +31,7 @@ def lambda_event() -> dict:
 
 @pytest.fixture
 def sample_xml_files() -> dict[str, bytes]:
-    zip_path = get_asset_path("demo", "mon-mothma-covid-influenza.zip")
+    zip_path = get_asset_path("demo", "mon-mothma-reportable-two-jds.zip")
 
     with ZipFile(zip_path) as z:
         with z.open("CDA_RR.xml") as f:
