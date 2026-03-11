@@ -11,7 +11,7 @@ from ..db.conditions.db import (
     get_conditions_by_child_rsg_snomed_codes_db,
     get_included_conditions_db,
 )
-from ..db.conditions.model import DbCondition
+from ..db.conditions.db_models import DbCondition
 from ..db.configurations.db import (
     get_configurations_by_condition_ids_and_jurisdiction_db,
     get_configurations_db,

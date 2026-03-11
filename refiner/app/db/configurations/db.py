@@ -11,7 +11,7 @@ from app.services.configurations import (
     get_default_sections,
 )
 
-from ..conditions.model import DbCondition
+from ..conditions.db_models import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
     BulkAddCustomCodesResult,

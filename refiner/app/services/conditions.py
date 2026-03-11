@@ -1,10 +1,12 @@
 import re
 
 from app.db.conditions.db import get_conditions_by_ids
-from app.db.conditions.model import (
+from app.db.conditions.db_models import (
+    DbCondition,
+)
+from app.db.conditions.models import (
     ConditionMappingPayload,
     ConditionMapValue,
-    DbCondition,
 )
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection

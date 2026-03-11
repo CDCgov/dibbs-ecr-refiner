@@ -3,3 +3,4 @@ chardet
 lxml
 pydantic>=2.0.0
 aws-lambda-powertools==3.14
+packaging

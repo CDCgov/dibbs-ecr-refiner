@@ -45,8 +45,9 @@ def seed_localstack(s3_client):
     except s3_client.exceptions.BucketAlreadyOwnedByYou:
         pass
 
+    COVID_CANONICAL_URL = "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"
     activation_key = get_active_file_key(
-        jurisdiction_id="SDDH", rsg_code="840539006", version=1
+        jurisdiction_id="SDDH", canonical_url=COVID_CANONICAL_URL, version=1
     )
     activation_content = load_fixture_str("lambda/active.json")
 
@@ -58,7 +59,9 @@ def seed_localstack(s3_client):
         ContentType="application/json",
     )
 
-    current_key = get_current_file_key(jurisdiction_id="SDDH", rsg_code="840539006")
+    current_key = get_current_file_key(
+        jurisdiction_id="SDDH", canonical_url=COVID_CANONICAL_URL
+    )
     current_content = {"version": 1}
 
     # Upload current file to S3
