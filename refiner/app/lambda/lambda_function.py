@@ -6,6 +6,7 @@
 
 import json
 import os
+from collections import defaultdict
 from typing import TypedDict
 
 import boto3
@@ -19,6 +20,7 @@ from ..services.aws.s3_keys import (
     get_rsg_cg_mapping_file_key,
 )
 from ..services.conditions import ConditionMappingPayload
+from ..services.ecr.models import RRRefinementPlan
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
@@ -204,11 +206,11 @@ def process_refiner(
     reportability_result = determine_reportability(xml_files)
     refiner_output_files: list[str] = []
     metadata: dict[str, dict[str, bool]] = {}
+    non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
 
     # Process each jurisdiction
     for jurisdiction_group in reportability_result["reportable_conditions"]:
         jurisdiction_code = jurisdiction_group.jurisdiction.upper()
-
         if jurisdiction_code not in metadata:
             metadata[jurisdiction_code] = {}
 
@@ -252,6 +254,9 @@ def process_refiner(
             # Skip if no active configuration for the condition is in use
             if not config_version_to_use:
                 metadata[jurisdiction_code][condition_code] = False
+
+                # keep track of non active conditions for final processing
+                non_active_reportable_conditions[jurisdiction_code].add(condition_code)
                 logger.info(
                     "No active configuration identified, skipping.",
                     key=current_file_key,
@@ -317,7 +322,6 @@ def process_refiner(
 
             refined_rr_content = refine_rr(
                 xml_files=xml_files,
-                jurisdiction_id=jurisdiction_code,
                 plan=rr_refinement_plan,
             )
 
@@ -358,17 +362,52 @@ def process_refiner(
                 unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr_content
             )
             logger.info(
-                "Refinement complete.",
+                "Condition refinement complete.",
                 eicr_key=eicr_output_key,
                 rr_key=rr_output_key,
                 eicr_size_reduction_percentage=eicr_size_reduction_percentage,
                 jurisdiction_code=jurisdiction_code,
                 condition_code=condition_code,
-                operation="refinement_complete",
+                operation="condition_refinement_complete",
             )
 
             metadata[jurisdiction_code][condition_code] = True
 
+    # Process reportable conditions that don't have an active Refiner configuration
+    # and create a followup RR
+    for jurisdiction_code, condition_codes in non_active_reportable_conditions.items():
+        non_active_rr_refinement_plan = RRRefinementPlan(condition_codes)
+
+        shadow_refined_rr_content = refine_rr(
+            xml_files=xml_files,
+            plan=non_active_rr_refinement_plan,
+        )
+        # TODO: swap this out with the actual value once we get it from APHL
+        output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/inactive-codes"
+
+        shadow_rr_output_key = f"{output_key}/refined_RR.xml"
+        s3_client.put_object(
+            Bucket=bucket,
+            Key=shadow_rr_output_key,
+            Body=shadow_refined_rr_content.encode("utf-8"),
+            ContentType="application/xml",
+        )
+        refiner_output_files.append(shadow_rr_output_key)
+
+        logger.info(
+            "Created refined shadow RR output",
+            output_key=shadow_rr_output_key,
+            jurisdiction_code=jurisdiction_code,
+            operation="shadow_rr_written",
+        )
+
+    logger.info(
+        "Refinement complete.",
+        persistence_id=persistence_id,
+        output_file_urls=refiner_output_files,
+        jurisdiction_codes=metadata.keys(),
+        operation="refinement_complete",
+    )
     return refiner_output_files, metadata
 
 
