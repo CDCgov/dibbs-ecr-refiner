@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import UploadSvg from '../../../assets/upload.svg';
 import { Title } from '../../../components/Title';
@@ -10,7 +10,7 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useRef, useMemo, useState, forwardRef } from 'react';
+import { useEffect, useRef, useMemo, useState, forwardRef } from 'react';
 
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
@@ -56,6 +56,8 @@ import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
+
+const IMPORT_FRAGMENT = '#import-from-csv';
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -184,6 +186,8 @@ function Builder({
   const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
     null
   );
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const modalRef = useRef<ModalRef | null>(null);
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
@@ -212,6 +216,36 @@ function Builder({
     setSelectedCodesetId(null);
     setTableView('csv_import');
   }
+
+  useEffect(() => {
+    if (location.hash === IMPORT_FRAGMENT && tableView !== 'csv_import') {
+      setTableView('csv_import');
+    }
+  }, [location.hash, tableView]);
+
+  useEffect(() => {
+    const navigateWithHash = (hash: string) => {
+      navigate(
+        {
+          pathname: location.pathname,
+          search: location.search,
+          hash,
+        },
+        { replace: true }
+      );
+    };
+
+    if (tableView === 'csv_import') {
+      if (location.hash !== IMPORT_FRAGMENT) {
+        navigateWithHash(IMPORT_FRAGMENT);
+      }
+      return;
+    }
+
+    if (location.hash === IMPORT_FRAGMENT) {
+      navigateWithHash('');
+    }
+  }, [tableView, location.hash, location.pathname, location.search, navigate]);
 
   function setCodesetListItemFocus(deletedId: string) {
     // No change needed if we're not viewing the code set
