@@ -130,8 +130,8 @@ def test_lambda_inactive(
     assert "eCRMessageV2/persistence/id" in created_files
 
     # Expected eICR output files created by Refiner
-    full_flu_path = "RefinerOutput/persistence/id/SDDH/772828001/refined_eICR.xml"
-    full_covid_path = "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
+    full_flu_path = "RefinerOutput/persistence/id/SDDH/Influenza/refined_eICR.xml"
+    full_covid_path = "RefinerOutput/persistence/id/SDDH/COVID19/refined_eICR.xml"
     # TODO: swap these out with the actual value once we get it from APHL
     full_shadow_rr_path_sddh = (
         "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
