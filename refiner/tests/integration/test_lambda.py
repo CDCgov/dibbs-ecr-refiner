@@ -11,6 +11,7 @@ from tests.localstack.seed import (
 )
 
 LAMBDA_BASE_URL = "http://localhost:9000/2015-03-31/functions/function/invocations"
+COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
 
 
 @pytest.fixture
@@ -66,7 +67,7 @@ class TestLambda:
 
         # Assert refined RR was created
         expected_refined_rr_key = (
-            "RefinerOutput/persistence/id/SDDH/840539006/refined_RR.xml"
+            "RefinerOutput/persistence/id/SDDH/COVID19/refined_RR.xml"
         )
         rr_response = s3_client.get_object(Bucket=bucket, Key=expected_refined_rr_key)
 
@@ -84,7 +85,7 @@ class TestLambda:
 
         # Assert refined eICR was created
         expected_refined_eicr_key = (
-            "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
+            "RefinerOutput/persistence/id/SDDH/COVID19/refined_eICR.xml"
         )
         eicr_response = s3_client.get_object(
             Bucket=bucket, Key=expected_refined_eicr_key
@@ -153,10 +154,11 @@ class TestLambda:
         assert resp.status_code == 200
 
         resp_json = resp.json()
+        print(resp_json)
         error_message = resp_json["errorMessage"]
         assert (
             error_message
-            == "Activated configuration file could not be read at: configurations/SDDH/840539006/2/active.json"
+            == f"Activated configuration file could not be read at: configurations/SDDH/{COVID_CANONICAL_URL_UUID}/2/active.json"
         )
 
     async def test_lambda_missing_current_file(

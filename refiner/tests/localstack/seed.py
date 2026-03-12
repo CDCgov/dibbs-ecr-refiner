@@ -16,6 +16,7 @@ if refiner_dir not in sys.path:
 from app.services.aws.s3_keys import (  # noqa: E402
     get_active_file_key,
     get_current_file_key,
+    get_rsg_cg_mapping_file_key,
 )
 from tests.fixtures.loader import load_fixture_str  # noqa: E402
 
@@ -69,6 +70,17 @@ def seed_localstack(s3_client):
         Bucket=BUCKET,
         Key=current_key,
         Body=json.dumps(current_content, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+    rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(jurisdiction_id="SDDH")
+    rsg_cg_content = load_fixture_str("lambda/rsg_cg_mapping.json")
+
+    # Upload current file to S3
+    s3_client.put_object(
+        Bucket=BUCKET,
+        Key=rsg_cg_mapping_file_key,
+        Body=rsg_cg_content.encode("utf-8"),
         ContentType="application/json",
     )
 
