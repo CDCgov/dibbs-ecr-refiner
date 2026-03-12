@@ -43,23 +43,25 @@ async def get_info(
     tes_versions = await get_loaded_tes_versions_db(db=db)
     latest_tes_version = max(tes_versions, key=lambda v: parse(v))
 
-    return {
-        "app": {
-            "environment": ENVIRONMENT["ENV"],
-            "version": ENVIRONMENT["VERSION"],
-        },
-        "data": {
-            "revision": await get_latest_migration_db(db=db),
-            "tes_versions": tes_versions,
-            "latest_tes_version": latest_tes_version,
-        },
-        "session": {
-            "username": user.username,
-            "jurisdiction_id": user.jurisdiction_id,
-            "configurations": {
-                "total_count": total_config_count,
-                "active_count": total_active_config_count,
-                "detail": config_details,
+    return JSONResponse(
+        content={
+            "app": {
+                "environment": ENVIRONMENT["ENV"],
+                "version": ENVIRONMENT["VERSION"],
             },
-        },
-    }
+            "data": {
+                "revision": await get_latest_migration_db(db=db),
+                "tes_versions": tes_versions,
+                "latest_tes_version": latest_tes_version,
+            },
+            "session": {
+                "username": user.username,
+                "jurisdiction_id": user.jurisdiction_id,
+                "configurations": {
+                    "total_count": total_config_count,
+                    "active_count": total_active_config_count,
+                    "detail": config_details,
+                },
+            },
+        }
+    )
