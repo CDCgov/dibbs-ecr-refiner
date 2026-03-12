@@ -65,6 +65,12 @@ export function EicrSectionReview({
                 />
               </div>
             </th>
+            <th scope="col" className="w-[25%] pb-3">
+              <div className="flex items-center justify-center gap-1">
+                <span>Narrative</span>
+                <Tooltip text="Enable to retain the narrative block for this section in the refined output or disable to omit it." />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-gray-cool-20 divide-y">
@@ -93,6 +99,19 @@ export function EicrSectionReview({
                 {section.include ? (
                   <div className="flex justify-center">
                     <RefineSwitch
+                      configurationId={configurationId}
+                      currentSection={section}
+                      sections={sectionProcessing}
+                      disabled={disabled || disabledSections.has(section.code)}
+                    />
+                  </div>
+                ) : null}
+              </td>
+
+              <td>
+                {section.include ? (
+                  <div className="flex justify-center">
+                    <NarrativeSwitch
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
@@ -284,6 +303,81 @@ function InfoIcon() {
         fill="#3A7D95"
       />
     </svg>
+  );
+}
+
+function NarrativeSwitch({
+  currentSection,
+  configurationId,
+  disabled,
+}: RefineSwitchProps) {
+  const { mutate: updateSectionProcessing } =
+    useUpdateConfigurationSectionProcessing();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+  const showToast = useToast();
+
+  const narrativeEnabled =
+    'narrative' in currentSection ? Boolean(currentSection.narrative) : false;
+
+  const narrativeOnLabelText = 'Include narrative';
+  const narrativeOffLabelText = 'Exclude narrative';
+
+  return (
+    <Field className="flex items-center gap-3">
+      <Label
+        aria-label={
+          narrativeEnabled
+            ? `${narrativeOnLabelText} for ${currentSection.name} section`
+            : `${narrativeOffLabelText} for ${currentSection.name} section`
+        }
+        passive
+        className="w-36"
+      >
+        {narrativeEnabled ? (
+          <span>{narrativeOnLabelText}</span>
+        ) : (
+          <span className="italic">{narrativeOffLabelText}</span>
+        )}
+      </Label>
+
+      <Switch
+        className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
+        disabled={disabled}
+        checked={narrativeEnabled}
+        onChange={(checked) => {
+          updateSectionProcessing(
+            {
+              configurationId,
+              data: {
+                action: currentSection.action,
+                code: currentSection.code,
+                include: currentSection.include,
+                narrative: checked,
+              },
+            },
+            {
+              onSuccess: async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: getGetConfigurationQueryKey(configurationId),
+                });
+              },
+              onError: (error) => {
+                const errorDetail =
+                  formatError(error) || error.message || 'Unknown error';
+                showToast({
+                  heading: 'Section failed to update',
+                  body: errorDetail,
+                  variant: 'error',
+                });
+              },
+            }
+          );
+        }}
+      >
+        <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
+      </Switch>
+    </Field>
   );
 }
 
