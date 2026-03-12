@@ -38,18 +38,14 @@ async def get_conditions_with_active_config(
 
 # TODO: Collect this from the TES data directly instead?
 def _get_computed_name(text: str) -> str:
-    normalized = re.sub(r"\s+", "_", text.strip())
-    normalized = re.sub(r"[^A-Za-z0-9_]", "", normalized)
-
     # !!NOTE!!
     # TES versions 1-3 have the computed name `Tickborne_relapsing_feverTBRF` and
     # version 4 has the computed name `Tickborne_relapsing_fever_TBRF` which is probably a bug
-    overrides = {
-        "NonStreptococcal_Toxic_Shock_Syndrome": "NonStreptococcal_ToxicShock_Syndrome",
-        "Tickborne_relapsing_fever_TBRF": "Tickborne_relapsing_feverTBRF",
-    }
 
-    return overrides.get(normalized, normalized)
+    normalized = re.sub(r"\s+", "", text.strip())
+    normalized = re.sub(r"[^A-Za-z0-9_]", "", normalized)
+
+    return normalized
 
 
 def create_condition_mapping_payload(
