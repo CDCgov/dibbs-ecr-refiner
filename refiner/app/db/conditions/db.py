@@ -11,6 +11,25 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase
 
 
+async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
+    """
+    Queries the database for all TES versions available for use.
+    """
+
+    query = """
+        SELECT
+            DISTINCT(version)
+        FROM conditions
+        ORDER BY version
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query)
+            rows = await cur.fetchall()
+
+    return [row["version"] for row in rows]
+
+
 async def get_conditions_by_version_db(
     db: AsyncDatabaseConnection, version: str
 ) -> list[DbConditionBase]:
