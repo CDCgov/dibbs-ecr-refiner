@@ -33,7 +33,7 @@ from app.services.sample_file import create_sample_zip_file, get_sample_zip_path
 from app.services.testing import inline_testing
 from app.services.xslt import get_path_to_xslt_stylesheet, transform_xml_to_html
 
-from .models import ConfigurationTestResponse
+from .model import ConfigurationTestResponse
 
 router = APIRouter(prefix="/test")
 

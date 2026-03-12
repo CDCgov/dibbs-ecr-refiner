@@ -4,7 +4,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.db.configurations.model import DbConfigurationSectionInstructions
-from app.services.ecr.models import EICRRefinementPlan
+from app.services.ecr.model import EICRRefinementPlan
 from app.services.terminology import ProcessedConfiguration
 
 from ...core.exceptions import (
@@ -13,7 +13,7 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ..format import remove_element
-from .models import NamespaceMap, RRRefinementPlan
+from .model import NamespaceMap, RRRefinementPlan
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,

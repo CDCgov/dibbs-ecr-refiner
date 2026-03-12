@@ -3,7 +3,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.core.exceptions import StructureValidationError
-from app.services.ecr.models import ReportableCondition
+from app.services.ecr.model import ReportableCondition
 from app.services.ecr.process_rr import get_reportable_conditions_by_jurisdiction
 
 

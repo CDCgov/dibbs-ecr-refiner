@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.models import (
+from app.api.v1.configurations.model import (
     AddCustomCodeInput,
     ConfigurationCustomCodeResponse,
     UploadCustomCodesCsvInput,

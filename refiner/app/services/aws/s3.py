@@ -10,11 +10,11 @@ import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
 
+from app.db.conditions.model import ConditionMappingPayload
 from app.db.configurations.model import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
 )
-from app.services.conditions import ConditionMappingPayload
 
 from ...core.config import ENVIRONMENT
 from .s3_keys import (
