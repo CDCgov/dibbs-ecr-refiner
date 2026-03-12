@@ -108,7 +108,7 @@ class TestConfigurations:
             )
             assert (
                 mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["name"]
-                == "Drowning_and_Submersion"
+                == "DrowningandSubmersion"
             )
             assert (
                 mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["tes_version"] is not None
