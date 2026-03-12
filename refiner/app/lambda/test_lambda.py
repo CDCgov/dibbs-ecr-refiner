@@ -444,7 +444,8 @@ def test_lambda_all_active(
         s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
     )
 
-    # Both COVID and Flu should be marked as refined for SDDH, no refining for JDDH
+    # Both COVID and Flu should be marked as refined for SDDH,
+    # Flu should be refined for JDDH
     expected_refiner_metadata = {
         "SDDH": {"840539006": True, "772828001": True},
         "JDDH": {"772828001": True},
