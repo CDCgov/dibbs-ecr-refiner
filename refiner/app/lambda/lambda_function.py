@@ -250,16 +250,14 @@ def process_refiner(
                 if rsg_code not in rsg_cg_payload.mappings.keys():
                     # The specified RSG isn't in the CG map and thus isn't active.
                     # Make a record and skip it
-                    # TODO: update this once we know what to write to metadata
                     metadata[jurisdiction_code][rsg_code] = False
 
                     # keep track of non active conditions for final processing
                     non_active_reportable_conditions[jurisdiction_code].add(rsg_code)
                     logger.info(
                         "No active configuration for specified code, skipping.",
-                        key=rsg_metadata,
+                        key=rsg_code,
                         jurisdiction_code=jurisdiction_code,
-                        rsg_code=rsg_metadata,
                         rsg_cg_payload=rsg_cg_payload.to_dict(),
                         operation="skipped",
                     )
@@ -402,7 +400,6 @@ def process_refiner(
             xml_files=xml_files,
             plan=non_active_rr_refinement_plan,
         )
-        # TODO: swap this out with the actual value once we get it from APHL
         output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/inactive-codes"
 
         shadow_rr_output_key = f"{output_key}/refined_RR.xml"

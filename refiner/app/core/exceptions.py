@@ -213,23 +213,3 @@ class DatabaseDataError(DatabaseError):
     """
 
     pass
-
-
-class LambdaLookupError(BaseApplicationException):
-    """
-    Base class for lambda lookup errors.
-    """
-
-    pass
-
-
-class LambdaActiveFileLookupError:
-    """
-    Raised when lambda file lookups don't find expected values.
-    """
-
-
-class LambdaConditionCodeLookupError:
-    """
-    Raised when lambda code lookup operations don't find expected values.
-    """

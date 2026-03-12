@@ -66,7 +66,7 @@ Examples of the required environment variables can be seen in the project's [doc
 
 ### Lambda
 
-Please refer to the [Lambda README](./refiner/app/refinement_lambda/README.md).
+Please refer to the [Lambda README](./refiner/app/lambda/README.md).
 
 ### Ops (Maintenance tasks)
 

@@ -154,7 +154,6 @@ class TestLambda:
         assert resp.status_code == 200
 
         resp_json = resp.json()
-        print(resp_json)
         error_message = resp_json["errorMessage"]
         assert (
             error_message

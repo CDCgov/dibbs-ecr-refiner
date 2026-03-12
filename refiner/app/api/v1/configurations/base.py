@@ -12,7 +12,7 @@ from app.db.conditions.db import (
     get_conditions_by_version_db,
     get_included_conditions_db,
 )
-from app.db.conditions.db_models import DbConditionCoding
+from app.db.conditions.models import DbConditionCoding
 from app.db.configurations.db import (
     get_configuration_by_id_db,
     get_configuration_versions_db,

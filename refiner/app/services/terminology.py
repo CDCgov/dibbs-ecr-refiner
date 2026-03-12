@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass
 
 from pydantic import BaseModel, Field
 
-from ..db.conditions.db_models import DbCondition
+from ..db.conditions.models import DbCondition
 from ..db.configurations.model import DbConfiguration
 
 # NOTE:

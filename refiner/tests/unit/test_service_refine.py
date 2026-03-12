@@ -1,7 +1,7 @@
 from lxml import etree
 
 from app.core.models.types import XMLFiles
-from app.db.conditions.db_models import DbCondition, DbConditionCoding
+from app.db.conditions.models import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionInstructions,

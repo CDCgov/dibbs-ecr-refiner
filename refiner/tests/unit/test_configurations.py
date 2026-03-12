@@ -9,7 +9,7 @@ from fastapi import status
 
 from app.api.v1.configurations.models import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _upload_to_s3
-from app.db.conditions.db_models import DbCondition, DbConditionCoding
+from app.db.conditions.models import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
