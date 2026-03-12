@@ -27,7 +27,7 @@ from app.services.configurations import (
 )
 from app.services.logger import get_logger
 
-from .models import ConfigurationStatusUpdateResponse
+from .model import ConfigurationStatusUpdateResponse
 
 router = APIRouter(prefix="/{configuration_id}")
 

@@ -11,7 +11,7 @@ from ..db.conditions.db import (
     get_conditions_by_child_rsg_snomed_codes_db,
     get_included_conditions_db,
 )
-from ..db.conditions.models import DbCondition
+from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
     get_configurations_by_condition_ids_and_jurisdiction_db,
     get_configurations_db,
@@ -19,7 +19,7 @@ from ..db.configurations.db import (
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
-from .ecr.models import (
+from .ecr.model import (
     ProcessedRR,
     RefinedDocument,
     ReportableCondition,

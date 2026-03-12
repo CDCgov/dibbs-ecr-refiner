@@ -8,7 +8,7 @@ from psycopg.rows import class_row, dict_row
 from app.db.configurations.model import DbConfigurationCondition
 
 from ..pool import AsyncDatabaseConnection
-from .models import DbCondition, DbConditionBase
+from .model import DbCondition, DbConditionBase
 
 
 async def get_conditions_by_version_db(
