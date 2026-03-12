@@ -225,6 +225,13 @@ def process_refiner(
             )
 
             if not rsg_cg_mapping:
+                # Add all the RSG codes for shadow RR processing
+                for c in jurisdiction_group.conditions:
+                    non_active_reportable_conditions[jurisdiction_code].add(c.code)
+
+                    # TODO: update this once we know what to write to metadata
+                    metadata[jurisdiction_code][c.code] = False
+
                 logger.info(
                     "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
                     key=rsg_cg_mapping_file_key,
@@ -243,6 +250,7 @@ def process_refiner(
                 if rsg_code not in rsg_cg_payload.mappings.keys():
                     # The specified RSG isn't in the CG map and thus isn't active.
                     # Make a record and skip it
+                    # TODO: update this once we know what to write to metadata
                     metadata[jurisdiction_code][rsg_code] = False
 
                     # keep track of non active conditions for final processing
@@ -268,7 +276,6 @@ def process_refiner(
                     bucket=config_bucket,
                     key=current_file_key,
                 )
-                logger.info("config found", config=config_version_to_use)
                 if not config_version_to_use:
                     metadata[jurisdiction_code][rsg_code] = False
 
