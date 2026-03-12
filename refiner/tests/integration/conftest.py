@@ -10,6 +10,7 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 os.environ["ENV"] = "local"
+os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
 os.environ["DB_PASSWORD"] = "refiner"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"

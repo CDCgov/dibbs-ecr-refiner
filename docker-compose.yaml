@@ -24,6 +24,7 @@ services:
     environment:
       - PIP_ROOT_USER_ACTION=ignore
       - ENV=local
+      - VERSION=local
       - DB_URL=postgresql://postgres@db:5432/refiner
       - DB_PASSWORD=refiner
       - SESSION_SECRET_KEY=super-secret-key
@@ -56,6 +57,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=refiner
       - S3_ENDPOINT_URL=http://localstack:4566
       - S3_BUCKET_CONFIG=local-config-bucket
+      - VERSION=local
     depends_on:
       - localstack
   auth:
