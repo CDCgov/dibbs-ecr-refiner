@@ -13,7 +13,7 @@ import boto3
 from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
-from app.db.conditions.models import ConditionMappingPayload
+from app.db.conditions.model import ConditionMappingPayload
 
 from ..core.models.types import XMLFiles
 from ..services.aws.s3_keys import (
@@ -21,7 +21,7 @@ from ..services.aws.s3_keys import (
     get_current_file_key,
     get_rsg_cg_mapping_file_key,
 )
-from ..services.ecr.models import RRRefinementPlan
+from ..services.ecr.model import RRRefinementPlan
 from ..services.ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,

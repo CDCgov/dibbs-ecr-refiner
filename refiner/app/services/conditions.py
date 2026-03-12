@@ -1,7 +1,7 @@
 import re
 
 from app.db.conditions.db import get_conditions_by_ids
-from app.db.conditions.models import (
+from app.db.conditions.model import (
     ConditionMappingPayload,
     ConditionMapValue,
     DbCondition,

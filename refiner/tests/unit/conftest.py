@@ -31,7 +31,7 @@ from lxml.etree import _Element
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
-from app.db.conditions.models import DbCondition, DbConditionCoding
+from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration, DbConfigurationCondition
 from app.db.pool import get_db
 from app.db.users.model import DbUser

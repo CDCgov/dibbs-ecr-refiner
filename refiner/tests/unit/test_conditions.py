@@ -4,7 +4,7 @@ import pytest
 from fastapi import status
 
 from app.db.conditions.db import GetConditionCode
-from app.db.conditions.models import DbCondition, DbConditionCoding
+from app.db.conditions.model import DbCondition, DbConditionCoding
 
 
 @pytest.mark.asyncio

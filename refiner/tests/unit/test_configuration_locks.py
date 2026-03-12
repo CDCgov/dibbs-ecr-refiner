@@ -4,8 +4,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.api.v1.configurations.models import GetConfigurationsResponse
-from app.db.conditions.models import DbCondition, DbConditionCoding
+from app.api.v1.configurations.model import GetConfigurationsResponse
+from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCondition,
