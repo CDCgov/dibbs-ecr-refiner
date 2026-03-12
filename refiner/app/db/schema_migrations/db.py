@@ -18,6 +18,6 @@ async def get_latest_migration_db(db: AsyncDatabaseConnection) -> str:
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query)
-            rows = await cur.fetchall()
+            row = await cur.fetchone()
 
-    return [row["version"] for row in rows]
+    return row["version"] if row and row["version"] else "unknown"
