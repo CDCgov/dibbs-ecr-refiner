@@ -228,8 +228,6 @@ def process_refiner(
                 # Add all the RSG codes for shadow RR processing
                 for c in jurisdiction_group.conditions:
                     non_active_reportable_conditions[jurisdiction_code].add(c.code)
-
-                    # TODO: update this once we know what to write to metadata
                     metadata[jurisdiction_code][c.code] = False
 
                 logger.info(
