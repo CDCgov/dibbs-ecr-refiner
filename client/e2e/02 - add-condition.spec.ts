@@ -212,6 +212,27 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByText('Saving').waitFor({ state: 'detached' });
     await page.getByText('Saved').waitFor({ state: 'visible' });
 
+    // narrative should start off unchecked
+    await expect(
+      page.getByRole('switch', {
+        name: 'Exclude narrative for Encounters section',
+      })
+    ).not.toBeChecked();
+
+    // toggle narrative on
+    await page
+      .getByRole('switch', {
+        name: 'Exclude narrative for Encounters section',
+      })
+      .click();
+
+    // Wait for saving to show up
+    await page.getByText('Saving').waitFor({ state: 'visible' });
+
+    // Wait for saving to go away (refetch finished)
+    await page.getByText('Saving').waitFor({ state: 'detached' });
+    await page.getByText('Saved').waitFor({ state: 'visible' });
+
     await page.getByRole('button', { name: configurationToTest }).click();
 
     await page.getByRole('button', { name: 'Sections' }).click();
@@ -222,6 +243,12 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     // switch was previously toggled off which adds one more to the total count
     await expect(page.getByText('Preserve & retain all data')).toHaveCount(3);
+
+    await expect(
+      page.getByRole('switch', {
+        name: 'Include narrative for Encounters section',
+      })
+    ).toBeChecked();
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
