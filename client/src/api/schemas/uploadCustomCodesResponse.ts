@@ -8,7 +8,7 @@
 import type { UploadCustomCodesResponseErrors } from './uploadCustomCodesResponseErrors';
 
 /**
- * CSV response model. If errors: errors arr with row+error.
+ * CSV response model. Errors are surfaced via the `errors` array.
  */
 export interface UploadCustomCodesResponse {
   message?: string | null;

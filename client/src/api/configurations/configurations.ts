@@ -39,6 +39,7 @@ import type {
   ConfigurationCustomCodeResponse,
   ConfigurationStatusUpdateResponse,
   ConfigurationTestResponse,
+  ConfirmUploadCustomCodesInput,
   CreateConfigInput,
   CreateConfigurationResponse,
   GetConfigurationResponse,
@@ -47,6 +48,7 @@ import type {
   UpdateCustomCodeInput,
   UpdateSectionInput,
   UploadCustomCodesCsvInput,
+  UploadCustomCodesPreviewResponse,
   UploadCustomCodesResponse
 } from '../schemas';
 
@@ -619,7 +621,7 @@ Returns:
 export const uploadCustomCodesCsv = (
     configurationId: string,
     uploadCustomCodesCsvInput: UploadCustomCodesCsvInput, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UploadCustomCodesResponse>> => {
+ ): Promise<AxiosResponse<UploadCustomCodesPreviewResponse>> => {
     
     
     return axios.default.post(
@@ -673,6 +675,68 @@ export const useUploadCustomCodesCsv = <TError = AxiosError<HTTPValidationError>
         TContext
       > => {
       return useMutation(getUploadCustomCodesCsvMutationOptions(options), queryClient);
+    }
+    /**
+ * Confirm and save custom codes from preview list.
+ * @summary Confirm Upload Custom Codes Csv
+ */
+export const confirmUploadCustomCodesCsv = (
+    configurationId: string,
+    confirmUploadCustomCodesInput: ConfirmUploadCustomCodesInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<UploadCustomCodesResponse>> => {
+    
+    
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/custom-codes/confirm`,
+      confirmUploadCustomCodesInput,options
+    );
+  }
+
+
+
+export const getConfirmUploadCustomCodesCsvMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmUploadCustomCodesCsv>>, TError,{configurationId: string;data: ConfirmUploadCustomCodesInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmUploadCustomCodesCsv>>, TError,{configurationId: string;data: ConfirmUploadCustomCodesInput}, TContext> => {
+
+const mutationKey = ['confirmUploadCustomCodesCsv'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmUploadCustomCodesCsv>>, {configurationId: string;data: ConfirmUploadCustomCodesInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  confirmUploadCustomCodesCsv(configurationId,data,axiosOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmUploadCustomCodesCsvMutationResult = NonNullable<Awaited<ReturnType<typeof confirmUploadCustomCodesCsv>>>
+    export type ConfirmUploadCustomCodesCsvMutationBody = ConfirmUploadCustomCodesInput
+    export type ConfirmUploadCustomCodesCsvMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Confirm Upload Custom Codes Csv
+ */
+export const useConfirmUploadCustomCodesCsv = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmUploadCustomCodesCsv>>, TError,{configurationId: string;data: ConfirmUploadCustomCodesInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmUploadCustomCodesCsv>>,
+        TError,
+        {configurationId: string;data: ConfirmUploadCustomCodesInput},
+        TContext
+      > => {
+      return useMutation(getConfirmUploadCustomCodesCsvMutationOptions(options), queryClient);
     }
     /**
  * Delete a custom code from a configuration.

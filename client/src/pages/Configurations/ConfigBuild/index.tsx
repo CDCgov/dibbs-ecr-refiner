@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { EicrSectionReview } from './EicrSectionReview';
 import UploadSvg from '../../../assets/upload.svg';
 import { Title } from '../../../components/Title';
@@ -10,7 +10,14 @@ import {
   SectionContainer,
   TitleContainer,
 } from '../layout';
-import { useEffect, useRef, useMemo, useState, forwardRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useMemo,
+  useState,
+  forwardRef,
+  ChangeEvent,
+} from 'react';
 
 import classNames from 'classnames';
 import { Search } from '../../../components/Search';
@@ -28,6 +35,7 @@ import { useSearch } from '../../../hooks/useSearch';
 import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
+  useConfirmUploadCustomCodesCsv,
   useDeleteCustomCodeFromConfiguration,
   useDisassociateConditionWithConfiguration,
   useEditCustomCodeFromConfiguration,
@@ -39,10 +47,12 @@ import {
   DbConfigurationCustomCode,
   DbConfigurationCustomCodeSystem,
   GetConfigurationResponse,
+  UploadCustomCodesPreviewItem,
+  UploadCustomCodesPreviewItemSystem,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
-import { FuseResultMatch } from 'fuse.js';
+import type { FuseResultMatch, IFuseOptions } from 'fuse.js';
 import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
 import { highlightMatches } from '../../../utils';
 import { useQueryClient } from '@tanstack/react-query';
@@ -57,7 +67,15 @@ import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
 import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
-const IMPORT_FRAGMENT = '#import-from-csv';
+type CsvImportStep = 'intro' | 'preview' | 'error';
+type CsvImportView = `csv_${CsvImportStep}`;
+type TableView = 'none' | 'codeset' | 'custom' | 'sections' | CsvImportView;
+
+const toCsvImportView = (step: CsvImportStep): CsvImportView =>
+  `csv_${step}` as CsvImportView;
+
+const isCsvImportView = (view: TableView): view is CsvImportView =>
+  view.startsWith('csv_');
 
 export function ConfigBuild() {
   const { id } = useParams<{ id: string }>();
@@ -177,17 +195,13 @@ function Builder({
   disabled,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [tableView, setTableView] = useState<
-    'none' | 'codeset' | 'custom' | 'sections' | 'csv_import'
-  >('none');
+  const [tableView, setTableView] = useState<TableView>('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
   );
   const [selectedCodesetName, setSelectedCodesetName] = useState<string | null>(
     null
   );
-  const location = useLocation();
-  const navigate = useNavigate();
 
   const modalRef = useRef<ModalRef | null>(null);
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
@@ -214,38 +228,8 @@ function Builder({
   function onCsvImportClick() {
     setSelectedCodesetName(null);
     setSelectedCodesetId(null);
-    setTableView('csv_import');
+    setTableView(toCsvImportView('intro'));
   }
-
-  useEffect(() => {
-    if (location.hash === IMPORT_FRAGMENT && tableView !== 'csv_import') {
-      setTableView('csv_import');
-    }
-  }, [location.hash, tableView]);
-
-  useEffect(() => {
-    const navigateWithHash = (hash: string) => {
-      navigate(
-        {
-          pathname: location.pathname,
-          search: location.search,
-          hash,
-        },
-        { replace: true }
-      );
-    };
-
-    if (tableView === 'csv_import') {
-      if (location.hash !== IMPORT_FRAGMENT) {
-        navigateWithHash(IMPORT_FRAGMENT);
-      }
-      return;
-    }
-
-    if (location.hash === IMPORT_FRAGMENT) {
-      navigateWithHash('');
-    }
-  }, [tableView, location.hash, location.pathname, location.search, navigate]);
 
   function setCodesetListItemFocus(deletedId: string) {
     // No change needed if we're not viewing the code set
@@ -396,14 +380,14 @@ function Builder({
                 <ModalToggleButton
                   modalRef={modalRef}
                   opener
-                  variant="primary"
+                  variant="secondary"
                   aria-label="Add new custom code"
                   disabled={disabled}
                 >
                   Add code
                 </ModalToggleButton>
 
-                <Button onClick={onCsvImportClick} variant="secondary">
+                <Button onClick={onCsvImportClick} variant="tertiary">
                   Import from CSV
                 </Button>
               </div>
@@ -421,11 +405,12 @@ function Builder({
               sectionProcessing={section_processing}
               disabled={disabled}
             />
-          ) : tableView === 'csv_import' ? (
+          ) : isCsvImportView(tableView) ? (
             <ImportCustomCodes
               configurationId={id}
               disabled={disabled}
               onSuccess={() => setTableView('custom')}
+              onStepChange={(newStep) => setTableView(toCsvImportView(newStep))}
             />
           ) : null}
         </div>
@@ -940,7 +925,7 @@ export function CustomCodeModal({
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (selectedCustomCode) {
@@ -1084,7 +1069,9 @@ export function CustomCodeModal({
 
       <ModalFooter className="flex justify-end p-0">
         <Button
-          onClick={handleSubmit}
+          onClick={(e) =>
+            handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)
+          }
           disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
           variant="primary"
           className="m-0!"
@@ -1130,12 +1117,39 @@ interface ImportCustomCodesProps {
   configurationId: string;
   disabled?: boolean;
   onSuccess?: () => void;
+  onStepChange?: (step: CsvImportStep) => void;
 }
+
+type PreviewError = { row: number; error: string };
+
+type SearchPreviewItem = UploadCustomCodesPreviewItem & {
+  __previewIndex: number;
+};
+
+type PreviewRow = {
+  item: SearchPreviewItem;
+  matches?: readonly FuseResultMatch[];
+};
+
+const PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[] = [
+  'ICD-10',
+  'SNOMED',
+  'RxNorm',
+  'LOINC',
+  'Other',
+];
+
+const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
+  code: '',
+  system: 'ICD-10',
+  name: '',
+};
 
 function ImportCustomCodes({
   configurationId,
   disabled = false,
   onSuccess,
+  onStepChange,
 }: ImportCustomCodesProps) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1143,12 +1157,96 @@ function ImportCustomCodes({
   const formatApiError = useApiErrorFormatter();
 
   const [error, setError] = useState<string | null>(null);
-  const [apiErrors, setApiErrors] = useState<
-    { row: number; error: string }[] | null
+  const [apiErrors, setApiErrors] = useState<PreviewError[] | null>(null);
+  const [previewItems, setPreviewItems] = useState<
+    UploadCustomCodesPreviewItem[] | null
   >(null);
+  const [step, setStep] = useState<CsvImportStep>('intro');
   const [isUploading, setIsUploading] = useState(false);
+  const [previewEditIndex, setPreviewEditIndex] = useState<number | null>(null);
+  const [previewEditForm, setPreviewEditForm] =
+    useState<UploadCustomCodesPreviewItem>({
+      code: '',
+      system: 'ICD-10',
+      name: '',
+    });
+  const previewEditModalRef = useRef<ModalRef | null>(null);
+  const confirmModalRef = useRef<ModalRef | null>(null);
+  const undoModalRef = useRef<ModalRef | null>(null);
 
-  const { mutate: uploadCsvMutation, isPending } = useUploadCustomCodesCsv();
+  const { mutate: uploadCsvMutation, isPending: isUploadPending } =
+    useUploadCustomCodesCsv();
+  const { mutate: confirmCsvMutation, isPending: isConfirming } =
+    useConfirmUploadCustomCodesCsv();
+
+  useEffect(() => {
+    onStepChange?.(step);
+  }, [step, onStepChange]);
+
+  useEffect(() => {
+    if (step !== 'preview') return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [step]);
+
+  const uploading = isUploading || isUploadPending;
+
+  const renderCsvInstructions = () => (
+    <>
+      <div className="flex items-start gap-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
+          1
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm">
+            Your spreadsheet must follow the format of this template.
+          </p>
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={handleDownloadTemplate}
+          >
+            Download template
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
+          2
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm">
+            Once you have your codes in the right format, upload the CSV.
+            <br />
+            We will validate the codes and let you know if you need to change
+            anything.
+          </p>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            hidden
+            onChange={handleFileChange}
+          />
+
+          <Button
+            type="button"
+            onClick={handleButtonClick}
+            disabled={disabled}
+            variant="primary"
+          >
+            Upload CSV
+          </Button>
+        </div>
+      </div>
+    </>
+  );
 
   const handleButtonClick = () => {
     if (!disabled && fileInputRef.current) {
@@ -1183,23 +1281,21 @@ function ImportCustomCodes({
         },
       },
       {
-        onSuccess: async (res) => {
+        onSuccess: (res) => {
           const payload = res.data;
-          // show errors if present
           if (
             payload.errors &&
             Array.isArray(payload.errors) &&
             payload.errors.length > 0
           ) {
             setApiErrors(
-              Array.isArray(payload.errors)
-                ? payload.errors.map(({ row, error }) => ({
-                    row: Number(row),
-                    error: String(error),
-                  }))
-                : null
+              payload.errors.map(({ row, error }) => ({
+                row: Number(row),
+                error: String(error),
+              }))
             );
-            setIsUploading(false); // immediately stop
+            setPreviewItems(null);
+            setStep('error');
             showToast({
               variant: 'error',
               heading: 'Error importing CSV',
@@ -1208,17 +1304,15 @@ function ImportCustomCodes({
             return;
           }
 
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationId),
-          });
+          const preview = payload.preview ?? [];
+          if (preview.length === 0) {
+            setError('The CSV file did not produce any valid rows.');
+            return;
+          }
 
-          showToast({
-            heading: 'CSV successfully imported',
-            body: `${payload.codes_processed} codes.`,
-          });
-
+          setPreviewItems(preview);
+          setStep('preview');
           setApiErrors(null);
-          onSuccess?.();
         },
         onError: (err: unknown) => {
           const message = formatApiError(err);
@@ -1236,8 +1330,6 @@ function ImportCustomCodes({
       }
     );
   };
-
-  const uploading = isUploading || isPending;
 
   const handleDownloadTemplate = () => {
     const csv = `code_number,code_system,display_name
@@ -1257,26 +1349,183 @@ function ImportCustomCodes({
     URL.revokeObjectURL(url);
   };
 
+  const openConfirmModal = () => {
+    confirmModalRef.current?.toggleModal();
+  };
+
+  const closeConfirmModal = () => {
+    confirmModalRef.current?.toggleModal();
+  };
+
+  const openUndoModal = () => {
+    undoModalRef.current?.toggleModal();
+  };
+
+  const closeUndoModal = () => {
+    undoModalRef.current?.toggleModal();
+  };
+
+  const handleConfirm = () => {
+    if (!previewItems?.length) return;
+
+    closeConfirmModal();
+
+    confirmCsvMutation(
+      {
+        configurationId,
+        data: {
+          custom_codes: previewItems,
+        },
+      },
+      {
+        onSuccess: async (res) => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+          showToast({
+            heading: 'CSV confirmed',
+            body: `${res.data.codes_processed ?? previewItems.length} codes imported.`,
+          });
+          handleDelete({ resetStep: false });
+        },
+        onError: (err: unknown) => {
+          const message = formatApiError(err);
+          showToast({
+            variant: 'error',
+            heading: 'Error confirming CSV',
+            body: message,
+          });
+          handleDelete();
+        },
+      }
+    );
+  };
+
+  const handleDelete = ({ resetStep = true }: { resetStep?: boolean } = {}) => {
+    setPreviewItems(null);
+    setApiErrors(null);
+    setError(null);
+    if (resetStep) {
+      setStep('intro');
+    }
+    onSuccess?.();
+  };
+
+  const handleBack = () => {
+    if (uploading) {
+      setIsUploading(false);
+      return;
+    }
+
+    if (step === 'preview') {
+      handleDelete({ resetStep: false });
+      return;
+    }
+
+    onSuccess?.();
+  };
+
+  const openPreviewEditModal = (previewIndex: number) => {
+    const target = previewItems?.[previewIndex];
+    if (!target) return;
+    setPreviewEditIndex(previewIndex);
+    setPreviewEditForm({ ...target });
+    previewEditModalRef.current?.toggleModal();
+  };
+
+  const closePreviewEditModal = () => {
+    previewEditModalRef.current?.toggleModal();
+    setPreviewEditIndex(null);
+    setPreviewEditForm(EMPTY_PREVIEW_FORM);
+  };
+
+  const handlePreviewEditSubmit = () => {
+    if (previewEditIndex === null || !previewItems) {
+      closePreviewEditModal();
+      return;
+    }
+
+    setPreviewItems((prev) =>
+      prev
+        ? prev.map((item, index) =>
+            index === previewEditIndex ? { ...previewEditForm } : item
+          )
+        : prev
+    );
+    closePreviewEditModal();
+  };
+
+  const handlePreviewEditChange =
+    (field: keyof UploadCustomCodesPreviewItem) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setPreviewEditForm((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+
+  const previewData = useMemo<SearchPreviewItem[]>(() => {
+    if (!previewItems) return [];
+    return previewItems.map((item, index) => ({
+      ...item,
+      __previewIndex: index,
+    }));
+  }, [previewItems]);
+
+  const previewSearchOptions = useMemo<IFuseOptions<SearchPreviewItem>>(
+    () => ({
+      keys: [
+        { name: 'code', weight: 0.6 },
+        { name: 'name', weight: 0.4 },
+      ],
+      includeMatches: true,
+      minMatchCharLength: 2,
+    }),
+    []
+  );
+
+  const {
+    searchText,
+    setSearchText,
+    results: previewSearchResults,
+  } = useSearch<SearchPreviewItem>(previewData, previewSearchOptions);
+
+  useEffect(() => {
+    if (step === 'preview') {
+      setSearchText('');
+    }
+  }, [step, setSearchText]);
+
+  const previewRows = useMemo<PreviewRow[]>(() => {
+    if (searchText) {
+      return previewSearchResults.map(({ item, matches }) => ({
+        item,
+        matches,
+      }));
+    }
+
+    return previewData.map((item) => ({ item }));
+  }, [previewData, previewSearchResults, searchText]);
+
+  const isEditSaveDisabled =
+    !previewEditForm.code || !previewEditForm.name || !previewEditForm.system;
+
   return (
-    <div className="w-full max-w-xl space-y-6">
-      {uploading ? (
+    <>
+      <div className="w-full space-y-6">
         <>
-          <button
-            type="button"
-            onClick={() => setIsUploading(false)}
+          <Button
+            variant="tertiary"
+            onClick={handleBack}
             className="text-blue-cool-50 text-sm hover:underline"
           >
             ← Back
-          </button>
-
-          <div>
-            <h2 className="text-2xl font-semibold">Import from CSV</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Easily add multiple codes by uploading a spreadsheet in CSV
-              format.
-            </p>
-          </div>
-
+          </Button>
+          <h2 className="m-0 py-4 text-2xl font-semibold">Import from CSV</h2>
+          <p className="text-sm text-gray-600">
+            Easily add multiple codes by uploading a spreadsheet in CSV format.
+          </p>
+        </>
+        {uploading ? (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
             <div className="mb-4 flex justify-center">
               <img
@@ -1296,92 +1545,303 @@ function ImportCustomCodes({
             <Button
               variant="secondary"
               onClick={() => setIsUploading(false)}
-              disabled={isPending}
+              disabled={isUploadPending}
             >
               Cancel
             </Button>
           </div>
-        </>
-      ) : (
-        <div className="w-full max-w-xl space-y-6">
-          <button
-            type="button"
-            onClick={onSuccess}
-            className="text-blue-cool-50 text-sm hover:underline"
-          >
-            ← Back
-          </button>
-
-          <div>
-            <h2 className="text-2xl font-semibold">Import from CSV</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Easily add multiple codes by uploading a spreadsheet in CSV
-              format.
+        ) : step === 'intro' ? (
+          <div className="w-full max-w-xl space-y-6">
+            {renderCsvInstructions()}
+            {error && <div className="text-sm text-red-600">{error}</div>}
+          </div>
+        ) : step === 'error' ? (
+          <div className="flex flex-col gap-6">
+            <p className="font-bold">
+              Please fix the errors in your CSV and re-upload it.
             </p>
-          </div>
-
-          <div className="flex items-start gap-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
-              1
+            <Button
+              onClick={handleButtonClick}
+              disabled={disabled}
+              variant="primary"
+              className="max-w-40 px-5"
+            >
+              Re-upload CSV
+            </Button>
+            <div className="mb-2">
+              {error && <p className="text-sm text-red-700">{error}</p>}
             </div>
-            <div className="space-y-2">
-              <p className="text-sm">
-                Your spreadsheet must follow the format of this template.
+            {apiErrors && apiErrors.length > 0 ? (
+              <>
+                <hr className="border-gray-cool-20" />
+                <table className="w-full border-spacing-y-2 text-left text-sm">
+                  <tbody>
+                    {apiErrors.map(({ row, error }) => (
+                      <tr key={`${row}-${error}`} className="text-red-700">
+                        <td className="w-20 px-0 py-1 font-bold">
+                          Row {row > 0 ? row : '—'}
+                        </td>
+                        <td className="px-0 py-1">{error}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <p className="text-sm text-red-700">
+                Try uploading the file again or download a fresh template.
               </p>
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={handleDownloadTemplate}
-              >
-                Download template
-              </Button>
-            </div>
+            )}
           </div>
-
-          <div className="flex items-start gap-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-400 text-sm font-medium">
-              2
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm">
-                Once you have your codes in the right format, upload the CSV.
-                <br />
-                We will validate the codes and let you know if you need to
-                change anything.
-              </p>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                hidden
-                onChange={handleFileChange}
-              />
-
+        ) : step === 'preview' && previewItems ? (
+          <div className="flex flex-col gap-6">
+            <p className="text-sm font-bold text-gray-600">
+              Review the codes below to make sure they are correct
+            </p>
+            <div className="flex flex-wrap gap-3">
               <Button
-                type="button"
-                onClick={handleButtonClick}
-                disabled={disabled}
                 variant="primary"
+                onClick={openConfirmModal}
+                disabled={isConfirming}
               >
-                {apiErrors ? 'Re-upload CSV' : 'Upload CSV'}
+                Confirm & save codes
               </Button>
-
-              {error && <div className="text-sm text-red-600">{error}</div>}
-
-              {apiErrors && apiErrors.length > 0 && (
-                <ul className="text-state-error-dark mt-4 w-full text-sm">
-                  {apiErrors.map(({ row, error }) => (
-                    <li className="block px-4" key={row}>
-                      <strong className="pr-8">Row {row}</strong> {error}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <Button variant="tertiary" onClick={openUndoModal}>
+                Undo & delete codes
+              </Button>
             </div>
+            <hr className="border-gray-cool-20" />
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Search
+                  placeholder="Search codes"
+                  value={searchText}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                    setSearchText(event.target.value)
+                  }
+                  id="csv-preview-search"
+                  name="csv-preview-search"
+                  className="w-full min-w-[240px]"
+                />
+              </div>
+            </div>
+            <table className="w-full border-separate border-spacing-y-2 text-left text-sm">
+              <tbody>
+                {previewRows.map(({ item, matches }) => (
+                  <tr
+                    key={`${item.code}-${item.system}-${item.__previewIndex ?? item.row}`}
+                    className="border-y border-blue-50"
+                  >
+                    <td className="px-2 py-1">
+                      {highlightMatches(item.code, matches, 'code')}
+                    </td>
+                    <td className="px-2 py-1">{item.system}</td>
+                    <td className="px-2 py-1">
+                      {highlightMatches(item.name, matches, 'name')}
+                    </td>
+                    <td className="px-2 py-1 text-right text-sm">
+                      <Button
+                        variant="tertiary"
+                        onClick={() =>
+                          openPreviewEditModal(item.__previewIndex)
+                        }
+                      >
+                        Edit
+                      </Button>
+                      <span className="px-2 text-gray-400">&nbsp;</span>
+                      <Button
+                        variant="tertiary"
+                        onClick={() => {
+                          const updated =
+                            previewItems?.filter(
+                              (_, idx) => idx !== item.__previewIndex
+                            ) ?? [];
+                          if (updated.length === 0) {
+                            setPreviewItems(null);
+                            setApiErrors(null);
+                            setError(null);
+                            setStep('intro');
+                            onSuccess?.();
+                          } else {
+                            setPreviewItems(updated);
+                          }
+                          showToast({
+                            heading: 'Row deleted',
+                            body: item.code,
+                          });
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {error && <div className="text-sm text-red-600">{error}</div>}
+          </div>
+        ) : null}
+      </div>
+
+      <Modal
+        ref={confirmModalRef}
+        id="csv-confirm-modal"
+        aria-describedby="csv-confirm-description"
+        aria-labelledby="csv-confirm-heading"
+        forceAction
+      >
+        <Button
+          aria-label="Close this window"
+          onClick={closeConfirmModal}
+          variant="tertiary"
+          className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+        >
+          <Icon.Close className="h-5 w-5" aria-hidden />
+        </Button>
+        <ModalHeading id="csv-confirm-heading">
+          Confirm & save codes?
+        </ModalHeading>
+        <div
+          id="csv-confirm-description"
+          className="mt-4 text-sm text-gray-700"
+        >
+          Once you save the codes, you will need to edit or delete them
+          individually.
+        </div>
+        <ModalFooter className="flex justify-end gap-2">
+          <Button variant="primary" onClick={handleConfirm}>
+            Yes, save codes
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        ref={undoModalRef}
+        id="csv-undo-modal"
+        aria-describedby="csv-undo-description"
+        aria-labelledby="csv-undo-heading"
+        forceAction
+      >
+        <Button
+          aria-label="Close this window"
+          onClick={closeUndoModal}
+          variant="tertiary"
+          className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+        >
+          <Icon.Close className="h-5 w-5" aria-hidden />
+        </Button>
+        <ModalHeading id="csv-undo-heading">Undo & delete codes</ModalHeading>
+        <div id="csv-undo-description" className="mt-4 text-sm text-gray-700">
+          Are you sure you want to delete all these uploaded codes? If you want
+          to add this list of codes again, you will need to re-upload the
+          spreadsheet.
+        </div>
+        <ModalFooter className="flex justify-end gap-2">
+          <Button
+            variant="primary"
+            onClick={() => {
+              closeUndoModal();
+              handleDelete();
+            }}
+          >
+            Undo & delete codes
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        ref={previewEditModalRef}
+        id="preview-edit-modal"
+        aria-describedby="preview-edit-description"
+        aria-labelledby="preview-edit-heading"
+        isLarge
+        className="max-w-100!"
+        forceAction
+      >
+        <Button
+          aria-label="Close this window"
+          onClick={closePreviewEditModal}
+          variant="tertiary"
+          className="absolute top-4 right-2 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+        >
+          <Icon.Close className="h-5 w-5" aria-hidden />
+        </Button>
+        <ModalHeading
+          id="preview-edit-heading"
+          className="text-bold font-merriweather mb-6 p-0! text-xl"
+        >
+          {previewEditForm.code ? `Edit ${previewEditForm.code}` : 'Edit code'}
+        </ModalHeading>
+        <div
+          id="preview-edit-description"
+          className="mt-5 flex flex-col gap-5 p-0!"
+        >
+          <div>
+            <Label htmlFor="preview-edit-code">Code #</Label>
+            <TextInput
+              id="preview-edit-code"
+              name="preview-edit-code"
+              type="text"
+              value={previewEditForm.code}
+              onChange={handlePreviewEditChange('code')}
+              onBlur={() => {
+                const trimmedCode = previewEditForm.code.trim();
+                if (
+                  previewItems?.some(
+                    (item, idx) =>
+                      item.code === trimmedCode && idx !== previewEditIndex
+                  )
+                ) {
+                  setError(`The code "${trimmedCode}" already exists.`);
+                } else {
+                  setPreviewEditForm((prev) => ({
+                    ...prev,
+                    code: trimmedCode,
+                  }));
+                  setError(null);
+                }
+              }}
+              autoComplete="off"
+            />
+            {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
+          </div>
+          <div>
+            <Label htmlFor="preview-edit-system">Code system</Label>
+            <Select
+              id="preview-edit-system"
+              name="preview-edit-system"
+              value={previewEditForm.system}
+              onChange={handlePreviewEditChange('system')}
+            >
+              {PREVIEW_CODE_SYSTEMS.map((system) => (
+                <option key={system} value={system}>
+                  {system}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="preview-edit-name">Code name</Label>
+            <TextInput
+              id="preview-edit-name"
+              name="preview-edit-name"
+              type="text"
+              value={previewEditForm.name}
+              onChange={handlePreviewEditChange('name')}
+            />
           </div>
         </div>
-      )}
-    </div>
+        <ModalFooter className="flex justify-end gap-2">
+          <Button
+            onClick={handlePreviewEditSubmit}
+            disabled={isEditSaveDisabled}
+            variant="primary"
+          >
+            Save changes
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </>
   );
 }
