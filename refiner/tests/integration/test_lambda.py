@@ -12,6 +12,7 @@ from tests.localstack.seed import (
 
 LAMBDA_BASE_URL = "http://localhost:9000/2015-03-31/functions/function/invocations"
 COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
+REFINER_OUTPUT_PREFIX = "RefinerOutput/"
 
 
 @pytest.fixture
@@ -67,15 +68,14 @@ class TestLambda:
 
         # Assert refined RR was created
         expected_refined_rr_key = (
-            "RefinerOutput/persistence/id/SDDH/COVID19/refined_RR.xml"
+            f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_RR.xml"
         )
         rr_response = s3_client.get_object(Bucket=bucket, Key=expected_refined_rr_key)
 
         assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
         # Assert shadow refined RR was created
-        # TODO: swap this out with the actual value once we get it from APHL
         expected_shadow_rr_key = (
-            "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+            f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/unrefined_rr/refined_RR.xml"
         )
         shadow_rr_response = s3_client.get_object(
             Bucket=bucket, Key=expected_shadow_rr_key
@@ -85,7 +85,7 @@ class TestLambda:
 
         # Assert refined eICR was created
         expected_refined_eicr_key = (
-            "RefinerOutput/persistence/id/SDDH/COVID19/refined_eICR.xml"
+            f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_eICR.xml"
         )
         eicr_response = s3_client.get_object(
             Bucket=bucket, Key=expected_refined_eicr_key

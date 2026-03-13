@@ -13,6 +13,7 @@ import boto3
 from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
+from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload
 
 from ..core.models.types import XMLFiles
@@ -36,11 +37,11 @@ from ..services.terminology import ProcessedConfiguration
 logger = Logger(service="refiner")
 
 # Environment variables
-EICR_INPUT_PREFIX = os.getenv("EICR_INPUT_PREFIX", "eCRMessageV2/")
-REFINER_INPUT_PREFIX = os.getenv("REFINER_INPUT_PREFIX", "RefinerInput/")
-REFINER_OUTPUT_PREFIX = os.getenv("REFINER_OUTPUT_PREFIX", "RefinerOutput/")
-REFINER_COMPLETE_PREFIX = os.getenv("REFINER_COMPLETE_PREFIX", "RefinerComplete/")
-S3_BUCKET_CONFIG = os.getenv("S3_BUCKET_CONFIG")
+EICR_INPUT_PREFIX = get_env_variable("EICR_INPUT_PREFIX")
+REFINER_INPUT_PREFIX = get_env_variable("REFINER_INPUT_PREFIX")
+REFINER_OUTPUT_PREFIX = get_env_variable("REFINER_OUTPUT_PREFIX")
+REFINER_COMPLETE_PREFIX = get_env_variable("REFINER_COMPLETE_PREFIX")
+S3_BUCKET_CONFIG = get_env_variable("S3_BUCKET_CONFIG")
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
 
@@ -321,11 +322,6 @@ def process_refiner(
                     processed_configuration=processed_configuration,
                 )
 
-                logger.info(
-                    "Running eICR refinement with the below plan",
-                    codes=eicr_refinement_plan.codes_to_check,
-                )
-
                 # Run refinement
                 refined_eicr_content = refine_eicr(
                     xml_files=xml_files, plan=eicr_refinement_plan
@@ -398,7 +394,9 @@ def process_refiner(
             xml_files=xml_files,
             plan=non_active_rr_refinement_plan,
         )
-        output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/inactive-codes"
+        output_key = (
+            f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/unrefined_rr"
+        )
 
         shadow_rr_output_key = f"{output_key}/refined_RR.xml"
         s3_client.put_object(
@@ -448,9 +446,6 @@ def lambda_handler(event, context):
         logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
         s3_config_bucket_name = S3_BUCKET_CONFIG
 
-        if not s3_config_bucket_name:
-            raise Exception("S3_BUCKET_CONFIG environment variable must be defined.")
-
         # Process each SQS record
         for record in event["Records"]:
             logger.info(f"Processing record: {record.get('messageId')}")
@@ -479,6 +474,7 @@ def lambda_handler(event, context):
             rr_content = get_s3_object_content(
                 s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
             )
+            logger.info("Retrieved RR from s3")
 
             # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
             eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
@@ -488,6 +484,7 @@ def lambda_handler(event, context):
             eicr_content = get_s3_object_content(
                 s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
             )
+            logger.info("Retrieved eICR from s3")
 
             # Create XMLFiles container
             xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)

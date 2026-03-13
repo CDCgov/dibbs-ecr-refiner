@@ -58,6 +58,10 @@ services:
       - S3_ENDPOINT_URL=http://localstack:4566
       - S3_BUCKET_CONFIG=local-config-bucket
       - VERSION=local
+      - EICR_INPUT_PREFIX=eCRMessageV2/
+      - REFINER_INPUT_PREFIX=RefinerInput/
+      - REFINER_OUTPUT_PREFIX=RefinerOutput/
+      - REFINER_COMPLETE_PREFIX=RefinerComplete/
     depends_on:
       - localstack
   auth:

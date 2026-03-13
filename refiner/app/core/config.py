@@ -1,4 +1,4 @@
-import os
+from app.core.utils import get_env_variable
 
 # create a class with the DIBBs default Creative Commons Zero v1.0 and
 # MIT license to be used by the BaseService class
@@ -17,35 +17,16 @@ DIBBS_CONTACT = {
 }
 
 
-def _get_env_variable(name: str) -> str:
-    """
-    Grabs a variable by name from the environment. Throws an error if the variable is not present.
-
-    Args:
-        name (str): Name of the environment variable
-
-    Raises:
-        OSError: raised if environment variable is not present
-
-    Returns:
-        str: Name of the environment variable
-    """
-    value = os.getenv(name)
-    if value is None:
-        raise OSError(f"Missing environment variable: {name}")
-    return value
-
-
 ENVIRONMENT: dict[str, str] = {
-    "ENV": _get_env_variable("ENV"),
-    "VERSION": _get_env_variable("VERSION"),
-    "DB_URL": _get_env_variable("DB_URL"),
-    "DB_PASSWORD": _get_env_variable("DB_PASSWORD"),
-    "SESSION_SECRET_KEY": _get_env_variable("SESSION_SECRET_KEY"),
-    "AUTH_PROVIDER": _get_env_variable("AUTH_PROVIDER"),
-    "AUTH_CLIENT_ID": _get_env_variable("AUTH_CLIENT_ID"),
-    "AUTH_CLIENT_SECRET": _get_env_variable("AUTH_CLIENT_SECRET"),
-    "AUTH_ISSUER": _get_env_variable("AUTH_ISSUER"),
-    "AWS_REGION": _get_env_variable("AWS_REGION"),
-    "S3_BUCKET_CONFIG": _get_env_variable("S3_BUCKET_CONFIG"),
+    "ENV": get_env_variable("ENV"),
+    "VERSION": get_env_variable("VERSION"),
+    "DB_URL": get_env_variable("DB_URL"),
+    "DB_PASSWORD": get_env_variable("DB_PASSWORD"),
+    "SESSION_SECRET_KEY": get_env_variable("SESSION_SECRET_KEY"),
+    "AUTH_PROVIDER": get_env_variable("AUTH_PROVIDER"),
+    "AUTH_CLIENT_ID": get_env_variable("AUTH_CLIENT_ID"),
+    "AUTH_CLIENT_SECRET": get_env_variable("AUTH_CLIENT_SECRET"),
+    "AUTH_ISSUER": get_env_variable("AUTH_ISSUER"),
+    "AWS_REGION": get_env_variable("AWS_REGION"),
+    "S3_BUCKET_CONFIG": get_env_variable("S3_BUCKET_CONFIG"),
 }

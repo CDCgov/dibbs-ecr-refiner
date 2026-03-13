@@ -14,14 +14,14 @@ These images are built based on [Dockerfile.lambda](../../../Dockerfile.lambda).
 
 The Lambda accepts the following environment variables, some of which are required.
 
-| Name | Description | Required | Default value |
+| Name | Description | Required |
 | --- | --- | --- | --- |
-| `S3_BUCKET_CONFIG` | S3 directory containing jurisdiction configuration files | Yes | N/A |
-| `S3_ENDPOINT_URL` | Endpoint to use when configuring the S3 client. Primarily used for testing purposes and should not need to be set in production | No | N/A |
-| `EICR_INPUT_PREFIX` | S3 directory containing eICR files | No | `eCRMessageV2/` |
-| `REFINER_INPUT_PREFIX` | S3 directory containing RR files | No | `RefinerInput/` |
-| `REFINER_OUTPUT_PREFIX` | S3 directory where refined files are written | No | `RefinerOutput/` |
-| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success | No | `RefinerComplete/` |
+| `S3_BUCKET_CONFIG` | S3 directory containing jurisdiction configuration files | Yes |
+| `S3_ENDPOINT_URL` | Endpoint to use when configuring the S3 client. Primarily used for testing purposes and should not need to be set in production | No |
+| `EICR_INPUT_PREFIX` | S3 directory containing eICR files | Yes |
+| `REFINER_INPUT_PREFIX` | S3 directory containing RR files | Yes |
+| `REFINER_OUTPUT_PREFIX` | S3 directory where refined files are written | Yes |
+| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success | Yes |
 
 ## File structure and build
 
