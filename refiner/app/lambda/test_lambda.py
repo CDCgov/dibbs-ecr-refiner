@@ -10,6 +10,11 @@ from ..services.file_io import get_asset_path
 
 COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
 INFLUENZA_CANONICAL_URL_UUID = "38475891-387a-4fa2-bbe9-1dc97ce415d1"
+REFINER_INPUT_PREFIX = "RefinerInput"
+REFINER_OUTPUT_PREFIX = "RefinerOutput"
+REFINER_COMPLETE_PREFIX = "RefinerComplete"
+ECR_INPUT_PREFIX = "eCRMessageV2"
+S3_BUCKET_CONFIG = "dibbs-refiner-dev"
 
 
 @pytest.fixture
@@ -19,10 +24,19 @@ def aws_mock():
 
 
 @pytest.fixture
-def config_bucket_env(monkeypatch) -> str:
-    bucket_name = "config-bucket"
-    monkeypatch.setenv("S3_BUCKET_CONFIG", bucket_name)
-    return bucket_name
+def config_lambda_env(monkeypatch) -> dict[str, str]:
+    monkeypatch.setenv("EICR_INPUT_PREFIX", ECR_INPUT_PREFIX)
+    monkeypatch.setenv("REFINER_INPUT_PREFIX", REFINER_INPUT_PREFIX)
+    monkeypatch.setenv("REFINER_OUTPUT_PREFIX", REFINER_OUTPUT_PREFIX)
+    monkeypatch.setenv("REFINER_COMPLETE_PREFIX", REFINER_COMPLETE_PREFIX)
+    monkeypatch.setenv("S3_BUCKET_CONFIG", S3_BUCKET_CONFIG)
+    return {
+        "REFINER_INPUT_PREFIX": REFINER_INPUT_PREFIX,
+        "REFINER_OUTPUT_PREFIX": REFINER_OUTPUT_PREFIX,
+        "REFINER_COMPLETE_PREFIX": REFINER_COMPLETE_PREFIX,
+        "EICR_INPUT_PREFIX": ECR_INPUT_PREFIX,
+        "S3_BUCKET_CONFIG": S3_BUCKET_CONFIG,
+    }
 
 
 @pytest.fixture
@@ -55,15 +69,14 @@ def s3_client(aws_mock):
 
 @pytest.fixture
 def data_bucket(s3_client) -> str:
-    bucket_name = "dibbs-refiner-dev"
-    s3_client.create_bucket(Bucket=bucket_name)
-    return bucket_name
+    s3_client.create_bucket(Bucket=S3_BUCKET_CONFIG)
+    return S3_BUCKET_CONFIG
 
 
 @pytest.fixture
-def config_bucket(s3_client, config_bucket_env) -> str:
-    s3_client.create_bucket(Bucket=config_bucket_env)
-    return config_bucket_env
+def config_bucket(s3_client) -> str:
+    s3_client.create_bucket(Bucket=S3_BUCKET_CONFIG)
+    return S3_BUCKET_CONFIG
 
 
 @pytest.fixture
@@ -76,13 +89,13 @@ def s3_input_objects(
 
     s3_client.put_object(
         Bucket=data_bucket,
-        Key=f"RefinerInput/{persistence_id}",
+        Key=f"{REFINER_INPUT_PREFIX}/{persistence_id}",
         Body=sample_xml_files["rr_xml"],
     )
 
     s3_client.put_object(
         Bucket=data_bucket,
-        Key=f"eCRMessageV2/{persistence_id}",
+        Key=f"{ECR_INPUT_PREFIX}/{persistence_id}",
         Body=sample_xml_files["eicr_xml"],
     )
 
@@ -100,7 +113,9 @@ def get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict:
     """
     Returns the content of the RefinerComplete file as a dict
     """
-    resp = s3_client.get_object(Bucket=bucket, Key=f"RefinerComplete/{persistance_id}")
+    resp = s3_client.get_object(
+        Bucket=bucket, Key=f"{REFINER_COMPLETE_PREFIX}/{persistance_id}"
+    )
     return json.loads(resp["Body"].read().decode("utf-8"))
 
 
@@ -109,7 +124,7 @@ def test_lambda_inactive(
     lambda_event,
     s3_client,
     data_bucket,
-    config_bucket,
+    config_lambda_env,
     s3_input_objects,
 ):
     """
@@ -126,18 +141,21 @@ def test_lambda_inactive(
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
 
     # Expected input files paths
-    assert "RefinerInput/persistence/id" in created_files
-    assert "eCRMessageV2/persistence/id" in created_files
+    assert f"{REFINER_INPUT_PREFIX}/persistence/id" in created_files
+    assert f"{ECR_INPUT_PREFIX}/persistence/id" in created_files
 
     # Expected eICR output files created by Refiner
-    full_flu_path = "RefinerOutput/persistence/id/SDDH/Influenza/refined_eICR.xml"
-    full_covid_path = "RefinerOutput/persistence/id/SDDH/COVID19/refined_eICR.xml"
-    # TODO: swap these out with the actual value once we get it from APHL
+    full_flu_path = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/Influenza/refined_eICR.xml"
+    )
+    full_covid_path = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/COVID19/refined_eICR.xml"
+    )
     full_shadow_rr_path_sddh = (
-        "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
     )
     full_shadow_rr_path_jddh = (
-        "RefinerOutput/persistence/id/JDDH/inactive-codes/refined_RR.xml"
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/JDDH/unrefined_rr/refined_RR.xml"
     )
 
     # Skipped due to no current.json files found
@@ -147,7 +165,7 @@ def test_lambda_inactive(
     assert full_shadow_rr_path_jddh in created_files
 
     # Expected completion file for pipeline
-    assert "RefinerComplete/persistence/id" in created_files
+    assert f"{REFINER_COMPLETE_PREFIX}/persistence/id" in created_files
 
     # Load RefinerComplete/persistence/id and ensure it contains expected paths
     complete_json = get_refiner_complete_content(
@@ -174,6 +192,7 @@ def test_lambda_one_active(
     s3_client,
     data_bucket,
     config_bucket,
+    config_lambda_env,
     s3_input_objects,
 ):
     """
@@ -244,20 +263,18 @@ def test_lambda_one_active(
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
 
     full_shadow_rr_path_sddh = (
-        "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+        "RefinerOutput/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
     )
     full_shadow_rr_path_jddh = (
-        "RefinerOutput/persistence/id/JDDH/inactive-codes/refined_RR.xml"
+        "RefinerOutput/persistence/id/JDDH/unrefined_rr/refined_RR.xml"
     )
 
-    assert f"RefinerComplete/{s3_input_objects}" in created_files
+    assert f"{REFINER_COMPLETE_PREFIX}/{s3_input_objects}" in created_files
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
+        f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in created_files
     )
-    assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_RR.xml" in created_files
-    )
+    assert f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
     # since one reportable condition didn't have an active config, a shadow RR
     # should have gotten written
     assert full_shadow_rr_path_sddh in created_files
@@ -297,6 +314,7 @@ def test_lambda_all_active(
     s3_client,
     data_bucket,
     config_bucket,
+    config_lambda_env,
     s3_input_objects,
 ):
     """
@@ -412,7 +430,7 @@ def test_lambda_all_active(
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
     full_shadow_rr_path = (
-        "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
     )
     assert f"RefinerComplete/{s3_input_objects}" in created_files
 

@@ -56,9 +56,9 @@ For example, if the SDDH jurisdiction has a configuration active for COVID-19 an
 2. Lambda attempts to pull in the map at `/configurations/SDDH/rsg_cg_mapping.json`
 3. Lambda reads the map data and determines that `186747009` maps to the COVID-19 canonical URL `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64`
 4. With this information, Lambda determines that the files required for processing COVID-19 will be found at the following keys
-    - `/configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64/current.json`
-    - `/configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64/1/metadata.json`
-    - `/configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64/1/active.json`
+   - `/configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64/current.json`
+   - `/configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64/1/metadata.json`
+   - `/configurations/SDDH/07221093-b8a1-4b1d-8678-259277bfba64/1/active.json`
 5. Lambda processes the eICR/RR pair and produces CG level outputs
 
 #### Producing CG level outputs
@@ -104,4 +104,4 @@ Matching eICR S3 key is constructed by Lambda using this data.
 
 - `RefinerOutput/persistence/id/SDDH/COVID19/refined_eICR.xml`
 - `RefinerOutput/persistence/id/SDDH/COVID19/refined_RR.xml`
-- `RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml` (Shadow RR - only if other reportable conditions were found in the RR that are not configured by the JD)
+- `RefinerOutput/persistence/id/SDDH/unrefined_rr/refined_RR.xml` (Shadow RR - only if other reportable conditions were found in the RR that are not configured by the JD)
