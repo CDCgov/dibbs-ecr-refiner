@@ -38,6 +38,7 @@ def _make_db_condition(name: str, url: str, version: str, rsg_code: str):
         ("Arboviral Disease [Other]", "ArboviralDiseaseOther"),
         ("Coal Workers’ Pneumoconiosis (CWP)", "CoalWorkersPneumoconiosisCWP"),
         ("Guillain-Barré Syndrome", "GuillainBarreSyndrome"),
+        ("Trisomy 13", "Trisomy13"),
     ],
 )
 def test_create_condition_mapping_payload_computed_names(
