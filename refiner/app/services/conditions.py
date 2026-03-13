@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 from app.db.conditions.db import get_conditions_by_ids
 from app.db.conditions.model import (
@@ -40,9 +41,10 @@ def _get_computed_name(text: str) -> str:
     # TES versions 1-3 have the computed name `Tickborne_relapsing_feverTBRF` and
     # version 4 has the computed name `Tickborne_relapsing_fever_TBRF` which is probably a bug
 
-    normalized = re.sub(r"\s+", "", text.strip())
+    normalized = unicodedata.normalize("NFKD", text)
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = re.sub(r"\s+", "", normalized.strip())
     normalized = re.sub(r"[^A-Za-z0-9_]", "", normalized)
-
     return normalized
 
 
