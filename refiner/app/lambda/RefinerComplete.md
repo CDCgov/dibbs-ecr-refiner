@@ -13,8 +13,8 @@ A nested object that records which jurisdiction/condition combinations from the 
 
 An array of S3 keys pointing to the refined output files. Each successfully refined jurisdiction/condition combination produces two entries:
 
-- `RefinerOutput/<persistence_id>/<jurisdiction_code>/<condition_code>/refined_eICR.xml`
-- `RefinerOutput/<persistence_id>/<jurisdiction_code>/<condition_code>/refined_RR.xml`
+- `RefinerOutput/<persistence_id>/<jurisdiction_code>/<condition_grouper_names_no_spaces>/refined_eICR.xml`
+- `RefinerOutput/<persistence_id>/<jurisdiction_code>/<condition_grouper_names_no_spaces>/refined_RR.xml`
 
 Combinations marked `false` in `RefinerMetadata` will have no corresponding entries here.
 
@@ -38,10 +38,10 @@ A boolean indicating whether the refiner skipped processing entirely. When `fals
   },
   "RefinerSkip": false,
   "RefinerOutputFiles": [
-    "RefinerOutput/<persistence_id>/CA/27836007/refined_eICR.xml",
-    "RefinerOutput/<persistence_id>/CA/27836007/refined_RR.xml",
-    "RefinerOutput/<persistence_id>/NY/840539006/refined_eICR.xml",
-    "RefinerOutput/<persistence_id>/NY/840539006/refined_RR.xml"
+    "RefinerOutput/<persistence_id>/CA/Pertussis/refined_RR.xml",
+    "RefinerOutput/<persistence_id>/CA/Pertussis/refined_eICR.xml",
+    "RefinerOutput/<persistence_id>/NY/COVID19/refined_eICR.xml",
+    "RefinerOutput/<persistence_id>/NY/COVID19/refined_RR.xml"
   ]
 }
 ```

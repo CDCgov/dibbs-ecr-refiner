@@ -2,6 +2,7 @@ import os
 from unittest.mock import AsyncMock, MagicMock
 
 os.environ["ENV"] = "local"
+os.environ["VERSION"] = "unit-test"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
 os.environ["DB_PASSWORD"] = "mock"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"

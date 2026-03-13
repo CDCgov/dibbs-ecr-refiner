@@ -1,0 +1,12 @@
+{
+  "186747009": {
+    "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+    "name": "COVID19",
+    "tes_version": "4.0.0"
+  },
+  "840539006": {
+    "canonical_url": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+    "name": "COVID19",
+    "tes_version": "4.0.0"
+  }
+}

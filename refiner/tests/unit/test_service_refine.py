@@ -6,7 +6,7 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionInstructions,
 )
-from app.services.ecr.models import EICRRefinementPlan
+from app.services.ecr.model import EICRRefinementPlan
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
 

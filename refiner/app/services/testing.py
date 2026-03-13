@@ -19,7 +19,7 @@ from ..db.configurations.db import (
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
-from .ecr.models import (
+from .ecr.model import (
     ProcessedRR,
     RefinedDocument,
     ReportableCondition,
