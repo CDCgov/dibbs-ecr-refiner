@@ -52,7 +52,6 @@ def test_create_condition_mapping_payload_computed_names(
     )
 
     payload = create_condition_mapping_payload([cond])
-    print(payload)
 
     assert test_rsg in payload.mappings
     assert payload.mappings[test_rsg].canonical_url == cond.canonical_url
