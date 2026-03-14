@@ -10,6 +10,7 @@ SYSTEM_MAP = {
     "http://snomed.info/sct": "snomed_codes",
     "http://hl7.org/fhir/sid/icd-10-cm": "icd10_codes",
     "http://www.nlm.nih.gov/research/umls/rxnorm": "rxnorm_codes",
+    "http://hl7.org/fhir/sid/cvx": "cvx_codes",
 }
 
 # type aliases
@@ -92,14 +93,14 @@ class ConditionData:
         return {
             "canonical_url": self.parent_vs.get("url"),
             "version": self.parent_vs.get("version"),
-            "display_name": (
-                self.parent_vs.get("title") or self.parent_vs.get("name") or ""
-            ).replace("_", " "),
+            "display_name": self.parent_vs.get("title"),
+            "output_name": self.parent_vs.get("name"),
             "child_rsg_snomed_codes": list(self.child_rsg_snomed_codes),
             "loinc_codes": json.dumps(categorized["loinc_codes"]),
             "snomed_codes": json.dumps(categorized["snomed_codes"]),
             "icd10_codes": json.dumps(categorized["icd10_codes"]),
             "rxnorm_codes": json.dumps(categorized["rxnorm_codes"]),
+            "cvx_codes": json.dumps(categorized["cvx_codes"]),
         }
 
 

@@ -41,6 +41,7 @@ async def get_conditions_by_version_db(
             SELECT
                 id,
                 display_name,
+                output_name,
                 canonical_url,
                 version
             FROM conditions
@@ -76,6 +77,7 @@ async def get_latest_conditions_db(
         SELECT
             id,
             display_name,
+            output_name,
             canonical_url,
             version
         FROM conditions;
@@ -124,12 +126,14 @@ async def get_condition_by_id_db(
                 id,
                 canonical_url,
                 display_name,
+                output_name,
                 version,
                 child_rsg_snomed_codes,
                 snomed_codes,
                 loinc_codes,
                 icd10_codes,
-                rxnorm_codes
+                rxnorm_codes,
+                cvx_codes
             FROM conditions
             WHERE id = %s
             """
@@ -170,7 +174,7 @@ async def get_condition_codes_by_condition_id_db(
     For a condition ID, flatten all codes into a GetConditionCode shape.
 
     For a given condition ID, unnests and combines all terminology codes
-    (LOINC, SNOMED, ICD-10, RxNorm) from their respective JSONB columns
+    (LOINC, SNOMED, ICD-10, RxNorm, CVX) from their respective JSONB columns
     into a single, flat list of GetConditionCode objects.
     """
 
@@ -215,6 +219,15 @@ async def get_condition_codes_by_condition_id_db(
                     code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+
+                UNION ALL
+
+                SELECT
+                    code_elem->>'code' AS code,
+                    'CVX' AS system,
+                    code_elem->>'display' AS description
+                FROM c
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.CVX_codes, '[]'::jsonb)) AS code_elem
             ) t
             WHERE code IS NOT NULL
             ORDER BY system, code;
@@ -256,13 +269,15 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
         SELECT
             id,
             display_name,
+            output_name,
             canonical_url,
             version,
             child_rsg_snomed_codes,
             snomed_codes,
             loinc_codes,
             icd10_codes,
-            rxnorm_codes
+            rxnorm_codes,
+            cvx_codes
         FROM conditions
         WHERE child_rsg_snomed_codes && %s::text[];
     """
