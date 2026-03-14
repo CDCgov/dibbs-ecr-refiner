@@ -11,7 +11,9 @@ from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
     AddCustomCodeInput,
     ConfigurationCustomCodeResponse,
+    ConfirmUploadCustomCodesInput,
     UploadCustomCodesCsvInput,
+    UploadCustomCodesPreviewItem,
 )
 from app.db.configurations.db import (
     add_bulk_custom_codes_to_configuration_db,
@@ -33,19 +35,25 @@ from app.services.logger import get_logger
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
 
-def _get_literal_system(system: str) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]:
+def _get_sanitized_system_name(
+    system: str,
+) -> Literal["LOINC", "SNOMED", "ICD-10", "RxNorm", "Other"]:
     """
-    Helper to ensure Literal type for custom code system.
+    Helper, returns allowed code system as Literal; raises ValueError if not allowed. Allowed: LOINC, SNOMED, ICD-10, RxNorm, Other. Case-insensitive.
     """
-    if system == "LOINC":
+    s = system.strip().lower()
+    if s == "loinc":
         return "LOINC"
-    if system == "SNOMED":
+    if s == "snomed":
         return "SNOMED"
-    if system == "ICD-10":
+    if s == "icd-10":
         return "ICD-10"
-    if system == "RxNorm":
+    if s == "rxnorm":
         return "RxNorm"
-    raise ValueError(f"Invalid system: {system}")
+    if s == "other":
+        return "Other"
+
+    raise Exception(f"System name provided: {system} is invalid.")
 
 
 def _validate_add_custom_code_input(input: AddCustomCodeInput):
@@ -64,19 +72,6 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "name" is missing.',
         )
-
-
-def _get_sanitized_system_name(system: str) -> str:
-    lower_system = system.strip().lower()
-
-    if lower_system in ("loinc", "snomed"):
-        return lower_system.upper()
-    if lower_system == "icd-10":
-        return "ICD-10"
-    if lower_system == "rxnorm":
-        return "RxNorm"
-
-    raise Exception(f"System name provided: {system} is invalid.")
 
 
 @router.post(
@@ -149,7 +144,7 @@ async def add_custom_code(
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=_get_literal_system(sanitized_system_name),
+        system=_get_sanitized_system_name(sanitized_system_name),
         name=body.name,
     )
 
@@ -177,20 +172,28 @@ async def add_custom_code(
 
 
 class UploadCustomCodesResponse(BaseModel):
-    """
-    Custom Code CSV response model.
-    """
+    """CSV response model. Errors are surfaced via the `errors` array."""
 
-    message: str
-    codes_processed: int
-    total_custom_codes_in_configuration: int
+    message: str | None = None
+    codes_processed: int | None = None
+    total_custom_codes_in_configuration: int | None = None
+    errors: list[dict] | None = None
+
+
+class UploadCustomCodesPreviewResponse(BaseModel):
+    """Validated CSV preview model for delayed confirmation."""
+
+    preview: list[UploadCustomCodesPreviewItem] | None = None
+    codes_processed: int | None = None
+    total_custom_codes_in_configuration: int | None = None
+    errors: list[dict] | None = None
 
 
 @router.post(
     "/upload",
     tags=["configurations"],
     operation_id="uploadCustomCodesCsv",
-    response_model=UploadCustomCodesResponse,
+    response_model=UploadCustomCodesPreviewResponse,
 )
 async def upload_custom_codes_csv(
     configuration_id: UUID,
@@ -198,7 +201,7 @@ async def upload_custom_codes_csv(
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> UploadCustomCodesResponse:
+) -> UploadCustomCodesPreviewResponse:
     """
     Accepts a CSV payload in JSON body.
 
@@ -241,48 +244,130 @@ async def upload_custom_codes_csv(
             detail="CSV must contain headers: code_number,code_system,display_name",
         )
 
-    custom_codes: list[DbConfigurationCustomCode] = []
-
+    preview_items: list[UploadCustomCodesPreviewItem] = []
+    errors: list[dict] = []
+    code_keys = [(cc.code.lower(), cc.system.lower()) for cc in config.custom_codes]
+    batch_keys = set()
+    allowed_systems = ["loinc", "snomed", "icd-10", "rxnorm", "other"]
     for row_number, row in enumerate(csv_reader, start=2):
+        code = (row.get("code_number") or "").strip()
+        code_system_raw = (row.get("code_system") or "").strip()
+        name = (row.get("display_name") or "").strip()
+        row_errors = []
+        if not code:
+            row_errors.append("Missing code_number")
+        if not code_system_raw:
+            row_errors.append("Missing code_system")
+        if not name:
+            row_errors.append("Missing display_name")
+        sys_l = code_system_raw.lower()
+        if sys_l not in allowed_systems:
+            row_errors.append(f"Invalid system: {code_system_raw or '[blank]'}")
+        code_key = (code.lower(), sys_l)
+        if code_key in code_keys:
+            row_errors.append("Duplicate: matches existing custom code")
+        if code_key in batch_keys:
+            row_errors.append("Duplicate: matches uploaded batch code")
+        if row_errors:
+            errors.append({"row": row_number, "error": ", ".join(row_errors)})
+            continue
+        batch_keys.add(code_key)
         try:
-            code = (row.get("code_number") or "").strip()
-            code_system_raw = (row.get("code_system") or "").strip()
-            name = (row.get("display_name") or "").strip()
-
-            if not code or not code_system_raw:
-                raise ValueError("Missing required values.")
-
             sanitized_system_name = _get_sanitized_system_name(code_system_raw)
-            system_literal = _get_literal_system(sanitized_system_name)
-
-            custom_codes.append(
-                DbConfigurationCustomCode(
+            system_literal = _get_sanitized_system_name(sanitized_system_name)
+            preview_items.append(
+                UploadCustomCodesPreviewItem(
                     code=code,
                     system=system_literal,
                     name=name,
+                    row=row_number,
                 )
             )
         except Exception as e:
-            logger.error(
-                "Invalid CSV row",
-                extra={"row_number": row_number, "error": str(e), "row": row},
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid data in CSV at row {row_number}",
-            )
+            errors.append({"row": row_number, "error": str(e)})
+    if errors:
+        logger.error("CSV upload errors", extra={"errors": errors})
+        return UploadCustomCodesPreviewResponse(
+            preview=None,
+            codes_processed=0,
+            total_custom_codes_in_configuration=len(config.custom_codes),
+            errors=errors,
+        )
+    if not preview_items:
+        return UploadCustomCodesPreviewResponse(
+            preview=None,
+            codes_processed=0,
+            total_custom_codes_in_configuration=len(config.custom_codes),
+            errors=[{"row": 0, "error": "No valid rows"}],
+        )
+    return UploadCustomCodesPreviewResponse(
+        preview=preview_items,
+        codes_processed=len(preview_items),
+        total_custom_codes_in_configuration=len(config.custom_codes)
+        + len(preview_items),
+        errors=None,
+    )
 
-    if not custom_codes:
+
+@router.post(
+    "/confirm",
+    tags=["configurations"],
+    operation_id="confirmUploadCustomCodesCsv",
+    response_model=UploadCustomCodesResponse,
+)
+async def confirm_upload_custom_codes_csv(
+    configuration_id: UUID,
+    body: ConfirmUploadCustomCodesInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
+) -> UploadCustomCodesResponse:
+    """
+    Confirm and save custom codes from preview list.
+    """
+    if not body.custom_codes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSV file contains no valid rows.",
+            detail="No custom codes to confirm.",
         )
 
-    # Bulk insert (dedupe happens inside the DB function)
+    jd = user.jurisdiction_id
+    config = await get_configuration_by_id_db(
+        id=configuration_id,
+        jurisdiction_id=jd,
+        db=db,
+    )
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configuration not found.",
+        )
+
+    await ConfigurationLock.raise_if_locked_by_other(
+        configuration_id,
+        user.id,
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
     try:
         result = await add_bulk_custom_codes_to_configuration_db(
             config=config,
-            custom_codes=custom_codes,
+            custom_codes=[
+                DbConfigurationCustomCode(
+                    code=item.code,
+                    system=item.system,
+                    name=item.name,
+                )
+                for item in body.custom_codes
+            ],
             user_id=user.id,
             db=db,
         )
@@ -300,9 +385,10 @@ async def upload_custom_codes_csv(
         )
 
     return UploadCustomCodesResponse(
-        message="Successfully uploaded custom codes.",
+        message="Successfully imported custom codes.",
         codes_processed=result.added_count,
         total_custom_codes_in_configuration=len(result.config.custom_codes),
+        errors=None,
     )
 
 
@@ -462,7 +548,7 @@ def _get_modified_custom_codes(
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
-        system=_get_literal_system(new_system_value),
+        system=_get_sanitized_system_name(new_system_value),
     )
 
     # check for duplicates

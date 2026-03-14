@@ -193,3 +193,18 @@ class UploadCustomCodesCsvInput(BaseModel):
 
     csv_text: str = Field(..., description="Full CSV contents as UTF-8 text")
     filename: str | None = None
+
+
+class UploadCustomCodesPreviewItem(BaseModel):
+    """Validated CSV row ready for confirmation."""
+
+    code: str
+    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm", "Other"]
+    name: str
+    row: int | None = None
+
+
+class ConfirmUploadCustomCodesInput(BaseModel):
+    """Payload used to confirm a previously validated CSV import."""
+
+    custom_codes: list[UploadCustomCodesPreviewItem]
