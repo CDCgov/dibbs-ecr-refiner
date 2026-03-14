@@ -10,6 +10,7 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 os.environ["ENV"] = "local"
+os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
 os.environ["DB_PASSWORD"] = "refiner"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
@@ -35,7 +36,7 @@ from app.core.config import ENVIRONMENT
 from app.db.pool import create_db
 from app.main import create_fastapi_app, create_lifespan
 from app.services.logger import setup_logger
-from scripts.validation.validate_ecr_data import (
+from scripts.validation.validate_document import (
     STANDARDS_MAP,
     display_svrl_results,
     get_document_template_info,

@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
-from app.api.v1.configurations.models import GetConfigurationsResponse
+from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
@@ -16,7 +16,7 @@ from app.db.configurations.model import (
     DbConfigurationCustomCode,
     GetConfigurationResponseVersion,
 )
-from app.services.ecr.models import RefinedDocument, ReportableCondition
+from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 
 

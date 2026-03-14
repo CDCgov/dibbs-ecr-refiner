@@ -1,4 +1,4 @@
-from .validate_ecr_data import (
+from .validate_document import (
     STANDARDS_MAP,
     get_document_template_info,
     parse_svrl,
