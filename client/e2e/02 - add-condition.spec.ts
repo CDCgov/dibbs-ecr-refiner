@@ -150,12 +150,12 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     expect(uploadResponse.ok(), 'upload POST returned non-2xx').toBeTruthy();
 
-    const confirmButton = page.getByRole('button', { name: 'Confirm & save codes' });
+    const confirmButton = page.getByRole('button', {
+      name: 'Confirm & save codes',
+    });
     await expect(confirmButton).toBeVisible();
     await confirmButton.click();
-    await page
-      .getByRole('button', { name: 'Yes, save codes' })
-      .click();
+    await page.getByRole('button', { name: 'Yes, save codes' }).click();
     await expect(page.getByText('CSV confirmed')).toBeVisible();
 
     await expect(

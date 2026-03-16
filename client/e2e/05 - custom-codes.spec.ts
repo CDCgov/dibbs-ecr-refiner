@@ -1,6 +1,8 @@
 import { test, expect } from './fixtures/fixtures';
 
-const makeCsvContent = (rows: { code: string; system: string; name: string }[]) => {
+const makeCsvContent = (
+  rows: { code: string; system: string; name: string }[]
+) => {
   const header = 'code_number,code_system,display_name';
   const lines = rows.map((row) => `${row.code},${row.system},${row.name}`);
   return [header, ...lines].join('\n') + '\n';
@@ -33,7 +35,9 @@ test.describe('Custom code builder flows', () => {
 
     await page.getByRole('textbox', { name: 'Code #' }).fill('CK-10001');
     await page.getByLabel('Code system').selectOption('rxnorm');
-    await page.getByRole('textbox', { name: 'Code name' }).fill('Custom Kitsune');
+    await page
+      .getByRole('textbox', { name: 'Code name' })
+      .fill('Custom Kitsune');
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
@@ -43,7 +47,9 @@ test.describe('Custom code builder flows', () => {
       .locator('table tbody tr')
       .filter({ hasText: 'Custom Kitsune' })
       .first();
-    await expect(rowLocator.getByRole('cell', { name: 'CK-10001', exact: true })).toBeVisible();
+    await expect(
+      rowLocator.getByRole('cell', { name: 'CK-10001', exact: true })
+    ).toBeVisible();
 
     const editButton = rowLocator.getByRole('button', {
       name: 'Edit custom code Custom Kitsune',
@@ -57,7 +63,10 @@ test.describe('Custom code builder flows', () => {
     await modalSaveButton.click();
     await expect(page.getByText('Custom code updated')).toBeVisible();
     await expect(
-      rowLocator.getByRole('cell', { name: 'Custom Kitsune Updated', exact: true })
+      rowLocator.getByRole('cell', {
+        name: 'Custom Kitsune Updated',
+        exact: true,
+      })
     ).toBeVisible();
 
     const deleteButton = rowLocator.getByRole('button', {
@@ -83,11 +92,12 @@ test.describe('Custom code builder flows', () => {
       page.getByRole('heading', { name: configurationName, level: 1 })
     ).toBeVisible();
 
-
     await page.getByRole('link', { name: 'Build' }).click();
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Import from CSV' }).click();
-    await expect(page.getByRole('heading', { name: 'Import from CSV' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Import from CSV' })
+    ).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     const suffix = Date.now();
@@ -106,28 +116,26 @@ test.describe('Custom code builder flows', () => {
       },
     ]);
 
-    await expect(page.getByText('Review the codes below to make sure they are correct')).toBeVisible();
+    await expect(
+      page.getByText('Review the codes below to make sure they are correct')
+    ).toBeVisible();
 
     const previewRowOne = page
       .locator('table tbody tr')
       .filter({ hasText: csvRows[0].name })
       .first();
-    const previewRowTwo = page
-      .locator('table tbody tr')
-      .filter({ hasText: csvRows[1].name })
-      .first();
 
     await previewRowOne.getByRole('button', { name: 'Edit' }).click();
-    const modalCodeInput = page.getByRole('textbox', { name: 'Code #' }).first();
+    const modalCodeInput = page
+      .getByRole('textbox', { name: 'Code #' })
+      .first();
     await modalCodeInput.fill(`${csvRows[0].code}-updated`);
     await page.getByRole('button', { name: 'Save changes' }).click();
     await expect(
       page.getByRole('button', { name: 'Undo & delete codes' })
     ).toBeVisible();
 
-    await page
-      .getByRole('searchbox', { name: 'Search codes' })
-      .fill('updated');
+    await page.getByRole('searchbox', { name: 'Search codes' }).fill('updated');
     await expect(
       page.getByRole('cell', { name: `${csvRows[0].code}-updated` })
     ).toBeVisible();

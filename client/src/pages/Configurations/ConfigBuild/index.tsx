@@ -1239,6 +1239,19 @@ function ImportCustomCodes({
     }
   };
 
+  type UploadCsvError = {
+    response?: {
+      data?: {
+        detail?: {
+          errors?: Array<{
+            row?: number | string;
+            error?: string;
+          }>;
+        };
+      };
+    };
+  };
+
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -1267,7 +1280,6 @@ function ImportCustomCodes({
       },
       {
         onSuccess: (res) => {
-          const payload = res.data;
           const preview = res.data.preview ?? [];
           if (preview.length === 0) {
             setError('The CSV file did not produce any valid rows.');
@@ -1277,16 +1289,14 @@ function ImportCustomCodes({
           setStep('preview');
           setApiErrors(null);
         },
-        onError: (err: any) => {
-          // if err.response.data.detail.errors parse and show table
-          let parsed = null;
-          if (err?.response?.data?.detail?.errors) {
-            parsed = err.response.data.detail.errors.map(
-              ({ row, error }: any) => ({
-                row: Number(row),
-                error: String(error),
-              })
-            );
+        onError: (err: unknown) => {
+          const csvError = err as UploadCsvError;
+          const parsedErrors = csvError.response?.data?.detail?.errors;
+          if (parsedErrors?.length) {
+            const parsed = parsedErrors.map(({ row, error }) => ({
+              row: Number(row),
+              error: String(error),
+            }));
             setApiErrors(parsed);
             setStep('error');
             showToast({
@@ -1296,7 +1306,6 @@ function ImportCustomCodes({
             });
             return;
           }
-          // fallback show text
           const message = formatApiError(err);
           setError(message);
           setApiErrors(null);
