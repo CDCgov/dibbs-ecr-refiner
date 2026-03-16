@@ -71,8 +71,7 @@ type CsvImportStep = 'intro' | 'preview' | 'error';
 type CsvImportView = `csv_${CsvImportStep}`;
 type TableView = 'none' | 'codeset' | 'custom' | 'sections' | CsvImportView;
 
-const toCsvImportView = (step: CsvImportStep): CsvImportView =>
-  `csv_${step}` as CsvImportView;
+const toCsvImportView = (step: CsvImportStep): CsvImportView => `csv_${step}`;
 
 const isCsvImportView = (view: TableView): view is CsvImportView =>
   view.startsWith('csv_');
