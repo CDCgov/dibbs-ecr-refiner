@@ -880,11 +880,10 @@ export function CustomCodeModal({
   // Maybe get this info as part of the seed script?
   const systemValues = [
     { name: 'Select system', value: '' },
-    { name: 'ICD-10', value: 'icd-10' },
-    { name: 'SNOMED', value: 'snomed' },
-    { name: 'RxNorm', value: 'rxnorm' },
-    { name: 'LOINC', value: 'loinc' },
-    { name: 'Other', value: 'other' },
+    ...Object.values(UploadCustomCodesPreviewItemSystem).map((s) => ({
+      name: s,
+      value: s.toLowerCase(),
+    })),
   ];
 
   const [form, setForm] = useState({
@@ -1130,17 +1129,12 @@ type PreviewRow = {
   matches?: readonly FuseResultMatch[];
 };
 
-const PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[] = [
-  'ICD-10',
-  'SNOMED',
-  'RxNorm',
-  'LOINC',
-  'Other',
-];
+const PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[] =
+  Object.values(UploadCustomCodesPreviewItemSystem);
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
-  system: 'ICD-10',
+  system: UploadCustomCodesPreviewItemSystem['ICD-10'],
   name: '',
 };
 
