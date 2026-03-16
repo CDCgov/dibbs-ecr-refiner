@@ -209,8 +209,7 @@ def refine_eicr(
         # parse the eicr document
         eicr_root = xml_files.parse_eicr()
 
-        namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
-        structured_body = eicr_root.find(".//hl7:structuredBody", namespaces)
+        structured_body = eicr_root.find(".//hl7:structuredBody", HL7_NS)
 
         # if we don't have a structuredBody this is a major problem
         if structured_body is None:
@@ -229,7 +228,7 @@ def refine_eicr(
             section = get_section_by_code(
                 structured_body=structured_body,
                 loinc_code=section_code,
-                namespaces=namespaces,
+                namespaces=HL7_NS,
             )
 
             if section is None:
@@ -248,7 +247,7 @@ def refine_eicr(
             process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,
-                namespaces=namespaces,
+                namespaces=HL7_NS,
                 section_specification=section_specification,
                 version=version,
             )
