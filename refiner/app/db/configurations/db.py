@@ -1089,20 +1089,7 @@ async def get_active_config_db(
     """
     query = """
         SELECT
-            id,
-            name,
-			status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
+            id
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -1117,7 +1104,9 @@ async def get_active_config_db(
     if not row:
         return None
 
-    return DbConfiguration.from_db_row(row)
+    return await get_configuration_by_id_db(
+        id=row["id"], jurisdiction_id=jurisdiction_id, db=db
+    )
 
 
 async def get_configuration_versions_db(
