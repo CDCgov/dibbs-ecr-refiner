@@ -2,7 +2,7 @@ import pytest
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.ecr.models import EICRSpecification
+from app.services.ecr.model import EICRSpecification
 from app.services.ecr.process_eicr import (
     _analyze_trigger_codes_in_context,
     _preserve_relevant_entries_and_generate_summary,

@@ -2,7 +2,7 @@ from typing import Final, TypedDict
 
 from lxml.etree import _Element
 
-from .models import (
+from .model import (
     EICRSpecification,
     EicrVersion,
     NamespaceMap,

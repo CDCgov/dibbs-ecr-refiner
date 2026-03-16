@@ -17,6 +17,7 @@ from app.services.configurations import (
 from ..conditions.model import DbCondition
 from ..pool import AsyncDatabaseConnection
 from .model import (
+    BulkAddCustomCodesResult,
     DbConfiguration,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
@@ -216,7 +217,7 @@ async def get_configuration_sections_db(
 
 
 async def get_configurations_db(
-    jurisdiction_id: str, db: AsyncDatabaseConnection
+    jurisdiction_id: str, db: AsyncDatabaseConnection, status: str | None = None
 ) -> list[DbConfiguration]:
     """
     Fetch all configurations from the DB for a given jurisdiction.
@@ -239,10 +240,16 @@ async def get_configurations_db(
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
-        ORDER BY name ASC;
     """
 
-    params = (jurisdiction_id,)
+    params: tuple[str, ...] = (jurisdiction_id,)
+
+    if status is not None:
+        query += " AND status = %s"
+        params += (status,)
+
+    query += " ORDER BY name ASC;"
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
@@ -251,21 +258,21 @@ async def get_configurations_db(
     if not config_rows:
         return []
 
-    # config_ids = [row["id"] for row in config_rows]
-    # sections = await get_configuration_sections_db(configuration_ids=config_ids, db=db)
+    config_ids = [row["id"] for row in config_rows]
+    sections = await get_configuration_sections_db(configuration_ids=config_ids, db=db)
     sections_by_config: dict[str, list[dict]] = defaultdict(list)
 
-    # for section in sections:
-    #     sections_by_config[section.].append(
-    #         {
-    #             "code": section["code"],
-    #             "name": section["name"],
-    #             "action": section["action"],
-    #             "include": section["include"],
-    #             "versions": section["versions"],
-    #             "narrative": section["narrative"],
-    #         }
-    #     )
+    for section in sections:
+        sections_by_config[section.con].append(
+            {
+                "code": section["code"],
+                "name": section["name"],
+                "action": section["action"],
+                "include": section["include"],
+                "versions": section["versions"],
+                "narrative": section["narrative"],
+            }
+        )
     for row in config_rows:
         row["section_processing"] = sections_by_config.get(row["id"], [])
 
@@ -686,6 +693,89 @@ async def add_custom_code_to_configuration_db(
             )
 
             return updated_config
+
+
+async def add_bulk_custom_codes_to_configuration_db(
+    config: DbConfiguration,
+    custom_codes: list[DbConfigurationCustomCode],
+    user_id: UUID,
+    db: AsyncDatabaseConnection,
+) -> BulkAddCustomCodesResult | None:
+    """
+    Adds multiple custom codes to a configuration in a single update.
+
+    Returns:
+        BulkAddCustomCodesResult | None
+    """
+
+    query = """
+        UPDATE configurations
+        SET custom_codes = %s::jsonb
+        WHERE id = %s
+        RETURNING
+            id,
+            name,
+            status,
+            jurisdiction_id,
+            condition_id,
+            included_conditions,
+            custom_codes,
+            section_processing,
+            version,
+            last_activated_at,
+            last_activated_by,
+            created_by,
+            condition_canonical_url,
+            s3_urls;
+    """
+
+    existing_codes = config.custom_codes or []
+
+    # Build a set of (code, system) for fast lookup
+    existing_keys = {(c.code, c.system) for c in existing_codes}
+
+    new_codes_added: list[DbConfigurationCustomCode] = []
+
+    for code in custom_codes:
+        key = (code.code, code.system)
+        if key not in existing_keys:
+            existing_codes.append(code)
+            existing_keys.add(key)
+            new_codes_added.append(code)
+
+    json_payload = [
+        {"code": cc.code, "system": cc.system, "name": cc.name} for cc in existing_codes
+    ]
+
+    params = (Jsonb(json_payload), config.id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+            if not row:
+                return None
+
+            updated_config = DbConfiguration.from_db_row(row)
+
+            # Insert a single audit event if codes were added
+            if new_codes_added:
+                await insert_event_db(
+                    event=EventInput(
+                        jurisdiction_id=updated_config.jurisdiction_id,
+                        user_id=user_id,
+                        configuration_id=updated_config.id,
+                        event_type="bulk_add_custom_code",
+                        action_text=f"Added {len(new_codes_added)} custom codes",
+                    ),
+                    cursor=cur,
+                )
+
+            return BulkAddCustomCodesResult(
+                config=updated_config,
+                added_count=len(new_codes_added),
+            )
 
 
 async def delete_custom_code_from_configuration_db(

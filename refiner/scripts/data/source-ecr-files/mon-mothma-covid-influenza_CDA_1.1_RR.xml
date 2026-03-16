@@ -408,7 +408,7 @@
                           root="2.16.840.1.113883.10.20.15.2.4.3" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH-GC-500" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR12"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
@@ -424,7 +424,7 @@
                         <templateId extension="2017-04-01"
                           root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
-                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR7"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
@@ -626,7 +626,7 @@
                           root="2.16.840.1.113883.10.20.15.2.4.3" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH-GC-500" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR12"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
@@ -643,7 +643,7 @@
                           root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR7"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
@@ -855,7 +855,7 @@
                           root="2.16.840.1.113883.10.20.15.2.4.3" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH-GC-500" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR12"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
@@ -879,7 +879,7 @@
                         <templateId extension="2017-04-01"
                           root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
-                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR7"
                             codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
@@ -1061,7 +1061,7 @@
                         <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.4.3" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH-GC-500" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR12" codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
                             displayName="Rules Authoring Agency" />
@@ -1075,7 +1075,7 @@
                       <participant typeCode="LOC">
                         <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
-                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR7" codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
                             displayName="Routing Entity" />
@@ -1220,7 +1220,7 @@
                         <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.4.3" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH-GC-500" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR12" codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
                             displayName="Rules Authoring Agency" />
@@ -1235,7 +1235,7 @@
                         <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR7" codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
                             displayName="Routing Entity" />
@@ -1419,7 +1419,7 @@
                         <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.4.3" />
                         <participantRole>
                           <!-- made up senate district authoring agency id -->
-                          <id extension="SDDH-GC-500" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR12" codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
                             displayName="Rules Authoring Agency" />
@@ -1441,7 +1441,7 @@
                       <participant typeCode="LOC">
                         <templateId extension="2017-04-01" root="2.16.840.1.113883.10.20.15.2.4.1" />
                         <participantRole>
-                          <id extension="SDDH" root="2.16.840.1.113883.4.6" />
+                          <id extension="sddh" root="2.16.840.1.113883.4.6" />
                           <code code="RR7" codeSystem="2.16.840.1.114222.4.5.232"
                             codeSystemName="PHIN Questions"
                             displayName="Routing Entity" />

@@ -2,7 +2,7 @@ import pytest
 
 from app.core.exceptions import XMLValidationError
 from app.core.models.types import XMLFiles
-from app.services.ecr.models import ReportableCondition
+from app.services.ecr.model import ReportableCondition
 from app.services.ecr.reportability import determine_reportability
 
 
