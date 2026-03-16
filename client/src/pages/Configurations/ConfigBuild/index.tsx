@@ -1226,14 +1226,6 @@ function ImportCustomCodes({
             anything.
           </p>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            hidden
-            onChange={handleFileChange}
-          />
-
           <Button
             type="button"
             onClick={handleButtonClick}
@@ -1523,6 +1515,13 @@ function ImportCustomCodes({
           <p className="text-sm text-gray-600">
             Easily add multiple codes by uploading a spreadsheet in CSV format.
           </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            hidden
+            onChange={handleFileChange}
+          />
         </>
         {uploading ? (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center">
@@ -1694,7 +1693,7 @@ function ImportCustomCodes({
           aria-label="Close this window"
           onClick={closeConfirmModal}
           variant="tertiary"
-          className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+          className="absolute top-4 right-2 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
         >
           <Icon.Close className="h-5 w-5" aria-hidden />
         </Button>
@@ -1726,7 +1725,7 @@ function ImportCustomCodes({
           aria-label="Close this window"
           onClick={closeUndoModal}
           variant="tertiary"
-          className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+          className="absolute top-4 right-2 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
         >
           <Icon.Close className="h-5 w-5" aria-hidden />
         </Button>
