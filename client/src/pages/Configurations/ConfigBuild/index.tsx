@@ -1569,11 +1569,11 @@ function ImportCustomCodes({
                 <table className="w-full border-spacing-y-2 text-left text-sm">
                   <tbody>
                     {apiErrors.map(({ row, error }) => (
-                      <tr key={`${row}-${error}`} className="text-red-700">
-                        <td className="w-20 px-0 py-1 font-bold">
+                      <tr key={`${row}-${error}`} className="h-6 text-red-700">
+                        <td className="w-20 px-3 py-3 font-bold">
                           Row {row > 0 ? row : '—'}
                         </td>
-                        <td className="px-0 py-1">{error}</td>
+                        <td className="px-3 py-3">{error}</td>
                       </tr>
                     ))}
                   </tbody>
