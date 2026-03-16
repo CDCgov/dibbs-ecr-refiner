@@ -9,12 +9,16 @@ import {
   TextInput,
   Select,
 } from '@trussworks/react-uswds';
+import {
+  UploadCustomCodesPreviewItem,
+  UploadCustomCodesPreviewItemSystem,
+} from '../../api/schemas';
 
 import { Button } from '../Button';
 
 // Confirm Modal
 interface ConfirmModalProps {
-  confirmModalRef: React.RefObject<ModalRef>;
+  confirmModalRef: React.RefObject<ModalRef | null>;
   closeConfirmModal: () => void;
   handleConfirm: () => void;
 }
@@ -58,7 +62,7 @@ export function ConfirmModal({
 
 // Undo Modal
 interface UndoModalProps {
-  undoModalRef: React.RefObject<ModalRef>;
+  undoModalRef: React.RefObject<ModalRef | null>;
   closeUndoModal: () => void;
   handleDelete: () => void;
 }
@@ -107,17 +111,17 @@ export function UndoModal({
 
 // PreviewEdit Modal
 interface PreviewEditModalProps {
-  previewEditModalRef: React.RefObject<ModalRef>;
+  previewEditModalRef: React.RefObject<ModalRef | null>;
   closePreviewEditModal: () => void;
-  previewEditForm: { code: string; system: string; name: string };
+  previewEditForm: UploadCustomCodesPreviewItem;
   setPreviewEditForm: React.Dispatch<
-    React.SetStateAction<{ code: string; system: string; name: string }>
+    React.SetStateAction<UploadCustomCodesPreviewItem>
   >;
   isEditSaveDisabled: boolean;
   handlePreviewEditSubmit: () => void;
-  PREVIEW_CODE_SYSTEMS: string[];
-  previewItems: { code: string; system: string; name: string }[];
-  previewEditIndex: number;
+  PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[];
+  previewItems: UploadCustomCodesPreviewItem[] | null;
+  previewEditIndex: number | null;
   setError: (err: string | null) => void;
   error: string | null;
   handlePreviewEditChange: (
