@@ -13,3 +13,6 @@ mypy==1.19.1
 lxml-stubs
 types-Authlib
 boto3-stubs
+requests
+rich
+types-requests
