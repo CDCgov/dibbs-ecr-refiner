@@ -4,7 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from psycopg import AsyncCursor
-from psycopg.rows import class_row, dict_row
+from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.db.events.db import insert_event_db
@@ -20,6 +20,7 @@ from .model import (
     BulkAddCustomCodesResult,
     DbConfiguration,
     DbConfigurationCustomCode,
+    DbConfigurationSection,
     DbConfigurationSectionProcessing,
     DbSectionAction,
     DbTotalConditionCodeCount,
@@ -180,40 +181,67 @@ async def insert_configuration_db(
 
 async def get_configuration_sections_db(
     configuration_ids: list[UUID], db: AsyncDatabaseConnection
-) -> list[DbConfigurationSectionProcessing]:
+) -> list[DbConfigurationSection]:
     """
-    Fetch all sections for a given configuration.
+    Fetch all sections for the given configurations.
 
     Args:
-        configuration_ids (UUID): ID of the configuration
+        configuration_ids (UUID): List of configuration IDs
         db (AsyncDatabaseConnection): The database connection
 
     Returns:
-        list(DbConfigurationSectionProcessing): List of sections
+        list(DbConfigurationSection): List of sections
     """
 
     query = """
     SELECT
         id,
+        configuration_id,
         name,
         code,
         action,
         include,
         narrative,
-        versions
+        versions,
+        created_at,
+        updated_at
     FROM configurations_sections
     WHERE configuration_id = ANY(%s)
     ORDER BY name;
     """
     params = (configuration_ids,)
     async with db.get_connection() as conn:
-        async with conn.cursor(
-            row_factory=class_row(DbConfigurationSectionProcessing)
-        ) as cur:
+        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
     return rows
+
+
+async def _map_sections_to_config_db(
+    raw_configurations: list[DictRow], db: AsyncDatabaseConnection
+) -> dict[str, DbConfigurationSection]:
+    updated_configs_list = raw_configurations.copy()
+    configuration_ids: list[UUID] = [row["id"] for row in updated_configs_list]
+    sections = await get_configuration_sections_db(
+        configuration_ids=configuration_ids, db=db
+    )
+    sections_by_config: dict[str, list[dict]] = defaultdict(list)
+
+    for section in sections:
+        sections_by_config[section.configuration_id].append(
+            {
+                "code": section.code,
+                "name": section.name,
+                "action": section.action,
+                "include": section.include,
+                "versions": section.versions,
+                "narrative": section.narrative,
+            }
+        )
+    for row in updated_configs_list:
+        row["section_processing"] = sections_by_config.get(row["id"], [])
+    return updated_configs_list
 
 
 async def get_configurations_db(
@@ -258,25 +286,11 @@ async def get_configurations_db(
     if not config_rows:
         return []
 
-    config_ids = [row["id"] for row in config_rows]
-    sections = await get_configuration_sections_db(configuration_ids=config_ids, db=db)
-    sections_by_config: dict[str, list[dict]] = defaultdict(list)
+    updated_config_rows = await _map_sections_to_config_db(
+        raw_configurations=config_rows, db=db
+    )
 
-    for section in sections:
-        sections_by_config[section.con].append(
-            {
-                "code": section["code"],
-                "name": section["name"],
-                "action": section["action"],
-                "include": section["include"],
-                "versions": section["versions"],
-                "narrative": section["narrative"],
-            }
-        )
-    for row in config_rows:
-        row["section_processing"] = sections_by_config.get(row["id"], [])
-
-    return [DbConfiguration.from_db_row(row) for row in config_rows]
+    return [DbConfiguration.from_db_row(row) for row in updated_config_rows]
 
 
 async def get_configuration_by_id_db(
