@@ -607,20 +607,7 @@ async def add_custom_code_to_configuration_db(
             SET custom_codes = %s::jsonb
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     custom_codes = config.custom_codes
@@ -647,20 +634,20 @@ async def add_custom_code_to_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="add_code",
                     action_text=f"Added custom code '{custom_code.code}'",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def add_bulk_custom_codes_to_configuration_db(
@@ -725,15 +712,13 @@ async def add_bulk_custom_codes_to_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             # Insert a single audit event if codes were added
             if new_codes_added:
                 await insert_event_db(
                     event=EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="bulk_add_custom_code",
                         action_text=f"Added {len(new_codes_added)} custom codes",
                     ),
@@ -741,7 +726,9 @@ async def add_bulk_custom_codes_to_configuration_db(
                 )
 
             return BulkAddCustomCodesResult(
-                config=updated_config,
+                config=await get_configuration_by_id_db(
+                    id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+                ),
                 added_count=len(new_codes_added),
             )
 
@@ -762,20 +749,7 @@ async def delete_custom_code_from_configuration_db(
             SET custom_codes = %s::jsonb
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     updated_custom_codes = [
@@ -794,20 +768,20 @@ async def delete_custom_code_from_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="delete_code",
                     action_text=f"Removed custom code '{code}'",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def edit_custom_code_from_configuration_db(
@@ -831,20 +805,7 @@ async def edit_custom_code_from_configuration_db(
             SET custom_codes = %s::jsonb
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     json_codes = [
@@ -862,8 +823,6 @@ async def edit_custom_code_from_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             # Collect all event messages
             events_to_insert = []
 
@@ -871,9 +830,9 @@ async def edit_custom_code_from_configuration_db(
             if new_code is not None and new_code != prev_code:
                 events_to_insert.append(
                     EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="edit_code",
                         action_text=f"Updated custom code from '{prev_code}' to '{new_code}'",
                     )
@@ -883,9 +842,9 @@ async def edit_custom_code_from_configuration_db(
             if new_name is not None and new_name != prev_name:
                 events_to_insert.append(
                     EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="edit_code",
                         action_text=f"Updated name for custom code '{prev_code}' from '{prev_name}' to '{new_name}'",
                     )
@@ -895,9 +854,9 @@ async def edit_custom_code_from_configuration_db(
             if new_system is not None and new_system != prev_system:
                 events_to_insert.append(
                     EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="edit_code",
                         action_text=f"Updated system for custom code '{prev_code}' from '{prev_system}' to '{new_system}'",
                     )
@@ -907,7 +866,9 @@ async def edit_custom_code_from_configuration_db(
             for event in events_to_insert:
                 await insert_event_db(event=event, cursor=cur)
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def get_configuration_section_by_code(
