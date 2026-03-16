@@ -262,7 +262,13 @@ async def upload_custom_codes_csv(
             row_errors.append("Missing display_name")
         sys_l = code_system_raw.lower()
         if sys_l not in allowed_systems:
-            row_errors.append(f"Invalid system: {code_system_raw or '[blank]'}")
+            allowed_systems_sanitized = [
+                _get_sanitized_system_name(s) for s in allowed_systems
+            ]
+            allowed_systems_str = ", ".join(allowed_systems_sanitized)
+            row_errors.append(
+                f"Invalid system: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
+            )
         code_key = (code.lower(), sys_l)
         if code_key in code_keys:
             row_errors.append("Duplicate: matches existing custom code")
