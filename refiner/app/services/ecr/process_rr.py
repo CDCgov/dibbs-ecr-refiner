@@ -3,7 +3,7 @@ from typing import cast
 from lxml.etree import _Element
 
 from ...core.exceptions import StructureValidationError
-from .models import JurisdictionReportableConditions, ReportableCondition
+from .model import JurisdictionReportableConditions, ReportableCondition
 
 # NOTE:
 # =============================================================================

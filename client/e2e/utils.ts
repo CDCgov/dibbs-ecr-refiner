@@ -53,23 +53,19 @@ export async function login({
   const username = typeof user === 'string' ? user : 'refiner';
   const password = typeof user === 'string' ? user : 'refiner';
 
-  await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60000 });
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
   await page.getByText('Log in').click();
-  await page.getByRole('textbox', { name: 'Username or email' }).click();
   await page.getByRole('textbox', { name: 'Username or email' }).fill(username);
-  await page.getByRole('textbox', { name: 'Username or email' }).press('Tab');
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
 
   // wait for navigation after clicking sign in button
   await Promise.all([
-    page.waitForURL((url) => !url.hostname.includes('localhost:8082'), {
+    page.waitForURL('http://localhost:8081/configurations', {
       timeout: 30000,
     }),
     page.getByRole('button', { name: 'Sign In' }).click(),
   ]);
-
-  // wait for network to be idle after login
-  await page.waitForLoadState('networkidle');
 
   // check that we are on the logged-in home screen
   await expect(

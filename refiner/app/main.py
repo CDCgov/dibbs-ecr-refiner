@@ -203,7 +203,7 @@ def create_fastapi_app(lifespan: Lifespan[FastAPI]) -> FastAPI:
         secret_key=get_session_secret_key(),
         https_only=ENVIRONMENT["ENV"] != "local",
         same_site="lax",
-        max_age=600,
+        max_age=None,
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 

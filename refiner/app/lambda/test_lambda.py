@@ -8,6 +8,14 @@ from moto import mock_aws
 
 from ..services.file_io import get_asset_path
 
+COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
+INFLUENZA_CANONICAL_URL_UUID = "38475891-387a-4fa2-bbe9-1dc97ce415d1"
+REFINER_INPUT_PREFIX = "RefinerInput"
+REFINER_OUTPUT_PREFIX = "RefinerOutput"
+REFINER_COMPLETE_PREFIX = "RefinerComplete"
+ECR_INPUT_PREFIX = "eCRMessageV2"
+S3_BUCKET_CONFIG = "dibbs-refiner-dev"
+
 
 @pytest.fixture
 def aws_mock():
@@ -16,10 +24,19 @@ def aws_mock():
 
 
 @pytest.fixture
-def config_bucket_env(monkeypatch) -> str:
-    bucket_name = "config-bucket"
-    monkeypatch.setenv("S3_BUCKET_CONFIG", bucket_name)
-    return bucket_name
+def config_lambda_env(monkeypatch) -> dict[str, str]:
+    monkeypatch.setenv("EICR_INPUT_PREFIX", ECR_INPUT_PREFIX)
+    monkeypatch.setenv("REFINER_INPUT_PREFIX", REFINER_INPUT_PREFIX)
+    monkeypatch.setenv("REFINER_OUTPUT_PREFIX", REFINER_OUTPUT_PREFIX)
+    monkeypatch.setenv("REFINER_COMPLETE_PREFIX", REFINER_COMPLETE_PREFIX)
+    monkeypatch.setenv("S3_BUCKET_CONFIG", S3_BUCKET_CONFIG)
+    return {
+        "REFINER_INPUT_PREFIX": REFINER_INPUT_PREFIX,
+        "REFINER_OUTPUT_PREFIX": REFINER_OUTPUT_PREFIX,
+        "REFINER_COMPLETE_PREFIX": REFINER_COMPLETE_PREFIX,
+        "EICR_INPUT_PREFIX": ECR_INPUT_PREFIX,
+        "S3_BUCKET_CONFIG": S3_BUCKET_CONFIG,
+    }
 
 
 @pytest.fixture
@@ -31,7 +48,7 @@ def lambda_event() -> dict:
 
 @pytest.fixture
 def sample_xml_files() -> dict[str, bytes]:
-    zip_path = get_asset_path("demo", "mon-mothma-covid-influenza.zip")
+    zip_path = get_asset_path("demo", "mon-mothma-reportable-two-jds.zip")
 
     with ZipFile(zip_path) as z:
         with z.open("CDA_RR.xml") as f:
@@ -52,15 +69,14 @@ def s3_client(aws_mock):
 
 @pytest.fixture
 def data_bucket(s3_client) -> str:
-    bucket_name = "dibbs-refiner-dev"
-    s3_client.create_bucket(Bucket=bucket_name)
-    return bucket_name
+    s3_client.create_bucket(Bucket=S3_BUCKET_CONFIG)
+    return S3_BUCKET_CONFIG
 
 
 @pytest.fixture
-def config_bucket(s3_client, config_bucket_env) -> str:
-    s3_client.create_bucket(Bucket=config_bucket_env)
-    return config_bucket_env
+def config_bucket(s3_client) -> str:
+    s3_client.create_bucket(Bucket=S3_BUCKET_CONFIG)
+    return S3_BUCKET_CONFIG
 
 
 @pytest.fixture
@@ -73,13 +89,13 @@ def s3_input_objects(
 
     s3_client.put_object(
         Bucket=data_bucket,
-        Key=f"RefinerInput/{persistence_id}",
+        Key=f"{REFINER_INPUT_PREFIX}/{persistence_id}",
         Body=sample_xml_files["rr_xml"],
     )
 
     s3_client.put_object(
         Bucket=data_bucket,
-        Key=f"eCRMessageV2/{persistence_id}",
+        Key=f"{ECR_INPUT_PREFIX}/{persistence_id}",
         Body=sample_xml_files["eicr_xml"],
     )
 
@@ -97,7 +113,9 @@ def get_refiner_complete_content(s3_client, bucket, persistance_id) -> dict:
     """
     Returns the content of the RefinerComplete file as a dict
     """
-    resp = s3_client.get_object(Bucket=bucket, Key=f"RefinerComplete/{persistance_id}")
+    resp = s3_client.get_object(
+        Bucket=bucket, Key=f"{REFINER_COMPLETE_PREFIX}/{persistance_id}"
+    )
     return json.loads(resp["Body"].read().decode("utf-8"))
 
 
@@ -106,7 +124,7 @@ def test_lambda_inactive(
     lambda_event,
     s3_client,
     data_bucket,
-    config_bucket,
+    config_lambda_env,
     s3_input_objects,
 ):
     """
@@ -123,19 +141,31 @@ def test_lambda_inactive(
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
 
     # Expected input files paths
-    assert "RefinerInput/persistence/id" in created_files
-    assert "eCRMessageV2/persistence/id" in created_files
+    assert f"{REFINER_INPUT_PREFIX}/persistence/id" in created_files
+    assert f"{ECR_INPUT_PREFIX}/persistence/id" in created_files
 
     # Expected eICR output files created by Refiner
-    full_flu_path = "RefinerOutput/persistence/id/SDDH/772828001/refined_eICR.xml"
-    full_covid_path = "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
+    full_flu_path = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/Influenza/refined_eICR.xml"
+    )
+    full_covid_path = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/COVID19/refined_eICR.xml"
+    )
+    full_shadow_rr_path_sddh = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
+    )
+    full_shadow_rr_path_jddh = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/JDDH/unrefined_rr/refined_RR.xml"
+    )
 
     # Skipped due to no current.json files found
     assert full_flu_path not in created_files
     assert full_covid_path not in created_files
+    assert full_shadow_rr_path_sddh in created_files
+    assert full_shadow_rr_path_jddh in created_files
 
     # Expected completion file for pipeline
-    assert "RefinerComplete/persistence/id" in created_files
+    assert f"{REFINER_COMPLETE_PREFIX}/persistence/id" in created_files
 
     # Load RefinerComplete/persistence/id and ensure it contains expected paths
     complete_json = get_refiner_complete_content(
@@ -143,7 +173,10 @@ def test_lambda_inactive(
     )
 
     # Neither condition was refined
-    expected_refiner_metadata = {"SDDH": {"840539006": False, "772828001": False}}
+    expected_refiner_metadata = {
+        "SDDH": {"840539006": False, "772828001": False},
+        "JDDH": {"772828001": False},
+    }
     assert complete_json["RefinerMetadata"] == expected_refiner_metadata
 
     assert not complete_json["RefinerSkip"]
@@ -159,6 +192,7 @@ def test_lambda_one_active(
     s3_client,
     data_bucket,
     config_bucket,
+    config_lambda_env,
     s3_input_objects,
 ):
     """
@@ -174,7 +208,7 @@ def test_lambda_one_active(
     covid_current = {"version": 1}
     s3_client.put_object(
         Bucket=config_bucket,
-        Key="configurations/SDDH/840539006/current.json",
+        Key=f"configurations/SDDH/{COVID_CANONICAL_URL_UUID}/current.json",
         Body=json.dumps(covid_current, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -187,8 +221,37 @@ def test_lambda_one_active(
     }
     s3_client.put_object(
         Bucket=config_bucket,
-        Key=f"configurations/SDDH/840539006/{covid_current['version']}/active.json",
+        Key=f"configurations/SDDH/{COVID_CANONICAL_URL_UUID}/{covid_current['version']}/active.json",
         Body=json.dumps(covid_activation, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+    rsg_mapping_sddh = {
+        "840539006": {
+            "canonical_url": f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{COVID_CANONICAL_URL_UUID}",
+            "name": "COVID19",
+            "tes_version": "4.0.0",
+        }
+    }
+
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key="configurations/SDDH/rsg_cg_mapping.json",
+        Body=json.dumps(rsg_mapping_sddh).encode("utf-8"),
+        ContentType="application/json",
+    )
+    rsg_mapping_jddh = {
+        "772828001": {
+            "canonical_url": f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{INFLUENZA_CANONICAL_URL_UUID}",
+            "name": "Influenza",
+            "tes_version": "4.0.0",
+        }
+    }
+
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key="configurations/JDDH/rsg_cg_mapping.json",
+        Body=json.dumps(rsg_mapping_jddh).encode("utf-8"),
         ContentType="application/json",
     )
 
@@ -198,36 +261,49 @@ def test_lambda_one_active(
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
-    assert f"RefinerComplete/{s3_input_objects}" in created_files
+
+    full_shadow_rr_path_sddh = (
+        "RefinerOutput/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
+    )
+    full_shadow_rr_path_jddh = (
+        "RefinerOutput/persistence/id/JDDH/unrefined_rr/refined_RR.xml"
+    )
+
+    assert f"{REFINER_COMPLETE_PREFIX}/{s3_input_objects}" in created_files
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
+        f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in created_files
     )
-    assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
-        in created_files
-    )
+    assert f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
+    # since one reportable condition didn't have an active config, a shadow RR
+    # should have gotten written
+    assert full_shadow_rr_path_sddh in created_files
+    assert full_shadow_rr_path_jddh in created_files
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
         s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
     )
 
-    # Only COVID should be marked as refined
-    expected_refiner_metadata = {"SDDH": {"840539006": True, "772828001": False}}
+    # Only COVID should be marked as refined for SDDH, since we don't have
+    # an active config for JDDH reportable Influenza
+    expected_refiner_metadata = {
+        "SDDH": {"840539006": True, "772828001": False},
+        "JDDH": {"772828001": False},
+    }
     assert complete_json["RefinerMetadata"] == expected_refiner_metadata
 
     assert not complete_json["RefinerSkip"]
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in complete_json["RefinerOutputFiles"]
     )
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_RR.xml"
         in complete_json["RefinerOutputFiles"]
     )
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_eICR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/Influenza/refined_eICR.xml"
         not in complete_json["RefinerOutputFiles"]
     )
 
@@ -238,6 +314,7 @@ def test_lambda_all_active(
     s3_client,
     data_bucket,
     config_bucket,
+    config_lambda_env,
     s3_input_objects,
 ):
     """
@@ -253,7 +330,7 @@ def test_lambda_all_active(
     covid_current = {"version": 1}
     s3_client.put_object(
         Bucket=config_bucket,
-        Key="configurations/SDDH/840539006/current.json",
+        Key=f"configurations/SDDH/{COVID_CANONICAL_URL_UUID}/current.json",
         Body=json.dumps(covid_current, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -265,16 +342,16 @@ def test_lambda_all_active(
     }
     s3_client.put_object(
         Bucket=config_bucket,
-        Key=f"configurations/SDDH/840539006/{covid_current['version']}/active.json",
+        Key=f"configurations/SDDH/{COVID_CANONICAL_URL_UUID}/{covid_current['version']}/active.json",
         Body=json.dumps(covid_activation, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
 
-    # Create current.json for the flu
+    # Create current.json for the flu SDDH
     flu_current = {"version": 1}
     s3_client.put_object(
         Bucket=config_bucket,
-        Key="configurations/SDDH/772828001/current.json",
+        Key=f"configurations/SDDH/{INFLUENZA_CANONICAL_URL_UUID}/current.json",
         Body=json.dumps(flu_current, indent=2).encode("utf-8"),
         ContentType="application/json",
     )
@@ -286,8 +363,63 @@ def test_lambda_all_active(
     }
     s3_client.put_object(
         Bucket=config_bucket,
-        Key=f"configurations/SDDH/772828001/{flu_current['version']}/active.json",
+        Key=f"configurations/SDDH/{INFLUENZA_CANONICAL_URL_UUID}/{flu_current['version']}/active.json",
         Body=json.dumps(flu_activation, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+    # Create current.json for the flu for JDDH
+    flu_current = {"version": 1}
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key=f"configurations/JDDH/{INFLUENZA_CANONICAL_URL_UUID}/current.json",
+        Body=json.dumps(flu_current, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+    # Create activation for the flu
+    flu_activation = {
+        "codes": ["100343-3"],
+        "sections": [],
+        "included_condition_rsg_codes": ["772828001"],
+    }
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key=f"configurations/JDDH/{INFLUENZA_CANONICAL_URL_UUID}/{flu_current['version']}/active.json",
+        Body=json.dumps(flu_activation, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+    # Create RSG mappings for SDDH
+    rsg_mapping = {
+        "840539006": {
+            "canonical_url": f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{COVID_CANONICAL_URL_UUID}",
+            "name": "COVID19",
+            "tes_version": "4.0.0",
+        },
+        "772828001": {
+            "canonical_url": f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{INFLUENZA_CANONICAL_URL_UUID}",
+            "name": "Influenza",
+            "tes_version": "4.0.0",
+        },
+    }
+
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key="configurations/SDDH/rsg_cg_mapping.json",
+        Body=json.dumps(rsg_mapping).encode("utf-8"),
+        ContentType="application/json",
+    )
+    # Create RSG mappings for JDDH
+    rsg_mapping_jddh = {
+        "772828001": {
+            "canonical_url": f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{INFLUENZA_CANONICAL_URL_UUID}",
+            "name": "Influenza",
+            "tes_version": "4.0.0",
+        }
+    }
+
+    s3_client.put_object(
+        Bucket=config_bucket,
+        Key="configurations/JDDH/rsg_cg_mapping.json",
+        Body=json.dumps(rsg_mapping_jddh).encode("utf-8"),
         ContentType="application/json",
     )
 
@@ -297,55 +429,65 @@ def test_lambda_all_active(
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
+    full_shadow_rr_path = (
+        f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
+    )
     assert f"RefinerComplete/{s3_input_objects}" in created_files
 
     # Expect COVID outputs
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in created_files
     )
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
-        in created_files
+        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_RR.xml" in created_files
     )
 
     # Expect flu outputs
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_eICR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/Influenza/refined_eICR.xml"
         in created_files
     )
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_RR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/Influenza/refined_RR.xml"
         in created_files
     )
+
+    # Shouldn't have shadow RR since all reportable conditions have corresponding
+    # active configs
+    assert full_shadow_rr_path not in created_files
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
         s3_client=s3_client, bucket=data_bucket, persistance_id=s3_input_objects
     )
 
-    # Both COVID and Flu should be marked as refined
-    expected_refiner_metadata = {"SDDH": {"840539006": True, "772828001": True}}
+    # Both COVID and Flu should be marked as refined for SDDH,
+    # Flu should be refined for JDDH
+    expected_refiner_metadata = {
+        "SDDH": {"840539006": True, "772828001": True},
+        "JDDH": {"772828001": True},
+    }
     assert complete_json["RefinerMetadata"] == expected_refiner_metadata
 
     assert not complete_json["RefinerSkip"]
 
     # Expect COVID
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_eICR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in complete_json["RefinerOutputFiles"]
     )
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/840539006/refined_RR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_RR.xml"
         in complete_json["RefinerOutputFiles"]
     )
 
     # Expect flu
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_eICR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/Influenza/refined_eICR.xml"
         in complete_json["RefinerOutputFiles"]
     )
     assert (
-        f"RefinerOutput/{s3_input_objects}/SDDH/772828001/refined_RR.xml"
+        f"RefinerOutput/{s3_input_objects}/SDDH/Influenza/refined_RR.xml"
         in complete_json["RefinerOutputFiles"]
     )

@@ -9,7 +9,7 @@ from ...core.exceptions import (
     XMLParsingError,
 )
 from ..format import remove_element
-from .models import EicrVersion, NamespaceMap, SectionSpecification
+from .model import EicrVersion, NamespaceMap, SectionSpecification
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION

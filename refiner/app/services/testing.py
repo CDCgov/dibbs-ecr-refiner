@@ -19,7 +19,7 @@ from ..db.configurations.db import (
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
-from .ecr.models import (
+from .ecr.model import (
     ProcessedRR,
     RefinedDocument,
     ReportableCondition,
@@ -294,7 +294,6 @@ async def independent_testing(
             processed_configuration=processed_configuration
         )
         refined_rr_str = refine_rr(
-            jurisdiction_id=jurisdiction_id,
             xml_files=xml_files,
             plan=rr_refinement_plan,
         )
@@ -441,7 +440,6 @@ async def inline_testing(
         processed_configuration=processed_configuration
     )
     refined_rr_str = refine_rr(
-        jurisdiction_id=jurisdiction_id,
         xml_files=xml_files,
         plan=rr_refinement_plan,
     )

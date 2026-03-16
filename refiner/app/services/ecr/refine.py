@@ -4,7 +4,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.db.configurations.model import DbConfigurationSectionInstructions
-from app.services.ecr.models import EICRRefinementPlan
+from app.services.ecr.model import EICRRefinementPlan
 from app.services.terminology import ProcessedConfiguration
 
 from ...core.exceptions import (
@@ -13,7 +13,7 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ..format import remove_element
-from .models import NamespaceMap, RRRefinementPlan
+from .model import NamespaceMap, RRRefinementPlan
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
@@ -228,7 +228,6 @@ def create_rr_refinement_plan(
 
 
 def refine_rr(
-    jurisdiction_id: str,
     xml_files: XMLFiles,
     plan: RRRefinementPlan,
 ) -> str:
@@ -237,7 +236,6 @@ def refine_rr(
 
     Processing behavior:
         - It iterates through the RR and removes information common to all RR's.
-        - It removes anything not applicable to the specified jurisdiction
         - It loops through all the condition observations in the reportability RC
             - Anything that isn't RRSVS1 reportable is filtered out
             - Of the remaining reportable observations, anything that isn't specified
@@ -246,7 +244,6 @@ def refine_rr(
               in the configuration RSG or custom codes are filtered out.
 
     Args:
-        jurisdiction_id: the ID of the jurisdiction we're currently processing information for
         xml_files: The XMLFiles container with the eICR document to refine.
         plan: The RRRefinementPlan for the corresponding eICR.
 
@@ -351,14 +348,6 @@ def refine_rr(
 
             if id_element is None:
                 continue
-
-            jurisdiction_code = id_element.get("extension")
-            if not jurisdiction_code:
-                continue
-
-            # remove any that don't match the specified JID
-            if jurisdiction_code != jurisdiction_id:
-                remove_element(component)
 
         # Similarly, if component / observation doesn't have a tagged RRVS1 entry,
         # it's not reportable, so throw out the whole thing

@@ -2,7 +2,7 @@ from lxml import etree
 
 from app.core.exceptions import XMLParsingError
 from app.core.models.types import XMLFiles
-from app.services.ecr.models import ProcessedRR
+from app.services.ecr.model import ProcessedRR
 
 from .process_rr import get_reportable_conditions_by_jurisdiction
 
