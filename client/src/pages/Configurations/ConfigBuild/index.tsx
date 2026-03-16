@@ -1268,38 +1268,35 @@ function ImportCustomCodes({
       {
         onSuccess: (res) => {
           const payload = res.data;
-          if (
-            payload.errors &&
-            Array.isArray(payload.errors) &&
-            payload.errors.length > 0
-          ) {
-            setApiErrors(
-              payload.errors.map(({ row, error }) => ({
-                row: Number(row),
-                error: String(error),
-              }))
-            );
-            setPreviewItems(null);
-            setStep('error');
-            showToast({
-              variant: 'error',
-              heading: 'Error importing CSV',
-              body: `${payload.errors.length} errors`,
-            });
-            return;
-          }
-
-          const preview = payload.preview ?? [];
+          const preview = res.data.preview ?? [];
           if (preview.length === 0) {
             setError('The CSV file did not produce any valid rows.');
             return;
           }
-
           setPreviewItems(preview);
           setStep('preview');
           setApiErrors(null);
         },
-        onError: (err: unknown) => {
+        onError: (err: any) => {
+          // if err.response.data.detail.errors parse and show table
+          let parsed = null;
+          if (err?.response?.data?.detail?.errors) {
+            parsed = err.response.data.detail.errors.map(
+              ({ row, error }: any) => ({
+                row: Number(row),
+                error: String(error),
+              })
+            );
+            setApiErrors(parsed);
+            setStep('error');
+            showToast({
+              variant: 'error',
+              heading: 'Error importing CSV',
+              body: `${parsed.length} errors`,
+            });
+            return;
+          }
+          // fallback show text
           const message = formatApiError(err);
           setError(message);
           setApiErrors(null);

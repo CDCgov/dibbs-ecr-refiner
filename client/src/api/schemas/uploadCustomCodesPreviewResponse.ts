@@ -6,14 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { UploadCustomCodesPreviewItem } from './uploadCustomCodesPreviewItem';
-import type { UploadCustomCodesPreviewResponseErrors } from './uploadCustomCodesPreviewResponseErrors';
 
 /**
- * Validated CSV preview model for delayed confirmation.
+ * Validated CSV preview for delayed confirmation; only valid if preview.
  */
 export interface UploadCustomCodesPreviewResponse {
-  preview?: UploadCustomCodesPreviewItem[] | null;
+  preview: UploadCustomCodesPreviewItem[];
   codes_processed?: number | null;
   total_custom_codes_in_configuration?: number | null;
-  errors?: UploadCustomCodesPreviewResponseErrors;
 }

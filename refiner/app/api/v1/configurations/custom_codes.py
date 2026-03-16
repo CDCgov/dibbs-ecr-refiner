@@ -218,12 +218,11 @@ class UploadCustomCodesResponse(BaseModel):
 
 
 class UploadCustomCodesPreviewResponse(BaseModel):
-    """Validated CSV preview model for delayed confirmation."""
+    """Validated CSV preview for delayed confirmation; only valid if preview."""
 
-    preview: list[UploadCustomCodesPreviewItem] | None = None
+    preview: list[UploadCustomCodesPreviewItem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
-    errors: list[dict] | None = None
 
 
 @router.post(
@@ -326,25 +325,20 @@ async def upload_custom_codes_csv(
             )
     if errors:
         logger.error("CSV upload errors", extra={"errors": errors})
-        return UploadCustomCodesPreviewResponse(
-            preview=None,
-            codes_processed=0,
-            total_custom_codes_in_configuration=len(config.custom_codes),
-            errors=errors,
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"errors": errors},
         )
     if not preview_items:
-        return UploadCustomCodesPreviewResponse(
-            preview=None,
-            codes_processed=0,
-            total_custom_codes_in_configuration=len(config.custom_codes),
-            errors=[{"row": 0, "error": "No valid rows"}],
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"errors": [{"row": 0, "error": "No valid rows"}]},
         )
     return UploadCustomCodesPreviewResponse(
         preview=preview_items,
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
-        errors=None,
     )
 
 
