@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
-from app.db.configurations.db import update_section_processing_db
+from app.db.configurations.db import update_configuration_section_db
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
@@ -129,7 +129,7 @@ async def test_update_section_processing_valid():
 
     fake_db = _FakeDB(row=row)
 
-    updated_config = await update_section_processing_db(
+    updated_config = await update_configuration_section_db(
         config=mock_config,
         section_update=DbConfigurationSectionProcessing(
             code="A",
@@ -216,7 +216,7 @@ async def test_update_section_processing_invalid_action():
     fake_db = _FakeDB(row=row)
 
     with pytest.raises(ValueError, match="No existing section with code Unknown"):
-        await update_section_processing_db(
+        await update_configuration_section_db(
             config=mock_config,
             section_update=DbConfigurationSectionProcessing(
                 code="Unknown",

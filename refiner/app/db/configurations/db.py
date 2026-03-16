@@ -956,7 +956,40 @@ async def edit_custom_code_from_configuration_db(
             return updated_config
 
 
-async def update_section_processing_db(
+async def get_configuration_section_by_code(
+    configuration_id: UUID, code: str, db: AsyncDatabaseConnection
+) -> DbConfigurationSection | None:
+    """
+    Get a configuration's section by its unique code.
+    """
+    query = """
+        SELECT
+            id,
+            configuration_id,
+            name,
+            code,
+            action,
+            include,
+            narrative,
+            versions,
+            created_at,
+            updated_at
+        FROM configurations_sections
+        WHERE configuration_id = %s
+        AND code = %s
+        ORDER BY name;
+    """
+    params = (configuration_id, code)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
+            return row
+
+
+async def update_configuration_section_db(
     config: DbConfiguration,
     section_update: DbConfigurationSectionProcessing,
     user_id: UUID,
@@ -987,23 +1020,14 @@ async def update_section_processing_db(
             f"Invalid action '{section_update.action}' for section update."
         )
 
-    prev_section = None
-    for section in config.section_processing:
-        if section.code == section_update.code:
-            prev_section = section
+    prev_section = await get_configuration_section_by_code(
+        configuration_id=config.id, code=section_update.code, db=db
+    )
 
     if not prev_section:
         raise ValueError(
             f"No existing section with code {section_update.code} to update"
         )
-
-    updated_sections: list[DbConfigurationSectionProcessing] = [
-        section
-        for section in config.section_processing
-        if section.code != section_update.code
-    ]
-
-    updated_sections = updated_sections + [section_update]
 
     action_changed = prev_section.action != section_update.action
 
@@ -1021,30 +1045,24 @@ async def update_section_processing_db(
             )
         )
 
-    # If any update codes were not present in the existing sections, ignore them.
-    # Persist the updated list back to the database
     query = """
-            UPDATE configurations
-            SET section_processing = %s::jsonb
-            WHERE id = %s
-            RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+            UPDATE configurations_sections
+            SET action = %s,
+                include = %s,
+                narrative = %s,
+                updated_at = NOW()
+            WHERE configuration_id = %s
+            AND code = %s
+            RETURNING id;
             """
 
-    params = (Jsonb([asdict(section) for section in updated_sections]), config.id)
+    params = (
+        section_update.action,
+        section_update.include,
+        section_update.narrative,
+        config.id,
+        section_update.code,
+    )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -1054,13 +1072,13 @@ async def update_section_processing_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             # Insert all generated section events
             for event in section_events:
                 await insert_event_db(event=event, cursor=cur)
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def get_configurations_by_condition_ids_and_jurisdiction_db(
