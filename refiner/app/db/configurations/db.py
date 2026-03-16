@@ -299,6 +299,7 @@ async def get_configuration_by_id_db(
     """
     Fetch a configuration by the given ID.
     """
+    # TODO: This query is kind of a hack. Improve or leave for now?
     query = """
     SELECT
         c.id,
@@ -337,27 +338,6 @@ async def get_configuration_by_id_db(
     WHERE c.id = %s
     AND c.jurisdiction_id = %s;
     """
-
-    # query = """
-    #     SELECT
-    #         id,
-    #         name,
-    # 		status,
-    #         jurisdiction_id,
-    #         condition_id,
-    #         included_conditions,
-    #         custom_codes,
-    #         section_processing,
-    #         version,
-    # 		last_activated_at,
-    # 		last_activated_by,
-    #         created_by,
-    #         condition_canonical_url,
-    #         s3_urls
-    #     FROM configurations
-    #     WHERE id = %s
-    #     AND jurisdiction_id = %s
-    #     """
 
     params = (
         id,
@@ -447,20 +427,7 @@ async def associate_condition_codeset_with_configuration_db(
             )
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     new_condition = Jsonb([str(condition.id)])
@@ -474,20 +441,20 @@ async def associate_condition_codeset_with_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="add_code",
                     action_text=f"Associated '{condition.display_name}' code set",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def disassociate_condition_codeset_with_configuration_db(
@@ -525,20 +492,7 @@ async def disassociate_condition_codeset_with_configuration_db(
         )
         WHERE id = %s
         RETURNING
-            id,
-            name,
-            status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls;
+            id;
     """
 
     params = (str(condition.id), config.id)
@@ -551,20 +505,20 @@ async def disassociate_condition_codeset_with_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="delete_code",
                     action_text=f"Removed '{condition.display_name}' code set",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def get_total_condition_code_counts_by_configuration_db(
