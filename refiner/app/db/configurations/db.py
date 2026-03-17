@@ -729,6 +729,7 @@ async def add_bulk_custom_codes_to_configuration_db(
     updated_config = await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
     )
+
     if not updated_config:
         return None
 
@@ -876,7 +877,7 @@ async def edit_custom_code_from_configuration_db(
     )
 
 
-async def get_configuration_section_by_code(
+async def _get_configuration_section_by_code(
     configuration_id: UUID, code: str, db: AsyncDatabaseConnection
 ) -> DbConfigurationSection | None:
     """
@@ -903,10 +904,7 @@ async def get_configuration_section_by_code(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
             await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                return None
-            return row
+            return await cur.fetchone()
 
 
 async def update_configuration_section_db(
@@ -940,7 +938,7 @@ async def update_configuration_section_db(
             f"Invalid action '{section_update.action}' for section update."
         )
 
-    prev_section = await get_configuration_section_by_code(
+    prev_section = await _get_configuration_section_by_code(
         configuration_id=config.id, code=section_update.code, db=db
     )
 
@@ -967,7 +965,8 @@ async def update_configuration_section_db(
 
     query = """
             UPDATE configurations_sections
-            SET action = %s,
+            SET
+                action = %s,
                 include = %s,
                 narrative = %s,
                 updated_at = NOW()
