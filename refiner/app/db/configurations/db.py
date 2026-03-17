@@ -238,7 +238,7 @@ async def _map_sections_to_config_db(
     sections_by_config: dict[str, list[dict]] = defaultdict(list)
 
     for section in sections:
-        sections_by_config[section.configuration_id].append(
+        sections_by_config[str(section.configuration_id)].append(
             {
                 "code": section.code,
                 "name": section.name,
@@ -248,8 +248,8 @@ async def _map_sections_to_config_db(
                 "narrative": section.narrative,
             }
         )
-    for row in updated_configs_list:
-        row["section_processing"] = sections_by_config.get(row["id"], [])
+    for config in updated_configs_list:
+        config["section_processing"] = sections_by_config.get(str(config["id"]), [])
     return updated_configs_list
 
 
