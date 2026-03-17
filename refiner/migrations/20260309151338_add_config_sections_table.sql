@@ -23,6 +23,13 @@ CREATE TABLE IF NOT EXISTS configurations_sections (
   UNIQUE (configuration_id, code)
 );
 
+DROP TRIGGER IF EXISTS update_configurations_sections_updated_at ON configurations_sections;
+
+CREATE TRIGGER update_configurations_sections_updated_at
+BEFORE UPDATE ON configurations_sections
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
 CREATE INDEX IF NOT EXISTS configurations_sections_configuration_id_idx
   ON configurations_sections(configuration_id);
 
@@ -90,6 +97,8 @@ SET section_processing = COALESCE((
 
 DROP INDEX IF EXISTS configurations_sections_code_idx;
 DROP INDEX IF EXISTS configurations_sections_configuration_id_idx;
+
+DROP TRIGGER IF EXISTS update_configurations_sections_updated_at ON configurations_sections;
 
 DROP TABLE IF EXISTS configurations_sections;
 

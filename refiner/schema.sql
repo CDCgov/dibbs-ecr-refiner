@@ -462,6 +462,13 @@ CREATE TRIGGER update_conditions_updated_at BEFORE UPDATE ON public.conditions F
 
 
 --
+-- Name: configurations_sections update_configurations_sections_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_configurations_sections_updated_at BEFORE UPDATE ON public.configurations_sections FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: configurations update_configurations_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
