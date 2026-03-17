@@ -1,5 +1,4 @@
 from collections import defaultdict
-from dataclasses import asdict
 from typing import Any
 from uuid import UUID
 
@@ -36,22 +35,16 @@ async def insert_configuration_sections_db(
     configuration_id: UUID,
     sections_to_insert: list[DbConfigurationSectionProcessing],
     cur: AsyncCursor[CursorType],
-) -> list[DbConfigurationSectionProcessing]:
+) -> None:
     """
     Inserts sections into configurations_sections table.
     """
     query = """
-        INSERT INTO configuration_sections (
+        INSERT INTO configurations_sections (
             configuration_id, code, name, action, include, narrative, versions
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (configuration_id, code) DO UPDATE SET
-            name = EXCLUDED.name,
-            action = EXCLUDED.action,
-            include = EXCLUDED.include,
-            narrative = EXCLUDED.narrative,
-            versions = EXCLUDED.versions,
-            updated_at = now();
+
     """
 
     params = [
@@ -59,20 +52,15 @@ async def insert_configuration_sections_db(
             configuration_id,
             s.code,
             s.name,
-            s.action,  # if enum, pass string label or adapt type
+            s.action,
             s.include,
             s.narrative,
-            s.versions,  # text[]
+            s.versions,
         )
         for s in sections_to_insert
     ]
 
     await cur.executemany(query, params)
-    rows = await cur.fetchall()
-    if not rows:
-        return None
-
-    return rows
 
 
 async def insert_configuration_db(
@@ -89,7 +77,7 @@ async def insert_configuration_db(
     for easier display and searching. The authoritative clinical context is still given by `condition_id`.
     """
 
-    query = """
+    config_insert_query = """
     INSERT INTO configurations (
         jurisdiction_id,
         condition_id,
@@ -130,16 +118,6 @@ async def insert_configuration_db(
                     for c in config_to_clone.custom_codes
                 ]
             ),
-            # section_processing
-            Jsonb(
-                [
-                    asdict(c)
-                    for c in clone_section_processing_instructions(
-                        clone_from=config_to_clone.section_processing,
-                        clone_to=get_default_sections(),
-                    )
-                ]
-            ),
         )
     else:
         params = (
@@ -154,29 +132,46 @@ async def insert_configuration_db(
             Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
             # custom_codes
             EMPTY_JSONB,
-            # section_processing
-            Jsonb([asdict(s) for s in get_default_sections()]),
         )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
+            await cur.execute(config_insert_query, params)
             row = await cur.fetchone()
             if not row:
                 return None
 
-            config = DbConfiguration.from_db_row(row)
+            config_id = row["id"]
+
+            if config_to_clone:
+                await insert_configuration_sections_db(
+                    configuration_id=config_id,
+                    sections_to_insert=clone_section_processing_instructions(
+                        clone_from=config_to_clone.section_processing,
+                        clone_to=get_default_sections(),
+                    ),
+                    cur=cur,
+                )
+            else:
+                await insert_configuration_sections_db(
+                    configuration_id=config_id,
+                    sections_to_insert=get_default_sections(),
+                    cur=cur,
+                )
+
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=config.jurisdiction_id,
+                    jurisdiction_id=jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=config.id,
+                    configuration_id=config_id,
                     event_type="create_configuration",
                     action_text="Created configuration",
                 ),
                 cursor=cur,
             )
-            return config
+    return await get_configuration_by_id_db(
+        id=row["id"], jurisdiction_id=jurisdiction_id, db=db
+    )
 
 
 async def get_configuration_sections_db(
