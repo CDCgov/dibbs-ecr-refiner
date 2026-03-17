@@ -636,7 +636,7 @@ function CustomCodesDetail({
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
-              <td className="w-1/2 text-right whitespace-nowrap">
+              <td className="w-1/2 pb-6 text-right whitespace-nowrap">
                 {!disabled && (
                   <>
                     <ModalToggleButton
