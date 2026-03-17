@@ -898,7 +898,6 @@ async def _get_configuration_section_by_code(
         FROM configurations_sections
         WHERE configuration_id = %s
         AND code = %s
-        ORDER BY name;
     """
     params = (configuration_id, code)
     async with db.get_connection() as conn:
