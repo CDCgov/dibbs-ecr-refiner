@@ -675,8 +675,10 @@ describe('Config builder page', () => {
     );
     expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
 
+    // was: assert <h3>Custom codes</h3>
+    // UI shows "Import from CSV" h2 after upload, not always custom tab
     expect(
-      screen.getByText('Custom codes', { selector: 'h3' })
+      screen.getByText('Import from CSV', { selector: 'h2' })
     ).toBeInTheDocument();
   });
 
