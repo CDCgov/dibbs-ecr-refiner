@@ -223,7 +223,7 @@ class TestConfigurations:
             response = await authed_client.patch(
                 f"/api/v1/configurations/{draft_id}/activate"
             )
-            assert response.status_code == 200
+            assert response.status_code == status.HTTP_200_OK
 
             # Mapping file and content
             mapping_file = await authed_client.get(
@@ -299,7 +299,7 @@ class TestConfigurations:
         # Now create a new configuration for activation
         payload = {"condition_id": str(condition["id"])}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         config_data = response.json()
         initial_configuration_id = config_data["id"]
         # Use the condition_id from the payload for subsequent steps
@@ -309,7 +309,7 @@ class TestConfigurations:
         response = await authed_client.patch(
             f"/api/v1/configurations/{initial_configuration_id}/activate"
         )
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "active"
@@ -332,14 +332,14 @@ class TestConfigurations:
             "/api/v1/configurations/", json=payload
         )
         new_draft_response_data = new_draft_response.json()
-        assert new_draft_response.status_code == 200
+        assert new_draft_response.status_code == status.HTTP_200_OK
         assert "id" in new_draft_response_data
 
         new_draft_response_id = new_draft_response_data["id"]
         new_draft_activation_response = await authed_client.patch(
             f"/api/v1/configurations/{new_draft_response_id}/activate"
         )
-        assert new_draft_activation_response.status_code == 200
+        assert new_draft_activation_response.status_code == status.HTTP_200_OK
         new_draft_activation_data = new_draft_activation_response.json()
         assert new_draft_activation_data["configuration_id"] == new_draft_response_id
         assert new_draft_activation_data["status"] == "active"
@@ -348,7 +348,7 @@ class TestConfigurations:
         validation_response = await authed_client.get(
             f"/api/v1/configurations/{initial_configuration_id}"
         )
-        assert validation_response.status_code == 200
+        assert validation_response.status_code == status.HTTP_200_OK
 
         validation_response_data = validation_response.json()
         assert validation_response_data["id"] == initial_configuration_id
@@ -434,7 +434,7 @@ class TestConfigurations:
         response = await authed_client.patch(
             f"/api/v1/configurations/{initial_configuration_id}/deactivate",
         )
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["configuration_id"] == initial_configuration_id
         assert data["status"] == "inactive"
@@ -451,7 +451,7 @@ class TestConfigurations:
         current_file_resp = await authed_client.get(
             f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
         )
-        assert current_file_resp.status_code == 200
+        assert current_file_resp.status_code == status.HTTP_200_OK
 
         # This is the previously activated version from the test above
         assert current_file_resp.json()["version"] is None
