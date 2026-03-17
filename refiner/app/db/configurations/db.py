@@ -677,20 +677,7 @@ async def add_bulk_custom_codes_to_configuration_db(
         SET custom_codes = %s::jsonb
         WHERE id = %s
         RETURNING
-            id,
-            name,
-            status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-            last_activated_at,
-            last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls;
+            id;
     """
 
     existing_codes = config.custom_codes or []
@@ -734,13 +721,12 @@ async def add_bulk_custom_codes_to_configuration_db(
                     cursor=cur,
                 )
 
-            # TODO: don't do this!
-            return BulkAddCustomCodesResult(
-                config=await get_configuration_by_id_db(
-                    id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
-                ),
-                added_count=len(new_codes_added),
-            )
+    return BulkAddCustomCodesResult(
+        config=await get_configuration_by_id_db(
+            id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+        ),
+        added_count=len(new_codes_added),
+    )
 
 
 async def delete_custom_code_from_configuration_db(
