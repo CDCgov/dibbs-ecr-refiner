@@ -41,9 +41,23 @@ async def insert_configuration_sections_db(
     """
     query = """
         INSERT INTO configurations_sections (
-            configuration_id, code, name, action, include, narrative, versions
+            configuration_id,
+            code,
+            name,
+            action,
+            include,
+            narrative,
+            versions
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
 
     """
 
