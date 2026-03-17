@@ -37,6 +37,14 @@ describe('EicrSectionReview', () => {
         narrative: false,
         versions: ['3.1', '3.1.1'],
       },
+      {
+        name: 'Narrative section',
+        action: 'retain',
+        include: true,
+        code: 'nar',
+        narrative: true,
+        versions: ['3.1'],
+      },
     ];
     renderWithClient(
       <EicrSectionReview
@@ -48,9 +56,8 @@ describe('EicrSectionReview', () => {
 
     const rows = screen.getAllByRole('row');
 
-    expect(rows).toHaveLength(4); // including header
+    expect(rows).toHaveLength(5);
 
-    // get the table rows
     const firstRow = rows[1];
     const firstRowCells = within(firstRow).getAllByRole('cell');
 
@@ -60,10 +67,15 @@ describe('EicrSectionReview', () => {
     const thirdRow = rows[3];
     const thirdRowCells = within(thirdRow).getAllByRole('cell');
 
-    // check the contents of each row
+    const fourthRow = rows[4];
+    const fourthRowCells = within(fourthRow).getAllByRole('cell');
+
     expect(within(firstRow).getByRole('checkbox')).toBeChecked();
     expect(firstRowCells[1]).toHaveTextContent('History section');
-    expect(within(firstRow).getByRole('switch')).toBeChecked();
+    const firstRowSwitches = within(firstRow).getAllByRole('switch');
+    expect(firstRowSwitches).toHaveLength(2);
+    expect(firstRowSwitches[0]).toBeChecked();
+    expect(firstRowSwitches[1]).not.toBeChecked();
 
     expect(within(secondRow).getByRole('checkbox')).not.toBeChecked();
     expect(secondRowCells[1]).toHaveTextContent('Med section');
@@ -71,6 +83,16 @@ describe('EicrSectionReview', () => {
 
     expect(within(thirdRow).getByRole('checkbox')).toBeChecked();
     expect(thirdRowCells[1]).toHaveTextContent('Immuizations section');
-    expect(within(thirdRow).getByRole('switch')).not.toBeChecked();
+    const thirdRowSwitches = within(thirdRow).getAllByRole('switch');
+    expect(thirdRowSwitches).toHaveLength(2);
+    expect(thirdRowSwitches[0]).not.toBeChecked();
+    expect(thirdRowSwitches[1]).not.toBeChecked();
+
+    expect(within(fourthRow).getByRole('checkbox')).toBeChecked();
+    expect(fourthRowCells[1]).toHaveTextContent('Narrative section');
+    const fourthRowSwitches = within(fourthRow).getAllByRole('switch');
+    expect(fourthRowSwitches).toHaveLength(2);
+    expect(fourthRowSwitches[0]).not.toBeChecked();
+    expect(fourthRowSwitches[1]).toBeChecked();
   });
 });
