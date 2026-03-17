@@ -179,16 +179,22 @@ async def deactivate_configuration_db(
     user_id: UUID,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,
-) -> UUID | None:
+) -> DbConfiguration | None:
     """
     Deactivate the specified configuration and return relevant status info.
     """
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as internal_cur:
-            return await _deactivate_configuration_db(
+            deactivated_config_id = await _deactivate_configuration_db(
                 configuration_id=configuration_id,
                 user_id=user_id,
                 jurisdiction_id=jurisdiction_id,
                 cur=internal_cur,
             )
+            if not deactivated_config_id:
+                return None
+
+    return await get_configuration_by_id_db(
+        id=deactivated_config_id, jurisdiction_id=jurisdiction_id, db=db
+    )
