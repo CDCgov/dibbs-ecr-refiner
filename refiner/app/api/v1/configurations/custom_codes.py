@@ -62,7 +62,10 @@ class CodeSystem(StrEnum):
         return sanitized
 
 
-ALLOWED_CUSTOM_CODE_SYSTEMS = {system.value for system in CodeSystem}
+ALLOWED_CUSTOM_CODE_SYSTEMS: set[CodeSystem] = set(CodeSystem)
+ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
+    item.value for item in ALLOWED_CUSTOM_CODE_SYSTEMS
+)
 
 
 def _sanitize_system_or_raise(
@@ -172,7 +175,7 @@ async def add_custom_code(
     if sanitized_system_name not in ALLOWED_CUSTOM_CODE_SYSTEMS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"System must be one of {ALLOWED_CUSTOM_CODE_SYSTEMS}. Got: {sanitized_system_name}",
+            detail=f"System must be one of [{ALLOWED_CUSTOM_CODE_SYSTEM_NAMES}]. Got: {sanitized_system_name.value}",
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
