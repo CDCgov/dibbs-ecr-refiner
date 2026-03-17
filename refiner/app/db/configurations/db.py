@@ -229,7 +229,7 @@ async def get_configuration_sections_db(
 
 async def _map_sections_to_config_db(
     raw_configurations: list[DictRow], db: AsyncDatabaseConnection
-) -> dict[str, DbConfigurationSection]:
+) -> list[DictRow]:
     updated_configs_list = raw_configurations.copy()
     configuration_ids: list[UUID] = [row["id"] for row in updated_configs_list]
     sections = await get_configuration_sections_db(
