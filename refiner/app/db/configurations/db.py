@@ -34,7 +34,7 @@ type CursorType = dict[str, Any]
 async def _insert_configuration_sections_db(
     configuration_id: UUID,
     sections_to_insert: list[DbConfigurationSectionProcessing],
-    cur: AsyncCursor[CursorType],
+    cursor: AsyncCursor[CursorType],
 ) -> None:
     """
     Inserts sections into configurations_sections table.
@@ -74,7 +74,7 @@ async def _insert_configuration_sections_db(
         for s in sections_to_insert
     ]
 
-    await cur.executemany(query, params)
+    await cursor.executemany(query, params)
 
 
 async def insert_configuration_db(
@@ -91,7 +91,7 @@ async def insert_configuration_db(
     for easier display and searching. The authoritative clinical context is still given by `condition_id`.
     """
 
-    config_insert_query = """
+    query = """
     INSERT INTO configurations (
         jurisdiction_id,
         condition_id,
@@ -150,7 +150,7 @@ async def insert_configuration_db(
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(config_insert_query, params)
+            await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
                 return None
@@ -164,13 +164,13 @@ async def insert_configuration_db(
                         clone_from=config_to_clone.section_processing,
                         clone_to=get_default_sections(),
                     ),
-                    cur=cur,
+                    cursor=cur,
                 )
             else:
                 await _insert_configuration_sections_db(
                     configuration_id=config_id,
                     sections_to_insert=get_default_sections(),
-                    cur=cur,
+                    cursor=cur,
                 )
 
             await insert_event_db(
@@ -188,7 +188,7 @@ async def insert_configuration_db(
     )
 
 
-async def get_configuration_sections_db(
+async def _get_configuration_sections_db(
     configuration_ids: list[UUID], db: AsyncDatabaseConnection
 ) -> list[DbConfigurationSection]:
     """
@@ -230,23 +230,26 @@ async def get_configuration_sections_db(
 async def _map_sections_to_config_db(
     raw_configurations: list[DictRow], db: AsyncDatabaseConnection
 ) -> list[DictRow]:
+    """
+    Given a list of unprocessed configurations, adds a `section_processing` key with a list of section data.
+
+    Args:
+        raw_configurations (list[DictRow]): List of unprocessed configuration data coming from the database
+        db (AsyncDatabaseConnection): The database connection.
+
+    Returns:
+        list[DictRow]: List of unprocessed configuration data that includes `section_processing`
+    """
     updated_configs_list = raw_configurations.copy()
     configuration_ids: list[UUID] = [row["id"] for row in updated_configs_list]
-    sections = await get_configuration_sections_db(
+    sections = await _get_configuration_sections_db(
         configuration_ids=configuration_ids, db=db
     )
     sections_by_config: dict[str, list[dict]] = defaultdict(list)
 
     for section in sections:
         sections_by_config[str(section.configuration_id)].append(
-            {
-                "code": section.code,
-                "name": section.name,
-                "action": section.action,
-                "include": section.include,
-                "versions": section.versions,
-                "narrative": section.narrative,
-            }
+            section.to_processing_dict()
         )
     for config in updated_configs_list:
         config["section_processing"] = sections_by_config.get(str(config["id"]), [])
