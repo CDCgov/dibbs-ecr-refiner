@@ -62,12 +62,7 @@ class CodeSystem(StrEnum):
         return sanitized
 
 
-ALLOWED_CUSTOM_CODE_SYSTEMS = {
-    CodeSystem.LOINC,
-    CodeSystem.SNOMED,
-    CodeSystem.ICD10,
-    CodeSystem.RXNORM,
-}
+ALLOWED_CUSTOM_CODE_SYSTEMS = {system.value for system in CodeSystem}
 
 
 def _sanitize_system_or_raise(
