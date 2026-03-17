@@ -12,9 +12,9 @@ import {
 import {
   UploadCustomCodesPreviewItem,
   UploadCustomCodesPreviewItemSystem,
-} from '../../api/schemas';
+} from '../../../api/schemas';
 
-import { Button } from '../Button';
+import { Button } from '../../../components/Button';
 
 // Confirm Modal
 interface ConfirmModalProps {

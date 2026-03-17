@@ -35,7 +35,7 @@ import {
   ConfirmModal,
   UndoModal,
   PreviewEditModal,
-} from '../../../components/Modal';
+} from './CsvCodeUploadModal';
 import { useSearch } from '../../../hooks/useSearch';
 import {
   getGetConfigurationQueryKey,
