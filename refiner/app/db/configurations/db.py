@@ -721,10 +721,14 @@ async def add_bulk_custom_codes_to_configuration_db(
                     cursor=cur,
                 )
 
+    updated_config = await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
+    if not updated_config:
+        return None
+
     return BulkAddCustomCodesResult(
-        config=await get_configuration_by_id_db(
-            id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
-        ),
+        config=updated_config,
         added_count=len(new_codes_added),
     )
 
