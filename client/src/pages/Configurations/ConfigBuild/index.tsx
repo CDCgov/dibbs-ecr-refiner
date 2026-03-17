@@ -1139,7 +1139,7 @@ const PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[] =
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
-  system: UploadCustomCodesPreviewItemSystem['ICD-10'],
+  system: UploadCustomCodesPreviewItemSystem['Other'],
   name: '',
 };
 
