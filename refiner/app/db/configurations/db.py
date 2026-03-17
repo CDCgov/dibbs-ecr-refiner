@@ -157,6 +157,7 @@ async def insert_configuration_db(
 
             config_id = row["id"]
 
+            # Insert either cloned sections or brand new sections as part of the same transaction
             if config_to_clone:
                 await _insert_configuration_sections_db(
                     configuration_id=config_id,
@@ -311,7 +312,8 @@ async def get_configuration_by_id_db(
     """
     Fetch a configuration by the given ID.
     """
-    # TODO: This query is kind of a hack. Improve or leave for now?
+    # TODO: Leaving `section_processing` as JSONB on read for compatability.
+    # We may want to revisit this at some point.
     query = """
     SELECT
         c.id,
