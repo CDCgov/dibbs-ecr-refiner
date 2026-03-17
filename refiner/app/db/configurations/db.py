@@ -31,7 +31,7 @@ EMPTY_JSONB = Jsonb([])
 type CursorType = dict[str, Any]
 
 
-async def insert_configuration_sections_db(
+async def _insert_configuration_sections_db(
     configuration_id: UUID,
     sections_to_insert: list[DbConfigurationSectionProcessing],
     cur: AsyncCursor[CursorType],
@@ -158,7 +158,7 @@ async def insert_configuration_db(
             config_id = row["id"]
 
             if config_to_clone:
-                await insert_configuration_sections_db(
+                await _insert_configuration_sections_db(
                     configuration_id=config_id,
                     sections_to_insert=clone_section_processing_instructions(
                         clone_from=config_to_clone.section_processing,
@@ -167,7 +167,7 @@ async def insert_configuration_db(
                     cur=cur,
                 )
             else:
-                await insert_configuration_sections_db(
+                await _insert_configuration_sections_db(
                     configuration_id=config_id,
                     sections_to_insert=get_default_sections(),
                     cur=cur,
