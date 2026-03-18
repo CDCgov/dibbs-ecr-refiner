@@ -706,7 +706,8 @@ def build_section_insert_sql(config_id_sql: str, sections: list[dict]) -> str:
             '{section["action"]}',
             {str(section["include"]).lower()},
             {str(section["narrative"]).lower()},
-            ARRAY[{", ".join(f"'{v}'" for v in section["versions"])}]
+            ARRAY[{", ".join(f"'{v}'" for v in section["versions"])}],
+            'standard'
         )"""
         for section in sections
     )
@@ -719,7 +720,8 @@ def build_section_insert_sql(config_id_sql: str, sections: list[dict]) -> str:
             action,
             include,
             narrative,
-            versions
+            versions,
+            section_type
         )
         VALUES
         {values}

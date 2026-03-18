@@ -7,6 +7,8 @@ type DbSectionAction = Literal["retain", "refine"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
+type DbSectionType = Literal["standard", "custom"]
+
 
 @dataclass(frozen=True)
 class GetConfigurationResponseVersion:

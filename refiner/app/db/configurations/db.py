@@ -47,9 +47,11 @@ async def _insert_configuration_sections_db(
             action,
             include,
             narrative,
-            versions
+            versions,
+            section_type
         )
         VALUES (
+            %s,
             %s,
             %s,
             %s,
@@ -70,6 +72,7 @@ async def _insert_configuration_sections_db(
             s.include,
             s.narrative,
             s.versions,
+            "standard",
         )
         for s in sections_to_insert
     ]
