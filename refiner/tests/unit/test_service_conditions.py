@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 
 from app.db.conditions.model import DbCondition
-from app.services.conditions import _get_computed_name, create_condition_mapping_payload
+from app.services.conditions import create_condition_mapping_payload
 
 
 def _make_db_condition(name: str, url: str, version: str, rsg_code: str):
