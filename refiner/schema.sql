@@ -65,7 +65,10 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'lock_acquire',
     'lock_release',
     'lock_renew',
-    'bulk_add_custom_code'
+    'bulk_add_custom_code',
+    'create_custom_section',
+    'edit_custom_section',
+    'delete_custom_section'
 );
 
 

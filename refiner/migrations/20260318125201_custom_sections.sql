@@ -1,4 +1,14 @@
 -- migrate:up
+
+ALTER TYPE event_type_enum
+    ADD VALUE IF NOT EXISTS 'create_custom_section';
+
+ALTER TYPE event_type_enum
+    ADD VALUE IF NOT EXISTS 'edit_custom_section';
+
+ALTER TYPE event_type_enum
+    ADD VALUE IF NOT EXISTS 'delete_custom_section';
+
 CREATE TYPE configurations_sections_type AS ENUM (
     'standard',
     'custom'
