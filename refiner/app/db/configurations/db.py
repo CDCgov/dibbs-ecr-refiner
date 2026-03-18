@@ -74,6 +74,8 @@ async def insert_custom_section_db(
             %s
         )
         """
+
+    versions: list[str] = []
     params = (
         config.id,
         code,
@@ -81,7 +83,7 @@ async def insert_custom_section_db(
         "refine",
         True,
         False,
-        [],
+        versions,
         "custom",
     )
 

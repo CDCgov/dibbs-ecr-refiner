@@ -80,7 +80,7 @@ async def insert_custom_section(
             )
 
     updated_config = await insert_custom_section_db(
-        config=config, user_id=user.id, section_input=section_input, db=db
+        config=config, user_id=user.id, custom_section_input=section_input, db=db
     )
 
     if not updated_config:
