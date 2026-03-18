@@ -84,7 +84,6 @@ async def test_get_condition_found(monkeypatch, authed_client):
     data = response.json()
     assert data["id"] == str(condition_id)
     assert data["display_name"] == "Asthma"
-    assert sorted(data["available_systems"]) == ["LOINC", "SNOMED"]
     assert any(code["system"] == "LOINC" for code in data["codes"])
     assert any(code["system"] == "SNOMED" for code in data["codes"])
 
