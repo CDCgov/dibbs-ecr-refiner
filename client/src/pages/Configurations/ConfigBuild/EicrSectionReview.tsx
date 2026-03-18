@@ -8,9 +8,16 @@ import {
   useUpdateConfigurationSectionProcessing,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
-import React, { JSX } from 'react';
-import { Button } from '../../../components/Button';
+import {
+  ModalRef,
+  Tooltip as USWDSTooltip,
+  Modal as USWDSModal,
+  ModalFooter,
+  ModalHeading,
+  ButtonGroup,
+} from '@trussworks/react-uswds';
+import React, { JSX, useRef } from 'react';
+import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
 /**
  * TODO: please refer to specification.py
@@ -39,12 +46,17 @@ export function EicrSectionReview({
   sectionProcessing,
   disabled,
 }: EicrSectionReviewProps) {
+  const modalRef = useRef<ModalRef>(null);
+
   return (
     <section className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
-          <Button variant="tertiary">Add custom section +</Button>
+          <ModalToggleButton modalRef={modalRef} variant="tertiary" opener>
+            Add custom section +
+          </ModalToggleButton>
+          <Modal ref={modalRef} />
         </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
@@ -110,6 +122,40 @@ export function EicrSectionReview({
         </tbody>
       </table>
     </section>
+  );
+}
+
+interface ModalProps {
+  ref: React.RefObject<ModalRef | null>;
+}
+
+function Modal({ ref }: ModalProps) {
+  return (
+    <USWDSModal
+      ref={ref}
+      id="custom-section-modal"
+      aria-labelledby="modal-heading"
+      aria-describedby="modal-description"
+    >
+      <ModalHeading id="modal-heading">
+        Are you sure you want to continue?
+      </ModalHeading>
+      <div>
+        <p id="modal-description">
+          You have unsaved changes that will be lost.
+        </p>
+      </div>
+      <ModalFooter>
+        <ButtonGroup>
+          <ModalToggleButton modalRef={ref} closer>
+            Add section
+          </ModalToggleButton>
+          <ModalToggleButton modalRef={ref} closer>
+            Cancel
+          </ModalToggleButton>
+        </ButtonGroup>
+      </ModalFooter>
+    </USWDSModal>
   );
 }
 
