@@ -149,9 +149,16 @@ class AddCustomCodeInput(BaseModel):
         """
         Make the system lowercase before Pydantic checks it.
         """
+
         if not isinstance(v, str):
             raise TypeError('"system" must be a string')
-        return v.lower()
+
+        lookup = {item.value.lower(): item for item in CodeSystem}
+        norm_input = v.lower()
+        if norm_input in lookup:
+            return lookup[norm_input]
+
+        return v
 
 
 @dataclass(frozen=True)

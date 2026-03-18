@@ -7,7 +7,9 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
-from app.api.v1.configurations.custom_codes.model import CodeSystem
+from app.api.v1.configurations.custom_codes.model import (
+    CodeSystem,
+)
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
@@ -228,8 +230,12 @@ async def test_disassociate_codeset_with_configuration(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "code_system",
+    list(CodeSystem),
+)
 async def test_add_custom_code_to_configuration(
-    authed_client, mock_configuration, monkeypatch
+    authed_client, mock_configuration, monkeypatch, code_system
 ):
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
@@ -240,7 +246,7 @@ async def test_add_custom_code_to_configuration(
         mock_configuration,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="test-code", name="test-name", system=CodeSystem.LOINC
+                code="test-code", name="test-name", system=code_system
             )
         ],
     )
@@ -250,7 +256,7 @@ async def test_add_custom_code_to_configuration(
     )
 
     config_id = str(mock_configuration.id)
-    payload = {"code": "test-code", "name": "test-name", "system": "loinc"}
+    payload = {"code": "test-code", "name": "test-name", "system": code_system}
     response = await authed_client.post(
         f"/api/v1/configurations/{config_id}/custom-codes", json=payload
     )
@@ -258,7 +264,7 @@ async def test_add_custom_code_to_configuration(
     data = response.json()
     assert len(data["custom_codes"]) == 1
     assert data["custom_codes"][0]["code"] == "test-code"
-    assert data["custom_codes"][0]["system"] == "LOINC"
+    assert data["custom_codes"][0]["system"] == code_system
 
 
 @pytest.mark.asyncio
