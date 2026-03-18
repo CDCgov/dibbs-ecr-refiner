@@ -3,6 +3,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.db.configurations.model import ALLOWED_CUSTOM_CODE_SYSTEMS
+
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
@@ -64,7 +66,6 @@ class GetConditionResponse:
     id: UUID
     display_name: str
     output_name: str
-    available_systems: list[str]
     codes: list[GetConditionCode]
 
 
@@ -101,13 +102,9 @@ async def get_condition(
         id=condition.id, db=db
     )
 
-    # Get all systems in a list (['LOINC', 'SNOMED'])
-    available_systems = sorted({code.system for code in condition_codes})
-
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
         output_name=condition.output_name,
-        available_systems=available_systems,
         codes=condition_codes,
     )

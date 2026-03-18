@@ -799,7 +799,7 @@ function ConditionCodeTable({
             <option key="all-code-systems" value="all">
               All code systems
             </option>
-            {response.data.available_systems.map((system) => (
+            {Object.keys(CodeSystem).map((system) => (
               <option key={system} value={system}>
                 {system}
               </option>

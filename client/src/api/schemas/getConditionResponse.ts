@@ -11,6 +11,5 @@ export interface GetConditionResponse {
   id: string;
   display_name: string;
   output_name: string;
-  available_systems: string[];
   codes: GetConditionCode[];
 }
