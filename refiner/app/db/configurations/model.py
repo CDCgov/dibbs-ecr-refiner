@@ -56,7 +56,7 @@ class DbConfigurationCustomCode:
     """
 
     code: str
-    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm", "Other"]
     name: str
 
 
