@@ -205,14 +205,18 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   primary code: observation/code SHOULD be LOINC (CONF:1098-31030)
 #   eICR trigger: SHALL be from RCTC lab test orders (CONF:3284-336)
 #
-# rule 2 — Planned Medication Activity
-#   IG template: Planned Medication Activity (V2) (2.16.840.1.113883.10.20.22.4.42)
+# rule 2 — Medication Activity
+#   IG template: Medication Activity (V2) (2.16.840.1.113883.10.20.22.4.16)
+#   note: Planned Medication Activity (4.42) conforms to Medication Activity (4.16),
+#     so targeting 4.16 catches both planned and non-planned medication entries
 #   inner template: Medication Information (V2) (2.16.840.1.113883.10.20.22.4.23)
 #   primary code: manufacturedMaterial/code SHALL be RxNorm (CONF:1098-7412)
 #   translation:  manufacturedMaterial/code/translation MAY have NDC (CONF:1098-31884)
 #
-# rule 3 — Planned Immunization Activity
-#   IG template: Planned Immunization Activity (2.16.840.1.113883.10.20.22.4.120)
+# rule 3 — Immunization Activity
+#   IG template: Immunization Activity (V3) (2.16.840.1.113883.10.20.22.4.52)
+#   note: Planned Immunization Activity (4.120) conforms to Immunization Activity (4.52),
+#     so targeting 4.52 catches both planned and non-planned immunization entries
 #   inner template: Immunization Medication Information (V2) (2.16.840.1.113883.10.20.22.4.54)
 #   primary code: manufacturedMaterial/code SHALL be CVX (CONF:1098-9007)
 #   translation:  manufacturedMaterial/code/translation MAY be RxNorm (CONF:1098-31543)
@@ -235,31 +239,31 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
         ),
         code_system_oid="2.16.840.1.113883.6.1",  # LOINC
     ),
-    # rule 2 — planned medication activity (scoped to Planned Medication Activity template)
+    # rule 2 — medication activity (scoped to base Medication Activity template)
     EntryMatchRule(
         code_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.42']]"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.16']]"
             "//hl7:manufacturedMaterial/hl7:code"
         ),
         code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
         translation_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.42']]"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.16']]"
             "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
         ),
     ),
-    # rule 3 — planned immunization activity (scoped to Planned Immunization template)
+    # rule 3 — immunization activity (scoped to base Immunization Activity template)
     EntryMatchRule(
         code_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.120']]"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
             "//hl7:manufacturedMaterial/hl7:code"
         ),
         code_system_oid="2.16.840.1.113883.12.292",  # CVX
         translation_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.120']]"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
             "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
         ),
         translation_code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
