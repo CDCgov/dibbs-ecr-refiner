@@ -3,8 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.api.v1.configurations.custom_codes.model import CodeSystem
 from app.db.configurations.model import (
+    CodeSystem,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,

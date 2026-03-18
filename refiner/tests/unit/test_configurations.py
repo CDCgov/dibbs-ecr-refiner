@@ -7,13 +7,11 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
-from app.api.v1.configurations.custom_codes.model import (
-    CodeSystem,
-)
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
+    CodeSystem,
     DbConfiguration,
     DbConfigurationCondition,
     DbConfigurationCustomCode,

@@ -1,8 +1,11 @@
 from uuid import uuid4
 
-from app.api.v1.configurations.custom_codes.model import CodeSystem
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from app.db.configurations.model import (
+    CodeSystem,
+    DbConfiguration,
+    DbConfigurationCustomCode,
+)
 from app.services.terminology import (
     ConfigurationPayload,
     ProcessedConfiguration,

@@ -7,11 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.custom_codes.model import (
-    ALLOWED_CUSTOM_CODE_SYSTEM_NAMES,
-    ALLOWED_CUSTOM_CODE_SYSTEMS,
-    CodeSystem,
-)
 from app.api.v1.configurations.model import (
     AddCustomCodeInput,
     ConfigurationCustomCodeResponse,
@@ -28,6 +23,9 @@ from app.db.configurations.db import (
     get_total_condition_code_counts_by_configuration_db,
 )
 from app.db.configurations.model import (
+    ALLOWED_CUSTOM_CODE_SYSTEM_NAMES,
+    ALLOWED_CUSTOM_CODE_SYSTEMS,
+    CodeSystem,
     DbConfiguration,
     DbConfigurationCustomCode,
 )
