@@ -206,12 +206,19 @@ def process_refiner(
     """
     # Extract reportable conditions by jurisdiction from RR
     reportability_result = determine_reportability(xml_files)
+    reportable_groups = reportability_result["reportable_conditions"]
+    logger.info(
+        "Running refinement based on the following information:",
+        reportable_group_payload=reportable_groups,
+        operation="determined_reportability",
+    )
+
     refiner_output_files: list[str] = []
     metadata: dict[str, dict[str, bool]] = {}
     non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
 
     # Process each jurisdiction
-    for jurisdiction_group in reportability_result["reportable_conditions"]:
+    for jurisdiction_group in reportable_groups:
         jurisdiction_code = jurisdiction_group.jurisdiction.upper()
 
         if jurisdiction_code not in metadata:
@@ -254,14 +261,13 @@ def process_refiner(
                     # keep track of non active conditions for final processing
                     non_active_reportable_conditions[jurisdiction_code].add(rsg_code)
                     logger.info(
-                        "No active configuration for specified code, skipping.",
-                        key=rsg_code,
-                        jurisdiction_code=jurisdiction_code,
+                        "RSG code isn't in the CG map, skipping.",
+                        rsg_code=rsg_code,
                         rsg_cg_payload=rsg_cg_payload.to_dict(),
+                        jurisdiction_code=jurisdiction_code,
                         operation="skipped",
                     )
                     continue
-
                 cg_metadata = rsg_cg_payload.mappings[rsg_code]
 
                 current_file_key = get_current_file_key(
@@ -282,7 +288,7 @@ def process_refiner(
                         "No active configuration identified, skipping.",
                         key=current_file_key,
                         jurisdiction_code=jurisdiction_code,
-                        rsg_code=rsg_metadata,
+                        rsg_metadata=rsg_metadata,
                         operation="skipped",
                     )
                     continue
