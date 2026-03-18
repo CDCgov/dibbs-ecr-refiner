@@ -1,6 +1,5 @@
 import csv
 import io
-from enum import StrEnum
 from logging import Logger
 from uuid import UUID
 
@@ -8,6 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
+from app.api.v1.configurations.custom_codes.model import (
+    ALLOWED_CUSTOM_CODE_SYSTEM_NAMES,
+    ALLOWED_CUSTOM_CODE_SYSTEMS,
+    CodeSystem,
+)
 from app.api.v1.configurations.model import (
     AddCustomCodeInput,
     ConfigurationCustomCodeResponse,
@@ -33,39 +37,6 @@ from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
-
-
-class CodeSystem(StrEnum):
-    """
-    An Enum for code systems.
-    """
-
-    LOINC = "LOINC"
-    SNOMED = "SNOMED"
-    ICD10 = "ICD-10"
-    RXNORM = "RxNorm"
-    OTHER = "Other"
-
-    @classmethod
-    def sanitize(cls, value: str) -> "CodeSystem":
-        """
-        Convert value to a santized name from the CodeSystem.
-        """
-        if not isinstance(value, str):
-            raise ValueError(f"System name provided: {value} is invalid.")
-
-        mapping = {item.value.lower(): item for item in cls}
-        sanitized = mapping.get(value.strip().lower())
-        if not sanitized:
-            raise ValueError(f"System name provided: {value} is invalid.")
-
-        return sanitized
-
-
-ALLOWED_CUSTOM_CODE_SYSTEMS: set[CodeSystem] = set(CodeSystem)
-ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
-    item.value for item in ALLOWED_CUSTOM_CODE_SYSTEMS
-)
 
 
 def _sanitize_system_or_raise(
@@ -179,7 +150,7 @@ async def add_custom_code(
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=sanitized_system_name.value,
+        system=sanitized_system_name,
         name=body.name,
     )
 
@@ -316,7 +287,7 @@ async def upload_custom_codes_csv(
             preview_items.append(
                 UploadCustomCodesPreviewItem(
                     code=code,
-                    system=sanitized_system.value,
+                    system=sanitized_system,
                     name=name,
                     row=row_number,
                 )
@@ -578,7 +549,7 @@ def _get_modified_custom_codes(
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
-        system=new_system_value.value
+        system=new_system_value
         if isinstance(new_system_value, CodeSystem)
         else new_system_value,
     )

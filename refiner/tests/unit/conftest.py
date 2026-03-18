@@ -102,7 +102,7 @@ def test_app(mock_db):
 @pytest.fixture
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=UUID("5deb43c2-6a82-4052-9918-616e01d255c7"),
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -119,10 +119,12 @@ def mock_condition():
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
+        output_name="Hyptertension",
         snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("124124", "Hypertension CVX")],
     )
 
 

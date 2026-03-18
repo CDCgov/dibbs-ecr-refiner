@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import status
 
+from app.api.v1.configurations.custom_codes.model import CodeSystem
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
@@ -46,6 +47,7 @@ def mock_db_functions(
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
+        output_name="Hypertension",
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
@@ -53,6 +55,7 @@ def mock_db_functions(
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("15251", "Hypertension CVX")],
     )
 
     monkeypatch.setattr(
@@ -152,7 +155,7 @@ def mock_db_functions(
 
     # for get_total_condition_code_counts_by_configuration_db, could use a list of count objects if needed
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_total_condition_code_counts_by_configuration_db",
+        "app.api.v1.configurations.custom_codes.base.get_total_condition_code_counts_by_configuration_db",
         AsyncMock(return_value=[]),
     )
 
@@ -229,7 +232,7 @@ async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch
 ):
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
     # Mock adding custom code to a config
@@ -237,12 +240,12 @@ async def test_add_custom_code_to_configuration(
         mock_configuration,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="test-code", name="test-name", system="LOINC"
+                code="test-code", name="test-name", system=CodeSystem.LOINC
             )
         ],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.add_custom_code_to_configuration_db",
+        "app.api.v1.configurations.custom_codes.base.add_custom_code_to_configuration_db",
         AsyncMock(return_value=custom_code_config_mock),
     )
 
@@ -263,7 +266,7 @@ async def test_delete_custom_code_from_configuration(
     authed_client, mock_configuration, monkeypatch
 ):
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
     # Mock deleting a custom code from a config
@@ -272,7 +275,7 @@ async def test_delete_custom_code_from_configuration(
         custom_codes=[],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.delete_custom_code_from_configuration_db",
+        "app.api.v1.configurations.custom_codes.base.delete_custom_code_from_configuration_db",
         AsyncMock(return_value=custom_code_deletion_mock),
     )
 
@@ -297,12 +300,12 @@ async def test_edit_custom_code_from_configuration(
         mock_configuration,
         custom_codes=[
             DbConfigurationCustomCode(
-                code="edited-code", name="updated-name", system="SNOMED"
+                code="edited-code", name="updated-name", system=CodeSystem.SNOMED
             )
         ],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.edit_custom_code_from_configuration_db",
+        "app.api.v1.configurations.custom_codes.base.edit_custom_code_from_configuration_db",
         AsyncMock(return_value=custom_code_edit_mock),
     )
 
@@ -316,7 +319,7 @@ async def test_edit_custom_code_from_configuration(
         included_conditions=[],
         custom_codes=[
             DbConfigurationCustomCode(
-                code="test-code", name="test-name", system="LOINC"
+                code="test-code", name="test-name", system=CodeSystem.LOINC
             )
         ],
         section_processing=[],
@@ -329,7 +332,7 @@ async def test_edit_custom_code_from_configuration(
         s3_urls=[],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
         AsyncMock(return_value=mock_config),
     )
 

@@ -27,6 +27,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
     condition_mock = DbCondition(
         id=UUID("22222222-2222-2222-2222-222222222222"),
         display_name="Condition A",
+        output_name="ConditionA",
         canonical_url="url-1",
         version="3.0.0",
         child_rsg_snomed_codes=["12345"],
@@ -34,6 +35,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         loinc_codes=[DbConditionCoding("54321", "LOINC Description")],
         icd10_codes=[DbConditionCoding("A00", "ICD10 Description")],
         rxnorm_codes=[DbConditionCoding("99999", "RXNORM Description")],
+        cvx_codes=[DbConditionCoding("99999", "CVX Description")],
     )
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_condition_by_id_db",
@@ -43,6 +45,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
+        output_name="Hypertension",
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
@@ -50,6 +53,7 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("15251", "Hypertension CVX")],
     )
 
     monkeypatch.setattr(

@@ -12,6 +12,7 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
+        output_name="Hypertension",
         canonical_url="http://url.com",
         version="4.0.0",
         child_rsg_snomed_codes=["11111"],
@@ -19,6 +20,7 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("124124", "Hypertension CVX")],
     )
 
     async def fake_get_latest_conditions_db(db):
@@ -45,6 +47,7 @@ async def test_get_condition_found(monkeypatch, authed_client):
     fake_condition = DbCondition(
         id=condition_id,
         display_name="Asthma",
+        output_name="Asthma",
         canonical_url="http://asthma.com",
         version="4.0.0",
         child_rsg_snomed_codes=["67890"],
@@ -52,6 +55,7 @@ async def test_get_condition_found(monkeypatch, authed_client):
         loinc_codes=[DbConditionCoding("1234-5", "Asthma LOINC")],
         icd10_codes=[DbConditionCoding("J45", "Asthma ICD10")],
         rxnorm_codes=[DbConditionCoding("55555", "Asthma RXNORM")],
+        cvx_codes=[DbConditionCoding("15125", "Asthma CVX")],
     )
 
     fake_codes = [

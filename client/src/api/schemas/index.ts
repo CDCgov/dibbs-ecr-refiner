@@ -7,12 +7,12 @@
  */
 
 export * from './addCustomCodeInput';
-export * from './addCustomCodeInputSystem';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
 export * from './bodyRunInlineConfigurationTest';
 export * from './bodyUploadEcr';
+export * from './codeSystem';
 export * from './condition';
 export * from './conditionEntry';
 export * from './configurationCustomCodeResponse';
@@ -22,7 +22,6 @@ export * from './confirmUploadCustomCodesInput';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
 export * from './dbConfigurationCustomCode';
-export * from './dbConfigurationCustomCodeSystem';
 export * from './dbConfigurationSectionProcessing';
 export * from './dbConfigurationStatus';
 export * from './dbSectionAction';
@@ -44,7 +43,6 @@ export * from './updateCustomCodeInput';
 export * from './updateSectionInput';
 export * from './uploadCustomCodesCsvInput';
 export * from './uploadCustomCodesPreviewItem';
-export * from './uploadCustomCodesPreviewItemSystem';
 export * from './uploadCustomCodesPreviewResponse';
 export * from './uploadCustomCodesResponse';
 export * from './uploadCustomCodesResponseErrors';

@@ -25,6 +25,7 @@ def _make_condition_v1_1(**kwargs) -> DbCondition:
     defaults = {
         "id": "fake-condition-id-v1-1",
         "display_name": "Test Condition v1.1",
+        "output_name": "TestConditionv11",
         "canonical_url": "http://example.com/condition/v1.1",
         "version": "1.1",
         "child_rsg_snomed_codes": [],
@@ -32,6 +33,7 @@ def _make_condition_v1_1(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -75,6 +77,7 @@ def _make_condition_v3_1_1(**kwargs) -> DbCondition:
     defaults = {
         "id": "fake-condition-id-v3-1-1",
         "display_name": "Test Condition v3.1.1",
+        "output_name": "TestConditionv311",
         "canonical_url": "http://example.com/condition/v3.1.1",
         "version": "3.1.1",
         "child_rsg_snomed_codes": [],
@@ -82,6 +85,7 @@ def _make_condition_v3_1_1(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -123,7 +127,7 @@ def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
     """
 
     plan = EICRRefinementPlan(
-        codes_to_check=(),
+        codes_to_check=set(),
         section_instructions={
             "29762-2": DbConfigurationSectionInstructions(
                 action="retain", include=True, narrative=False

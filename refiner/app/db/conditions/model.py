@@ -23,6 +23,9 @@ class DbConditionBase:
 
     id: UUID
     display_name: str
+    # this is the name we use for packaging in S3, which is the value of the
+    # condition name from the TES without special characters and spaces
+    # (ie "Guillain-Barré Syndrome" --> "GuillainBarreSyndrome").
     output_name: str
     canonical_url: str
     version: str

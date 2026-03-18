@@ -9,4 +9,5 @@
 export interface GetConditionsResponse {
   id: string;
   display_name: string;
+  output_name: string;
 }

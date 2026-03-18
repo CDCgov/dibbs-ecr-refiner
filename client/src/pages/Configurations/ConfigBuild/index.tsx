@@ -48,12 +48,10 @@ import {
   useUploadCustomCodesCsv,
 } from '../../../api/configurations/configurations';
 import {
-  AddCustomCodeInputSystem,
+  CodeSystem,
   DbConfigurationCustomCode,
-  DbConfigurationCustomCodeSystem,
   GetConfigurationResponse,
   UploadCustomCodesPreviewItem,
-  UploadCustomCodesPreviewItemSystem,
 } from '../../../api/schemas';
 import { useGetCondition } from '../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
@@ -885,7 +883,7 @@ export function CustomCodeModal({
   // Maybe get this info as part of the seed script?
   const systemValues = [
     { name: 'Select system', value: '' },
-    ...Object.values(UploadCustomCodesPreviewItemSystem).map((s) => ({
+    ...Object.values(CodeSystem).map((s) => ({
       name: s,
       value: s.toLowerCase(),
     })),
@@ -1110,10 +1108,8 @@ function ConditionCodeRow({
   );
 }
 
-function normalizeSystem(
-  system: DbConfigurationCustomCodeSystem | string
-): AddCustomCodeInputSystem {
-  return system.toLowerCase() as AddCustomCodeInputSystem;
+function normalizeSystem(system: CodeSystem | string): CodeSystem {
+  return system.toLowerCase() as CodeSystem;
 }
 
 interface ImportCustomCodesProps {
@@ -1134,12 +1130,11 @@ type PreviewRow = {
   matches?: readonly FuseResultMatch[];
 };
 
-const PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[] =
-  Object.values(UploadCustomCodesPreviewItemSystem);
+const PREVIEW_CODE_SYSTEMS: CodeSystem[] = Object.values(CodeSystem);
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
-  system: UploadCustomCodesPreviewItemSystem['Other'],
+  system: CodeSystem['Other'],
   name: '',
 };
 

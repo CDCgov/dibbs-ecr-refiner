@@ -5,10 +5,10 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { DbConfigurationCustomCodeSystem } from './dbConfigurationCustomCodeSystem';
+import type { CodeSystem } from './codeSystem';
 
 export interface DbConfigurationCustomCode {
   code: string;
-  system: DbConfigurationCustomCodeSystem;
+  system: CodeSystem;
   name: string;
 }

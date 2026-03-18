@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.api.v1.configurations.custom_codes.model import CodeSystem
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
@@ -140,7 +140,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: Literal["loinc", "snomed", "icd-10", "rxnorm", "other"]
+    system: CodeSystem
     name: str
 
     @field_validator("system", mode="before")
@@ -199,7 +199,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm", "Other"]
+    system: CodeSystem
     name: str
     row: int | None = None
 
