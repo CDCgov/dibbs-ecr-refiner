@@ -5,11 +5,22 @@ import { Switch, Checkbox, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
+  useInsertCustomSection,
   useUpdateConfigurationSectionProcessing,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
-import React, { JSX } from 'react';
+import {
+  ModalRef,
+  Tooltip as USWDSTooltip,
+  Modal as USWDSModal,
+  ModalFooter,
+  ModalHeading,
+  ButtonGroup,
+  TextInput,
+  Label as USWDSLabel,
+} from '@trussworks/react-uswds';
+import React, { JSX, useRef, useState } from 'react';
+import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
 /**
  * TODO: please refer to specification.py
@@ -38,10 +49,20 @@ export function EicrSectionReview({
   sectionProcessing,
   disabled,
 }: EicrSectionReviewProps) {
+  const modalRef = useRef<ModalRef>(null);
+
   return (
     <section className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+          {disabled ? null : (
+            <ModalToggleButton modalRef={modalRef} variant="tertiary" opener>
+              Add custom section +
+            </ModalToggleButton>
+          )}
+          <Modal configurationId={configurationId} ref={modalRef} />
+        </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
           refine or retain each section.
@@ -81,13 +102,7 @@ export function EicrSectionReview({
                 </div>
               </td>
               <td>
-                {section.include ? (
-                  <span className="font-bold">{section.name}</span>
-                ) : (
-                  <span className="text-gray-cool-70 italic">
-                    {section.name}
-                  </span>
-                )}
+                <SectionName section={section} />
               </td>
               <td>
                 {section.include ? (
@@ -106,6 +121,139 @@ export function EicrSectionReview({
         </tbody>
       </table>
     </section>
+  );
+}
+
+interface SectionNameProps {
+  section: DbConfigurationSectionProcessing;
+}
+
+function SectionName({ section }: SectionNameProps) {
+  const isCustom = section.section_type === 'custom';
+
+  if (section.include) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-bold">{section.name}</span>
+        {isCustom ? <CustomSectionBadge /> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-gray-cool-70 italic">{section.name}</span>
+      {isCustom ? <CustomSectionBadge /> : null}
+    </div>
+  );
+}
+
+function CustomSectionBadge() {
+  return (
+    <span className="bg-gray-cool-3 flex items-center justify-center rounded-sm px-2 py-0.5 text-sm">
+      Custom
+    </span>
+  );
+}
+
+interface ModalProps {
+  ref: React.RefObject<ModalRef | null>;
+  configurationId: string;
+}
+
+function Modal({ ref, configurationId }: ModalProps) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [errorText, setErrorText] = useState('');
+  const { mutate, error } = useInsertCustomSection();
+
+  const onSubmit = () => {
+    if (!name) {
+      setErrorText('Name is required.');
+      return;
+    }
+    if (!code) {
+      setErrorText('Code is required.');
+      return;
+    }
+
+    mutate(
+      {
+        configurationId,
+        data: {
+          code,
+          name,
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
+      }
+    );
+  };
+
+  return (
+    <USWDSModal
+      className="rounded-sm"
+      ref={ref}
+      id="custom-section-modal"
+      aria-labelledby="modal-heading"
+      aria-describedby="modal-description"
+    >
+      <div className="flex flex-col items-start gap-6 p-5">
+        <ModalHeading
+          className="font-public-sans! text-2xl!"
+          id="modal-heading"
+        >
+          Add a custom section
+        </ModalHeading>
+        <div className="flex flex-col items-start">
+          <p id="modal-description" className="sr-only">
+            Enter your custom section information and click "Add section".
+          </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <USWDSLabel htmlFor="custom-section-name-input">
+                Display name (for this section)
+              </USWDSLabel>
+              <TextInput
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                id="custom-section-name-input"
+                name="custom-section-name-input"
+                type="text"
+              />
+            </div>
+            <div>
+              <USWDSLabel htmlFor="custom-section-code-input">
+                LOINC code
+              </USWDSLabel>
+              <TextInput
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                id="custom-section-code-input"
+                name="custom-section-code-input"
+                type="text"
+              />
+            </div>
+          </div>
+        </div>
+        <ModalFooter>
+          <ButtonGroup>
+            <ModalToggleButton modalRef={ref} onClick={onSubmit} closer>
+              Add section
+            </ModalToggleButton>
+            <ModalToggleButton variant="tertiary" modalRef={ref} closer>
+              Cancel
+            </ModalToggleButton>
+          </ButtonGroup>
+        </ModalFooter>
+      </div>
+    </USWDSModal>
   );
 }
 

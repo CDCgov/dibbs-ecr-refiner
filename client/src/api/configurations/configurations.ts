@@ -42,11 +42,12 @@ import type {
   ConfirmUploadCustomCodesInput,
   CreateConfigInput,
   CreateConfigurationResponse,
+  CustomSectionInput,
   GetConfigurationResponse,
   GetConfigurationsResponse,
   HTTPValidationError,
+  StandardSectionInput,
   UpdateCustomCodeInput,
-  UpdateSectionInput,
   UploadCustomCodesCsvInput,
   UploadCustomCodesPreviewResponse,
   UploadCustomCodesResponse
@@ -1000,6 +1001,75 @@ export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidation
       return useMutation(getRunInlineConfigurationTestMutationOptions(options), queryClient);
     }
     /**
+ * Create a new custom section for a given configuration ID.
+
+Args:
+    configuration_id (UUID): The ID of the configuration
+    section_input (CustomSectionInput): Desired properties of the section
+    user (DbUser): The logged-in user
+    db (AsyncDatabaseConnection): The database connection
+ * @summary Insert Custom Section
+ */
+export const insertCustomSection = (
+    configurationId: string,
+    customSectionInput: CustomSectionInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<string>> => {
+    
+    
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/section-processing`,
+      customSectionInput,{
+    ...options,}
+    );
+  }
+
+
+
+export const getInsertCustomSectionMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof insertCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof insertCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext> => {
+
+const mutationKey = ['insertCustomSection'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof insertCustomSection>>, {configurationId: string;data: CustomSectionInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  insertCustomSection(configurationId,data,axiosOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InsertCustomSectionMutationResult = NonNullable<Awaited<ReturnType<typeof insertCustomSection>>>
+    export type InsertCustomSectionMutationBody = CustomSectionInput
+    export type InsertCustomSectionMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Insert Custom Section
+ */
+export const useInsertCustomSection = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof insertCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof insertCustomSection>>,
+        TError,
+        {configurationId: string;data: CustomSectionInput},
+        TContext
+      > => {
+      return useMutation(getInsertCustomSectionMutationOptions(options), queryClient);
+    }
+    /**
  * Update a section entry for a configuration.
 
 Args:
@@ -1019,13 +1089,13 @@ Returns:
  */
 export const updateConfigurationSectionProcessing = (
     configurationId: string,
-    updateSectionInput: UpdateSectionInput, options?: AxiosRequestConfig
+    standardSectionInput: StandardSectionInput, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<string>> => {
     
     
     return axios.default.patch(
       `/api/v1/configurations/${configurationId}/section-processing`,
-      updateSectionInput,{
+      standardSectionInput,{
     ...options,}
     );
   }
@@ -1033,8 +1103,8 @@ export const updateConfigurationSectionProcessing = (
 
 
 export const getUpdateConfigurationSectionProcessingMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: UpdateSectionInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: UpdateSectionInput}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: StandardSectionInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: StandardSectionInput}, TContext> => {
 
 const mutationKey = ['updateConfigurationSectionProcessing'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -1046,7 +1116,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, {configurationId: string;data: UpdateSectionInput}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, {configurationId: string;data: StandardSectionInput}> = (props) => {
           const {configurationId,data} = props ?? {};
 
           return  updateConfigurationSectionProcessing(configurationId,data,axiosOptions)
@@ -1060,18 +1130,18 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UpdateConfigurationSectionProcessingMutationResult = NonNullable<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>>
-    export type UpdateConfigurationSectionProcessingMutationBody = UpdateSectionInput
+    export type UpdateConfigurationSectionProcessingMutationBody = StandardSectionInput
     export type UpdateConfigurationSectionProcessingMutationError = AxiosError<HTTPValidationError>
 
     /**
  * @summary Update Section Processing
  */
 export const useUpdateConfigurationSectionProcessing = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: UpdateSectionInput}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>, TError,{configurationId: string;data: StandardSectionInput}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateConfigurationSectionProcessing>>,
         TError,
-        {configurationId: string;data: UpdateSectionInput},
+        {configurationId: string;data: StandardSectionInput},
         TContext
       > => {
       return useMutation(getUpdateConfigurationSectionProcessingMutationOptions(options), queryClient);

@@ -165,15 +165,30 @@ class ConfigurationTestResponse:
     condition: Condition
 
 
-class UpdateSectionInput(BaseModel):
+class SectionInputBase(BaseModel):
     """
-    Model for a single section processing update.
+    Shared request body properties for sections.
     """
 
     code: str
+
+
+class StandardSectionInput(SectionInputBase):
+    """
+    Request body for modifying a standard section from the TES.
+    """
+
     include: bool
     narrative: bool
     action: DbSectionAction
+
+
+class CustomSectionInput(SectionInputBase):
+    """
+    Request body for adding or modifying a custom section.
+    """
+
+    name: str
 
 
 @dataclass(frozen=True)

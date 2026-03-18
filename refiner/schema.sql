@@ -41,6 +41,16 @@ CREATE TYPE public.configuration_status AS ENUM (
 
 
 --
+-- Name: configurations_sections_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.configurations_sections_type AS ENUM (
+    'standard',
+    'custom'
+);
+
+
+--
 -- Name: event_type_enum; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -55,7 +65,10 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'lock_acquire',
     'lock_release',
     'lock_renew',
-    'bulk_add_custom_code'
+    'bulk_add_custom_code',
+    'create_custom_section',
+    'edit_custom_section',
+    'delete_custom_section'
 );
 
 
@@ -221,7 +234,8 @@ CREATE TABLE public.configurations_sections (
     narrative boolean NOT NULL,
     versions text[] DEFAULT '{}'::text[] NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    section_type public.configurations_sections_type NOT NULL
 );
 
 
@@ -585,4 +599,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260226212322'),
     ('20260305221859'),
     ('20260309143000'),
-    ('20260309151338');
+    ('20260309151338'),
+    ('20260318125201');
