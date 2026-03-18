@@ -471,7 +471,7 @@ _SECTION_CATALOG: Final[dict[str, SectionSpecification]] = {
 # entry match rules, display names, and C-CDA templateIds come from the
 # catalog above
 
-# type: dict of section LOINC -> dict of trigger OID -> TriggerCode
+# format: dict of section LOINC -> dict of trigger OID -> TriggerCode
 type TriggerMap = dict[str, list[TriggerCode]]
 
 _VERSION_1_1_TRIGGERS: Final[TriggerMap] = {
