@@ -73,6 +73,8 @@ async def insert_custom_section_db(
             %s,
             %s
         )
+        RETURNING
+            id;
         """
 
     versions: list[str] = []
@@ -88,7 +90,7 @@ async def insert_custom_section_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
