@@ -891,7 +891,9 @@ export function CustomCodeModal({
 
   const [form, setForm] = useState({
     code: selectedCustomCode?.code ?? '',
-    system: selectedCustomCode?.system ?? '',
+    system: selectedCustomCode?.system
+      ? normalizeSystem(selectedCustomCode.system)
+      : '',
     name: selectedCustomCode?.name ?? '',
   });
 
@@ -903,7 +905,9 @@ export function CustomCodeModal({
   ) {
     setForm({
       code: selectedCustomCode?.code ?? '',
-      system: selectedCustomCode?.system ?? '',
+      system: selectedCustomCode?.system
+        ? normalizeSystem(selectedCustomCode.system)
+        : '',
       name: selectedCustomCode?.name ?? '',
     });
   }
@@ -931,10 +935,10 @@ export function CustomCodeModal({
           configurationId,
           data: {
             code: selectedCustomCode.code,
-            system: selectedCustomCode.system,
+            system: normalizeSystem(selectedCustomCode.system),
             name: selectedCustomCode.name,
             new_code: form.code,
-            new_system: form.system,
+            new_system: normalizeSystem(form.system),
             new_name: form.name,
           },
         },
@@ -964,7 +968,7 @@ export function CustomCodeModal({
           configurationId,
           data: {
             code: form.code,
-            system: form.system as CodeSystem,
+            system: normalizeSystem(form.system),
             name: form.name,
           },
         },
@@ -1102,6 +1106,10 @@ function ConditionCodeRow({
       </td>
     </tr>
   );
+}
+
+function normalizeSystem(system: CodeSystem | string): CodeSystem {
+  return system.toLowerCase() as CodeSystem;
 }
 
 interface ImportCustomCodesProps {
