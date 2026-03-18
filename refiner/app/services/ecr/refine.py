@@ -115,6 +115,7 @@ def create_eicr_refinement_plan(
 
     return EICRRefinementPlan(
         codes_to_check=processed_configuration.codes,
+        code_system_sets=processed_configuration.code_system_sets,
         section_instructions=final_instructions,
     )
 
@@ -194,6 +195,7 @@ def refine_eicr(
                 namespaces=namespaces,
                 section_specification=section_specification,
                 version=version,
+                code_system_sets=plan.code_system_sets,
             )
 
         # format and return the result
