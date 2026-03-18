@@ -6,6 +6,7 @@ from psycopg import AsyncCursor
 from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
+from app.api.v1.configurations.model import CustomSectionInput
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -31,13 +32,89 @@ EMPTY_JSONB = Jsonb([])
 type CursorType = dict[str, Any]
 
 
+async def insert_custom_section_db(
+    config: DbConfiguration,
+    user_id: UUID,
+    custom_section_input: CustomSectionInput,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Inserts a custom section into the configurations_sections table.
+
+    Args:
+        config (DbConfiguration): Configuration associated with the section
+        user_id (UUID): ID of the user creating the custom section
+        custom_section_input (CustomSectionInput): Custom section properties to use for creation
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        DbConfiguration: Updated configuration
+    """
+    name, code = custom_section_input.name, custom_section_input.code
+
+    query = """
+        INSERT INTO configurations_sections (
+            configuration_id,
+            code,
+            name,
+            action,
+            include,
+            narrative,
+            versions,
+            section_type
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        """
+    params = (
+        config.id,
+        code,
+        name,
+        "refine",
+        True,
+        False,
+        [],
+        "custom",
+    )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
+
+            await insert_event_db(
+                event=EventInput(
+                    configuration_id=config.id,
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    event_type="create_custom_section",
+                    action_text=f'Custom section "{name}" with code "{code}" created.',
+                ),
+                cursor=cur,
+            )
+
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
+
+
 async def _insert_configuration_sections_db(
     configuration_id: UUID,
     sections_to_insert: list[DbConfigurationSectionProcessing],
     cursor: AsyncCursor[CursorType],
 ) -> None:
     """
-    Inserts sections into configurations_sections table.
+    Inserts sections into the configurations_sections table.
     """
     query = """
         INSERT INTO configurations_sections (
@@ -216,6 +293,7 @@ async def _get_configuration_sections_db(
         include,
         narrative,
         versions,
+        section_type,
         created_at,
         updated_at
     FROM configurations_sections
@@ -896,6 +974,7 @@ async def _get_configuration_section_by_code(
             include,
             narrative,
             versions,
+            section_type,
             created_at,
             updated_at
         FROM configurations_sections

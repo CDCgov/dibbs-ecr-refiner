@@ -78,9 +78,11 @@ class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
     """
     Section Processing instructions for a Configuration.
 
-    Name is the section's name.
-    Code is the LOINC code for the section.
-    Versions is a list of versions this section appears in.
+    `name` is the section's name.
+    `code` is the LOINC code for the section.
+    `versions` is a list of versions this section appears in.
+    `section_type` is an indicator as to how the section was created.
+
     """
 
     name: str
@@ -98,6 +100,7 @@ class DbConfigurationSection(DbConfigurationSectionProcessing):
     configuration_id: UUID
     created_at: datetime
     updated_at: datetime
+    section_type: DbSectionType
 
     def to_processing_dict(self) -> dict:
         """
