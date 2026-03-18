@@ -170,6 +170,7 @@ async def update_section_processing(
         include=section.include,
         name=prev_section.name,
         versions=prev_section.versions,
+        section_type="standard",
     )
 
     try:

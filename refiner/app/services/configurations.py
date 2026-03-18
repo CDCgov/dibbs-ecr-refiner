@@ -45,6 +45,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
             include=True,
             action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
             versions=loinc_versions_flat.get(loinc_code, []),
+            section_type="standard",
         )
         for loinc_code, section_spec in spec.sections.items()
     ]

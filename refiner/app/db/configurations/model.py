@@ -88,6 +88,7 @@ class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
     name: str
     code: str
     versions: list[str]
+    section_type: DbSectionType
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,6 @@ class DbConfigurationSection(DbConfigurationSectionProcessing):
     configuration_id: UUID
     created_at: datetime
     updated_at: datetime
-    section_type: DbSectionType
 
     def to_processing_dict(self) -> dict:
         """
@@ -118,6 +118,7 @@ class DbConfigurationSection(DbConfigurationSectionProcessing):
             "include": self.include,
             "versions": self.versions,
             "narrative": self.narrative,
+            "section_type": self.section_type,
         }
 
 

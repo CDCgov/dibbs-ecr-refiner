@@ -427,7 +427,8 @@ async def get_configuration_by_id_db(
                        'action', s.action::text,
                        'include', s.include,
                        'versions', to_jsonb(s.versions),
-                       'narrative', s.narrative
+                       'narrative', s.narrative,
+                       'section_type', s.section_type
                    )
                    ORDER BY s.code
                ) AS section_processing

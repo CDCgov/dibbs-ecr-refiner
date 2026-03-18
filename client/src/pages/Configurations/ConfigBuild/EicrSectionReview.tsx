@@ -102,13 +102,7 @@ export function EicrSectionReview({
                 </div>
               </td>
               <td>
-                {section.include ? (
-                  <span className="font-bold">{section.name}</span>
-                ) : (
-                  <span className="text-gray-cool-70 italic">
-                    {section.name}
-                  </span>
-                )}
+                <SectionName section={section} />
               </td>
               <td>
                 {section.include ? (
@@ -127,6 +121,38 @@ export function EicrSectionReview({
         </tbody>
       </table>
     </section>
+  );
+}
+
+interface SectionNameProps {
+  section: DbConfigurationSectionProcessing;
+}
+
+function SectionName({ section }: SectionNameProps) {
+  const isCustom = section.section_type === 'custom';
+
+  if (section.include) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-bold">{section.name}</span>
+        {isCustom ? <CustomSectionBadge /> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-gray-cool-70 italic">{section.name}</span>
+      {isCustom ? <CustomSectionBadge /> : null}
+    </div>
+  );
+}
+
+function CustomSectionBadge() {
+  return (
+    <span className="bg-gray-cool-3 flex items-center justify-center rounded-sm px-2 py-0.5 text-sm">
+      Custom
+    </span>
   );
 }
 
