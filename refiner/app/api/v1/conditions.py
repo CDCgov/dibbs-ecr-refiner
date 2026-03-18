@@ -3,8 +3,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.db.configurations.model import ALLOWED_CUSTOM_CODE_SYSTEMS
-
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
