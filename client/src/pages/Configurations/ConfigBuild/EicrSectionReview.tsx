@@ -5,6 +5,7 @@ import { Switch, Checkbox, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
+  useInsertCustomSection,
   useUpdateConfigurationSectionProcessing,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,7 +19,7 @@ import {
   TextInput,
   Label as USWDSLabel,
 } from '@trussworks/react-uswds';
-import React, { JSX, useRef } from 'react';
+import React, { JSX, useRef, useState } from 'react';
 import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 
 /**
@@ -60,7 +61,7 @@ export function EicrSectionReview({
               Add custom section +
             </ModalToggleButton>
           )}
-          <Modal ref={modalRef} />
+          <Modal configurationId={configurationId} ref={modalRef} />
         </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
@@ -131,9 +132,44 @@ export function EicrSectionReview({
 
 interface ModalProps {
   ref: React.RefObject<ModalRef | null>;
+  configurationId: string;
 }
 
-function Modal({ ref }: ModalProps) {
+function Modal({ ref, configurationId }: ModalProps) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [errorText, setErrorText] = useState('');
+  const { mutate, error } = useInsertCustomSection();
+
+  const onSubmit = () => {
+    if (!name) {
+      setErrorText('Name is required.');
+      return;
+    }
+    if (!code) {
+      setErrorText('Code is required.');
+      return;
+    }
+
+    mutate(
+      {
+        configurationId,
+        data: {
+          code,
+          name,
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
+      }
+    );
+  };
+
   return (
     <USWDSModal
       className="rounded-sm"
@@ -159,7 +195,8 @@ function Modal({ ref }: ModalProps) {
                 Display name (for this section)
               </USWDSLabel>
               <TextInput
-                className="w-full!"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 id="custom-section-name-input"
                 name="custom-section-name-input"
                 type="text"
@@ -170,6 +207,8 @@ function Modal({ ref }: ModalProps) {
                 LOINC code
               </USWDSLabel>
               <TextInput
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
                 id="custom-section-code-input"
                 name="custom-section-code-input"
                 type="text"
@@ -179,7 +218,7 @@ function Modal({ ref }: ModalProps) {
         </div>
         <ModalFooter>
           <ButtonGroup>
-            <ModalToggleButton modalRef={ref} closer>
+            <ModalToggleButton modalRef={ref} onClick={onSubmit} closer>
               Add section
             </ModalToggleButton>
             <ModalToggleButton variant="tertiary" modalRef={ref} closer>
