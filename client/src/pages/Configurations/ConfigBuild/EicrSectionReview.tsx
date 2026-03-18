@@ -15,6 +15,8 @@ import {
   ModalFooter,
   ModalHeading,
   ButtonGroup,
+  TextInput,
+  Label as USWDSLabel,
 } from '@trussworks/react-uswds';
 import React, { JSX, useRef } from 'react';
 import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
@@ -53,9 +55,11 @@ export function EicrSectionReview({
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
-          <ModalToggleButton modalRef={modalRef} variant="tertiary" opener>
-            Add custom section +
-          </ModalToggleButton>
+          {disabled ? null : (
+            <ModalToggleButton modalRef={modalRef} variant="tertiary" opener>
+              Add custom section +
+            </ModalToggleButton>
+          )}
           <Modal ref={modalRef} />
         </div>
         <p className="italic">
@@ -132,29 +136,58 @@ interface ModalProps {
 function Modal({ ref }: ModalProps) {
   return (
     <USWDSModal
+      className="rounded-sm"
       ref={ref}
       id="custom-section-modal"
       aria-labelledby="modal-heading"
       aria-describedby="modal-description"
     >
-      <ModalHeading id="modal-heading">
-        Are you sure you want to continue?
-      </ModalHeading>
-      <div>
-        <p id="modal-description">
-          You have unsaved changes that will be lost.
-        </p>
+      <div className="flex flex-col items-start gap-6 p-5">
+        <ModalHeading
+          className="font-public-sans! text-2xl!"
+          id="modal-heading"
+        >
+          Add a custom section
+        </ModalHeading>
+        <div className="flex flex-col items-start">
+          <p id="modal-description" className="sr-only">
+            Enter your custom section information and click "Add section".
+          </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <USWDSLabel htmlFor="custom-section-name-input">
+                Display name (for this section)
+              </USWDSLabel>
+              <TextInput
+                className="w-full!"
+                id="custom-section-name-input"
+                name="custom-section-name-input"
+                type="text"
+              />
+            </div>
+            <div>
+              <USWDSLabel htmlFor="custom-section-code-input">
+                LOINC code
+              </USWDSLabel>
+              <TextInput
+                id="custom-section-code-input"
+                name="custom-section-code-input"
+                type="text"
+              />
+            </div>
+          </div>
+        </div>
+        <ModalFooter>
+          <ButtonGroup>
+            <ModalToggleButton modalRef={ref} closer>
+              Add section
+            </ModalToggleButton>
+            <ModalToggleButton variant="tertiary" modalRef={ref} closer>
+              Cancel
+            </ModalToggleButton>
+          </ButtonGroup>
+        </ModalFooter>
       </div>
-      <ModalFooter>
-        <ButtonGroup>
-          <ModalToggleButton modalRef={ref} closer>
-            Add section
-          </ModalToggleButton>
-          <ModalToggleButton modalRef={ref} closer>
-            Cancel
-          </ModalToggleButton>
-        </ButtonGroup>
-      </ModalFooter>
     </USWDSModal>
   );
 }
