@@ -209,9 +209,8 @@ def process_refiner(
     reportable_groups = reportability_result["reportable_conditions"]
     logger.info(
         "Running refinement based on the following information:",
-        key="reportable_groups",
         reportable_group_payload=reportable_groups,
-        operation="skipped",
+        operation="determined_reportability",
     )
 
     refiner_output_files: list[str] = []
@@ -263,9 +262,9 @@ def process_refiner(
                     non_active_reportable_conditions[jurisdiction_code].add(rsg_code)
                     logger.info(
                         "RSG code isn't in the CG map, skipping.",
-                        key=rsg_code,
-                        jurisdiction_code=jurisdiction_code,
+                        rsg_code=rsg_code,
                         rsg_cg_payload=rsg_cg_payload.to_dict(),
+                        jurisdiction_code=jurisdiction_code,
                         operation="skipped",
                     )
                     continue
