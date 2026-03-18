@@ -12,7 +12,6 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
-        output_name="Hypertension",
         canonical_url="http://url.com",
         version="4.0.0",
         child_rsg_snomed_codes=["11111"],
@@ -47,7 +46,6 @@ async def test_get_condition_found(monkeypatch, authed_client):
     fake_condition = DbCondition(
         id=condition_id,
         display_name="Asthma",
-        output_name="Asthma",
         canonical_url="http://asthma.com",
         version="4.0.0",
         child_rsg_snomed_codes=["67890"],

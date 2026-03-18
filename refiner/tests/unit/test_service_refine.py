@@ -25,7 +25,6 @@ def _make_condition_v1_1(**kwargs) -> DbCondition:
     defaults = {
         "id": "fake-condition-id-v1-1",
         "display_name": "Test Condition v1.1",
-        "output_name": "TestConditionv11",
         "canonical_url": "http://example.com/condition/v1.1",
         "version": "1.1",
         "child_rsg_snomed_codes": [],
@@ -77,7 +76,6 @@ def _make_condition_v3_1_1(**kwargs) -> DbCondition:
     defaults = {
         "id": "fake-condition-id-v3-1-1",
         "display_name": "Test Condition v3.1.1",
-        "output_name": "TestConditionv311",
         "canonical_url": "http://example.com/condition/v3.1.1",
         "version": "3.1.1",
         "child_rsg_snomed_codes": [],

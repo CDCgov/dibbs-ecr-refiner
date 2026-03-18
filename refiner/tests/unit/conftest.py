@@ -119,7 +119,6 @@ def mock_condition():
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],
-        output_name="Hyptertension",
         snomed_codes=[DbConditionCoding("11111", "Hypertension SNOMED")],
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],

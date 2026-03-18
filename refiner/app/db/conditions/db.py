@@ -41,7 +41,6 @@ async def get_conditions_by_version_db(
             SELECT
                 id,
                 display_name,
-                output_name,
                 canonical_url,
                 version
             FROM conditions
@@ -77,7 +76,6 @@ async def get_latest_conditions_db(
         SELECT
             id,
             display_name,
-            output_name,
             canonical_url,
             version
         FROM conditions;
@@ -126,7 +124,6 @@ async def get_condition_by_id_db(
                 id,
                 canonical_url,
                 display_name,
-                output_name,
                 version,
                 child_rsg_snomed_codes,
                 snomed_codes,
@@ -269,7 +266,6 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
         SELECT
             id,
             display_name,
-            output_name,
             canonical_url,
             version,
             child_rsg_snomed_codes,

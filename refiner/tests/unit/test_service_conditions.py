@@ -9,7 +9,6 @@ from app.services.conditions import _get_computed_name, create_condition_mapping
 def _make_db_condition(name: str, url: str, version: str, rsg_code: str):
     return DbCondition(
         display_name=name,
-        output_name=_get_computed_name(name),
         canonical_url=url,
         version=version,
         id=(uuid4()),

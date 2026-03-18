@@ -20,7 +20,6 @@ def make_condition(**kwargs) -> DbCondition:
     defaults = {
         "id": uuid4(),
         "display_name": "Condition",
-        "output_name": "Condition",
         "canonical_url": "http://cond.com",
         "version": "1.0.0",
         "child_rsg_snomed_codes": [],

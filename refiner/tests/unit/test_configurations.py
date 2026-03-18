@@ -47,7 +47,6 @@ def mock_db_functions(
     fake_condition = DbCondition(
         id=uuid4(),
         display_name="Hypertension",
-        output_name="Hypertension",
         canonical_url="http://url.com",
         version="3.0.0",
         child_rsg_snomed_codes=["11111"],

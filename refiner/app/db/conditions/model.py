@@ -23,10 +23,6 @@ class DbConditionBase:
 
     id: UUID
     display_name: str
-    # this is the name we use for packaging in S3, which is the value of the
-    # condition name from the TES without special characters and spaces
-    # (ie "Guillain-Barré Syndrome" --> "GuillainBarreSyndrome").
-    output_name: str
     canonical_url: str
     version: str
 
@@ -66,7 +62,6 @@ class DbCondition(DbConditionBase):
         return cls(
             id=row["id"],
             display_name=row["display_name"],
-            output_name=row["output_name"],
             canonical_url=row["canonical_url"],
             version=row["version"],
             child_rsg_snomed_codes=row["child_rsg_snomed_codes"],

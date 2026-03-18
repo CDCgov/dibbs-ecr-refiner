@@ -94,7 +94,6 @@ class ConditionData:
             "canonical_url": self.parent_vs.get("url"),
             "version": self.parent_vs.get("version"),
             "display_name": self.parent_vs.get("title"),
-            "output_name": self.parent_vs.get("name"),
             "child_rsg_snomed_codes": list(self.child_rsg_snomed_codes),
             "loinc_codes": json.dumps(categorized["loinc_codes"]),
             "snomed_codes": json.dumps(categorized["snomed_codes"]),
