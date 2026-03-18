@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
 import React, { JSX } from 'react';
+import { Button } from '../../../components/Button';
 
 /**
  * TODO: please refer to specification.py
@@ -41,7 +42,10 @@ export function EicrSectionReview({
   return (
     <section className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+          <Button variant="tertiary">Add custom section +</Button>
+        </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
           refine or retain each section.
