@@ -10,8 +10,25 @@
 }
 
 @layer base {
+  /* To lock the document height to the viewport and prevent unwanted
+   * page-level scrolling, the html and body elements have been switched from
+   * h-full to a fixed height: 100dvh. We applied overflow: hidden to the
+   * html element to ensure the outer document remains static, while setting
+   * overflow-y: auto on the body to handle internal content scrolling. This
+   * configuration uses modern Dynamic Viewport Units to provide a consistent
+   * full-screen layout across both desktop and mobile browsers.
+   */
   html,
   body {
+    @apply h-dvh;
+  }
+  html {
+    @apply overflow-hidden;
+  }
+  body {
+    @apply m-0 overflow-y-auto;
+  }
+  #root {
     @apply h-full;
   }
 
