@@ -543,7 +543,7 @@ def _prune_section_by_matches(
         # COMPONENT-LEVEL PRUNING
         # for entries that matched, prune non-matching containers within them
         # for entries that didn't match at all, remove the whole entry
-        _prune_at_container_level(section, matches, all_entries, namespaces)
+        _prune_at_container_level(matches, all_entries, namespaces)
     else:
         # ENTRY-LEVEL PRUNING
         # simple: remove entries not in the matched set
@@ -553,7 +553,6 @@ def _prune_section_by_matches(
 
 
 def _prune_at_container_level(
-    section: _Element,
     matches: list[EntryMatch],
     all_entries: list[_Element],
     namespaces: NamespaceMap,
