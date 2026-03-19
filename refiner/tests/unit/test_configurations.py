@@ -11,12 +11,12 @@ from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _upload_to_s3
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
-    CodeSystem,
     DbConfiguration,
     DbConfigurationCondition,
     DbConfigurationCustomCode,
     GetConfigurationResponseVersion,
 )
+from app.services.code_system import CodeSystem
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
 

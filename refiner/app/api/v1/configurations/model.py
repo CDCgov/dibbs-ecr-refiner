@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator
 
 from app.db.configurations.model import (
-    CodeSystem,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
@@ -14,6 +13,7 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
+from app.services.code_system import CodeSystem
 
 
 @dataclass(frozen=True)

@@ -23,14 +23,16 @@ from app.db.configurations.db import (
     get_total_condition_code_counts_by_configuration_db,
 )
 from app.db.configurations.model import (
-    ALLOWED_CUSTOM_CODE_SYSTEM_NAMES,
-    ALLOWED_CUSTOM_CODE_SYSTEMS,
-    CodeSystem,
     DbConfiguration,
     DbConfigurationCustomCode,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.code_system import (
+    ALLOWED_CUSTOM_CODE_SYSTEM_NAMES,
+    ALLOWED_CUSTOM_CODE_SYSTEMS,
+    CodeSystem,
+)
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
 

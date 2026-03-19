@@ -2,10 +2,10 @@ from uuid import uuid4
 
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
-    CodeSystem,
     DbConfiguration,
     DbConfigurationCustomCode,
 )
+from app.services.code_system import CodeSystem
 from app.services.terminology import (
     ConfigurationPayload,
     ProcessedConfiguration,
