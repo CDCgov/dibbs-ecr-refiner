@@ -639,8 +639,7 @@
                               <td>2.16.840.1.114222.4.11.7508</td>
                               <td>20250216</td>
                             </tr>
-                            <!-- NEW: Dyspnea caused by SARS-CoV-2 (IN COVID GROUPER) - NO
-                            displayName on entry -->
+                            <!-- NEW: Dyspnea caused by SARS-CoV-2 (IN COVID GROUPER) - NO displayName on entry -->
                             <tr>
                               <td>condition</td>
                               <td>119981000146107</td>
@@ -824,8 +823,7 @@
                   <effectiveTime>
                     <low value="20250221" />
                   </effectiveTime>
-                  <!-- MISSING displayName: should be "Dyspnea caused by severe acute respiratory
-                  syndrome coronavirus 2 (disorder)" -->
+                  <!-- MISSING displayName: should be "Dyspnea caused by severe acute respiratory syndrome coronavirus 2 (disorder)" -->
                   <value code="119981000146107" codeSystem="2.16.840.1.113883.6.96"
                     codeSystemName="SNOMED-CT"
                     sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
@@ -1007,8 +1005,7 @@
                 </tr>
                 <!-- COVID Nasopharyngeal NAA test -->
                 <tr>
-                  <td>SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe
-                    detection</td>
+                  <td>SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection</td>
                   <td />
                 </tr>
                 <tr>
@@ -1483,8 +1480,7 @@
                     displayName="Portable XR Chest AP" />
                   <statusCode code="completed" />
                   <effectiveTime value="20250221" />
-                  <value xsi:type="ED" mediaType="text/plain">Bilateral ground-glass opacities
-                    consistent with viral pneumonia. No pleural effusion. Heart size normal.</value>
+                  <value xsi:type="ED" mediaType="text/plain">Bilateral ground-glass opacities consistent with viral pneumonia. No pleural effusion. Heart size normal.</value>
                 </observation>
               </component>
             </organizer>

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -12,8 +11,8 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.specification import (
-    EICR_SPECS_DATA,
     SECTION_PROCESSING_SKIP,
+    get_section_version_map,
     load_spec,
 )
 
@@ -26,17 +25,12 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         list[DbConfigurationSectionProcessing]: List of sections with default values set.
     """
 
-    # use the new specification system in the ecr service
     spec = load_spec("3.1.1")
+    loinc_versions_flat = get_section_version_map()
 
-    # build loinc->versions dict once per import
-    loinc_version_map: dict[str, set[str]] = defaultdict(set)
-    for version, version_data in EICR_SPECS_DATA.items():
-        for loinc in version_data.keys():
-            loinc_version_map[loinc].add(version)
-
-    loinc_versions_flat = {k: sorted(v) for k, v in loinc_version_map.items()}
-
+    # TODO:
+    # we should try to keep `db` related models out of the
+    # ecr service as much as practicable
     section_processing_defaults = [
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
