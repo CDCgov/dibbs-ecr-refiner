@@ -82,7 +82,7 @@ RR ClinicalDocument
 
 ### Algorithm
 
-```
+```python
 for each Relevant Reportable Condition Observation:
     snomed_code = observation/value/@code
     for each child Reportability Information Organizer:
