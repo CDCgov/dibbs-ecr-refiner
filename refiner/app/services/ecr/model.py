@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Literal, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 from app.db.configurations.model import DbConfigurationSectionInstructions
+
+if TYPE_CHECKING:
+    from app.services.terminology import CodeSystemSets
 
 type NamespaceMap = dict[str, str]
 type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
@@ -53,14 +56,17 @@ class EICRRefinementPlan:
 
     This object serves as the contract between the orchestration layer (which
     knows about databases and business logic) and the pure refinement service
-    (which only knows how to manipulate XML). This is the final form of the
-    ProcessedConfiguration, as it combines the complete set of XPaths used in
-    the filtering process with the joined set of section processing instructions
-    that result from the configuration's instructions and the sections that appear
-    in the eICR document after an initial scan.
+    (which only knows how to manipulate XML).
+
+    Contains both:
+    - codes_to_check: Flat set for the existing generic search path (backward compat)
+    - code_system_sets: Structured per-system lookup for the new section-aware path
+
+    Once all sections migrate to entry_match_rules, codes_to_check can be removed.
     """
 
     codes_to_check: set[str]
+    code_system_sets: "CodeSystemSets"
     section_instructions: dict[str, DbConfigurationSectionInstructions]
 
 
@@ -85,11 +91,27 @@ class RRRefinementPlan:
 class TriggerCode:
     """
     Represents a specific trigger code definition within a section.
+
+    `element_tag` here means something like: "observation", "act",
+    "manufacturedProduct"
     """
 
     oid: str
     display_name: str
-    element_tag: str  # e.g., "observation", "act", "manufacturedProduct"
+    element_tag: str
+
+
+@dataclass(frozen=True)
+class EntryMatchRule:
+    """
+    Each <section> has its own rules for their <entry>s; this object memorializes those rules.
+    """
+
+    code_xpath: str
+    code_system_oid: str | None = None
+    translation_xpath: str | None = None
+    translation_code_system_oid: str | None = None
+    prune_container_xpath: str | None = None
 
 
 @dataclass(frozen=True)
@@ -102,6 +124,7 @@ class SectionSpecification:
     display_name: str
     template_id: str
     trigger_codes: list[TriggerCode] = field(default_factory=list)
+    entry_match_rules: list[EntryMatchRule] = field(default_factory=list)
 
     @property
     def trigger_oids(self) -> set[str]:
@@ -110,6 +133,17 @@ class SectionSpecification:
         """
 
         return {tc.oid for tc in self.trigger_codes}
+
+    @property
+    def has_match_rules(self) -> bool:
+        """
+        Does the section have entry matching rules or not?
+
+        Returns `True`, that the section **has** entry matching rules; or, `False`,
+        the section **doesn't have** entry matching rules.
+        """
+
+        return len(self.entry_match_rules) > 0
 
 
 @dataclass(frozen=True)
