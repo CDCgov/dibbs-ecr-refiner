@@ -35,7 +35,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
-            narrative=False,
+            narrative=False,  # TODO: Decide on a default value for narrative.
             include=True,
             action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
             versions=loinc_versions_flat.get(loinc_code, []),
