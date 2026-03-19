@@ -1,3 +1,17 @@
+# build from source
+FROM golang:1.26.1 AS dbmate-builder
+
+ARG DBMATE_REF=dependabot/go_modules/google.golang.org/grpc-1.79.3
+
+WORKDIR /src
+RUN apt-get update && apt-get install -y ca-certificates git && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/amacneil/dbmate.git .
+RUN git checkout "${DBMATE_REF}"
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/dbmate .
+
+
 # Install Python dependencies
 FROM python:3.14-slim
 
@@ -17,7 +31,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dbmate binary from dbmate base image
-COPY --from=ghcr.io/amacneil/dbmate:2 /usr/local/bin/dbmate /usr/local/bin/dbmate
+# COPY --from=ghcr.io/amacneil/dbmate:2 /usr/local/bin/dbmate /usr/local/bin/dbmate
+COPY --from=dbmate-builder /out/dbmate /usr/local/bin/dbmate
 
 WORKDIR /app
 
@@ -35,7 +50,7 @@ COPY ./refiner/scripts/data/source-tes-groupers ./scripts/data/source-tes-groupe
 # Copy entrypoint script
 COPY ./ops/entrypoint.sh ./entrypoint.sh
 
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh && /usr/local/bin/dbmate --version
 
 # Start this file, fall back to bash
 ENTRYPOINT ["./entrypoint.sh"]
