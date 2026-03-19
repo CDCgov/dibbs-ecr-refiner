@@ -304,9 +304,9 @@ class ProcessedConfiguration:
 
         # STEP 2: add custom codes, routing by their system label
         for custom_code in payload.configuration.custom_codes:
-            system_label = getattr(custom_code, "system", "Other")
+            system_label = custom_code.system
             code_val = custom_code.code
-            display_val = getattr(custom_code, "name", "")
+            display_val = custom_code.name
 
             oid = SYSTEM_LABEL_TO_OID.get(system_label, "")
 
