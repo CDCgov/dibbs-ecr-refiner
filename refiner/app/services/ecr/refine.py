@@ -422,3 +422,51 @@ def refine_rr(
             continue
 
     return etree.tostring(rr_root, encoding="unicode")
+
+
+def create_unrefined_conditions_rr(
+    xml_files: XMLFiles,
+    condition_codes: set[str],
+) -> str:
+    """
+    Create an RR filtered to only the reportable conditions that were not refined.
+
+    When the RR contains multiple reportable conditions for a jurisdiction but
+    only some have active refiner configurations, the conditions that go through
+    full refinement get their own refined RR (produced by `refine_for_condition`
+    via the pipeline). The remaining conditions — those without active
+    configurations — still need their reportability information preserved.
+
+    This function produces that "remainder" RR. It filters the original RR down
+    to just the condition observations matching the provided codes, removing
+    everything else. This prevents duplication: when the jurisdiction receives
+    the full output package (original files + refined outputs), each condition's
+    reportability information appears exactly once.
+
+    Example scenario:
+        SDDH has two reportable conditions: COVID (840539006) and Influenza (772828001).
+        Only COVID has an active configuration.
+
+        - COVID goes through refine_for_condition → produces refined_eICR.xml + refined_RR.xml
+        - Influenza has no config → this function produces an RR with only the
+          Influenza reportability observation, written to unrefined_rr/refined_RR.xml
+
+        The jurisdiction receives both and can process each condition without
+        seeing COVID reported twice.
+
+    Args:
+        xml_files: The eICR/RR pair. Only the RR is used.
+        condition_codes: The set of RSG SNOMED codes for conditions that
+            were NOT refined (i.e., had no active configuration). The
+            returned RR will retain only these condition observations.
+
+    Returns:
+        str: The filtered RR XML as a string, containing only the
+            reportability observations for the specified condition codes.
+    """
+
+    plan = RRRefinementPlan(
+        included_condition_child_rsg_snomed_codes_to_retain=condition_codes
+    )
+
+    return refine_rr(xml_files=xml_files, plan=plan)
