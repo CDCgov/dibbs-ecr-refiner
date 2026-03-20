@@ -189,9 +189,7 @@ class ConfigurationStoragePayload:
         }
 
     @classmethod
-    def from_dict(
-        cls, data: ConfigurationStoragePayloadDict
-    ) -> "ConfigurationStoragePayload":
+    def from_dict(cls, data: dict[Any, Any]) -> "ConfigurationStoragePayload":
         """
         Returns the ConfigurationStoragePayload represented as a dict.
 

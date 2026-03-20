@@ -125,11 +125,11 @@ class TestConfigurations:
             TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
                 1  # No other conditions were included
             )
+            counted_codes = 0
+            for _, code_list in activation_file_json["codes"].items():
+                counted_codes += len(code_list)
 
-            assert (
-                len(activation_file_json["codes"])
-                == TOTAL_EXPECTED_CONDITION_CODE_COUNT
-            )
+            assert counted_codes == TOTAL_EXPECTED_CONDITION_CODE_COUNT
             assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
             assert (
                 len(activation_file_json["included_condition_rsg_codes"])

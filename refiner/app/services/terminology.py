@@ -1,14 +1,11 @@
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
 from app.services.code_system import CodeSystem
 
 from ..db.conditions.model import DbCondition
-
-if TYPE_CHECKING:
-    from ..db.configurations.model import ConfigurationStoragePayload, DbConfiguration
+from ..db.configurations.model import ConfigurationStoragePayload, DbConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:

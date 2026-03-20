@@ -324,7 +324,7 @@ def process_refiner(
 
                 processed_configuration = ProcessedConfiguration.from_storage_payload(
                     # read the stored serialized config for eICR processing
-                    ConfigurationStoragePayload.from_dict(**serialized_configuration)
+                    ConfigurationStoragePayload.from_dict(serialized_configuration)
                 )
 
                 eicr_refinement_plan = create_eicr_refinement_plan(
