@@ -135,7 +135,9 @@ async def convert_config_to_storage_payload(
 
     # custom codes
     for cc in configuration.custom_codes:
-        codes[cc.system].append(Coding(code=cc.code, display=cc.name, system=cc.system))
+        codes[cc.system].append(
+            asdict(Coding(code=cc.code, display=cc.name, system=cc.system))
+        )
 
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
