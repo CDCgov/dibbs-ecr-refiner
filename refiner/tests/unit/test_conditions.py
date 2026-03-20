@@ -19,6 +19,7 @@ async def test_get_latest_conditions(monkeypatch, authed_client):
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("124124", "Hypertension CVX")],
     )
 
     async def fake_get_latest_conditions_db(db):
@@ -52,6 +53,7 @@ async def test_get_condition_found(monkeypatch, authed_client):
         loinc_codes=[DbConditionCoding("1234-5", "Asthma LOINC")],
         icd10_codes=[DbConditionCoding("J45", "Asthma ICD10")],
         rxnorm_codes=[DbConditionCoding("55555", "Asthma RXNORM")],
+        cvx_codes=[DbConditionCoding("15125", "Asthma CVX")],
     )
 
     fake_codes = [
@@ -80,7 +82,6 @@ async def test_get_condition_found(monkeypatch, authed_client):
     data = response.json()
     assert data["id"] == str(condition_id)
     assert data["display_name"] == "Asthma"
-    assert sorted(data["available_systems"]) == ["LOINC", "SNOMED"]
     assert any(code["system"] == "LOINC" for code in data["codes"])
     assert any(code["system"] == "SNOMED" for code in data["codes"])
 

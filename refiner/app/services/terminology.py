@@ -18,7 +18,7 @@ from ..db.configurations.model import DbConfiguration
 # NOTE:
 # CODE SYSTEM MODELS
 # =============================================================================
-
+# todo: refactor these with the code system enum
 SYSTEM_LABEL_TO_OID: dict[str, str] = {
     "SNOMED": "2.16.840.1.113883.6.96",
     "LOINC": "2.16.840.1.113883.6.1",
