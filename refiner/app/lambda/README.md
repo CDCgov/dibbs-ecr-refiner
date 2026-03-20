@@ -2,6 +2,43 @@
 
 This package is exclusively used to build a version of the Refiner intended to run as an AWS Lambda function.
 
+## Refinement pipeline architecture
+
+The Refiner has two entry points that both need to produce identical refinement results:
+
+- **Webapp** (`testing.py`): Interactive validation where a logged-in user tests an eICR/RR pair against a configuration resolved from the database.
+- **Lambda** (`lambda_function.py`): Production refinement where an incoming eICR/RR pair is refined against configurations resolved from S3.
+
+Both entry points share a common refinement pipeline defined in `app/services/pipeline.py`. The pipeline exposes two stages:
+
+1. **Discovery** (`discover_reportable_conditions`): Parses the RR to extract which conditions are reportable and to which jurisdictions. Both the webapp and Lambda call this identically.
+2. **Refinement** (`refine_for_condition`): Takes a `ProcessedConfiguration` and an eICR/RR pair, creates refinement plans, and executes them. The refined output is identical regardless of how the configuration was sourced.
+
+The only difference between the two paths is how they resolve a `ProcessedConfiguration`:
+
+- The **webapp** queries the database, builds a `ConfigurationPayload` with full `DbCondition` objects, and calls `ProcessedConfiguration.from_payload()`. This produces a `CodeSystemSets` with codes organized by system (SNOMED, LOINC, ICD-10, RxNorm, CVX) and enriched with display names.
+- **Lambda** reads an `active.json` file from S3 and calls `ProcessedConfiguration.from_dict()`. The `active.json` file contains a `code_system_sets` field that was serialized at activation time, so `from_dict` produces the same `CodeSystemSets` with the same per-system routing and display names.
+
+This design ensures that once a `ProcessedConfiguration` is built, the downstream behavior is byte-for-byte identical in both environments.
+
+### The activation bridge
+
+The connection between the webapp and Lambda is the activation step. When a user activates a configuration in the webapp, `convert_config_to_storage_payload` in `app/services/configurations.py` serializes the configuration to S3. This includes both a flat `codes` list (for backward compatibility with the generic matching path) and a structured `code_system_sets` field (for section-aware matching). Lambda reads this file at runtime and deserializes it back into the same data structures the webapp uses.
+
+The S3 file structure for a jurisdiction's configuration:
+
+- `configurations/<jurisdiction_id>/rsg_cg_mapping.json` — maps RSG SNOMED codes to condition grouper names and canonical URLs
+- `configurations/<jurisdiction_id>/<canonical_url_uuid>/current.json` — points to the active version number (supports rollback)
+- `configurations/<jurisdiction_id>/<canonical_url_uuid>/<version>/active.json` — the serialized configuration used for refinement
+
+### Unrefined conditions RR
+
+When the RR contains reportable conditions for a jurisdiction but only some have active configurations, conditions that go through full refinement get their own refined eICR and RR. The remaining conditions (those without active configurations) still need their reportability information preserved. The `create_unrefined_conditions_rr` function in `app/services/ecr/refine.py` produces a filtered RR containing only those unrefined conditions. This prevents downstream systems from seeing duplicate condition information when they receive the full output package.
+
+### Observability
+
+Both entry points use `RefinementTrace` objects (defined in `pipeline.py`) to track what happened during refinement. Each trace captures the jurisdiction, condition code, whether a configuration was resolved, the refinement outcome (refined, skipped, or error), and the skip reason if applicable. Lambda logs a summary of all traces at the end of each invocation.
+
 ## Running the eCR Refiner Lambda in production
 
 ### Docker image
@@ -14,14 +51,14 @@ These images are built based on [Dockerfile.lambda](../../../Dockerfile.lambda).
 
 The Lambda accepts the following environment variables, some of which are required.
 
-| Name | Description | Required |
-| --- | --- | --- | --- |
-| `S3_BUCKET_CONFIG` | S3 directory containing jurisdiction configuration files | Yes |
-| `S3_ENDPOINT_URL` | Endpoint to use when configuring the S3 client. Primarily used for testing purposes and should not need to be set in production | No |
-| `EICR_INPUT_PREFIX` | S3 directory containing eICR files | Yes |
-| `REFINER_INPUT_PREFIX` | S3 directory containing RR files | Yes |
-| `REFINER_OUTPUT_PREFIX` | S3 directory where refined files are written | Yes |
-| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success | Yes |
+| Name                      | Description                                                                                                                     | Required |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| `S3_BUCKET_CONFIG`        | S3 directory containing jurisdiction configuration files                                                                        | Yes      |
+| `S3_ENDPOINT_URL`         | Endpoint to use when configuring the S3 client. Primarily used for testing purposes and should not need to be set in production | No       |
+| `EICR_INPUT_PREFIX`       | S3 directory containing eICR files                                                                                              | Yes      |
+| `REFINER_INPUT_PREFIX`    | S3 directory containing RR files                                                                                                | Yes      |
+| `REFINER_OUTPUT_PREFIX`   | S3 directory where refined files are written                                                                                    | Yes      |
+| `REFINER_COMPLETE_PREFIX` | S3 directory where a completion file is written by the Refiner to indicate success                                              | Yes      |
 
 ## File structure and build
 
