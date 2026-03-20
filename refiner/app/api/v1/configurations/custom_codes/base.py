@@ -29,8 +29,6 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.code_system import (
-    ALLOWED_CUSTOM_CODE_SYSTEM_NAMES,
-    ALLOWED_CUSTOM_CODE_SYSTEMS,
     CodeSystem,
 )
 from app.services.configuration_locks import ConfigurationLock
@@ -76,6 +74,12 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "name" is missing.',
         )
+
+
+ALLOWED_CUSTOM_CODE_SYSTEMS: set[CodeSystem] = set(CodeSystem)
+ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
+    item.value for item in ALLOWED_CUSTOM_CODE_SYSTEMS
+)
 
 
 @router.post(

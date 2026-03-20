@@ -33,12 +33,3 @@ ALLOWED_CUSTOM_CODE_SYSTEMS: set[CodeSystem] = set(CodeSystem)
 ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
     item.value for item in ALLOWED_CUSTOM_CODE_SYSTEMS
 )
-
-
-SYSTEM_LABEL_TO_OID: dict[str, str] = {
-    "SNOMED": "2.16.840.1.113883.6.96",
-    "LOINC": "2.16.840.1.113883.6.1",
-    "ICD-10": "2.16.840.1.113883.6.90",
-    "RxNorm": "2.16.840.1.113883.6.88",
-    "CVX": "2.16.840.1.113883.12.292",
-}
