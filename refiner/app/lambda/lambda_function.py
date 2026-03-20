@@ -15,6 +15,9 @@ from botocore.exceptions import ClientError
 
 from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload
+from app.db.configurations.model import (
+    ConfigurationStoragePayload,
+)
 
 from ..core.models.types import XMLFiles
 from ..services.aws.s3_keys import (
@@ -319,8 +322,9 @@ def process_refiner(
                     operation="activation_file_read",
                 )
 
-                processed_configuration = ProcessedConfiguration.from_dict(
-                    serialized_configuration
+                processed_configuration = ProcessedConfiguration.from_storage_payload(
+                    # read the stored serialized config for eICR processing
+                    ConfigurationStoragePayload.from_dict(serialized_configuration)
                 )
 
                 eicr_refinement_plan = create_eicr_refinement_plan(

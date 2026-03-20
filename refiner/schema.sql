@@ -160,7 +160,7 @@ CREATE TABLE public.conditions (
     rxnorm_codes jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    cvx_codes jsonb
+    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 

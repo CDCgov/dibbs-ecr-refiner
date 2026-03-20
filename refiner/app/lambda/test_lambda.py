@@ -215,7 +215,9 @@ def test_lambda_one_active(
 
     # Create activation for COVID
     covid_activation = {
-        "codes": ["101289-7"],
+        "codes": {
+            "LOINC": [{"code": "101289-7", "display": "COVID code", "system": "LOINC"}]
+        },
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
     }
@@ -336,7 +338,9 @@ def test_lambda_all_active(
     )
     # Create activation for COVID
     covid_activation = {
-        "codes": ["101289-7"],
+        "codes": {
+            "LOINC": [{"code": "101289-7", "display": "COVID code", "system": "LOINC"}]
+        },
         "sections": [],
         "included_condition_rsg_codes": ["840539006"],
     }
@@ -357,7 +361,9 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
-        "codes": ["100343-3"],
+        "codes": {
+            "LOINC": [{"code": "100343-3", "display": "COVID code", "system": "LOINC"}]
+        },
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
     }
@@ -377,7 +383,9 @@ def test_lambda_all_active(
     )
     # Create activation for the flu
     flu_activation = {
-        "codes": ["100343-3"],
+        "codes": {
+            "LOINC": [{"code": "100343-3", "display": "COVID code", "system": "LOINC"}]
+        },
         "sections": [],
         "included_condition_rsg_codes": ["772828001"],
     }

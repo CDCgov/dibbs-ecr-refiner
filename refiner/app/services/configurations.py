@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -10,11 +11,13 @@ from app.db.configurations.model import (
     DbConfigurationSectionProcessing,
 )
 from app.db.pool import AsyncDatabaseConnection
+from app.services.code_system import CodeSystem
 from app.services.ecr.specification import (
     SECTION_PROCESSING_SKIP,
     get_section_version_map,
     load_spec,
 )
+from app.services.terminology import Coding
 
 
 def get_default_sections() -> list[DbConfigurationSectionProcessing]:
@@ -126,27 +129,38 @@ async def convert_config_to_storage_payload(
     Returns:
         ConfigurationStoragePayload | None: A configuration that can be written to a file system, or None if operation can't be completed.
     """
-    codes: set[str] = set()
+    codes: dict[str, list[dict]] = defaultdict(list)
     sections: list[dict[str, Any]] = []
     included_condition_rsg_codes: set[str] = set()
 
     # custom codes
     for cc in configuration.custom_codes:
-        codes.add(cc.code)
+        codes[cc.system].append(
+            asdict(Coding(code=cc.code, display=cc.name, system=cc.system))
+        )
 
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
 
-    # condition codes
+    system_map = {
+        "snomed_codes": CodeSystem.SNOMED,
+        "loinc_codes": CodeSystem.LOINC,
+        "rxnorm_codes": CodeSystem.RXNORM,
+        "cvx_codes": CodeSystem.CVX,
+        "icd10_codes": CodeSystem.ICD10,
+    }
+
     for condition in conditions:
-        for code_list in [
-            condition.snomed_codes,
-            condition.loinc_codes,
-            condition.icd10_codes,
-            condition.rxnorm_codes,
-        ]:
-            codes.update(code.code for code in code_list)
+        for attr, system_name in system_map.items():
+            source_data = getattr(condition, attr, [])
+
+            codes[system_name.value].extend(
+                [
+                    asdict(Coding(code=c.code, display=c.display, system=system_name))
+                    for c in source_data
+                ]
+            )
 
     sections = [
         asdict(section_process) for section_process in configuration.section_processing

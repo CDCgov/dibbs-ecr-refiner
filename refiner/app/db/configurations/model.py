@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 from uuid import UUID
 
 from app.services.code_system import CodeSystem
@@ -155,13 +155,23 @@ class DbConfiguration:
         )
 
 
+class ConfigurationStoragePayloadDict(TypedDict):
+    """
+    Typed dictionary version of a ConfigurationStoragePayload.
+    """
+
+    codes: dict[str, list[dict]]
+    sections: list[dict[str, Any]]
+    included_condition_rsg_codes: set[str]
+
+
 @dataclass(frozen=True)
 class ConfigurationStoragePayload:
     """
     The model for a configuration that is being written to S3.
     """
 
-    codes: set[str]
+    codes: dict[str, list[dict]]
     sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
 
@@ -173,10 +183,24 @@ class ConfigurationStoragePayload:
             dict: ConfigurationStoragePayload represented as a dict
         """
         return {
-            "codes": sorted(self.codes),
+            "codes": self.codes,
             "sections": self.sections,
             "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[Any, Any]) -> "ConfigurationStoragePayload":
+        """
+        Returns the ConfigurationStoragePayload represented as a dict.
+
+        Returns:
+            dict: ConfigurationStoragePayload represented as a dict
+        """
+        return cls(
+            codes=data["codes"],
+            sections=data["sections"],
+            included_condition_rsg_codes=data["included_condition_rsg_codes"],
+        )
 
 
 @dataclass(frozen=True)
