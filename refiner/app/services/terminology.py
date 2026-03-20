@@ -310,7 +310,7 @@ class ProcessedConfiguration:
         Creates a ProcessedConfiguration from a validated dictionary.
 
         Supports both the enriched format (with code_system_sets) and the
-        legacy format (flat codes only). When code_system_sets is present
+        simple code search (flat codes only). When code_system_sets is present
         in the data, codes are routed to the correct per-system dictionaries
         with display names, enabling section-aware matching and displayName
         enrichment. When absent, all codes are placed in the 'other' bucket
@@ -326,10 +326,10 @@ class ProcessedConfiguration:
         validated = ProcessedConfigurationData.model_validate(data)
 
         if validated.code_system_sets is not None:
-            # Enriched format: deserialize the per-system code structure
+            # enriched format: deserialize the per-system code structure
             code_system_sets = CodeSystemSets.from_dict(validated.code_system_sets)
         else:
-            # Legacy format: no system info available, put everything in 'other'
+            # no system info available, put everything in 'other'
             other_codings = {code: Coding(code=code) for code in validated.codes}
             code_system_sets = CodeSystemSets(other=other_codings)
 
