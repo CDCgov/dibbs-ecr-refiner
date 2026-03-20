@@ -1,9 +1,14 @@
 from dataclasses import asdict, dataclass, field
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
+from app.services.code_system import CodeSystem
+
 from ..db.conditions.model import DbCondition
-from ..db.configurations.model import DbConfiguration
+
+if TYPE_CHECKING:
+    from ..db.configurations.model import ConfigurationStoragePayload, DbConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -20,11 +25,11 @@ from ..db.configurations.model import DbConfiguration
 # =============================================================================
 # todo: refactor these with the code system enum
 SYSTEM_LABEL_TO_OID: dict[str, str] = {
-    "SNOMED": "2.16.840.1.113883.6.96",
-    "LOINC": "2.16.840.1.113883.6.1",
-    "ICD-10": "2.16.840.1.113883.6.90",
-    "RxNorm": "2.16.840.1.113883.6.88",
-    "CVX": "2.16.840.1.113883.12.292",
+    CodeSystem.SNOMED: "2.16.840.1.113883.6.96",
+    CodeSystem.LOINC: "2.16.840.1.113883.6.1",
+    CodeSystem.ICD10: "2.16.840.1.113883.6.90",
+    CodeSystem.RXNORM: "2.16.840.1.113883.6.88",
+    CodeSystem.CVX: "2.16.840.1.113883.12.292",
 }
 
 
@@ -348,5 +353,57 @@ class ProcessedConfiguration:
             section_processing=[
                 asdict(section) for section in payload.configuration.section_processing
             ],
+            included_condition_rsg_codes=included_condition_rsg_codes,
+        )
+
+    @classmethod
+    def from_storage_payload(
+        cls, payload: ConfigurationStoragePayload
+    ) -> "ProcessedConfiguration":
+        """
+        Create ProcessedConfiguration from a ConfigurationStoragePayload S3 object.
+
+        Args:
+            payload: The ConfigurationStoragePayload containing config information as stored in S3
+
+        Returns:
+            ProcessedConfiguration: An object containing both flat and structured code sets.
+        """
+
+        # STEP 1: build per-system dicts from condition codes
+        # each condition has snomed_codes, loinc_codes, icd10_codes, rxnorm_codes
+        # each code object in those lists has .code and .display
+        terminology_maps: dict[str, dict[str, Coding]] = {
+            system.value: {} for system in CodeSystem
+        }
+        all_codes = set()
+
+        for system, code_list in payload.codes.items():
+            for c in code_list:
+                code = c["code"]
+                all_codes.add(code)
+
+                terminology_maps[system][code] = Coding(
+                    display=c["display"],
+                    code=c["code"],
+                    system=SYSTEM_LABEL_TO_OID[system],
+                )
+
+        # STEP 3: build the CodeSystemSets
+        code_system_sets = CodeSystemSets(
+            snomed=terminology_maps[CodeSystem.SNOMED],
+            loinc=terminology_maps[CodeSystem.LOINC],
+            icd10=terminology_maps[CodeSystem.ICD10],
+            rxnorm=terminology_maps[CodeSystem.RXNORM],
+            cvx=terminology_maps[CodeSystem.CVX],
+            other=terminology_maps[CodeSystem.OTHER],
+        )
+
+        # STEP 4: build included_condition_rsg_codes
+        included_condition_rsg_codes = payload.included_condition_rsg_codes
+        return cls(
+            codes=all_codes,
+            code_system_sets=code_system_sets,
+            section_processing=payload.sections,
             included_condition_rsg_codes=included_condition_rsg_codes,
         )
