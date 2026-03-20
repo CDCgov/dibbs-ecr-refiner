@@ -45,7 +45,10 @@ async def get_conditions(
 
     conditions = await get_latest_conditions_db(db=db)
     return [
-        GetConditionsResponse(id=condition.id, display_name=condition.display_name)
+        GetConditionsResponse(
+            id=condition.id,
+            display_name=condition.display_name,
+        )
         for condition in conditions
     ]
 
@@ -58,7 +61,6 @@ class GetConditionResponse:
 
     id: UUID
     display_name: str
-    available_systems: list[str]
     codes: list[GetConditionCode]
 
 
@@ -95,12 +97,8 @@ async def get_condition(
         id=condition.id, db=db
     )
 
-    # Get all systems in a list (['LOINC', 'SNOMED'])
-    available_systems = sorted({code.system for code in condition_codes})
-
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
-        available_systems=available_systems,
         codes=condition_codes,
     )

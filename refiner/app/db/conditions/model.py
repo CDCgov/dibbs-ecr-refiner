@@ -41,11 +41,12 @@ class DbCondition(DbConditionBase):
     child_rsg_snomed_codes: list[str]
     # jsonb columns storing code/display pairs
     # this data is extracted from flat files from the TES
-    # and seeded from CG's RSG children
+    # and seeded from CG's RSG and ACG children
     snomed_codes: list[DbConditionCoding]
     loinc_codes: list[DbConditionCoding]
     icd10_codes: list[DbConditionCoding]
     rxnorm_codes: list[DbConditionCoding]
+    cvx_codes: list[DbConditionCoding]
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbCondition":
@@ -68,6 +69,7 @@ class DbCondition(DbConditionBase):
             loinc_codes=[DbConditionCoding(**c) for c in row["loinc_codes"]],
             icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],
             rxnorm_codes=[DbConditionCoding(**c) for c in row["rxnorm_codes"]],
+            cvx_codes=[DbConditionCoding(**c) for c in row["cvx_codes"]],
         )
 
 

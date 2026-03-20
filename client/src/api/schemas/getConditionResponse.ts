@@ -10,6 +10,5 @@ import type { GetConditionCode } from './getConditionCode';
 export interface GetConditionResponse {
   id: string;
   display_name: string;
-  available_systems: string[];
   codes: GetConditionCode[];
 }
