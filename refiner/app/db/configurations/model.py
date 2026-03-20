@@ -157,11 +157,17 @@ class DbConfiguration:
 class ConfigurationStoragePayload:
     """
     The model for a configuration that is being written to S3.
+
+    Contains both the flat codes set (for the generic fallback
+    matching path) and the enriched code_system_sets (for
+    section-aware matching with proper code system routing and
+    displayName enrichment).
     """
 
     codes: set[str]
     sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
+    code_system_sets: dict[str, list[dict[str, str]]] | None = None
 
     def to_dict(self) -> dict:
         """
@@ -170,11 +176,17 @@ class ConfigurationStoragePayload:
         Returns:
             dict: ConfigurationStoragePayload represented as a dict
         """
-        return {
+
+        result = {
             "codes": sorted(self.codes),
             "sections": self.sections,
             "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
         }
+
+        if self.code_system_sets is not None:
+            result["code_system_sets"] = self.code_system_sets
+
+        return result
 
 
 @dataclass(frozen=True)

@@ -158,6 +158,75 @@ class CodeSystemSets:
 
         return self.find_match(code, code_system_oid) is not None
 
+    def to_dict(self) -> dict[str, list[dict[str, str]]]:
+        """
+        Serialize CodeSystemSets to a dictionary for S3 storage.
+
+        Each system is serialized as a list of Coding dicts. This format
+        is written to active.json during activation and deserialized by
+        from_dict when lambda reads the configuration.
+
+        Returns:
+            dict: A dictionary with system names as keys and lists of
+                  Coding dicts as values.
+        """
+
+        def _serialize_system(system_dict: dict[str, Coding]) -> list[dict[str, str]]:
+            return [
+                {
+                    "code": coding.code,
+                    "display": coding.display,
+                    "system": coding.system,
+                }
+                for coding in system_dict.values()
+            ]
+
+        return {
+            "snomed": _serialize_system(self.snomed),
+            "loinc": _serialize_system(self.loinc),
+            "icd10": _serialize_system(self.icd10),
+            "rxnorm": _serialize_system(self.rxnorm),
+            "cvx": _serialize_system(self.cvx),
+            "other": _serialize_system(self.other),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, list[dict[str, str]]]) -> "CodeSystemSets":
+        """
+        Deserialize a CodeSystemSets from a dictionary (read from S3).
+
+        This is the inverse of to_dict. Each system key maps to a list
+        of Coding dicts which are reconstructed into the per-system
+        lookup dictionaries.
+
+        Args:
+            data: Dictionary with system names as keys and lists of
+                  Coding dicts as values.
+
+        Returns:
+            CodeSystemSets: A fully populated CodeSystemSets with codes
+                           routed to the correct system dictionaries.
+        """
+
+        def _deserialize_system(codings: list[dict[str, str]]) -> dict[str, Coding]:
+            return {
+                item["code"]: Coding(
+                    code=item["code"],
+                    display=item.get("display", ""),
+                    system=item.get("system", ""),
+                )
+                for item in codings
+            }
+
+        return cls(
+            snomed=_deserialize_system(data.get("snomed", [])),
+            loinc=_deserialize_system(data.get("loinc", [])),
+            icd10=_deserialize_system(data.get("icd10", [])),
+            rxnorm=_deserialize_system(data.get("rxnorm", [])),
+            cvx=_deserialize_system(data.get("cvx", [])),
+            other=_deserialize_system(data.get("other", [])),
+        )
+
 
 # NOTE:
 # CONFIGURATION PROCESSING
@@ -202,11 +271,16 @@ class Section(BaseModel):
 class ProcessedConfigurationData(BaseModel):
     """
     ProcessedConfiguration data coming from an active.json S3 file.
+
+    Supports both the legacy format (flat codes only) and the enriched
+    format (with code_system_sets). The enriched format is written by
+    newer activation code.
     """
 
     codes: set[str] = Field(min_length=1)
     sections: list[Section]
     included_condition_rsg_codes: set[str]
+    code_system_sets: dict[str, list[dict[str, str]]] | None = None
 
 
 @dataclass(frozen=True)
@@ -235,6 +309,13 @@ class ProcessedConfiguration:
         """
         Creates a ProcessedConfiguration from a validated dictionary.
 
+        Supports both the enriched format (with code_system_sets) and the
+        legacy format (flat codes only). When code_system_sets is present
+        in the data, codes are routed to the correct per-system dictionaries
+        with display names, enabling section-aware matching and displayName
+        enrichment. When absent, all codes are placed in the 'other' bucket
+        as a fallback.
+
         Args:
             data (dict): Input dictionary with required data.
 
@@ -244,10 +325,13 @@ class ProcessedConfiguration:
 
         validated = ProcessedConfigurationData.model_validate(data)
 
-        # from_dict only has a flat set of codes — no code system info available
-        # put everything into 'other' since we don't know the systems
-        other_codings = {code: Coding(code=code) for code in validated.codes}
-        code_system_sets = CodeSystemSets(other=other_codings)
+        if validated.code_system_sets is not None:
+            # Enriched format: deserialize the per-system code structure
+            code_system_sets = CodeSystemSets.from_dict(validated.code_system_sets)
+        else:
+            # Legacy format: no system info available, put everything in 'other'
+            other_codings = {code: Coding(code=code) for code in validated.codes}
+            code_system_sets = CodeSystemSets(other=other_codings)
 
         return cls(
             codes=validated.codes,
