@@ -42,7 +42,7 @@ import type {
   ConfirmUploadCustomCodesInput,
   CreateConfigInput,
   CreateConfigurationResponse,
-  CustomSectionInput,
+  DeleteCustomSectionInput,
   GetConfigurationResponse,
   GetConfigurationsResponse,
   HTTPValidationError,
@@ -1001,35 +1001,44 @@ export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidation
       return useMutation(getRunInlineConfigurationTestMutationOptions(options), queryClient);
     }
     /**
- * Create a new custom section for a given configuration ID.
+ * Delete a custom section.
+
 
 Args:
-    configuration_id (UUID): The ID of the configuration
-    section_input (CustomSectionInput): Desired properties of the section
-    user (DbUser): The logged-in user
+    configuration_id (UUID): ID of the configuration with custom section to delete
+    section_input (DeleteCustomSectionInput): Custom section deletion input
+    user (DbUser): The logged in user
     db (AsyncDatabaseConnection): The database connection
- * @summary Insert Custom Section
+
+Raises:
+    HTTPException: 404 if configuration isn't found
+    HTTPException: 409 if configuration isn't a draft
+    HTTPException: 404 if custom section code to delete isn't found
+
+Returns:
+    str: Deleted custom section code
+ * @summary Delete Custom Section
  */
-export const insertCustomSection = (
+export const deleteCustomSection = (
     configurationId: string,
-    customSectionInput: CustomSectionInput, options?: AxiosRequestConfig
+    deleteCustomSectionInput: DeleteCustomSectionInput, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<string>> => {
     
     
     return axios.default.post(
       `/api/v1/configurations/${configurationId}/section-processing`,
-      customSectionInput,{
+      deleteCustomSectionInput,{
     ...options,}
     );
   }
 
 
 
-export const getInsertCustomSectionMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof insertCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof insertCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext> => {
+export const getDeleteCustomSectionMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomSection>>, TError,{configurationId: string;data: DeleteCustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomSection>>, TError,{configurationId: string;data: DeleteCustomSectionInput}, TContext> => {
 
-const mutationKey = ['insertCustomSection'];
+const mutationKey = ['deleteCustomSection'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1039,10 +1048,10 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof insertCustomSection>>, {configurationId: string;data: CustomSectionInput}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomSection>>, {configurationId: string;data: DeleteCustomSectionInput}> = (props) => {
           const {configurationId,data} = props ?? {};
 
-          return  insertCustomSection(configurationId,data,axiosOptions)
+          return  deleteCustomSection(configurationId,data,axiosOptions)
         }
 
 
@@ -1052,22 +1061,22 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type InsertCustomSectionMutationResult = NonNullable<Awaited<ReturnType<typeof insertCustomSection>>>
-    export type InsertCustomSectionMutationBody = CustomSectionInput
-    export type InsertCustomSectionMutationError = AxiosError<HTTPValidationError>
+    export type DeleteCustomSectionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomSection>>>
+    export type DeleteCustomSectionMutationBody = DeleteCustomSectionInput
+    export type DeleteCustomSectionMutationError = AxiosError<HTTPValidationError>
 
     /**
- * @summary Insert Custom Section
+ * @summary Delete Custom Section
  */
-export const useInsertCustomSection = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof insertCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
+export const useDeleteCustomSection = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomSection>>, TError,{configurationId: string;data: DeleteCustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof insertCustomSection>>,
+        Awaited<ReturnType<typeof deleteCustomSection>>,
         TError,
-        {configurationId: string;data: CustomSectionInput},
+        {configurationId: string;data: DeleteCustomSectionInput},
         TContext
       > => {
-      return useMutation(getInsertCustomSectionMutationOptions(options), queryClient);
+      return useMutation(getDeleteCustomSectionMutationOptions(options), queryClient);
     }
     /**
  * Update a section entry for a configuration.

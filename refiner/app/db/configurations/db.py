@@ -6,7 +6,7 @@ from psycopg import AsyncCursor
 from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.api.v1.configurations.model import CustomSectionInput
+from app.api.v1.configurations.model import CustomSectionInput, DeleteCustomSectionInput
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -106,6 +106,44 @@ async def insert_custom_section_db(
                 ),
                 cursor=cur,
             )
+
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
+
+
+async def delete_custom_section_db(
+    config: DbConfiguration,
+    custom_section_input: DeleteCustomSectionInput,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Deletes a custom section from the configurations_sections table.
+
+    Args:
+        config (DbConfiguration): Configuration associated with the section
+        custom_section_input (DeleteCustomSectionInput): Custom section to delete
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        DbConfiguration: Updated configuration
+    """
+
+    query = """
+        DELETE from configurations_sections
+        WHERE configuration_id = %s
+        AND code = %s
+        AND section_type = 'custom'
+        RETURNING code
+    """
+    params = (config.id, custom_section_input.code)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db

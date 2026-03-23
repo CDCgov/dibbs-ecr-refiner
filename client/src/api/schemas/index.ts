@@ -28,6 +28,7 @@ export * from './dbConfigurationStatus';
 export * from './dbSectionAction';
 export * from './dbSectionType';
 export * from './dbTotalConditionCodeCount';
+export * from './deleteCustomSectionInput';
 export * from './eventFilterOption';
 export * from './eventResponse';
 export * from './getConditionCode';

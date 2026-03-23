@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
     CustomSectionInput,
+    DeleteCustomSectionInput,
     StandardSectionInput,
 )
 from app.db.configurations.db import (
+    delete_custom_section_db,
     get_configuration_by_id_db,
     insert_custom_section_db,
     update_configuration_section_db,
@@ -87,6 +89,72 @@ async def insert_custom_section(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Custom section creation failed.",
+        )
+
+    return section_input.code
+
+
+@router.post(
+    "", response_model=str, tags=["configurations"], operation_id="deleteCustomSection"
+)
+async def delete_custom_section(
+    configuration_id: UUID,
+    section_input: DeleteCustomSectionInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> str:
+    """
+
+    Delete a custom section.
+
+    Args:
+        configuration_id (UUID): ID of the configuration with custom section to delete
+        section_input (DeleteCustomSectionInput): Custom section deletion input
+        user (DbUser): The logged in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if configuration isn't found
+        HTTPException: 409 if configuration isn't a draft
+        HTTPException: 404 if custom section code to delete isn't found
+
+    Returns:
+        str: Deleted custom section code
+    """
+
+    jd = user.jurisdiction_id
+
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=jd, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    await ConfigurationLock.raise_if_locked_by_other(
+        configuration_id,
+        user.id,
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
+    updated_config = await delete_custom_section_db(
+        config=config, custom_section_input=section_input, db=db
+    )
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"A custom section with code {section_input.code} was not found.",
         )
 
     return section_input.code
