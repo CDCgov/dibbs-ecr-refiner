@@ -141,7 +141,7 @@ function SectionName({ section }: SectionNameProps) {
         </div>
         {isCustom ? (
           <div className="flex flex-row gap-2">
-            <span>{section.code}</span>
+            <span className="text-sm">{section.code}</span>
             <div className="flex flex-row gap-1">
               <Button className="text-sm!" variant="tertiary">
                 Edit
@@ -163,7 +163,7 @@ function SectionName({ section }: SectionNameProps) {
         <span className="text-gray-cool-70 italic">{section.name}</span>
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
-      {isCustom ? <span>{section.code}</span> : null}
+      {isCustom ? <span className="text-sm">{section.code}</span> : null}
     </div>
   );
 }
