@@ -53,7 +53,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Trivy vulnerability scanner (SARIF)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "sarif"
@@ -63,7 +63,7 @@ jobs:
           timeout: "10m"
 
       - name: Run Trivy vulnerability scanner (JSON for PR comment)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "json"
@@ -73,7 +73,7 @@ jobs:
           timeout: "10m"
 
       - name: Display Trivy results as table
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: local-scan/${{ matrix.image.name }}:${{ github.sha }}
           format: "table"
