@@ -4,7 +4,7 @@ Date: 2026-03-07
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context and Problem Statement
 
