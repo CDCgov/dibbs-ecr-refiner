@@ -32,6 +32,7 @@ def _make_condition_v1_1(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -82,6 +83,7 @@ def _make_condition_v3_1_1(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -113,7 +115,65 @@ def _make_db_configuration_v3_1_1(**kwargs) -> DbConfiguration:
 
 
 # NOTE:
-# EICR REFINEMENT TESTS
+# LOCAL TEST HELPER FUNCTIONS - shared
+# =============================================================================
+
+
+def _make_empty_processed_config() -> ProcessedConfiguration:
+    """
+    Creates a ProcessedConfiguration with no codes.
+
+    Used by tests that need a valid code_system_sets but don't
+    care about matching (e.g., retain, no-match tests).
+    """
+
+    condition = _make_condition_v1_1()
+    config = _make_db_configuration_v1_1()
+    payload = ConfigurationPayload(conditions=[condition], configuration=config)
+    return ProcessedConfiguration.from_payload(payload)
+
+
+def _make_processed_config_v1_1(**condition_kwargs) -> ProcessedConfiguration:
+    """
+    Creates a ProcessedConfiguration from a v1.1 condition with the given codes.
+
+    Convenience helper to reduce boilerplate in tests that need real
+    code_system_sets for section-aware matching.
+    """
+
+    condition = _make_condition_v1_1(**condition_kwargs)
+    config = _make_db_configuration_v1_1()
+    payload = ConfigurationPayload(conditions=[condition], configuration=config)
+    return ProcessedConfiguration.from_payload(payload)
+
+
+def _make_plan(
+    processed_config: ProcessedConfiguration,
+    sections: dict[str, str],
+) -> EICRRefinementPlan:
+    """
+    Creates an EICRRefinementPlan from a ProcessedConfiguration and a dict
+    of section_code -> action.
+
+    Args:
+        processed_config: The processed configuration with codes and code_system_sets.
+        sections: Dict mapping section LOINC codes to actions ("refine", "retain", "remove").
+    """
+
+    return EICRRefinementPlan(
+        codes_to_check=processed_config.codes,
+        code_system_sets=processed_config.code_system_sets,
+        section_instructions={
+            code: DbConfigurationSectionInstructions(
+                action=action, include=True, narrative=False
+            )
+            for code, action in sections.items()
+        },
+    )
+
+
+# NOTE:
+# EICR REFINEMENT TESTS — existing (fixed)
 # =============================================================================
 
 
@@ -122,8 +182,11 @@ def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
     Tests the 'retain' action, which should not modify the section.
     """
 
+    empty_config = _make_empty_processed_config()
+
     plan = EICRRefinementPlan(
-        codes_to_check=(),
+        codes_to_check=set(),
+        code_system_sets=empty_config.code_system_sets,
         section_instructions={
             "29762-2": DbConfigurationSectionInstructions(
                 action="retain", include=True, narrative=False
@@ -147,11 +210,14 @@ def test_retain_action_v1_1(covid_influenza_v1_1_files: XMLFiles):
 
 def test_refine_action_with_no_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
     """
-    Tests 'refine' with a non-matching XPath, which should create a minimal section.
+    Tests 'refine' with a non-matching code, which should create a minimal section.
     """
 
+    empty_config = _make_empty_processed_config()
+
     plan = EICRRefinementPlan(
-        codes_to_check=set("NON_EXISTENT_CODE"),
+        codes_to_check={"NON_EXISTENT_CODE"},
+        code_system_sets=empty_config.code_system_sets,
         section_instructions={
             "11450-4": DbConfigurationSectionInstructions(
                 action="refine", include=True, narrative=False
@@ -169,19 +235,16 @@ def test_refine_action_with_no_matches_v1_1(covid_influenza_v1_1_files: XMLFiles
 def test_refine_action_with_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
     """
     Tests the 'refine' action for v1.1, ensuring it correctly uses the
-    terminology pipeline to build an XPath and filter a section.
+    terminology pipeline to build codes and filter a section.
     """
 
-    condition = _make_condition_v1_1(
-        loinc_codes=[DbConditionCoding(code="94310-0", display="")]
+    processed_config = _make_processed_config_v1_1(
+        loinc_codes=[DbConditionCoding(code="94533-7", display="")]
     )
-    config = _make_db_configuration_v1_1()
-    payload = ConfigurationPayload(conditions=[condition], configuration=config)
-
-    processed_config = ProcessedConfiguration.from_payload(payload)
 
     plan = EICRRefinementPlan(
         codes_to_check=processed_config.codes,
+        code_system_sets=processed_config.code_system_sets,
         section_instructions={
             "30954-2": DbConfigurationSectionInstructions(
                 action="refine", include=True, narrative=False
@@ -195,7 +258,251 @@ def test_refine_action_with_matches_v1_1(covid_influenza_v1_1_files: XMLFiles):
         './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=NAMESPACES
     )[0]
     section_text = etree.tostring(results_section, encoding="unicode")
-    assert "94310-0" in section_text
+    assert "94533-7" in section_text
+
+
+# NOTE:
+# EICR REFINEMENT TESTS — section-aware path
+# =============================================================================
+# These tests exercise the full refine_eicr pipeline with real
+# ProcessedConfiguration objects so that the section-aware match rules,
+# component-level pruning, and displayName enrichment all fire.
+#
+# They assert on the shape of the refined XML output rather than testing
+# internal functions, making them resilient to internal refactoring.
+
+
+def test_section_aware_results_filtering_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests that the section-aware path correctly filters the Results section:
+    keeps entries with LOINC codes in the condition grouper and removes entries
+    with LOINC codes not in the condition grouper.
+    """
+
+    processed_config = _make_processed_config_v1_1(
+        loinc_codes=[
+            DbConditionCoding(code="94533-7", display="SARS-CoV-2 N gene"),
+            DbConditionCoding(code="94558-4", display="SARS-CoV-2 Ag Rapid"),
+        ],
+    )
+    plan = _make_plan(processed_config, {"30954-2": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    results_section = doc.xpath(
+        './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=NAMESPACES
+    )[0]
+
+    # matching COVID tests should survive
+    organizer_codes = results_section.xpath(
+        ".//hl7:organizer/hl7:code/@code", namespaces=NAMESPACES
+    )
+    assert "94533-7" in organizer_codes
+    assert "94558-4" in organizer_codes
+
+    # non-matching entries should be removed
+    section_text = etree.tostring(results_section, encoding="unicode")
+    assert "34487-9" not in section_text  # influenza
+    assert "51990-0" not in section_text  # BMP
+    assert "48065-7" not in section_text  # D-dimer
+    assert "30746-2" not in section_text  # chest X-ray
+
+
+def test_section_aware_problems_component_pruning_v1_1(
+    covid_influenza_v1_1_files: XMLFiles,
+):
+    """
+    Tests that the Problems section prunes individual problem observations
+    within a Problem Concern Act while keeping the act wrapper intact.
+    """
+
+    processed_config = _make_processed_config_v1_1(
+        snomed_codes=[
+            DbConditionCoding(code="840539006", display="Disease caused by SARS-CoV-2"),
+            DbConditionCoding(code="186747009", display="Coronavirus infection"),
+            DbConditionCoding(code="230145002", display="Difficulty Breathing"),
+        ],
+    )
+    plan = _make_plan(processed_config, {"11450-4": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    problems_section = doc.xpath(
+        './/hl7:section[hl7:code[@code="11450-4"]]', namespaces=NAMESPACES
+    )[0]
+
+    # section should NOT be NI — we have matches
+    assert problems_section.get("nullFlavor") is None
+
+    # the Problem Concern Act wrapper should still be present
+    concern_acts = problems_section.xpath(
+        ".//hl7:act[hl7:code[@code='CONC']]", namespaces=NAMESPACES
+    )
+    assert len(concern_acts) == 1
+
+    # matching problem observations should survive
+    surviving_values = problems_section.xpath(
+        ".//hl7:observation/hl7:value/@code", namespaces=NAMESPACES
+    )
+    assert "840539006" in surviving_values
+    assert "186747009" in surviving_values
+    assert "230145002" in surviving_values
+
+    # non-matching observations should be pruned
+    section_text = etree.tostring(problems_section, encoding="unicode")
+    assert "719865001" not in section_text  # influenza
+    assert "59621000" not in section_text  # hypertension
+    assert "44054006" not in section_text  # diabetes
+
+
+def test_display_name_enrichment_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests that missing displayName attributes are filled in from the condition
+    grouper, both at match time (observation code) and during the post-prune
+    enrichment pass (organizer code, result value).
+    """
+
+    processed_config = _make_processed_config_v1_1(
+        loinc_codes=[
+            DbConditionCoding(
+                code="94759-8",
+                display="SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection",
+            ),
+        ],
+        snomed_codes=[
+            DbConditionCoding(code="260373001", display="Detected (qualifier value)"),
+        ],
+    )
+    plan = _make_plan(processed_config, {"30954-2": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    results_section = doc.xpath(
+        './/hl7:section[hl7:code[@code="30954-2"]]', namespaces=NAMESPACES
+    )[0]
+
+    # observation code should be enriched (match-time)
+    obs_codes = results_section.xpath(
+        ".//hl7:observation/hl7:code[@code='94759-8']", namespaces=NAMESPACES
+    )
+    assert len(obs_codes) > 0
+    assert obs_codes[0].get("displayName") is not None
+    assert "Nasopharynx" in obs_codes[0].get("displayName", "")
+
+    # organizer code should be enriched (post-prune _enrich_surviving_entries)
+    organizer_codes = results_section.xpath(
+        ".//hl7:organizer/hl7:code[@code='94759-8']", namespaces=NAMESPACES
+    )
+    assert len(organizer_codes) > 0
+    assert organizer_codes[0].get("displayName") is not None
+    assert "Nasopharynx" in organizer_codes[0].get("displayName", "")
+
+    # result value should be enriched (post-prune _enrich_surviving_entries)
+    detected_values = results_section.xpath(
+        ".//hl7:value[@code='260373001']", namespaces=NAMESPACES
+    )
+    assert len(detected_values) > 0
+    assert detected_values[0].get("displayName") is not None
+    assert "Detected" in detected_values[0].get("displayName", "")
+
+
+def test_plan_of_treatment_heterogeneous_entries_v1_1(
+    covid_influenza_v1_1_files: XMLFiles,
+):
+    """
+    Tests that Plan of Treatment correctly handles heterogeneous entry types:
+    keeps matching lab orders (LOINC) and medications (RxNorm), removes
+    non-matching entries.
+    """
+
+    processed_config = _make_processed_config_v1_1(
+        loinc_codes=[
+            DbConditionCoding(code="94500-6", display="SARS-CoV-2 RNA panel"),
+        ],
+        rxnorm_codes=[
+            DbConditionCoding(code="2284960", display="remdesivir 100 MG Injection"),
+        ],
+    )
+    plan = _make_plan(processed_config, {"18776-5": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    pot_section = doc.xpath(
+        './/hl7:section[hl7:code[@code="18776-5"]]', namespaces=NAMESPACES
+    )[0]
+    section_text = etree.tostring(pot_section, encoding="unicode")
+
+    # matching lab order and medication should survive
+    assert "94500-6" in section_text
+    assert "2284960" in section_text
+
+    # non-matching entries should be removed
+    assert "25836-8" not in section_text  # influenza lab order
+    assert "261315" not in section_text  # oseltamivir
+    assert "314076" not in section_text  # lisinopril
+    assert "861007" not in section_text  # metformin
+    assert "270427003" not in section_text  # follow-up encounter
+
+
+def test_encounters_diagnosis_pruning_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests that the Encounters section prunes non-matching diagnoses at the
+    component level while keeping the encounter wrapper and matching diagnoses.
+    """
+
+    processed_config = _make_processed_config_v1_1(
+        snomed_codes=[
+            DbConditionCoding(code="840539006", display="Disease caused by SARS-CoV-2"),
+        ],
+    )
+    plan = _make_plan(processed_config, {"46240-8": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    enc_section = doc.xpath(
+        './/hl7:section[hl7:code[@code="46240-8"]]', namespaces=NAMESPACES
+    )[0]
+
+    # only encounters with matching diagnoses should survive
+    entries = enc_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
+    assert len(entries) == 1
+
+    # COVID diagnosis should be kept
+    surviving_values = enc_section.xpath(
+        ".//hl7:observation/hl7:value/@code", namespaces=NAMESPACES
+    )
+    assert "840539006" in surviving_values
+
+    # influenza diagnosis should be pruned from within the encounter
+    section_text = etree.tostring(enc_section, encoding="unicode")
+    assert "772828001" not in section_text
+
+
+def test_non_matching_section_becomes_ni_v1_1(covid_influenza_v1_1_files: XMLFiles):
+    """
+    Tests that a section with entries but no matching codes becomes nullFlavor NI
+    with all entries removed.
+    """
+
+    processed_config = _make_processed_config_v1_1(
+        snomed_codes=[
+            DbConditionCoding(code="840539006", display="Disease caused by SARS-CoV-2"),
+        ],
+    )
+    plan = _make_plan(processed_config, {"11369-6": "refine"})
+    refined_xml = refine_eicr(xml_files=covid_influenza_v1_1_files, plan=plan)
+
+    doc = etree.fromstring(refined_xml.encode("utf-8"))
+    imm_section = doc.xpath(
+        './/hl7:section[hl7:code[@code="11369-6"]]', namespaces=NAMESPACES
+    )[0]
+
+    # no matching CVX codes for COVID → section should be NI
+    assert imm_section.get("nullFlavor") == "NI"
+
+    # entries should be removed
+    entries = imm_section.xpath(".//hl7:entry", namespaces=NAMESPACES)
+    assert len(entries) == 0
 
 
 # NOTE:
@@ -257,7 +564,8 @@ def test_refine_rr_by_jurisdiction_v1_1(covid_influenza_v1_1_files: XMLFiles):
 
 def test_refine_rr_by_condition_v3_1_1(zika_v3_1_1_files: XMLFiles):
     """
-    Tests RR refinement on the Zika file: confirms the Zika observation is kept even if config is for another jurisdiction.
+    Tests RR refinement on the Zika file: confirms the Zika observation is kept
+    even if config is for another jurisdiction.
     """
 
     zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])

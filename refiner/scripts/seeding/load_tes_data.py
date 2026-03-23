@@ -74,7 +74,8 @@ def _insert_processed_conditions(
                     loinc_codes,
                     snomed_codes,
                     icd10_codes,
-                    rxnorm_codes
+                    rxnorm_codes,
+                    cvx_codes
                 )
                 VALUES (
                     %(canonical_url)s,
@@ -84,7 +85,8 @@ def _insert_processed_conditions(
                     %(loinc_codes)s,
                     %(snomed_codes)s,
                     %(icd10_codes)s,
-                    %(rxnorm_codes)s
+                    %(rxnorm_codes)s,
+                    %(cvx_codes)s
                 )
                 """
             )

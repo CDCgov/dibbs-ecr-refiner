@@ -5,13 +5,13 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { AddCustomCodeInputSystem } from './addCustomCodeInputSystem';
+import type { CodeSystem } from './codeSystem';
 
 /**
  * Input model for adding a custom code to a configuration.
  */
 export interface AddCustomCodeInput {
   code: string;
-  system: AddCustomCodeInputSystem;
+  system: CodeSystem;
   name: string;
 }
