@@ -215,7 +215,7 @@ The structure of `current.json` will be:
 
 ```json
 {
-  "version": 2
+    "version": 2
 }
 ```
 
@@ -265,20 +265,20 @@ A successful activation will produce the following changes:
 
 1. In S3, these files will be written
 
-   ```sh
-   .
-   └── SDDH/
-       ├── 186747009/
-       │   ├── current.json
-       │   └── 1/
-       │       ├── active.json
-       │       └── metadata.json
-       └── 840539006/
-           ├── current.json
-           └── 1/
-               ├── active.json
-               └── metadata.json
-   ```
+    ```sh
+    .
+    └── SDDH/
+        ├── 186747009/
+        │   ├── current.json
+        │   └── 1/
+        │       ├── active.json
+        │       └── metadata.json
+        └── 840539006/
+            ├── current.json
+            └── 1/
+                ├── active.json
+                └── metadata.json
+    ```
 
 2. The database row of the version 1 COVID-19 configuration for SDDH will have its status set to `active` and its `s3_urls` will include the URLs for the two active configuration files written.
 
@@ -288,14 +288,14 @@ A failed activation will produce the following changes:
 
 1. In S3, only some of the necessary files could be written. Note that we're missing this directory's `current.json` and the entire subdirectory for `840539006`
 
-   ```sh
-   .
-   └── SDDH/
-       └── 186747009/
-           └── 1/
-               ├── active.json
-               └── metadata.json
-   ```
+    ```sh
+    .
+    └── SDDH/
+        └── 186747009/
+            └── 1/
+                ├── active.json
+                └── metadata.json
+    ```
 
 2. In this scenario, only 2 of the necessary files were written so the activation will fail
 3. Database transaction ends, record is not updated, user is given an error message in the web app
@@ -356,11 +356,11 @@ The initial format of this file will look as such:
 
 ```json
 {
-  "canonicalUrl": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
-  "tesVersion": "3.0.0",
-  "conditionName": "COVID-19",
-  "configurationVersion": 3,
-  "childRsgSnomedCodes": [186747009, 840539006]
+    "canonicalUrl": "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
+    "tesVersion": "3.0.0",
+    "conditionName": "COVID-19",
+    "configurationVersion": 3,
+    "childRsgSnomedCodes": [186747009,840539006]
 }
 ```
 
