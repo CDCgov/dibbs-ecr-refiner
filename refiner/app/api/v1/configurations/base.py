@@ -383,6 +383,11 @@ def _format_section_naming(
     Returns:
         DbConfigurationSectionProcessing: Section with modified name
     """
+
+    # Don't modify the name of a custom section
+    if section.section_type == "custom":
+        return section
+
     name_without_section = re.sub(
         r"\s+section\s*$", "", section.name, flags=re.IGNORECASE
     )
