@@ -4,7 +4,7 @@ Date: 2026-01-14
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context and Problem Statement
 
@@ -29,15 +29,15 @@ Here is a minimal example of what the `active.json` file will look like:
 
 ```json
 {
-    "codes": ["string"],
-    "sections": [
-        {
-            "code": "string",
-            "name": "string",
-            "action": "string"
-        }
-    ],
-    "included_condition_rsg_codes": ["string"]
+  "codes": ["string"],
+  "sections": [
+    {
+      "code": "string",
+      "name": "string",
+      "action": "string"
+    }
+  ],
+  "included_condition_rsg_codes": ["string"]
 }
 ```
 
@@ -3759,10 +3759,7 @@ A real-world example might look like this:
 
 ```json
 {
-  "child_rsg_snomed_codes": [
-    "186747009",
-    "840539006"
-  ],
+  "child_rsg_snomed_codes": ["186747009", "840539006"],
   "jurisdiction_code": "SDDH",
   "active_version": 2
 }
