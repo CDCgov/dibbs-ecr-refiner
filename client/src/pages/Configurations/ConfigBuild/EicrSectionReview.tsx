@@ -21,6 +21,7 @@ import {
 } from '@trussworks/react-uswds';
 import React, { JSX, useRef, useState } from 'react';
 import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
+import { Button } from '../../../components/Button';
 
 /**
  * TODO: please refer to specification.py
@@ -133,17 +134,36 @@ function SectionName({ section }: SectionNameProps) {
 
   if (section.include) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="font-bold">{section.name}</span>
-        {isCustom ? <CustomSectionBadge /> : null}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="font-bold">{section.name}</span>
+          {isCustom ? <CustomSectionBadge /> : null}
+        </div>
+        {isCustom ? (
+          <div className="flex flex-row gap-2">
+            <span>{section.code}</span>
+            <div className="flex flex-row gap-1">
+              <Button className="text-sm!" variant="tertiary">
+                Edit
+              </Button>
+              <span className="not-sr-only text-sm">|</span>
+              <Button className="text-sm!" variant="tertiary">
+                Delete
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-gray-cool-70 italic">{section.name}</span>
-      {isCustom ? <CustomSectionBadge /> : null}
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="text-gray-cool-70 italic">{section.name}</span>
+        {isCustom ? <CustomSectionBadge /> : null}
+      </div>
+      {isCustom ? <span>{section.code}</span> : null}
     </div>
   );
 }
