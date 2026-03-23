@@ -20,6 +20,7 @@ describe('EicrSectionReview', () => {
         code: 'hist',
         narrative: false,
         versions: ['1.1', '3.1'],
+        section_type: 'standard',
       },
       {
         name: 'Med section',
@@ -28,6 +29,7 @@ describe('EicrSectionReview', () => {
         code: 'med',
         narrative: false,
         versions: ['1.1', '3.1', '3.1.1'],
+        section_type: 'standard',
       },
       {
         name: 'Immuizations section',
@@ -36,6 +38,7 @@ describe('EicrSectionReview', () => {
         code: 'imm',
         narrative: false,
         versions: ['3.1', '3.1.1'],
+        section_type: 'standard',
       },
     ];
     renderWithClient(
