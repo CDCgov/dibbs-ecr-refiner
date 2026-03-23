@@ -28,7 +28,7 @@ The files decribed in [the original file format write-up](./0004_2026-01-14_file
 
 It's worth mentioning that these values are a duplicate version of the codes included under `codes`. This decision was done to speed up implementation in the short term, but may be changed if issues around data drift, storage performance, etc. arise in the future.
 
-```json
+```jsonc
   "code_system_sets": {
     "snomed": [
       {
