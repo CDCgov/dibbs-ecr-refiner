@@ -9,10 +9,7 @@ import {
   TextInput,
   Select,
 } from '@trussworks/react-uswds';
-import {
-  UploadCustomCodesPreviewItem,
-  UploadCustomCodesPreviewItemSystem,
-} from '../../../api/schemas';
+import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '../../../components/Button';
 
@@ -119,7 +116,7 @@ interface PreviewEditModalProps {
   >;
   isEditSaveDisabled: boolean;
   handlePreviewEditSubmit: () => void;
-  PREVIEW_CODE_SYSTEMS: UploadCustomCodesPreviewItemSystem[];
+  PREVIEW_CODE_SYSTEMS: CodeSystem[];
   previewItems: UploadCustomCodesPreviewItem[] | null;
   previewEditIndex: number | null;
   setError: (err: string | null) => void;

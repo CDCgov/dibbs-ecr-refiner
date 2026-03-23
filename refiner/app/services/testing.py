@@ -19,17 +19,14 @@ from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
 from .ecr.model import (
-    ProcessedRR,
     RefinedDocument,
     ReportableCondition,
 )
-from .ecr.refine import (
-    create_eicr_refinement_plan,
-    create_rr_refinement_plan,
-    refine_eicr,
-    refine_rr,
+from .pipeline import (
+    RefinementTrace,
+    discover_reportable_conditions,
+    refine_for_condition,
 )
-from .ecr.reportability import determine_reportability
 
 # NOTE:
 # DATA STRUCTURES
@@ -150,12 +147,13 @@ async def independent_testing(
     """
 
     # STEP 1:
-    # extract all reportable condition snomed codes from the RR file that are reportable for the given jurisdiction
-    # then, for each code, get a list of all possible condition versions (because we can't know which version is configured a priori)
-    reportability_data = _extract_reportable_conditions_for_jurisdiction(
+    # * use the shared pipeline to discover all reportable conditions, then
+    # filter to the logged-in user's jurisdiction.
+    # * for each code, get a list of all possible condition versions (because
+    # we can't know which version is configured a priori)
+    rc_codes_for_jurisdiction = _get_reportable_codes_for_jurisdiction(
         xml_files, jurisdiction_id
     )
-    rc_codes_for_jurisdiction = reportability_data["rc_codes_for_jurisdiction"]
     rc_to_conditions_map = await _map_rc_codes_to_conditions(
         db=db, rc_codes=rc_codes_for_jurisdiction
     )
@@ -284,17 +282,19 @@ async def independent_testing(
         processed_configuration = ProcessedConfiguration.from_payload(payload)
         trace.refine_object = processed_configuration
 
-        eicr_refinement_plan = create_eicr_refinement_plan(
-            processed_configuration=processed_configuration, xml_files=xml_files
+        # Use the shared pipeline to execute refinement
+        rr_code_used = trace.rc_snomed_codes[0]
+        pipeline_trace = RefinementTrace(
+            jurisdiction_code=jurisdiction_id,
+            rsg_code=rr_code_used,
+            condition_grouper_name=trace.matching_condition.display_name,
+            configuration_version=configuration.version,
         )
-        refined_eicr_str = refine_eicr(xml_files=xml_files, plan=eicr_refinement_plan)
 
-        rr_refinement_plan = create_rr_refinement_plan(
-            processed_configuration=processed_configuration
-        )
-        refined_rr_str = refine_rr(
+        result = refine_for_condition(
             xml_files=xml_files,
-            plan=rr_refinement_plan,
+            processed_configuration=processed_configuration,
+            trace=pipeline_trace,
         )
 
         # TODO: in the future we might want the ReportableCondition model to use
@@ -302,14 +302,13 @@ async def independent_testing(
         # `rc_snomed_code` that was **in** the RR that matches the condition and
         # has a configuration. picking the first entry in an index isn't correct but
         # we should wait to see how the testing service evolves with the routes
-        rr_code_used = trace.rc_snomed_codes[0]
         trace.refined_document = RefinedDocument(
             reportable_condition=ReportableCondition(
                 code=rr_code_used,
                 display_name=trace.matching_condition.display_name,
             ),
-            refined_eicr=refined_eicr_str,
-            refined_rr=refined_rr_str,
+            refined_eicr=result.refined_eicr,
+            refined_rr=result.refined_rr,
         )
 
         logger.info(
@@ -319,6 +318,7 @@ async def independent_testing(
                 "triggering_codes": trace.rc_snomed_codes,
                 "configuration_found": trace.matching_configuration.name,
                 "total_conditions_used": trace.number_of_included_conditions,
+                "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
                 "outcome": "Refinement successful",
             },
         )
@@ -356,7 +356,7 @@ async def inline_testing(
        is present in the reportable codes from the RR; if not, returns an error.
     4. If valid, builds a ProcessedConfiguration object using the configuration and its primary condition.
     5. Use the ProcessedConfiguration to create a final set of instructions for refinement
-       and execute the plan via refine_eicr.
+       and execute the plan via the shared refinement pipeline.
     6. Constructs and returns the InlineTestingResult, containing the refined document or an error message if validation failed.
 
     Args:
@@ -382,12 +382,13 @@ async def inline_testing(
     )
 
     # STEP 2:
-    # extract and validate reportable condition codes from RR
-    reportability_data = _extract_reportable_conditions_for_jurisdiction(
+    # use the shared pipeline to discover reportable conditions, then
+    # filter to this jurisdiction and validate against the primary condition
+    rc_codes_for_jurisdiction = _get_reportable_codes_for_jurisdiction(
         xml_files, jurisdiction_id
     )
 
-    reportable_codes_in_rr = set(reportability_data["rc_codes_for_jurisdiction"])
+    reportable_codes_in_rr = set(rc_codes_for_jurisdiction)
     rsg_codes_from_primary_condition = set(
         trace.primary_condition.child_rsg_snomed_codes
     )
@@ -423,24 +424,24 @@ async def inline_testing(
     trace.matched_code = list(matched_codes)[0]
 
     # STEP 4:
-    # prepare and execute the refinement from payload -> processed_configuration -> refinement plan
+    # prepare and execute the refinement from payload -> processed_configuration -> shared pipeline
     payload = ConfigurationPayload(
         configuration=trace.configuration,
         conditions=trace.all_conditions_for_configuration,
     )
     processed_configuration = ProcessedConfiguration.from_payload(payload)
 
-    eicr_refinement_plan = create_eicr_refinement_plan(
-        processed_configuration=processed_configuration, xml_files=xml_files
+    pipeline_trace = RefinementTrace(
+        jurisdiction_code=jurisdiction_id,
+        rsg_code=trace.matched_code,
+        condition_grouper_name=trace.primary_condition.display_name,
+        configuration_version=trace.configuration.version,
     )
-    refined_eicr_str = refine_eicr(xml_files=xml_files, plan=eicr_refinement_plan)
 
-    rr_refinement_plan = create_rr_refinement_plan(
-        processed_configuration=processed_configuration
-    )
-    refined_rr_str = refine_rr(
+    result = refine_for_condition(
         xml_files=xml_files,
-        plan=rr_refinement_plan,
+        processed_configuration=processed_configuration,
+        trace=pipeline_trace,
     )
 
     # STEP 5:
@@ -450,8 +451,8 @@ async def inline_testing(
             code=trace.matched_code,
             display_name=trace.primary_condition.display_name,
         ),
-        refined_eicr=refined_eicr_str,
-        refined_rr=refined_rr_str,
+        refined_eicr=result.refined_eicr,
+        refined_rr=result.refined_rr,
     )
 
     # log high level details of the refinement flow for this
@@ -463,6 +464,7 @@ async def inline_testing(
             "primary_condition": trace.primary_condition.display_name,
             "matched_code_in_rr": trace.matched_code,
             "total_conditions_used": trace.number_of_included_conditions,
+            "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
             "outcome": "Refinement successful",
         },
     )
@@ -478,47 +480,32 @@ async def inline_testing(
 # =============================================================================
 
 
-class ReportabilityData(TypedDict):
-    """
-    In determining reportability package necessary data into this shape.
-    """
-
-    rc_codes_for_jurisdiction: list[str]
-    rc_codes_all: list[str]
-    full_reportability_result: ProcessedRR
-
-
-def _extract_reportable_conditions_for_jurisdiction(
+def _get_reportable_codes_for_jurisdiction(
     xml_files: XMLFiles, jurisdiction_id: str
-) -> ReportabilityData:
+) -> list[str]:
     """
-    Extract RC SNOMED codes from RR, filter by jurisdiction, and collect all RCs for trace.
+    Get reportable conditions for jurisdicitons.
+
+    Use the shared pipeline to discover reportable conditions from the RR,
+    then extract just the SNOMED codes for the specified jurisdiction.
+
+    Args:
+        xml_files: The eICR/RR pair.
+        jurisdiction_id: The jurisdiction to filter for (e.g., "SDDH").
+
+    Returns:
+        list[str]: The RC SNOMED codes reportable to this jurisdiction.
     """
 
-    # run reportability logic (assuming function is async, otherwise remove await)
-    reportability_result = determine_reportability(xml_files)
+    reportable_groups = discover_reportable_conditions(xml_files)
 
-    # example structure: reportability_result["conditions"] = list of dicts
-    # each dict: {"code": "...", "is_reportable": True/False, "jurisdictions": [...]}
+    rc_codes: list[str] = []
+    for group in reportable_groups:
+        if group.jurisdiction.upper() == jurisdiction_id:
+            for condition in group.conditions:
+                rc_codes.append(condition.code)
 
-    rc_codes_for_jurisdiction = []
-    rc_codes_all = []
-
-    for jurisdiction_group in reportability_result["reportable_conditions"]:
-        # add all codes to rc_codes_all
-        for cond in jurisdiction_group.conditions:
-            rc_codes_all.append(cond.code)
-            jd_code_to_check = jurisdiction_group.jurisdiction.upper()
-
-            # if this jurisdiction matches the one we're filtering for, add to filtered list
-            if jd_code_to_check == jurisdiction_id:
-                rc_codes_for_jurisdiction.append(cond.code)
-
-    return {
-        "rc_codes_for_jurisdiction": rc_codes_for_jurisdiction,
-        "rc_codes_all": rc_codes_all,
-        "full_reportability_result": reportability_result,
-    }
+    return rc_codes
 
 
 async def _map_rc_codes_to_conditions(

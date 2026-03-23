@@ -5,14 +5,14 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { UploadCustomCodesPreviewItemSystem } from './uploadCustomCodesPreviewItemSystem';
+import type { CodeSystem } from './codeSystem';
 
 /**
  * Validated CSV row ready for confirmation.
  */
 export interface UploadCustomCodesPreviewItem {
   code: string;
-  system: UploadCustomCodesPreviewItemSystem;
+  system: CodeSystem;
   name: string;
   row?: number | null;
 }

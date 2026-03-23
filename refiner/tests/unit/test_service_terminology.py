@@ -1,7 +1,11 @@
 from uuid import uuid4
 
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+from app.db.configurations.model import (
+    DbConfiguration,
+    DbConfigurationCustomCode,
+)
+from app.services.code_system import CodeSystem
 from app.services.terminology import (
     ConfigurationPayload,
     ProcessedConfiguration,
@@ -23,6 +27,7 @@ def make_condition(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -55,7 +60,9 @@ def test_processed_configuration_from_payload_and_xpath():
     )
     config: DbConfiguration = make_dbconfiguration(
         custom_codes=[
-            DbConfigurationCustomCode(code="B", system="LOINC", name="Custom LOINC")
+            DbConfigurationCustomCode(
+                code="B", system=CodeSystem.LOINC, name="Custom LOINC"
+            )
         ]
     )
     payload = ConfigurationPayload(conditions=[cond1], configuration=config)
@@ -80,7 +87,9 @@ def test_processed_configuration_duplicate_codes():
     )
     config: DbConfiguration = make_dbconfiguration(
         custom_codes=[
-            DbConfigurationCustomCode(code="DUP", system="LOINC", name="Custom")
+            DbConfigurationCustomCode(
+                code="DUP", system=CodeSystem.LOINC, name="Custom"
+            )
         ]
     )
     payload = ConfigurationPayload(conditions=[cond1, cond2], configuration=config)

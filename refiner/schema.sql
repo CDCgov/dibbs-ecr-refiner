@@ -169,7 +169,8 @@ CREATE TABLE public.conditions (
     icd10_codes jsonb,
     rxnorm_codes jsonb,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -584,5 +585,6 @@ ALTER TABLE ONLY public.users
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260226212322'),
     ('20260305221859'),
+    ('20260309001833'),
     ('20260309143000'),
     ('20260309151338');

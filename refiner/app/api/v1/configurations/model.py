@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -14,6 +13,7 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
+from app.services.code_system import CodeSystem
 
 
 @dataclass(frozen=True)
@@ -140,7 +140,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: Literal["loinc", "snomed", "icd-10", "rxnorm", "other"]
+    system: CodeSystem
     name: str
 
     @field_validator("system", mode="before")
@@ -149,9 +149,16 @@ class AddCustomCodeInput(BaseModel):
         """
         Make the system lowercase before Pydantic checks it.
         """
+
         if not isinstance(v, str):
             raise TypeError('"system" must be a string')
-        return v.lower()
+
+        lookup = {item.value.lower(): item for item in CodeSystem}
+        norm_input = v.lower()
+        if norm_input in lookup:
+            return lookup[norm_input]
+
+        return v
 
 
 @dataclass(frozen=True)
@@ -199,7 +206,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm", "Other"]
+    system: CodeSystem
     name: str
     row: int | None = None
 

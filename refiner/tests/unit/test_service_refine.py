@@ -32,6 +32,7 @@ def _make_condition_v1_1(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
@@ -82,6 +83,7 @@ def _make_condition_v3_1_1(**kwargs) -> DbCondition:
         "loinc_codes": [],
         "icd10_codes": [],
         "rxnorm_codes": [],
+        "cvx_codes": [],
     }
     defaults.update(kwargs)
     return DbCondition(**defaults)
