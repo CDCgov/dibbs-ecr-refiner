@@ -72,6 +72,7 @@ const baseMockConfig: GetConfigurationResponse = {
       include: true,
       action: 'refine',
       versions: ['1.1'],
+      section_type: 'standard',
     },
   ],
   included_conditions: [],
