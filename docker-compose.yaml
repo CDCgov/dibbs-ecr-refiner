@@ -65,7 +65,7 @@ services:
     depends_on:
       - localstack
   auth:
-    image: quay.io/keycloak/keycloak:26.5.5
+    image: quay.io/keycloak/keycloak:26.5.6
     command:
       - "start-dev"
       - "--import-realm"
@@ -99,7 +99,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:4
     ports:
       - "4566:4566"
     environment:
