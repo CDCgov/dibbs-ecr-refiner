@@ -1,4 +1,4 @@
-# 6. displayName Enrichment and Better Search
+# 6. S3 Adjustments for Display Name
 
 Date: 2026-03-07
 
