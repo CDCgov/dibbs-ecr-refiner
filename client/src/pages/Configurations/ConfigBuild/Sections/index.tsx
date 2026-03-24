@@ -7,22 +7,15 @@ import {
   getGetConfigurationQueryKey,
   useUpdateSection,
   useDeleteCustomSection,
-  useAddCustomSection,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  ModalRef,
-  Tooltip as USWDSTooltip,
-  Modal as USWDSModal,
-  ModalFooter,
-  ModalHeading,
-  ButtonGroup,
-  TextInput,
-  Label as USWDSLabel,
-} from '@trussworks/react-uswds';
-import React, { JSX, useRef, useState } from 'react';
+import { ModalRef } from '@trussworks/react-uswds';
+import React, { useRef, useState } from 'react';
 import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
 import { Button } from '../../../../components/Button';
+import { Modal } from './Modal';
+import { CustomSectionBadge } from './CustomSectionBadge';
+import { Tooltip } from './Tooltip';
 
 /**
  * TODO: please refer to specification.py
@@ -211,14 +204,6 @@ function SectionName({
   );
 }
 
-function CustomSectionBadge() {
-  return (
-    <span className="bg-gray-cool-3 flex items-center justify-center rounded-sm px-2 py-0.5 text-sm">
-      Custom
-    </span>
-  );
-}
-
 interface EditButtonProps {
   setEditMode: () => void;
   setSelectedSection: () => void;
@@ -276,172 +261,6 @@ function DeleteButton({ configurationId, code }: DeleteButtonProps) {
     <Button className="text-sm!" variant="tertiary" onClick={onClick}>
       Delete
     </Button>
-  );
-}
-
-interface EditCustomSection {
-  name: string;
-  currentCode: string;
-}
-
-interface ModalProps {
-  ref: React.RefObject<ModalRef | null>;
-  configurationId: string;
-  mode: 'add' | 'edit';
-  onClose?: () => void;
-  initialSection?: EditCustomSection | null;
-}
-
-function Modal({
-  ref,
-  configurationId,
-  mode,
-  onClose,
-  initialSection,
-}: ModalProps) {
-  const queryClient = useQueryClient();
-  const [name, setName] = useState(initialSection?.name ?? '');
-  const [newCode, setNewCode] = useState(initialSection?.currentCode ?? '');
-  const [errorText, setErrorText] = useState('');
-  const { mutate: addCustomSection } = useAddCustomSection();
-  const { mutate: updateCustomSection } = useUpdateSection();
-
-  if (initialSection && !name && !newCode) {
-    setName(initialSection.name);
-    setNewCode(initialSection.currentCode);
-  }
-
-  const isEdit = mode === 'edit';
-
-  const clearForm = () => {
-    setName('');
-    setNewCode('');
-    setErrorText('');
-    onClose?.();
-  };
-
-  const onSubmit = () => {
-    const trimmedName = name.trim();
-    const trimmedCode = newCode.trim();
-
-    if (!trimmedName) {
-      setErrorText('Name is required.');
-      return;
-    }
-
-    if (!trimmedCode) {
-      setErrorText('Code is required.');
-      return;
-    }
-
-    if (isEdit && initialSection) {
-      updateCustomSection(
-        {
-          configurationId,
-          data: {
-            name: trimmedName,
-            new_code: trimmedCode,
-            current_code: initialSection.currentCode,
-          },
-        },
-        {
-          onSuccess: async () => {
-            await queryClient.invalidateQueries({
-              queryKey: getGetConfigurationQueryKey(configurationId),
-            });
-            clearForm();
-          },
-          onError: () => {
-            setErrorText('Unable to update custom section.');
-          },
-        }
-      );
-      return;
-    }
-
-    addCustomSection(
-      {
-        configurationId,
-        data: {
-          code: newCode,
-          name,
-        },
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationId),
-          });
-          clearForm();
-        },
-        onError: () => {
-          setErrorText('Unable to add custom section.');
-        },
-      }
-    );
-  };
-
-  return (
-    <USWDSModal
-      className="rounded-sm"
-      ref={ref}
-      id="custom-section-modal"
-      aria-labelledby="modal-heading"
-      aria-describedby="modal-description"
-    >
-      <div className="flex flex-col items-start gap-6 p-5">
-        <ModalHeading
-          className="font-public-sans! text-2xl!"
-          id="modal-heading"
-        >
-          {isEdit ? 'Edit custom section' : 'Add a custom section'}
-        </ModalHeading>
-        <div className="flex flex-col items-start">
-          <p id="modal-description" className="sr-only">
-            Enter your custom section information and click "Add section".
-          </p>
-          <div className="flex flex-col gap-3">
-            <div>
-              <USWDSLabel htmlFor="custom-section-name-input">
-                Display name (for this section)
-              </USWDSLabel>
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                id="custom-section-name-input"
-                name="custom-section-name-input"
-                type="text"
-              />
-            </div>
-            <div>
-              <USWDSLabel htmlFor="custom-section-code-input">
-                LOINC code
-              </USWDSLabel>
-              <TextInput
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value)}
-                id="custom-section-code-input"
-                name="custom-section-code-input"
-                type="text"
-              />
-            </div>
-            {errorText ? (
-              <p className="text-secondary-dark text-sm">{errorText}</p>
-            ) : null}
-          </div>
-        </div>
-        <ModalFooter>
-          <ButtonGroup>
-            <ModalToggleButton modalRef={ref} onClick={onSubmit} closer>
-              {isEdit ? 'Update section' : 'Add section'}
-            </ModalToggleButton>
-            <ModalToggleButton variant="tertiary" modalRef={ref} closer>
-              Cancel
-            </ModalToggleButton>
-          </ButtonGroup>
-        </ModalFooter>
-      </div>
-    </USWDSModal>
   );
 }
 
@@ -598,53 +417,5 @@ function RefineSwitch({
         <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
       </Switch>
     </Field>
-  );
-}
-
-function InfoIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M9.16675 5.83366H10.8334V7.50033H9.16675V5.83366ZM9.16675 9.16699H10.8334V14.167H9.16675V9.16699ZM10.0001 1.66699C5.40008 1.66699 1.66675 5.40033 1.66675 10.0003C1.66675 14.6003 5.40008 18.3337 10.0001 18.3337C14.6001 18.3337 18.3334 14.6003 18.3334 10.0003C18.3334 5.40033 14.6001 1.66699 10.0001 1.66699ZM10.0001 16.667C6.32508 16.667 3.33341 13.6753 3.33341 10.0003C3.33341 6.32533 6.32508 3.33366 10.0001 3.33366C13.6751 3.33366 16.6667 6.32533 16.6667 10.0003C16.6667 13.6753 13.6751 16.667 10.0001 16.667Z"
-        fill="#3A7D95"
-      />
-    </svg>
-  );
-}
-
-type CustomTooltipProps = JSX.IntrinsicElements['div'] &
-  React.RefAttributes<HTMLDivElement>;
-
-const CustomLinkForwardRef: React.ForwardRefRenderFunction<
-  HTMLDivElement,
-  CustomTooltipProps
-> = ({ ...tooltipProps }: CustomTooltipProps, ref) => (
-  <div {...tooltipProps} ref={ref}>
-    <InfoIcon />
-  </div>
-);
-
-const CustomTooltip = React.forwardRef(CustomLinkForwardRef);
-
-interface TooltipProps {
-  text: string;
-}
-function Tooltip({ text }: TooltipProps) {
-  return (
-    <USWDSTooltip<CustomTooltipProps>
-      position="left"
-      label={<div className="w-max max-w-75 whitespace-normal">{text}</div>}
-      asCustom={CustomTooltip}
-    >
-      Data handling approach tooltip
-    </USWDSTooltip>
   );
 }
