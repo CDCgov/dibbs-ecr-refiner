@@ -13,7 +13,6 @@ from ..db.conditions.db import (
 )
 from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
-    get_configurations_by_condition_ids_and_jurisdiction_db,
     get_configurations_db,
 )
 from ..db.configurations.model import DbConfiguration
@@ -544,18 +543,3 @@ async def _map_rc_codes_to_conditions(
     # STEP 4:
     # build the final map from the file's code to its corresponding condition objects (all versions)
     return {code: rc_code_to_conditions_map[code] for code in matched_codes}
-
-
-async def _map_conditions_to_configurations(
-    db: AsyncDatabaseConnection,
-    conditions: list[DbCondition],
-    jurisdiction_id: str,
-) -> dict[UUID, DbConfiguration | None]:
-    """
-    Map each condition to its configuration for a jurisdiction.
-    """
-
-    condition_ids = [cond.id for cond in conditions]
-    return await get_configurations_by_condition_ids_and_jurisdiction_db(
-        db, condition_ids, jurisdiction_id
-    )

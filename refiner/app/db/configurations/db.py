@@ -1,7 +1,9 @@
-from dataclasses import asdict
+from collections import defaultdict
+from typing import Any
 from uuid import UUID
 
-from psycopg.rows import class_row, dict_row
+from psycopg import AsyncCursor
+from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.db.events.db import insert_event_db
@@ -17,6 +19,7 @@ from .model import (
     BulkAddCustomCodesResult,
     DbConfiguration,
     DbConfigurationCustomCode,
+    DbConfigurationSection,
     DbConfigurationSectionProcessing,
     DbSectionAction,
     DbTotalConditionCodeCount,
@@ -24,6 +27,54 @@ from .model import (
 )
 
 EMPTY_JSONB = Jsonb([])
+
+type CursorType = dict[str, Any]
+
+
+async def _insert_configuration_sections_db(
+    configuration_id: UUID,
+    sections_to_insert: list[DbConfigurationSectionProcessing],
+    cursor: AsyncCursor[CursorType],
+) -> None:
+    """
+    Inserts sections into configurations_sections table.
+    """
+    query = """
+        INSERT INTO configurations_sections (
+            configuration_id,
+            code,
+            name,
+            action,
+            include,
+            narrative,
+            versions
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+
+    """
+
+    params = [
+        (
+            configuration_id,
+            s.code,
+            s.name,
+            s.action,
+            s.include,
+            s.narrative,
+            s.versions,
+        )
+        for s in sections_to_insert
+    ]
+
+    await cursor.executemany(query, params)
 
 
 async def insert_configuration_db(
@@ -47,8 +98,7 @@ async def insert_configuration_db(
         name,
         created_by,
         included_conditions,
-        custom_codes,
-        section_processing
+        custom_codes
     )
     VALUES (
         %s,
@@ -56,24 +106,10 @@ async def insert_configuration_db(
         %s,
         %s,
         %s::jsonb,
-        %s::jsonb,
         %s::jsonb
     )
     RETURNING
-        id,
-        name,
-        status,
-        jurisdiction_id,
-        condition_id,
-        included_conditions,
-        custom_codes,
-        section_processing,
-        version,
-        last_activated_at,
-        last_activated_by,
-        created_by,
-        condition_canonical_url,
-        s3_urls
+        id
     """
 
     if config_to_clone:
@@ -96,16 +132,6 @@ async def insert_configuration_db(
                     for c in config_to_clone.custom_codes
                 ]
             ),
-            # section_processing
-            Jsonb(
-                [
-                    asdict(c)
-                    for c in clone_section_processing_instructions(
-                        clone_from=config_to_clone.section_processing,
-                        clone_to=get_default_sections(),
-                    )
-                ]
-            ),
         )
     else:
         params = (
@@ -120,8 +146,6 @@ async def insert_configuration_db(
             Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
             # custom_codes
             EMPTY_JSONB,
-            # section_processing
-            Jsonb([asdict(s) for s in get_default_sections()]),
         )
 
     async with db.get_connection() as conn:
@@ -131,18 +155,106 @@ async def insert_configuration_db(
             if not row:
                 return None
 
-            config = DbConfiguration.from_db_row(row)
+            config_id = row["id"]
+
+            # Insert either cloned sections or brand new sections as part of the same transaction
+            if config_to_clone:
+                await _insert_configuration_sections_db(
+                    configuration_id=config_id,
+                    sections_to_insert=clone_section_processing_instructions(
+                        clone_from=config_to_clone.section_processing,
+                        clone_to=get_default_sections(),
+                    ),
+                    cursor=cur,
+                )
+            else:
+                await _insert_configuration_sections_db(
+                    configuration_id=config_id,
+                    sections_to_insert=get_default_sections(),
+                    cursor=cur,
+                )
+
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=config.jurisdiction_id,
+                    jurisdiction_id=jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=config.id,
+                    configuration_id=config_id,
                     event_type="create_configuration",
                     action_text="Created configuration",
                 ),
                 cursor=cur,
             )
-            return config
+    return await get_configuration_by_id_db(
+        id=row["id"], jurisdiction_id=jurisdiction_id, db=db
+    )
+
+
+async def _get_configuration_sections_db(
+    configuration_ids: list[UUID], db: AsyncDatabaseConnection
+) -> list[DbConfigurationSection]:
+    """
+    Fetch all sections for the given configurations.
+
+    Args:
+        configuration_ids (UUID): List of configuration IDs
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list(DbConfigurationSection): List of sections
+    """
+
+    query = """
+    SELECT
+        id,
+        configuration_id,
+        name,
+        code,
+        action,
+        include,
+        narrative,
+        versions,
+        created_at,
+        updated_at
+    FROM configurations_sections
+    WHERE configuration_id = ANY(%s)
+    ORDER BY name;
+    """
+    params = (configuration_ids,)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return rows
+
+
+async def _map_sections_to_config_db(
+    raw_configurations: list[DictRow], db: AsyncDatabaseConnection
+) -> list[DictRow]:
+    """
+    Given a list of unprocessed configurations, adds a `section_processing` key with a list of section data.
+
+    Args:
+        raw_configurations (list[DictRow]): List of unprocessed configuration data coming from the database
+        db (AsyncDatabaseConnection): The database connection.
+
+    Returns:
+        list[DictRow]: List of unprocessed configuration data that includes `section_processing`
+    """
+    updated_configs_list = raw_configurations.copy()
+    configuration_ids: list[UUID] = [row["id"] for row in updated_configs_list]
+    sections = await _get_configuration_sections_db(
+        configuration_ids=configuration_ids, db=db
+    )
+    sections_by_config: dict[str, list[dict]] = defaultdict(list)
+
+    for section in sections:
+        sections_by_config[str(section.configuration_id)].append(
+            section.to_processing_dict()
+        )
+    for config in updated_configs_list:
+        config["section_processing"] = sections_by_config.get(str(config["id"]), [])
+    return updated_configs_list
 
 
 async def get_configurations_db(
@@ -156,21 +268,20 @@ async def get_configurations_db(
         SELECT
             id,
             name,
-			status,
+            status,
             jurisdiction_id,
             condition_id,
             included_conditions,
             custom_codes,
-            section_processing,
             version,
-			last_activated_at,
-			last_activated_by,
+            last_activated_at,
+            last_activated_by,
             created_by,
             condition_canonical_url,
             s3_urls
         FROM configurations
         WHERE jurisdiction_id = %s
-        """
+    """
 
     params: tuple[str, ...] = (jurisdiction_id,)
 
@@ -183,9 +294,16 @@ async def get_configurations_db(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            rows = await cur.fetchall()
+            config_rows = await cur.fetchall()
 
-    return [DbConfiguration.from_db_row(row) for row in rows]
+    if not config_rows:
+        return []
+
+    updated_config_rows = await _map_sections_to_config_db(
+        raw_configurations=config_rows, db=db
+    )
+
+    return [DbConfiguration.from_db_row(row) for row in updated_config_rows]
 
 
 async def get_configuration_by_id_db(
@@ -194,27 +312,46 @@ async def get_configuration_by_id_db(
     """
     Fetch a configuration by the given ID.
     """
-
+    # TODO: Leaving `section_processing` as JSONB on read for compatability.
+    # We may want to revisit this at some point.
     query = """
-        SELECT
-            id,
-            name,
-			status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
-        FROM configurations
-        WHERE id = %s
-        AND jurisdiction_id = %s
-        """
+    SELECT
+        c.id,
+        c.name,
+        c.status,
+        c.jurisdiction_id,
+        c.condition_id,
+        c.included_conditions,
+        c.custom_codes,
+
+        -- build section_processing from configurations_sections
+        COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
+
+        c.version,
+        c.last_activated_at,
+        c.last_activated_by,
+        c.created_by,
+        c.condition_canonical_url,
+        c.s3_urls
+    FROM configurations c
+    LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+                   jsonb_build_object(
+                       'code', s.code,
+                       'name', s.name,
+                       'action', s.action::text,
+                       'include', s.include,
+                       'versions', to_jsonb(s.versions),
+                       'narrative', s.narrative
+                   )
+                   ORDER BY s.code
+               ) AS section_processing
+        FROM configurations_sections s
+        WHERE s.configuration_id = c.id
+    ) secs ON TRUE
+    WHERE c.id = %s
+    AND c.jurisdiction_id = %s;
+    """
 
     params = (
         id,
@@ -304,20 +441,7 @@ async def associate_condition_codeset_with_configuration_db(
             )
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     new_condition = Jsonb([str(condition.id)])
@@ -331,20 +455,20 @@ async def associate_condition_codeset_with_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="add_code",
                     action_text=f"Associated '{condition.display_name}' code set",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def disassociate_condition_codeset_with_configuration_db(
@@ -382,20 +506,7 @@ async def disassociate_condition_codeset_with_configuration_db(
         )
         WHERE id = %s
         RETURNING
-            id,
-            name,
-            status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls;
+            id;
     """
 
     params = (str(condition.id), config.id)
@@ -408,20 +519,20 @@ async def disassociate_condition_codeset_with_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="delete_code",
                     action_text=f"Removed '{condition.display_name}' code set",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def get_total_condition_code_counts_by_configuration_db(
@@ -510,20 +621,7 @@ async def add_custom_code_to_configuration_db(
             SET custom_codes = %s::jsonb
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     custom_codes = config.custom_codes
@@ -550,20 +648,20 @@ async def add_custom_code_to_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="add_code",
                     action_text=f"Added custom code '{custom_code.code}'",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def add_bulk_custom_codes_to_configuration_db(
@@ -584,20 +682,7 @@ async def add_bulk_custom_codes_to_configuration_db(
         SET custom_codes = %s::jsonb
         WHERE id = %s
         RETURNING
-            id,
-            name,
-            status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-            last_activated_at,
-            last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls;
+            id;
     """
 
     existing_codes = config.custom_codes or []
@@ -628,25 +713,30 @@ async def add_bulk_custom_codes_to_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             # Insert a single audit event if codes were added
             if new_codes_added:
                 await insert_event_db(
                     event=EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="bulk_add_custom_code",
                         action_text=f"Added {len(new_codes_added)} custom codes",
                     ),
                     cursor=cur,
                 )
 
-            return BulkAddCustomCodesResult(
-                config=updated_config,
-                added_count=len(new_codes_added),
-            )
+    updated_config = await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
+
+    if not updated_config:
+        return None
+
+    return BulkAddCustomCodesResult(
+        config=updated_config,
+        added_count=len(new_codes_added),
+    )
 
 
 async def delete_custom_code_from_configuration_db(
@@ -665,20 +755,7 @@ async def delete_custom_code_from_configuration_db(
             SET custom_codes = %s::jsonb
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     updated_custom_codes = [
@@ -697,20 +774,20 @@ async def delete_custom_code_from_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             await insert_event_db(
                 event=EventInput(
-                    jurisdiction_id=updated_config.jurisdiction_id,
+                    jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
-                    configuration_id=updated_config.id,
+                    configuration_id=config.id,
                     event_type="delete_code",
                     action_text=f"Removed custom code '{code}'",
                 ),
                 cursor=cur,
             )
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def edit_custom_code_from_configuration_db(
@@ -734,20 +811,7 @@ async def edit_custom_code_from_configuration_db(
             SET custom_codes = %s::jsonb
             WHERE id = %s
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id;
             """
 
     json_codes = [
@@ -765,8 +829,6 @@ async def edit_custom_code_from_configuration_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             # Collect all event messages
             events_to_insert = []
 
@@ -774,9 +836,9 @@ async def edit_custom_code_from_configuration_db(
             if new_code is not None and new_code != prev_code:
                 events_to_insert.append(
                     EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="edit_code",
                         action_text=f"Updated custom code from '{prev_code}' to '{new_code}'",
                     )
@@ -786,9 +848,9 @@ async def edit_custom_code_from_configuration_db(
             if new_name is not None and new_name != prev_name:
                 events_to_insert.append(
                     EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="edit_code",
                         action_text=f"Updated name for custom code '{prev_code}' from '{prev_name}' to '{new_name}'",
                     )
@@ -798,9 +860,9 @@ async def edit_custom_code_from_configuration_db(
             if new_system is not None and new_system != prev_system:
                 events_to_insert.append(
                     EventInput(
-                        jurisdiction_id=updated_config.jurisdiction_id,
+                        jurisdiction_id=config.jurisdiction_id,
                         user_id=user_id,
-                        configuration_id=updated_config.id,
+                        configuration_id=config.id,
                         event_type="edit_code",
                         action_text=f"Updated system for custom code '{prev_code}' from '{prev_system}' to '{new_system}'",
                     )
@@ -810,10 +872,41 @@ async def edit_custom_code_from_configuration_db(
             for event in events_to_insert:
                 await insert_event_db(event=event, cursor=cur)
 
-            return updated_config
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
-async def update_section_processing_db(
+async def _get_configuration_section_by_code(
+    configuration_id: UUID, code: str, db: AsyncDatabaseConnection
+) -> DbConfigurationSection | None:
+    """
+    Get a configuration's section by its unique code.
+    """
+    query = """
+        SELECT
+            id,
+            configuration_id,
+            name,
+            code,
+            action,
+            include,
+            narrative,
+            versions,
+            created_at,
+            updated_at
+        FROM configurations_sections
+        WHERE configuration_id = %s
+        AND code = %s
+    """
+    params = (configuration_id, code)
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
+            await cur.execute(query, params)
+            return await cur.fetchone()
+
+
+async def update_configuration_section_db(
     config: DbConfiguration,
     section_update: DbConfigurationSectionProcessing,
     user_id: UUID,
@@ -844,23 +937,14 @@ async def update_section_processing_db(
             f"Invalid action '{section_update.action}' for section update."
         )
 
-    prev_section = None
-    for section in config.section_processing:
-        if section.code == section_update.code:
-            prev_section = section
+    prev_section = await _get_configuration_section_by_code(
+        configuration_id=config.id, code=section_update.code, db=db
+    )
 
     if not prev_section:
         raise ValueError(
             f"No existing section with code {section_update.code} to update"
         )
-
-    updated_sections: list[DbConfigurationSectionProcessing] = [
-        section
-        for section in config.section_processing
-        if section.code != section_update.code
-    ]
-
-    updated_sections = updated_sections + [section_update]
 
     action_changed = prev_section.action != section_update.action
 
@@ -878,30 +962,25 @@ async def update_section_processing_db(
             )
         )
 
-    # If any update codes were not present in the existing sections, ignore them.
-    # Persist the updated list back to the database
     query = """
-            UPDATE configurations
-            SET section_processing = %s::jsonb
-            WHERE id = %s
-            RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+            UPDATE configurations_sections
+            SET
+                action = %s,
+                include = %s,
+                narrative = %s,
+                updated_at = NOW()
+            WHERE configuration_id = %s
+            AND code = %s
+            RETURNING id;
             """
 
-    params = (Jsonb([asdict(section) for section in updated_sections]), config.id)
+    params = (
+        section_update.action,
+        section_update.include,
+        section_update.narrative,
+        config.id,
+        section_update.code,
+    )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -911,67 +990,13 @@ async def update_section_processing_db(
             if not row:
                 return None
 
-            updated_config = DbConfiguration.from_db_row(row)
-
             # Insert all generated section events
             for event in section_events:
                 await insert_event_db(event=event, cursor=cur)
 
-            return updated_config
-
-
-async def get_configurations_by_condition_ids_and_jurisdiction_db(
-    db: AsyncDatabaseConnection,
-    condition_ids: list[UUID],
-    jurisdiction_id: str,
-) -> dict[UUID, DbConfiguration | None]:
-    """
-    For each condition_id, fetch the configuration for the given jurisdiction.
-
-    Returns a dict: {condition_id: DbConfiguration or None}
-    """
-
-    if not condition_ids:
-        return {}
-
-    query = """
-        SELECT
-            id,
-            name,
-            status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
-        FROM configurations
-        WHERE jurisdiction_id = %s
-          AND condition_id = ANY(%s::uuid[])
-    """
-
-    params = (jurisdiction_id, condition_ids)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-
-    # build mapping from condition_id to config
-    configs_by_condition_id = {
-        row["condition_id"]: DbConfiguration.from_db_row(row) for row in rows
-    }
-
-    # ensure every input condition_id is present (with None if absent)
-    result: dict[UUID, DbConfiguration | None] = {}
-    for cond_id in condition_ids:
-        result[cond_id] = configs_by_condition_id.get(cond_id)
-
-    return result
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
 
 
 async def get_latest_config_db(
@@ -982,20 +1007,7 @@ async def get_latest_config_db(
     """
     query = """
         SELECT
-            id,
-            name,
-			status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
+            id
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -1008,12 +1020,14 @@ async def get_latest_config_db(
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
-    configs = [DbConfiguration.from_db_row(row) for row in rows]
-
-    if len(configs) < 1:
+    if len(rows) < 1:
         return None
 
-    return configs[0]
+    config_id = rows[0]["id"]
+
+    return await get_configuration_by_id_db(
+        id=config_id, jurisdiction_id=jurisdiction_id, db=db
+    )
 
 
 async def get_active_config_db(
@@ -1024,20 +1038,7 @@ async def get_active_config_db(
     """
     query = """
         SELECT
-            id,
-            name,
-			status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            section_processing,
-            version,
-			last_activated_at,
-			last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
+            id
         FROM configurations
         WHERE jurisdiction_id = %s
         AND condition_canonical_url = %s
@@ -1052,7 +1053,9 @@ async def get_active_config_db(
     if not row:
         return None
 
-    return DbConfiguration.from_db_row(row)
+    return await get_configuration_by_id_db(
+        id=row["id"], jurisdiction_id=jurisdiction_id, db=db
+    )
 
 
 async def get_configuration_versions_db(

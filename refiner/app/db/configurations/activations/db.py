@@ -6,6 +6,7 @@ from psycopg.rows import dict_row
 
 from app.db.configurations.db import (
     get_active_config_db,
+    get_configuration_by_id_db,
 )
 from app.db.configurations.model import DbConfiguration
 from app.db.events.db import insert_event_db
@@ -22,7 +23,7 @@ async def _activate_configuration_db(
     s3_urls: list[str],
     *,
     cur: AsyncCursor[CursorType],
-) -> DbConfiguration | None:
+) -> UUID | None:
     query = """
             UPDATE configurations
             SET
@@ -31,20 +32,7 @@ async def _activate_configuration_db(
                 last_activated_by = %s
             WHERE id = %s
                 RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls;
+                id
         """
 
     params = (
@@ -69,7 +57,7 @@ async def _activate_configuration_db(
         cursor=cur,
     )
 
-    return DbConfiguration.from_db_row(row)
+    return row["id"]
 
 
 async def _deactivate_configuration_db(
@@ -78,7 +66,7 @@ async def _deactivate_configuration_db(
     jurisdiction_id: str,
     *,
     cur: AsyncCursor[CursorType],
-) -> DbConfiguration | None:
+) -> UUID | None:
     query = """
         WITH updated AS (
             UPDATE configurations
@@ -88,37 +76,11 @@ async def _deactivate_configuration_db(
             WHERE id = %s
             AND status = 'active'
             RETURNING
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls
+                id
         ),
         unchanged AS (
             SELECT
-                id,
-                name,
-                status,
-                jurisdiction_id,
-                condition_id,
-                included_conditions,
-                custom_codes,
-                section_processing,
-                version,
-                last_activated_at,
-                last_activated_by,
-                created_by,
-                condition_canonical_url,
-                s3_urls
+                id
             FROM configurations
             WHERE id = %s
             AND NOT EXISTS (SELECT 1 FROM updated)
@@ -146,7 +108,7 @@ async def _deactivate_configuration_db(
         cursor=cur,
     )
 
-    return DbConfiguration.from_db_row(row)
+    return row["id"]
 
 
 async def activate_configuration_db(
@@ -171,19 +133,19 @@ async def activate_configuration_db(
         db=db,
     )
 
+    activated_config_id = None
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             if not current_active_config:
                 # just activate the configuration without deactivating
-                activated_config = await _activate_configuration_db(
+                activated_config_id = await _activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
                     jurisdiction_id=jurisdiction_id,
                     s3_urls=s3_urls,
                     cur=cur,
                 )
-                if activated_config:
-                    return activated_config
             else:
                 # perform deactivation and activation in a single transaction so we don't run into half-deactivation states
                 deactivated_config = await _deactivate_configuration_db(
@@ -197,17 +159,19 @@ async def activate_configuration_db(
                         "Couldn't deactivate configuration that needed to be deactivated before activating new configuration.",
                     )
 
-                activated_config = await _activate_configuration_db(
+                activated_config_id = await _activate_configuration_db(
                     configuration_id=configuration_id,
                     activated_by_user_id=activated_by_user_id,
                     jurisdiction_id=jurisdiction_id,
                     s3_urls=s3_urls,
                     cur=cur,
                 )
-                if activated_config:
-                    return activated_config
+    if not activated_config_id:
+        return None
 
-    return None
+    return await get_configuration_by_id_db(
+        id=activated_config_id, jurisdiction_id=jurisdiction_id, db=db
+    )
 
 
 async def deactivate_configuration_db(
@@ -222,9 +186,15 @@ async def deactivate_configuration_db(
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as internal_cur:
-            return await _deactivate_configuration_db(
+            deactivated_config_id = await _deactivate_configuration_db(
                 configuration_id=configuration_id,
                 user_id=user_id,
                 jurisdiction_id=jurisdiction_id,
                 cur=internal_cur,
             )
+            if not deactivated_config_id:
+                return None
+
+    return await get_configuration_by_id_db(
+        id=deactivated_config_id, jurisdiction_id=jurisdiction_id, db=db
+    )
