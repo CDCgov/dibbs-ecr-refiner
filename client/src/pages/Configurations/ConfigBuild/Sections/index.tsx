@@ -29,8 +29,6 @@ import { Switch } from './Switch';
 
 const disabledSections = new Set(['88085-6', '83910-0']);
 
-type ModalState = 'add' | 'edit';
-
 interface SectionsProps {
   configurationId: string;
   sections: DbConfigurationSectionProcessing[];
@@ -49,12 +47,10 @@ export function Sections({
   disabled,
 }: SectionsProps) {
   const modalRef = useRef<ModalRef>(null);
-  const [mode, setMode] = useState<ModalState>('add');
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
 
   const resetModal = () => {
-    setMode('add');
     setSelectedSection(null);
   };
 
@@ -71,7 +67,6 @@ export function Sections({
           <Modal
             configurationId={configurationId}
             ref={modalRef}
-            mode={mode}
             initialSection={
               selectedSection
                 ? {
@@ -126,7 +121,6 @@ export function Sections({
                   configurationId={configurationId}
                   section={section}
                   modalRef={modalRef}
-                  setEditMode={() => setMode('edit')}
                   setSelectedSection={() => setSelectedSection(section)}
                 />
               </td>
@@ -154,7 +148,6 @@ interface SectionNameProps {
   configurationId: string;
   section: DbConfigurationSectionProcessing;
   modalRef: React.RefObject<ModalRef | null>;
-  setEditMode: () => void;
   setSelectedSection: () => void;
 }
 
@@ -162,7 +155,6 @@ function SectionName({
   configurationId,
   section,
   modalRef,
-  setEditMode,
   setSelectedSection,
 }: SectionNameProps) {
   const isCustom = section.section_type === 'custom';
@@ -180,7 +172,6 @@ function SectionName({
             <div className="flex flex-row gap-1">
               <EditButton
                 modalRef={modalRef}
-                setEditMode={setEditMode}
                 setSelectedSection={setSelectedSection}
               />
               <span className="not-sr-only text-sm">|</span>
@@ -207,23 +198,17 @@ function SectionName({
 }
 
 interface EditButtonProps {
-  setEditMode: () => void;
   setSelectedSection: () => void;
   modalRef: React.RefObject<ModalRef | null>;
 }
 
-function EditButton({
-  setEditMode,
-  setSelectedSection,
-  modalRef,
-}: EditButtonProps) {
+function EditButton({ setSelectedSection, modalRef }: EditButtonProps) {
   return (
     <ModalToggleButton
       className="text-sm!"
       variant="tertiary"
       modalRef={modalRef}
       onClick={() => {
-        setEditMode();
         setSelectedSection();
       }}
     >

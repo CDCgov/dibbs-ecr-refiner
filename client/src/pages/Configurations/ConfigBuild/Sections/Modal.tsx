@@ -7,7 +7,9 @@ import {
   ModalRef,
   Label as USWDSLabel,
   Modal as USWDSModal,
+  Icon,
 } from '@trussworks/react-uswds';
+import { Button } from '../../../../components/Button';
 import { useState } from 'react';
 import {
   getGetConfigurationQueryKey,
@@ -24,7 +26,6 @@ interface EditCustomSection {
 interface ModalProps {
   ref: React.RefObject<ModalRef | null>;
   configurationId: string;
-  mode: 'add' | 'edit';
   onClose?: () => void;
   initialSection?: EditCustomSection | null;
 }
@@ -32,7 +33,6 @@ interface ModalProps {
 export function Modal({
   ref,
   configurationId,
-  mode,
   onClose,
   initialSection,
 }: ModalProps) {
@@ -48,9 +48,7 @@ export function Modal({
     setNewCode(initialSection.currentCode);
   }
 
-  const isEdit = mode === 'edit';
-
-  const clearForm = () => {
+  const reset = () => {
     setName('');
     setNewCode('');
     setErrorText('');
@@ -71,7 +69,7 @@ export function Modal({
       return;
     }
 
-    if (isEdit && initialSection) {
+    if (initialSection) {
       updateCustomSection(
         {
           configurationId,
@@ -86,13 +84,15 @@ export function Modal({
             await queryClient.invalidateQueries({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
-            clearForm();
+            reset();
+            ref.current?.toggleModal();
           },
           onError: () => {
             setErrorText('Unable to update custom section.');
           },
         }
       );
+
       return;
     }
 
@@ -109,7 +109,8 @@ export function Modal({
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
-          clearForm();
+          reset();
+          ref.current?.toggleModal();
         },
         onError: () => {
           setErrorText('Unable to add custom section.');
@@ -126,14 +127,25 @@ export function Modal({
       id="custom-section-modal"
       aria-labelledby="modal-heading"
       aria-describedby="modal-description"
+      forceAction
     >
       <div className="flex flex-col items-start gap-5">
         <ModalHeading
           id="modal-heading"
           className="text-bold font-merriweather m-0! mb-6 p-0! text-xl"
         >
-          {isEdit ? 'Edit custom section' : 'Add a custom section'}
+          {initialSection ? 'Edit custom section' : 'Add a custom section'}
         </ModalHeading>
+        <Button
+          aria-label="Close this window"
+          onClick={() => {
+            reset();
+            ref.current?.toggleModal();
+          }}
+          className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+        >
+          <Icon.Close className="h-6! w-6!" aria-hidden />
+        </Button>
         <div className="flex w-full flex-col items-start">
           <p id="modal-description" className="sr-only">
             Enter your custom section information and click "Add section".
@@ -149,6 +161,7 @@ export function Modal({
                 id="custom-section-name-input"
                 name="custom-section-name-input"
                 type="text"
+                autoComplete="off"
               />
             </div>
             <div>
@@ -161,6 +174,7 @@ export function Modal({
                 id="custom-section-code-input"
                 name="custom-section-code-input"
                 type="text"
+                autoComplete="off"
               />
             </div>
             {errorText ? (
@@ -171,9 +185,17 @@ export function Modal({
         <ModalFooter className="m-0!">
           <ButtonGroup>
             <ModalToggleButton modalRef={ref} onClick={onSubmit} closer>
-              {isEdit ? 'Update section' : 'Add section'}
+              {initialSection ? 'Update section' : 'Add section'}
             </ModalToggleButton>
-            <ModalToggleButton variant="tertiary" modalRef={ref} closer>
+            <ModalToggleButton
+              onClick={() => {
+                reset();
+                ref.current?.toggleModal();
+              }}
+              variant="tertiary"
+              modalRef={ref}
+              closer
+            >
               Cancel
             </ModalToggleButton>
           </ButtonGroup>
