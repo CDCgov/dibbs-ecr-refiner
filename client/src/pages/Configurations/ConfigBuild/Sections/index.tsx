@@ -1,14 +1,14 @@
-import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
-import { useToast } from '../../../hooks/useToast';
-import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { useToast } from '../../../../hooks/useToast';
+import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { Switch, Checkbox, Field, Label } from '@headlessui/react';
-import { DbSectionAction } from '../../../api/schemas';
+import { DbSectionAction } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
   useUpdateSection,
   useDeleteCustomSection,
   useAddCustomSection,
-} from '../../../api/configurations/configurations';
+} from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ModalRef,
@@ -21,8 +21,8 @@ import {
   Label as USWDSLabel,
 } from '@trussworks/react-uswds';
 import React, { JSX, useRef, useState } from 'react';
-import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
-import { Button } from '../../../components/Button';
+import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { Button } from '../../../../components/Button';
 
 /**
  * TODO: please refer to specification.py

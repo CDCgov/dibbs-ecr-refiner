@@ -1,9 +1,9 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import { TestQueryClientProvider } from '../../../test-utils';
-import { Sections } from './Sections';
-import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
+import { TestQueryClientProvider } from '../../../../test-utils';
+import { Sections } from '.';
+import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 
 function renderWithClient(ui: React.ReactElement) {
   return render(<TestQueryClientProvider>{ui}</TestQueryClientProvider>);
