@@ -74,9 +74,6 @@ export function EicrSectionReview({
             </ModalToggleButton>
           )}
           <Modal
-            key={
-              mode === 'edit' && selectedSection ? selectedSection.code : 'add'
-            }
             configurationId={configurationId}
             ref={modalRef}
             mode={mode}
@@ -308,6 +305,11 @@ function Modal({
   const [errorText, setErrorText] = useState('');
   const { mutate: addCustomSection } = useAddCustomSection();
   const { mutate: updateCustomSection } = useUpdateSection();
+
+  if (initialSection && !name && !newCode) {
+    setName(initialSection.name);
+    setNewCode(initialSection.currentCode);
+  }
 
   const isEdit = mode === 'edit';
 
