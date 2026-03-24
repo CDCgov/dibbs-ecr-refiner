@@ -5,8 +5,9 @@ import { Switch, Checkbox, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
-  useInsertCustomSection,
   useUpdateConfigurationSectionProcessing,
+  useDeleteCustomSection,
+  useAddCustomSection,
 } from '../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -103,7 +104,10 @@ export function EicrSectionReview({
                 </div>
               </td>
               <td>
-                <SectionName section={section} />
+                <SectionName
+                  configurationId={configurationId}
+                  section={section}
+                />
               </td>
               <td>
                 {section.include ? (
@@ -126,10 +130,11 @@ export function EicrSectionReview({
 }
 
 interface SectionNameProps {
+  configurationId: string;
   section: DbConfigurationSectionProcessing;
 }
 
-function SectionName({ section }: SectionNameProps) {
+function SectionName({ configurationId, section }: SectionNameProps) {
   const isCustom = section.section_type === 'custom';
 
   if (section.include) {
@@ -147,9 +152,10 @@ function SectionName({ section }: SectionNameProps) {
                 Edit
               </Button>
               <span className="not-sr-only text-sm">|</span>
-              <Button className="text-sm!" variant="tertiary">
-                Delete
-              </Button>
+              <DeleteButton
+                configurationId={configurationId}
+                code={section.code}
+              />
             </div>
           </div>
         ) : null}
@@ -176,6 +182,40 @@ function CustomSectionBadge() {
   );
 }
 
+interface DeleteButtonProps {
+  configurationId: string;
+  code: string;
+}
+
+function DeleteButton({ configurationId, code }: DeleteButtonProps) {
+  const { mutate } = useDeleteCustomSection();
+  const queryClient = useQueryClient();
+
+  const onClick = () => {
+    mutate(
+      {
+        configurationId,
+        data: {
+          code,
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
+      }
+    );
+  };
+
+  return (
+    <Button className="text-sm!" variant="tertiary" onClick={onClick}>
+      Delete
+    </Button>
+  );
+}
+
 interface ModalProps {
   ref: React.RefObject<ModalRef | null>;
   configurationId: string;
@@ -186,7 +226,7 @@ function Modal({ ref, configurationId }: ModalProps) {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [errorText, setErrorText] = useState('');
-  const { mutate, error } = useInsertCustomSection();
+  const { mutate, error } = useAddCustomSection();
 
   const onSubmit = () => {
     if (!name) {

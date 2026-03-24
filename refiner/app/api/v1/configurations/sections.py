@@ -25,7 +25,7 @@ router = APIRouter(prefix="/{configuration_id}/section-processing")
 
 
 @router.post(
-    "", response_model=str, tags=["configurations"], operation_id="insertCustomSection"
+    "", response_model=str, tags=["configurations"], operation_id="addCustomSection"
 )
 async def insert_custom_section(
     configuration_id: UUID,
@@ -94,7 +94,7 @@ async def insert_custom_section(
     return section_input.code
 
 
-@router.post(
+@router.delete(
     "", response_model=str, tags=["configurations"], operation_id="deleteCustomSection"
 )
 async def delete_custom_section(
