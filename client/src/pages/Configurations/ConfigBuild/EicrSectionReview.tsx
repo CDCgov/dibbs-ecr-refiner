@@ -545,7 +545,6 @@ function RefineSwitch({
             : // "Preserve & retain all data for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
-        passive
         className="w-48"
       >
         {isRefineToggled ? (
