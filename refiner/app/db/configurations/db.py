@@ -6,7 +6,7 @@ from psycopg import AsyncCursor
 from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.api.v1.configurations.model import CustomSectionInput, DeleteCustomSectionInput
+from app.api.v1.configurations.model import CustomSectionInput, DeleteSectionInput
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -114,7 +114,7 @@ async def insert_custom_section_db(
 
 async def delete_custom_section_db(
     config: DbConfiguration,
-    custom_section_input: DeleteCustomSectionInput,
+    custom_section_input: DeleteSectionInput,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """
@@ -1033,6 +1033,7 @@ async def _get_configuration_section_by_code(
 
 async def update_configuration_section_db(
     config: DbConfiguration,
+    current_code: str,
     section_update: DbConfigurationSectionProcessing,
     user_id: UUID,
     db: AsyncDatabaseConnection,
@@ -1042,6 +1043,7 @@ async def update_configuration_section_db(
 
     Args:
         config: The configuration to update
+        current_code: The section code to update
         section_update: Section to update
         user_id: ID of the user
         db: Database connection
@@ -1063,13 +1065,11 @@ async def update_configuration_section_db(
         )
 
     prev_section = await _get_configuration_section_by_code(
-        configuration_id=config.id, code=section_update.code, db=db
+        configuration_id=config.id, code=current_code, db=db
     )
 
     if not prev_section:
-        raise ValueError(
-            f"No existing section with code {section_update.code} to update"
-        )
+        raise ValueError(f"No existing section with code {current_code} to update")
 
     action_changed = prev_section.action != section_update.action
 
@@ -1090,6 +1090,8 @@ async def update_configuration_section_db(
     query = """
             UPDATE configurations_sections
             SET
+                code = %s,
+                name = %s,
                 action = %s,
                 include = %s,
                 narrative = %s,
@@ -1100,11 +1102,13 @@ async def update_configuration_section_db(
             """
 
     params = (
+        section_update.code,
+        section_update.name,
         section_update.action,
         section_update.include,
         section_update.narrative,
         config.id,
-        section_update.code,
+        current_code,
     )
 
     async with db.get_connection() as conn:

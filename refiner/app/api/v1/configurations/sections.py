@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
     CustomSectionInput,
-    DeleteCustomSectionInput,
-    StandardSectionInput,
+    DeleteSectionInput,
+    SectionUpdateInput,
 )
 from app.db.configurations.db import (
     delete_custom_section_db,
@@ -21,7 +21,7 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 
-router = APIRouter(prefix="/{configuration_id}/section-processing")
+router = APIRouter(prefix="/{configuration_id}/sections")
 
 
 @router.post(
@@ -99,7 +99,7 @@ async def insert_custom_section(
 )
 async def delete_custom_section(
     configuration_id: UUID,
-    section_input: DeleteCustomSectionInput,
+    section_input: DeleteSectionInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> str:
@@ -164,11 +164,11 @@ async def delete_custom_section(
     "",
     response_model=str,
     tags=["configurations"],
-    operation_id="updateConfigurationSectionProcessing",
+    operation_id="updateSection",
 )
-async def update_section_processing(
+async def update_section(
     configuration_id: UUID,
-    section: StandardSectionInput,
+    section_input: SectionUpdateInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> str:
@@ -177,7 +177,7 @@ async def update_section_processing(
 
     Args:
         configuration_id (UUID): ID of the configuration to update
-        section (UpdateSectionInput): Updated section info
+        section_input (SectionUpdateInput): Updated section info
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): Database connection
 
@@ -218,32 +218,61 @@ async def update_section_processing(
     )
 
     # Can't update a section unless it exists
-    updated_code = section.code
+    match_code = section_input.current_code
     prev_section = None
     for s in config.section_processing:
-        if s.code == updated_code:
+        if s.code == match_code:
             prev_section = s
             break
 
     if not prev_section:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Section with code {updated_code} is invalid and can't be updated.",
+            detail=f"Section with code {match_code} is invalid and can't be updated.",
         )
 
-    section_update = DbConfigurationSectionProcessing(
-        code=section.code,
-        action=section.action,
-        narrative=section.narrative,
-        include=section.include,
-        name=prev_section.name,
-        versions=prev_section.versions,
-        section_type="standard",
+    include = (
+        section_input.include
+        if section_input.include is not None
+        else prev_section.include
     )
+    narrative = (
+        section_input.narrative
+        if section_input.narrative is not None
+        else prev_section.narrative
+    )
+
+    if prev_section.section_type == "custom":
+        code = section_input.new_code if section_input.new_code else prev_section.code
+        name = section_input.name if section_input.name else prev_section.name
+        section_update = DbConfigurationSectionProcessing(
+            code=code,
+            name=name,
+            action=section_input.action or prev_section.action,
+            narrative=narrative,
+            include=include,
+            versions=prev_section.versions,
+            section_type="custom",
+        )
+    else:
+        section_update = DbConfigurationSectionProcessing(
+            # standard section code and name cannot be changed
+            code=prev_section.code,
+            name=prev_section.name,
+            action=section_input.action or prev_section.action,
+            narrative=narrative,
+            include=include,
+            versions=prev_section.versions,
+            section_type="standard",
+        )
 
     try:
         updated_config = await update_configuration_section_db(
-            config=config, section_update=section_update, user_id=user.id, db=db
+            config=config,
+            current_code=prev_section.code,
+            section_update=section_update,
+            user_id=user.id,
+            db=db,
         )
     except ValueError:
         raise HTTPException(

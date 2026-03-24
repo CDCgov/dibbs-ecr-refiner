@@ -404,7 +404,7 @@ function Builder({
           ) : tableView === 'sections' ? (
             <EicrSectionReview
               configurationId={id}
-              sectionProcessing={section_processing}
+              sections={section_processing}
               disabled={disabled}
             />
           ) : isCsvImportView(tableView) ? (

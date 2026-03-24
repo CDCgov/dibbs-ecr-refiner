@@ -45,7 +45,7 @@ describe('EicrSectionReview', () => {
       <EicrSectionReview
         configurationId={testId}
         disabled={false}
-        sectionProcessing={sections}
+        sections={sections}
       />
     );
 

@@ -5,7 +5,7 @@ import { Switch, Checkbox, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
-  useUpdateConfigurationSectionProcessing,
+  useUpdateSection,
   useDeleteCustomSection,
   useAddCustomSection,
 } from '../../../api/configurations/configurations';
@@ -34,9 +34,11 @@ import { Button } from '../../../components/Button';
 
 const disabledSections = new Set(['88085-6', '83910-0']);
 
+type ModalState = 'add' | 'edit';
+
 interface EicrSectionReviewProps {
   configurationId: string;
-  sectionProcessing: DbConfigurationSectionProcessing[];
+  sections: DbConfigurationSectionProcessing[];
   disabled: boolean;
 }
 
@@ -48,10 +50,18 @@ interface EicrSectionReviewProps {
  */
 export function EicrSectionReview({
   configurationId,
-  sectionProcessing,
+  sections: sectionProcessing,
   disabled,
 }: EicrSectionReviewProps) {
   const modalRef = useRef<ModalRef>(null);
+  const [mode, setMode] = useState<ModalState>('add');
+  const [selectedSection, setSelectedSection] =
+    useState<DbConfigurationSectionProcessing | null>(null);
+
+  const resetModal = () => {
+    setMode('add');
+    setSelectedSection(null);
+  };
 
   return (
     <section className="flex w-full flex-col gap-6">
@@ -63,7 +73,23 @@ export function EicrSectionReview({
               Add custom section +
             </ModalToggleButton>
           )}
-          <Modal configurationId={configurationId} ref={modalRef} />
+          <Modal
+            key={
+              mode === 'edit' && selectedSection ? selectedSection.code : 'add'
+            }
+            configurationId={configurationId}
+            ref={modalRef}
+            mode={mode}
+            initialSection={
+              selectedSection
+                ? {
+                    name: selectedSection?.name,
+                    currentCode: selectedSection.code,
+                  }
+                : null
+            }
+            onClose={resetModal}
+          />
         </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
@@ -107,6 +133,9 @@ export function EicrSectionReview({
                 <SectionName
                   configurationId={configurationId}
                   section={section}
+                  modalRef={modalRef}
+                  setEditMode={() => setMode('edit')}
+                  setSelectedSection={() => setSelectedSection(section)}
                 />
               </td>
               <td>
@@ -132,9 +161,18 @@ export function EicrSectionReview({
 interface SectionNameProps {
   configurationId: string;
   section: DbConfigurationSectionProcessing;
+  modalRef: React.RefObject<ModalRef | null>;
+  setEditMode: () => void;
+  setSelectedSection: () => void;
 }
 
-function SectionName({ configurationId, section }: SectionNameProps) {
+function SectionName({
+  configurationId,
+  section,
+  modalRef,
+  setEditMode,
+  setSelectedSection,
+}: SectionNameProps) {
   const isCustom = section.section_type === 'custom';
 
   if (section.include) {
@@ -148,9 +186,11 @@ function SectionName({ configurationId, section }: SectionNameProps) {
           <div className="flex flex-row gap-2">
             <span className="text-sm">{section.code}</span>
             <div className="flex flex-row gap-1">
-              <Button className="text-sm!" variant="tertiary">
-                Edit
-              </Button>
+              <EditButton
+                modalRef={modalRef}
+                setEditMode={setEditMode}
+                setSelectedSection={setSelectedSection}
+              />
               <span className="not-sr-only text-sm">|</span>
               <DeleteButton
                 configurationId={configurationId}
@@ -179,6 +219,32 @@ function CustomSectionBadge() {
     <span className="bg-gray-cool-3 flex items-center justify-center rounded-sm px-2 py-0.5 text-sm">
       Custom
     </span>
+  );
+}
+
+interface EditButtonProps {
+  setEditMode: () => void;
+  setSelectedSection: () => void;
+  modalRef: React.RefObject<ModalRef | null>;
+}
+
+function EditButton({
+  setEditMode,
+  setSelectedSection,
+  modalRef,
+}: EditButtonProps) {
+  return (
+    <ModalToggleButton
+      className="text-sm!"
+      variant="tertiary"
+      modalRef={modalRef}
+      onClick={() => {
+        setEditMode();
+        setSelectedSection();
+      }}
+    >
+      Edit
+    </ModalToggleButton>
   );
 }
 
@@ -216,33 +282,86 @@ function DeleteButton({ configurationId, code }: DeleteButtonProps) {
   );
 }
 
+interface EditCustomSection {
+  name: string;
+  currentCode: string;
+}
+
 interface ModalProps {
   ref: React.RefObject<ModalRef | null>;
   configurationId: string;
+  mode: 'add' | 'edit';
+  onClose?: () => void;
+  initialSection?: EditCustomSection | null;
 }
 
-function Modal({ ref, configurationId }: ModalProps) {
+function Modal({
+  ref,
+  configurationId,
+  mode,
+  onClose,
+  initialSection,
+}: ModalProps) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  const [name, setName] = useState(initialSection?.name ?? '');
+  const [newCode, setNewCode] = useState(initialSection?.currentCode ?? '');
   const [errorText, setErrorText] = useState('');
-  const { mutate, error } = useAddCustomSection();
+  const { mutate: addCustomSection } = useAddCustomSection();
+  const { mutate: updateCustomSection } = useUpdateSection();
+
+  const isEdit = mode === 'edit';
+
+  const clearForm = () => {
+    setName('');
+    setNewCode('');
+    setErrorText('');
+    onClose?.();
+  };
 
   const onSubmit = () => {
-    if (!name) {
+    const trimmedName = name.trim();
+    const trimmedCode = newCode.trim();
+
+    if (!trimmedName) {
       setErrorText('Name is required.');
       return;
     }
-    if (!code) {
+
+    if (!trimmedCode) {
       setErrorText('Code is required.');
       return;
     }
 
-    mutate(
+    if (isEdit && initialSection) {
+      updateCustomSection(
+        {
+          configurationId,
+          data: {
+            name: trimmedName,
+            new_code: trimmedCode,
+            current_code: initialSection.currentCode,
+          },
+        },
+        {
+          onSuccess: async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getGetConfigurationQueryKey(configurationId),
+            });
+            clearForm();
+          },
+          onError: () => {
+            setErrorText('Unable to update custom section.');
+          },
+        }
+      );
+      return;
+    }
+
+    addCustomSection(
       {
         configurationId,
         data: {
-          code,
+          code: newCode,
           name,
         },
       },
@@ -251,6 +370,10 @@ function Modal({ ref, configurationId }: ModalProps) {
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
+          clearForm();
+        },
+        onError: () => {
+          setErrorText('Unable to add custom section.');
         },
       }
     );
@@ -269,7 +392,7 @@ function Modal({ ref, configurationId }: ModalProps) {
           className="font-public-sans! text-2xl!"
           id="modal-heading"
         >
-          Add a custom section
+          {isEdit ? 'Edit custom section' : 'Add a custom section'}
         </ModalHeading>
         <div className="flex flex-col items-start">
           <p id="modal-description" className="sr-only">
@@ -293,19 +416,22 @@ function Modal({ ref, configurationId }: ModalProps) {
                 LOINC code
               </USWDSLabel>
               <TextInput
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
                 id="custom-section-code-input"
                 name="custom-section-code-input"
                 type="text"
               />
             </div>
+            {errorText ? (
+              <p className="text-secondary-dark text-sm">{errorText}</p>
+            ) : null}
           </div>
         </div>
         <ModalFooter>
           <ButtonGroup>
             <ModalToggleButton modalRef={ref} onClick={onSubmit} closer>
-              Add section
+              {isEdit ? 'Update section' : 'Add section'}
             </ModalToggleButton>
             <ModalToggleButton variant="tertiary" modalRef={ref} closer>
               Cancel
@@ -329,8 +455,7 @@ function IncludeCheckbox({
   configurationId,
   disabled,
 }: RefineSwitchProps) {
-  const { mutate: updateSectionProcessing } =
-    useUpdateConfigurationSectionProcessing();
+  const { mutate: updateSection } = useUpdateSection();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
@@ -349,12 +474,12 @@ function IncludeCheckbox({
           include,
         };
 
-        updateSectionProcessing(
+        updateSection(
           {
             configurationId,
             data: {
               action: updatedSection.action,
-              code: updatedSection.code,
+              current_code: updatedSection.code,
               include: updatedSection.include,
               narrative: false, // TODO: Update later
             },
@@ -399,8 +524,7 @@ function RefineSwitch({
   configurationId,
   disabled,
 }: RefineSwitchProps) {
-  const { mutate: updateSectionProcessing } =
-    useUpdateConfigurationSectionProcessing();
+  const { mutate: updateSection } = useUpdateSection();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
@@ -441,12 +565,12 @@ function RefineSwitch({
             action,
           };
 
-          updateSectionProcessing(
+          updateSection(
             {
               configurationId,
               data: {
                 action: updatedSection.action,
-                code: updatedSection.code,
+                current_code: updatedSection.code,
                 include: updatedSection.include,
                 narrative: false, // TODO: Update later
               },

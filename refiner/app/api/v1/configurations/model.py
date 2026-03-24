@@ -180,7 +180,7 @@ class SectionInputBase(BaseModel):
     code: str
 
 
-class DeleteCustomSectionInput(SectionInputBase):
+class DeleteSectionInput(SectionInputBase):
     """
     Request body to delete a custom section.
     """
@@ -188,14 +188,17 @@ class DeleteCustomSectionInput(SectionInputBase):
     pass
 
 
-class StandardSectionInput(SectionInputBase):
+class SectionUpdateInput(BaseModel):
     """
     Request body for modifying a standard section from the TES.
     """
 
-    include: bool
-    narrative: bool
-    action: DbSectionAction
+    include: bool | None = None
+    narrative: bool | None = None
+    action: DbSectionAction | None = None
+    name: str | None = None
+    current_code: str
+    new_code: str | None = None
 
 
 class CustomSectionInput(SectionInputBase):
