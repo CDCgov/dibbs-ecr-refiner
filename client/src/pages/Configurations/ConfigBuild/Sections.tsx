@@ -36,7 +36,7 @@ const disabledSections = new Set(['88085-6', '83910-0']);
 
 type ModalState = 'add' | 'edit';
 
-interface EicrSectionReviewProps {
+interface SectionsProps {
   configurationId: string;
   sections: DbConfigurationSectionProcessing[];
   disabled: boolean;
@@ -48,11 +48,11 @@ interface EicrSectionReviewProps {
  * Radio inputs are fully accessible and can be selected by clicking anywhere
  * in the containing table cell (td), supporting keyboard navigation as well.
  */
-export function EicrSectionReview({
+export function Sections({
   configurationId,
   sections: sectionProcessing,
   disabled,
-}: EicrSectionReviewProps) {
+}: SectionsProps) {
   const modalRef = useRef<ModalRef>(null);
   const [mode, setMode] = useState<ModalState>('add');
   const [selectedSection, setSelectedSection] =

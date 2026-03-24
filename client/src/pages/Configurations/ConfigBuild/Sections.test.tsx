@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { TestQueryClientProvider } from '../../../test-utils';
-import { EicrSectionReview } from './EicrSectionReview';
+import { Sections } from './Sections';
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 
 function renderWithClient(ui: React.ReactElement) {
@@ -42,11 +42,7 @@ describe('EicrSectionReview', () => {
       },
     ];
     renderWithClient(
-      <EicrSectionReview
-        configurationId={testId}
-        disabled={false}
-        sections={sections}
-      />
+      <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
     const rows = screen.getAllByRole('row');

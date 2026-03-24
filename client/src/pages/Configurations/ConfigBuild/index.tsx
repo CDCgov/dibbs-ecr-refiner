@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { EicrSectionReview } from './EicrSectionReview';
+import { Sections } from './Sections';
 import UploadSvg from '../../../assets/upload.svg';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
@@ -402,7 +402,7 @@ function Builder({
               />
             </div>
           ) : tableView === 'sections' ? (
-            <EicrSectionReview
+            <Sections
               configurationId={id}
               sections={section_processing}
               disabled={disabled}
