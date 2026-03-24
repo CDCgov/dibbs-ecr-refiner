@@ -120,24 +120,25 @@ export function Modal({
 
   return (
     <USWDSModal
-      className="rounded-sm"
+      className="max-w-100! rounded-sm"
+      isLarge
       ref={ref}
       id="custom-section-modal"
       aria-labelledby="modal-heading"
       aria-describedby="modal-description"
     >
-      <div className="flex flex-col items-start gap-6 p-5">
+      <div className="flex flex-col items-start gap-5">
         <ModalHeading
-          className="font-public-sans! text-2xl!"
           id="modal-heading"
+          className="text-bold font-merriweather m-0! mb-6 p-0! text-xl"
         >
           {isEdit ? 'Edit custom section' : 'Add a custom section'}
         </ModalHeading>
-        <div className="flex flex-col items-start">
+        <div className="flex w-full flex-col items-start">
           <p id="modal-description" className="sr-only">
             Enter your custom section information and click "Add section".
           </p>
-          <div className="flex flex-col gap-3">
+          <div className="flex w-full flex-col gap-3">
             <div>
               <USWDSLabel htmlFor="custom-section-name-input">
                 Display name (for this section)
@@ -167,7 +168,7 @@ export function Modal({
             ) : null}
           </div>
         </div>
-        <ModalFooter>
+        <ModalFooter className="m-0!">
           <ButtonGroup>
             <ModalToggleButton modalRef={ref} onClick={onSubmit} closer>
               {isEdit ? 'Update section' : 'Add section'}
