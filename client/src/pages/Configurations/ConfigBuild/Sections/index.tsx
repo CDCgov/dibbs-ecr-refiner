@@ -1,7 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
-import { Switch, Checkbox, Field, Label } from '@headlessui/react';
+import { Switch, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -16,6 +16,7 @@ import { Button } from '../../../../components/Button';
 import { Modal } from './Modal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Tooltip } from './Tooltip';
+import { Checkbox } from './Checkbox';
 
 /**
  * TODO: please refer to specification.py
@@ -283,7 +284,6 @@ function IncludeCheckbox({
 
   return (
     <Checkbox
-      className="group block size-5 cursor-pointer rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
       id={`${currentSection.name}-include`}
       aria-label={`Include ${currentSection.name} section rules in refined document.`}
       checked={currentSection.include}
