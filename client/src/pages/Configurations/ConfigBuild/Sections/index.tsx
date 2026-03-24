@@ -1,7 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
-import { Switch, Field, Label } from '@headlessui/react';
+import { Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -17,6 +17,7 @@ import { Modal } from './Modal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
+import { Switch } from './Switch';
 
 /**
  * TODO: please refer to specification.py
