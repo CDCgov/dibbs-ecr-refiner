@@ -9,11 +9,9 @@ import {
   useDeleteCustomSection,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { ModalRef } from '@trussworks/react-uswds';
-import React, { useRef, useState } from 'react';
-import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { useState } from 'react';
 import { Button } from '../../../../components/Button';
-import { Modal } from './Modal';
+import { ModalTest } from './Modal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
@@ -46,9 +44,15 @@ export function Sections({
   sections: sectionProcessing,
   disabled,
 }: SectionsProps) {
-  const modalRef = useRef<ModalRef>(null);
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
+    setSelectedSection(section);
+    setIsOpen(true);
+  };
 
   const resetModal = () => {
     setSelectedSection(null);
@@ -60,23 +64,32 @@ export function Sections({
         <div className="flex items-center justify-between">
           <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
           {disabled ? null : (
-            <ModalToggleButton modalRef={modalRef} variant="tertiary" opener>
+            <Button
+              variant="tertiary"
+              onClick={() => {
+                setSelectedSection(null);
+                setIsOpen(true);
+              }}
+            >
               Add custom section +
-            </ModalToggleButton>
+            </Button>
           )}
-          <Modal
-            configurationId={configurationId}
-            ref={modalRef}
-            initialSection={
-              selectedSection
-                ? {
-                    name: selectedSection?.name,
-                    currentCode: selectedSection.code,
-                  }
-                : null
-            }
-            onClose={resetModal}
-          />
+          {isOpen ? (
+            <ModalTest
+              isOpen={isOpen}
+              setIsOpen={setIsOpen}
+              configurationId={configurationId}
+              initialSection={
+                selectedSection
+                  ? {
+                      name: selectedSection?.name,
+                      currentCode: selectedSection.code,
+                    }
+                  : null
+              }
+              onClose={resetModal}
+            />
+          ) : null}
         </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
@@ -120,8 +133,7 @@ export function Sections({
                 <SectionName
                   configurationId={configurationId}
                   section={section}
-                  modalRef={modalRef}
-                  setSelectedSection={() => setSelectedSection(section)}
+                  setSelectedSection={() => onSelectedSection(section)}
                 />
               </td>
               <td>
@@ -147,14 +159,12 @@ export function Sections({
 interface SectionNameProps {
   configurationId: string;
   section: DbConfigurationSectionProcessing;
-  modalRef: React.RefObject<ModalRef | null>;
   setSelectedSection: () => void;
 }
 
 function SectionName({
   configurationId,
   section,
-  modalRef,
   setSelectedSection,
 }: SectionNameProps) {
   const isCustom = section.section_type === 'custom';
@@ -170,10 +180,7 @@ function SectionName({
           <div className="flex flex-row gap-2">
             <span className="text-sm">{section.code}</span>
             <div className="flex flex-row gap-1">
-              <EditButton
-                modalRef={modalRef}
-                setSelectedSection={setSelectedSection}
-              />
+              <EditButton setSelectedSection={setSelectedSection} />
               <span className="not-sr-only text-sm">|</span>
               <DeleteButton
                 configurationId={configurationId}
@@ -199,21 +206,17 @@ function SectionName({
 
 interface EditButtonProps {
   setSelectedSection: () => void;
-  modalRef: React.RefObject<ModalRef | null>;
 }
 
-function EditButton({ setSelectedSection, modalRef }: EditButtonProps) {
+function EditButton({ setSelectedSection }: EditButtonProps) {
   return (
-    <ModalToggleButton
+    <Button
       className="text-sm!"
       variant="tertiary"
-      modalRef={modalRef}
-      onClick={() => {
-        setSelectedSection();
-      }}
+      onClick={setSelectedSection}
     >
       Edit
-    </ModalToggleButton>
+    </Button>
   );
 }
 
