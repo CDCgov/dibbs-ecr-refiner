@@ -1,4 +1,3 @@
-from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -12,10 +11,11 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.specification import (
-    EICR_SPECS_DATA,
     SECTION_PROCESSING_SKIP,
+    get_section_version_map,
     load_spec,
 )
+from app.services.terminology import SYSTEM_LABEL_TO_OID, CodeSystemSets, Coding
 
 
 def get_default_sections() -> list[DbConfigurationSectionProcessing]:
@@ -26,17 +26,12 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
         list[DbConfigurationSectionProcessing]: List of sections with default values set.
     """
 
-    # use the new specification system in the ecr service
     spec = load_spec("3.1.1")
+    loinc_versions_flat = get_section_version_map()
 
-    # build loinc->versions dict once per import
-    loinc_version_map: dict[str, set[str]] = defaultdict(set)
-    for version, version_data in EICR_SPECS_DATA.items():
-        for loinc in version_data.keys():
-            loinc_version_map[loinc].add(version)
-
-    loinc_versions_flat = {k: sorted(v) for k, v in loinc_version_map.items()}
-
+    # TODO:
+    # we should try to keep `db` related models out of the
+    # ecr service as much as practicable
     section_processing_defaults = [
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
@@ -125,6 +120,11 @@ async def convert_config_to_storage_payload(
     """
     Takes a DbConfiguration and distills it down to the bare minimum data required for refining.
 
+    Produces both a flat code set (for the generic fallback matching path) and a
+    structured CodeSystemSets (for section-aware matching with proper code system
+    routing and displayName enrichment). Both are serialized into the active.json
+    file so that lambda has full parity with the webapp's refinement pipeline.
+
     Args:
         configuration (DbConfiguration): The configuration from the database
         db (AsyncDatabaseConnection): The async database connection
@@ -136,23 +136,59 @@ async def convert_config_to_storage_payload(
     sections: list[dict[str, Any]] = []
     included_condition_rsg_codes: set[str] = set()
 
+    # build per-system code dicts for CodeSystemSets
+    snomed: dict[str, Coding] = {}
+    loinc: dict[str, Coding] = {}
+    icd10: dict[str, Coding] = {}
+    rxnorm: dict[str, Coding] = {}
+    cvx: dict[str, Coding] = {}
+    other: dict[str, Coding] = {}
+
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
+
+        # route custom codes to the correct system dict
+        oid = SYSTEM_LABEL_TO_OID.get(cc.system, "")
+        target_map: dict[str, dict[str, Coding]] = {
+            "SNOMED": snomed,
+            "LOINC": loinc,
+            "ICD-10": icd10,
+            "RxNorm": rxnorm,
+            "CVX": cvx,
+        }
+        target_dict = target_map.get(cc.system, other)
+
+        if cc.code not in target_dict:
+            target_dict[cc.code] = Coding(
+                code=cc.code,
+                display=cc.name,
+                system=oid if oid else cc.system,
+            )
 
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
 
-    # condition codes
+    # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
-        for code_list in [
-            condition.snomed_codes,
-            condition.loinc_codes,
-            condition.icd10_codes,
-            condition.rxnorm_codes,
-        ]:
-            codes.update(code.code for code in code_list)
+        # map each code list to its system dict + OID
+        system_mappings: list[tuple[list, dict[str, Coding], str]] = [
+            (condition.snomed_codes, snomed, "2.16.840.1.113883.6.96"),
+            (condition.loinc_codes, loinc, "2.16.840.1.113883.6.1"),
+            (condition.icd10_codes, icd10, "2.16.840.1.113883.6.90"),
+            (condition.rxnorm_codes, rxnorm, "2.16.840.1.113883.6.88"),
+        ]
+
+        for code_list, target_dict, oid in system_mappings:
+            for code_obj in code_list:
+                codes.add(code_obj.code)
+                if code_obj.code not in target_dict:
+                    target_dict[code_obj.code] = Coding(
+                        code=code_obj.code,
+                        display=getattr(code_obj, "display", ""),
+                        system=oid,
+                    )
 
     sections = [
         asdict(section_process) for section_process in configuration.section_processing
@@ -161,10 +197,21 @@ async def convert_config_to_storage_payload(
     for c in conditions:
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
+    # build and serialize the CodeSystemSets
+    code_system_sets = CodeSystemSets(
+        snomed=snomed,
+        loinc=loinc,
+        icd10=icd10,
+        rxnorm=rxnorm,
+        cvx=cvx,
+        other=other,
+    )
+
     return ConfigurationStoragePayload(
         codes=codes,
         sections=sections,
         included_condition_rsg_codes=included_condition_rsg_codes,
+        code_system_sets=code_system_sets.to_dict(),
     )
 
 

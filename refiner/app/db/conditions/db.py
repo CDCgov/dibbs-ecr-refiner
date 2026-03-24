@@ -11,6 +11,25 @@ from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase
 
 
+async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
+    """
+    Queries the database for all TES versions available for use.
+    """
+
+    query = """
+        SELECT
+            DISTINCT(version)
+        FROM conditions
+        ORDER BY version
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query)
+            rows = await cur.fetchall()
+
+    return [row["version"] for row in rows]
+
+
 async def get_conditions_by_version_db(
     db: AsyncDatabaseConnection, version: str
 ) -> list[DbConditionBase]:
@@ -110,7 +129,8 @@ async def get_condition_by_id_db(
                 snomed_codes,
                 loinc_codes,
                 icd10_codes,
-                rxnorm_codes
+                rxnorm_codes,
+                cvx_codes
             FROM conditions
             WHERE id = %s
             """
@@ -151,7 +171,7 @@ async def get_condition_codes_by_condition_id_db(
     For a condition ID, flatten all codes into a GetConditionCode shape.
 
     For a given condition ID, unnests and combines all terminology codes
-    (LOINC, SNOMED, ICD-10, RxNorm) from their respective JSONB columns
+    (LOINC, SNOMED, ICD-10, RxNorm, CVX) from their respective JSONB columns
     into a single, flat list of GetConditionCode objects.
     """
 
@@ -196,6 +216,15 @@ async def get_condition_codes_by_condition_id_db(
                     code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
+
+                UNION ALL
+
+                SELECT
+                    code_elem->>'code' AS code,
+                    'CVX' AS system,
+                    code_elem->>'display' AS description
+                FROM c
+                CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.CVX_codes, '[]'::jsonb)) AS code_elem
             ) t
             WHERE code IS NOT NULL
             ORDER BY system, code;
@@ -243,12 +272,39 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             snomed_codes,
             loinc_codes,
             icd10_codes,
-            rxnorm_codes
+            rxnorm_codes,
+            cvx_codes
         FROM conditions
         WHERE child_rsg_snomed_codes && %s::text[];
     """
 
     params = (codes,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    return [DbCondition.from_db_row(row) for row in rows]
+
+
+async def get_conditions_by_ids(
+    ids: list[UUID], db: AsyncDatabaseConnection
+) -> list[DbCondition]:
+    """
+    Given a list of condition IDs, returns a list of condition records.
+    """
+
+    if not ids:
+        return []
+
+    query = """
+        SELECT *
+        FROM conditions
+        WHERE id = ANY(%s);
+    """
+
+    params = (ids,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

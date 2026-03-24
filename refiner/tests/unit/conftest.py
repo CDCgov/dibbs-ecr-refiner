@@ -2,6 +2,7 @@ import os
 from unittest.mock import AsyncMock, MagicMock
 
 os.environ["ENV"] = "local"
+os.environ["VERSION"] = "unit-test"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
 os.environ["DB_PASSWORD"] = "mock"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
@@ -101,7 +102,7 @@ def test_app(mock_db):
 @pytest.fixture
 def mock_user():
     return DbUser(
-        id="5deb43c2-6a82-4052-9918-616e01d255c7",
+        id=UUID("5deb43c2-6a82-4052-9918-616e01d255c7"),
         username="tester",
         email="tester@test.com",
         jurisdiction_id="JD-1",
@@ -122,6 +123,7 @@ def mock_condition():
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("124124", "Hypertension CVX")],
     )
 
 

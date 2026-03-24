@@ -3,12 +3,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.configurations.models import (
+from app.api.v1.configurations.model import (
     UpdateSectionInput,
 )
 from app.db.configurations.db import (
     get_configuration_by_id_db,
-    update_section_processing_db,
+    update_configuration_section_db,
 )
 from app.db.configurations.model import DbConfigurationSectionProcessing
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -99,7 +99,7 @@ async def update_section_processing(
     )
 
     try:
-        updated_config = await update_section_processing_db(
+        updated_config = await update_configuration_section_db(
             config=config, section_update=section_update, user_id=user.id, db=db
         )
     except ValueError:

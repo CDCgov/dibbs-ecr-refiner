@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.api.v1.configurations.models import GetConfigurationsResponse
+from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import GetConfigurationResponseVersion
 
@@ -38,6 +38,7 @@ def mock_db_functions(
         loinc_codes=[DbConditionCoding("22222", "Hypertension LOINC")],
         icd10_codes=[DbConditionCoding("I10", "Essential hypertension")],
         rxnorm_codes=[DbConditionCoding("33333", "Hypertension RXNORM")],
+        cvx_codes=[DbConditionCoding("12415", "Hypertension CVX")],
     )
 
     monkeypatch.setattr(

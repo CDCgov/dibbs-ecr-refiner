@@ -4,7 +4,7 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.db.configurations.model import DbConfigurationSectionInstructions
-from app.services.ecr.models import EICRRefinementPlan
+from app.services.ecr.model import EICRRefinementPlan
 from app.services.terminology import ProcessedConfiguration
 
 from ...core.exceptions import (
@@ -13,7 +13,7 @@ from ...core.exceptions import (
 )
 from ...core.models.types import XMLFiles
 from ..format import remove_element
-from .models import NamespaceMap, RRRefinementPlan
+from .model import NamespaceMap, RRRefinementPlan
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
@@ -21,6 +21,24 @@ from .process_eicr import (
     process_section,
 )
 from .specification import SECTION_PROCESSING_SKIP, detect_eicr_version, load_spec
+
+# NOTE:
+# CONSTANTS
+# =============================================================================
+HL7_NS: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
+
+SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
+    include=True,
+    narrative=False,  # TODO: Decide a default
+    action="retain",
+)
+
+DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
+    include=True,
+    narrative=False,  # TODO: Decide a default
+    action="refine",
+)
+
 
 # NOTE:
 # PUBLIC API FUNCTIONS
@@ -48,6 +66,75 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
     return round(percent_diff)
 
 
+def _discover_present_eicr_sections(xml_files: XMLFiles) -> list[str]:
+    """
+    Finds all of the section LOINCs in an eICR and returns them as a list.
+
+    Args:
+        xml_files (XMLFiles): the eICR/RR pair
+
+    Returns:
+        list[str]: All discovered section LOINCs in the eICR document
+    """
+    eicr_root = xml_files.parse_eicr()
+
+    structured_body = eicr_root.find(".//hl7:structuredBody", namespaces=HL7_NS)
+    if structured_body is None:
+        return []
+
+    return get_section_loinc_codes(structured_body)
+
+
+def _build_section_rules_map(
+    processed_configuration: ProcessedConfiguration,
+) -> dict[str, DbConfigurationSectionInstructions]:
+    """
+    Builds a section rules map from a processed configuration.
+
+    The map key is a section LOINC code and the value is a `DbConfigurationSectionInstructions`.
+
+    Args:
+        processed_configuration (ProcessedConfiguration): The processed configuration
+
+    Returns:
+        dict[str, DbConfigurationSectionInstructions]: The resulting section rules map
+    """
+    rules_map: dict[str, DbConfigurationSectionInstructions] = {}
+
+    for rule in processed_configuration.section_processing:
+        code = rule.get("code")
+        if not code:
+            continue
+
+        rules_map[code] = DbConfigurationSectionInstructions(
+            include=rule.get("include", DEFAULT_SECTION_INSTRUCTIONS.include),
+            narrative=rule.get("narrative", DEFAULT_SECTION_INSTRUCTIONS.narrative),
+            action=rule.get("action", DEFAULT_SECTION_INSTRUCTIONS.action),
+        )
+
+    return rules_map
+
+
+def _apply_section_skip_rules(
+    rules_map: dict[str, DbConfigurationSectionInstructions],
+) -> dict[str, DbConfigurationSectionInstructions]:
+    """
+    Takes a section rules map, copies it, updates it to include skipped sections, and then returns the new map.
+
+    Args:
+        rules_map (dict[str, DbConfigurationSectionInstructions]): The original map without skips
+
+    Returns:
+        dict[str, DbConfigurationSectionInstructions]: The modified map that includes skipped sections
+    """
+    modified_map = rules_map.copy()
+
+    for code in SECTION_PROCESSING_SKIP:
+        modified_map[code] = SKIP_SECTION_INSTRUCTIONS
+
+    return modified_map
+
+
 def create_eicr_refinement_plan(
     processed_configuration: ProcessedConfiguration, xml_files: XMLFiles
 ) -> EICRRefinementPlan:
@@ -67,55 +154,26 @@ def create_eicr_refinement_plan(
         An EICRRefinementPlan containing the exact instructions for `refine_eicr`.
     """
 
-    # get eICR root and pull out the structuredBody
-    eicr_root = xml_files.parse_eicr()
-    structured_body = eicr_root.find(
-        ".//hl7:structuredBody", namespaces={"hl7": "urn:hl7-org:v3"}
-    )
-
-    # discover which sections are present in this specific eICR
-    if structured_body is None:
-        present_section_codes = []
-    else:
-        present_section_codes = get_section_loinc_codes(structured_body)
-
-    DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
-        include=True,
-        narrative=False,  # TODO: Decide a default
-        action="refine",
-    )
-
-    SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
-        include=True,
-        narrative=False,  # TODO: Decide a default
-        action="retain",
-    )
+    # discover all sections in the eICR
+    present_section_codes = _discover_present_eicr_sections(xml_files)
 
     # create a map of the rules from the configuration for efficient lookup
-    rules_map: dict[str, DbConfigurationSectionInstructions] = {}
-    for rule in processed_configuration.section_processing:
-        code = rule.get("code")
-        if not code:
-            continue  # TODO: do we need to do something if it's not present?
-        rules_map[code] = DbConfigurationSectionInstructions(
-            include=rule.get("include", DEFAULT_SECTION_INSTRUCTIONS.include),
-            narrative=rule.get("narrative", DEFAULT_SECTION_INSTRUCTIONS.narrative),
-            action=rule.get("action", DEFAULT_SECTION_INSTRUCTIONS.action),
-        )
+    rules_map = _build_section_rules_map(processed_configuration)
 
-    # inject the skip logic for the sections
-    # defined in the specification file
-    for code in SECTION_PROCESSING_SKIP:
-        rules_map[code] = SKIP_SECTION_INSTRUCTIONS
+    # update the rules map with sections to be skipped (include + retain)
+    rules_map_with_skips = _apply_section_skip_rules(rules_map)
 
-    final_instructions: dict[str, DbConfigurationSectionInstructions] = {
-        code: rules_map.get(code, DEFAULT_SECTION_INSTRUCTIONS)
+    section_instructions = {
+        # For each discovered section, use the determined rules from the map.
+        # If a code doesn't yet have rules, we'll skip it (include + retain)
+        code: rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
         for code in present_section_codes
     }
 
     return EICRRefinementPlan(
         codes_to_check=processed_configuration.codes,
-        section_instructions=final_instructions,
+        code_system_sets=processed_configuration.code_system_sets,
+        section_instructions=section_instructions,
     )
 
 
@@ -152,8 +210,7 @@ def refine_eicr(
         # parse the eicr document
         eicr_root = xml_files.parse_eicr()
 
-        namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
-        structured_body = eicr_root.find(".//hl7:structuredBody", namespaces)
+        structured_body = eicr_root.find(".//hl7:structuredBody", HL7_NS)
 
         # if we don't have a structuredBody this is a major problem
         if structured_body is None:
@@ -172,7 +229,7 @@ def refine_eicr(
             section = get_section_by_code(
                 structured_body=structured_body,
                 loinc_code=section_code,
-                namespaces=namespaces,
+                namespaces=HL7_NS,
             )
 
             if section is None:
@@ -191,9 +248,10 @@ def refine_eicr(
             process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,
-                namespaces=namespaces,
+                namespaces=HL7_NS,
                 section_specification=section_specification,
                 version=version,
+                code_system_sets=plan.code_system_sets,
             )
 
         # format and return the result
@@ -364,3 +422,51 @@ def refine_rr(
             continue
 
     return etree.tostring(rr_root, encoding="unicode")
+
+
+def create_unrefined_conditions_rr(
+    xml_files: XMLFiles,
+    condition_codes: set[str],
+) -> str:
+    """
+    Create an RR filtered to only the reportable conditions that were not refined.
+
+    When the RR contains multiple reportable conditions for a jurisdiction but
+    only some have active refiner configurations, the conditions that go through
+    full refinement get their own refined RR (produced by `refine_for_condition`
+    via the pipeline). The remaining conditions — those without active
+    configurations — still need their reportability information preserved.
+
+    This function produces that "remainder" RR. It filters the original RR down
+    to just the condition observations matching the provided codes, removing
+    everything else. This prevents duplication: when the jurisdiction receives
+    the full output package (original files + refined outputs), each condition's
+    reportability information appears exactly once.
+
+    Example scenario:
+        SDDH has two reportable conditions: COVID (840539006) and Influenza (772828001).
+        Only COVID has an active configuration.
+
+        - COVID goes through refine_for_condition → produces refined_eICR.xml + refined_RR.xml
+        - Influenza has no config → this function produces an RR with only the
+          Influenza reportability observation, written to unrefined_rr/refined_RR.xml
+
+        The jurisdiction receives both and can process each condition without
+        seeing COVID reported twice.
+
+    Args:
+        xml_files: The eICR/RR pair. Only the RR is used.
+        condition_codes: The set of RSG SNOMED codes for conditions that
+            were NOT refined (i.e., had no active configuration). The
+            returned RR will retain only these condition observations.
+
+    Returns:
+        str: The filtered RR XML as a string, containing only the
+            reportability observations for the specified condition codes.
+    """
+
+    plan = RRRefinementPlan(
+        included_condition_child_rsg_snomed_codes_to_retain=condition_codes
+    )
+
+    return refine_rr(xml_files=xml_files, plan=plan)

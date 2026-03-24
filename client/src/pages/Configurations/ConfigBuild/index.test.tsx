@@ -5,6 +5,7 @@ import { ConfigBuild } from '.';
 import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
+  CodeSystem,
   DbConfigurationCustomCode,
   DbTotalConditionCodeCount,
   GetConfigurationResponse,
@@ -376,6 +377,14 @@ describe('Config builder page', () => {
       'code-system-select-container'
     ); // name of the `data-testid` added to the parent div
     const select = within(parentContainer).getByLabelText(/code system/i);
+
+    // expect the list of code system options to match the list of expected values
+    const optionList = within(select)
+      .getAllByRole('option')
+      .map((o) => o.textContent);
+    Object.values(CodeSystem).forEach((c) => {
+      expect(optionList.includes(c.toLocaleLowerCase()));
+    });
     await user.selectOptions(select, 'SNOMED');
 
     // Should be only SNOMED codes
@@ -675,8 +684,10 @@ describe('Config builder page', () => {
     );
     expect(vars.data.csv_text).toContain('12345,LOINC,TEST 1');
 
+    // was: assert <h3>Custom codes</h3>
+    // UI shows "Import from CSV" h2 after upload, not always custom tab
     expect(
-      screen.getByText('Custom codes', { selector: 'h3' })
+      screen.getByText('Import from CSV', { selector: 'h2' })
     ).toBeInTheDocument();
   });
 

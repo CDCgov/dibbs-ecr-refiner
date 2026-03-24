@@ -36,7 +36,7 @@ from app.services.configurations import (
 )
 from app.services.logger import get_logger
 
-from .models import (
+from .model import (
     CreateConfigInput,
     CreateConfigurationResponse,
     GetConfigurationResponse,

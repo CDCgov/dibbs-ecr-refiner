@@ -185,6 +185,14 @@ async def auth_callback(
 
         logger.info("Set cookie for user", extra={"username": user.username})
 
+        # Delete temporary Starlette auth cookie
+        response.delete_cookie(
+            key="oidc",
+            path="/",
+            samesite="lax",
+            secure=env != "local",
+        )
+
         response.set_cookie(
             key="refiner-session",
             value=session_token,
@@ -277,8 +285,14 @@ async def logout(
 
     response = RedirectResponse(url=post_logout_redirect_uri)
 
-    # Starlette's session shouldn't exist by this point but just to be safe we'll clear it.
+    # Starlette's session shouldn't exist by this point but just to be safe we'll clear/delete it.
     request.session.clear()
+    response.delete_cookie(
+        key="oidc",
+        path="/",
+        samesite="lax",
+        secure=env != "local",
+    )
 
     response.delete_cookie(
         key="refiner-session",

@@ -10,6 +10,7 @@ from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
 os.environ["ENV"] = "local"
+os.environ["VERSION"] = "integration-test"
 os.environ["DB_URL"] = "postgresql://postgres@localhost:5432/refiner"
 os.environ["DB_PASSWORD"] = "refiner"
 os.environ["AUTH_PROVIDER"] = "mock-oauth-provider"
@@ -381,23 +382,97 @@ def setup(request):
     )
 
     # Define the default section processing that matches production behavior
-    section_processing_default = """[
-        {"code": "46240-8", "name": "History of encounters", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "10164-2", "name": "History of Present Illness", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "11369-6", "name": "History of Immunizations", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "29549-3", "name": "Medications Administered", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "18776-5", "name": "Plan of Treatment", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "11450-4", "name": "Problem List", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "29299-5", "name": "Reason For Visit", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "30954-2", "name": "Relevant diagnostic tests and/or laboratory data", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false},
-        {"code": "29762-2", "name": "Social History", "action": "refine", "versions": ["1.1", "3.1", "3.1.1"], "include": true, "narrative": false}
-    ]"""
+    section_defaults = [
+        {
+            "code": "46240-8",
+            "name": "History of encounters",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "10164-2",
+            "name": "History of Present Illness",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "11369-6",
+            "name": "History of Immunizations",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "29549-3",
+            "name": "Medications Administered",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "18776-5",
+            "name": "Plan of Treatment",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "11450-4",
+            "name": "Problem List",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "29299-5",
+            "name": "Reason For Visit",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "30954-2",
+            "name": "Relevant diagnostic tests and/or laboratory data",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+        {
+            "code": "29762-2",
+            "name": "Social History",
+            "action": "refine",
+            "versions": ["1.1", "3.1", "3.1.1"],
+            "include": True,
+            "narrative": False,
+        },
+    ]
 
     config_insert = f"""
     DO $$
+    DECLARE
+        covid_config_id uuid;
+        flu_config_id uuid;
+        zika_config_id uuid;
     BEGIN
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, section_processing, version, status
+            jurisdiction_id,
+            condition_id,
+            name,
+            created_by,
+            included_conditions,
+            custom_codes,
+            version,
+            status
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -406,14 +481,25 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{covid_id}"]'::jsonb,
             '[]'::jsonb,
-            '{section_processing_default}'::jsonb,
             1,
             'active'
         )
-        ON CONFLICT DO NOTHING;
+        ON CONFLICT DO NOTHING
+        RETURNING id INTO covid_config_id;
+
+        IF covid_config_id IS NOT NULL THEN
+            {build_section_insert_sql("covid_config_id", section_defaults)}
+        END IF;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, section_processing, version, status
+            jurisdiction_id,
+            condition_id,
+            name,
+            created_by,
+            included_conditions,
+            custom_codes,
+            version,
+            status
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -422,15 +508,25 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{flu_id}"]'::jsonb,
             '[]'::jsonb,
-            '{section_processing_default}'::jsonb,
             1,
             'active'
-
         )
-        ON CONFLICT DO NOTHING;
+        ON CONFLICT DO NOTHING
+        RETURNING id INTO flu_config_id;
+
+        IF flu_config_id IS NOT NULL THEN
+            {build_section_insert_sql("flu_config_id", section_defaults)}
+        END IF;
 
         INSERT INTO configurations (
-            jurisdiction_id, condition_id, name, created_by, included_conditions, custom_codes, section_processing, version, status
+            jurisdiction_id,
+            condition_id,
+            name,
+            created_by,
+            included_conditions,
+            custom_codes,
+            version,
+            status
         )
         VALUES (
             '{TEST_JD_ID}',
@@ -439,14 +535,15 @@ def setup(request):
             '{TEST_USER_ID}',
             '["{zika_id}"]'::jsonb,
             '[]'::jsonb,
-            '{section_processing_default}'::jsonb,
             1,
             'active'
-
         )
-        ON CONFLICT DO NOTHING;
+        ON CONFLICT DO NOTHING
+        RETURNING id INTO zika_config_id;
 
-
+        IF zika_config_id IS NOT NULL THEN
+            {build_section_insert_sql("zika_config_id", section_defaults)}
+        END IF;
     END $$;
     """
     refiner_service.exec_in_container(
@@ -598,3 +695,33 @@ def assert_schematron_valid(
         f"[{test_name}] Expected 0 Schematron errors for {item_label}, "
         f"got {validation_result['errors']} errors (see above for details)"
     )
+
+
+def build_section_insert_sql(config_id_sql: str, sections: list[dict]) -> str:
+    values = ",\n".join(
+        f"""(
+            {config_id_sql},
+            '{section["name"]}',
+            '{section["code"]}',
+            '{section["action"]}',
+            {str(section["include"]).lower()},
+            {str(section["narrative"]).lower()},
+            ARRAY[{", ".join(f"'{v}'" for v in section["versions"])}]
+        )"""
+        for section in sections
+    )
+
+    return f"""
+        INSERT INTO configurations_sections (
+            configuration_id,
+            name,
+            code,
+            action,
+            include,
+            narrative,
+            versions
+        )
+        VALUES
+        {values}
+        ON CONFLICT DO NOTHING;
+    """

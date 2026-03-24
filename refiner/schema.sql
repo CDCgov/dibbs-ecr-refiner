@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.3
+-- Dumped from database version 18.2
 -- Dumped by pg_dump version 18.2
 
 SET statement_timeout = 0;
@@ -14,6 +14,20 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
 
 --
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
@@ -42,6 +56,16 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'lock_release',
     'lock_renew',
     'bulk_add_custom_code'
+);
+
+
+--
+-- Name: section_action; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.section_action AS ENUM (
+    'refine',
+    'retain'
 );
 
 
@@ -145,7 +169,8 @@ CREATE TABLE public.conditions (
     icd10_codes jsonb,
     rxnorm_codes jsonb,
     created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
+    updated_at timestamp with time zone DEFAULT now(),
+    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -163,14 +188,12 @@ CREATE TABLE public.configurations (
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
     condition_id uuid NOT NULL,
-    section_processing jsonb DEFAULT '[]'::jsonb,
     status public.configuration_status DEFAULT 'draft'::public.configuration_status NOT NULL,
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
     condition_canonical_url text NOT NULL,
     created_by uuid NOT NULL,
-    s3_urls text[],
-    CONSTRAINT section_processing_must_be_json_array CHECK ((jsonb_typeof(section_processing) = 'array'::text))
+    s3_urls text[]
 );
 
 
@@ -182,6 +205,24 @@ CREATE TABLE public.configurations_locks (
     configuration_id uuid NOT NULL,
     user_id uuid NOT NULL,
     expires_at timestamp without time zone NOT NULL
+);
+
+
+--
+-- Name: configurations_sections; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_sections (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    configuration_id uuid NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    action public.section_action NOT NULL,
+    include boolean NOT NULL,
+    narrative boolean NOT NULL,
+    versions text[] DEFAULT '{}'::text[] NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -287,6 +328,22 @@ ALTER TABLE ONLY public.configurations
 
 
 --
+-- Name: configurations_sections configurations_sections_configuration_id_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_code_key UNIQUE (configuration_id, code);
+
+
+--
+-- Name: configurations_sections configurations_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: events events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -357,6 +414,20 @@ CREATE UNIQUE INDEX configurations_one_draft_per_pair_idx ON public.configuratio
 
 
 --
+-- Name: configurations_sections_code_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configurations_sections_code_idx ON public.configurations_sections USING btree (code);
+
+
+--
+-- Name: configurations_sections_configuration_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX configurations_sections_configuration_id_idx ON public.configurations_sections USING btree (configuration_id);
+
+
+--
 -- Name: idx_conditions_child_snomed_codes; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -389,6 +460,13 @@ CREATE TRIGGER configurations_set_version_on_insert_trigger BEFORE INSERT ON pub
 --
 
 CREATE TRIGGER update_conditions_updated_at BEFORE UPDATE ON public.conditions FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: configurations_sections update_configurations_sections_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_configurations_sections_updated_at BEFORE UPDATE ON public.configurations_sections FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -454,6 +532,14 @@ ALTER TABLE ONLY public.configurations_locks
 
 
 --
+-- Name: configurations_sections configurations_sections_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
 -- Name: events fk_configuration; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -499,4 +585,6 @@ ALTER TABLE ONLY public.users
 INSERT INTO public.schema_migrations (version) VALUES
     ('20260226212322'),
     ('20260305221859'),
-    ('20260309143000');
+    ('20260309001833'),
+    ('20260309143000'),
+    ('20260309151338');

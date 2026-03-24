@@ -1,60 +1,110 @@
+from urllib.parse import urlparse
+from uuid import UUID
+
 S3_CONFIGURATION_DIR_PREFIX = "configurations"
 
 
-def get_parent_directory_key(jurisdiction_id: str, rsg_code: str) -> str:
+def _extract_uuid_from_canonical_url(url: str) -> UUID:
+    """
+    Given a `canonical_url`, extracts and returns the UUID at the end of it.
+
+    For example, given `https://tes.tools.aimsplatform.org/api/fhir/ValueSet/c435a017-41e6-4030-b6d1-0bda2eb05b1f`
+    the function returns `c435a017-41e6-4030-b6d1-0bda2eb05b1f`
+
+    Args:
+        url (str): The canonical URL
+
+    Returns:
+        UUID: The UUID at the end of the canonical URL
+    """
+    parsed = urlparse(url)
+    last_segment = parsed.path.rstrip("/").split("/")[-1]
+    return UUID(last_segment)
+
+
+def get_jurisdiction_directory(jurisdiction_id: str) -> str:
+    """
+    Returns the jurisdiction's S3 directory path.
+
+    Args:
+        jurisdiction_id (str): The ID of the jurisdiction
+
+    Returns:
+        str: Full S3 key to the jurisdiction directory.
+    """
+    return f"{S3_CONFIGURATION_DIR_PREFIX}/{jurisdiction_id}"
+
+
+def get_parent_directory_key(jurisdiction_id: str, canonical_url: str) -> str:
     """
     Returns the "parent" directory where the activation files live.
 
     Args:
         jurisdiction_id (str): The ID of the jurisdiction
-        rsg_code (str): The RSG code
+        canonical_url (str): The condition canonical URL
 
     Returns:
         str: Full S3 key to the activation file parent directory
     """
-    return f"{S3_CONFIGURATION_DIR_PREFIX}/{jurisdiction_id}/{rsg_code}"
+    uuid = _extract_uuid_from_canonical_url(url=canonical_url)
+    return f"{get_jurisdiction_directory(jurisdiction_id=jurisdiction_id)}/{uuid}"
 
 
-def get_active_file_key(jurisdiction_id: str, rsg_code: str, version: int) -> str:
+def get_rsg_cg_mapping_file_key(jurisdiction_id: str) -> str:
+    """
+    Constructs and returns the key to a jurisdiction's condition mapping file.
+
+    Args:
+        jurisdiction_id (str): The ID of the jurisdiction
+
+    Returns:
+        str: Full S3 key to a jurisdiction's rsg_cg_mapping.json file
+    """
+    return f"{get_jurisdiction_directory(jurisdiction_id=jurisdiction_id)}/rsg_cg_mapping.json"
+
+
+def get_active_file_key(jurisdiction_id: str, canonical_url: str, version: int) -> str:
     """
     Constructs and returns the key to a configuration activation file.
 
     Args:
         jurisdiction_id (str): The ID of the jurisdiction
-        rsg_code (str): The RSG code
+        canonical_url (str): The condition canonical URL
         version (int): The configuration version
 
     Returns:
         str: Full S3 key to an active.json configuration file
     """
-    return f"{get_parent_directory_key(jurisdiction_id=jurisdiction_id, rsg_code=rsg_code)}/{version}/active.json"
+    return f"{get_parent_directory_key(jurisdiction_id=jurisdiction_id, canonical_url=canonical_url)}/{version}/active.json"
 
 
-def get_metadata_file_key(jurisdiction_id: str, rsg_code: str, version: int) -> str:
+def get_metadata_file_key(
+    jurisdiction_id: str, canonical_url: str, version: int
+) -> str:
     """
     Constructs and returns the key to a configuration metadata file.
 
     Args:
         jurisdiction_id (str): The ID of the jurisdiction
-        rsg_code (str): The RSG code
+        canonical_url (str): The condition canonical URL
         version (int): The configuration version
 
     Returns:
         str: Full S3 key to a metadata.json file
     """
-    return f"{get_parent_directory_key(jurisdiction_id=jurisdiction_id, rsg_code=rsg_code)}/{version}/metadata.json"
+    return f"{get_parent_directory_key(jurisdiction_id=jurisdiction_id, canonical_url=canonical_url)}/{version}/metadata.json"
 
 
-def get_current_file_key(jurisdiction_id: str, rsg_code: str) -> str:
+def get_current_file_key(jurisdiction_id: str, canonical_url: str) -> str:
     """
     Constructs and returns the key to a current version file.
 
     Args:
         jurisdiction_id (str): The ID of the jurisdiction
-        rsg_code (str): The RSG code
+        canonical_url (str): The condition canonical URL
         version (int): The configuration version
 
     Returns:
         str: Full S3 key to a current.json file
     """
-    return f"{get_parent_directory_key(jurisdiction_id=jurisdiction_id, rsg_code=rsg_code)}/current.json"
+    return f"{get_parent_directory_key(jurisdiction_id=jurisdiction_id, canonical_url=canonical_url)}/current.json"

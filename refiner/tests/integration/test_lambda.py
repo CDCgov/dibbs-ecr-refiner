@@ -3,7 +3,9 @@ import json
 import httpx
 import pytest
 import pytest_asyncio
+from lxml import etree
 
+from tests.integration.conftest import assert_schematron_valid, validate_refined_xml
 from tests.localstack.seed import (
     create_s3_client,
     seed_localstack,
@@ -11,6 +13,29 @@ from tests.localstack.seed import (
 )
 
 LAMBDA_BASE_URL = "http://localhost:9000/2015-03-31/functions/function/invocations"
+COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
+REFINER_OUTPUT_PREFIX = "RefinerOutput/"
+
+# Condition SNOMED codes
+COVID_CODE = "840539006"
+INFLUENZA_CODE = "772828001"
+
+# RR namespaces for content assertions
+RR_NAMESPACES = {"cda": "urn:hl7-org:v3"}
+
+
+def get_rr_condition_codes(rr_xml: str) -> set[str]:
+    """
+    Extract all reportable condition SNOMED codes from the RR11 organizer.
+    """
+    root = etree.fromstring(rr_xml.encode("utf-8"))
+    codes = root.xpath(
+        ".//cda:observation"
+        "[cda:templateId[@root='2.16.840.1.113883.10.20.15.2.3.12']]"
+        "/cda:value/@code",
+        namespaces=RR_NAMESPACES,
+    )
+    return set(codes)
 
 
 @pytest.fixture
@@ -52,60 +77,123 @@ async def http_client():
 @pytest.mark.asyncio
 class TestLambda:
     async def test_lambda_successful_refinement(
-        self, http_client, s3_client, default_setup
+        self, http_client, s3_client, default_setup, validate_xml_string
     ):
         """
         Lambda should be able to successfully refine the RR and eICR when all of the
-        required files exist in their expected locations.
+        required files exist in their expected locations. Refined outputs should be
+        well-formed XML that passes Schematron validation.
         """
+        test_name = "test_lambda_successful_refinement"
         bucket = default_setup["bucket"]
 
         resp = await http_client.post(LAMBDA_BASE_URL, json=default_setup["event"])
 
         assert resp.status_code == 200
 
+        # --- File existence assertions ---
+
         # Assert refined RR was created
         expected_refined_rr_key = (
-            "RefinerOutput/persistence/id/SDDH/840539006/refined_RR.xml"
+            f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_RR.xml"
         )
         rr_response = s3_client.get_object(Bucket=bucket, Key=expected_refined_rr_key)
-
         assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
-        # Assert shadow refined RR was created
-        # TODO: swap this out with the actual value once we get it from APHL
-        expected_shadow_rr_key = (
-            "RefinerOutput/persistence/id/SDDH/inactive-codes/refined_RR.xml"
-        )
-        shadow_rr_response = s3_client.get_object(
-            Bucket=bucket, Key=expected_shadow_rr_key
-        )
 
-        assert shadow_rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        # Assert unrefined conditions RR was created
+        expected_unrefined_rr_key = (
+            f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/unrefined_rr/refined_RR.xml"
+        )
+        unrefined_rr_response = s3_client.get_object(
+            Bucket=bucket, Key=expected_unrefined_rr_key
+        )
+        assert unrefined_rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
         # Assert refined eICR was created
         expected_refined_eicr_key = (
-            "RefinerOutput/persistence/id/SDDH/840539006/refined_eICR.xml"
+            f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_eICR.xml"
         )
         eicr_response = s3_client.get_object(
             Bucket=bucket, Key=expected_refined_eicr_key
         )
         assert eicr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
-        # Check generated RefinerComplete file
+        # --- RefinerComplete assertions ---
+
         complete_response = s3_client.get_object(
             Bucket=bucket, Key=default_setup["complete_key"]
         )
         complete_body = json.loads(complete_response["Body"].read().decode("utf-8"))
 
         # COVID was refined and the flu was not
-        expected_refiner_metadata = {"SDDH": {"840539006": True, "772828001": False}}
+        expected_refiner_metadata = {
+            "SDDH": {COVID_CODE: True, INFLUENZA_CODE: False},
+            "JDDH": {INFLUENZA_CODE: False},
+        }
         assert complete_body["RefinerMetadata"] == expected_refiner_metadata
 
         assert expected_refined_eicr_key in complete_body["RefinerOutputFiles"]
         assert expected_refined_rr_key in complete_body["RefinerOutputFiles"]
-        assert expected_shadow_rr_key in complete_body["RefinerOutputFiles"]
+        assert expected_unrefined_rr_key in complete_body["RefinerOutputFiles"]
 
         assert not complete_body["RefinerSkip"]
+
+        # --- Content and Schematron validation for refined eICR ---
+
+        refined_eicr_xml = eicr_response["Body"].read().decode("utf-8")
+
+        validate_refined_xml(
+            refined_eicr_xml, "eICR", "COVID19 refined eICR", test_name
+        )
+        eicr_result = validate_xml_string(refined_eicr_xml, "eicr")
+        assert_schematron_valid(eicr_result, "COVID19 refined eICR", test_name)
+
+        # Refined eICR should be smaller than the original
+        original_eicr = s3_client.get_object(
+            Bucket=bucket, Key=default_setup["eicr_key"]
+        )
+        original_eicr_xml = original_eicr["Body"].read().decode("utf-8")
+        assert len(refined_eicr_xml) < len(original_eicr_xml), (
+            "Refined eICR should be smaller than the original"
+        )
+
+        # --- Content and Schematron validation for refined RR ---
+
+        refined_rr_xml = rr_response["Body"].read().decode("utf-8")
+
+        validate_refined_xml(refined_rr_xml, "RR", "COVID19 refined RR", test_name)
+        rr_result = validate_xml_string(refined_rr_xml, "rr")
+        assert_schematron_valid(rr_result, "COVID19 refined RR", test_name)
+
+        # Refined RR should contain only the COVID condition
+        refined_rr_codes = get_rr_condition_codes(refined_rr_xml)
+        assert COVID_CODE in refined_rr_codes, "Refined RR should contain COVID"
+        assert INFLUENZA_CODE not in refined_rr_codes, (
+            "Refined RR should not contain Influenza"
+        )
+
+        # --- Content validation for unrefined conditions RR ---
+
+        unrefined_rr_xml = unrefined_rr_response["Body"].read().decode("utf-8")
+
+        validate_refined_xml(
+            unrefined_rr_xml, "RR", "Unrefined conditions RR", test_name
+        )
+        unrefined_rr_result = validate_xml_string(unrefined_rr_xml, "rr")
+        assert_schematron_valid(
+            unrefined_rr_result, "Unrefined conditions RR", test_name
+        )
+
+        # Unrefined conditions RR should contain only Influenza
+        unrefined_rr_codes = get_rr_condition_codes(unrefined_rr_xml)
+        assert INFLUENZA_CODE in unrefined_rr_codes, (
+            "Unrefined conditions RR should contain Influenza"
+        )
+        assert COVID_CODE not in unrefined_rr_codes, (
+            "Unrefined conditions RR should not contain COVID"
+        )
+
+        print(f"[{test_name}] ✅ All refined outputs passed Schematron validation")
 
     async def test_lambda_current_file_null_version(
         self, http_client, s3_client, default_setup
@@ -156,7 +244,7 @@ class TestLambda:
         error_message = resp_json["errorMessage"]
         assert (
             error_message
-            == "Activated configuration file could not be read at: configurations/SDDH/840539006/2/active.json"
+            == f"Activated configuration file could not be read at: configurations/SDDH/{COVID_CANONICAL_URL_UUID}/2/active.json"
         )
 
     async def test_lambda_missing_current_file(

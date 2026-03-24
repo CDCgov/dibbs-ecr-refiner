@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
+from app.services.code_system import CodeSystem
+
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
@@ -56,7 +58,7 @@ class DbConfigurationCustomCode:
     """
 
     code: str
-    system: Literal["LOINC", "SNOMED", "ICD-10", "RxNorm"]
+    system: CodeSystem
     name: str
 
 
@@ -84,6 +86,36 @@ class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
     name: str
     code: str
     versions: list[str]
+
+
+@dataclass(frozen=True)
+class DbConfigurationSection(DbConfigurationSectionProcessing):
+    """
+    A section row from the `configurations_sections` table.
+    """
+
+    id: UUID
+    configuration_id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    def to_processing_dict(self) -> dict:
+        """
+        Convert a DbConfigurationSection to a dictionary that can be used for processing.
+
+        Data not needed for processing is excluded.
+
+        Returns:
+            dict: The dictionary
+        """
+        return {
+            "code": self.code,
+            "name": self.name,
+            "action": self.action,
+            "include": self.include,
+            "versions": self.versions,
+            "narrative": self.narrative,
+        }
 
 
 @dataclass(frozen=True)
@@ -157,11 +189,17 @@ class DbConfiguration:
 class ConfigurationStoragePayload:
     """
     The model for a configuration that is being written to S3.
+
+    Contains both the flat codes set (for the generic fallback
+    matching path) and the enriched code_system_sets (for
+    section-aware matching with proper code system routing and
+    displayName enrichment).
     """
 
     codes: set[str]
     sections: list[dict[str, Any]]
     included_condition_rsg_codes: set[str]
+    code_system_sets: dict[str, list[dict[str, str]]] | None = None
 
     def to_dict(self) -> dict:
         """
@@ -170,11 +208,17 @@ class ConfigurationStoragePayload:
         Returns:
             dict: ConfigurationStoragePayload represented as a dict
         """
-        return {
+
+        result = {
             "codes": sorted(self.codes),
             "sections": self.sections,
             "included_condition_rsg_codes": sorted(self.included_condition_rsg_codes),
         }
+
+        if self.code_system_sets is not None:
+            result["code_system_sets"] = self.code_system_sets
+
+        return result
 
 
 @dataclass(frozen=True)
