@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dbmate binary from dbmate base image
-COPY --from=ghcr.io/amacneil/dbmate:2 /usr/local/bin/dbmate /usr/local/bin/dbmate
+COPY --from=ghcr.io/amacneil/dbmate:main /usr/local/bin/dbmate /usr/local/bin/dbmate
 
 WORKDIR /app
 

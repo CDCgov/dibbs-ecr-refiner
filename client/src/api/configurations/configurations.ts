@@ -1003,7 +1003,6 @@ export const useRunInlineConfigurationTest = <TError = AxiosError<HTTPValidation
     /**
  * Delete a custom section.
 
-
 Args:
     configuration_id (UUID): ID of the configuration with custom section to delete
     section_input (DeleteCustomSectionInput): Custom section deletion input
