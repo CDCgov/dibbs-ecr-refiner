@@ -26,7 +26,15 @@ WHERE section_type IS NULL;
 ALTER TABLE configurations_sections
     ALTER COLUMN section_type SET NOT NULL;
 
+ALTER TABLE configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_name_key
+    UNIQUE (configuration_id, name);
+
 -- migrate:down
+
+ALTER TABLE configurations_sections
+    DROP CONSTRAINT IF EXISTS configurations_sections_configuration_id_name_key;
+
 ALTER TABLE configurations_sections
     DROP COLUMN IF EXISTS section_type;
 

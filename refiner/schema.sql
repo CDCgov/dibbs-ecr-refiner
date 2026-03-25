@@ -350,6 +350,14 @@ ALTER TABLE ONLY public.configurations_sections
 
 
 --
+-- Name: configurations_sections configurations_sections_configuration_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_name_key UNIQUE (configuration_id, name);
+
+
+--
 -- Name: configurations_sections configurations_sections_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
