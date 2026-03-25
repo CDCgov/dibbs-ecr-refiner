@@ -12,7 +12,14 @@ from ...core.exceptions import (
     XMLParsingError,
 )
 from ..format import remove_element
-from .model import EicrVersion, EntryMatchRule, NamespaceMap, SectionSpecification
+from .model import (
+    HL7_NS,
+    HL7_XSI_NS,
+    EicrVersion,
+    EntryMatchRule,
+    NamespaceMap,
+    SectionSpecification,
+)
 
 # NOTE:
 # CONSTANTS AND CONFIGURATION
@@ -38,10 +45,7 @@ CLINICAL_DATA_TABLE_HEADERS: Final[list[str]] = [
 
 # extended namespace map that includes xsi — needed for Results match rules
 # that filter on @xsi:type='CD'
-_MATCH_NAMESPACES: Final[NamespaceMap] = {
-    "hl7": "urn:hl7-org:v3",
-    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
-}
+_MATCH_NAMESPACES = HL7_XSI_NS
 
 
 # NOTE:
@@ -73,7 +77,7 @@ class EntryMatch:
 def get_section_by_code(
     structured_body: _Element,
     loinc_code: str,
-    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
+    namespaces: NamespaceMap = HL7_NS,
 ) -> _Element | None:
     """
     Get a section from structuredBody by its LOINC code.
@@ -107,7 +111,7 @@ def get_section_by_code(
 
 def get_section_loinc_codes(
     structured_body: _Element,
-    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
+    namespaces: NamespaceMap = HL7_NS,
 ) -> list[str]:
     """
     Parses an eICR's structuredBody to find all top-level section codes.
@@ -151,7 +155,7 @@ def get_section_loinc_codes(
 def process_section(
     section: _Element,
     codes_to_match: set[str],
-    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"},
+    namespaces: NamespaceMap = HL7_NS,
     section_specification: SectionSpecification | None = None,
     version: EicrVersion = "1.1",
     code_system_sets: CodeSystemSets | None = None,
@@ -945,7 +949,7 @@ def _prune_unwanted_siblings(
         section: The section being processed
     """
 
-    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
+    namespaces: NamespaceMap = HL7_NS
 
     xpath_result = section.xpath(".//hl7:entry", namespaces=namespaces)
     if not isinstance(xpath_result, list):
@@ -1100,7 +1104,7 @@ def _extract_clinical_data(
     code_element: _Element | None = (
         clinical_element
         if clinical_element.tag.endswith("code")
-        else clinical_element.find(".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"})
+        else clinical_element.find(".//hl7:code", namespaces=HL7_NS)
     )
 
     # find the code element — check for code, value, or translation tags
@@ -1114,9 +1118,7 @@ def _extract_clinical_data(
     if tag_local in ("code", "value", "translation") and clinical_element.get("code"):
         code_element = clinical_element
     else:
-        code_element = clinical_element.find(
-            ".//hl7:code", namespaces={"hl7": "urn:hl7-org:v3"}
-        )
+        code_element = clinical_element.find(".//hl7:code", namespaces=HL7_NS)
 
     display_text: str | None = None
     code: str | None = None
@@ -1161,7 +1163,7 @@ def _has_trigger_template_ancestor(element: _Element, trigger_oids: set[str]) ->
         return False
 
     current: _Element | None = element
-    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
+    namespaces: NamespaceMap = HL7_NS
 
     while current is not None:
         template_elements = current.xpath(".//hl7:templateId", namespaces=namespaces)
@@ -1219,7 +1221,7 @@ def create_minimal_section(
 
     _section_message = MESSAGE_MAP[removal_reason]
 
-    namespaces: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
+    namespaces: NamespaceMap = HL7_NS
     text_element = section.find(".//hl7:text", namespaces=namespaces)
 
     if text_element is None:
@@ -1359,9 +1361,7 @@ def _update_text_element(
         clinical_elements, trigger_code_elements
     )
 
-    existing_text_element = section.find(
-        ".//hl7:text", namespaces={"hl7": "urn:hl7-org:v3"}
-    )
+    existing_text_element = section.find(".//hl7:text", namespaces=HL7_NS)
 
     if existing_text_element is not None:
         section.replace(existing_text_element, new_text_element)

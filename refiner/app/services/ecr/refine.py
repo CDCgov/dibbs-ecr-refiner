@@ -9,11 +9,10 @@ from app.services.terminology import ProcessedConfiguration
 
 from ...core.exceptions import (
     StructureValidationError,
-    XMLValidationError,
 )
 from ...core.models.types import XMLFiles
 from ..format import remove_element
-from .model import NamespaceMap, RRRefinementPlan
+from .model import HL7_NS, RRRefinementPlan
 from .process_eicr import (
     create_minimal_section,
     get_section_by_code,
@@ -25,7 +24,6 @@ from .specification import SECTION_PROCESSING_SKIP, detect_eicr_version, load_sp
 # NOTE:
 # CONSTANTS
 # =============================================================================
-HL7_NS: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
 
 SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
@@ -66,23 +64,9 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
     return round(percent_diff)
 
 
-def _discover_present_eicr_sections(xml_files: XMLFiles) -> list[str]:
-    """
-    Finds all of the section LOINCs in an eICR and returns them as a list.
-
-    Args:
-        xml_files (XMLFiles): the eICR/RR pair
-
-    Returns:
-        list[str]: All discovered section LOINCs in the eICR document
-    """
-    eicr_root = xml_files.parse_eicr()
-
-    structured_body = eicr_root.find(".//hl7:structuredBody", namespaces=HL7_NS)
-    if structured_body is None:
-        return []
-
-    return get_section_loinc_codes(structured_body)
+# NOTE:
+# EICR REFINEMENT PLAN CREATION
+# =============================================================================
 
 
 def _build_section_rules_map(
@@ -136,26 +120,26 @@ def _apply_section_skip_rules(
 
 
 def create_eicr_refinement_plan(
-    processed_configuration: ProcessedConfiguration, xml_files: XMLFiles
+    processed_configuration: ProcessedConfiguration,
+    eicr_root: _Element,
 ) -> EICRRefinementPlan:
     """
-    Create an EICRRefinementPlan by combining configuration rules and the sections present in the eICR document.
-
-    This function lives in the orchestration layer (`testing.py`) because it
-    requires access to both the processed configuration data and the raw XML
-    file to create the final, actionable plan.
+    Create an EICRRefinementPlan by combining configuration rules and the sections present in the parsed eICR document.
 
     Args:
         processed_configuration: The processed configuration containing terminology
                                  and section processing rules.
-        xml_files: The XMLFiles object containing the eICR to be inspected.
+        eicr_root: The parsed eICR root element.
 
     Returns:
         An EICRRefinementPlan containing the exact instructions for `refine_eicr`.
     """
 
-    # discover all sections in the eICR
-    present_section_codes = _discover_present_eicr_sections(xml_files)
+    # discover all sections directly from the parsed tree
+    structured_body = eicr_root.find(".//hl7:structuredBody", namespaces=HL7_NS)
+    present_section_codes = (
+        get_section_loinc_codes(structured_body) if structured_body is not None else []
+    )
 
     # create a map of the rules from the configuration for efficient lookup
     rules_map = _build_section_rules_map(processed_configuration)
@@ -164,8 +148,8 @@ def create_eicr_refinement_plan(
     rules_map_with_skips = _apply_section_skip_rules(rules_map)
 
     section_instructions = {
-        # For each discovered section, use the determined rules from the map.
-        # If a code doesn't yet have rules, we'll skip it (include + retain)
+        # * for each discovered section, use the determined rules from the map
+        # * if a code doesn't yet have rules, we'll skip it (include + retain)
         code: rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
         for code in present_section_codes
     }
@@ -177,12 +161,20 @@ def create_eicr_refinement_plan(
     )
 
 
+# NOTE:
+# EICR REFINEMENT EXECUTION
+# =============================================================================
+
+
 def refine_eicr(
-    xml_files: XMLFiles,
+    eicr_root: _Element,
     plan: EICRRefinementPlan,
-) -> str:
+) -> None:
     """
-    Refine an eICR XML document by executing a provided RefinementPlan.
+    Refine an eICR by executing a provided RefinementPlan.
+
+    Mutates `eicr_root` in place. The caller is responsible for parsing
+    beforehand and serializing afterward.
 
     This function is a "pure executor." It does not make decisions; it only
     carries out the instructions given to it in the plan.
@@ -195,77 +187,63 @@ def refine_eicr(
           - refine: Processes the section using the plan's XPath to filter entries.
 
     Args:
-        xml_files: The XMLFiles container with the eICR document to refine.
+        eicr_root: The parsed eICR root element.
         plan: A complete, actionable plan for refining the eICR.
 
-    Returns:
-        str: The refined eICR XML document as a string.
-
     Raises:
-        XMLValidationError: If the XML is invalid.
         StructureValidationError: If the document structure is invalid.
     """
 
-    try:
-        # parse the eicr document
-        eicr_root = xml_files.parse_eicr()
+    structured_body = eicr_root.find(".//hl7:structuredBody", HL7_NS)
 
-        structured_body = eicr_root.find(".//hl7:structuredBody", HL7_NS)
-
-        # if we don't have a structuredBody this is a major problem
-        if structured_body is None:
-            raise StructureValidationError(
-                message="No structured body found in eICR",
-                details={"document_type": "eICR"},
-            )
-
-        # 1. detect version
-        version = detect_eicr_version(eicr_root)
-
-        # 2. load specification
-        specification = load_spec(version)
-
-        for section_code, section_rules in plan.section_instructions.items():
-            section = get_section_by_code(
-                structured_body=structured_body,
-                loinc_code=section_code,
-                namespaces=HL7_NS,
-            )
-
-            if section is None:
-                continue
-
-            if not section_rules.include:
-                # we will just force a minimal section
-                create_minimal_section(section=section, removal_reason="configured")
-                continue
-
-            if section_rules.action == "retain":
-                # retain means that we're not processing this section so we continue
-                continue
-
-            section_specification = specification.sections.get(section_code)
-            process_section(
-                section=section,
-                codes_to_match=plan.codes_to_check,
-                namespaces=HL7_NS,
-                section_specification=section_specification,
-                version=version,
-                code_system_sets=plan.code_system_sets,
-            )
-
-        # format and return the result
-        return etree.tostring(eicr_root, encoding="unicode")
-
-    except etree.XMLSyntaxError as e:
-        raise XMLValidationError(
-            message="Failed to parse eICR document", details={"error": str(e)}
+    # if we don't have a structuredBody this is a major problem
+    if structured_body is None:
+        raise StructureValidationError(
+            message="No structured body found in eICR",
+            details={"document_type": "eICR"},
         )
-    except etree.XPathEvalError as e:
-        raise XMLValidationError(
-            message="Failed to evaluate XPath expression in eICR document",
-            details={"error": str(e)},
+
+    # STEP 1:
+    # detect version
+    version = detect_eicr_version(eicr_root)
+
+    # STEP 2:
+    # load specification
+    specification = load_spec(version)
+
+    for section_code, section_rules in plan.section_instructions.items():
+        section = get_section_by_code(
+            structured_body=structured_body,
+            loinc_code=section_code,
+            namespaces=HL7_NS,
         )
+
+        if section is None:
+            continue
+
+        if not section_rules.include:
+            # we will just force a minimal section
+            create_minimal_section(section=section, removal_reason="configured")
+            continue
+
+        if section_rules.action == "retain":
+            # retain means that we're not processing this section so we continue
+            continue
+
+        section_specification = specification.sections.get(section_code)
+        process_section(
+            section=section,
+            codes_to_match=plan.codes_to_check,
+            namespaces=HL7_NS,
+            section_specification=section_specification,
+            version=version,
+            code_system_sets=plan.code_system_sets,
+        )
+
+
+# NOTE:
+# RR REFINEMENT
+# =============================================================================
 
 
 def create_rr_refinement_plan(
@@ -280,17 +258,21 @@ def create_rr_refinement_plan(
     Returns:
         RRRefinementPlan: The newly created RRRefinement plan.
     """
+
     return RRRefinementPlan(
         included_condition_child_rsg_snomed_codes_to_retain=processed_configuration.included_condition_rsg_codes
     )
 
 
 def refine_rr(
-    xml_files: XMLFiles,
+    rr_root: _Element,
     plan: RRRefinementPlan,
-) -> str:
+) -> None:
     """
-    Refine a RR XML document from anything not reportable to the specified jurisdiction.
+    Refine an RR by filtering out conditions not reportable to the jurisdiction.
+
+    Mutates `rr_root` in place. The caller is responsible for parsing
+    beforehand and serializing afterward.
 
     Processing behavior:
         - It iterates through the RR and removes information common to all RR's.
@@ -302,26 +284,15 @@ def refine_rr(
               in the configuration RSG or custom codes are filtered out.
 
     Args:
-        xml_files: The XMLFiles container with the eICR document to refine.
+        rr_root: The parsed RR root element.
         plan: The RRRefinementPlan for the corresponding eICR.
 
-    Returns:
-        str: The refined RR XML document as a string.
-
     Raises:
-        XMLValidationError: If the XML is invalid.
         StructureValidationError: If the document structure is invalid.
     """
 
-    # look for structured body
-    rr_root = xml_files.parse_rr()
-    namespaces: NamespaceMap = {
-        "hl7": "urn:hl7-org:v3",
-        "cda": "urn:hl7-org:v3",
-    }
-
     # now, move on to processing the actual RR body
-    structured_body = rr_root.find(".//hl7:structuredBody", namespaces)
+    structured_body = rr_root.find(".//hl7:structuredBody", HL7_NS)
 
     if structured_body is None:
         raise StructureValidationError(
@@ -331,8 +302,8 @@ def refine_rr(
     rr11_organizers = cast(
         list[_Element],
         structured_body.xpath(
-            ".//cda:section[cda:code/@code='55112-7']//cda:entry/cda:organizer[cda:code/@code='RR11']",
-            namespaces=namespaces,
+            ".//hl7:section[hl7:code/@code='55112-7']//hl7:entry/hl7:organizer[hl7:code/@code='RR11']",
+            namespaces=HL7_NS,
         ),
     )
 
@@ -356,17 +327,17 @@ def refine_rr(
     components_to_check = cast(
         list[_Element],
         rr_organizer.xpath(
-            ".//cda:component[cda:observation[cda:templateId/@root='2.16.840.1.113883.10.20.15.2.3.12']]",
-            namespaces=namespaces,
+            ".//hl7:component[hl7:observation[hl7:templateId/@root='2.16.840.1.113883.10.20.15.2.3.12']]",
+            namespaces=HL7_NS,
         ),
     )
 
     for component in components_to_check:
-        observation = component.find("cda:observation", namespaces)
+        observation = component.find("hl7:observation", HL7_NS)
         if observation is None:
             continue
 
-        value = observation.find("cda:value", namespaces)
+        value = observation.find("hl7:value", HL7_NS)
         if value is None:
             continue
 
@@ -380,8 +351,8 @@ def refine_rr(
         organizers = cast(
             list[_Element],
             observation.xpath(
-                ".//cda:entryRelationship/cda:organizer",
-                namespaces=namespaces,
+                ".//hl7:entryRelationship/hl7:organizer",
+                namespaces=HL7_NS,
             ),
         )
 
@@ -393,8 +364,8 @@ def refine_rr(
         rr7_roles = cast(
             list[_Element],
             organizer.xpath(
-                ".//cda:participant/cda:participantRole[cda:code/@code='RR7']",
-                namespaces=namespaces,
+                ".//hl7:participant/hl7:participantRole[hl7:code/@code='RR7']",
+                namespaces=HL7_NS,
             ),
         )
 
@@ -402,7 +373,7 @@ def refine_rr(
             continue
 
         for rr7_role in rr7_roles:
-            id_element = rr7_role.find("cda:id", namespaces)
+            id_element = rr7_role.find("hl7:id", HL7_NS)
 
             if id_element is None:
                 continue
@@ -412,16 +383,14 @@ def refine_rr(
         reportable_observation_tags = cast(
             list[_Element],
             organizer.xpath(
-                ".//cda:component/cda:observation[cda:value/@code='RRVS1']",
-                namespaces=namespaces,
+                ".//hl7:component/hl7:observation[hl7:value/@code='RRVS1']",
+                namespaces=HL7_NS,
             ),
         )
 
         if len(reportable_observation_tags) == 0:
             remove_element(component)
             continue
-
-    return etree.tostring(rr_root, encoding="unicode")
 
 
 def create_unrefined_conditions_rr(
@@ -430,6 +399,10 @@ def create_unrefined_conditions_rr(
 ) -> str:
     """
     Create an RR filtered to only the reportable conditions that were not refined.
+
+    This is a convenience function for callers outside the pipeline (e.g., the
+    lambda handler) that need a self-contained parse → filter → serialize path.
+    The pipeline itself uses reportability directly on a parsed tree.
 
     When the RR contains multiple reportable conditions for a jurisdiction but
     only some have active refiner configurations, the conditions that go through
@@ -469,4 +442,6 @@ def create_unrefined_conditions_rr(
         included_condition_child_rsg_snomed_codes_to_retain=condition_codes
     )
 
-    return refine_rr(xml_files=xml_files, plan=plan)
+    rr_root = xml_files.parse_rr()
+    refine_rr(rr_root=rr_root, plan=plan)
+    return etree.tostring(rr_root, encoding="unicode")
