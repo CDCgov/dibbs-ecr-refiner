@@ -231,6 +231,24 @@ async def update_section(
             detail=f"Section with code {match_code} is invalid and can't be updated.",
         )
 
+    # Can't update if desired name or code is already in user
+    desired_name = section_input.name
+    desired_code = section_input.new_code
+    for s in config.section_processing:
+        if s.code == prev_section.code:
+            continue
+
+        if desired_name is not None and s.name == desired_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Custom section name is already in use.",
+            )
+        if desired_code is not None and s.code == desired_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Custom section code is already in use.",
+            )
+
     include = (
         section_input.include
         if section_input.include is not None

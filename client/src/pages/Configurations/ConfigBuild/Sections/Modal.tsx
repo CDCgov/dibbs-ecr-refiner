@@ -13,6 +13,7 @@ import {
   DialogPanel,
   DialogTitle,
 } from '@headlessui/react';
+import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 
 interface EditCustomSection {
   name: string;
@@ -39,6 +40,7 @@ export function Modal({
   const [errorText, setErrorText] = useState('');
   const { mutate: addCustomSection } = useAddCustomSection();
   const { mutate: updateCustomSection } = useUpdateSection();
+  const formatError = useApiErrorFormatter();
 
   const isEditing = initialSection ? true : false;
 
@@ -88,8 +90,10 @@ export function Modal({
             });
             closeSuccess();
           },
-          onError: () => {
-            setErrorText('Unable to update custom section.');
+          onError: (error) => {
+            setErrorText(
+              formatError(error) || 'Unable to edit section. Please try again.'
+            );
           },
         }
       );
@@ -112,8 +116,10 @@ export function Modal({
           });
           closeSuccess();
         },
-        onError: () => {
-          setErrorText('Unable to add custom section.');
+        onError: (error) => {
+          setErrorText(
+            formatError(error) || 'Unable to add section. Please try again.'
+          );
         },
       }
     );
