@@ -243,8 +243,15 @@ async def update_section(
     )
 
     if prev_section.section_type == "custom":
-        code = section_input.new_code if section_input.new_code else prev_section.code
-        name = section_input.name if section_input.name else prev_section.name
+        code = (
+            section_input.new_code
+            if section_input.new_code is not None
+            else prev_section.code
+        )
+        name = (
+            section_input.name if section_input.name is not None else prev_section.name
+        )
+
         section_update = DbConfigurationSectionProcessing(
             code=code,
             name=name,
