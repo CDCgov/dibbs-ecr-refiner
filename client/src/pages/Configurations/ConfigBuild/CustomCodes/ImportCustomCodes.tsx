@@ -46,7 +46,7 @@ interface ImportCustomCodesProps {
 type PreviewError = { row: number; error: string };
 
 type SearchPreviewItem = UploadCustomCodesPreviewItem & {
-  __previewIndex: number;
+  previewIndex: number;
 };
 
 export function ImportCustomCodes({
@@ -370,7 +370,7 @@ export function ImportCustomCodes({
     if (!previewItems) return [];
     return previewItems.map((item, index) => ({
       ...item,
-      __previewIndex: index,
+      previewIndex: index,
     }));
   }, [previewItems]);
 
@@ -539,7 +539,7 @@ export function ImportCustomCodes({
               <tbody>
                 {previewRows.map(({ item, matches }) => (
                   <tr
-                    key={`${item.code}-${item.system}-${item.__previewIndex ?? item.row}`}
+                    key={`${item.code}-${item.system}-${item.previewIndex ?? item.row}`}
                     className="border-y border-blue-50"
                   >
                     <td className="px-2 py-1">
@@ -552,9 +552,7 @@ export function ImportCustomCodes({
                     <td className="px-2 py-1 text-right text-sm">
                       <Button
                         variant="tertiary"
-                        onClick={() =>
-                          openPreviewEditModal(item.__previewIndex)
-                        }
+                        onClick={() => openPreviewEditModal(item.previewIndex)}
                       >
                         Edit
                       </Button>
@@ -564,7 +562,7 @@ export function ImportCustomCodes({
                         onClick={() => {
                           const updated =
                             previewItems?.filter(
-                              (_, idx) => idx !== item.__previewIndex
+                              (_, idx) => idx !== item.previewIndex
                             ) ?? [];
                           if (updated.length === 0) {
                             setPreviewItems(null);
