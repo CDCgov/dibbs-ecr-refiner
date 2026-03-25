@@ -1157,6 +1157,7 @@ Args:
     db (AsyncDatabaseConnection): Database connection
 
 Raises:
+    HTTPException: 400 if the code is not valid, code is in use, or name is in use
     HTTPException: 404 if configuration isn't found
     HTTPException: 409 if configuration is not a draft and therefore not editable
     HTTPException: 500 if section processing can't be updated
