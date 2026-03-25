@@ -114,6 +114,7 @@ async def insert_custom_section_db(
 
 async def delete_custom_section_db(
     config: DbConfiguration,
+    user_id: UUID,
     custom_section_input: DeleteSectionInput,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
@@ -122,6 +123,7 @@ async def delete_custom_section_db(
 
     Args:
         config (DbConfiguration): Configuration associated with the section
+        user_id (UUID): ID of the user deleting the custom section
         custom_section_input (DeleteCustomSectionInput): Custom section to delete
         db (AsyncDatabaseConnection): The database connection
 
@@ -138,12 +140,34 @@ async def delete_custom_section_db(
     """
     params = (config.id, custom_section_input.code)
 
+    section_name = next(
+        (
+            s.name
+            for s in config.section_processing
+            if s.code == custom_section_input.code
+        ),
+        None,
+    )
+    if not section_name:
+        return None
+
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
                 return None
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=config.id,
+                    event_type="delete_custom_section",
+                    action_text=f'Deleted custom section "{section_name}" with code "{custom_section_input.code}"',
+                ),
+                cursor=cur,
+            )
 
     return await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db

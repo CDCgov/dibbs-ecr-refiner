@@ -148,7 +148,7 @@ async def delete_custom_section(
     )
 
     updated_config = await delete_custom_section_db(
-        config=config, custom_section_input=section_input, db=db
+        config=config, user_id=user.id, custom_section_input=section_input, db=db
     )
 
     if not updated_config:
