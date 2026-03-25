@@ -121,7 +121,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     expect(contents).toBe(
       `code_number,code_system,display_name
-[CODE_NUMBER],[CODE_SYSTEM],[DISPLAY_NAME]
+12345,Other,Other Example
+6789,ICD-10,ICD-10 Example
+99999A,LOINC,LOINC Example
 `
     );
 
