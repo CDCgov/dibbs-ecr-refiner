@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from psycopg import AsyncCursor
@@ -102,7 +102,7 @@ async def insert_custom_section_db(
                     jurisdiction_id=config.jurisdiction_id,
                     user_id=user_id,
                     event_type="create_custom_section",
-                    action_text=f'Custom section "{name}" with code "{code}" created.',
+                    action_text=f"Custom section '{name}' with code '{code}' created",
                 ),
                 cursor=cur,
             )
@@ -1055,6 +1055,19 @@ async def _get_configuration_section_by_code(
             return await cur.fetchone()
 
 
+def _bool_label(value: bool) -> Literal["enabled", "disabled"]:
+    """
+    Small helper function to convert a boolean into "enabled" or "disabled".
+
+    Args:
+        value (bool): True or False value
+
+    Returns:
+        Literal['enabled', 'disabled']: "enabled" or "disabled"
+    """
+    return "enabled" if value else "disabled"
+
+
 async def update_configuration_section_db(
     config: DbConfiguration,
     current_code: str,
@@ -1095,21 +1108,53 @@ async def update_configuration_section_db(
     if not prev_section:
         raise ValueError(f"No existing section with code {current_code} to update")
 
-    action_changed = prev_section.action != section_update.action
+    # Calculate what changed and generate the text for the event
+    change_specs = [
+        (
+            prev_section.action,
+            section_update.action,
+            lambda old, new: (
+                f"data handling approach from '{ACTION_LABELS.get(old, old)}' "
+                f"to '{ACTION_LABELS.get(new, new)}'"
+            ),
+        ),
+        (
+            prev_section.include,
+            section_update.include,
+            lambda old, new: (
+                f"include from '{_bool_label(old)}' to '{_bool_label(new)}'"
+            ),
+        ),
+        (
+            prev_section.code,
+            section_update.code,
+            lambda old, new: f"code from '{old}' to '{new}'",
+        ),
+        (
+            prev_section.name,
+            section_update.name,
+            lambda old, new: f"name from '{old}' to '{new}'",
+        ),
+        (
+            prev_section.narrative,
+            section_update.narrative,
+            lambda old, new: (
+                f"narrative from '{_bool_label(old)}' to '{_bool_label(new)}'"
+            ),
+        ),
+    ]
 
-    section_events: list[EventInput] = []
-    if action_changed:
-        section_events.append(
-            EventInput(
-                jurisdiction_id=config.jurisdiction_id,
-                user_id=user_id,
-                configuration_id=config.id,
-                event_type="section_update",
-                action_text=(
-                    f"Updated section '{prev_section.name}' from '{ACTION_LABELS.get(prev_section.action, prev_section.action)}' to '{ACTION_LABELS.get(section_update.action, section_update.action)}'"
-                ),
-            )
+    section_events = [
+        EventInput(
+            jurisdiction_id=config.jurisdiction_id,
+            user_id=user_id,
+            configuration_id=config.id,
+            event_type="section_update",
+            action_text=f"Updated section '{prev_section.name}' {formatter(old, new)}",
         )
+        for old, new, formatter in change_specs
+        if old != new
+    ]
 
     query = """
             UPDATE configurations_sections
