@@ -16,6 +16,7 @@ import { CustomSectionBadge } from './CustomSectionBadge';
 import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
 import { Switch } from './Switch';
+import classNames from 'classnames';
 
 /**
  * TODO: please refer to specification.py
@@ -169,43 +170,48 @@ function SectionName({
 }: SectionNameProps) {
   const isCustom = section.section_type === 'custom';
 
-  if (section.include) {
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-bold">{section.name}</span>
-          {isCustom ? <CustomSectionBadge /> : null}
-        </div>
-        {isCustom ? (
-          <div className="flex gap-2">
-            <span className="truncate text-sm">{section.code}</span>
-            <div className="flex gap-1">
-              <EditButton setSelectedSection={setSelectedSection} />
-              <span className="not-sr-only text-sm">|</span>
-              <DeleteButton
-                configurationId={configurationId}
-                code={section.code}
-              />
-            </div>
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <span className="text-gray-cool-70 truncate italic">
+        <span
+          className={classNames('truncate', {
+            italic: !section.include,
+            'font-bold': section.include,
+          })}
+        >
           {section.name}
         </span>
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       {isCustom ? (
-        <span className="truncate text-sm">{section.code}</span>
+        <div className="flex gap-2">
+          <span className="truncate text-sm">{section.code}</span>
+          <div className="flex gap-1">
+            <EditButton setSelectedSection={setSelectedSection} />
+            <span className="not-sr-only text-sm">|</span>
+            <DeleteButton
+              configurationId={configurationId}
+              code={section.code}
+            />
+          </div>
+        </div>
       ) : null}
     </div>
   );
+
+  // return (
+  //   <div className="flex flex-col gap-1">
+  //     <div className="flex items-center gap-2">
+  //       <span className="text-gray-cool-70 truncate italic">
+  //         {section.name}
+  //       </span>
+  //       {isCustom ? <CustomSectionBadge /> : null}
+  //     </div>
+  //     {isCustom ? (
+  //       <span className="truncate text-sm">{section.code}</span>
+  //     ) : null}
+  //   </div>
+  // );
 }
 
 interface EditButtonProps {
