@@ -100,19 +100,20 @@ class TestConfigurations:
                 "name": "Admission Diagnosis",
                 "code": "46241-6",
                 "versions": ["3.1", "3.1.1"],
+                "section_type": "standard",
             }
 
             assert admission_diagnosis_section is not None
             assert admission_diagnosis_section == expected_section_defaults
 
-            url = f"/api/v1/configurations/{draft_id}/section-processing"
+            url = f"/api/v1/configurations/{draft_id}/sections"
 
             # set to "retain" and exclude
             response = await authed_client.patch(
                 url,
                 json={
                     "action": "retain",
-                    "code": admission_diagnosis_code,
+                    "current_code": admission_diagnosis_code,
                     "include": False,
                     "narrative": False,
                 },
@@ -133,6 +134,7 @@ class TestConfigurations:
                 "name": "Admission Diagnosis",
                 "code": "46241-6",
                 "versions": ["3.1", "3.1.1"],
+                "section_type": "standard",
             }
 
             assert admission_diagnosis_section is not None
@@ -158,7 +160,7 @@ class TestConfigurations:
             response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
             response.status_code == status.HTTP_200_OK
 
-            url = f"/api/v1/configurations/{draft_id}/section-processing"
+            url = f"/api/v1/configurations/{draft_id}/sections"
 
             # try to update a code that doesn't exist
             nonexistent_code = "fakecode"
@@ -166,7 +168,7 @@ class TestConfigurations:
                 url,
                 json={
                     "action": "retain",
-                    "code": nonexistent_code,
+                    "current_code": nonexistent_code,
                     "include": False,
                     "narrative": False,
                 },
@@ -183,7 +185,7 @@ class TestConfigurations:
                 url,
                 json={
                     "action": "remove",
-                    "code": admission_diagnosis_code,
+                    "current_code": admission_diagnosis_code,
                     "include": False,
                     "narrative": False,
                 },
