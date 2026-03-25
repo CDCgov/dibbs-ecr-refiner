@@ -11,7 +11,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '../../../../components/Button';
-import { ModalTest } from './Modal';
+import { Modal } from './Modal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
@@ -75,14 +75,14 @@ export function Sections({
             </Button>
           )}
           {isOpen ? (
-            <ModalTest
+            <Modal
               isOpen={isOpen}
               setIsOpen={setIsOpen}
               configurationId={configurationId}
               initialSection={
                 selectedSection
                   ? {
-                      name: selectedSection?.name,
+                      name: selectedSection.name,
                       currentCode: selectedSection.code,
                     }
                   : null

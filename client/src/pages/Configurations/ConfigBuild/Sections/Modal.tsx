@@ -27,7 +27,7 @@ interface ModalTestProps {
   initialSection?: EditCustomSection | null;
 }
 
-export function ModalTest({
+export function Modal({
   isOpen,
   setIsOpen,
   configurationId,
