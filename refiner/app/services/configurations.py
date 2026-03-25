@@ -62,11 +62,19 @@ def clone_section_processing_instructions(
     Returns:
         list[DbConfigurationSectionProcessing]: The new list of sections.
     """
-    action_map = {section.code: section.action for section in clone_from}
-    include_map = {section.code: section.include for section in clone_from}
-    narrative_map = {section.code: section.narrative for section in clone_from}
 
-    return [
+    custom_sections = [
+        section for section in clone_from if section.section_type == "custom"
+    ]
+    standard_sections = [
+        section for section in clone_from if section.section_type == "standard"
+    ]
+
+    action_map = {section.code: section.action for section in standard_sections}
+    include_map = {section.code: section.include for section in standard_sections}
+    narrative_map = {section.code: section.narrative for section in standard_sections}
+
+    standard_updates = [
         replace(
             section,
             action=action_map.get(section.code, section.action),
@@ -75,6 +83,8 @@ def clone_section_processing_instructions(
         )
         for section in clone_to
     ]
+
+    return standard_updates + custom_sections
 
 
 async def get_config_payload_metadata(

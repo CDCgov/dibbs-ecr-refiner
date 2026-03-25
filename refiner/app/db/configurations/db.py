@@ -215,7 +215,7 @@ async def _insert_configuration_sections_db(
             s.include,
             s.narrative,
             s.versions,
-            "standard",
+            s.section_type,
         )
         for s in sections_to_insert
     ]
