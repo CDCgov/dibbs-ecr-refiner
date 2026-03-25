@@ -113,7 +113,7 @@ services:
       - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
 
   migrate:
-    image: ghcr.io/amacneil/dbmate:2
+    image: ghcr.io/amacneil/dbmate:main
     working_dir: /app
     entrypoint: ["tail", "-f", "/dev/null"]
     depends_on:

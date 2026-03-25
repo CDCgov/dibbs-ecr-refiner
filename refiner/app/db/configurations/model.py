@@ -89,6 +89,36 @@ class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
 
 
 @dataclass(frozen=True)
+class DbConfigurationSection(DbConfigurationSectionProcessing):
+    """
+    A section row from the `configurations_sections` table.
+    """
+
+    id: UUID
+    configuration_id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    def to_processing_dict(self) -> dict:
+        """
+        Convert a DbConfigurationSection to a dictionary that can be used for processing.
+
+        Data not needed for processing is excluded.
+
+        Returns:
+            dict: The dictionary
+        """
+        return {
+            "code": self.code,
+            "name": self.name,
+            "action": self.action,
+            "include": self.include,
+            "versions": self.versions,
+            "narrative": self.narrative,
+        }
+
+
+@dataclass(frozen=True)
 class DbConfiguration:
     """
     Model for a database Configuration object (row).
