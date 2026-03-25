@@ -198,20 +198,6 @@ function SectionName({
       ) : null}
     </div>
   );
-
-  // return (
-  //   <div className="flex flex-col gap-1">
-  //     <div className="flex items-center gap-2">
-  //       <span className="text-gray-cool-70 truncate italic">
-  //         {section.name}
-  //       </span>
-  //       {isCustom ? <CustomSectionBadge /> : null}
-  //     </div>
-  //     {isCustom ? (
-  //       <span className="truncate text-sm">{section.code}</span>
-  //     ) : null}
-  //   </div>
-  // );
 }
 
 interface EditButtonProps {
