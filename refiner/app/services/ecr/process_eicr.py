@@ -43,7 +43,7 @@ CLINICAL_DATA_TABLE_HEADERS: Final[list[str]] = [
     "Matching Condition Code",
 ]
 
-# extended namespace map that includes xsi — needed for Results match rules
+# extended namespace map that includes xsi — needed for results match rules
 # that filter on @xsi:type='CD'
 _MATCH_NAMESPACES = HL7_XSI_NS
 
@@ -199,7 +199,8 @@ def process_section(
             and displayName enrichment on both paths.
     """
 
-    # ROUTE: if we have match rules and structured codes, use the new path
+    # ROUTE:
+    # if we have match rules and structured codes, use the section aware path
     if (
         section_specification is not None
         and section_specification.has_match_rules
@@ -213,7 +214,8 @@ def process_section(
         )
         return
 
-    # FALLBACK: existing generic path (unchanged)
+    # FALLBACK:
+    # generic search strategy
     _process_section_generic(
         section=section,
         codes_to_match=codes_to_match,
@@ -225,7 +227,7 @@ def process_section(
 
 
 # NOTE:
-# NEW PATH: SECTION-AWARE MATCHING
+# SECTION-AWARE MATCHING
 # =============================================================================
 
 
