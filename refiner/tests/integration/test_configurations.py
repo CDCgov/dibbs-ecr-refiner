@@ -62,9 +62,7 @@ class TestConfigurations:
         failure_audit_events = response.json()["audit_events"]
         assert len(failure_audit_events) == 1
 
-    async def test_custom_section_addition(
-        self, setup, authed_client, test_username, db_pool
-    ):
+    async def test_custom_sections(self, setup, authed_client, test_username, db_pool):
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
                 # Grab a draft config
