@@ -1,7 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { Switch, Checkbox, Field, Label } from '@headlessui/react';
+import { Switch, Checkbox, Field } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -57,7 +57,7 @@ export function EicrSectionReview({
             <th scope="col" className="w-2/6 pb-3 text-left">
               Section name
             </th>
-            <th scope="col" className="w-3/6 pb-3">
+            <th scope="col" className="align-right w-3/6 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
                 <Tooltip
@@ -202,70 +202,67 @@ function RefineSwitch({
   const preserveLabelText = 'Preserve & retain all data';
 
   return (
-    <Field className="flex items-center">
-      <div>
-        <Label
-          aria-label={
-            isRefineToggled
-              ? // "Refine & optimize Admission Diagnosis section"
-                `${refineLabelText} ${currentSection.name} section`
-              : // "Preserve & retain all data for Admission Diagnosis section"
-                `${preserveLabelText} for ${currentSection.name} section`
-          }
-          passive
-          className="mr-2 w-48"
-        >
-          {isRefineToggled ? (
-            <span>{refineLabelText}</span>
-          ) : (
-            <span className="italic">{preserveLabelText}</span>
-          )}
-        </Label>
-        <Switch
-          className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
-          disabled={disabled}
-          checked={isRefineToggled}
-          onChange={(checked) => {
-            const action: DbSectionAction = checked
-              ? DbSectionAction.refine
-              : DbSectionAction.retain;
-            const updatedSection: DbConfigurationSectionProcessing = {
-              ...currentSection,
-              action,
-            };
+    <Field className="flex -translate-x-5 items-center">
+      <span
+        aria-label={
+          isRefineToggled
+            ? // "Refine & optimize Admission Diagnosis section"
+              `${refineLabelText} ${currentSection.name} section`
+            : // "Preserve & retain all data for Admission Diagnosis section"
+              `${preserveLabelText} for ${currentSection.name} section`
+        }
+        className="mr-2 w-48 text-right"
+      >
+        {isRefineToggled ? (
+          <span>{refineLabelText}</span>
+        ) : (
+          <span className="italic">{preserveLabelText}</span>
+        )}
+      </span>
+      <Switch
+        className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
+        disabled={disabled}
+        checked={isRefineToggled}
+        onChange={(checked) => {
+          const action: DbSectionAction = checked
+            ? DbSectionAction.refine
+            : DbSectionAction.retain;
+          const updatedSection: DbConfigurationSectionProcessing = {
+            ...currentSection,
+            action,
+          };
 
-            updateSectionProcessing(
-              {
-                configurationId,
-                data: {
-                  action: updatedSection.action,
-                  code: updatedSection.code,
-                  include: updatedSection.include,
-                  narrative: false, // TODO: Update later
-                },
+          updateSectionProcessing(
+            {
+              configurationId,
+              data: {
+                action: updatedSection.action,
+                code: updatedSection.code,
+                include: updatedSection.include,
+                narrative: false, // TODO: Update later
               },
-              {
-                onSuccess: async () => {
-                  await queryClient.invalidateQueries({
-                    queryKey: getGetConfigurationQueryKey(configurationId),
-                  });
-                },
-                onError: (error) => {
-                  const errorDetail =
-                    formatError(error) || error.message || 'Unknown error';
-                  showToast({
-                    heading: 'Section failed to update',
-                    body: errorDetail,
-                    variant: 'error',
-                  });
-                },
-              }
-            );
-          }}
-        >
-          <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
-        </Switch>
-      </div>
+            },
+            {
+              onSuccess: async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: getGetConfigurationQueryKey(configurationId),
+                });
+              },
+              onError: (error) => {
+                const errorDetail =
+                  formatError(error) || error.message || 'Unknown error';
+                showToast({
+                  heading: 'Section failed to update',
+                  body: errorDetail,
+                  variant: 'error',
+                });
+              },
+            }
+          );
+        }}
+      >
+        <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
+      </Switch>
     </Field>
   );
 }
