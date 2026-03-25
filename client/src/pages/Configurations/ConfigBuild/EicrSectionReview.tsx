@@ -1,7 +1,7 @@
 import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { Switch, Checkbox, Field } from '@headlessui/react';
+import { Switch, Checkbox, Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -202,8 +202,8 @@ function RefineSwitch({
   const preserveLabelText = 'Preserve & retain all data';
 
   return (
-    <Field className="flex -translate-x-5 items-center">
-      <span
+    <Field className="flex -translate-x-4 items-center">
+      <Label
         aria-label={
           isRefineToggled
             ? // "Refine & optimize Admission Diagnosis section"
@@ -218,7 +218,7 @@ function RefineSwitch({
         ) : (
           <span className="italic">{preserveLabelText}</span>
         )}
-      </span>
+      </Label>
       <Switch
         className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
         disabled={disabled}
