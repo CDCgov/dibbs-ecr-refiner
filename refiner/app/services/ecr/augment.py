@@ -180,7 +180,7 @@ def augment_eicr(
 
     # STEP 8:
     # add relatedDocument with XFRM lineage (CONF:5573-12 through 5573-23)
-    _add_related_document(eicr_root, context, original)
+    _add_related_document(eicr_root, original)
 
 
 # NOTE:
@@ -244,7 +244,7 @@ def augment_rr(
 
     # STEP 8:
     # add relatedDocument with XFRM lineage
-    _add_related_document(rr_root, context, original)
+    _add_related_document(rr_root, original)
 
 
 # NOTE:
