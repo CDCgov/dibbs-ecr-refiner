@@ -72,7 +72,7 @@ export function Sections({
                 setIsOpen(true);
               }}
             >
-              Add custom section +
+              Add custom section <span aria-hidden>+</span>
             </Button>
           )}
           {isOpen ? (
@@ -188,7 +188,9 @@ function SectionName({
           <span className="truncate text-sm">{section.code}</span>
           <div className="flex gap-1">
             <EditButton setSelectedSection={setSelectedSection} />
-            <span className="not-sr-only text-sm">|</span>
+            <span className="text-sm" aria-hidden>
+              |
+            </span>
             <DeleteButton
               configurationId={configurationId}
               code={section.code}
