@@ -30,6 +30,9 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      ignored: ['**/e2e/**'],
+    },
     host: true,
     strictPort: true,
     port: 8081,
