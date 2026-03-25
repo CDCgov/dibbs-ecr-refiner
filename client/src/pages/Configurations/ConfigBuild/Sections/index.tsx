@@ -97,16 +97,16 @@ export function Sections({
         </p>
       </div>
 
-      <table className="w-full">
+      <table className="w-full table-fixed">
         <thead>
           <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-            <th scope="col" className="w-1/6 pb-3">
+            <th scope="col" className="w-32 pb-3">
               Include
             </th>
-            <th scope="col" className="w-2/6 pb-3 text-left">
+            <th scope="col" className="w-auto pb-3 text-left">
               Section name
             </th>
-            <th scope="col" className="w-3/6 pb-3">
+            <th scope="col" className="w-64 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
                 <Tooltip
@@ -173,13 +173,13 @@ function SectionName({
     return (
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <span className="font-bold">{section.name}</span>
+          <span className="truncate font-bold">{section.name}</span>
           {isCustom ? <CustomSectionBadge /> : null}
         </div>
         {isCustom ? (
-          <div className="flex flex-row gap-2">
-            <span className="text-sm">{section.code}</span>
-            <div className="flex flex-row gap-1">
+          <div className="flex gap-2">
+            <span className="truncate text-sm">{section.code}</span>
+            <div className="flex gap-1">
               <EditButton setSelectedSection={setSelectedSection} />
               <span className="not-sr-only text-sm">|</span>
               <DeleteButton
@@ -196,10 +196,14 @@ function SectionName({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <span className="text-gray-cool-70 italic">{section.name}</span>
+        <span className="text-gray-cool-70 truncate italic">
+          {section.name}
+        </span>
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
-      {isCustom ? <span className="text-sm">{section.code}</span> : null}
+      {isCustom ? (
+        <span className="truncate text-sm">{section.code}</span>
+      ) : null}
     </div>
   );
 }

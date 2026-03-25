@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { TextInput, Label as USWDSLabel } from '@trussworks/react-uswds';
+import { Icon, TextInput, Label as USWDSLabel } from '@trussworks/react-uswds';
 import { Button } from '../../../../components/Button';
 import { useState } from 'react';
 import {
@@ -121,15 +121,21 @@ export function Modal({
 
   return (
     <Dialog open={isOpen} onClose={closeSuccess}>
-      <DialogBackdrop className="fixed inset-0 bg-black/30" />
-
+      <DialogBackdrop className="fixed inset-0 bg-black/60" />
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="bg-base-dark/70 fixed inset-0" aria-hidden="true" />
-        <DialogPanel className="border-base-lighter relative z-50 w-full max-w-2xl rounded-sm border bg-white shadow-lg">
-          <div className="border-base-lighter border-b px-6 py-4">
-            <DialogTitle className="font-merriweather text-gray-90 text-xl font-bold">
+        <DialogPanel className="border-base-lighter relative z-50 h-94 w-100 rounded-sm border bg-white shadow-lg">
+          <div className="px-6 py-4">
+            <DialogTitle className="font-merriweather text-gray-90 text-3xl font-bold">
               {isEditing ? 'Edit custom section' : 'Add a custom section'}
             </DialogTitle>
+            <Button
+              aria-label="Close this window"
+              onClick={closeSuccess}
+              className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Icon.Close className="h-6! w-6!" aria-hidden />
+            </Button>
           </div>
           <div className="px-6 py-5">
             <div className="flex w-full flex-col items-start">
@@ -169,7 +175,7 @@ export function Modal({
               </div>
             </div>
           </div>
-          <div className="border-base-lighter flex justify-end gap-2 border-t px-6 py-4">
+          <div className="flex justify-start gap-2 px-6 py-4">
             <Button onClick={onSubmit}>
               {isEditing ? 'Update section' : 'Add section'}
             </Button>
