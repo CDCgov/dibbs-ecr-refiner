@@ -134,6 +134,7 @@ export function Sections({
                 <SectionName
                   configurationId={configurationId}
                   section={section}
+                  disabled={disabled}
                   setSelectedSection={() => onSelectedSection(section)}
                 />
               </td>
@@ -160,12 +161,14 @@ export function Sections({
 interface SectionNameProps {
   configurationId: string;
   section: DbConfigurationSectionProcessing;
+  disabled: boolean;
   setSelectedSection: () => void;
 }
 
 function SectionName({
   configurationId,
   section,
+  disabled,
   setSelectedSection,
 }: SectionNameProps) {
   const isCustom = section.section_type === 'custom';
@@ -186,16 +189,18 @@ function SectionName({
       {isCustom ? (
         <div className="flex gap-2">
           <span className="truncate text-sm">{section.code}</span>
-          <div className="flex gap-1">
-            <EditButton setSelectedSection={setSelectedSection} />
-            <span className="text-sm" aria-hidden>
-              |
-            </span>
-            <DeleteButton
-              configurationId={configurationId}
-              code={section.code}
-            />
-          </div>
+          {disabled ? null : (
+            <div className="flex gap-1">
+              <EditButton setSelectedSection={setSelectedSection} />
+              <span className="text-sm" aria-hidden>
+                |
+              </span>
+              <DeleteButton
+                configurationId={configurationId}
+                code={section.code}
+              />
+            </div>
+          )}
         </div>
       ) : null}
     </div>
