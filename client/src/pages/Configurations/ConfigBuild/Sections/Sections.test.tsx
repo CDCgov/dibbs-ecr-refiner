@@ -61,7 +61,7 @@ describe('Configuration sections', () => {
 
     const rows = screen.getAllByRole('row');
 
-    expect(rows).toHaveLength(4); // including header
+    expect(rows).toHaveLength(sections.length + 1); // including header
 
     // get the table rows
     const firstRow = rows[1];
@@ -83,20 +83,75 @@ describe('Configuration sections', () => {
     expect(within(secondRow).queryByRole('switch')).not.toBeInTheDocument();
 
     expect(within(thirdRow).getByRole('checkbox')).toBeChecked();
-    expect(thirdRowCells[1]).toHaveTextContent('Immuizations section');
+    expect(thirdRowCells[1]).toHaveTextContent('Immunizations section');
     expect(within(thirdRow).getByRole('switch')).not.toBeChecked();
   });
 
-  it('should allow custom section additions', () => {
+  it('should allow custom section additions', async () => {
     const user = userEvent.setup();
 
     renderWithClient(
       <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
+    expect(screen.getByText('Add custom section')).toBeInTheDocument();
+    await user.click(screen.getByText('Add custom section'));
 
+    expect(
+      screen.getByText('Add a custom section', { selector: 'h2' })
+    ).toBeInTheDocument();
+    await user.type(
+      screen.getByLabelText('Display name (for this section)', { exact: true }),
+      'sample name'
+    );
+    await user.type(
+      screen.getByLabelText('LOINC code', { exact: true }),
+      'sample code'
+    );
+    expect(
+      screen.getByRole('button', { name: 'Add section' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Close this window' })
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+  });
 
+  it('should allow custom section edits', () => {
+    renderWithClient(
+      <Sections configurationId={testId} disabled={false} sections={sections} />
+    );
 
+    const cell = screen.getByText('Mock custom section');
+    const row = cell.closest('tr');
 
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Mock custom section"');
+    }
+
+    expect(
+      within(row).getByRole('button', { name: /edit/i })
+    ).toBeInTheDocument();
+  });
+
+  it('should allow custom section deletions', () => {
+    renderWithClient(
+      <Sections configurationId={testId} disabled={false} sections={sections} />
+    );
+
+    const cell = screen.getByText('Mock custom section');
+    const row = cell.closest('tr');
+
+    expect(row).not.toBeNull();
+
+    if (!row) {
+      throw new Error('Could not find table row for "Mock custom section"');
+    }
+
+    expect(
+      within(row).getByRole('button', { name: /delete/i })
+    ).toBeInTheDocument();
   });
 });
