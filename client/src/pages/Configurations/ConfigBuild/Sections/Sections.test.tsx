@@ -4,43 +4,57 @@ import { render, screen, within } from '@testing-library/react';
 import { TestQueryClientProvider } from '../../../../test-utils';
 import { Sections } from '.';
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import userEvent from '@testing-library/user-event';
+
+const sections: DbConfigurationSectionProcessing[] = [
+  {
+    name: 'History section',
+    action: 'refine',
+    include: true,
+    code: 'hist',
+    narrative: false,
+    versions: ['1.1', '3.1'],
+    section_type: 'standard',
+  },
+  {
+    name: 'Med section',
+    action: 'refine',
+    include: false,
+    code: 'med',
+    narrative: false,
+    versions: ['1.1', '3.1', '3.1.1'],
+    section_type: 'standard',
+  },
+  {
+    name: 'Immunizations section',
+    action: 'retain',
+    include: true,
+    code: 'imm',
+    narrative: false,
+    versions: ['3.1', '3.1.1'],
+    section_type: 'standard',
+  },
+  {
+    name: 'Mock custom section',
+    action: 'refine',
+    include: true,
+    code: 'mock-custom-section',
+    narrative: false,
+    versions: [],
+    section_type: 'custom',
+  },
+];
+
+const testId = 'test-id';
 
 function renderWithClient(ui: React.ReactElement) {
   return render(<TestQueryClientProvider>{ui}</TestQueryClientProvider>);
 }
 
-describe('EicrSectionReview', () => {
+describe('Configuration sections', () => {
   it('should display sections based on stored section data', () => {
     const testId = 'test-id';
-    const sections: DbConfigurationSectionProcessing[] = [
-      {
-        name: 'History section',
-        action: 'refine',
-        include: true,
-        code: 'hist',
-        narrative: false,
-        versions: ['1.1', '3.1'],
-        section_type: 'standard',
-      },
-      {
-        name: 'Med section',
-        action: 'refine',
-        include: false,
-        code: 'med',
-        narrative: false,
-        versions: ['1.1', '3.1', '3.1.1'],
-        section_type: 'standard',
-      },
-      {
-        name: 'Immuizations section',
-        action: 'retain',
-        include: true,
-        code: 'imm',
-        narrative: false,
-        versions: ['3.1', '3.1.1'],
-        section_type: 'standard',
-      },
-    ];
+
     renderWithClient(
       <Sections configurationId={testId} disabled={false} sections={sections} />
     );
@@ -71,5 +85,18 @@ describe('EicrSectionReview', () => {
     expect(within(thirdRow).getByRole('checkbox')).toBeChecked();
     expect(thirdRowCells[1]).toHaveTextContent('Immuizations section');
     expect(within(thirdRow).getByRole('switch')).not.toBeChecked();
+  });
+
+  it('should allow custom section additions', () => {
+    const user = userEvent.setup();
+
+    renderWithClient(
+      <Sections configurationId={testId} disabled={false} sections={sections} />
+    );
+
+
+
+
+
   });
 });
