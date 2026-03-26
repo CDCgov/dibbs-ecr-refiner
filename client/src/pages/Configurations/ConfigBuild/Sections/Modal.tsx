@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@headlessui/react';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
+import { useToast } from '../../../../hooks/useToast';
 
 interface EditCustomSection {
   name: string;
@@ -41,6 +42,7 @@ export function Modal({
   const { mutate: addCustomSection } = useAddCustomSection();
   const { mutate: updateCustomSection } = useUpdateSection();
   const formatError = useApiErrorFormatter();
+  const showToast = useToast();
 
   const isEditing = initialSection ? true : false;
 
@@ -89,6 +91,10 @@ export function Modal({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
             closeSuccess();
+            showToast({
+              heading: 'Custom section updated',
+              body: trimmedName,
+            });
           },
           onError: (error) => {
             setErrorText(
@@ -115,6 +121,10 @@ export function Modal({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
           closeSuccess();
+          showToast({
+            heading: 'Custom section created',
+            body: trimmedName,
+          });
         },
         onError: (error) => {
           setErrorText(

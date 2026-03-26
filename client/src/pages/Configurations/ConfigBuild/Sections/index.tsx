@@ -198,6 +198,7 @@ function SectionName({
               <DeleteButton
                 configurationId={configurationId}
                 code={section.code}
+                name={section.name}
               />
             </div>
           )}
@@ -226,11 +227,13 @@ function EditButton({ setSelectedSection }: EditButtonProps) {
 interface DeleteButtonProps {
   configurationId: string;
   code: string;
+  name: string;
 }
 
-function DeleteButton({ configurationId, code }: DeleteButtonProps) {
+function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
   const { mutate } = useDeleteCustomSection();
   const queryClient = useQueryClient();
+  const showToast = useToast();
 
   const onClick = () => {
     mutate(
@@ -245,6 +248,19 @@ function DeleteButton({ configurationId, code }: DeleteButtonProps) {
           await queryClient.invalidateQueries({
             queryKey: getGetConfigurationQueryKey(configurationId),
           });
+          showToast({
+            heading: 'Custom section deleted',
+            body: name,
+          });
+        },
+        onError: () => {
+          {
+            showToast({
+              heading: 'Custom section could not be deleted',
+              body: name,
+              variant: 'error',
+            });
+          }
         },
       }
     );
