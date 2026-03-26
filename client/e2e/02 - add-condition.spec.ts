@@ -261,7 +261,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: 'Update section' }).click();
     await expect(page.getByText('Name is required.')).toBeVisible();
 
-    // try an empty name
+    // try an empty code
     await page
       .getByLabel('Display name (for this section)')
       .fill('New custom section name');
