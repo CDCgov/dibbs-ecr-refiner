@@ -24,7 +24,7 @@ interface EditCustomSection {
   currentCode: string;
 }
 
-interface ModalTestProps {
+interface ModalProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   configurationId: string;
@@ -37,7 +37,7 @@ export function Modal({
   setIsOpen,
   configurationId,
   initialSection,
-}: ModalTestProps) {
+}: ModalProps) {
   const queryClient = useQueryClient();
   const [name, setName] = useState(initialSection?.name ?? '');
   const [newCode, setNewCode] = useState(initialSection?.currentCode ?? '');
