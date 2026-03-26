@@ -328,6 +328,24 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     ),
 ]
 
+# Vital Signs (8716-3)
+# IG template: Vital Signs Organizer (V3) wraps Vital Sign Observation (V2)
+#   via component (CONF:1198-7285, CONF:1198-15946)
+# primary code: observation/code SHALL be LOINC from Vital Sign Result Type
+#   value set (CONF:1098-7301)
+# prune level:  organizer/component (individual vital sign observations)
+_VITAL_SIGNS_MATCH_RULES: Final[list[EntryMatchRule]] = [
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.27']]"
+            "/hl7:code"
+        ),
+        code_system_oid="2.16.840.1.113883.6.1",  # LOINC
+        prune_container_xpath="hl7:organizer/hl7:component",
+    ),
+]
+
 
 # NOTE:
 # SECTION CATALOG
@@ -442,6 +460,7 @@ _SECTION_CATALOG: Final[dict[str, SectionSpecification]] = {
         loinc_code="8716-3",
         display_name="Vital Signs Section",
         template_id="2.16.840.1.113883.10.20.22.2.4.1:2015-08-01",
+        entry_match_rules=_VITAL_SIGNS_MATCH_RULES,
     ),
     "90767-5": SectionSpecification(
         loinc_code="90767-5",
