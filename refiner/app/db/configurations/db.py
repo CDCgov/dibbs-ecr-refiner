@@ -6,7 +6,7 @@ from psycopg import AsyncCursor
 from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
-from app.api.v1.configurations.model import CustomSectionInput, DeleteSectionInput
+from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -35,7 +35,7 @@ type CursorType = dict[str, Any]
 async def insert_custom_section_db(
     config: DbConfiguration,
     user_id: UUID,
-    custom_section_input: CustomSectionInput,
+    custom_section_input: AddSectionInput,
     db: AsyncDatabaseConnection,
 ) -> DbConfiguration | None:
     """

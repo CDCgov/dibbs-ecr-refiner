@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
-    CustomSectionInput,
+    AddSectionInput,
     DeleteSectionInput,
     SectionUpdateInput,
 )
@@ -32,7 +32,7 @@ router = APIRouter(prefix="/{configuration_id}/sections")
 )
 async def insert_custom_section(
     configuration_id: UUID,
-    section_input: CustomSectionInput,
+    section_input: AddSectionInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> str:
@@ -223,7 +223,7 @@ def _raise_if_invalid_section_fields(
 
 
 def _raise_if_invalid_section_addition(
-    config: DbConfiguration, section_input: CustomSectionInput
+    config: DbConfiguration, section_input: AddSectionInput
 ) -> None:
     """
     Raises an exception if any properties of a section addition are not valid.
