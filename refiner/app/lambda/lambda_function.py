@@ -22,7 +22,7 @@ from ..services.aws.s3_keys import (
     get_current_file_key,
     get_rsg_cg_mapping_file_key,
 )
-from ..services.ecr.refine import create_unrefined_conditions_rr
+from ..services.ecr.refine import refine_rr_for_unconfigured_conditions
 from ..services.pipeline import (
     RefinementTrace,
     discover_reportable_conditions,
@@ -458,7 +458,7 @@ def process_refiner(
     # STAGE 4:
     # create unrefined condition RRs for conditions without active configs
     for jurisdiction_code, condition_codes in non_active_reportable_conditions.items():
-        unrefined_rr_content = create_unrefined_conditions_rr(
+        unrefined_rr_content = refine_rr_for_unconfigured_conditions(
             xml_files=xml_files,
             condition_codes=condition_codes,
         )
