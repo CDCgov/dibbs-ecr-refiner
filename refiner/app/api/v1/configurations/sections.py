@@ -17,6 +17,7 @@ from app.db.configurations.db import (
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionProcessing,
+    DbSectionType,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -48,22 +49,7 @@ async def insert_custom_section(
         configuration_id=configuration_id, user=user, db=db
     )
 
-    if not _is_valid_name(
-        desired_name=section_input.name,
-        sections=config.section_processing,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Section name is already in use.",
-        )
-
-    if not _is_valid_code(
-        desired_code=section_input.code, sections=config.section_processing
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Section code is already in use.",
-        )
+    _raise_if_invalid_section_addition(config=config, section_input=section_input)
 
     updated_config = await insert_custom_section_db(
         config=config, user_id=user.id, custom_section_input=section_input, db=db
@@ -165,8 +151,8 @@ async def update_section(
         sections=config.section_processing,
     )
 
-    _validate_section_update_or_raise(
-        prev_section=prev_section,
+    _raise_if_invalid_section_update(
+        existing_section=prev_section,
         all_sections=config.section_processing,
         desired_name=section_input.name,
         desired_code=section_input.new_code,
@@ -200,17 +186,26 @@ async def update_section(
     return section_update.code
 
 
-def _validate_section_update_or_raise(
-    prev_section: DbConfigurationSectionProcessing,
-    all_sections: list[DbConfigurationSectionProcessing],
+def _raise_if_invalid_section_fields(
+    sections: list[DbConfigurationSectionProcessing],
     desired_name: str | None,
     desired_code: str | None,
-) -> None:
-    other_sections = [s for s in all_sections if s.code != prev_section.code]
+):
+    """
+    Raises an exception if the desired name or desired code are invalid.
 
+    Args:
+        sections (list[DbConfigurationSectionProcessing]): The list of sections to check against
+        desired_name (str | None): The desired name to use
+        desired_code (str | None): The desired code to use
+
+    Raises:
+        HTTPException: 400 if name is in use
+        HTTPException: 400 if code is in use
+    """
     if desired_name is not None and not _is_valid_name(
         desired_name=desired_name,
-        sections=other_sections,
+        sections=sections,
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -219,12 +214,53 @@ def _validate_section_update_or_raise(
 
     if desired_code is not None and not _is_valid_code(
         desired_code=desired_code,
-        sections=other_sections,
+        sections=sections,
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Section code is already in use.",
         )
+
+
+def _raise_if_invalid_section_addition(
+    config: DbConfiguration, section_input: CustomSectionInput
+) -> None:
+    """
+    Raises an exception if any properties of a section addition are not valid.
+
+    Args:
+        config (DbConfiguration): The configuration
+        section_input (CustomSectionInput): The section addition input
+    """
+    _raise_if_invalid_section_fields(
+        sections=config.section_processing,
+        desired_name=section_input.name,
+        desired_code=section_input.code,
+    )
+
+
+def _raise_if_invalid_section_update(
+    existing_section: DbConfigurationSectionProcessing,
+    all_sections: list[DbConfigurationSectionProcessing],
+    desired_name: str | None,
+    desired_code: str | None,
+) -> None:
+    """
+    Raises an exception if any properties of an update are not valid.
+
+    Args:
+        existing_section (DbConfigurationSectionProcessing): The existing section to update
+        all_sections (list[DbConfigurationSectionProcessing]): All sections associated with a config
+        desired_name (str | None): The desired name to update to
+        desired_code (str | None): the desired code to update to
+    """
+    other_sections = [s for s in all_sections if s.code != existing_section.code]
+
+    _raise_if_invalid_section_fields(
+        sections=other_sections,
+        desired_name=desired_name,
+        desired_code=desired_code,
+    )
 
 
 def _value_or_default[T](new_value: T | None, old_value: T) -> T:
@@ -251,6 +287,7 @@ def _build_section_update(
     include = _value_or_default(section_input.include, prev_section.include)
     narrative = _value_or_default(section_input.narrative, prev_section.narrative)
     action = _value_or_default(section_input.action, prev_section.action)
+    section_type: DbSectionType
 
     if prev_section.section_type == "custom":
         code = _value_or_default(section_input.new_code, prev_section.code)
@@ -296,6 +333,7 @@ def _validate_section_exists_or_raise(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Section with code {code} is invalid and can't be updated.",
         )
+
     return section
 
 
