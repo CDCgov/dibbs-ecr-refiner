@@ -62,7 +62,7 @@ async def insert_custom_section(
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Custom section code is already in use.",
+            detail="Section code is already in use.",
         )
 
     updated_config = await insert_custom_section_db(
@@ -72,7 +72,7 @@ async def insert_custom_section(
     if not updated_config:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Custom section creation failed.",
+            detail="Section creation failed.",
         )
 
     return section_input.code
@@ -155,21 +155,58 @@ async def update_section(
     """
 
     config = await _validate_configuration_or_raise(
-        configuration_id=configuration_id, user=user, db=db
+        configuration_id=configuration_id,
+        user=user,
+        db=db,
     )
 
     prev_section = _validate_section_exists_or_raise(
-        code=section_input.current_code, sections=config.section_processing
+        code=section_input.current_code,
+        sections=config.section_processing,
     )
 
-    # Can't update if desired name or code is already in user
-    desired_name = section_input.name
-    desired_code = section_input.new_code
+    _validate_section_update_or_raise(
+        prev_section=prev_section,
+        all_sections=config.section_processing,
+        desired_name=section_input.name,
+        desired_code=section_input.new_code,
+    )
 
-    # No need to check the section we're trying to edit
-    other_sections = [
-        s for s in config.section_processing if s.code != prev_section.code
-    ]
+    section_update = _build_section_update(
+        prev_section=prev_section,
+        section_input=section_input,
+    )
+
+    try:
+        updated_config = await update_configuration_section_db(
+            config=config,
+            current_code=prev_section.code,
+            section_update=section_update,
+            user_id=user.id,
+            db=db,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provided section is not valid.",
+        ) from exc
+
+    if not updated_config:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update configuration.",
+        )
+
+    return section_update.code
+
+
+def _validate_section_update_or_raise(
+    prev_section: DbConfigurationSectionProcessing,
+    all_sections: list[DbConfigurationSectionProcessing],
+    desired_name: str | None,
+    desired_code: str | None,
+) -> None:
+    other_sections = [s for s in all_sections if s.code != prev_section.code]
 
     if desired_name is not None and not _is_valid_name(
         desired_name=desired_name,
@@ -181,81 +218,77 @@ async def update_section(
         )
 
     if desired_code is not None and not _is_valid_code(
-        desired_code=desired_code, sections=other_sections
+        desired_code=desired_code,
+        sections=other_sections,
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Section code is already in use.",
         )
 
-    include = (
-        section_input.include
-        if section_input.include is not None
-        else prev_section.include
-    )
-    narrative = (
-        section_input.narrative
-        if section_input.narrative is not None
-        else prev_section.narrative
-    )
+
+def _value_or_default[T](new_value: T | None, old_value: T) -> T:
+    """
+    Helper function to use the new value if available, otherwise fall back to the old value.
+    """
+    return new_value if new_value is not None else old_value
+
+
+def _build_section_update(
+    prev_section: DbConfigurationSectionProcessing,
+    section_input: SectionUpdateInput,
+) -> DbConfigurationSectionProcessing:
+    """
+    Builds a section update object when given the existing section and the properties to modify.
+
+    Args:
+        prev_section (DbConfigurationSectionProcessing): The existing section to modify
+        section_input (SectionUpdateInput): The object containing section properties to update
+
+    Returns:
+        DbConfigurationSectionProcessing: The modified section
+    """
+    include = _value_or_default(section_input.include, prev_section.include)
+    narrative = _value_or_default(section_input.narrative, prev_section.narrative)
+    action = _value_or_default(section_input.action, prev_section.action)
 
     if prev_section.section_type == "custom":
-        code = (
-            section_input.new_code
-            if section_input.new_code is not None
-            else prev_section.code
-        )
-        name = (
-            section_input.name if section_input.name is not None else prev_section.name
-        )
-
-        section_update = DbConfigurationSectionProcessing(
-            code=code,
-            name=name,
-            action=section_input.action or prev_section.action,
-            narrative=narrative,
-            include=include,
-            versions=prev_section.versions,
-            section_type="custom",
-        )
+        code = _value_or_default(section_input.new_code, prev_section.code)
+        name = _value_or_default(section_input.name, prev_section.name)
+        section_type = "custom"
     else:
-        section_update = DbConfigurationSectionProcessing(
-            # standard section code and name cannot be changed
-            code=prev_section.code,
-            name=prev_section.name,
-            action=section_input.action or prev_section.action,
-            narrative=narrative,
-            include=include,
-            versions=prev_section.versions,
-            section_type="standard",
-        )
+        # standard section code and name cannot be changed
+        code = prev_section.code
+        name = prev_section.name
+        section_type = "standard"
 
-    try:
-        updated_config = await update_configuration_section_db(
-            config=config,
-            current_code=prev_section.code,
-            section_update=section_update,
-            user_id=user.id,
-            db=db,
-        )
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provided section is not valid.",
-        )
-
-    if not updated_config:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update configuration.",
-        )
-
-    return section_update.code
+    return DbConfigurationSectionProcessing(
+        code=code,
+        name=name,
+        action=action,
+        narrative=narrative,
+        include=include,
+        versions=prev_section.versions,
+        section_type=section_type,
+    )
 
 
 def _validate_section_exists_or_raise(
     code: str, sections: list[DbConfigurationSectionProcessing]
 ) -> DbConfigurationSectionProcessing:
+    """
+    Raises an exception if a section in the list doesn't match the code. Otherwise returns the matched section.
+
+    Args:
+        code (str): The section's code to match on
+        sections (list[DbConfigurationSectionProcessing]): The list of sections
+
+    Raises:
+        HTTPException: 400 if no matching section was found
+
+    Returns:
+        DbConfigurationSectionProcessing: The section with the matching code
+    """
     section = next((s for s in sections if s.code == code), None)
 
     if not section:
