@@ -107,7 +107,7 @@ export function Sections({
             <th scope="col" className="w-auto pb-3 text-left">
               Section name
             </th>
-            <th scope="col" className="w-64 pb-3">
+            <th scope="col" className="align-right w-3/6 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
                 <Tooltip
@@ -363,7 +363,7 @@ function RefineSwitch({
   const preserveLabelText = 'Preserve & retain all data';
 
   return (
-    <Field className="flex items-center">
+    <Field className="flex -translate-x-4 items-center">
       <Label
         aria-label={
           isRefineToggled
@@ -372,7 +372,7 @@ function RefineSwitch({
             : // "Preserve & retain all data for Admission Diagnosis section"
               `${preserveLabelText} for ${currentSection.name} section`
         }
-        className="w-48"
+        className="mr-2 w-48 text-right"
       >
         {isRefineToggled ? (
           <span>{refineLabelText}</span>

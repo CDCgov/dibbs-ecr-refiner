@@ -1,7 +1,15 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from lxml import etree
+
+from ..core.exceptions import XMLValidationError
 from ..core.models.types import XMLFiles
+from .ecr.augment import (
+    augment_eicr,
+    augment_rr,
+    create_augmentation_context,
+)
 from .ecr.model import JurisdictionReportableConditions
 from .ecr.refine import (
     create_eicr_refinement_plan,
@@ -10,7 +18,7 @@ from .ecr.refine import (
     refine_eicr,
     refine_rr,
 )
-from .ecr.reportability import determine_reportability
+from .ecr.reportability import get_reportable_conditions_by_jurisdiction
 from .terminology import ProcessedConfiguration
 
 # NOTE:
@@ -105,8 +113,14 @@ def discover_reportable_conditions(
         All reportable condition groups extracted from the RR.
     """
 
-    result = determine_reportability(xml_files)
-    return result["reportable_conditions"]
+    try:
+        rr_root = xml_files.parse_rr()
+        return get_reportable_conditions_by_jurisdiction(rr_root)
+    except etree.XMLSyntaxError as e:
+        raise XMLValidationError(
+            message="Failed to parse RR document",
+            details={"error": str(e)},
+        )
 
 
 # NOTE:
@@ -120,14 +134,19 @@ def refine_for_condition(
     trace: RefinementTrace,
 ) -> RefinementResult:
     """
-    Execute the full refinement pipeline for a single condition.
+    Execute the full refinement + augmentation pipeline for a single condition.
 
     Takes a ProcessedConfiguration that has already been resolved by the
     caller (from the database in the webapp, or from S3 in lambda) and
-    runs plan creation and refinement for both the eICR and RR.
+    runs plan creation, refinement, and augmentation for both the eICR
+    and RR.
 
-    This is the shared core that ensures refinement behavior is identical
-    regardless of how the configuration was sourced.
+    The pipeline owns the parse/serialize boundary:
+        1. Parse both documents once
+        2. Build refinement plans
+        3. Refine (mutate trees in place)
+        4. Augment (mutate same trees in place)
+        5. Serialize once at the end
 
     Args:
         xml_files: The eICR/RR pair to refine.
@@ -150,20 +169,34 @@ def refine_for_condition(
     trace.configuration_resolved = True
 
     try:
-        # create and execute the eICR refinement plan
+        # augmentation contexts (created up front so both documents
+        # share the same augmentation_time since we don't have a way to
+        # point at the eicr by document id; may need to talk with aphl
+        # about how they want this handled
+        shared_context = create_augmentation_context()
+        augmentation_time = shared_context.augmentation_time
+        eicr_context = shared_context
+        rr_context = create_augmentation_context(augmentation_time=augmentation_time)
+
+        # plan -> refine -> augment -> output
+        eicr_root = xml_files.parse_eicr()
         eicr_plan = create_eicr_refinement_plan(
             processed_configuration=processed_configuration,
-            xml_files=xml_files,
+            eicr_root=eicr_root,
         )
-        refined_eicr = refine_eicr(xml_files=xml_files, plan=eicr_plan)
+        refine_eicr(eicr_root=eicr_root, plan=eicr_plan)
+        augment_eicr(eicr_root, eicr_context)
+        refined_eicr = etree.tostring(eicr_root, encoding="unicode")
 
-        # create and execute the RR refinement plan
+        # plan -> refine -> augment -> output
+        rr_root = xml_files.parse_rr()
         rr_plan = create_rr_refinement_plan(
             processed_configuration=processed_configuration,
         )
-        refined_rr = refine_rr(xml_files=xml_files, plan=rr_plan)
+        refine_rr(rr_root=rr_root, plan=rr_plan)
+        augment_rr(rr_root, rr_context)
+        refined_rr = etree.tostring(rr_root, encoding="unicode")
 
-        # record success in the trace
         trace.refinement_outcome = "refined"
         trace.eicr_size_reduction_percentage = get_file_size_reduction_percentage(
             unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr

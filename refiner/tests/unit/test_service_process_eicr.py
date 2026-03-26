@@ -2,7 +2,7 @@ import pytest
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.ecr.model import EICRSpecification
+from app.services.ecr.model import HL7_NS, EICRSpecification
 from app.services.ecr.process_eicr import (
     _analyze_trigger_codes_in_context,
     _preserve_relevant_entries_and_generate_summary,
@@ -11,8 +11,6 @@ from app.services.ecr.process_eicr import (
     process_section,
 )
 from app.services.ecr.specification import load_spec
-
-from .conftest import NAMESPACES
 
 # NOTE:
 # TEST FIXTURES
@@ -54,7 +52,7 @@ def clinical_elements_v1_1(results_section_v1_1: _Element) -> list[_Element]:
     """
 
     xpath = './/hl7:observation[hl7:code[@code="94533-7"]]'
-    return results_section_v1_1.xpath(xpath, namespaces=NAMESPACES)
+    return results_section_v1_1.xpath(xpath, namespaces=HL7_NS)
 
 
 # fixtures for eICR v3.1.1
@@ -91,7 +89,7 @@ def test_get_section_by_code(
     structured_body: _Element = request.getfixturevalue(fixture_name)
     section = get_section_by_code(structured_body, loinc_code)
     assert section is not None
-    assert section.find(".//hl7:title", namespaces=NAMESPACES).text == expected_title
+    assert section.find(".//hl7:title", namespaces=HL7_NS).text == expected_title
 
 
 @pytest.mark.parametrize(
@@ -126,7 +124,7 @@ def test_process_section_no_clinical_elements() -> None:
     section: _Element = etree.fromstring(
         '<section xmlns="urn:hl7-org:v3"><code code="30954-2"/></section>'
     )
-    process_section(section=section, codes_to_match=set(), namespaces=NAMESPACES)
+    process_section(section=section, codes_to_match=set(), namespaces=HL7_NS)
     assert section.get("nullFlavor") == "NI"
 
 
@@ -142,13 +140,13 @@ def test_process_section_with_matches_v1_1(
     process_section(
         section=results_section_v1_1,
         codes_to_match=set("94310-0"),
-        namespaces=NAMESPACES,
+        namespaces=HL7_NS,
         section_specification=results_spec,
         version="1.1",
     )
 
     assert results_section_v1_1.get("nullFlavor") == "NI"
-    final_text = results_section_v1_1.find(".//hl7:text", namespaces=NAMESPACES)
+    final_text = results_section_v1_1.find(".//hl7:text", namespaces=HL7_NS)
     assert final_text is not None
     assert final_text.find("table") is not None
 
@@ -185,7 +183,7 @@ def test_preserve_relevant_entries_and_generate_summary(
     """
 
     initial_entry_count = len(
-        results_section_v1_1.xpath(".//hl7:entry", namespaces=NAMESPACES)
+        results_section_v1_1.xpath(".//hl7:entry", namespaces=HL7_NS)
     )
     trigger_analysis = {id(elem): False for elem in clinical_elements_v1_1}
 
@@ -193,11 +191,11 @@ def test_preserve_relevant_entries_and_generate_summary(
         section=results_section_v1_1,
         contextual_matches=clinical_elements_v1_1,
         trigger_analysis=trigger_analysis,
-        namespaces=NAMESPACES,
+        namespaces=HL7_NS,
     )
 
     final_entry_count = len(
-        results_section_v1_1.xpath(".//hl7:entry", namespaces=NAMESPACES)
+        results_section_v1_1.xpath(".//hl7:entry", namespaces=HL7_NS)
     )
     # some entries should be pruned, but not all
     assert 0 < final_entry_count < initial_entry_count
