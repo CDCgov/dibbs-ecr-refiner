@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Final, Literal, TypedDict
 
 from app.db.configurations.model import DbConfigurationSectionInstructions
 
@@ -7,6 +7,16 @@ if TYPE_CHECKING:
     from app.services.terminology import CodeSystemSets
 
 type NamespaceMap = dict[str, str]
+
+HL7_NAMESPACE: Final[str] = "urn:hl7-org:v3"
+
+HL7_NS: Final[NamespaceMap] = {"hl7": HL7_NAMESPACE}
+
+HL7_XSI_NS: Final[NamespaceMap] = {
+    "hl7": HL7_NAMESPACE,
+    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+}
+
 type EicrVersion = Literal["1.1", "3.1", "3.1.1"]
 
 

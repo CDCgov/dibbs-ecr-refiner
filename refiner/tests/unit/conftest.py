@@ -37,10 +37,8 @@ from app.db.configurations.model import DbConfiguration, DbConfigurationConditio
 from app.db.pool import get_db
 from app.db.users.model import DbUser
 from app.main import create_fastapi_app
+from app.services.ecr.model import HL7_NS
 from tests.fixtures.loader import load_fixture_str, load_fixture_xml
-
-type NamespaceMap = dict[str, str]
-NAMESPACES: NamespaceMap = {"hl7": "urn:hl7-org:v3"}
 
 # User info
 TEST_SESSION_TOKEN = "test-token"
@@ -210,6 +208,13 @@ def normalize_xml(xml: str) -> str:
     ).strip()
 
 
+# NOTE:
+# SESSION-SCOPED PARSED FIXTURES
+# =============================================================================
+# these are parsed once per test session and shared across all tests
+# do **not** mutate these; use the function-scoped deepcopy fixtures below
+
+
 @pytest.fixture(scope="session")
 def eicr_v1_1_covid_influenza() -> etree._Element:
     """
@@ -226,6 +231,81 @@ def eicr_v3_1_1_zika() -> etree._Element:
     """
 
     return load_fixture_xml("eicr_v3_1_1/mon_mothma_zika_eICR.xml")
+
+
+@pytest.fixture(scope="session")
+def rr_v1_1_covid_influenza() -> etree._Element:
+    """
+    Loads the Mon Mothma v1.1 COVID+Influenza RR document once per session.
+    """
+
+    return load_fixture_xml("eicr_v1_1/mon_mothma_covid_influenza_RR.xml")
+
+
+@pytest.fixture(scope="session")
+def rr_v3_1_1_zika() -> etree._Element:
+    """
+    Loads the Mon Mothma v3.1.1 Zika RR document once per session.
+    """
+
+    return load_fixture_xml("eicr_v3_1_1/mon_mothma_zika_RR.xml")
+
+
+# NOTE:
+# FUNCTION-SCOPED MUTABLE FIXTURES
+# =============================================================================
+# each test gets its own deep copy to mutate freely
+
+
+@pytest.fixture
+def eicr_root_v1_1(eicr_v1_1_covid_influenza: _Element) -> _Element:
+    """
+    Mutable deep copy of the full v1.1 eICR root.
+    """
+
+    return deepcopy(eicr_v1_1_covid_influenza)
+
+
+@pytest.fixture
+def eicr_root_v3_1_1(eicr_v3_1_1_zika: _Element) -> _Element:
+    """
+    Mutable deep copy of the full v3.1.1 eICR root.
+    """
+
+    return deepcopy(eicr_v3_1_1_zika)
+
+
+@pytest.fixture
+def original_eicr_root_v1_1(eicr_v1_1_covid_influenza: _Element) -> _Element:
+    """
+    Reference to the original v1.1 eICR for comparison assertions.
+    Not deep-copied — do not mutate.
+    """
+
+    return eicr_v1_1_covid_influenza
+
+
+@pytest.fixture
+def rr_root_v1_1(rr_v1_1_covid_influenza: _Element) -> _Element:
+    """
+    Mutable deep copy of the full v1.1 RR root.
+    """
+
+    return deepcopy(rr_v1_1_covid_influenza)
+
+
+@pytest.fixture
+def rr_root_v3_1_1(rr_v3_1_1_zika: _Element) -> _Element:
+    """
+    Mutable deep copy of the full v3.1.1 RR root.
+    """
+
+    return deepcopy(rr_v3_1_1_zika)
+
+
+# NOTE:
+# XMLFILES FIXTURES
+# =============================================================================
 
 
 @pytest.fixture
@@ -288,7 +368,7 @@ def structured_body_v1_1(eicr_v1_1_covid_influenza: _Element) -> _Element:
 
     if (
         body := eicr_v1_1_covid_influenza.find(
-            path=".//hl7:structuredBody", namespaces=NAMESPACES
+            path=".//hl7:structuredBody", namespaces=HL7_NS
         )
     ) is not None:
         return deepcopy(body)
@@ -303,9 +383,7 @@ def structured_body_v3_1_1(eicr_v3_1_1_zika: _Element) -> _Element:
     """
 
     if (
-        body := eicr_v3_1_1_zika.find(
-            path=".//hl7:structuredBody", namespaces=NAMESPACES
-        )
+        body := eicr_v3_1_1_zika.find(path=".//hl7:structuredBody", namespaces=HL7_NS)
     ) is not None:
         return deepcopy(body)
     else:

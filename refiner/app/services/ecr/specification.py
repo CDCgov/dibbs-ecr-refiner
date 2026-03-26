@@ -4,10 +4,10 @@ from typing import Final
 from lxml.etree import _Element
 
 from .model import (
+    HL7_NS,
     EICRSpecification,
     EicrVersion,
     EntryMatchRule,
-    NamespaceMap,
     SectionSpecification,
     TriggerCode,
 )
@@ -21,11 +21,6 @@ EICR_VERSION_MAP: Final[dict[str, EicrVersion]] = {
     "2016-12-01": "1.1",
     "2021-01-01": "3.1",
     "2022-05-01": "3.1.1",
-}
-
-NAMESPACES: Final[NamespaceMap] = {
-    "hl7": "urn:hl7-org:v3",
-    "cda": "urn:hl7-org:v3",
 }
 
 # for CDA sections that we should not refine; in the future we may
@@ -657,8 +652,8 @@ def detect_eicr_version(xml_root: _Element) -> EicrVersion:
     """
 
     template_id = xml_root.find(
-        'cda:templateId[@root="2.16.840.1.113883.10.20.15.2"]',
-        namespaces=NAMESPACES,
+        'hl7:templateId[@root="2.16.840.1.113883.10.20.15.2"]',
+        namespaces=HL7_NS,
     )
 
     if template_id is not None:
