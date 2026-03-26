@@ -34,12 +34,6 @@ interface SectionsProps {
   disabled: boolean;
 }
 
-/**
- * EicrSectionReview displays an overview or review of eICR sections and allows
- * users to choose an action for each section (retain, refine, remove).
- * Radio inputs are fully accessible and can be selected by clicking anywhere
- * in the containing table cell (td), supporting keyboard navigation as well.
- */
 export function Sections({
   configurationId,
   sections: sectionProcessing,
