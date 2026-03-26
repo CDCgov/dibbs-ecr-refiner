@@ -275,8 +275,10 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: 'Update section' }).click();
 
     // check the page
-    await expect(page.getByText('New custom section name')).toBeVisible();
-    await expect(page.getByText('new-code')).toBeVisible();
+    await expect(
+      page.getByRole('table').getByText('New custom section name')
+    ).toBeVisible();
+    await expect(page.getByRole('table').getByText('new-code')).toBeVisible();
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
