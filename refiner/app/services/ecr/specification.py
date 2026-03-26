@@ -31,6 +31,11 @@ SECTION_PROCESSING_SKIP: Final[set[str]] = {
     "88085-6",  # reportability response information section
 }
 
+LOINC_OID = "2.16.840.1.113883.6.1"
+ICD10_OID = "2.16.840.1.113883.6.90"
+RXNORM_OID = "2.16.840.1.113883.6.88"
+CVX_OID = "2.16.840.1.113883.12.292"
+SNOMED_OID = "2.16.840.1.113883.6.96"
 
 # NOTE:
 # ENTRY MATCH RULES
@@ -57,13 +62,13 @@ _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",
+        code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value/hl7:translation"
         ),
-        translation_code_system_oid="2.16.840.1.113883.6.90",
+        translation_code_system_oid=ICD10_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
@@ -75,7 +80,7 @@ _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
 _ADMISSION_MEDICATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=".//hl7:manufacturedMaterial/hl7:code",
-        code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
+        code_system_oid=RXNORM_OID,  # RxNorm
         translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
     ),
 ]
@@ -93,13 +98,13 @@ _DISCHARGE_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",
+        code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value/hl7:translation"
         ),
-        translation_code_system_oid="2.16.840.1.113883.6.90",
+        translation_code_system_oid=ICD10_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
@@ -117,13 +122,13 @@ _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",
+        code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value/hl7:translation"
         ),
-        translation_code_system_oid="2.16.840.1.113883.6.90",
+        translation_code_system_oid=ICD10_OID,
         prune_container_xpath="hl7:encounter/hl7:entryRelationship[@typeCode='COMP']",
     ),
 ]
@@ -135,9 +140,9 @@ _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
 _IMMUNIZATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=".//hl7:manufacturedMaterial/hl7:code",
-        code_system_oid="2.16.840.1.113883.12.292",  # CVX
+        code_system_oid=CVX_OID,  # CVX
         translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
-        translation_code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
+        translation_code_system_oid=RXNORM_OID,  # RxNorm
     ),
 ]
 
@@ -148,7 +153,7 @@ _IMMUNIZATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
 _MEDICATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=".//hl7:manufacturedMaterial/hl7:code",
-        code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
+        code_system_oid=RXNORM_OID,  # RxNorm
         translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
     ),
 ]
@@ -160,7 +165,7 @@ _MEDICATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
 _MEDICATIONS_HOME_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=".//hl7:manufacturedMaterial/hl7:code",
-        code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
+        code_system_oid=RXNORM_OID,  # RxNorm
         translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
     ),
 ]
@@ -178,13 +183,13 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",
+        code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value/hl7:translation"
         ),
-        translation_code_system_oid="2.16.840.1.113883.6.90",
+        translation_code_system_oid=ICD10_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
@@ -232,7 +237,7 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.44']]"
             "/hl7:code"
         ),
-        code_system_oid="2.16.840.1.113883.6.1",  # LOINC
+        code_system_oid=LOINC_OID,  # LOINC
     ),
     # rule 2 — medication activity (scoped to base Medication Activity template)
     EntryMatchRule(
@@ -241,7 +246,7 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.16']]"
             "//hl7:manufacturedMaterial/hl7:code"
         ),
-        code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
+        code_system_oid=RXNORM_OID,  # RxNorm
         translation_xpath=(
             ".//hl7:substanceAdministration"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.16']]"
@@ -255,13 +260,13 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
             "//hl7:manufacturedMaterial/hl7:code"
         ),
-        code_system_oid="2.16.840.1.113883.12.292",  # CVX
+        code_system_oid=CVX_OID,  # CVX
         translation_xpath=(
             ".//hl7:substanceAdministration"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
             "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
         ),
-        translation_code_system_oid="2.16.840.1.113883.6.88",  # RxNorm
+        translation_code_system_oid=RXNORM_OID,  # RxNorm
     ),
     # rule 4 — indication value (reason for medication/procedure) — SNOMED fallback
     EntryMatchRule(
@@ -270,7 +275,7 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.19']]"
             "/hl7:value"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",  # SNOMED
+        code_system_oid=SNOMED_OID,  # SNOMED
     ),
 ]
 
@@ -287,13 +292,13 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",
+        code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
             "/hl7:value/hl7:translation"
         ),
-        translation_code_system_oid="2.16.840.1.113883.6.90",
+        translation_code_system_oid=ICD10_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
@@ -314,7 +319,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.2']]"
             "/hl7:code"
         ),
-        code_system_oid="2.16.840.1.113883.6.1",  # LOINC
+        code_system_oid=LOINC_OID,  # LOINC
         prune_container_xpath="hl7:organizer/hl7:component",
     ),
     EntryMatchRule(
@@ -323,7 +328,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.2']]"
             "/hl7:value[@xsi:type='CD']"
         ),
-        code_system_oid="2.16.840.1.113883.6.96",  # SNOMED
+        code_system_oid=SNOMED_OID,  # SNOMED
         prune_container_xpath="hl7:organizer/hl7:component",
     ),
 ]
