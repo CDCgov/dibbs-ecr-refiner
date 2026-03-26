@@ -393,7 +393,7 @@ def refine_rr(
             continue
 
 
-def create_unrefined_conditions_rr(
+def refine_rr_for_unconfigured_conditions(
     xml_files: XMLFiles,
     condition_codes: set[str],
 ) -> str:
