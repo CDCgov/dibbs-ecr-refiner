@@ -223,16 +223,16 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     // narrative should start off unchecked
     await expect(
-      page.getByRole('switch', {
-        name: 'Exclude narrative for Encounters section',
-      })
+      page.getByLabel(
+        'Toggle to refine or retain the narrative block in the Encounters section'
+      )
     ).not.toBeChecked();
 
     // toggle narrative on
     await page
-      .getByRole('switch', {
-        name: 'Exclude narrative for Encounters section',
-      })
+      .getByLabel(
+        'Toggle to refine or retain the narrative block in the Encounters section'
+      )
       .click();
 
     // Wait for saving to show up
@@ -254,9 +254,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await expect(page.getByText('Preserve & retain all data')).toHaveCount(3);
 
     await expect(
-      page.getByRole('switch', {
-        name: 'Include narrative for Encounters section',
-      })
+      page.getByLabel(
+        'Toggle to refine or retain the narrative block in the Encounters section'
+      )
     ).toBeChecked();
 
     /// ==========================================================================
