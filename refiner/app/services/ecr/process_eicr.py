@@ -1,4 +1,4 @@
-import uuid
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Final, Literal, cast
 
@@ -15,7 +15,6 @@ from ..format import remove_element
 from .model import (
     HL7_NS,
     HL7_XSI_NS,
-    EicrVersion,
     EntryMatchRule,
     NamespaceMap,
     SectionSpecification,
@@ -31,6 +30,10 @@ REFINER_OUTPUT_TITLE: Final[str] = (
 )
 REMOVE_SECTION_MESSAGE: Final[str] = (
     "Section details have been removed as requested by jurisdiction for this condition."
+)
+REMOVE_NARRATIVE_MESSAGE: Final[str] = (
+    "Section narrative has been removed from this refined document as configured by "
+    "jurisdiction. Clinical entries are preserved for machine processing."
 )
 MINIMAL_SECTION_MESSAGE: Final[str] = (
     "No clinical information matches the configured code sets for this condition."
@@ -157,8 +160,8 @@ def process_section(
     codes_to_match: set[str],
     namespaces: NamespaceMap = HL7_NS,
     section_specification: SectionSpecification | None = None,
-    version: EicrVersion = "1.1",
     code_system_sets: CodeSystemSets | None = None,
+    include_narrative: bool = True,
 ) -> None:
     """
     Process a section by filtering its entries based on provided condition codes.
@@ -197,6 +200,15 @@ def process_section(
         version: eICR version being processed.
         code_system_sets: Structured per-system codes for section-aware matching
             and displayName enrichment on both paths.
+        include_narrative: If True, the original `<text>` element is preserved
+            intact after entry refinement. If False, the `<text>` element is
+            replaced with a notice explaining that narrative was removed at
+            the jurisdiction's request. Clinical entries are preserved
+            regardless of this flag.
+
+            Future evolution: this boolean will be replaced by a three-way
+            enum ("retain" / "remove" / "refine") once section-specific
+            narrative reconstruction is implemented.
     """
 
     # ROUTE:
@@ -211,6 +223,7 @@ def process_section(
             code_system_sets=code_system_sets,
             section_specification=section_specification,
             namespaces=namespaces,
+            include_narrative=include_narrative,
         )
         return
 
@@ -221,8 +234,8 @@ def process_section(
         codes_to_match=codes_to_match,
         namespaces=namespaces,
         section_specification=section_specification,
-        version=version,
         code_system_sets=code_system_sets,
+        include_narrative=include_narrative,
     )
 
 
@@ -236,29 +249,23 @@ def _process_section_with_match_rules(
     code_system_sets: CodeSystemSets,
     section_specification: SectionSpecification,
     namespaces: NamespaceMap,
+    include_narrative: bool = True,
 ) -> None:
     """
     Process a section using IG-driven entry match rules.
 
-    Todo:
-    Update after narrative refinement plan addition
-
-    This is the new section-aware path. It:
-    1. Clears the narrative <text> (will be rebuilt)
-    2. Iterates <entry> elements and evaluates match rules per entry
-    3. Enriches displayName on matched code elements
-    4. Prunes non-matching entries (or components within entries for organizers)
-    5. Identifies trigger codes among matches
-    6. Generates summary text
+    This is the section-aware path. It:
+    1. Iterates <entry> elements and evaluates match rules per entry
+    2. Enriches displayName on matched code elements
+    3. Prunes non-matching entries (or components within entries for organizers)
+    4. Identifies trigger codes among matches
+    5. Handles narrative <text> based on include_narrative:
+       - True:  preserves the original <text> element untouched
+       - False: replaces <text> with a removal notice
 
     No UUID swap needed — match rules only search within <entry> elements,
     so the section's own <code> is never at risk of matching.
     """
-
-    # clear the narrative text — it will be rebuilt from matches
-    text_element = section.find("./hl7:text", namespaces=namespaces)
-    if text_element is not None:
-        text_element.clear()
 
     try:
         # STEP 1:
@@ -278,32 +285,17 @@ def _process_section_with_match_rules(
         _prune_section_by_matches(section, matches, namespaces)
 
         # STEP 3:
-        # enrich displayName on **all** surviving code-baring elements
+        # enrich displayName on **all** surviving code-bearing elements
         _enrich_surviving_entries(section, code_system_sets, namespaces)
 
         # STEP 4:
-        # trigger identification among matched elements
-        trigger_analysis = _analyze_trigger_codes_in_context(
-            [m.matched_code_element for m in matches],
-            section_specification,
-        )
-
-        # STEP 5:
-        # generate summary text
-        trigger_code_elements = {
-            element_id
-            for element_id, is_trigger in trigger_analysis.items()
-            if is_trigger
-        }
-
         # clean up comments
         _remove_all_comments(section)
 
-        _update_text_element(
-            section,
-            [m.matched_code_element for m in matches],
-            trigger_code_elements,
-        )
+        # STEP 5:
+        # handle narrative <text>
+        if not include_narrative:
+            _replace_narrative_with_removal_notice(section, namespaces)
 
     except etree.XPathEvalError as e:
         raise XMLParsingError(
@@ -663,8 +655,8 @@ def _process_section_generic(
     codes_to_match: set[str],
     namespaces: NamespaceMap,
     section_specification: SectionSpecification | None,
-    version: EicrVersion,
     code_system_sets: CodeSystemSets | None = None,
+    include_narrative: bool = True,
 ) -> None:
     """
     Process a section using the generic matching logic.
@@ -677,20 +669,35 @@ def _process_section_generic(
     Matching is unscoped — any code/value/translation element with a @code
     in codes_to_match is considered a hit. Pruning is entry-level only.
     DisplayName enrichment runs post-prune when code_system_sets is available.
+
+    The generic path must neutralize the section's <code> and <text> elements
+    before searching to prevent false matches. Both are saved as deep copies
+    and restored after processing — <code> unconditionally in the finally block
+    (to avoid corrupting the tree on error), and <text> conditionally based on
+    include_narrative.
     """
 
-    # neutralize section's direct <code> and <text> children to exclude from search
-    original_code_value = None
+    # neutralize <code>: remove the @code attribute so the section's own
+    # loinc code doesn't match during the unscoped search
+    # * the full element is deep-copied and restored in the finally block
+    section_code_element = section.find("./hl7:code", namespaces=namespaces)
+    original_code = (
+        deepcopy(section_code_element) if section_code_element is not None else None
+    )
+    if section_code_element is not None and section_code_element.get("code"):
+        section_code_element.attrib.pop("code")
 
-    if (
-        section_code_element := section.find("./hl7:code", namespaces=namespaces)
-    ) is not None:
-        if (
-            original_code_value := section_code_element.get("code")
-        ) and "code" in section_code_element.attrib:
-            section_code_element.set("code", f"TEMP_SWAP_{uuid.uuid4()}")
-
-    if (text_element := section.find("./hl7:text", namespaces=namespaces)) is not None:
+    # neutralize <text>: clear it so inline codes in the narrative don't
+    # produce false matches
+    # * if include_narrative is True, a deep copy is saved so the original
+    #   can be restored after processing
+    text_element = section.find("./hl7:text", namespaces=namespaces)
+    original_text = (
+        deepcopy(text_element)
+        if text_element is not None and include_narrative
+        else None
+    )
+    if text_element is not None:
         text_element.clear()
 
     try:
@@ -711,20 +718,28 @@ def _process_section_generic(
 
             # STEP 2:
             # TRIGGER IDENTIFICATION WITHIN CONTEXT
+            # TODO:
+            # this will be used in reconstruction of the narrative
+            # in a future PR
             trigger_analysis = _analyze_trigger_codes_in_context(
                 contextual_matches, section_specification
             )
 
             # STEP 3:
-            # PROCESS ENTRIES AND GENERATE OUTPUT
-            _preserve_relevant_entries_and_generate_summary(
-                section, contextual_matches, trigger_analysis, namespaces
-            )
+            # PRUNE non-matching entries
+            _preserve_relevant_entries(section, contextual_matches)
 
             # STEP 4:
             # ENRICH displayName on surviving entries
             if code_system_sets is not None:
                 _enrich_surviving_entries(section, code_system_sets, namespaces)
+
+            # STEP 5:
+            # handle narrative <text>
+            if include_narrative and original_text is not None:
+                _restore_narrative(section, original_text, namespaces)
+            elif not include_narrative:
+                _replace_narrative_with_removal_notice(section, namespaces)
 
         except etree.XPathEvalError as e:
             raise XMLParsingError(
@@ -732,8 +747,10 @@ def _process_section_generic(
                 details={"section_details": section.attrib, "error": str(e)},
             )
     finally:
-        if section_code_element is not None and original_code_value:
-            section_code_element.set("code", original_code_value)
+        # always restore <code> — even on error — to avoid leaving the
+        # tree in a modified state for the caller
+        if section_code_element is not None and original_code is not None:
+            section.replace(section_code_element, original_code)
 
 
 def _find_condition_relevant_elements(
@@ -859,48 +876,32 @@ def _analyze_trigger_codes_in_context(
     return trigger_analysis
 
 
-def _preserve_relevant_entries_and_generate_summary(
+def _preserve_relevant_entries(
     section: _Element,
     contextual_matches: list[_Element],
-    trigger_analysis: dict[int, bool],
-    namespaces: NamespaceMap,
 ) -> None:
     """
-    STEP 3: Process entry-level operations and generate final section content.
+    Preserve entries containing contextually relevant elements and remove the rest.
 
-    This function handles the final processing steps:
-    1. Find and preserve entries containing our contextually relevant elements
-    2. Remove unwanted entries
-    3. Generate summary text showing both regular matches and trigger codes
+    This is the entry-pruning portion of section processing. It finds the
+    parent <entry> for each matched clinical element, deduplicates the paths,
+    and removes entries that don't contain any matches.
 
     Args:
         section: The XML section element being processed
         contextual_matches: List of contextually relevant clinical elements
-        trigger_analysis: Mapping of element_id -> is_trigger_code
-        namespaces: XML namespaces for XPath evaluation
     """
 
-    # find parent entries for all matching clinical elements
     entry_paths = []
     for clinical_element in contextual_matches:
         entry_path = _find_path_to_entry(clinical_element)
         entry_paths.append(entry_path)
 
-    # deduplicate entry paths to prevent overlapping XML branches
     deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
 
-    # remove entries that don't contain our contextually relevant clinical elements
     _prune_unwanted_siblings(deduplicated_entry_paths, section)
 
-    # clean up all comments from processed sections
     _remove_all_comments(section)
-
-    # generate summary text showing both regular matches and trigger codes
-    trigger_code_elements = {
-        element_id for element_id, is_trigger in trigger_analysis.items() if is_trigger
-    }
-
-    _update_text_element(section, contextual_matches, trigger_code_elements)
 
 
 # NOTE:
@@ -1194,6 +1195,82 @@ def _has_trigger_template_ancestor(element: _Element, trigger_oids: set[str]) ->
 # =============================================================================
 
 
+def _replace_narrative_with_removal_notice(
+    section: _Element, namespaces: NamespaceMap
+) -> None:
+    """
+    Replace the <text> element of a section with a notice explaining its removal.
+
+    Produces a human-readable <text> block that communicates the narrative
+    was intentionally removed by the eCR Refiner at the jurisdiction's
+    request. Uses the same table structure as `create_minimal_section` for
+    visual consistency when the refined document is rendered in a CDA viewer.
+
+    The replacement is performed via `section.replace()` to preserve the
+    element's position in the CDA R2 xs:sequence (templateId → code →
+    title → text → ...). If no <text> element exists, a new one is created
+    and inserted after <title> (or appended as a last resort).
+
+    Args:
+        section: The section element whose narrative should be replaced.
+        namespaces: XML namespaces for element lookup.
+    """
+
+    # build the replacement <text> with the removal notice
+    new_text = etree.Element("{urn:hl7-org:v3}text")
+
+    title_el = etree.SubElement(new_text, "title")
+    title_el.text = REFINER_OUTPUT_TITLE
+
+    table_el = etree.SubElement(new_text, "table", border="1")
+    thead_el = etree.SubElement(table_el, "thead")
+    tr_el = etree.SubElement(thead_el, "tr")
+    td_el = etree.SubElement(tr_el, "td")
+    td_el.text = REMOVE_NARRATIVE_MESSAGE
+
+    # swap the existing <text> in place to preserve CDA element ordering
+    existing_text = section.find("./hl7:text", namespaces=namespaces)
+    if existing_text is not None:
+        section.replace(existing_text, new_text)
+    else:
+        # no <text> element exists; insert after <title> to respect
+        # the CDA R2 xs:sequence (code → title → text → ...)
+        title_element = section.find("./hl7:title", namespaces=namespaces)
+        if title_element is not None:
+            title_element.addnext(new_text)
+        else:
+            section.append(new_text)
+
+
+def _restore_narrative(
+    section: _Element, original_text: _Element, namespaces: NamespaceMap
+) -> None:
+    """
+    Restore a previously saved <text> element into a section.
+
+    Replaces the current <text> element (which was cleared during processing)
+    with the provided deep copy of the original. If no <text> element currently
+    exists in the section, the original is inserted after <title> to respect
+    the CDA R2 xs:sequence ordering (code → title → text → ...).
+
+    Args:
+        section: The section element to restore the narrative into.
+        original_text: A deep copy of the original <text> element.
+        namespaces: XML namespaces for element lookup.
+    """
+
+    current_text = section.find("./hl7:text", namespaces=namespaces)
+    if current_text is not None:
+        section.replace(current_text, original_text)
+    else:
+        # insert after <title> to respect CDA R2 xs:sequence ordering
+        title_element = section.find("./hl7:title", namespaces=namespaces)
+        if title_element is not None:
+            title_element.addnext(original_text)
+        else:
+            section.append(original_text)
+
+
 def create_minimal_section(
     section: _Element, removal_reason: Literal["no_match", "configured"] = "no_match"
 ) -> None:
@@ -1386,6 +1463,7 @@ def _remove_all_comments(section: _Element) -> None:
     Args:
         section: The section element to clean up
     """
+
     xpath_result = section.xpath(".//comment()")
     if isinstance(xpath_result, list):
         for comment in xpath_result:
