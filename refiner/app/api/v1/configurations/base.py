@@ -1,5 +1,3 @@
-import re
-from dataclasses import replace
 from datetime import UTC, datetime
 from logging import Logger
 from uuid import UUID
@@ -25,13 +23,13 @@ from app.db.configurations.db import (
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
-    DbConfigurationSectionProcessing,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
+    format_section_naming,
     get_canonical_url_to_highest_inactive_version_map,
 )
 from app.services.logger import get_logger
@@ -357,7 +355,7 @@ async def get_configuration(
         included_conditions=included_conditions,
         custom_codes=config.custom_codes,
         section_processing=sorted(
-            [_format_section_naming(section) for section in config.section_processing],
+            [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.name.lower(),
         ),
         deduplicated_codes=deduplicated_codes,
@@ -369,26 +367,3 @@ async def get_configuration(
         locked_by=locked_by,
         is_locked=is_locked,
     )
-
-
-def _format_section_naming(
-    section: DbConfigurationSectionProcessing,
-) -> DbConfigurationSectionProcessing:
-    """
-    Takes a section and modifies its name to remove `Section` at the end of it. It also converts the name to title case.
-
-    Args:
-        section (DbConfigurationSectionProcessing): Section with name to modify
-
-    Returns:
-        DbConfigurationSectionProcessing: Section with modified name
-    """
-
-    # Don't modify the name of a custom section
-    if section.section_type == "custom":
-        return section
-
-    name_without_section = re.sub(
-        r"\s+section\s*$", "", section.name, flags=re.IGNORECASE
-    )
-    return replace(section, name=name_without_section.strip().title())

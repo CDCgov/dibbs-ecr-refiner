@@ -20,6 +20,7 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
+from app.services.configurations import format_section_naming
 
 router = APIRouter(prefix="/{configuration_id}/sections")
 
@@ -67,18 +68,22 @@ async def insert_custom_section(
         db=db,
     )
 
+    if not _is_valid_name(
+        desired_name=section_input.name,
+        sections=config.section_processing,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Section name is already in use.",
+        )
+
     # Check if valid
     for s in config.section_processing:
-        name, code = section_input.name, section_input.code
-        if s.name == name:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Custom section name is already in use.",
-            )
+        code = section_input.code
         if s.code == code:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Custom section code is already in use.",
+                detail="Section code is already in use.",
             )
 
     updated_config = await insert_custom_section_db(
@@ -235,15 +240,22 @@ async def update_section(
     # Can't update if desired name or code is already in user
     desired_name = section_input.name
     desired_code = section_input.new_code
-    for s in config.section_processing:
-        if s.code == prev_section.code:
-            continue
 
-        if desired_name is not None and s.name == desired_name:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Custom section name is already in use.",
-            )
+    # No need to check the section we're trying to edit
+    other_sections = [
+        s for s in config.section_processing if s.code != prev_section.code
+    ]
+
+    if desired_name is not None and not _is_valid_name(
+        desired_name=desired_name,
+        sections=other_sections,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Custom section name is already in use.",
+        )
+
+    for s in other_sections:
         if desired_code is not None and s.code == desired_code:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -313,3 +325,34 @@ async def update_section(
         )
 
     return section_update.code
+
+
+def _is_valid_name(
+    desired_name: str, sections: list[DbConfigurationSectionProcessing]
+) -> bool:
+    # the name the user is attempting to use (lowercase)
+    desired_name = desired_name.lower()
+
+    # all standard section names as they are (lowercase)
+    standard_section_names = [
+        s.name.lower() for s in sections if s.section_type == "standard"
+    ]
+
+    # all standard section names with "section" removed at the end (lowecase)
+    standard_section_names_formatted = [
+        format_section_naming(s).name.lower()
+        for s in sections
+        if s.section_type == "standard"
+    ]
+
+    # all custom names in use
+    custom_names_in_use = [
+        s.name.lower() for s in sections if s.section_type == "custom"
+    ]
+
+    # all of the above make up a list of names that cannot be used
+    invalid_names = (
+        standard_section_names + standard_section_names_formatted + custom_names_in_use
+    )
+
+    return desired_name not in invalid_names

@@ -1,3 +1,4 @@
+import re
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -250,3 +251,26 @@ def get_canonical_url_to_highest_inactive_version_map(
             ):
                 highest_version_inactive_configs_map[key] = c
     return highest_version_inactive_configs_map
+
+
+def format_section_naming(
+    section: DbConfigurationSectionProcessing,
+) -> DbConfigurationSectionProcessing:
+    """
+    Takes a section and modifies its name to remove `Section` at the end of it. It also converts the name to title case.
+
+    Args:
+        section (DbConfigurationSectionProcessing): Section with name to modify
+
+    Returns:
+        DbConfigurationSectionProcessing: Section with modified name
+    """
+
+    # Don't modify the name of a custom section
+    if section.section_type == "custom":
+        return section
+
+    name_without_section = re.sub(
+        r"\s+section\s*$", "", section.name, flags=re.IGNORECASE
+    )
+    return replace(section, name=name_without_section.strip().title())
