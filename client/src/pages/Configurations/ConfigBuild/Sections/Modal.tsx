@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Icon, TextInput, Label as USWDSLabel } from '@trussworks/react-uswds';
+import { Icon } from '@trussworks/react-uswds';
 import { Button } from '../../../../components/Button';
 import { useState } from 'react';
 import {
@@ -12,6 +12,9 @@ import {
   DialogBackdrop,
   DialogPanel,
   DialogTitle,
+  Field,
+  Input,
+  Label,
 } from '@headlessui/react';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
@@ -159,32 +162,25 @@ export function Modal({
                 Enter your custom section information and click "Add section".
               </p>
               <div className="flex w-full flex-col gap-3">
-                <div>
-                  <USWDSLabel htmlFor="custom-section-name-input">
-                    Display name (for this section)
-                  </USWDSLabel>
-                  <TextInput
+                <Field className="flex flex-col gap-2">
+                  <Label>Display name (for this section)</Label>
+                  <Input
+                    className="p-2 outline -outline-offset-1 outline-gray-600"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    id="custom-section-name-input"
-                    name="custom-section-name-input"
                     type="text"
-                    autoComplete="off"
+                    autoFocus
                   />
-                </div>
-                <div>
-                  <USWDSLabel htmlFor="custom-section-code-input">
-                    LOINC code
-                  </USWDSLabel>
-                  <TextInput
+                </Field>
+                <Field className="flex flex-col gap-2">
+                  <Label>LOINC code</Label>
+                  <Input
+                    className="p-2 outline -outline-offset-1 outline-gray-600"
                     value={newCode}
                     onChange={(e) => setNewCode(e.target.value)}
-                    id="custom-section-code-input"
-                    name="custom-section-code-input"
                     type="text"
-                    autoComplete="off"
                   />
-                </div>
+                </Field>
                 {errorText ? (
                   <p className="text-secondary-dark text-sm">{errorText}</p>
                 ) : null}
