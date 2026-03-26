@@ -93,7 +93,7 @@ class TestConfigurations:
                 f"/api/v1/configurations/{config_id}/sections", json=payload
             )
             assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert response.json()["detail"] == "Custom section name is already in use."
+            assert response.json()["detail"] == "Section name is already in use."
 
             # try adding one with a duplicate code
             payload = {"name": "new name", "code": "section-code123"}
@@ -101,7 +101,7 @@ class TestConfigurations:
                 f"/api/v1/configurations/{config_id}/sections", json=payload
             )
             assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert response.json()["detail"] == "Custom section code is already in use."
+            assert response.json()["detail"] == "Section code is already in use."
 
             # editing the custom section with the original values should work
             payload = {
