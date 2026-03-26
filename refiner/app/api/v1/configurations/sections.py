@@ -15,6 +15,7 @@ from app.db.configurations.db import (
     update_configuration_section_db,
 )
 from app.db.configurations.model import (
+    DbConfiguration,
     DbConfigurationSectionProcessing,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -43,29 +44,8 @@ async def insert_custom_section(
         user (DbUser): The logged-in user
         db (AsyncDatabaseConnection): The database connection
     """
-    jd = user.jurisdiction_id
-
-    config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
-    )
-
-    if not config:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
-        )
-
-    if config.status != "draft":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Trying to update a non-draft configuration",
-        )
-
-    await ConfigurationLock.raise_if_locked_by_other(
-        configuration_id,
-        user.id,
-        username=user.username,
-        email=user.email,
-        db=db,
+    config = await _validate_configuration_or_raise(
+        configuration_id=configuration_id, user=user, db=db
     )
 
     if not _is_valid_name(
@@ -77,14 +57,13 @@ async def insert_custom_section(
             detail="Section name is already in use.",
         )
 
-    # Check if valid
-    for s in config.section_processing:
-        code = section_input.code
-        if s.code == code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Section code is already in use.",
-            )
+    if not _is_valid_code(
+        desired_code=section_input.code, sections=config.section_processing
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Custom section code is already in use.",
+        )
 
     updated_config = await insert_custom_section_db(
         config=config, user_id=user.id, custom_section_input=section_input, db=db
@@ -127,29 +106,8 @@ async def delete_custom_section(
         str: Deleted custom section code
     """
 
-    jd = user.jurisdiction_id
-
-    config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
-    )
-
-    if not config:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
-        )
-
-    if config.status != "draft":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Trying to update a non-draft configuration",
-        )
-
-    await ConfigurationLock.raise_if_locked_by_other(
-        configuration_id,
-        user.id,
-        username=user.username,
-        email=user.email,
-        db=db,
+    config = await _validate_configuration_or_raise(
+        configuration_id=configuration_id, user=user, db=db
     )
 
     updated_config = await delete_custom_section_db(
@@ -196,46 +154,13 @@ async def update_section(
         UpdateSectionProcessingResponse: The message to show the user
     """
 
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
-    # find config
-    config = await get_configuration_by_id_db(
-        id=configuration_id, jurisdiction_id=jd, db=db
+    config = await _validate_configuration_or_raise(
+        configuration_id=configuration_id, user=user, db=db
     )
 
-    if not config:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
-        )
-
-    if config.status != "draft":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Trying to update a non-draft configuration",
-        )
-
-    await ConfigurationLock.raise_if_locked_by_other(
-        configuration_id,
-        user.id,
-        username=user.username,
-        email=user.email,
-        db=db,
+    prev_section = _validate_section_exists_or_raise(
+        code=section_input.current_code, sections=config.section_processing
     )
-
-    # Can't update a section unless it exists
-    match_code = section_input.current_code
-    prev_section = None
-    for s in config.section_processing:
-        if s.code == match_code:
-            prev_section = s
-            break
-
-    if not prev_section:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Section with code {match_code} is invalid and can't be updated.",
-        )
 
     # Can't update if desired name or code is already in user
     desired_name = section_input.name
@@ -252,15 +177,16 @@ async def update_section(
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Custom section name is already in use.",
+            detail="Section name is already in use.",
         )
 
-    for s in other_sections:
-        if desired_code is not None and s.code == desired_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Custom section code is already in use.",
-            )
+    if desired_code is not None and not _is_valid_code(
+        desired_code=desired_code, sections=other_sections
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Section code is already in use.",
+        )
 
     include = (
         section_input.include
@@ -327,9 +253,93 @@ async def update_section(
     return section_update.code
 
 
+def _validate_section_exists_or_raise(
+    code: str, sections: list[DbConfigurationSectionProcessing]
+) -> DbConfigurationSectionProcessing:
+    section = next((s for s in sections if s.code == code), None)
+
+    if not section:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Section with code {code} is invalid and can't be updated.",
+        )
+    return section
+
+
+async def _validate_configuration_or_raise(
+    configuration_id: UUID, user: DbUser, db: AsyncDatabaseConnection
+) -> DbConfiguration:
+    """
+    Checks that a configuration is able to be modified. Either returns the configuration or raises an exception.
+
+    Args:
+        configuration_id (UUID): The ID of the configuration to validate
+        user (DbUser): The logged in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if configuration can't be found
+        HTTPException: 409 if the configuration is not a draft
+
+    Returns:
+        DbConfiguration: The validated configuration
+    """
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
+
+    if config.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Trying to update a non-draft configuration",
+        )
+
+    await ConfigurationLock.raise_if_locked_by_other(
+        configuration_id,
+        user.id,
+        username=user.username,
+        email=user.email,
+        db=db,
+    )
+
+    return config
+
+
+def _is_valid_code(
+    desired_code: str, sections: list[DbConfigurationSectionProcessing]
+) -> bool:
+    """
+    Returns True if the desired name has not already been used by another section in the list.
+
+    Args:
+        desired_code (str): The desired code of the custom section
+        sections (list[DbConfigurationSectionProcessing]): A list of sections to check the codes of
+
+    Returns:
+        bool: True if the desired code is allowed, else False
+    """
+    existing_codes = [s.code for s in sections]
+    return desired_code not in existing_codes
+
+
 def _is_valid_name(
     desired_name: str, sections: list[DbConfigurationSectionProcessing]
 ) -> bool:
+    """
+    Returns True if the desired name has not already been used by another section in the list.
+
+    Args:
+        desired_name (str): The desired name of the custom section
+        sections (list[DbConfigurationSectionProcessing]): A list of sections to check the names of
+
+    Returns:
+        bool: True if the desired name is allowed, else False
+    """
     # the name the user is attempting to use (lowercase)
     desired_name = desired_name.lower()
 
