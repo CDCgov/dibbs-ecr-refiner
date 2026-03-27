@@ -274,7 +274,7 @@ async def get_configuration(
     all_codes: set[str] = set()
 
     for c in conditions:
-        all_codes = all_codes | {c.code for c in c.get_codes_from_all_systems()}
+        all_codes.update(c.code for c in c.get_codes_from_all_systems())
 
     # Include custom codes from the configuration
     for custom_code in getattr(config, "custom_codes", []):
