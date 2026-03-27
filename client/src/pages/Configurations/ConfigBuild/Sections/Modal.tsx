@@ -56,7 +56,7 @@ export function Modal({
       <DialogBackdrop className="fixed inset-0 bg-black/60" />
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="bg-base-dark/70 fixed inset-0" aria-hidden="true" />
-        <DialogPanel className="border-base-lighter relative z-50 h-94 w-100 rounded-sm border bg-white shadow-lg">
+        <DialogPanel className="border-base-lighter relative z-50 h-90 w-100 rounded-sm border bg-white shadow-lg">
           {isOpen && (
             <ModalForm
               key={formKey}
@@ -169,8 +169,8 @@ function ModalForm({
   };
 
   return (
-    <>
-      <div className="px-6 py-4">
+    <div className="pt-5">
+      <div className="p-5 px-6 pb-4">
         <DialogTitle className="font-merriweather text-gray-90 text-3xl font-bold">
           {isEditing ? 'Edit custom section' : 'Add a custom section'}
         </DialogTitle>
@@ -221,6 +221,6 @@ function ModalForm({
           Cancel
         </Button>
       </div>
-    </>
+    </div>
   );
 }
