@@ -503,7 +503,7 @@ def process_refiner(
         ],
         operation="refinement_complete",
     )
-    return refiner_output_files, metadata
+    return list(set(refiner_output_files)), metadata
 
 
 def lambda_handler(event, context):
