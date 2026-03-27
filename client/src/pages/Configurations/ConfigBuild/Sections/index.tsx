@@ -283,11 +283,18 @@ function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
   );
 }
 
+interface SelectionToggleProps {
+  configurationId: string;
+  currentSection: DbConfigurationSectionProcessing;
+  sections: DbConfigurationSectionProcessing[];
+  disabled: boolean;
+}
+
 function IncludeCheckbox({
   currentSection,
   configurationId,
   disabled,
-}: SwitchProps) {
+}: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
 
   return (
@@ -363,18 +370,11 @@ function useSectionUpdater(configurationId: string) {
   };
 }
 
-interface SwitchProps {
-  configurationId: string;
-  currentSection: DbConfigurationSectionProcessing;
-  sections: DbConfigurationSectionProcessing[];
-  disabled: boolean;
-}
-
 function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-}: SwitchProps) {
+}: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
@@ -416,7 +416,7 @@ function NarrativeSwitch({
   currentSection,
   configurationId,
   disabled,
-}: SwitchProps) {
+}: SelectionToggleProps) {
   const updateSection = useSectionUpdater(configurationId);
 
   return (
