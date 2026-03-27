@@ -84,7 +84,7 @@ def index_condition_code_list_by_system(
     result: dict[CodeSystem, list[DbConditionCoding]] = defaultdict(list)
     for s in CodeSystem:
         condition_column_index = f"{s.format_system_string()}_codes"
-        result[s] = getattr(condition, condition_column_index)
+        result[s] = getattr(condition, condition_column_index, [])
 
     return result
 
@@ -283,12 +283,12 @@ class CodeSystemSets:
             }
 
         return cls(
-            snomed=_deserialize_system(data[CodeSystem.SNOMED]),
-            loinc=_deserialize_system(data[CodeSystem.LOINC]),
-            icd10=_deserialize_system(data[CodeSystem.ICD10]),
-            rxnorm=_deserialize_system(data[CodeSystem.RXNORM]),
-            cvx=_deserialize_system(data[CodeSystem.CVX]),
-            other=_deserialize_system(data[CodeSystem.OTHER]),
+            snomed=_deserialize_system(data["snomed"]),
+            loinc=_deserialize_system(data["loinc"]),
+            icd10=_deserialize_system(data["icd10"]),
+            rxnorm=_deserialize_system(data["rxnorm"]),
+            cvx=_deserialize_system(data["cvx"]),
+            other=_deserialize_system(data["other"]),
         )
 
 
@@ -434,7 +434,9 @@ class ProcessedConfiguration:
 
             for code_system, code_list in code_system_map.items():
                 coding_dict[code_system.format_system_string()] = [
-                    Coding(code=c.code, display=c.display, system=code_system.oid)
+                    asdict(
+                        Coding(code=c.code, display=c.display, system=code_system.oid)
+                    )
                     for c in code_list
                 ]
 
@@ -446,10 +448,12 @@ class ProcessedConfiguration:
 
             # route to the correct dict based on system label
             coding_dict[cur_code_system].append(
-                Coding(
-                    code=code_val,
-                    display=display_val,
-                    system=CodeSystem(cur_code_system).oid,
+                asdict(
+                    Coding(
+                        code=code_val,
+                        display=display_val,
+                        system=CodeSystem(cur_code_system).oid,
+                    )
                 )
             )
 

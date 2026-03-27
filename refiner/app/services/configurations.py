@@ -152,10 +152,12 @@ async def convert_config_to_storage_payload(
 
         # route custom codes to the correct system dict
         coding_dict[cur_code_system].append(
-            Coding(
-                code=cc.code,
-                display=cc.name,
-                system=CodeSystem(cur_code_system).oid,
+            asdict(
+                Coding(
+                    code=cc.code,
+                    display=cc.name,
+                    system=CodeSystem(cur_code_system).oid,
+                )
             )
         )
 
@@ -171,8 +173,9 @@ async def convert_config_to_storage_payload(
         )
 
         for code_system, code_list in code_system_map.items():
+            codes = codes | {c.code for c in code_list}
             coding_dict[code_system.format_system_string()] = [
-                Coding(code=c.code, display=c.display, system=code_system.oid)
+                asdict(Coding(code=c.code, display=c.display, system=code_system.oid))
                 for c in code_list
             ]
 

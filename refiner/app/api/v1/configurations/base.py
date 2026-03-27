@@ -12,7 +12,6 @@ from app.db.conditions.db import (
     get_conditions_by_version_db,
     get_included_conditions_db,
 )
-from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.db import (
     get_configuration_by_id_db,
     get_configuration_versions_db,
@@ -35,7 +34,6 @@ from app.services.configurations import (
     get_canonical_url_to_highest_inactive_version_map,
 )
 from app.services.logger import get_logger
-from app.services.terminology import CodeSystem
 
 from .model import (
     CreateConfigInput,
@@ -276,7 +274,7 @@ async def get_configuration(
     all_codes = set()
 
     for c in conditions:
-        all_codes.add(c.get_codes_from_all_systems())
+        all_codes = all_codes | {c.code for c in c.get_codes_from_all_systems()}
 
     # Include custom codes from the configuration
     for custom_code in getattr(config, "custom_codes", []):
