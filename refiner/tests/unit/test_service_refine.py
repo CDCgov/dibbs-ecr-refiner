@@ -1,5 +1,4 @@
 from lxml import etree
-from lxml.etree import _Element
 
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
@@ -176,7 +175,7 @@ def _make_plan(
 
 
 def test_retain_action_v1_1(
-    eicr_root_v1_1: _Element, original_eicr_root_v1_1: _Element
+    eicr_root_v1_1: etree.Element, original_eicr_root_v1_1: etree.Element
 ):
     """
     Tests the 'retain' action, which should not modify the section.
@@ -207,7 +206,7 @@ def test_retain_action_v1_1(
     assert etree.tostring(section_refined) == etree.tostring(section_original)
 
 
-def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: _Element):
+def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests 'refine' with a non-matching code, which should create a minimal section.
     """
@@ -232,7 +231,7 @@ def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: _Element):
     assert problems_section.get("nullFlavor") == "NI"
 
 
-def test_refine_action_with_matches_v1_1(eicr_root_v1_1: _Element):
+def test_refine_action_with_matches_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests the 'refine' action for v1.1, ensuring it correctly uses the
     terminology pipeline to build codes and filter a section.
@@ -271,7 +270,7 @@ def test_refine_action_with_matches_v1_1(eicr_root_v1_1: _Element):
 # internal functions, making them resilient to internal refactoring.
 
 
-def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: _Element):
+def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests that the section-aware path correctly filters the Results section:
     keeps entries with LOINC codes in the condition grouper and removes entries
@@ -307,7 +306,7 @@ def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: _Element):
     assert "30746-2" not in section_text  # chest X-ray
 
 
-def test_section_aware_problems_component_pruning_v1_1(eicr_root_v1_1: _Element):
+def test_section_aware_problems_component_pruning_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests that the Problems section prunes individual problem observations
     within a Problem Concern Act while keeping the act wrapper intact.
@@ -352,7 +351,7 @@ def test_section_aware_problems_component_pruning_v1_1(eicr_root_v1_1: _Element)
     assert "44054006" not in section_text  # diabetes
 
 
-def test_display_name_enrichment_v1_1(eicr_root_v1_1: _Element):
+def test_display_name_enrichment_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests that missing displayName attributes are filled in from the condition
     grouper, both at match time (observation code) and during the post-prune
@@ -403,7 +402,7 @@ def test_display_name_enrichment_v1_1(eicr_root_v1_1: _Element):
     assert "Detected" in detected_values[0].get("displayName", "")
 
 
-def test_plan_of_treatment_heterogeneous_entries_v1_1(eicr_root_v1_1: _Element):
+def test_plan_of_treatment_heterogeneous_entries_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests that Plan of Treatment correctly handles heterogeneous entry types:
     keeps matching lab orders (LOINC) and medications (RxNorm), removes
@@ -439,7 +438,7 @@ def test_plan_of_treatment_heterogeneous_entries_v1_1(eicr_root_v1_1: _Element):
     assert "270427003" not in section_text  # follow-up encounter
 
 
-def test_encounters_diagnosis_pruning_v1_1(eicr_root_v1_1: _Element):
+def test_encounters_diagnosis_pruning_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests that the Encounters section prunes non-matching diagnoses at the
     component level while keeping the encounter wrapper and matching diagnoses.
@@ -473,7 +472,7 @@ def test_encounters_diagnosis_pruning_v1_1(eicr_root_v1_1: _Element):
     assert "772828001" not in section_text
 
 
-def test_non_matching_section_becomes_ni_v1_1(eicr_root_v1_1: _Element):
+def test_non_matching_section_becomes_ni_v1_1(eicr_root_v1_1: etree.Element):
     """
     Tests that a section with entries but no matching codes becomes nullFlavor NI
     with all entries removed.
@@ -505,7 +504,7 @@ def test_non_matching_section_becomes_ni_v1_1(eicr_root_v1_1: _Element):
 # =============================================================================
 
 
-def test_refine_rr_by_condition_v1_1(rr_root_v1_1: _Element):
+def test_refine_rr_by_condition_v1_1(rr_root_v1_1: etree.Element):
     """
     Tests RR refinement for v1.1: keeps ONLY the observations for conditions
     specified in the configuration.
@@ -529,7 +528,7 @@ def test_refine_rr_by_condition_v1_1(rr_root_v1_1: _Element):
     assert "49727002" not in doc_string
 
 
-def test_refine_rr_by_jurisdiction_v1_1(rr_root_v1_1: _Element):
+def test_refine_rr_by_jurisdiction_v1_1(rr_root_v1_1: etree.Element):
     """
     Tests RR refinement for v1.1: doesn't touch observations not for the given jurisdiction.
     """
@@ -550,7 +549,7 @@ def test_refine_rr_by_jurisdiction_v1_1(rr_root_v1_1: _Element):
     assert "840539006" in doc_string
 
 
-def test_refine_rr_by_condition_v3_1_1(rr_root_v3_1_1: _Element):
+def test_refine_rr_by_condition_v3_1_1(rr_root_v3_1_1: etree.Element):
     """
     Tests RR refinement on the Zika file: confirms the Zika observation is kept
     even if config is for another jurisdiction.
@@ -572,7 +571,7 @@ def test_refine_rr_by_condition_v3_1_1(rr_root_v3_1_1: _Element):
     assert "3928002" in doc_string
 
 
-def test_refine_rr_by_jurisdiction_v3_1_1(rr_root_v3_1_1: _Element):
+def test_refine_rr_by_jurisdiction_v3_1_1(rr_root_v3_1_1: etree.Element):
     """
     Tests RR refinement on the Zika file: confirms the Zika observation is still
     present even when jurisdiction is different.
