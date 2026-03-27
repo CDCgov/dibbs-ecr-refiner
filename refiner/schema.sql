@@ -1,7 +1,7 @@
 \restrict dbmate
 
--- Dumped from database version 18.2
--- Dumped by pg_dump version 18.2
+-- Dumped from database version 18.3
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -41,6 +41,16 @@ CREATE TYPE public.configuration_status AS ENUM (
 
 
 --
+-- Name: configurations_sections_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.configurations_sections_type AS ENUM (
+    'standard',
+    'custom'
+);
+
+
+--
 -- Name: event_type_enum; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -55,7 +65,10 @@ CREATE TYPE public.event_type_enum AS ENUM (
     'lock_acquire',
     'lock_release',
     'lock_renew',
-    'bulk_add_custom_code'
+    'bulk_add_custom_code',
+    'create_custom_section',
+    'edit_custom_section',
+    'delete_custom_section'
 );
 
 
@@ -222,7 +235,8 @@ CREATE TABLE public.configurations_sections (
     narrative boolean NOT NULL,
     versions text[] DEFAULT '{}'::text[] NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    section_type public.configurations_sections_type NOT NULL
 );
 
 
@@ -333,6 +347,14 @@ ALTER TABLE ONLY public.configurations
 
 ALTER TABLE ONLY public.configurations_sections
     ADD CONSTRAINT configurations_sections_configuration_id_code_key UNIQUE (configuration_id, code);
+
+
+--
+-- Name: configurations_sections configurations_sections_configuration_id_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_sections
+    ADD CONSTRAINT configurations_sections_configuration_id_name_key UNIQUE (configuration_id, name);
 
 
 --
@@ -587,4 +609,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260305221859'),
     ('20260309001833'),
     ('20260309143000'),
-    ('20260309151338');
+    ('20260309151338'),
+    ('20260318125201');

@@ -1,11 +1,12 @@
 from collections import defaultdict
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from psycopg import AsyncCursor
 from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
+from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
 from app.db.events.db import insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -31,13 +32,155 @@ EMPTY_JSONB = Jsonb([])
 type CursorType = dict[str, Any]
 
 
+async def insert_custom_section_db(
+    config: DbConfiguration,
+    user_id: UUID,
+    custom_section_input: AddSectionInput,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Inserts a custom section into the configurations_sections table.
+
+    Args:
+        config (DbConfiguration): Configuration associated with the section
+        user_id (UUID): ID of the user creating the custom section
+        custom_section_input (CustomSectionInput): Custom section properties to use for creation
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        DbConfiguration: Updated configuration
+    """
+    name, code = custom_section_input.name, custom_section_input.code
+
+    query = """
+        INSERT INTO configurations_sections (
+            configuration_id,
+            code,
+            name,
+            action,
+            include,
+            narrative,
+            versions,
+            section_type
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        RETURNING
+            id;
+        """
+
+    versions: list[str] = []
+    params = (
+        config.id,
+        code,
+        name,
+        "refine",
+        True,
+        False,
+        versions,
+        "custom",
+    )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
+
+            await insert_event_db(
+                event=EventInput(
+                    configuration_id=config.id,
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    event_type="create_custom_section",
+                    action_text=f"Custom section '{name}' with code '{code}' created",
+                ),
+                cursor=cur,
+            )
+
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
+
+
+async def delete_custom_section_db(
+    config: DbConfiguration,
+    user_id: UUID,
+    custom_section_input: DeleteSectionInput,
+    db: AsyncDatabaseConnection,
+) -> DbConfiguration | None:
+    """
+    Deletes a custom section from the configurations_sections table.
+
+    Args:
+        config (DbConfiguration): Configuration associated with the section
+        user_id (UUID): ID of the user deleting the custom section
+        custom_section_input (DeleteCustomSectionInput): Custom section to delete
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        DbConfiguration: Updated configuration
+    """
+
+    query = """
+        DELETE from configurations_sections
+        WHERE configuration_id = %s
+        AND code = %s
+        AND section_type = 'custom'
+        RETURNING code
+    """
+    params = (config.id, custom_section_input.code)
+
+    section_name = next(
+        (
+            s.name
+            for s in config.section_processing
+            if s.code == custom_section_input.code
+        ),
+        None,
+    )
+    if not section_name:
+        return None
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                return None
+
+            await insert_event_db(
+                event=EventInput(
+                    jurisdiction_id=config.jurisdiction_id,
+                    user_id=user_id,
+                    configuration_id=config.id,
+                    event_type="delete_custom_section",
+                    action_text=f'Deleted custom section "{section_name}" with code "{custom_section_input.code}"',
+                ),
+                cursor=cur,
+            )
+
+    return await get_configuration_by_id_db(
+        id=config.id, jurisdiction_id=config.jurisdiction_id, db=db
+    )
+
+
 async def _insert_configuration_sections_db(
     configuration_id: UUID,
     sections_to_insert: list[DbConfigurationSectionProcessing],
     cursor: AsyncCursor[CursorType],
 ) -> None:
     """
-    Inserts sections into configurations_sections table.
+    Inserts sections into the configurations_sections table.
     """
     query = """
         INSERT INTO configurations_sections (
@@ -47,9 +190,11 @@ async def _insert_configuration_sections_db(
             action,
             include,
             narrative,
-            versions
+            versions,
+            section_type
         )
         VALUES (
+            %s,
             %s,
             %s,
             %s,
@@ -70,6 +215,7 @@ async def _insert_configuration_sections_db(
             s.include,
             s.narrative,
             s.versions,
+            s.section_type,
         )
         for s in sections_to_insert
     ]
@@ -213,6 +359,7 @@ async def _get_configuration_sections_db(
         include,
         narrative,
         versions,
+        section_type,
         created_at,
         updated_at
     FROM configurations_sections
@@ -342,7 +489,8 @@ async def get_configuration_by_id_db(
                        'action', s.action::text,
                        'include', s.include,
                        'versions', to_jsonb(s.versions),
-                       'narrative', s.narrative
+                       'narrative', s.narrative,
+                       'section_type', s.section_type
                    )
                    ORDER BY s.code
                ) AS section_processing
@@ -893,6 +1041,7 @@ async def _get_configuration_section_by_code(
             include,
             narrative,
             versions,
+            section_type,
             created_at,
             updated_at
         FROM configurations_sections
@@ -906,8 +1055,22 @@ async def _get_configuration_section_by_code(
             return await cur.fetchone()
 
 
+def _bool_label(value: bool) -> Literal["enabled", "disabled"]:
+    """
+    Small helper function to convert a boolean into "enabled" or "disabled".
+
+    Args:
+        value (bool): True or False value
+
+    Returns:
+        Literal['enabled', 'disabled']: "enabled" or "disabled"
+    """
+    return "enabled" if value else "disabled"
+
+
 async def update_configuration_section_db(
     config: DbConfiguration,
+    current_code: str,
     section_update: DbConfigurationSectionProcessing,
     user_id: UUID,
     db: AsyncDatabaseConnection,
@@ -917,6 +1080,7 @@ async def update_configuration_section_db(
 
     Args:
         config: The configuration to update
+        current_code: The section code to update
         section_update: Section to update
         user_id: ID of the user
         db: Database connection
@@ -938,33 +1102,65 @@ async def update_configuration_section_db(
         )
 
     prev_section = await _get_configuration_section_by_code(
-        configuration_id=config.id, code=section_update.code, db=db
+        configuration_id=config.id, code=current_code, db=db
     )
 
     if not prev_section:
-        raise ValueError(
-            f"No existing section with code {section_update.code} to update"
-        )
+        raise ValueError(f"No existing section with code {current_code} to update")
 
-    action_changed = prev_section.action != section_update.action
+    # Calculate what changed and generate the text for the event
+    change_specs = [
+        (
+            prev_section.action,
+            section_update.action,
+            lambda old, new: (
+                f"data handling approach from '{ACTION_LABELS.get(old, old)}' "
+                f"to '{ACTION_LABELS.get(new, new)}'"
+            ),
+        ),
+        (
+            prev_section.include,
+            section_update.include,
+            lambda old, new: (
+                f"include from '{_bool_label(old)}' to '{_bool_label(new)}'"
+            ),
+        ),
+        (
+            prev_section.code,
+            section_update.code,
+            lambda old, new: f"code from '{old}' to '{new}'",
+        ),
+        (
+            prev_section.name,
+            section_update.name,
+            lambda old, new: f"name from '{old}' to '{new}'",
+        ),
+        (
+            prev_section.narrative,
+            section_update.narrative,
+            lambda old, new: (
+                f"narrative from '{_bool_label(old)}' to '{_bool_label(new)}'"
+            ),
+        ),
+    ]
 
-    section_events: list[EventInput] = []
-    if action_changed:
-        section_events.append(
-            EventInput(
-                jurisdiction_id=config.jurisdiction_id,
-                user_id=user_id,
-                configuration_id=config.id,
-                event_type="section_update",
-                action_text=(
-                    f"Updated section '{prev_section.name}' from '{ACTION_LABELS.get(prev_section.action, prev_section.action)}' to '{ACTION_LABELS.get(section_update.action, section_update.action)}'"
-                ),
-            )
+    section_events = [
+        EventInput(
+            jurisdiction_id=config.jurisdiction_id,
+            user_id=user_id,
+            configuration_id=config.id,
+            event_type="section_update",
+            action_text=f"Updated section '{prev_section.name}' {formatter(old, new)}",
         )
+        for old, new, formatter in change_specs
+        if old != new
+    ]
 
     query = """
             UPDATE configurations_sections
             SET
+                code = %s,
+                name = %s,
                 action = %s,
                 include = %s,
                 narrative = %s,
@@ -975,11 +1171,13 @@ async def update_configuration_section_db(
             """
 
     params = (
+        section_update.code,
+        section_update.name,
         section_update.action,
         section_update.include,
         section_update.narrative,
         config.id,
-        section_update.code,
+        current_code,
     )
 
     async with db.get_connection() as conn:

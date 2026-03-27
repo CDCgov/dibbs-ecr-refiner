@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DbSectionAction } from './dbSectionAction';
+import type { DbSectionType } from './dbSectionType';
 
 export interface DbConfigurationSectionProcessing {
   include: boolean;
@@ -14,4 +15,5 @@ export interface DbConfigurationSectionProcessing {
   name: string;
   code: string;
   versions: string[];
+  section_type: DbSectionType;
 }

@@ -1,15 +1,22 @@
-import { DbConfigurationSectionProcessing } from '../../../api/schemas/dbConfigurationSectionProcessing';
-import { useToast } from '../../../hooks/useToast';
-import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
-import { Switch, Checkbox, Field, Label } from '@headlessui/react';
-import { DbSectionAction } from '../../../api/schemas';
+import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { useToast } from '../../../../hooks/useToast';
+import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
+import { Field, Label } from '@headlessui/react';
+import { DbSectionAction } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
-  useUpdateConfigurationSectionProcessing,
-} from '../../../api/configurations/configurations';
+  useUpdateSection,
+  useDeleteCustomSection,
+} from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { Tooltip as USWDSTooltip } from '@trussworks/react-uswds';
-import React, { JSX } from 'react';
+import { useState } from 'react';
+import { Button } from '../../../../components/Button';
+import { Modal } from './Modal';
+import { CustomSectionBadge } from './CustomSectionBadge';
+import { Tooltip } from './Tooltip';
+import { Checkbox } from './Checkbox';
+import { Switch } from './Switch';
+import classNames from 'classnames';
 
 /**
  * TODO: please refer to specification.py
@@ -21,40 +28,74 @@ import React, { JSX } from 'react';
 
 const disabledSections = new Set(['88085-6', '83910-0']);
 
-interface EicrSectionReviewProps {
+interface SectionsProps {
   configurationId: string;
-  sectionProcessing: DbConfigurationSectionProcessing[];
+  sections: DbConfigurationSectionProcessing[];
   disabled: boolean;
 }
 
-/**
- * EicrSectionReview displays an overview or review of eICR sections and allows
- * users to choose an action for each section (retain, refine, remove).
- * Radio inputs are fully accessible and can be selected by clicking anywhere
- * in the containing table cell (td), supporting keyboard navigation as well.
- */
-export function EicrSectionReview({
+export function Sections({
   configurationId,
-  sectionProcessing,
+  sections: sectionProcessing,
   disabled,
-}: EicrSectionReviewProps) {
+}: SectionsProps) {
+  const [selectedSection, setSelectedSection] =
+    useState<DbConfigurationSectionProcessing | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
+    setSelectedSection(section);
+    setIsOpen(true);
+  };
+
+  const resetModal = () => {
+    setSelectedSection(null);
+  };
+
   return (
     <section className="flex w-full flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-gray-cool-90 text-xl font-bold">eICR Sections</h3>
+          {disabled ? null : (
+            <Button
+              variant="tertiary"
+              onClick={() => {
+                setSelectedSection(null);
+                setIsOpen(true);
+              }}
+            >
+              Add custom section <span aria-hidden>+</span>
+            </Button>
+          )}
+          <Modal
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            configurationId={configurationId}
+            initialSection={
+              selectedSection
+                ? {
+                    name: selectedSection.name,
+                    currentCode: selectedSection.code,
+                  }
+                : null
+            }
+            onClose={resetModal}
+          />
+        </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
           refine or retain each section.
         </p>
       </div>
 
-      <table className="w-full">
+      <table className="w-full table-fixed">
         <thead>
           <tr className="border-gray-cool-20 text-gray-cool-60 border-b">
-            <th scope="col" className="w-1/6 pb-3">
+            <th scope="col" className="w-32 pb-3">
               Include
             </th>
-            <th scope="col" className="w-2/6 pb-3 text-left">
+            <th scope="col" className="w-auto pb-3 text-left">
               Section name
             </th>
             <th scope="col" className="align-right w-2/6 pb-3">
@@ -87,13 +128,12 @@ export function EicrSectionReview({
                 </div>
               </td>
               <td>
-                {section.include ? (
-                  <span className="font-bold">{section.name}</span>
-                ) : (
-                  <span className="text-gray-cool-70 italic">
-                    {section.name}
-                  </span>
-                )}
+                <SectionName
+                  configurationId={configurationId}
+                  section={section}
+                  disabled={disabled}
+                  setSelectedSection={() => onSelectedSection(section)}
+                />
               </td>
               <td>
                 {section.include ? (
@@ -128,6 +168,121 @@ export function EicrSectionReview({
   );
 }
 
+interface SectionNameProps {
+  configurationId: string;
+  section: DbConfigurationSectionProcessing;
+  disabled: boolean;
+  setSelectedSection: () => void;
+}
+
+function SectionName({
+  configurationId,
+  section,
+  disabled,
+  setSelectedSection,
+}: SectionNameProps) {
+  const isCustom = section.section_type === 'custom';
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span
+          className={classNames('truncate', {
+            italic: !section.include,
+            'font-bold': section.include,
+          })}
+        >
+          {section.name}
+        </span>
+        {isCustom ? <CustomSectionBadge /> : null}
+      </div>
+      {isCustom ? (
+        <div className="flex gap-2">
+          <span className="truncate text-sm">{section.code}</span>
+          {disabled ? null : (
+            <div className="flex gap-1">
+              <EditButton setSelectedSection={setSelectedSection} />
+              <span className="text-sm" aria-hidden>
+                |
+              </span>
+              <DeleteButton
+                configurationId={configurationId}
+                code={section.code}
+                name={section.name}
+              />
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface EditButtonProps {
+  setSelectedSection: () => void;
+}
+
+function EditButton({ setSelectedSection }: EditButtonProps) {
+  return (
+    <Button
+      className="text-sm!"
+      variant="tertiary"
+      onClick={setSelectedSection}
+    >
+      Edit
+    </Button>
+  );
+}
+
+interface DeleteButtonProps {
+  configurationId: string;
+  code: string;
+  name: string;
+}
+
+function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
+  const { mutate } = useDeleteCustomSection();
+  const queryClient = useQueryClient();
+  const showToast = useToast();
+
+  const onClick = () => {
+    mutate(
+      {
+        configurationId,
+        data: {
+          code,
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+          showToast({
+            heading: 'Custom section deleted',
+            body: name,
+          });
+        },
+        onError: () => {
+          {
+            showToast({
+              heading: 'Custom section could not be deleted',
+              body: name,
+              variant: 'error',
+            });
+          }
+        },
+      }
+    );
+  };
+
+  return (
+    <Button className="text-sm!" variant="tertiary" onClick={onClick}>
+      Delete
+    </Button>
+  );
+}
+
 interface RefineSwitchProps {
   configurationId: string;
   currentSection: DbConfigurationSectionProcessing;
@@ -140,15 +295,13 @@ function IncludeCheckbox({
   configurationId,
   disabled,
 }: RefineSwitchProps) {
-  const { mutate: updateSectionProcessing } =
-    useUpdateConfigurationSectionProcessing();
+  const { mutate: updateSection } = useUpdateSection();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
 
   return (
     <Checkbox
-      className="group block size-5 cursor-pointer rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
       id={`${currentSection.name}-include`}
       aria-label={`Include ${currentSection.name} section rules in refined document.`}
       checked={currentSection.include}
@@ -160,12 +313,12 @@ function IncludeCheckbox({
           include,
         };
 
-        updateSectionProcessing(
+        updateSection(
           {
             configurationId,
             data: {
               action: updatedSection.action,
-              code: updatedSection.code,
+              current_code: updatedSection.code,
               include: updatedSection.include,
               narrative: updatedSection.narrative,
             },
@@ -210,8 +363,7 @@ function RefineSwitch({
   configurationId,
   disabled,
 }: RefineSwitchProps) {
-  const { mutate: updateSectionProcessing } =
-    useUpdateConfigurationSectionProcessing();
+  const { mutate: updateSection } = useUpdateSection();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
@@ -251,12 +403,12 @@ function RefineSwitch({
             action,
           };
 
-          updateSectionProcessing(
+          updateSection(
             {
               configurationId,
               data: {
                 action: updatedSection.action,
-                code: updatedSection.code,
+                current_code: updatedSection.code,
                 include: updatedSection.include,
                 narrative: updatedSection.narrative,
               },
@@ -286,32 +438,12 @@ function RefineSwitch({
   );
 }
 
-function InfoIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-    >
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M9.16675 5.83366H10.8334V7.50033H9.16675V5.83366ZM9.16675 9.16699H10.8334V14.167H9.16675V9.16699ZM10.0001 1.66699C5.40008 1.66699 1.66675 5.40033 1.66675 10.0003C1.66675 14.6003 5.40008 18.3337 10.0001 18.3337C14.6001 18.3337 18.3334 14.6003 18.3334 10.0003C18.3334 5.40033 14.6001 1.66699 10.0001 1.66699ZM10.0001 16.667C6.32508 16.667 3.33341 13.6753 3.33341 10.0003C3.33341 6.32533 6.32508 3.33366 10.0001 3.33366C13.6751 3.33366 16.6667 6.32533 16.6667 10.0003C16.6667 13.6753 13.6751 16.667 10.0001 16.667Z"
-        fill="#3A7D95"
-      />
-    </svg>
-  );
-}
-
 function NarrativeSwitch({
   currentSection,
   configurationId,
   disabled,
 }: RefineSwitchProps) {
-  const { mutate: updateSectionProcessing } =
-    useUpdateConfigurationSectionProcessing();
+  const { mutate: updateSectionProcessing } = useUpdateSection();
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
@@ -328,7 +460,7 @@ function NarrativeSwitch({
               configurationId,
               data: {
                 action: currentSection.action,
-                code: currentSection.code,
+                current_code: currentSection.code,
                 include: currentSection.include,
                 narrative: checked,
               },
@@ -356,34 +488,5 @@ function NarrativeSwitch({
         <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
       </Switch>
     </Field>
-  );
-}
-
-type CustomTooltipProps = JSX.IntrinsicElements['div'] &
-  React.RefAttributes<HTMLDivElement>;
-
-const CustomLinkForwardRef: React.ForwardRefRenderFunction<
-  HTMLDivElement,
-  CustomTooltipProps
-> = ({ ...tooltipProps }: CustomTooltipProps, ref) => (
-  <div {...tooltipProps} ref={ref}>
-    <InfoIcon />
-  </div>
-);
-
-const CustomTooltip = React.forwardRef(CustomLinkForwardRef);
-
-interface TooltipProps {
-  text: string;
-}
-function Tooltip({ text }: TooltipProps) {
-  return (
-    <USWDSTooltip<CustomTooltipProps>
-      position="left"
-      label={<div className="w-max max-w-75 whitespace-normal">{text}</div>}
-      asCustom={CustomTooltip}
-    >
-      Data handling approach tooltip
-    </USWDSTooltip>
   );
 }

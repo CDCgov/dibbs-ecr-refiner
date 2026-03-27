@@ -263,6 +263,54 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
     /// ==========================================================================
+    /// Test working with custom sections
+    /// ==========================================================================
+
+    // Add a custom section
+    await page.getByRole('button', { name: 'Add custom section' }).click();
+    await page
+      .getByLabel('Display name (for this section)')
+      .fill('My custom section');
+    await page.getByLabel('LOINC code').fill('custom-section-code');
+    await page.getByRole('button', { name: 'Add section' }).click();
+
+    // check page
+    const expectedAccessibleName =
+      'My custom section Custom custom-section-code Edit Delete';
+    await expect(
+      page.getByRole('cell', {
+        name: expectedAccessibleName,
+        exact: true,
+      })
+    ).toBeVisible();
+
+    // edit the custom section
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+
+    // try an empty name
+    await page.getByLabel('Display name (for this section)').fill('');
+    await page.getByRole('button', { name: 'Update section' }).click();
+    await expect(page.getByText('Name is required.')).toBeVisible();
+
+    // try an empty code
+    await page
+      .getByLabel('Display name (for this section)')
+      .fill('New custom section name');
+    await page.getByLabel('LOINC code').fill('');
+    await page.getByRole('button', { name: 'Update section' }).click();
+    await expect(page.getByText('Code is required.')).toBeVisible();
+
+    // fill in correct details
+    await page.getByLabel('LOINC code').fill('new-code');
+    await page.getByRole('button', { name: 'Update section' }).click();
+
+    // check the page
+    await expect(
+      page.getByRole('table').getByText('New custom section name')
+    ).toBeVisible();
+    await expect(page.getByRole('table').getByText('new-code')).toBeVisible();
+
+    /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
     /// ==========================================================================
     await page.getByText('Activity log').click();
@@ -274,14 +322,6 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page
       .getByLabel('Condition')
       .selectOption({ label: configurationToTest });
-
-    await expect(
-      page
-        .getByRole('row')
-        .filter({ hasText: 'refiner' })
-        .filter({ hasText: configurationToTest })
-        .filter({ hasText: 'Created configuration' })
-    ).toBeVisible();
 
     await expect(
       page
@@ -307,6 +347,17 @@ test.describe('Adding/modifying configurations by initial condition', () => {
         .filter({ hasText: 'refiner' })
         .filter({ hasText: configurationToTest })
         .filter({ hasText: 'Added 2 custom codes' })
+    ).toBeVisible();
+
+    // go to previous page
+    await page.getByRole('button', { name: '2' }).click();
+
+    await expect(
+      page
+        .getByRole('row')
+        .filter({ hasText: 'refiner' })
+        .filter({ hasText: configurationToTest })
+        .filter({ hasText: 'Created configuration' })
     ).toBeVisible();
   });
 
