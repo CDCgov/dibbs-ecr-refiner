@@ -222,18 +222,25 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByText('Saved').waitFor({ state: 'visible' });
 
     // narrative should start off unchecked
+    const encountersLabelNarrativeText =
+      'Toggle to refine or retain the narrative block in the Encounters section';
     await expect(
-      page.getByLabel(
-        'Toggle to refine or retain the narrative block in the Encounters section'
-      )
+      page.getByLabel(encountersLabelNarrativeText)
     ).not.toBeChecked();
 
     // toggle narrative on
-    await page
-      .getByLabel(
-        'Toggle to refine or retain the narrative block in the Encounters section'
-      )
-      .click();
+    await page.getByLabel(encountersLabelNarrativeText).click();
+
+    // toggle include off
+    const encountersIncludeLabelText =
+      'Include Encounters section rules in refined document.';
+    await page.getByLabel(encountersIncludeLabelText).click();
+    await expect(page.getByLabel(encountersIncludeLabelText)).not.toBeChecked();
+
+    // toggle include back on, check that narrative value is the same
+    await page.getByLabel(encountersIncludeLabelText).click();
+    await expect(page.getByLabel(encountersIncludeLabelText)).toBeChecked();
+    await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
     // Wait for saving to show up
     await page.getByText('Saving').waitFor({ state: 'visible' });
