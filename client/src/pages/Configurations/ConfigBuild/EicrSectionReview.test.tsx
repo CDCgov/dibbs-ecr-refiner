@@ -30,7 +30,7 @@ describe('EicrSectionReview', () => {
         versions: ['1.1', '3.1', '3.1.1'],
       },
       {
-        name: 'Immuizations section',
+        name: 'Immunizations section',
         action: 'retain',
         include: true,
         code: 'imm',
@@ -54,45 +54,49 @@ describe('EicrSectionReview', () => {
       />
     );
 
+    // all table rows (including header)
     const rows = screen.getAllByRole('row');
-
     expect(rows).toHaveLength(5);
 
-    const firstRow = rows[1];
-    const firstRowCells = within(firstRow).getAllByRole('cell');
+    const getRow = (index: number) => {
+      const row = rows[index];
+      return {
+        checkbox: within(row).getByRole('checkbox'),
+        nameCell: within(row).getAllByRole('cell')[1],
+        switches: within(row).queryAllByRole('switch'), // [0] = data handling approach, [1] = narrative
+      };
+    };
 
-    const secondRow = rows[2];
-    const secondRowCells = within(secondRow).getAllByRole('cell');
+    // skip header
+    const history = getRow(1);
+    const med = getRow(2);
+    const imm = getRow(3);
+    const narrative = getRow(4);
 
-    const thirdRow = rows[3];
-    const thirdRowCells = within(thirdRow).getAllByRole('cell');
+    // History
+    expect(history.checkbox).toBeChecked();
+    expect(history.nameCell).toHaveTextContent('History section');
+    expect(history.switches).toHaveLength(2);
+    expect(history.switches[0]).toBeChecked();
+    expect(history.switches[1]).not.toBeChecked();
 
-    const fourthRow = rows[4];
-    const fourthRowCells = within(fourthRow).getAllByRole('cell');
+    // Med
+    expect(med.checkbox).not.toBeChecked();
+    expect(med.nameCell).toHaveTextContent('Med section');
+    expect(med.switches).toHaveLength(0);
 
-    expect(within(firstRow).getByRole('checkbox')).toBeChecked();
-    expect(firstRowCells[1]).toHaveTextContent('History section');
-    const firstRowSwitches = within(firstRow).getAllByRole('switch');
-    expect(firstRowSwitches).toHaveLength(2);
-    expect(firstRowSwitches[0]).toBeChecked();
-    expect(firstRowSwitches[1]).not.toBeChecked();
+    // Immunizations
+    expect(imm.checkbox).toBeChecked();
+    expect(imm.nameCell).toHaveTextContent('Immunizations section');
+    expect(imm.switches).toHaveLength(2);
+    expect(imm.switches[0]).not.toBeChecked();
+    expect(imm.switches[1]).not.toBeChecked();
 
-    expect(within(secondRow).getByRole('checkbox')).not.toBeChecked();
-    expect(secondRowCells[1]).toHaveTextContent('Med section');
-    expect(within(secondRow).queryByRole('switch')).not.toBeInTheDocument();
-
-    expect(within(thirdRow).getByRole('checkbox')).toBeChecked();
-    expect(thirdRowCells[1]).toHaveTextContent('Immuizations section');
-    const thirdRowSwitches = within(thirdRow).getAllByRole('switch');
-    expect(thirdRowSwitches).toHaveLength(2);
-    expect(thirdRowSwitches[0]).not.toBeChecked();
-    expect(thirdRowSwitches[1]).not.toBeChecked();
-
-    expect(within(fourthRow).getByRole('checkbox')).toBeChecked();
-    expect(fourthRowCells[1]).toHaveTextContent('Narrative section');
-    const fourthRowSwitches = within(fourthRow).getAllByRole('switch');
-    expect(fourthRowSwitches).toHaveLength(2);
-    expect(fourthRowSwitches[0]).not.toBeChecked();
-    expect(fourthRowSwitches[1]).toBeChecked();
+    // Narrative
+    expect(narrative.checkbox).toBeChecked();
+    expect(narrative.nameCell).toHaveTextContent('Narrative section');
+    expect(narrative.switches).toHaveLength(2);
+    expect(narrative.switches[0]).not.toBeChecked();
+    expect(narrative.switches[1]).toBeChecked();
   });
 });
