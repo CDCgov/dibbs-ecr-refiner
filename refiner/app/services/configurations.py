@@ -143,7 +143,7 @@ async def convert_config_to_storage_payload(
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
-    coding_dict: dict[str, list[dict]] = defaultdict(list)
+    coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
 
     # custom codes
     for cc in configuration.custom_codes:
@@ -151,7 +151,7 @@ async def convert_config_to_storage_payload(
         cur_code_system = cc.system
 
         # route custom codes to the correct system dict
-        coding_dict[cur_code_system].append(
+        coding_by_code_system[cur_code_system].append(
             asdict(
                 Coding(
                     code=cc.code,
@@ -174,7 +174,7 @@ async def convert_config_to_storage_payload(
 
         for code_system, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
-            coding_dict[code_system.format_system_string()] = [
+            coding_by_code_system[code_system.format_system_string()] = [
                 asdict(Coding(code=c.code, display=c.display, system=code_system.oid))
                 for c in code_list
             ]
@@ -187,7 +187,7 @@ async def convert_config_to_storage_payload(
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
     # STEP 3: build the CodeSystemSets
-    code_system_sets = CodeSystemSets.from_dict(data=coding_dict)
+    code_system_sets = CodeSystemSets.from_dict(data=coding_by_code_system)
 
     return ConfigurationStoragePayload(
         codes=codes,

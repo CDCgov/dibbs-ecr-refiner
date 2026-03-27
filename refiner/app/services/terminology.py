@@ -425,7 +425,7 @@ class ProcessedConfiguration:
         # STEP 1: build per-system dicts from condition codes
         # each condition has snomed_codes, loinc_codes, icd10_codes, rxnorm_codes
         # each code object in those lists has .code and .display
-        coding_dict: dict[str, list[dict]] = defaultdict(list)
+        coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
         for condition in payload.conditions:
             # map each db code list to its target dict + OID
             code_system_map: dict[CodeSystem, list] = (
@@ -433,7 +433,7 @@ class ProcessedConfiguration:
             )
 
             for code_system, code_list in code_system_map.items():
-                coding_dict[code_system.format_system_string()] = [
+                coding_by_code_system[code_system.format_system_string()] = [
                     asdict(
                         Coding(code=c.code, display=c.display, system=code_system.oid)
                     )
@@ -447,7 +447,7 @@ class ProcessedConfiguration:
             display_val = custom_code.name
 
             # route to the correct dict based on system label
-            coding_dict[cur_code_system].append(
+            coding_by_code_system[cur_code_system].append(
                 asdict(
                     Coding(
                         code=code_val,
@@ -458,7 +458,7 @@ class ProcessedConfiguration:
             )
 
         # STEP 3: build the CodeSystemSets
-        code_system_sets = CodeSystemSets.from_dict(data=coding_dict)
+        code_system_sets = CodeSystemSets.from_dict(data=coding_by_code_system)
 
         # STEP 4: build included_condition_rsg_codes
         included_condition_rsg_codes = set()
