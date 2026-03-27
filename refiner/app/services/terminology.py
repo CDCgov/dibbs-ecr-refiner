@@ -78,7 +78,7 @@ def index_condition_code_list_by_system(
     condition: DbCondition,
 ) -> dict[CodeSystem, list[DbConditionCoding]]:
     """
-    Utility method to index condition code lists by system for processing.
+    Utility method to index condition code lists as stored into the DB by the system enum values. Useful for various processing jobs processing.
     """
 
     result: dict[CodeSystem, list[DbConditionCoding]] = defaultdict(list)
