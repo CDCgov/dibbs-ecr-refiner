@@ -1233,14 +1233,14 @@ def _replace_narrative_with_removal_notice(
     if existing_text is not None:
         section.replace(existing_text, new_text)
         return
-    
+
     # no <text> element exists; insert after <title> to respect
     # the CDA R2 xs:sequence (code -> title -> text -> ...)
     title_element = section.find("./hl7:title", namespaces=namespaces)
     if title_element is not None:
         title_element.addnext(new_text)
         return
-    
+
     section.append(new_text)
 
 
