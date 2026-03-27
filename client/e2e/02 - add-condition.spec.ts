@@ -221,6 +221,34 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByText('Saving').waitFor({ state: 'detached' });
     await page.getByText('Saved').waitFor({ state: 'visible' });
 
+    // narrative should start off unchecked
+    const encountersLabelNarrativeText =
+      'Toggle to refine or retain the narrative block in the Encounters section';
+    await expect(
+      page.getByLabel(encountersLabelNarrativeText)
+    ).not.toBeChecked();
+
+    // toggle narrative on
+    await page.getByLabel(encountersLabelNarrativeText).click();
+
+    // toggle include off
+    const encountersIncludeLabelText =
+      'Include Encounters section rules in refined document.';
+    await page.getByLabel(encountersIncludeLabelText).click();
+    await expect(page.getByLabel(encountersIncludeLabelText)).not.toBeChecked();
+
+    // toggle include back on, check that narrative value is the same
+    await page.getByLabel(encountersIncludeLabelText).click();
+    await expect(page.getByLabel(encountersIncludeLabelText)).toBeChecked();
+    await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
+
+    // Wait for saving to show up
+    await page.getByText('Saving').waitFor({ state: 'visible' });
+
+    // Wait for saving to go away (refetch finished)
+    await page.getByText('Saving').waitFor({ state: 'detached' });
+    await page.getByText('Saved').waitFor({ state: 'visible' });
+
     await page.getByRole('button', { name: configurationToTest }).click();
 
     await page.getByRole('button', { name: 'Sections' }).click();
@@ -231,6 +259,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     // switch was previously toggled off which adds one more to the total count
     await expect(page.getByText('Preserve & retain all data')).toHaveCount(3);
+
+    await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
     /// ==========================================================================
     /// Test working with custom sections

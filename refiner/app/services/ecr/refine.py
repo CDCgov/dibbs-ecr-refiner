@@ -25,15 +25,22 @@ from .specification import SECTION_PROCESSING_SKIP, detect_eicr_version, load_sp
 # CONSTANTS
 # =============================================================================
 
+# TODO:
+# decide on default values for both:
+# * SKIP_SECTION_INSTRUCTIONS
+#   - if the action is "retain" we should keep (retain) the narrative as-is
+# * DEFAULT_SECTION_INSTRUCTIONS
+#   - we should match how it shows up in the UI where narrative is set
+#     to 'false' and refine is set to 'true'
 SKIP_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
-    narrative=False,  # TODO: Decide a default
+    narrative=True,
     action="retain",
 )
 
 DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
     include=True,
-    narrative=False,  # TODO: Decide a default
+    narrative=False,
     action="refine",
 )
 
@@ -236,8 +243,8 @@ def refine_eicr(
             codes_to_match=plan.codes_to_check,
             namespaces=HL7_NS,
             section_specification=section_specification,
-            version=version,
             code_system_sets=plan.code_system_sets,
+            include_narrative=section_rules.narrative,
         )
 
 

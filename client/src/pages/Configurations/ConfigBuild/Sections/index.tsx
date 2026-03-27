@@ -98,12 +98,18 @@ export function Sections({
             <th scope="col" className="w-auto pb-3 text-left">
               Section name
             </th>
-            <th scope="col" className="align-right w-3/6 pb-3">
+            <th scope="col" className="align-right w-2/6 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
                 <Tooltip
                   text={`Set to "Refine & optimize" if you'd like to filter the content of this section down to coded elements matching the codes in your configuration in your refined output. Set to "Preserve & retain" if you'd like to keep the information in this section in its entirety in the refined output.`}
                 />
+              </div>
+            </th>
+            <th scope="col" className="w-1/6 pb-3">
+              <div className="flex items-center justify-center gap-1">
+                <span>Narrative</span>
+                <Tooltip text="Enable to retain the narrative block for this section in the refined output or disable to omit it." />
               </div>
             </th>
           </tr>
@@ -133,6 +139,19 @@ export function Sections({
                 {section.include ? (
                   <div className="flex justify-center">
                     <RefineSwitch
+                      configurationId={configurationId}
+                      currentSection={section}
+                      sections={sectionProcessing}
+                      disabled={disabled || disabledSections.has(section.code)}
+                    />
+                  </div>
+                ) : null}
+              </td>
+
+              <td>
+                {section.include ? (
+                  <div className="flex justify-center">
+                    <NarrativeSwitch
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
@@ -301,7 +320,7 @@ function IncludeCheckbox({
               action: updatedSection.action,
               current_code: updatedSection.code,
               include: updatedSection.include,
-              narrative: false, // TODO: Update later
+              narrative: updatedSection.narrative,
             },
           },
           {
@@ -391,7 +410,7 @@ function RefineSwitch({
                 action: updatedSection.action,
                 current_code: updatedSection.code,
                 include: updatedSection.include,
-                narrative: false, // TODO: Update later
+                narrative: updatedSection.narrative,
               },
             },
             {
@@ -412,6 +431,59 @@ function RefineSwitch({
             }
           );
         }}
+      >
+        <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
+      </Switch>
+    </Field>
+  );
+}
+
+function NarrativeSwitch({
+  currentSection,
+  configurationId,
+  disabled,
+}: RefineSwitchProps) {
+  const { mutate: updateSectionProcessing } = useUpdateSection();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+  const showToast = useToast();
+
+  return (
+    <Field className="flex items-center gap-3">
+      <Switch
+        className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
+        disabled={disabled}
+        checked={currentSection.narrative}
+        onChange={(checked) => {
+          updateSectionProcessing(
+            {
+              configurationId,
+              data: {
+                action: currentSection.action,
+                current_code: currentSection.code,
+                include: currentSection.include,
+                narrative: checked,
+              },
+            },
+            {
+              onSuccess: async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: getGetConfigurationQueryKey(configurationId),
+                });
+              },
+              onError: (error) => {
+                const errorDetail =
+                  formatError(error) || error.message || 'Unknown error';
+                showToast({
+                  heading: 'Section failed to update',
+                  body: errorDetail,
+                  variant: 'error',
+                });
+              },
+            }
+          );
+        }}
+        aria-label={`Toggle to refine or retain the narrative block in the ${currentSection.name} section`}
       >
         <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
       </Switch>

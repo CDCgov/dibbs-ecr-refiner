@@ -1,11 +1,10 @@
 import pytest
 from lxml import etree
-from lxml.etree import _Element
 
 from app.services.ecr.model import HL7_NS, EICRSpecification
 from app.services.ecr.process_eicr import (
     _analyze_trigger_codes_in_context,
-    _preserve_relevant_entries_and_generate_summary,
+    _preserve_relevant_entries,
     get_section_by_code,
     get_section_loinc_codes,
     process_section,
@@ -37,7 +36,7 @@ def eicr_spec_v3_1_1() -> EICRSpecification:
 
 # fixtures for eICR v1.1
 @pytest.fixture
-def results_section_v1_1(structured_body_v1_1: _Element) -> _Element:
+def results_section_v1_1(structured_body_v1_1: etree.Element) -> etree.Element:
     """
     Provides the 'Results' section from the v1.1 eICR fixture.
     """
@@ -46,7 +45,7 @@ def results_section_v1_1(structured_body_v1_1: _Element) -> _Element:
 
 
 @pytest.fixture
-def clinical_elements_v1_1(results_section_v1_1: _Element) -> list[_Element]:
+def clinical_elements_v1_1(results_section_v1_1: etree.Element) -> list[etree.Element]:
     """
     Provides specific clinical elements from the v1.1 'Results' section.
     """
@@ -57,7 +56,7 @@ def clinical_elements_v1_1(results_section_v1_1: _Element) -> list[_Element]:
 
 # fixtures for eICR v3.1.1
 @pytest.fixture
-def results_section_v3_1_1(structured_body_v3_1_1: _Element) -> _Element:
+def results_section_v3_1_1(structured_body_v3_1_1: etree.Element) -> etree.Element:
     """
     Provides the 'Results' section from the v3.1.1 eICR fixture.
     """
@@ -86,7 +85,7 @@ def test_get_section_by_code(
     Tests that a section can be retrieved by its LOINC code for different eICR versions.
     """
 
-    structured_body: _Element = request.getfixturevalue(fixture_name)
+    structured_body: etree.Element = request.getfixturevalue(fixture_name)
     section = get_section_by_code(structured_body, loinc_code)
     assert section is not None
     assert section.find(".//hl7:title", namespaces=HL7_NS).text == expected_title
@@ -104,7 +103,7 @@ def test_get_section_loinc_codes(request, fixture_name: str, spec_fixture_name: 
     Tests that `get_section_loinc_codes` extracts all expected top-level section codes.
     """
 
-    structured_body: _Element = request.getfixturevalue(fixture_name)
+    structured_body: etree.Element = request.getfixturevalue(fixture_name)
     spec: EICRSpecification = request.getfixturevalue(spec_fixture_name)
 
     loinc_codes = get_section_loinc_codes(structured_body)
@@ -121,7 +120,7 @@ def test_process_section_no_clinical_elements() -> None:
     Test `process_section` when no matches are found, creating a minimal section.
     """
 
-    section: _Element = etree.fromstring(
+    section: etree.Element = etree.fromstring(
         '<section xmlns="urn:hl7-org:v3"><code code="30954-2"/></section>'
     )
     process_section(section=section, codes_to_match=set(), namespaces=HL7_NS)
@@ -129,10 +128,12 @@ def test_process_section_no_clinical_elements() -> None:
 
 
 def test_process_section_with_matches_v1_1(
-    results_section_v1_1: _Element, eicr_spec_v1_1: EICRSpecification
+    results_section_v1_1: etree.Element, eicr_spec_v1_1: EICRSpecification
 ):
     """
     Test the complete `process_section` workflow for v1.1 using a real spec.
+
+    When no entries match, the section should be made minimal (nullFlavor NI).
     """
 
     results_spec = eicr_spec_v1_1.sections.get("30954-2")
@@ -142,13 +143,9 @@ def test_process_section_with_matches_v1_1(
         codes_to_match=set("94310-0"),
         namespaces=HL7_NS,
         section_specification=results_spec,
-        version="1.1",
     )
 
     assert results_section_v1_1.get("nullFlavor") == "NI"
-    final_text = results_section_v1_1.find(".//hl7:text", namespaces=HL7_NS)
-    assert final_text is not None
-    assert final_text.find("table") is not None
 
 
 def test_analyze_trigger_codes_in_context_positive_match_v1_1(
@@ -175,23 +172,20 @@ def test_analyze_trigger_codes_in_context_positive_match_v1_1(
     assert result[id(non_trigger_element)] is False
 
 
-def test_preserve_relevant_entries_and_generate_summary(
-    results_section_v1_1: _Element, clinical_elements_v1_1: list[_Element]
+def test_preserve_relevant_entries(
+    results_section_v1_1: etree.Element, clinical_elements_v1_1: list[etree.Element]
 ):
     """
-    Test the `_preserve_relevant_entries_and_generate_summary` workflow for v1.1.
+    Test the `_preserve_relevant_entries` workflow for v1.1.
     """
 
     initial_entry_count = len(
         results_section_v1_1.xpath(".//hl7:entry", namespaces=HL7_NS)
     )
-    trigger_analysis = {id(elem): False for elem in clinical_elements_v1_1}
 
-    _preserve_relevant_entries_and_generate_summary(
+    _preserve_relevant_entries(
         section=results_section_v1_1,
         contextual_matches=clinical_elements_v1_1,
-        trigger_analysis=trigger_analysis,
-        namespaces=HL7_NS,
     )
 
     final_entry_count = len(

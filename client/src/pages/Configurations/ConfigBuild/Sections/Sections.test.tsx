@@ -53,38 +53,54 @@ function renderWithClient(ui: React.ReactElement) {
 
 describe('Configuration sections', () => {
   it('should display sections based on stored section data', () => {
-    const testId = 'test-id';
-
     renderWithClient(
       <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
+    // all table rows (including header)
     const rows = screen.getAllByRole('row');
+    expect(rows).toHaveLength(5);
 
-    expect(rows).toHaveLength(sections.length + 1); // including header
+    const getRow = (index: number) => {
+      const row = rows[index];
+      return {
+        checkbox: within(row).getByRole('checkbox'),
+        nameCell: within(row).getAllByRole('cell')[1],
+        switches: within(row).queryAllByRole('switch'), // [0] = data handling approach, [1] = narrative
+      };
+    };
 
-    // get the table rows
-    const firstRow = rows[1];
-    const firstRowCells = within(firstRow).getAllByRole('cell');
+    // skip header
+    const history = getRow(1);
+    const med = getRow(2);
+    const imm = getRow(3);
+    const narrative = getRow(4);
 
-    const secondRow = rows[2];
-    const secondRowCells = within(secondRow).getAllByRole('cell');
+    // History
+    expect(history.checkbox).toBeChecked();
+    expect(history.nameCell).toHaveTextContent('History section');
+    expect(history.switches).toHaveLength(2);
+    expect(history.switches[0]).toBeChecked();
+    expect(history.switches[1]).not.toBeChecked();
 
-    const thirdRow = rows[3];
-    const thirdRowCells = within(thirdRow).getAllByRole('cell');
+    // Med
+    expect(med.checkbox).not.toBeChecked();
+    expect(med.nameCell).toHaveTextContent('Med section');
+    expect(med.switches).toHaveLength(0);
 
-    // check the contents of each row
-    expect(within(firstRow).getByRole('checkbox')).toBeChecked();
-    expect(firstRowCells[1]).toHaveTextContent('History section');
-    expect(within(firstRow).getByRole('switch')).toBeChecked();
+    // Immunizations
+    expect(imm.checkbox).toBeChecked();
+    expect(imm.nameCell).toHaveTextContent('Immunizations section');
+    expect(imm.switches).toHaveLength(2);
+    expect(imm.switches[0]).not.toBeChecked();
+    expect(imm.switches[1]).not.toBeChecked();
 
-    expect(within(secondRow).getByRole('checkbox')).not.toBeChecked();
-    expect(secondRowCells[1]).toHaveTextContent('Med section');
-    expect(within(secondRow).queryByRole('switch')).not.toBeInTheDocument();
-
-    expect(within(thirdRow).getByRole('checkbox')).toBeChecked();
-    expect(thirdRowCells[1]).toHaveTextContent('Immunizations section');
-    expect(within(thirdRow).getByRole('switch')).not.toBeChecked();
+    // Narrative
+    expect(narrative.checkbox).toBeChecked();
+    expect(narrative.nameCell).toHaveTextContent('Narrative section');
+    expect(narrative.switches).toHaveLength(2);
+    expect(narrative.switches[0]).not.toBeChecked();
+    expect(narrative.switches[1]).toBeChecked();
   });
 
   it('should allow custom section additions', async () => {
