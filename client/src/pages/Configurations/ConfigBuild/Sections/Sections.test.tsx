@@ -39,7 +39,7 @@ const sections: DbConfigurationSectionProcessing[] = [
     action: 'refine',
     include: true,
     code: 'mock-custom-section',
-    narrative: false,
+    narrative: true,
     versions: [],
     section_type: 'custom',
   },
@@ -95,11 +95,13 @@ describe('Configuration sections', () => {
     expect(imm.switches[0]).not.toBeChecked();
     expect(imm.switches[1]).not.toBeChecked();
 
-    // Narrative
+    // Custom section
     expect(narrative.checkbox).toBeChecked();
-    expect(narrative.nameCell).toHaveTextContent('Narrative section');
+    expect(narrative.nameCell).toHaveTextContent(
+      'Mock custom sectionCustommock-custom-sectionEdit|Delete'
+    );
     expect(narrative.switches).toHaveLength(2);
-    expect(narrative.switches[0]).not.toBeChecked();
+    expect(narrative.switches[0]).toBeChecked();
     expect(narrative.switches[1]).toBeChecked();
   });
 
