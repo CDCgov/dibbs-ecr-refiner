@@ -167,7 +167,7 @@ function IncludeCheckbox({
               action: updatedSection.action,
               code: updatedSection.code,
               include: updatedSection.include,
-              narrative: false, // TODO: Update later
+              narrative: updatedSection.narrative,
             },
           },
           {
@@ -258,7 +258,7 @@ function RefineSwitch({
                 action: updatedSection.action,
                 code: updatedSection.code,
                 include: updatedSection.include,
-                narrative: false, // TODO: Update later
+                narrative: updatedSection.narrative,
               },
             },
             {
@@ -316,15 +316,12 @@ function NarrativeSwitch({
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
 
-  const narrativeEnabled =
-    'narrative' in currentSection ? Boolean(currentSection.narrative) : false;
-
   return (
     <Field className="flex items-center gap-3">
       <Switch
         className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
         disabled={disabled}
-        checked={narrativeEnabled}
+        checked={currentSection.narrative}
         onChange={(checked) => {
           updateSectionProcessing(
             {
