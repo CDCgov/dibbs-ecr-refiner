@@ -271,7 +271,7 @@ async def get_configuration(
     )
 
     # Flatten all codes from all included conditions and custom codes
-    all_codes = set()
+    all_codes: set[str] = set()
 
     for c in conditions:
         all_codes = all_codes | {c.code for c in c.get_codes_from_all_systems()}
