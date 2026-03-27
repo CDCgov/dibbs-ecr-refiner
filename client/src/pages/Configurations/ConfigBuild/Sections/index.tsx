@@ -41,7 +41,6 @@ export function Sections({
 }: SectionsProps) {
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
-
   const [isOpen, setIsOpen] = useState(false);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
@@ -69,22 +68,20 @@ export function Sections({
               Add custom section <span aria-hidden>+</span>
             </Button>
           )}
-          {isOpen ? (
-            <Modal
-              isOpen={isOpen}
-              setIsOpen={setIsOpen}
-              configurationId={configurationId}
-              initialSection={
-                selectedSection
-                  ? {
-                      name: selectedSection.name,
-                      currentCode: selectedSection.code,
-                    }
-                  : null
-              }
-              onClose={resetModal}
-            />
-          ) : null}
+          <Modal
+            isOpen={isOpen}
+            setIsOpen={setIsOpen}
+            configurationId={configurationId}
+            initialSection={
+              selectedSection
+                ? {
+                    name: selectedSection.name,
+                    currentCode: selectedSection.code,
+                  }
+                : null
+            }
+            onClose={resetModal}
+          />
         </div>
         <p className="italic">
           Choose which sections of your eICR to include, as well as whether to
