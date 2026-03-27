@@ -260,11 +260,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     // switch was previously toggled off which adds one more to the total count
     await expect(page.getByText('Preserve & retain all data')).toHaveCount(3);
 
-    await expect(
-      page.getByLabel(
-        'Toggle to refine or retain the narrative block in the Encounters section'
-      )
-    ).toBeChecked();
+    await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
     /// ==========================================================================
     /// Test that the condition and configuration creation shows up in the activity log
