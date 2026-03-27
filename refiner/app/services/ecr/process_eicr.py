@@ -721,9 +721,9 @@ def _process_section_generic(
             # TODO:
             # this will be used in reconstruction of the narrative
             # in a future PR
-            trigger_analysis = _analyze_trigger_codes_in_context(
-                contextual_matches, section_specification
-            )
+            # trigger_analysis = _analyze_trigger_codes_in_context(
+            #     contextual_matches, section_specification
+            # )
 
             # STEP 3:
             # PRUNE non-matching entries
