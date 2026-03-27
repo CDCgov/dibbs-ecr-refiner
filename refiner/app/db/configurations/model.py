@@ -9,6 +9,8 @@ type DbSectionAction = Literal["retain", "refine"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
 
+type DbSectionType = Literal["standard", "custom"]
+
 
 @dataclass(frozen=True)
 class GetConfigurationResponseVersion:
@@ -78,14 +80,17 @@ class DbConfigurationSectionProcessing(DbConfigurationSectionInstructions):
     """
     Section Processing instructions for a Configuration.
 
-    Name is the section's name.
-    Code is the LOINC code for the section.
-    Versions is a list of versions this section appears in.
+    `name` is the section's name.
+    `code` is the LOINC code for the section.
+    `versions` is a list of versions this section appears in.
+    `section_type` is an indicator as to how the section was created.
+
     """
 
     name: str
     code: str
     versions: list[str]
+    section_type: DbSectionType
 
 
 @dataclass(frozen=True)
@@ -115,6 +120,7 @@ class DbConfigurationSection(DbConfigurationSectionProcessing):
             "include": self.include,
             "versions": self.versions,
             "narrative": self.narrative,
+            "section_type": self.section_type,
         }
 
 

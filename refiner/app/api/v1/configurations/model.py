@@ -172,15 +172,41 @@ class ConfigurationTestResponse:
     condition: Condition
 
 
-class UpdateSectionInput(BaseModel):
+class SectionInputBase(BaseModel):
     """
-    Model for a single section processing update.
+    Shared request body properties for sections.
     """
 
     code: str
-    include: bool
-    narrative: bool
-    action: DbSectionAction
+
+
+class DeleteSectionInput(SectionInputBase):
+    """
+    Request body to delete a section.
+    """
+
+    pass
+
+
+class SectionUpdateInput(BaseModel):
+    """
+    Request body for modifying a section.
+    """
+
+    include: bool | None = None
+    narrative: bool | None = None
+    action: DbSectionAction | None = None
+    name: str | None = None
+    current_code: str
+    new_code: str | None = None
+
+
+class AddSectionInput(SectionInputBase):
+    """
+    Request body for adding a section.
+    """
+
+    name: str
 
 
 @dataclass(frozen=True)

@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
@@ -46,6 +47,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
             include=True,
             action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
             versions=loinc_versions_flat.get(loinc_code, []),
+            section_type="standard",
         )
         for loinc_code, section_spec in spec.sections.items()
     ]
@@ -67,11 +69,23 @@ def clone_section_processing_instructions(
     Returns:
         list[DbConfigurationSectionProcessing]: The new list of sections.
     """
-    action_map = {section.code: section.action for section in clone_from}
-    include_map = {section.code: section.include for section in clone_from}
-    narrative_map = {section.code: section.narrative for section in clone_from}
 
-    return [
+    # Custom sections can just be copied straight over from the original since
+    # they won't change version to version
+    custom_sections = [
+        section for section in clone_from if section.section_type == "custom"
+    ]
+
+    # Standard sections may change and require some additional processing
+    standard_sections = [
+        section for section in clone_from if section.section_type == "standard"
+    ]
+
+    action_map = {section.code: section.action for section in standard_sections}
+    include_map = {section.code: section.include for section in standard_sections}
+    narrative_map = {section.code: section.narrative for section in standard_sections}
+
+    standard_updates = [
         replace(
             section,
             action=action_map.get(section.code, section.action),
@@ -80,6 +94,8 @@ def clone_section_processing_instructions(
         )
         for section in clone_to
     ]
+
+    return standard_updates + custom_sections
 
 
 async def get_config_payload_metadata(
@@ -221,3 +237,26 @@ def get_canonical_url_to_highest_inactive_version_map(
             ):
                 highest_version_inactive_configs_map[key] = c
     return highest_version_inactive_configs_map
+
+
+def format_section_naming(
+    section: DbConfigurationSectionProcessing,
+) -> DbConfigurationSectionProcessing:
+    """
+    Takes a section and modifies its name to remove `Section` at the end of it. It also converts the name to title case.
+
+    Args:
+        section (DbConfigurationSectionProcessing): Section with name to modify
+
+    Returns:
+        DbConfigurationSectionProcessing: Section with modified name
+    """
+
+    # Don't modify the name of a custom section
+    if section.section_type == "custom":
+        return section
+
+    name_without_section = re.sub(
+        r"\s+section\s*$", "", section.name, flags=re.IGNORECASE
+    )
+    return replace(section, name=name_without_section.strip().title())

@@ -329,9 +329,28 @@ def setup(request):
         "db",
     )
 
+    glanders_result = refiner_service.exec_in_container(
+        [
+            "psql",
+            "-U",
+            "postgres",
+            "-d",
+            "refiner",
+            "-t",
+            "-A",
+            "-F",
+            "|",
+            "-c",
+            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Glanders' AND version = '4.0.0';",
+        ],
+        "db",
+    )
+
     covid_id, covid_canonical_url = get_id_and_url(covid_result)
     flu_id, flu_canonical_url = get_id_and_url(flu_result)
     zika_id, zika_canonical_url = get_id_and_url(zika_result)
+    glanders_id, glanders_canonical_url = get_id_and_url(glanders_result)
+
     # Add Drowning and Submersion condition lookup
     drowning_result = refiner_service.exec_in_container(
         [
@@ -356,10 +375,12 @@ def setup(request):
         or not flu_id
         or not zika_id
         or not drowning_id
+        or not glanders_id
         or not covid_canonical_url
         or not flu_canonical_url
         or not zika_canonical_url
         or not drowning_canonical_url
+        or not glanders_canonical_url
     ):
         raise RuntimeError(
             f"Could not find COVID-19, Influenza, Zika Virus Disease, or Drowning and Submersion condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url}), Zika=({zika_id}, {zika_canonical_url}), Drowning=({drowning_id}, {drowning_canonical_url})"
@@ -372,6 +393,9 @@ def setup(request):
     )
     print(
         f"✅ Found Zika Virus Disease condition_id: {zika_id} canonical_url: {zika_canonical_url}"
+    )
+    print(
+        f"✅ Found Glanders condition_id: {glanders_id} canonical_url: {glanders_canonical_url}"
     )
     print(
         f"✅ Found Drowning and Submersion condition_id: {drowning_id} canonical_url: {drowning_canonical_url}"
@@ -463,6 +487,7 @@ def setup(request):
         covid_config_id uuid;
         flu_config_id uuid;
         zika_config_id uuid;
+        glanders_config_id uuid;
     BEGIN
         INSERT INTO configurations (
             jurisdiction_id,
@@ -544,8 +569,36 @@ def setup(request):
         IF zika_config_id IS NOT NULL THEN
             {build_section_insert_sql("zika_config_id", section_defaults)}
         END IF;
+
+        INSERT INTO configurations (
+            jurisdiction_id,
+            condition_id,
+            name,
+            created_by,
+            included_conditions,
+            custom_codes,
+            version,
+            status
+        )
+        VALUES (
+            '{TEST_JD_ID}',
+            '{glanders_id}',
+            'Glanders',
+            '{TEST_USER_ID}',
+            '["{glanders_id}"]'::jsonb,
+            '[]'::jsonb,
+            1,
+            'draft'
+        )
+        ON CONFLICT DO NOTHING
+        RETURNING id INTO glanders_config_id;
+
+        IF glanders_config_id IS NOT NULL THEN
+            {build_section_insert_sql("glanders_config_id", section_defaults)}
+        END IF;
     END $$;
     """
+
     refiner_service.exec_in_container(
         [
             "psql",
@@ -706,7 +759,8 @@ def build_section_insert_sql(config_id_sql: str, sections: list[dict]) -> str:
             '{section["action"]}',
             {str(section["include"]).lower()},
             {str(section["narrative"]).lower()},
-            ARRAY[{", ".join(f"'{v}'" for v in section["versions"])}]
+            ARRAY[{", ".join(f"'{v}'" for v in section["versions"])}],
+            'standard'
         )"""
         for section in sections
     )
@@ -719,7 +773,8 @@ def build_section_insert_sql(config_id_sql: str, sections: list[dict]) -> str:
             action,
             include,
             narrative,
-            versions
+            versions,
+            section_type
         )
         VALUES
         {values}

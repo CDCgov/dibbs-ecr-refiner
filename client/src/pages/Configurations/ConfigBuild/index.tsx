@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import { EicrSectionReview } from './EicrSectionReview';
+import { Sections } from './Sections';
 import { Title } from '../../../components/Title';
 import { Button } from '../../../components/Button';
 import { useToast } from '../../../hooks/useToast';
@@ -366,9 +366,9 @@ function Builder({
               />
             </div>
           ) : tableView === 'sections' ? (
-            <EicrSectionReview
+            <Sections
               configurationId={id}
-              sectionProcessing={section_processing}
+              sections={section_processing}
               disabled={disabled}
             />
           ) : isCsvImportView(tableView) ? (
