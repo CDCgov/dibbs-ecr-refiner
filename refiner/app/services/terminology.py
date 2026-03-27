@@ -283,12 +283,12 @@ class CodeSystemSets:
             }
 
         return cls(
-            snomed=_deserialize_system(data["snomed"]),
-            loinc=_deserialize_system(data["loinc"]),
-            icd10=_deserialize_system(data["icd10"]),
-            rxnorm=_deserialize_system(data["rxnorm"]),
-            cvx=_deserialize_system(data["cvx"]),
-            other=_deserialize_system(data["other"]),
+            snomed=_deserialize_system(data.get("snomed", [])),
+            loinc=_deserialize_system(data.get("loinc", [])),
+            icd10=_deserialize_system(data.get("icd10", [])),
+            rxnorm=_deserialize_system(data.get("rxnorm", [])),
+            cvx=_deserialize_system(data.get("cvx", [])),
+            other=_deserialize_system(data.get("other", [])),
         )
 
 
