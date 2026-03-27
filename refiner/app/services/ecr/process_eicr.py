@@ -1264,13 +1264,15 @@ def _restore_narrative(
     current_text = section.find("./hl7:text", namespaces=namespaces)
     if current_text is not None:
         section.replace(current_text, original_text)
-    else:
-        # insert after <title> to respect CDA R2 xs:sequence ordering
-        title_element = section.find("./hl7:title", namespaces=namespaces)
-        if title_element is not None:
-            title_element.addnext(original_text)
-        else:
-            section.append(original_text)
+        return
+
+    # insert after <title> to respect CDA R2 xs:sequence ordering
+    title_element = section.find("./hl7:title", namespaces=namespaces)
+    if title_element is not None:
+        title_element.addnext(original_text)
+        return
+
+    section.append(original_text)
 
 
 def create_minimal_section(
