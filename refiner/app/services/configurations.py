@@ -64,9 +64,13 @@ def clone_section_processing_instructions(
         list[DbConfigurationSectionProcessing]: The new list of sections.
     """
 
+    # Custom sections can just be copied straight over from the original since
+    # they won't change version to version
     custom_sections = [
         section for section in clone_from if section.section_type == "custom"
     ]
+
+    # Standard sections may change and require some additional processing
     standard_sections = [
         section for section in clone_from if section.section_type == "standard"
     ]
