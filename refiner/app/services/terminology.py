@@ -73,6 +73,23 @@ class CodeSystem(StrEnum):
 
         return self.value.lower()
 
+    @classmethod
+    def _missing_(cls, value: object):
+        if not isinstance(value, str):
+            return None
+        normalized_value = value.lower()
+        mapping = {
+            "loinc": cls.LOINC,
+            "snomed": cls.SNOMED,
+            "icd10": cls.ICD10,
+            "icd-10": cls.ICD10,
+            "cvx": cls.CVX,
+            "rxnorm": cls.RXNORM,
+            "other": cls.OTHER,
+        }
+
+        return mapping.get(normalized_value)
+
 
 def index_condition_code_list_by_system(
     condition: DbCondition,
