@@ -72,6 +72,24 @@ class DbCondition(DbConditionBase):
             cvx_codes=[DbConditionCoding(**c) for c in row["cvx_codes"]],
         )
 
+    def get_codes_from_all_systems(self) -> list[DbConditionCoding]:
+        """
+        Returns all codes from all systems.
+
+        Args:
+            row (dict[str, Any]): Dictionary containing condition data from the database.
+
+        Returns:
+            DbCondition: The condition object
+        """
+        return (
+            self.snomed_codes
+            + self.loinc_codes
+            + self.icd10_codes
+            + self.rxnorm_codes
+            + self.cvx_codes
+        )
+
 
 class ConditionMapValueDict(TypedDict):
     """

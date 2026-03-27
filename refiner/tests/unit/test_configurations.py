@@ -16,8 +16,8 @@ from app.db.configurations.model import (
     DbConfigurationCustomCode,
     GetConfigurationResponseVersion,
 )
-from app.services.code_system import CodeSystem
 from app.services.ecr.model import RefinedDocument, ReportableCondition
+from app.services.terminology import CodeSystem
 from app.services.testing import InlineTestingResult
 
 

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.services.code_system import CodeSystem
+from app.services.terminology import CodeSystem
 
 type DbSectionAction = Literal["retain", "refine"]
 

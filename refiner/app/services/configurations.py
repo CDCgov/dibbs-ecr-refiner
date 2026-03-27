@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -15,7 +16,12 @@ from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
 )
-from app.services.terminology import SYSTEM_LABEL_TO_OID, CodeSystemSets, Coding
+from app.services.terminology import (
+    CodeSystem,
+    CodeSystemSets,
+    Coding,
+    index_condition_code_list_by_system,
+)
 
 
 def get_default_sections() -> list[DbConfigurationSectionProcessing]:
@@ -137,34 +143,21 @@ async def convert_config_to_storage_payload(
     included_condition_rsg_codes: set[str] = set()
 
     # build per-system code dicts for CodeSystemSets
-    snomed: dict[str, Coding] = {}
-    loinc: dict[str, Coding] = {}
-    icd10: dict[str, Coding] = {}
-    rxnorm: dict[str, Coding] = {}
-    cvx: dict[str, Coding] = {}
-    other: dict[str, Coding] = {}
+    coding_dict: dict[str, list[dict]] = defaultdict(list)
 
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
+        cur_code_system = cc.system
 
         # route custom codes to the correct system dict
-        oid = SYSTEM_LABEL_TO_OID.get(cc.system, "")
-        target_map: dict[str, dict[str, Coding]] = {
-            "SNOMED": snomed,
-            "LOINC": loinc,
-            "ICD-10": icd10,
-            "RxNorm": rxnorm,
-            "CVX": cvx,
-        }
-        target_dict = target_map.get(cc.system, other)
-
-        if cc.code not in target_dict:
-            target_dict[cc.code] = Coding(
+        coding_dict[cur_code_system].append(
+            Coding(
                 code=cc.code,
                 display=cc.name,
-                system=oid if oid else cc.system,
+                system=CodeSystem(cur_code_system).oid,
             )
+        )
 
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
@@ -172,23 +165,16 @@ async def convert_config_to_storage_payload(
 
     # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
-        # map each code list to its system dict + OID
-        system_mappings: list[tuple[list, dict[str, Coding], str]] = [
-            (condition.snomed_codes, snomed, "2.16.840.1.113883.6.96"),
-            (condition.loinc_codes, loinc, "2.16.840.1.113883.6.1"),
-            (condition.icd10_codes, icd10, "2.16.840.1.113883.6.90"),
-            (condition.rxnorm_codes, rxnorm, "2.16.840.1.113883.6.88"),
-        ]
+        # map each db code list to its target dict + OID
+        code_system_map: dict[CodeSystem, list] = index_condition_code_list_by_system(
+            condition
+        )
 
-        for code_list, target_dict, oid in system_mappings:
-            for code_obj in code_list:
-                codes.add(code_obj.code)
-                if code_obj.code not in target_dict:
-                    target_dict[code_obj.code] = Coding(
-                        code=code_obj.code,
-                        display=getattr(code_obj, "display", ""),
-                        system=oid,
-                    )
+        for code_system, code_list in code_system_map.items():
+            coding_dict[code_system.format_system_string()] = [
+                Coding(code=c.code, display=c.display, system=code_system.oid)
+                for c in code_list
+            ]
 
     sections = [
         asdict(section_process) for section_process in configuration.section_processing
@@ -197,15 +183,8 @@ async def convert_config_to_storage_payload(
     for c in conditions:
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
-    # build and serialize the CodeSystemSets
-    code_system_sets = CodeSystemSets(
-        snomed=snomed,
-        loinc=loinc,
-        icd10=icd10,
-        rxnorm=rxnorm,
-        cvx=cvx,
-        other=other,
-    )
+    # STEP 3: build the CodeSystemSets
+    code_system_sets = CodeSystemSets.from_dict(data=coding_dict)
 
     return ConfigurationStoragePayload(
         codes=codes,

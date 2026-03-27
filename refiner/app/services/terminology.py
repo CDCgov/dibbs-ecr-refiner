@@ -1,9 +1,15 @@
-from dataclasses import asdict, dataclass, field
+from collections import defaultdict
+from collections.abc import Iterator
+from dataclasses import asdict, dataclass, field, fields
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from ..db.conditions.model import DbCondition
-from ..db.configurations.model import DbConfiguration
+from ..db.conditions.model import DbCondition, DbConditionCoding
+
+if TYPE_CHECKING:
+    from ..db.configurations.model import DbConfiguration
 
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
@@ -15,16 +21,91 @@ from ..db.configurations.model import DbConfiguration
 # =============================================================================
 
 
-# NOTE:
 # CODE SYSTEM MODELS
 # =============================================================================
-# todo: refactor these with the code system enum
-SYSTEM_LABEL_TO_OID: dict[str, str] = {
-    "SNOMED": "2.16.840.1.113883.6.96",
-    "LOINC": "2.16.840.1.113883.6.1",
-    "ICD-10": "2.16.840.1.113883.6.90",
-    "RxNorm": "2.16.840.1.113883.6.88",
-    "CVX": "2.16.840.1.113883.12.292",
+class CodeSystem(StrEnum):
+    """
+    An Enum for code systems.
+    """
+
+    # !IMPORTANT!
+    # If you add something here, be sure to also update the value in the corresponding
+    # values in the CodeSystemSets class and in the database references in DBCondition
+    # and related classes. It's probably worth it at some point for us to centralize
+    # code system information into a source of truth in the db.
+    LOINC = "LOINC"
+    SNOMED = "SNOMED"
+    ICD10 = "ICD-10"
+    RXNORM = "RxNorm"
+    CVX = "CVX"
+    OTHER = "Other"
+
+    @classmethod
+    def sanitize(cls, value: str) -> "CodeSystem":
+        """
+        Convert value to a santized name from the CodeSystem.
+        """
+        if not isinstance(value, str):
+            raise ValueError(f"System name provided: {value} is invalid.")
+
+        mapping = {item.value.lower(): item for item in cls}
+        sanitized = mapping.get(value.strip().lower())
+        if not sanitized:
+            raise ValueError(f"System name provided: {value} is invalid.")
+
+        return sanitized
+
+    @property
+    def oid(self) -> str:
+        """
+        Get the corresponding code system OID.
+        """
+
+        return SYSTEM_LABEL_TO_OID[self]
+
+    def format_system_string(self) -> str:
+        """
+        Utility property to format system name into a value that can index dictionaries, with special formatting for ICD-10 to remove the hyphen.
+        """
+
+        if self.value == "ICD-10":
+            return "icd10"
+
+        return self.value.lower()
+
+
+def index_condition_code_list_by_system(
+    condition: DbCondition,
+) -> dict[CodeSystem, list[DbConditionCoding]]:
+    """
+    Utility method to index condition code lists by system for processing.
+    """
+
+    result: dict[CodeSystem, list[DbConditionCoding]] = defaultdict(list)
+    for s in CodeSystem:
+        condition_column_index = f"{s.format_system_string()}_codes"
+        result[s] = getattr(condition, condition_column_index)
+
+    return result
+
+
+ALLOWED_CUSTOM_CODE_SYSTEMS: set[CodeSystem] = set(CodeSystem)
+ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
+    item.value for item in ALLOWED_CUSTOM_CODE_SYSTEMS
+)
+
+SYSTEM_LABEL_TO_OID: dict[CodeSystem, str] = {
+    CodeSystem.SNOMED: "2.16.840.1.113883.6.96",
+    CodeSystem.LOINC: "2.16.840.1.113883.6.1",
+    CodeSystem.ICD10: "2.16.840.1.113883.6.90",
+    CodeSystem.RXNORM: "2.16.840.1.113883.6.88",
+    CodeSystem.CVX: "2.16.840.1.113883.12.292",
+    CodeSystem.OTHER: "Other",  # fall back to generic string in the event of custom code system,
+}
+
+OID_TO_SYSTEM_LABEL = {
+    oid: code_system.format_system_string()
+    for code_system, oid in SYSTEM_LABEL_TO_OID.items()
 }
 
 
@@ -65,18 +146,6 @@ class CodeSystemSets:
     cvx: dict[str, Coding] = field(default_factory=dict)
     other: dict[str, Coding] = field(default_factory=dict)
 
-    # OID → attribute name mapping for system-aware lookup
-    _OID_TO_ATTR: dict[str, str] = field(
-        default_factory=lambda: {
-            "2.16.840.1.113883.6.96": "snomed",
-            "2.16.840.1.113883.6.1": "loinc",
-            "2.16.840.1.113883.6.90": "icd10",
-            "2.16.840.1.113883.6.88": "rxnorm",
-            "2.16.840.1.113883.12.292": "cvx",
-        },
-        repr=False,
-    )
-
     @property
     def all_codes(self) -> set[str]:
         """
@@ -86,14 +155,16 @@ class CodeSystemSets:
         defined yet (the old generic search path).
         """
 
-        return (
-            set(self.snomed)
-            | set(self.loinc)
-            | set(self.icd10)
-            | set(self.rxnorm)
-            | set(self.cvx)
-            | set(self.other)
-        )
+        return {
+            code for system_dict in self._iter_dicts() for code in system_dict.keys()
+        }
+
+    def _iter_dicts(self) -> Iterator[dict[str, Coding]]:
+        """Helper to iterate over all dictionary fields in the dataclass."""
+        for f in fields(self):
+            val = getattr(self, f.name)
+            if isinstance(val, dict):
+                yield val
 
     def _get_system_dict(self, code_system_oid: str) -> dict[str, Coding] | None:
         """
@@ -106,7 +177,7 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
 
-        attr_name = self._OID_TO_ATTR.get(code_system_oid)
+        attr_name = OID_TO_SYSTEM_LABEL.get(code_system_oid)
         if attr_name is None:
             return None
         return getattr(self, attr_name)
@@ -137,14 +208,7 @@ class CodeSystemSets:
                 return target.get(code)
 
         # check all systems (either no OID given, or OID was unknown)
-        for system_dict in [
-            self.snomed,
-            self.loinc,
-            self.icd10,
-            self.rxnorm,
-            self.cvx,
-            self.other,
-        ]:
+        for system_dict in self._iter_dicts():
             if code in system_dict:
                 return system_dict[code]
         return None
@@ -219,12 +283,12 @@ class CodeSystemSets:
             }
 
         return cls(
-            snomed=_deserialize_system(data.get("snomed", [])),
-            loinc=_deserialize_system(data.get("loinc", [])),
-            icd10=_deserialize_system(data.get("icd10", [])),
-            rxnorm=_deserialize_system(data.get("rxnorm", [])),
-            cvx=_deserialize_system(data.get("cvx", [])),
-            other=_deserialize_system(data.get("other", [])),
+            snomed=_deserialize_system(data[CodeSystem.SNOMED]),
+            loinc=_deserialize_system(data[CodeSystem.LOINC]),
+            icd10=_deserialize_system(data[CodeSystem.ICD10]),
+            rxnorm=_deserialize_system(data[CodeSystem.RXNORM]),
+            cvx=_deserialize_system(data[CodeSystem.CVX]),
+            other=_deserialize_system(data[CodeSystem.OTHER]),
         )
 
 
@@ -252,7 +316,7 @@ class ConfigurationPayload:
       the codes defined in that configuration.
     """
 
-    configuration: DbConfiguration
+    configuration: "DbConfiguration"
     conditions: list[DbCondition]
 
 
@@ -361,65 +425,36 @@ class ProcessedConfiguration:
         # STEP 1: build per-system dicts from condition codes
         # each condition has snomed_codes, loinc_codes, icd10_codes, rxnorm_codes
         # each code object in those lists has .code and .display
-        snomed: dict[str, Coding] = {}
-        loinc: dict[str, Coding] = {}
-        icd10: dict[str, Coding] = {}
-        rxnorm: dict[str, Coding] = {}
-        cvx: dict[str, Coding] = {}
-        other: dict[str, Coding] = {}
-
+        coding_dict: dict[str, list[dict]] = defaultdict(list)
         for condition in payload.conditions:
             # map each db code list to its target dict + OID
-            system_mappings: list[tuple[list, dict[str, Coding], str]] = [
-                (condition.snomed_codes, snomed, "2.16.840.1.113883.6.96"),
-                (condition.loinc_codes, loinc, "2.16.840.1.113883.6.1"),
-                (condition.icd10_codes, icd10, "2.16.840.1.113883.6.90"),
-                (condition.rxnorm_codes, rxnorm, "2.16.840.1.113883.6.88"),
-            ]
+            code_system_map: dict[CodeSystem, list] = (
+                index_condition_code_list_by_system(condition)
+            )
 
-            for code_list, target_dict, oid in system_mappings:
-                for code_obj in code_list:
-                    if code_obj.code not in target_dict:
-                        target_dict[code_obj.code] = Coding(
-                            code=code_obj.code,
-                            display=getattr(code_obj, "display", ""),
-                            system=oid,
-                        )
+            for code_system, code_list in code_system_map.items():
+                coding_dict[code_system.format_system_string()] = [
+                    Coding(code=c.code, display=c.display, system=code_system.oid)
+                    for c in code_list
+                ]
 
         # STEP 2: add custom codes, routing by their system label
         for custom_code in payload.configuration.custom_codes:
-            system_label = custom_code.system
+            cur_code_system = custom_code.system.format_system_string()
             code_val = custom_code.code
             display_val = custom_code.name
 
-            oid = SYSTEM_LABEL_TO_OID.get(system_label, "")
-
             # route to the correct dict based on system label
-            target_map: dict[str, dict[str, Coding]] = {
-                "SNOMED": snomed,
-                "LOINC": loinc,
-                "ICD-10": icd10,
-                "RxNorm": rxnorm,
-                "CVX": cvx,
-            }
-            target_dict = target_map.get(system_label, other)
-
-            if code_val not in target_dict:
-                target_dict[code_val] = Coding(
+            coding_dict[cur_code_system].append(
+                Coding(
                     code=code_val,
                     display=display_val,
-                    system=oid if oid else system_label,
+                    system=CodeSystem(cur_code_system).oid,
                 )
+            )
 
         # STEP 3: build the CodeSystemSets
-        code_system_sets = CodeSystemSets(
-            snomed=snomed,
-            loinc=loinc,
-            icd10=icd10,
-            rxnorm=rxnorm,
-            cvx=cvx,
-            other=other,
-        )
+        code_system_sets = CodeSystemSets.from_dict(data=coding_dict)
 
         # STEP 4: build included_condition_rsg_codes
         included_condition_rsg_codes = set()

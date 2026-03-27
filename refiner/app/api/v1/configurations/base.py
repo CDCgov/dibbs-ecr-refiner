@@ -35,6 +35,7 @@ from app.services.configurations import (
     get_canonical_url_to_highest_inactive_version_map,
 )
 from app.services.logger import get_logger
+from app.services.terminology import CodeSystem
 
 from .model import (
     CreateConfigInput,
@@ -275,15 +276,7 @@ async def get_configuration(
     all_codes = set()
 
     for c in conditions:
-        for code_list in [
-            getattr(c, "snomed_codes", []),
-            getattr(c, "loinc_codes", []),
-            getattr(c, "icd10_codes", []),
-            getattr(c, "rxnorm_codes", []),
-        ]:
-            for coding in code_list:
-                if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
-                    all_codes.add(coding.code)
+        all_codes.add(c.get_codes_from_all_systems())
 
     # Include custom codes from the configuration
     for custom_code in getattr(config, "custom_codes", []):
