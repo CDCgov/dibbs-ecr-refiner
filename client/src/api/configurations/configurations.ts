@@ -33,6 +33,7 @@ import type {
 
 import type {
   AddCustomCodeInput,
+  AddSectionInput,
   AssociateCodesetInput,
   AssociateCodesetResponse,
   BodyRunInlineConfigurationTest,
@@ -42,7 +43,6 @@ import type {
   ConfirmUploadCustomCodesInput,
   CreateConfigInput,
   CreateConfigurationResponse,
-  CustomSectionInput,
   DeleteSectionInput,
   GetConfigurationResponse,
   GetConfigurationsResponse,
@@ -1013,13 +1013,13 @@ Args:
  */
 export const addCustomSection = (
     configurationId: string,
-    customSectionInput: CustomSectionInput, options?: AxiosRequestConfig
+    addSectionInput: AddSectionInput, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<string>> => {
     
     
     return axios.default.post(
       `/api/v1/configurations/${configurationId}/sections`,
-      customSectionInput,{
+      addSectionInput,{
     ...options,}
     );
   }
@@ -1027,8 +1027,8 @@ export const addCustomSection = (
 
 
 export const getAddCustomSectionMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof addCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomSection>>, TError,{configurationId: string;data: AddSectionInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof addCustomSection>>, TError,{configurationId: string;data: AddSectionInput}, TContext> => {
 
 const mutationKey = ['addCustomSection'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -1040,7 +1040,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCustomSection>>, {configurationId: string;data: CustomSectionInput}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCustomSection>>, {configurationId: string;data: AddSectionInput}> = (props) => {
           const {configurationId,data} = props ?? {};
 
           return  addCustomSection(configurationId,data,axiosOptions)
@@ -1054,18 +1054,18 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type AddCustomSectionMutationResult = NonNullable<Awaited<ReturnType<typeof addCustomSection>>>
-    export type AddCustomSectionMutationBody = CustomSectionInput
+    export type AddCustomSectionMutationBody = AddSectionInput
     export type AddCustomSectionMutationError = AxiosError<HTTPValidationError>
 
     /**
  * @summary Insert Custom Section
  */
 export const useAddCustomSection = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomSection>>, TError,{configurationId: string;data: CustomSectionInput}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomSection>>, TError,{configurationId: string;data: AddSectionInput}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof addCustomSection>>,
         TError,
-        {configurationId: string;data: CustomSectionInput},
+        {configurationId: string;data: AddSectionInput},
         TContext
       > => {
       return useMutation(getAddCustomSectionMutationOptions(options), queryClient);

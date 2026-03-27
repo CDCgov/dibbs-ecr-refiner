@@ -7,6 +7,7 @@
  */
 
 export * from './addCustomCodeInput';
+export * from './addSectionInput';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
@@ -21,7 +22,6 @@ export * from './configurationTestResponse';
 export * from './confirmUploadCustomCodesInput';
 export * from './createConfigInput';
 export * from './createConfigurationResponse';
-export * from './customSectionInput';
 export * from './dbConfigurationCustomCode';
 export * from './dbConfigurationSectionProcessing';
 export * from './dbConfigurationStatus';
