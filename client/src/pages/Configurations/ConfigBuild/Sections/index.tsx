@@ -283,7 +283,7 @@ function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
   );
 }
 
-interface RefineSwitchProps {
+interface SelectionToggleProps {
   configurationId: string;
   currentSection: DbConfigurationSectionProcessing;
   sections: DbConfigurationSectionProcessing[];
@@ -294,11 +294,8 @@ function IncludeCheckbox({
   currentSection,
   configurationId,
   disabled,
-}: RefineSwitchProps) {
-  const { mutate: updateSection } = useUpdateSection();
-  const queryClient = useQueryClient();
-  const formatError = useApiErrorFormatter();
-  const showToast = useToast();
+}: SelectionToggleProps) {
+  const updateSection = useSectionUpdater(configurationId);
 
   return (
     <Checkbox
@@ -307,66 +304,65 @@ function IncludeCheckbox({
       checked={currentSection.include}
       disabled={disabled}
       onChange={(checked) => {
-        const include = checked;
-        const updatedSection: DbConfigurationSectionProcessing = {
-          ...currentSection,
-          include,
-        };
-
-        updateSection(
-          {
-            configurationId,
-            data: {
-              action: updatedSection.action,
-              current_code: updatedSection.code,
-              include: updatedSection.include,
-              narrative: updatedSection.narrative,
-            },
-          },
-          {
-            onSuccess: async () => {
-              await queryClient.invalidateQueries({
-                queryKey: getGetConfigurationQueryKey(configurationId),
-              });
-            },
-            onError: (error) => {
-              const errorDetail =
-                formatError(error) || error.message || 'Unknown error';
-              showToast({
-                heading: 'Section failed to update',
-                body: errorDetail,
-                variant: 'error',
-              });
-            },
-          }
-        );
+        updateSection(currentSection, { include: checked });
       }}
-    >
-      <svg
-        className="group-data-checked:bg-blue-cool-50 hidden stroke-white group-data-checked:block"
-        viewBox="0 0 14 14"
-        fill="none"
-      >
-        <path
-          d="M3 8L6 11L11 3.5"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </Checkbox>
+    />
   );
+}
+
+type SectionPatch = Partial<
+  Pick<
+    DbConfigurationSectionProcessing,
+    'action' | 'include' | 'narrative' | 'code'
+  >
+>;
+
+function useSectionUpdater(configurationId: string) {
+  const { mutate: updateSection } = useUpdateSection();
+  const queryClient = useQueryClient();
+  const formatError = useApiErrorFormatter();
+  const showToast = useToast();
+
+  return (
+    currentSection: DbConfigurationSectionProcessing,
+    patch: SectionPatch
+  ) => {
+    updateSection(
+      {
+        configurationId,
+        data: {
+          action: patch.action ?? currentSection.action,
+          current_code: patch.code ?? currentSection.code,
+          include: patch.include ?? currentSection.include,
+          narrative: patch.narrative ?? currentSection.narrative,
+        },
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: getGetConfigurationQueryKey(configurationId),
+          });
+        },
+        onError: (error) => {
+          const errorDetail =
+            formatError(error) || error.message || 'Unknown error';
+          showToast({
+            heading: 'Section failed to update',
+            body: errorDetail,
+            variant: 'error',
+          });
+        },
+      }
+    );
+  };
 }
 
 function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-}: RefineSwitchProps) {
-  const { mutate: updateSection } = useUpdateSection();
-  const queryClient = useQueryClient();
-  const formatError = useApiErrorFormatter();
-  const showToast = useToast();
+}: SelectionToggleProps) {
+  const updateSection = useSectionUpdater(configurationId);
 
   const isRefineToggled = currentSection.action === DbSectionAction.refine;
   const refineLabelText = 'Refine & optimize';
@@ -391,49 +387,14 @@ function RefineSwitch({
         )}
       </Label>
       <Switch
-        className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
         disabled={disabled}
         checked={isRefineToggled}
         onChange={(checked) => {
-          const action: DbSectionAction = checked
-            ? DbSectionAction.refine
-            : DbSectionAction.retain;
-          const updatedSection: DbConfigurationSectionProcessing = {
-            ...currentSection,
-            action,
-          };
-
-          updateSection(
-            {
-              configurationId,
-              data: {
-                action: updatedSection.action,
-                current_code: updatedSection.code,
-                include: updatedSection.include,
-                narrative: updatedSection.narrative,
-              },
-            },
-            {
-              onSuccess: async () => {
-                await queryClient.invalidateQueries({
-                  queryKey: getGetConfigurationQueryKey(configurationId),
-                });
-              },
-              onError: (error) => {
-                const errorDetail =
-                  formatError(error) || error.message || 'Unknown error';
-                showToast({
-                  heading: 'Section failed to update',
-                  body: errorDetail,
-                  variant: 'error',
-                });
-              },
-            }
-          );
+          updateSection(currentSection, {
+            action: checked ? DbSectionAction.refine : DbSectionAction.retain,
+          });
         }}
-      >
-        <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
-      </Switch>
+      />
     </Field>
   );
 }
@@ -442,51 +403,21 @@ function NarrativeSwitch({
   currentSection,
   configurationId,
   disabled,
-}: RefineSwitchProps) {
-  const { mutate: updateSectionProcessing } = useUpdateSection();
-  const queryClient = useQueryClient();
-  const formatError = useApiErrorFormatter();
-  const showToast = useToast();
+}: SelectionToggleProps) {
+  const updateSection = useSectionUpdater(configurationId);
 
   return (
     <Field className="flex items-center gap-3">
       <Switch
-        className="group data-checked:bg-violet-warm-60 bg-gray-cool-60 inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition data-disabled:cursor-not-allowed data-disabled:opacity-50"
         disabled={disabled}
         checked={currentSection.narrative}
         onChange={(checked) => {
-          updateSectionProcessing(
-            {
-              configurationId,
-              data: {
-                action: currentSection.action,
-                current_code: currentSection.code,
-                include: currentSection.include,
-                narrative: checked,
-              },
-            },
-            {
-              onSuccess: async () => {
-                await queryClient.invalidateQueries({
-                  queryKey: getGetConfigurationQueryKey(configurationId),
-                });
-              },
-              onError: (error) => {
-                const errorDetail =
-                  formatError(error) || error.message || 'Unknown error';
-                showToast({
-                  heading: 'Section failed to update',
-                  body: errorDetail,
-                  variant: 'error',
-                });
-              },
-            }
-          );
+          updateSection(currentSection, {
+            narrative: checked,
+          });
         }}
         aria-label={`Toggle to refine or retain the narrative block in the ${currentSection.name} section`}
-      >
-        <span className="data-disabled:bg-gray-cool-60 pointer-events-none size-4 translate-x-1 rounded-full bg-white transition group-data-checked:translate-x-6" />
-      </Switch>
+      />
     </Field>
   );
 }
