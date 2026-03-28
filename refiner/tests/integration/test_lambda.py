@@ -18,6 +18,7 @@ REFINER_OUTPUT_PREFIX = "RefinerOutput/"
 
 # Condition SNOMED codes
 COVID_CODE = "840539006"
+COVID_DUPE_CODE = "186747009"
 INFLUENZA_CODE = "772828001"
 
 # RR namespaces for content assertions
@@ -94,10 +95,12 @@ class TestLambda:
         # --- File existence assertions ---
 
         # Assert refined RR was created
-        expected_refined_rr_key = (
+        expected_refined_covid_rr_key = (
             f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_RR.xml"
         )
-        rr_response = s3_client.get_object(Bucket=bucket, Key=expected_refined_rr_key)
+        rr_response = s3_client.get_object(
+            Bucket=bucket, Key=expected_refined_covid_rr_key
+        )
         assert rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
         # Assert unrefined conditions RR was created
@@ -110,13 +113,13 @@ class TestLambda:
         assert unrefined_rr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
         # Assert refined eICR was created
-        expected_refined_eicr_key = (
+        expected_refined_covid_eicr_key = (
             f"{REFINER_OUTPUT_PREFIX}persistence/id/SDDH/COVID19/refined_eICR.xml"
         )
-        eicr_response = s3_client.get_object(
-            Bucket=bucket, Key=expected_refined_eicr_key
+        eicr_covid_response = s3_client.get_object(
+            Bucket=bucket, Key=expected_refined_covid_eicr_key
         )
-        assert eicr_response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        assert eicr_covid_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
         # --- RefinerComplete assertions ---
 
@@ -127,20 +130,34 @@ class TestLambda:
 
         # COVID was refined and the flu was not
         expected_refiner_metadata = {
-            "SDDH": {COVID_CODE: True, INFLUENZA_CODE: False},
+            "SDDH": {
+                COVID_CODE: True,
+                COVID_DUPE_CODE: True,
+                INFLUENZA_CODE: False,
+            },
             "JDDH": {INFLUENZA_CODE: False},
         }
         assert complete_body["RefinerMetadata"] == expected_refiner_metadata
 
-        assert expected_refined_eicr_key in complete_body["RefinerOutputFiles"]
-        assert expected_refined_rr_key in complete_body["RefinerOutputFiles"]
-        assert expected_unrefined_rr_key in complete_body["RefinerOutputFiles"]
+        assert expected_refined_covid_eicr_key in complete_body["RefinerOutputFiles"]
 
+        # COVID has two codes, but should only have one instance of the output key
+        # for both files
+        assert (
+            complete_body["RefinerOutputFiles"].count(expected_refined_covid_eicr_key)
+            == 1
+        )
+        assert (
+            complete_body["RefinerOutputFiles"].count(expected_refined_covid_rr_key)
+            == 1
+        )
+
+        assert expected_unrefined_rr_key in complete_body["RefinerOutputFiles"]
         assert not complete_body["RefinerSkip"]
 
         # --- Content and Schematron validation for refined eICR ---
 
-        refined_eicr_xml = eicr_response["Body"].read().decode("utf-8")
+        refined_eicr_xml = eicr_covid_response["Body"].read().decode("utf-8")
 
         validate_refined_xml(
             refined_eicr_xml, "eICR", "COVID19 refined eICR", test_name

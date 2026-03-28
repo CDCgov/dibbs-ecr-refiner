@@ -85,8 +85,10 @@ def seed_localstack(s3_client):
     )
 
     persistence_id = "persistence/id"
-    rr_content = load_fixture_str("eicr_v1_1/mon_mothma_covid_influenza_RR.xml")
-    eicr_content = load_fixture_str("eicr_v1_1/mon_mothma_covid_influenza_eICR.xml")
+    rr_content = load_fixture_str("eicr_v3_1_1/multi-condition-multi-covid-CDA_RR.xml")
+    eicr_content = load_fixture_str(
+        "eicr_v3_1_1/multi-condition-multi-covid-CDA_eICR.xml"
+    )
 
     # Upload RR to S3
     rr_key = f"RefinerInput/{persistence_id}"

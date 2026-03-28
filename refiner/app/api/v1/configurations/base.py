@@ -10,7 +10,6 @@ from app.db.conditions.db import (
     get_conditions_by_version_db,
     get_included_conditions_db,
 )
-from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.db import (
     get_configuration_by_id_db,
     get_configuration_versions_db,
@@ -270,18 +269,10 @@ async def get_configuration(
     )
 
     # Flatten all codes from all included conditions and custom codes
-    all_codes = set()
+    all_codes: set[str] = set()
 
     for c in conditions:
-        for code_list in [
-            getattr(c, "snomed_codes", []),
-            getattr(c, "loinc_codes", []),
-            getattr(c, "icd10_codes", []),
-            getattr(c, "rxnorm_codes", []),
-        ]:
-            for coding in code_list:
-                if isinstance(coding, DbConditionCoding) and hasattr(coding, "code"):
-                    all_codes.add(coding.code)
+        all_codes.update(c.code for c in c.get_codes_from_all_systems())
 
     # Include custom codes from the configuration
     for custom_code in getattr(config, "custom_codes", []):

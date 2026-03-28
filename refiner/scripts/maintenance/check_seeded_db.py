@@ -11,6 +11,8 @@ from psycopg.rows import dict_row
 from rich.console import Console
 from rich.table import Table
 
+from app.services.terminology import CodeSystem
+
 SCRIPTS_DIR = Path(__file__).parent.parent
 ENV_PATH = SCRIPTS_DIR / ".env"
 TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0"]
@@ -238,11 +240,10 @@ def run_comparison_check(
     table.add_column("Total Codes", style="green", justify="right")
 
     for row in results:
-        loinc_count = len(row.get("loinc_codes") or [])
-        snomed_count = len(row.get("snomed_codes") or [])
-        icd10_count = len(row.get("icd10_codes") or [])
-        rxnorm_count = len(row.get("rxnorm_codes") or [])
-        total_codes = loinc_count + snomed_count + icd10_count + rxnorm_count
+        total_codes = 0
+        for s in CodeSystem:
+            column_name_to_check = f"{s.format_system_string()}_codes"
+            total_codes += len(row.get(column_name_to_check) or [])
 
         table.add_row(
             row["display_name"],

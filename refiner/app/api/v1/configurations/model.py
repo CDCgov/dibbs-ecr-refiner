@@ -13,7 +13,7 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.code_system import CodeSystem
+from app.services.terminology import CodeSystem
 
 
 @dataclass(frozen=True)

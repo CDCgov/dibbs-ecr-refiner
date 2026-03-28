@@ -8,7 +8,7 @@
 import type { DbSectionAction } from './dbSectionAction';
 
 /**
- * Request body for modifying a standard section from the TES.
+ * Request body for modifying a section.
  */
 export interface SectionUpdateInput {
   include?: boolean | null;

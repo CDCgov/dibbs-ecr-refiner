@@ -5,8 +5,8 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
 )
-from app.services.code_system import CodeSystem
 from app.services.terminology import (
+    CodeSystem,
     ConfigurationPayload,
     ProcessedConfiguration,
 )

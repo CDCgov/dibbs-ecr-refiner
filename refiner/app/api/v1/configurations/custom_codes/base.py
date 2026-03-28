@@ -28,11 +28,9 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
-from app.services.code_system import (
-    CodeSystem,
-)
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
+from app.services.terminology import CodeSystem
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
@@ -154,7 +152,7 @@ async def add_custom_code(
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=sanitized_system_name,
+        system=CodeSystem(sanitized_system_name),
         name=body.name,
     )
 

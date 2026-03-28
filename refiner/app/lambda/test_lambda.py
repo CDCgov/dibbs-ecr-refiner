@@ -477,6 +477,7 @@ def test_lambda_all_active(
         f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in complete_json["RefinerOutputFiles"]
     )
+
     assert (
         f"RefinerOutput/{s3_input_objects}/SDDH/COVID19/refined_RR.xml"
         in complete_json["RefinerOutputFiles"]
