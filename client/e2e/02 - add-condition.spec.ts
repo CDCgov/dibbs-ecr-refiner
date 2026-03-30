@@ -265,6 +265,14 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .getByLabel('Display name (for this section)')
       .fill('My custom section');
     await page.getByLabel('LOINC code').fill('custom-section-code');
+
+    // Form is ready, click button
+    await expect(page.getByLabel('Section name')).toHaveValue(
+      'My custom section'
+    );
+    await expect(page.getByLabel('LOINC code')).toHaveValue(
+      'custom-section-code'
+    );
     await page.getByRole('button', { name: 'Add section' }).click();
 
     // check page
