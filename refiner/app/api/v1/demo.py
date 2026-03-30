@@ -183,8 +183,6 @@ async def demo_upload(
 
         condition_refined_eicr = refined_document.refined_eicr
         condition_refined_rr = refined_document.refined_rr
-        refined_files_to_zip.append((eicr_filename_xml, condition_refined_eicr))
-        refined_files_to_zip.append((rr_filename_xml, condition_refined_rr))
 
         # Try to generate HTML using XSLT
         try:
@@ -215,6 +213,7 @@ async def demo_upload(
 
         normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
         refined_files_to_zip.append((eicr_filename_xml, normalized_refined_eicr))
+        refined_files_to_zip.append((rr_filename_xml, condition_refined_rr))
 
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)
