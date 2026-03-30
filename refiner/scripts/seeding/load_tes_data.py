@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
@@ -12,6 +12,15 @@ from lib import (
 )
 
 
+class Code(TypedDict):
+    """
+    A code object in a condition's code set.
+    """
+
+    code: str
+    display: str
+
+
 class ConditionRow(TypedDict):
     """
     A condition row to upsert into the DB.
@@ -21,11 +30,11 @@ class ConditionRow(TypedDict):
     version: str
     display_name: str
     child_rsg_snomed_codes: list[str] | None
-    loinc_codes: list[str] | None
-    snomed_codes: list[str] | None
-    icd10_codes: list[str] | None
-    rxnorm_codes: list[str] | None
-    cvx_codes: list[str] | None
+    loinc_codes: list[Code] | None
+    snomed_codes: list[Code] | None
+    icd10_codes: list[Code] | None
+    rxnorm_codes: list[Code] | None
+    cvx_codes: list[Code] | None
 
 
 def _build_condition_upsert_rows(
@@ -41,8 +50,8 @@ def _build_condition_upsert_rows(
     return conditions
 
 
-def _upsert_processed_conditions(
-    db_url: str, db_password: str, conditions: list[dict[str, Any]]
+def _upsert_condition_rows(
+    db_url: str, db_password: str, conditions: list[ConditionRow]
 ) -> None:
     try:
         with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
@@ -134,7 +143,7 @@ def load_tes_data(db_url: str, db_password: str) -> None:
         return
 
     logger.info(f"⬆️  Total conditions to upsert: {len(upsertable_condition_rows)}")
-    _upsert_processed_conditions(
+    _upsert_condition_rows(
         db_url=db_url, db_password=db_password, conditions=upsertable_condition_rows
     )
 
