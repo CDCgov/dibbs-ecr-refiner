@@ -1,6 +1,6 @@
 boto3==1.42.73
 Authlib==1.6.9
-chardet==7.4.0.post2
+chardet==7.4.0
 fastapi==0.135.1
 itsdangerous==2.2.0
 httpx==0.28.1
