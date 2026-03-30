@@ -214,12 +214,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .getByRole('switch', { name: 'Refine & optimize Encounters section' })
       .click();
 
-    // Wait for saving to show up
-    await page.getByText('Saving').waitFor({ state: 'visible' });
-
-    // Wait for saving to go away (refetch finished)
-    await page.getByText('Saving').waitFor({ state: 'detached' });
-    await page.getByText('Saved').waitFor({ state: 'visible' });
+    // Should show "saved"
+    await expect(page.getByText('Saved')).toBeVisible();
 
     // narrative should start off unchecked
     const encountersLabelNarrativeText =
@@ -230,6 +226,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     // toggle narrative on
     await page.getByLabel(encountersLabelNarrativeText).click();
+    await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
     // toggle include off
     const encountersIncludeLabelText =
@@ -242,12 +239,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await expect(page.getByLabel(encountersIncludeLabelText)).toBeChecked();
     await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
-    // Wait for saving to show up
-    await page.getByText('Saving').waitFor({ state: 'visible' });
-
-    // Wait for saving to go away (refetch finished)
-    await page.getByText('Saving').waitFor({ state: 'detached' });
-    await page.getByText('Saved').waitFor({ state: 'visible' });
+    // Should show "saved"
+    await expect(page.getByText('Saved')).toBeVisible();
 
     await page.getByRole('button', { name: configurationToTest }).click();
 
