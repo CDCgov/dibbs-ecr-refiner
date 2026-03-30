@@ -9,6 +9,6 @@ packaging==26.0
 psycopg[binary]==3.3.3
 psycopg[pool]==3.3.3
 pydantic==2.12.5
-python-json-logger==4.0.0
+python-json-logger==4.1.0
 uvicorn==0.42.0
 python-multipart==0.0.22
