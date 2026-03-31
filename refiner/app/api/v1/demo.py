@@ -15,6 +15,7 @@ from app.api.validation.file_validation import (
 )
 from app.core.models.types import XMLFiles
 from app.services.ecr.model import RefinedDocument, ReportableCondition
+from app.services.file_io import ZipFileItem, ZipFilePackage
 from app.services.testing import independent_testing
 
 from ...api.auth.middleware import get_logged_in_user
@@ -49,8 +50,6 @@ FILE_PROCESSING_ERROR = (
     "File cannot be processed. Please ensure ZIP archive only contains the required files.",
 )
 GENERIC_SERVER_ERROR = ("Server error occurred. Please check your file and try again.",)
-
-type ZippedItem = tuple[str, str]
 
 
 @router.post(
@@ -92,7 +91,7 @@ async def demo_upload(
     """
 
     # List of files to bundle into the zip
-    packaged_files: list[ZippedItem] = []
+    zip_package = ZipFilePackage()
 
     # Check that demo file path is valid
     validate_path_or_raise(path=demo_zip_path)
@@ -122,23 +121,27 @@ async def demo_upload(
         )
 
     # Get the refined condition info and file packages
-    conditions, refined_file_packages = _build_refined_conditions(
+    conditions, zip_file_items = _build_refined_conditions(
         original_xml_files=original_xml_files,
         refined_documents=test_results.refined_documents,
         logger=logger,
     )
 
     # Package refined files
-    for item in refined_file_packages:
-        packaged_files.append(item)
+    for item in zip_file_items:
+        zip_package.package(item)
 
     # Package original files
-    packaged_files.append(("CDA_eICR.xml", original_xml_files.eicr))
-    packaged_files.append(("CDA_RR.xml", original_xml_files.rr))
+    zip_package.package(
+        ZipFileItem(file_name="CDA_eICR.xml", file_content=original_xml_files.eicr)
+    )
+    zip_package.package(
+        ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
+    )
 
     # Create the zip bundle
     output_file_name, output_zip_buffer = create_output_zip(
-        files=packaged_files,
+        zip_package=zip_package,
     )
 
     # Ship bundle to S3
@@ -166,7 +169,7 @@ def _build_refined_conditions(
     original_xml_files: XMLFiles,
     refined_documents: list[RefinedDocument],
     logger: Logger,
-) -> tuple[list[Condition], list[ZippedItem]]:
+) -> tuple[list[Condition], list[ZipFileItem]]:
     """
     Builds a list of refined conditions.
 
@@ -181,7 +184,7 @@ def _build_refined_conditions(
 
     # Return both of these at the end
     conditions: list[Condition] = []
-    packaged_files: list[ZippedItem] = []
+    packaged_files: list[ZipFileItem] = []
 
     for refined_document in refined_documents:
         condition = refined_document.reportable_condition
@@ -200,10 +203,16 @@ def _build_refined_conditions(
 
         # Package all refined files for condition
         packaged_files.append(
-            (refined_file_names.eicr_xml_file_name, refined_document.refined_eicr)
+            ZipFileItem(
+                file_name=refined_file_names.eicr_xml_file_name,
+                file_content=refined_document.refined_eicr,
+            )
         )
         packaged_files.append(
-            (refined_file_names.rr_xml_file_name, refined_document.refined_rr)
+            ZipFileItem(
+                file_name=refined_file_names.rr_xml_file_name,
+                file_content=refined_document.refined_rr,
+            )
         )
         packaged_files.append(html_file)
 
@@ -245,7 +254,7 @@ def _format_xml_document(text: str) -> str:
 
 def _create_html_file(
     condition: ReportableCondition, refined_eicr: str, file_name: str, logger: Logger
-) -> ZippedItem:
+) -> ZipFileItem:
     """
     Creates an HTML file using the refined condition information.
 
@@ -280,7 +289,7 @@ def _create_html_file(
                 "error": str(e),
             },
         )
-    return (file_name, html_bytes.decode("utf-8"))
+    return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
 
 
 @router.get(

@@ -12,6 +12,7 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.services import file_io
+from app.services.file_io import ZipFileItem, ZipFilePackage
 
 
 class MockFileUpload:
@@ -237,12 +238,22 @@ def test_zip_contains_only_xml_when_html_fails() -> None:
 
     Simulate by omitting HTML file for ConditionC and including for ConditionD.
     """
+    zip_package = ZipFilePackage()
     files: list[tuple[str, str | bytes]] = [
-        ("ConditionC-321.xml", "<xml>TestC</xml>"),  # HTML intentionally omitted for C
-        ("ConditionD-654.xml", "<xml>TestD</xml>"),
-        ("ConditionD-654.html", b"<html><body>HTML D</body></html>"),
+        ZipFileItem(
+            file_name="ConditionC-321.xml", file_content="<xml>TestC</xml>"
+        ),  # HTML intentionally omitted for C
+        ZipFileItem(file_name="ConditionD-654.xml", file_content="<xml>TestD</xml>"),
+        ZipFileItem(
+            file_name="ConditionD-654.html",
+            file_content=b"<html><body>HTML D</body></html>",
+        ),
     ]
-    zip_name, zip_buf = file_io.create_refined_ecr_zip_in_memory(files=files)
+
+    for file in files:
+        zip_package.package(file)
+
+    _, zip_buf = file_io.create_refined_ecr_zip_in_memory(zip_package=zip_package)
     with zipfile.ZipFile(zip_buf, "r") as zf:
         namelist = zf.namelist()
         assert "ConditionC-321.xml" in namelist

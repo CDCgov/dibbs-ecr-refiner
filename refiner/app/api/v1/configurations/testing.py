@@ -25,6 +25,8 @@ from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_ecr
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
+    ZipFileItem,
+    ZipFilePackage,
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
 )
@@ -96,6 +98,8 @@ async def run_configuration_test(
         A response object containing the original eICR, a URL to download the
         zipped results, and details about the refined condition.
     """
+    # List of files to bundle into the zip
+    zip_package = ZipFilePackage()
 
     # Check that demo file path is valid
     validate_path_or_raise(path=sample_zip_path)
@@ -169,24 +173,31 @@ async def run_configuration_test(
             detail="An unexpected error occurred during the refinement process.",
         )
 
-    condition_obj = refined_document.reportable_condition
+    condition = refined_document.reportable_condition
 
-    # STEP 4:
-    # prepare files for zip and s3 upload
-    s3_file_package = []
-    s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
-    s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
+    zip_package.package(
+        ZipFileItem(file_name="CDA_eICR.xml", file_content=original_xml_files.eicr)
+    )
+    zip_package.package(
+        ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
+    )
 
     refined_file_names = create_refined_file_names(
-        condition_name=condition_obj.display_name,
-        condition_code=condition_obj.code,
+        condition_name=condition.display_name,
+        condition_code=condition.code,
     )
 
-    s3_file_package.append(
-        (refined_file_names.eicr_xml_file_name, refined_document.refined_eicr)
+    zip_package.package(
+        ZipFileItem(
+            file_name=refined_file_names.eicr_xml_file_name,
+            file_content=refined_document.refined_eicr,
+        )
     )
-    s3_file_package.append(
-        (refined_file_names.rr_xml_file_name, refined_document.refined_rr)
+    zip_package.package(
+        ZipFileItem(
+            file_name=refined_file_names.rr_xml_file_name,
+            file_content=refined_document.refined_rr,
+        )
     )
     # Generate HTML from refined XML
     try:
@@ -195,14 +206,17 @@ async def run_configuration_test(
             refined_document.refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
         )
 
-        s3_file_package.append(
-            (refined_file_names.eicr_html_file_name, html_bytes.decode("utf-8"))
+        zip_package.package(
+            ZipFileItem(
+                file_name=refined_file_names.eicr_html_file_name,
+                file_content=html_bytes.decode("utf-8"),
+            )
         )
         logger.info(
             "Successfully transformed XML to HTML",
             extra={
-                "condition_code": condition_obj.code,
-                "condition_name": condition_obj.display_name,
+                "condition_code": condition.code,
+                "condition_name": condition.display_name,
             },
         )
     except Exception as e:
@@ -210,8 +224,8 @@ async def run_configuration_test(
             logger.error(
                 "Failed to transform XML to HTML",
                 extra={
-                    "condition_code": condition_obj.code,
-                    "condition_name": condition_obj.display_name,
+                    "condition_code": condition.code,
+                    "condition_name": condition.display_name,
                     "error": str(e),
                 },
             )
@@ -219,8 +233,8 @@ async def run_configuration_test(
             logger.error(
                 "Unexpected error during XML to HTML transformation",
                 extra={
-                    "condition_code": condition_obj.code,
-                    "condition_name": condition_obj.display_name,
+                    "condition_code": condition.code,
+                    "condition_name": condition.display_name,
                     "error": str(e),
                 },
             )
@@ -228,7 +242,7 @@ async def run_configuration_test(
 
     try:
         output_file_name, output_zip_buffer = create_output_zip(
-            files=s3_file_package,
+            zip_package=zip_package,
         )
     except Exception as e:
         logger.error(msg="Error in create_output_zip", extra={"error": str(e)})
@@ -264,8 +278,8 @@ async def run_configuration_test(
         original_eicr=formatted_unrefined_eicr,
         refined_download_key=output_file_name if s3_key else "",
         condition=Condition(
-            code=condition_obj.code,
-            display_name=condition_obj.display_name,
+            code=condition.code,
+            display_name=condition.display_name,
             refined_eicr=formatted_refined_eicr,
             refined_rr=formatted_refined_rr,
             stats=[

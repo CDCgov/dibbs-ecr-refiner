@@ -11,7 +11,11 @@ from app.api.validation.file_validation import (
     _validate_zip_file,
 )
 from app.services.ecr.refine import get_file_size_reduction_percentage
-from app.services.file_io import create_refined_ecr_zip_in_memory
+from app.services.file_io import (
+    ZipFileItem,
+    ZipFilePackage,
+    create_refined_ecr_zip_in_memory,
+)
 
 api_route_base = "/api/v1/demo"
 
@@ -143,16 +147,24 @@ def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
 
 
 def test_create_refined_ecr_zip():
+    zip_package = ZipFilePackage()
     refined_files = [
-        ("covid_condition.xml", "<eICR>Covid Data</eICR>"),
-        ("flu_condition.xml", "<eICR>Flu Data</eICR>"),
+        ZipFileItem(
+            file_name="covid_condition.xml", file_content="<eICR>Covid Data</eICR>"
+        ),
+        ZipFileItem(
+            file_name="flu_condition.xml", file_content="<eICR>Flu Data</eICR>"
+        ),
     ]
 
     eicr = "<eICR>Some RR Data</eICR>"
 
-    refined_files.append(("CDA_eICR.xml", eicr))
+    refined_files.append(ZipFileItem(file_name="CDA_eICR.xml", file_content=eicr))
 
-    file_name, file_buffer = create_refined_ecr_zip_in_memory(files=refined_files)
+    for file in refined_files:
+        zip_package.package(file)
+
+    file_name, file_buffer = create_refined_ecr_zip_in_memory(zip_package=zip_package)
 
     assert "_refined_ecr.zip" in file_name
 

@@ -20,6 +20,42 @@ from ..core.models.types import FileUpload, XMLFiles
 MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
+@dataclass
+class ZipFileItem:
+    """
+    Represents an object to add to a ZipFilePackage.
+    """
+
+    file_name: str
+    file_content: str
+
+
+class ZipFilePackage:
+    """
+    Represents a collection of documents to use for creating a zip file package.
+    """
+
+    _packaged_items: list[ZipFileItem] = []
+
+    def package(self, item: ZipFileItem) -> None:
+        """
+        Adds a zipped item to the package.
+
+        Args:
+            item (ZippedItem): The item to add to the package
+        """
+        self._packaged_items.append(item)
+
+    def get_package(self) -> list[ZipFileItem]:
+        """
+        Gets the zip package.
+
+        Returns:
+            list[ZippedItem]: All items in the zip package.
+        """
+        return self._packaged_items
+
+
 def get_asset_path(*paths: str) -> Path:
     """
     Get the full path to an asset file or directory.
@@ -130,13 +166,13 @@ def create_refined_file_names(
 
 def create_refined_ecr_zip_in_memory(
     *,
-    files: list[tuple[str, str | bytes]],
+    zip_package: ZipFilePackage,
 ) -> tuple[str, io.BytesIO]:
     """
     Create a zip archive containing all provided (filename, content) pairs (content may be str or bytes).
 
     Args:
-        files (list[tuple[str, str | bytes]]): List of tuples [(filename, content)], content must be a string or bytes.
+        zip_package (ZipFilePackage): A constructed file package
 
     Returns:
         (filename, buffer)
@@ -151,7 +187,10 @@ def create_refined_ecr_zip_in_memory(
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, "w") as zf:
-        for filename, content in files:
+        for item in zip_package.get_package():
+            content = item.file_content
+            filename = item.file_name
+
             if not content:
                 continue
             data = content if isinstance(content, bytes) else content.encode("utf-8")
