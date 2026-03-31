@@ -211,13 +211,14 @@ async def demo_upload(
             )
             # Continue with XML only; do not include HTML file for this condition
 
-        normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
-        refined_files_to_zip.append((eicr_filename_xml, normalized_refined_eicr))
+        refined_files_to_zip.append((eicr_filename_xml, condition_refined_eicr))
         refined_files_to_zip.append((rr_filename_xml, condition_refined_rr))
 
         formatted_unrefined_eicr = format.strip_comments(
             format.normalize_xml(original_xml_files.eicr)
         )
+
+        normalized_refined_eicr = format.normalize_xml(refined_document.refined_eicr)
         formatted_refined_eicr = format.strip_comments(normalized_refined_eicr)
         formatted_refined_rr = format.strip_comments(
             format.normalize_xml(original_xml_files.rr)
