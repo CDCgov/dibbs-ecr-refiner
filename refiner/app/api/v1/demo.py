@@ -248,7 +248,9 @@ async def demo_upload(
     shadow_rr = result.get("shadow_rr")
     if shadow_rr:
         formatted_shadow_rr = format.strip_comments(format.normalize_xml(shadow_rr))
-        refined_files_to_zip.append(("unrefined_rr/refined_RR.xml", formatted_shadow_rr))
+        refined_files_to_zip.append(
+            ("unrefined_rr/refined_RR.xml", formatted_shadow_rr)
+        )
 
     # STEP 6:
     # package files into ZIP and upload to S3

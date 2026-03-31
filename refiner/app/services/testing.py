@@ -355,7 +355,6 @@ async def independent_testing(
     }
 
 
-
 async def inline_testing(
     xml_files: XMLFiles,
     configuration: DbConfiguration,
