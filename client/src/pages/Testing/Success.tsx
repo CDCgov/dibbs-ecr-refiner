@@ -9,7 +9,6 @@ type SuccessProps = Pick<
   'refined_conditions' | 'refined_download_key' | 'unrefined_eicr'
 >;
 
-
 type Condition = SuccessProps['refined_conditions'][0];
 
 export function Success({
@@ -17,7 +16,6 @@ export function Success({
   unrefined_eicr,
   refined_download_key,
 }: SuccessProps) {
-
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
     refined_conditions[0]
@@ -59,7 +57,6 @@ export function Success({
         unrefined_eicr={unrefined_eicr}
         refined_download_key={refined_download_key}
       />
-
     </div>
   );
 }
