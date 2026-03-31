@@ -4,6 +4,7 @@ from typing import Any
 
 import psycopg
 from config import TES_DATA_DIR, logger
+from psycopg.types.json import Jsonb
 
 SYSTEM_MAP = {
     "http://loinc.org": "loinc_codes",
@@ -80,6 +81,24 @@ class ConditionData:
         for sib_vs in get_sibling_context_valuesets(self.parent_vs, self.all_vs_map):
             self.sibling_codes.update(extract_codes_from_compose(sib_vs))
 
+    def _sort_codes(self, codes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """
+        Normalize and sort the lists of codes.
+
+        This ensures the condition row's `updated_at` won't change due to list order changing.
+        """
+        return sorted(
+            [
+                {
+                    "code": str(code.get("code", "")).strip(),
+                    "display": (code.get("display") or "").strip(),
+                }
+                for code in codes
+                if code.get("code") is not None
+            ],
+            key=lambda x: (x["code"], x["display"]),
+        )
+
     @property
     def payload(self) -> dict[str, Any]:
         """
@@ -94,12 +113,12 @@ class ConditionData:
             "canonical_url": self.parent_vs.get("url"),
             "version": self.parent_vs.get("version"),
             "display_name": self.parent_vs.get("title"),
-            "child_rsg_snomed_codes": list(self.child_rsg_snomed_codes),
-            "loinc_codes": json.dumps(categorized["loinc_codes"]),
-            "snomed_codes": json.dumps(categorized["snomed_codes"]),
-            "icd10_codes": json.dumps(categorized["icd10_codes"]),
-            "rxnorm_codes": json.dumps(categorized["rxnorm_codes"]),
-            "cvx_codes": json.dumps(categorized["cvx_codes"]),
+            "child_rsg_snomed_codes": sorted(self.child_rsg_snomed_codes),
+            "loinc_codes": Jsonb(self._sort_codes(categorized["loinc_codes"])),
+            "snomed_codes": Jsonb(self._sort_codes(categorized["snomed_codes"])),
+            "icd10_codes": Jsonb(self._sort_codes(categorized["icd10_codes"])),
+            "rxnorm_codes": Jsonb(self._sort_codes(categorized["rxnorm_codes"])),
+            "cvx_codes": Jsonb(self._sort_codes(categorized["cvx_codes"])),
         }
 
 
