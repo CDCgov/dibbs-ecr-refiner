@@ -174,6 +174,7 @@ def create_html_file(
                 "condition_name": condition.display_name,
             },
         )
+        return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
     except XSLTTransformationError as e:
         logger.error(
             f"Failed to transform XML to HTML for condition: {condition.display_name}",
@@ -183,7 +184,7 @@ def create_html_file(
                 "error": str(e),
             },
         )
-    return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
+        raise
 
 
 def create_refined_ecr_zip_in_memory(
