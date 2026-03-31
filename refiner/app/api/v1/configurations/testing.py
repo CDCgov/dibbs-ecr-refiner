@@ -27,14 +27,16 @@ from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
+    create_html_file,
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
 )
-from app.services.format import normalize_xml, strip_comments
+from app.services.format import (
+    format_xml_document_for_display,
+)
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import inline_testing
-from app.services.xslt import get_path_to_xslt_stylesheet, transform_xml_to_html
 
 from .model import ConfigurationTestResponse
 
@@ -175,10 +177,10 @@ async def run_configuration_test(
 
     condition = refined_document.reportable_condition
 
-    zip_package.package(
+    zip_package.add(
         ZipFileItem(file_name="CDA_eICR.xml", file_content=original_xml_files.eicr)
     )
-    zip_package.package(
+    zip_package.add(
         ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
     )
 
@@ -187,92 +189,44 @@ async def run_configuration_test(
         condition_code=condition.code,
     )
 
-    zip_package.package(
+    html_file = create_html_file(
+        condition=condition,
+        refined_eicr=refined_document.refined_eicr,
+        file_name=refined_file_names.eicr_html_file_name,
+        logger=logger,
+    )
+
+    zip_package.add(
         ZipFileItem(
             file_name=refined_file_names.eicr_xml_file_name,
             file_content=refined_document.refined_eicr,
         )
     )
-    zip_package.package(
+    zip_package.add(
         ZipFileItem(
             file_name=refined_file_names.rr_xml_file_name,
             file_content=refined_document.refined_rr,
         )
     )
-    # Generate HTML from refined XML
-    try:
-        xslt_stylesheet_path = get_path_to_xslt_stylesheet()
-        html_bytes = transform_xml_to_html(
-            refined_document.refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
-        )
+    zip_package.add(html_file)
 
-        zip_package.package(
-            ZipFileItem(
-                file_name=refined_file_names.eicr_html_file_name,
-                file_content=html_bytes.decode("utf-8"),
-            )
-        )
-        logger.info(
-            "Successfully transformed XML to HTML",
-            extra={
-                "condition_code": condition.code,
-                "condition_name": condition.display_name,
-            },
-        )
-    except Exception as e:
-        if "XSLTTransformationError" in str(type(e)):
-            logger.error(
-                "Failed to transform XML to HTML",
-                extra={
-                    "condition_code": condition.code,
-                    "condition_name": condition.display_name,
-                    "error": str(e),
-                },
-            )
-        else:
-            logger.error(
-                "Unexpected error during XML to HTML transformation",
-                extra={
-                    "condition_code": condition.code,
-                    "condition_name": condition.display_name,
-                    "error": str(e),
-                },
-            )
-        # Continue with XML only; do not include HTML file for this condition
-
-    try:
-        output_file_name, output_zip_buffer = create_output_zip(
-            zip_package=zip_package,
-        )
-    except Exception as e:
-        logger.error(msg="Error in create_output_zip", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal error creating the results ZIP file during S3 packaging process.",
-        )
-    try:
-        s3_key = await run_in_threadpool(
-            upload_refined_files_to_s3,
-            user.id,
-            user.jurisdiction_id,
-            output_zip_buffer,
-            output_file_name,
-            logger,
-        )
-    except Exception as e:
-        logger.error(msg="Error uploading to S3.", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal error uploading ZIP file to S3.",
-        )
-
-    # STEP 5:
-    # construct and return the final response
-    formatted_unrefined_eicr = strip_comments(normalize_xml(original_xml_files.eicr))
-    formatted_refined_eicr = strip_comments(
-        normalize_xml(refined_document.refined_eicr)
+    output_file_name, output_zip_buffer = create_output_zip(
+        zip_package=zip_package,
     )
-    formatted_refined_rr = strip_comments(normalize_xml(refined_document.refined_rr))
+
+    s3_key = await run_in_threadpool(
+        upload_refined_files_to_s3,
+        user.id,
+        user.jurisdiction_id,
+        output_zip_buffer,
+        output_file_name,
+        logger,
+    )
+
+    formatted_unrefined_eicr = format_xml_document_for_display(original_xml_files.eicr)
+    formatted_refined_eicr = format_xml_document_for_display(
+        refined_document.refined_eicr
+    )
 
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
@@ -281,7 +235,7 @@ async def run_configuration_test(
             code=condition.code,
             display_name=condition.display_name,
             refined_eicr=formatted_refined_eicr,
-            refined_rr=formatted_refined_rr,
+            refined_rr=format_xml_document_for_display(refined_document.refined_rr),
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from lxml import etree
 
-from ..services.file_io import get_asset_path
+from app.services.assets import get_asset_path
 
 
 def get_path_to_xslt_stylesheet() -> Path:

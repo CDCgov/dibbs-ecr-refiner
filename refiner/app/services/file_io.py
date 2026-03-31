@@ -1,14 +1,20 @@
 import io
-import json
 from dataclasses import dataclass
 from io import BytesIO
-from pathlib import Path
+from logging import Logger
 from uuid import uuid4
 from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from chardet import detect
 from lxml import etree
 from lxml.etree import _Element
+
+from app.services.ecr.model import ReportableCondition
+from app.services.xslt import (
+    XSLTTransformationError,
+    get_path_to_xslt_stylesheet,
+    transform_xml_to_html,
+)
 
 from ..core.exceptions import (
     FileProcessingError,
@@ -35,57 +41,33 @@ class ZipFilePackage:
     Represents a collection of documents to use for creating a zip file package.
     """
 
-    _packaged_items: list[ZipFileItem] = []
+    def __init__(self) -> None:
+        """
+        ZipFilePackage constructor.
+        """
+        self._packaged_items: list[ZipFileItem] = []
 
-    def package(self, item: ZipFileItem) -> None:
+    def add(self, item: ZipFileItem) -> None:
         """
         Adds a zipped item to the package.
 
         Args:
             item (ZippedItem): The item to add to the package
         """
+        if item.file_name in [i.file_name for i in self._packaged_items]:
+            raise ValueError(
+                f"Conflicting ZipFileItem name during packaging: {item.file_name}. Names must be unique."
+            )
         self._packaged_items.append(item)
 
-    def get_package(self) -> list[ZipFileItem]:
+    def get_items(self) -> list[ZipFileItem]:
         """
         Gets the zip package.
 
         Returns:
             list[ZippedItem]: All items in the zip package.
         """
-        return self._packaged_items
-
-
-def get_asset_path(*paths: str) -> Path:
-    """
-    Get the full path to an asset file or directory.
-
-    Args:
-        *paths: Variable number of path segments to join after 'assets'
-               e.g., get_asset_path('demo', 'monmothma.zip')
-               or get_asset_path('refiner_details.json')
-
-    Returns:
-        Path: Full path to the requested asset
-
-    Example:
-        >>> get_asset_path('demo', 'monmothma.zip')
-        Path('/path/to/project/assets/demo/monmothma.zip')
-        >>> get_asset_path('refiner_details.json')
-        Path('/path/to/project/assets/refiner_details.json')
-    """
-
-    base_path = Path(__file__).parent.parent.parent / "assets"
-    return base_path.joinpath(*paths)
-
-
-def read_json_asset(filename: str) -> dict:
-    """
-    Read and parse a JSON file from the assets directory.
-    """
-
-    with get_asset_path(filename).open() as f:
-        return json.load(f)
+        return list(self._packaged_items)
 
 
 def parse_xml(xml_content: str | bytes) -> _Element:
@@ -164,6 +146,46 @@ def create_refined_file_names(
     )
 
 
+def create_html_file(
+    condition: ReportableCondition, refined_eicr: str, file_name: str, logger: Logger
+) -> ZipFileItem:
+    """
+    Creates an HTML file using the refined condition information.
+
+    Args:
+        condition (ReportableCondition): The reportable condition
+        refined_eicr (str): Condition's refined eICR document
+        file_name (str): Desired HTML file name
+        logger (Logger): The logger
+
+    Returns:
+        ZippedItem: A processed object ready for packing into a zip file.
+    """
+    try:
+        xslt_stylesheet_path = get_path_to_xslt_stylesheet()
+        html_bytes = transform_xml_to_html(
+            refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
+        )
+
+        logger.info(
+            f"Successfully transformed XML to HTML for condition: {condition.display_name}",
+            extra={
+                "condition_code": condition.code,
+                "condition_name": condition.display_name,
+            },
+        )
+    except XSLTTransformationError as e:
+        logger.error(
+            f"Failed to transform XML to HTML for condition: {condition.display_name}",
+            extra={
+                "condition_code": condition.code,
+                "condition_name": condition.display_name,
+                "error": str(e),
+            },
+        )
+    return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
+
+
 def create_refined_ecr_zip_in_memory(
     *,
     zip_package: ZipFilePackage,
@@ -187,7 +209,7 @@ def create_refined_ecr_zip_in_memory(
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, "w") as zf:
-        for item in zip_package.get_package():
+        for item in zip_package.get_items():
             content = item.file_content
             filename = item.file_name
 

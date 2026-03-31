@@ -162,7 +162,7 @@ def test_create_refined_ecr_zip():
     refined_files.append(ZipFileItem(file_name="CDA_eICR.xml", file_content=eicr))
 
     for file in refined_files:
-        zip_package.package(file)
+        zip_package.add(file)
 
     file_name, file_buffer = create_refined_ecr_zip_in_memory(zip_package=zip_package)
 

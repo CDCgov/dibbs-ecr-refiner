@@ -14,15 +14,16 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
-from app.services.ecr.model import RefinedDocument, ReportableCondition
-from app.services.file_io import ZipFileItem, ZipFilePackage
+from app.services.ecr.model import RefinedDocument
+from app.services.file_io import ZipFileItem, ZipFilePackage, create_html_file
+from app.services.format import format_xml_document_for_display
 from app.services.testing import independent_testing
 
 from ...api.auth.middleware import get_logged_in_user
 from ...db.demo.model import Condition, IndependentTestUploadResponse
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
-from ...services import file_io, format
+from ...services import file_io
 from ...services.aws.s3 import (
     fetch_zip_from_s3,
     get_refined_user_zip_key,
@@ -31,11 +32,6 @@ from ...services.aws.s3 import (
 from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
 from ...services.sample_file import get_sample_zip_path
-from ...services.xslt import (
-    XSLTTransformationError,
-    get_path_to_xslt_stylesheet,
-    transform_xml_to_html,
-)
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -129,13 +125,13 @@ async def demo_upload(
 
     # Package refined files
     for item in zip_file_items:
-        zip_package.package(item)
+        zip_package.add(item)
 
     # Package original files
-    zip_package.package(
+    zip_package.add(
         ZipFileItem(file_name="CDA_eICR.xml", file_content=original_xml_files.eicr)
     )
-    zip_package.package(
+    zip_package.add(
         ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
     )
 
@@ -160,7 +156,7 @@ async def demo_upload(
         refined_conditions=conditions,
         conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
-        unrefined_eicr=_format_xml_document(original_xml_files.eicr),
+        unrefined_eicr=format_xml_document_for_display(original_xml_files.eicr),
         refined_download_key=output_file_name if output_key else "",
     )
 
@@ -194,7 +190,7 @@ def _build_refined_conditions(
             condition_code=condition.code,
         )
 
-        html_file = _create_html_file(
+        html_file = create_html_file(
             condition=condition,
             refined_eicr=refined_document.refined_eicr,
             file_name=refined_file_names.eicr_html_file_name,
@@ -216,18 +212,20 @@ def _build_refined_conditions(
         )
         packaged_files.append(html_file)
 
-        formatted_refined_eicr = _format_xml_document(refined_document.refined_eicr)
+        formatted_refined_eicr = format_xml_document_for_display(
+            refined_document.refined_eicr
+        )
 
         conditions.append(
             Condition(
                 code=condition.code,
                 display_name=condition.display_name,
                 refined_eicr=formatted_refined_eicr,
-                refined_rr=_format_xml_document(original_xml_files.rr),
+                refined_rr=format_xml_document_for_display(original_xml_files.rr),
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
-                            unrefined_eicr=_format_xml_document(
+                            unrefined_eicr=format_xml_document_for_display(
                                 original_xml_files.eicr
                             ),
                             refined_eicr=formatted_refined_eicr,
@@ -237,59 +235,6 @@ def _build_refined_conditions(
             )
         )
     return (conditions, packaged_files)
-
-
-def _format_xml_document(text: str) -> str:
-    """
-    Helper function to strip comments and perform normalization on a string.
-
-    Args:
-        text (str): XML document
-
-    Returns:
-        str: String with comments stripped and text normalized.
-    """
-    return format.strip_comments(format.normalize_xml(text))
-
-
-def _create_html_file(
-    condition: ReportableCondition, refined_eicr: str, file_name: str, logger: Logger
-) -> ZipFileItem:
-    """
-    Creates an HTML file using the refined condition information.
-
-    Args:
-        condition (ReportableCondition): The reportable condition
-        refined_eicr (str): Condition's refined eICR document
-        file_name (str): Desired HTML file name
-        logger (Logger): The logger
-
-    Returns:
-        ZippedItem: A processed object ready for packing into a zip file.
-    """
-    try:
-        xslt_stylesheet_path = get_path_to_xslt_stylesheet()
-        html_bytes = transform_xml_to_html(
-            refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
-        )
-
-        logger.info(
-            f"Successfully transformed XML to HTML for condition: {condition.display_name}",
-            extra={
-                "condition_code": condition.code,
-                "condition_name": condition.display_name,
-            },
-        )
-    except XSLTTransformationError as e:
-        logger.error(
-            f"Failed to transform XML to HTML for condition: {condition.display_name}",
-            extra={
-                "condition_code": condition.code,
-                "condition_name": condition.display_name,
-                "error": str(e),
-            },
-        )
-    return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
 
 
 @router.get(

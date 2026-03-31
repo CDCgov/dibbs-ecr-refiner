@@ -251,7 +251,7 @@ def test_zip_contains_only_xml_when_html_fails() -> None:
     ]
 
     for file in files:
-        zip_package.package(file)
+        zip_package.add(file)
 
     _, zip_buf = file_io.create_refined_ecr_zip_in_memory(zip_package=zip_package)
     with zipfile.ZipFile(zip_buf, "r") as zf:
