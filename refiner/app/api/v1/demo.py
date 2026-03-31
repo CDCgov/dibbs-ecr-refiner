@@ -1,5 +1,5 @@
 import io
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from logging import Logger
 from pathlib import Path
 from uuid import UUID
@@ -27,7 +27,7 @@ from ...services import file_io
 from ...services.aws.s3 import (
     fetch_zip_from_s3,
     get_refined_user_zip_key,
-    upload_refined_ecr,
+    upload_refined_file_package,
 )
 from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
@@ -48,6 +48,10 @@ FILE_PROCESSING_ERROR = (
 GENERIC_SERVER_ERROR = ("Server error occurred. Please check your file and try again.",)
 
 
+def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]]:
+    return upload_refined_file_package
+
+
 @router.post(
     "/upload",
     response_model=IndependentTestUploadResponse,
@@ -61,9 +65,9 @@ async def demo_upload(
         lambda: file_io.create_refined_ecr_zip_in_memory
     ),
     user: DbUser = Depends(get_logged_in_user),
-    upload_refined_files_to_s3: Callable[
-        [UUID, str, io.BytesIO, str, Logger], str
-    ] = Depends(lambda: upload_refined_ecr),
+    upload_zip: Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]] = Depends(
+        _get_upload_zip
+    ),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
 ) -> IndependentTestUploadResponse:
@@ -141,14 +145,7 @@ async def demo_upload(
     )
 
     # Ship bundle to S3
-    output_key = await run_in_threadpool(
-        upload_refined_files_to_s3,
-        user.id,
-        user.jurisdiction_id,
-        output_zip_buffer,
-        output_file_name,
-        logger,
-    )
+    s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
     return IndependentTestUploadResponse(
         message="Successfully processed eICR with condition-specific refinement",
@@ -157,7 +154,7 @@ async def demo_upload(
         conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
         unrefined_eicr=format_xml_document_for_display(original_xml_files.eicr),
-        refined_download_key=output_file_name if output_key else "",
+        refined_download_key=output_file_name if s3_key else "",
     )
 
 
@@ -245,7 +242,7 @@ def _build_refined_conditions(
 async def download_refined_ecr(
     filename: str,
     user: DbUser = Depends(get_logged_in_user),
-    s3_download: Callable[[str, Logger], dict] = Depends(lambda: fetch_zip_from_s3),
+    s3_download: Callable[[str], dict] = Depends(lambda: fetch_zip_from_s3),
     logger: Logger = Depends(get_logger),
 ) -> StreamingResponse:
     """Stream refined eCR zip from S3 by filename.
@@ -279,7 +276,7 @@ async def download_refined_ecr(
     )
 
     try:
-        resp = await run_in_threadpool(s3_download, key, logger)
+        resp = await run_in_threadpool(s3_download, key)
     except Exception as e:
         logger.error(
             "Failed to fetch refined zip from S3",

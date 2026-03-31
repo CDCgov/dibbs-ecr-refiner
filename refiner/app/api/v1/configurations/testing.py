@@ -1,11 +1,10 @@
 import io
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from logging import Logger
 from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.demo import XML_FILE_ERROR
@@ -22,7 +21,7 @@ from app.db.configurations.db import get_configuration_by_id_db
 from app.db.demo.model import Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
-from app.services.aws.s3 import upload_refined_ecr
+from app.services.aws.s3 import upload_refined_file_package
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     ZipFileItem,
@@ -43,11 +42,8 @@ from .model import ConfigurationTestResponse
 router = APIRouter(prefix="/test")
 
 
-def _upload_to_s3():
-    """
-    Returns a function to upload an eICR/RR pair .zip to S3.
-    """
-    return upload_refined_ecr
+def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]]:
+    return upload_refined_file_package
 
 
 @router.post(
@@ -62,9 +58,9 @@ async def run_configuration_test(
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
         lambda: create_refined_ecr_zip_in_memory
     ),
-    upload_refined_files_to_s3: Callable[
-        [UUID, str, io.BytesIO, str, Logger], str
-    ] = Depends(_upload_to_s3),
+    upload_zip: Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]] = Depends(
+        _get_upload_zip
+    ),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     sample_zip_path: Path = Depends(get_sample_zip_path),
@@ -90,7 +86,7 @@ async def run_configuration_test(
         id: The ID of the configuration to test.
         uploaded_file: An optional user-provided zip file with an eICR and RR.
         create_output_zip: Dependency to create a zip archive in memory.
-        upload_refined_files_to_s3: Dependency to upload the archive to S3.
+        upload_zip: Dependency to upload the archive to S3.
         user: The authenticated user making the request.
         db: The database connection.
         sample_zip_path: Path to the default sample zip file.
@@ -213,15 +209,8 @@ async def run_configuration_test(
     output_file_name, output_zip_buffer = create_output_zip(
         zip_package=zip_package,
     )
-
-    s3_key = await run_in_threadpool(
-        upload_refined_files_to_s3,
-        user.id,
-        user.jurisdiction_id,
-        output_zip_buffer,
-        output_file_name,
-        logger,
-    )
+    # Ship bundle to S3
+    s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
     formatted_unrefined_eicr = format_xml_document_for_display(original_xml_files.eicr)
     formatted_refined_eicr = format_xml_document_for_display(

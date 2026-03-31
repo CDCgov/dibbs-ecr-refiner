@@ -38,12 +38,12 @@ async def test_demo_file_not_found(authed_client, test_app, mock_logged_in_user)
 
 @pytest.mark.asyncio
 async def test_upload_route_s3_failure(test_app, authed_client):
-    from app.services.aws.s3 import upload_refined_ecr
+    from app.services.aws.s3 import _upload_refined_ecr
 
     def fake_upload_refined_ecr():
         return ""
 
-    test_app.dependency_overrides[upload_refined_ecr] = lambda: fake_upload_refined_ecr
+    test_app.dependency_overrides[_upload_refined_ecr] = lambda: fake_upload_refined_ecr
 
     response = await authed_client.post(f"{api_route_base}/upload")
 
