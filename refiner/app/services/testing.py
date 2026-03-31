@@ -65,7 +65,8 @@ class NoMatchEntry(TypedDict):
     rc_snomed_codes: list[str]
 
 
-class IndependentTestingResult(TypedDict):
+@dataclass
+class IndependentTestingResult:
     """
     The structured result of the independent_testing function.
 
@@ -80,6 +81,24 @@ class IndependentTestingResult(TypedDict):
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
+
+    def get_condition_names_with_no_matching_config(self) -> list[str]:
+        """
+        Returns a list of condition names that have no matching configuration.
+        """
+        return [
+            missing_condition["display_name"]
+            for missing_condition in self.no_matching_configuration_for_conditions
+        ]
+
+    def get_condition_names_with_no_active_config(self) -> list[str]:
+        """
+        Returns a list of condition names that have no active configuration.
+        """
+        return [
+            missing_condition["display_name"]
+            for missing_condition in self.no_active_configuration_for_conditions
+        ]
 
 
 @dataclass
@@ -160,11 +179,11 @@ async def independent_testing(
 
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
-        return {
-            "refined_documents": [],
-            "no_matching_configuration_for_conditions": [],
-            "no_active_configuration_for_conditions": [],
-        }
+        return IndependentTestingResult(
+            refined_documents=[],
+            no_matching_configuration_for_conditions=[],
+            no_active_configuration_for_conditions=[],
+        )
 
     # STEP 2:
     # get all configurations for the jurisdiction to create a lookup set of exactly
@@ -331,11 +350,11 @@ async def independent_testing(
         if trace.refined_document is not None
     ]
 
-    return {
-        "refined_documents": refined_documents,
-        "no_matching_configuration_for_conditions": no_matching_configurations,
-        "no_active_configuration_for_conditions": no_active_configurations,
-    }
+    return IndependentTestingResult(
+        refined_documents=refined_documents,
+        no_matching_configuration_for_conditions=no_matching_configurations,
+        no_active_configuration_for_conditions=no_active_configurations,
+    )
 
 
 async def inline_testing(

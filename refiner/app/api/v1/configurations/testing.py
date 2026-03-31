@@ -24,7 +24,7 @@ from app.services.aws.s3 import upload_refined_ecr
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
-    create_split_condition_filename,
+    create_refined_file_names,
     read_xml_zip,
 )
 from app.services.format import normalize_xml, strip_comments
@@ -213,23 +213,29 @@ async def run_configuration_test(
     s3_file_package.append(("CDA_eICR.xml", original_xml_files.eicr))
     s3_file_package.append(("CDA_RR.xml", original_xml_files.rr))
 
-    eicr_filename, rr_filename = create_split_condition_filename(
+    refined_file_names = create_refined_file_names(
         condition_name=condition_obj.display_name,
         condition_code=condition_obj.code,
     )
 
-    s3_file_package.append((eicr_filename, refined_document.refined_eicr))
-    s3_file_package.append((rr_filename, refined_document.refined_rr))
+    s3_file_package.append(
+        (refined_file_names.eicr_xml_file_name, refined_document.refined_eicr)
+    )
+    s3_file_package.append(
+        (refined_file_names.rr_xml_file_name, refined_document.refined_rr)
+    )
     # Generate HTML from refined XML
     try:
         xslt_stylesheet_path = get_path_to_xslt_stylesheet()
         html_bytes = transform_xml_to_html(
             refined_document.refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
         )
-        filename_html = eicr_filename.replace(".xml", ".html")
-        s3_file_package.append((filename_html, html_bytes.decode("utf-8")))
+
+        s3_file_package.append(
+            (refined_file_names.eicr_html_file_name, html_bytes.decode("utf-8"))
+        )
         logger.info(
-            f"Successfully transformed XML to HTML for: {eicr_filename}",
+            "Successfully transformed XML to HTML",
             extra={
                 "condition_code": condition_obj.code,
                 "condition_name": condition_obj.display_name,
@@ -238,7 +244,7 @@ async def run_configuration_test(
     except Exception as e:
         if "XSLTTransformationError" in str(type(e)):
             logger.error(
-                f"Failed to transform XML to HTML for: {eicr_filename}",
+                "Failed to transform XML to HTML",
                 extra={
                     "condition_code": condition_obj.code,
                     "condition_name": condition_obj.display_name,
@@ -247,7 +253,7 @@ async def run_configuration_test(
             )
         else:
             logger.error(
-                f"Unexpected error during XML to HTML transformation for: {eicr_filename}",
+                "Unexpected error during XML to HTML transformation",
                 extra={
                     "condition_code": condition_obj.code,
                     "condition_name": condition_obj.display_name,

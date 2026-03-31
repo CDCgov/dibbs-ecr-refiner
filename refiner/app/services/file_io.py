@@ -1,5 +1,6 @@
 import io
 import json
+from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from uuid import uuid4
@@ -94,25 +95,37 @@ def parse_xml(xml_content: str | bytes) -> _Element:
         )
 
 
-def create_split_condition_filename(
-    condition_name: str, condition_code: str
-) -> tuple[str, str]:
+@dataclass
+class RefinedFileName:
     """
-    Create a standard file name from a condition's name and code.
+    File name object.
+    """
+
+    eicr_xml_file_name: str
+    eicr_html_file_name: str
+    rr_xml_file_name: str
+
+
+def create_refined_file_names(
+    condition_name: str, condition_code: str
+) -> RefinedFileName:
+    """
+    Create file names for a refined condition given the name and code.
 
     Args:
         condition_name (str): Name of a condition
         condition_code (str): Code of a condition
 
     Returns:
-        str: Standard XML file name
+        RefinedFileName: Object with all required file names for packaging
     """
 
     safe_name = condition_name.replace(" ", "_").replace("/", "_")
-    ecr_filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
-    rr_filename = f"CDA_RR_{condition_code}_{safe_name}.xml"
-
-    return (ecr_filename, rr_filename)
+    return RefinedFileName(
+        eicr_xml_file_name=f"CDA_eICR_{condition_code}_{safe_name}.xml",
+        eicr_html_file_name=f"CDA_eICR_{condition_code}_{safe_name}.html",
+        rr_xml_file_name=f"CDA_RR_{condition_code}_{safe_name}.xml",
+    )
 
 
 def create_refined_ecr_zip_in_memory(
