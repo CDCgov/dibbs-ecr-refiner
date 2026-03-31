@@ -244,6 +244,12 @@ async def demo_upload(
     refined_files_to_zip.append(("CDA_eICR.xml", original_xml_files.eicr))
     refined_files_to_zip.append(("CDA_RR.xml", original_xml_files.rr))
 
+    # add shadow RR (for inactive conditions) to ZIP, using lambda-style path
+    shadow_rr = result.get("shadow_rr")
+    if shadow_rr:
+        formatted_shadow_rr = format.strip_comments(format.normalize_xml(shadow_rr))
+        refined_files_to_zip.append(("unrefined_rr/refined_RR.xml", formatted_shadow_rr))
+
     # STEP 6:
     # package files into ZIP and upload to S3
     output_file_name, output_zip_buffer = create_output_zip(
@@ -271,6 +277,7 @@ async def demo_upload(
         conditions_without_active_configs=conditions_without_active_config_names,
         unrefined_eicr=formatted_unrefined_eicr,
         refined_download_key=output_file_name if output_key else "",
+        shadow_rr=result.get("shadow_rr"),
     )
 
 

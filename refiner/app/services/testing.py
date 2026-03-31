@@ -22,6 +22,7 @@ from .ecr.model import (
     RefinedDocument,
     ReportableCondition,
 )
+from .ecr.refine import refine_rr_for_unconfigured_conditions
 from .pipeline import (
     RefinementTrace,
     discover_reportable_conditions,
@@ -75,11 +76,13 @@ class IndependentTestingResult(TypedDict):
            no matching configuration for the jurisdiction.
         - 'no_active_configuration_for_conditions': A list of conditions that were found but had
            no active configuration for the jurisdiction.
+        - 'shadow_rr': Optional RR containing only reportable conditions without active configs.
     """
 
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
+    shadow_rr: str | None
 
 
 @dataclass
@@ -164,6 +167,7 @@ async def independent_testing(
             "refined_documents": [],
             "no_matching_configuration_for_conditions": [],
             "no_active_configuration_for_conditions": [],
+            "shadow_rr": None,
         }
 
     # STEP 2:
@@ -331,11 +335,25 @@ async def independent_testing(
         if trace.refined_document is not None
     ]
 
+    # create a shadow RR for any reportable conditions that lacked an active configuration
+    shadow_rr: str | None = None
+    if no_active_configurations:
+        non_active_codes = {
+            code
+            for entry in no_active_configurations
+            for code in entry["rc_snomed_codes"]
+        }
+        shadow_rr = refine_rr_for_unconfigured_conditions(
+            xml_files=xml_files, condition_codes=non_active_codes
+        )
+
     return {
         "refined_documents": refined_documents,
         "no_matching_configuration_for_conditions": no_matching_configurations,
         "no_active_configuration_for_conditions": no_active_configurations,
+        "shadow_rr": shadow_rr,
     }
+
 
 
 async def inline_testing(
