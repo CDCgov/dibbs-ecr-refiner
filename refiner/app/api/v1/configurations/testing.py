@@ -153,13 +153,13 @@ async def run_configuration_test(
 
     # STEP 3:
     # handle the service layer response
-    if result["configuration_does_not_match_conditions"]:
+    if result.configuration_does_not_match_conditions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result["configuration_does_not_match_conditions"],
+            detail=result.configuration_does_not_match_conditions,
         )
 
-    refined_document = result["refined_document"]
+    refined_document = result.refined_document
     if refined_document is None:
         logger.error(
             msg="Internal logic error: inline_testing returned no error but also no refined eICR."

@@ -116,7 +116,8 @@ class InlineTestingTrace:
     refined_document: RefinedDocument | None = None
 
 
-class InlineTestingResult(TypedDict):
+@dataclass
+class InlineTestingResult:
     """
     The structured result for the inline_testing "validation" workflow.
 
@@ -428,10 +429,10 @@ async def inline_testing(
                 "outcome": "Validation failed: No matching reportable condition code found in file.",
             },
         )
-        return {
-            "refined_document": None,
-            "configuration_does_not_match_conditions": f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
-        }
+        return InlineTestingResult(
+            refined_document=None,
+            configuration_does_not_match_conditions=f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
+        )
 
     # STEP 3:
     # use the first RR code that matched the condition for the RefinedDocument
@@ -488,10 +489,10 @@ async def inline_testing(
         },
     )
 
-    return {
-        "refined_document": trace.refined_document,
-        "configuration_does_not_match_conditions": None,
-    }
+    return InlineTestingResult(
+        refined_document=trace.refined_document,
+        configuration_does_not_match_conditions=None,
+    )
 
 
 # NOTE:
