@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any
+from typing import TypedDict
 
 from config import ENV_PATH, logger
 from dotenv import load_dotenv
@@ -10,63 +10,55 @@ from lib import (
     is_condition_grouper,
     load_valuesets_from_all_files,
 )
-from psycopg import sql
 
 
-def _get_existing_versions(db_url: str, db_password: str) -> set[str]:
+class Code(TypedDict):
     """
-    Returns a list of TES versions already present in the database.
+    A code object in a condition's code set.
     """
 
-    query = """
-    SELECT DISTINCT(version)
-    FROM conditions
+    code: str
+    display: str
+
+
+class ConditionRow(TypedDict):
     """
-    try:
-        with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            return {row[0] for row in rows}
-    except Exception:
-        logger.critical(
-            "Could not connect to the DB while getting existing TES versions"
-        )
+    A condition row to upsert into the DB.
+    """
+
+    canonical_url: str
+    version: str
+    display_name: str
+    child_rsg_snomed_codes: list[str] | None
+    loinc_codes: list[Code] | None
+    snomed_codes: list[Code] | None
+    icd10_codes: list[Code] | None
+    rxnorm_codes: list[Code] | None
+    cvx_codes: list[Code] | None
 
 
-def _build_processed_conditions(
+def _build_condition_upsert_rows(
     condition_groupers: list[dict],
     valuesets_map: dict[tuple[str, str], dict],
-    versions_to_skip: set[str] = {},
-) -> list[ConditionData]:
-    conditions: list[ConditionData] = []
+) -> list[ConditionRow]:
+    conditions: list[ConditionRow] = []
 
-    versions_seen: set[str] = set()
-    skipped_count = 0
     for parent in condition_groupers:
-        version = parent.get("version")
-        if version in versions_to_skip:
-            versions_seen.add(version)
-            skipped_count += 1
-            continue
+        conditions.append(ConditionData(parent, valuesets_map).payload)
 
-        conditions.append(ConditionData(parent, valuesets_map))
-
-    for v in versions_seen:
-        logger.info(f"💡 TES version {v} data already found in DB, skipping import...")
-
-    logger.info(f"⏭️  Total condition rows skipped during processing: {skipped_count}")
+    logger.info(f"🛠️  Total condition rows processed: {len(conditions)}")
     return conditions
 
 
-def _insert_processed_conditions(
-    db_url: str, db_password: str, conditions: list[ConditionData]
+def _upsert_condition_rows(
+    db_url: str, db_password: str, conditions: list[ConditionRow]
 ) -> None:
     try:
         with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
-            logger.info("⏳ Inserting condition records...")
-            insert_query = sql.SQL(
-                """
-                INSERT INTO public.conditions (
+            logger.info("⏳ Upserting condition records...")
+
+            upsert_query = """
+                INSERT INTO conditions (
                     canonical_url,
                     version,
                     display_name,
@@ -88,24 +80,35 @@ def _insert_processed_conditions(
                     %(rxnorm_codes)s,
                     %(cvx_codes)s
                 )
-                """
-            )
+                ON CONFLICT (canonical_url, version)
+                DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
+                    loinc_codes = EXCLUDED.loinc_codes,
+                    snomed_codes = EXCLUDED.snomed_codes,
+                    icd10_codes = EXCLUDED.icd10_codes,
+                    rxnorm_codes = EXCLUDED.rxnorm_codes,
+                    cvx_codes = EXCLUDED.cvx_codes
+                WHERE
+                    conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
+                    OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
+                    OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
+                    OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
+                    OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
+                    OR conditions.rxnorm_codes IS DISTINCT FROM EXCLUDED.rxnorm_codes
+                    OR conditions.cvx_codes IS DISTINCT FROM EXCLUDED.cvx_codes
+            """
 
-            cursor.executemany(insert_query, conditions)
+            cursor.executemany(upsert_query, conditions)
             conn.commit()
+
     except Exception:
         logger.error(
-            "❌ A critical error occurred during the condition insert process.",
+            "❌ A critical error occurred during the condition upsert process.",
             exc_info=True,
         )
         logger.error("Make sure migrations have been run prior to seeding!")
         raise
-
-
-def _build_insertable_conditions(
-    processed_conditions: list[ConditionData],
-) -> list[dict[str, Any]]:
-    return [cond.payload for cond in processed_conditions]
 
 
 def _build_condition_groupers(valuesets_map: dict[tuple[str, str], dict]) -> list[dict]:
@@ -116,37 +119,32 @@ def _build_condition_groupers(valuesets_map: dict[tuple[str, str], dict]) -> lis
 
 def load_tes_data(db_url: str, db_password: str) -> None:
     """
-    Determines which condition groupers from the TES need to be inserted into the database and performs the insert.
+    Loads condition grouper data from the TES and upserts condition rows into the database.
 
-    It will skip any data that has already been found in the database.
+    New rows are inserted. Existing rows with the same (canonical_url, version)
+    are updated only when relevant fields have changed.
 
     Args:
         db_url (str): The database URL
         db_password (str): The database password
     """
-    # Get versions that already exist in DB
-    versions_in_db: set[str] = set()
-    versions_in_db = _get_existing_versions(db_url=db_url, db_password=db_password)
-    logger.info("🏃 Previously loaded TES condition data will be skipped.")
 
-    all_vs_map = load_valuesets_from_all_files()
+    all_valuesets_map = load_valuesets_from_all_files()
 
-    condition_groupers = _build_condition_groupers(valuesets_map=all_vs_map)
+    condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
-    processed_conditions = _build_processed_conditions(
+    upsertable_condition_rows = _build_condition_upsert_rows(
         condition_groupers=condition_groupers,
-        valuesets_map=all_vs_map,
-        versions_to_skip=versions_in_db,
+        valuesets_map=all_valuesets_map,
     )
 
-    insertable_conditions = _build_insertable_conditions(processed_conditions)
-    if not insertable_conditions:
-        logger.info("⚠️  All conditions found already exist. Skipping insert step.")
+    if not upsertable_condition_rows:
+        logger.info("⚠️  No conditions found to upsert.")
         return
 
-    logger.info(f"⬆️  Total conditions to insert: {len(insertable_conditions)}")
-    _insert_processed_conditions(
-        db_url=db_url, db_password=db_password, conditions=insertable_conditions
+    logger.info(f"⬆️  Total conditions to upsert: {len(upsertable_condition_rows)}")
+    _upsert_condition_rows(
+        db_url=db_url, db_password=db_password, conditions=upsertable_condition_rows
     )
 
     logger.info("🏁 Done!")
