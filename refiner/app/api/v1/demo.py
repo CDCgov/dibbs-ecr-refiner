@@ -8,16 +8,16 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
+from app.api.validation.file_validation import (
+    get_validated_file,
+    get_validated_xml_files,
+    validate_path_or_raise,
+)
 from app.core.models.types import XMLFiles
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import independent_testing
 
 from ...api.auth.middleware import get_logged_in_user
-from ...core.exceptions import (
-    FileProcessingError,
-    XMLValidationError,
-    ZipValidationError,
-)
 from ...db.demo.model import Condition, IndependentTestUploadResponse
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
@@ -29,13 +29,12 @@ from ...services.aws.s3 import (
 )
 from ...services.ecr.refine import get_file_size_reduction_percentage
 from ...services.logger import get_logger
-from ...services.sample_file import create_sample_zip_file, get_sample_zip_path
+from ...services.sample_file import get_sample_zip_path
 from ...services.xslt import (
     XSLTTransformationError,
     get_path_to_xslt_stylesheet,
     transform_xml_to_html,
 )
-from ..validation.file_validation import validate_zip_file
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -96,16 +95,16 @@ async def demo_upload(
     packaged_files: list[ZippedItem] = []
 
     # Check that demo file path is valid
-    _validate_path_or_raise(path=demo_zip_path)
+    validate_path_or_raise(path=demo_zip_path)
 
     # Validate and load the file
-    file = await _get_validated_file(
+    file = await get_validated_file(
         uploaded_file=uploaded_file, demo_file_path=demo_zip_path, logger=logger
     )
 
     logger.info("Processing demo file", extra={"upload_file": file.filename})
 
-    original_xml_files = await _get_validated_xml_files(file=file, logger=logger)
+    original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
     # Run the test
     try:
@@ -282,94 +281,6 @@ def _create_html_file(
             },
         )
     return (file_name, html_bytes.decode("utf-8"))
-
-
-async def _get_validated_xml_files(file: UploadFile, logger: Logger) -> XMLFiles:
-    """
-    Returns a fully validated XMLFiles object. Throws an exception if validation fails.
-
-    Args:
-        file (UploadFile): The uploaded file
-        logger (Logger): The logger
-
-    Raises:
-        HTTPException: 400 if a ZIP validation error occurs
-        HTTPException: 400 if an XML processing error occurs
-        HTTPException: 400 if a generic file processing error occurs
-
-    Returns:
-        XMLFiles: Fully validated XMLFiles object
-    """
-    try:
-        return await file_io.read_xml_zip(file)
-    except ZipValidationError as e:
-        logger.error("ZipValidationError in read_xml_zip", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
-        )
-    except XMLValidationError as e:
-        logger.error("XMLValidationError in read_xml_zip", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="XML file(s) could not be processed.",
-        )
-    except FileProcessingError as e:
-        logger.error("FileProcessingError in read_xml_zip", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File cannot be processed. Please ensure ZIP archive only contains the required files.",
-        )
-
-
-def _validate_path_or_raise(path: Path) -> None:
-    """
-    Throws an HTTPException if the path can't be found.
-
-    Args:
-        path (Path): The path to validate
-
-    Raises:
-        HTTPException: 404 if zip file path can't be found
-    """
-    if not path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Unable to find demo zip file to download.",
-        )
-
-
-async def _get_validated_file(
-    uploaded_file: UploadFile | None, demo_file_path: Path, logger: Logger
-) -> UploadFile:
-    """
-    Returns a validated file to use for the test flow.
-
-    Args:
-        uploaded_file (UploadFile | None): The uploaded file object
-        demo_file_path (Path): The path to the demo file
-        logger (Logger): The logger
-
-    Raises:
-        HTTPException: 400 if zip processing fails
-
-    Returns:
-        UploadFile: A validated file object
-    """
-    if not uploaded_file:
-        return create_sample_zip_file(sample_zip_path=demo_file_path)
-
-    try:
-        return await validate_zip_file(file=uploaded_file)
-    except ZipValidationError as e:
-        logger.error(
-            msg="ZipValidationError in validate_zip_file",
-            extra={"error": str(e)},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
-        )
 
 
 @router.get(

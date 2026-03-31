@@ -8,12 +8,14 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.demo import XML_FILE_ERROR, ZIP_READING_ERROR
-from app.api.validation.file_validation import validate_zip_file
+from app.api.v1.demo import XML_FILE_ERROR
+from app.api.validation.file_validation import (
+    get_validated_file,
+    get_validated_xml_files,
+    validate_path_or_raise,
+)
 from app.core.exceptions import (
-    FileProcessingError,
     XMLValidationError,
-    ZipValidationError,
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.configurations.db import get_configuration_by_id_db
@@ -25,11 +27,10 @@ from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
-    read_xml_zip,
 )
 from app.services.format import normalize_xml, strip_comments
 from app.services.logger import get_logger
-from app.services.sample_file import create_sample_zip_file, get_sample_zip_path
+from app.services.sample_file import get_sample_zip_path
 from app.services.testing import inline_testing
 from app.services.xslt import get_path_to_xslt_stylesheet, transform_xml_to_html
 
@@ -96,57 +97,20 @@ async def run_configuration_test(
         zipped results, and details about the refined condition.
     """
 
-    # STEP 1:
-    # handle file upload
-    if not sample_zip_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Unable to find sample zip file to download.",
-        )
+    # Check that demo file path is valid
+    validate_path_or_raise(path=sample_zip_path)
 
-    if uploaded_file:
-        try:
-            file = await validate_zip_file(file=uploaded_file)
-        except ZipValidationError as e:
-            logger.error(
-                msg="ZipValidationError in validate_zip_file", extra={"error": str(e)}
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
-            )
-        logger.info(
-            msg="Running inline test using user-provided file",
-            extra={"file": file.filename},
-        )
-    else:
-        file = create_sample_zip_file(sample_zip_path=sample_zip_path)
-        logger.info(
-            msg="Running inline test using sample file", extra={"file": file.filename}
-        )
+    # Validate and load the file
+    file = await get_validated_file(
+        uploaded_file=uploaded_file, demo_file_path=sample_zip_path, logger=logger
+    )
 
-    try:
-        # STEP 2:
-        # read xml and call the service layer
-        original_xml_files = await read_xml_zip(file)
-    except ZipValidationError as e:
-        logger.error(msg="ZipValidationError in read_xml_zip", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present.",
-        )
-    except FileProcessingError as e:
-        logger.error(msg="FileProcessingError in read_xml_zip", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ZIP_READING_ERROR,
-        )
-
-    # get the user's jurisdiction_id to pass to inline_testing
-    jd = user.jurisdiction_id
+    original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
     # get the DbConfiguration row for the jurisdiction
-    configuration = await get_configuration_by_id_db(id=id, jurisdiction_id=jd, db=db)
+    configuration = await get_configuration_by_id_db(
+        id=id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
     if not configuration:
         raise HTTPException(
             status_code=404, detail="Configuration not found for jurisdiction."
@@ -179,7 +143,7 @@ async def run_configuration_test(
             configuration=configuration,
             primary_condition=primary_condition,
             all_conditions=all_conditions_for_configuration,
-            jurisdiction_id=jd,
+            jurisdiction_id=user.jurisdiction_id,
             logger=logger,
         )
     except XMLValidationError:
