@@ -7,7 +7,7 @@ import {
   Select,
   Label as USWDSLabel,
 } from '@trussworks/react-uswds';
-import { Label, Field } from '@headlessui/react';
+import { Label } from '@headlessui/react';
 import { Button } from '../../../../components/Button';
 import {
   getGetConfigurationQueryKey,
@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '../../../../components/TextInput';
+import { Field } from '../../../../components/Field';
 
 interface CustomCodeModalProps {
   configurationId: string;
@@ -181,7 +182,7 @@ export function CustomCodeModal({
 
       <div className="mt-5 flex flex-col gap-5 p-0!">
         <div>
-          <Field className="flex flex-col gap-2">
+          <Field>
             <Label>Code #</Label>
             <TextInput
               type="text"
@@ -221,7 +222,7 @@ export function CustomCodeModal({
         </div>
 
         <div>
-          <Field className="flex flex-col gap-2">
+          <Field>
             <Label>Code name</Label>
             <TextInput
               type="text"

@@ -11,8 +11,9 @@ import {
 import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '../../../components/Button';
-import { Field, Label } from '@headlessui/react';
+import { Label } from '@headlessui/react';
 import { TextInput } from '../../../components/TextInput';
+import { Field } from '../../../components/Field';
 
 // Confirm Modal
 interface ConfirmModalProps {
@@ -170,7 +171,7 @@ export function PreviewEditModal({
         className="mt-5 flex flex-col gap-5 p-0!"
       >
         <div>
-          <Field className="flex flex-col gap-2">
+          <Field>
             <Label>Code #</Label>
             <TextInput
               id="preview-edit-code"
@@ -215,7 +216,7 @@ export function PreviewEditModal({
             ))}
           </Select>
         </div>
-        <Field className="flex flex-col gap-2">
+        <Field>
           <Label>Code name</Label>
           <TextInput
             type="text"
