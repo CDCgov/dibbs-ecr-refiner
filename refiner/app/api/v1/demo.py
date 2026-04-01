@@ -15,7 +15,13 @@ from app.api.validation.file_validation import (
 )
 from app.core.models.types import XMLFiles
 from app.services.ecr.model import RefinedDocument
-from app.services.file_io import ZipFileItem, ZipFilePackage, create_html_file
+from app.services.file_io import (
+    ZipFileItem,
+    ZipFilePackage,
+    create_html_file,
+    create_refined_ecr_zip_in_memory,
+    create_refined_file_names,
+)
 from app.services.format import format_xml_document_for_display
 from app.services.testing import independent_testing
 
@@ -23,7 +29,6 @@ from ...api.auth.middleware import get_logged_in_user
 from ...db.demo.model import Condition, IndependentTestUploadResponse
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.model import DbUser
-from ...services import file_io
 from ...services.aws.s3 import (
     fetch_zip_from_s3,
     get_refined_user_zip_key,
@@ -62,7 +67,7 @@ async def demo_upload(
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
-        lambda: file_io.create_refined_ecr_zip_in_memory
+        lambda: create_refined_ecr_zip_in_memory
     ),
     user: DbUser = Depends(get_logged_in_user),
     upload_zip: Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]] = Depends(
@@ -121,8 +126,9 @@ async def demo_upload(
         )
 
     # Get the refined condition info and file packages
-    conditions, zip_file_items = _build_refined_conditions(
+    conditions, zip_file_items = await _build_refined_conditions(
         original_xml_files=original_xml_files,
+        jurisdiction_id=user.jurisdiction_id,
         refined_documents=test_results.refined_documents,
         logger=logger,
     )
@@ -158,8 +164,9 @@ async def demo_upload(
     )
 
 
-def _build_refined_conditions(
+async def _build_refined_conditions(
     original_xml_files: XMLFiles,
+    jurisdiction_id: str,
     refined_documents: list[RefinedDocument],
     logger: Logger,
 ) -> tuple[list[Condition], list[ZipFileItem]]:
@@ -168,6 +175,7 @@ def _build_refined_conditions(
 
     Args:
         original_xml_files (XMLFiles): The original eICR and RR
+        jurisdiction_id (str): Jurisdiction ID of the logged in user
         refined_documents (list[RefinedDocument]): The list of refined documents
         logger (Logger): The logger
 
@@ -182,9 +190,9 @@ def _build_refined_conditions(
     for refined_document in refined_documents:
         condition = refined_document.reportable_condition
 
-        refined_file_names = file_io.create_refined_file_names(
+        refined_file_names = create_refined_file_names(
+            jurisdiction_id=jurisdiction_id,
             condition_name=condition.display_name,
-            condition_code=condition.code,
         )
 
         html_file = create_html_file(

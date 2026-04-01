@@ -9,6 +9,7 @@ from chardet import detect
 from lxml import etree
 from lxml.etree import _Element
 
+from app.services.conditions import get_computed_condition_name
 from app.services.ecr.model import ReportableCondition
 from app.services.xslt import (
     XSLTTransformationError,
@@ -125,24 +126,24 @@ class RefinedFileName:
 
 
 def create_refined_file_names(
-    condition_name: str, condition_code: str
+    jurisdiction_id: str,
+    condition_name: str,
 ) -> RefinedFileName:
     """
     Create file names for a refined condition given the name and code.
 
     Args:
+        jurisdiction_id: the jurisdiction
         condition_name (str): Name of a condition
-        condition_code (str): Code of a condition
 
     Returns:
         RefinedFileName: Object with all required file names for packaging
     """
-
-    safe_name = condition_name.replace(" ", "_").replace("/", "_")
+    computed_name = get_computed_condition_name(condition_name=condition_name)
     return RefinedFileName(
-        eicr_xml_file_name=f"CDA_eICR_{condition_code}_{safe_name}.xml",
-        eicr_html_file_name=f"CDA_eICR_{condition_code}_{safe_name}.html",
-        rr_xml_file_name=f"CDA_RR_{condition_code}_{safe_name}.xml",
+        eicr_xml_file_name=f"{jurisdiction_id}/{computed_name}/refined_eICR.xml",
+        eicr_html_file_name=f"{jurisdiction_id}/{computed_name}/refined_eICR.html",
+        rr_xml_file_name=f"{jurisdiction_id}/{computed_name}/refined_RR.xml",
     )
 
 
