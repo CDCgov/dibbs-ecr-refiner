@@ -1,13 +1,13 @@
 import {
   Icon,
-  Label,
   Modal,
   ModalFooter,
   ModalHeading,
   ModalRef,
   Select,
-  TextInput,
+  Label as USWDSLabel,
 } from '@trussworks/react-uswds';
+import { Label, Field } from '@headlessui/react';
 import { Button } from '../../../../components/Button';
 import {
   getGetConfigurationQueryKey,
@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
+import { TextInput } from '../../../../components/TextInput';
 
 interface CustomCodeModalProps {
   configurationId: string;
@@ -180,31 +181,31 @@ export function CustomCodeModal({
 
       <div className="mt-5 flex flex-col gap-5 p-0!">
         <div>
-          <Label htmlFor="code">Code #</Label>
-          <TextInput
-            id="code"
-            name="code"
-            type="text"
-            value={form.code}
-            onChange={(e) => {
-              const value = e.target.value.trimStart(); // trim leading space only while typing
-              setForm((prev) => ({ ...prev, code: value }));
-              if (error) setError(''); // clear error on change
-            }}
-            onBlur={() => {
-              const trimmedCode = form.code.trim(); // full trim (leading + trailing)
-              if (deduplicated_codes.includes(trimmedCode)) {
-                setError(`The code "${trimmedCode}" already exists.`);
-              } else {
-                setForm((prev) => ({ ...prev, code: trimmedCode })); // ensure stored value is clean
-              }
-            }}
-            autoComplete="off"
-          />
+          <Field className="flex flex-col gap-2">
+            <Label>Code #</Label>
+            <TextInput
+              type="text"
+              value={form.code}
+              onChange={(e) => {
+                const value = e.target.value.trimStart(); // trim leading space only while typing
+                setForm((prev) => ({ ...prev, code: value }));
+                if (error) setError(''); // clear error on change
+              }}
+              onBlur={() => {
+                const trimmedCode = form.code.trim(); // full trim (leading + trailing)
+                if (deduplicated_codes.includes(trimmedCode)) {
+                  setError(`The code "${trimmedCode}" already exists.`);
+                } else {
+                  setForm((prev) => ({ ...prev, code: trimmedCode })); // ensure stored value is clean
+                }
+              }}
+              autoFocus
+            />
+          </Field>
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
         </div>
         <div>
-          <Label htmlFor="system">Code system</Label>
+          <USWDSLabel htmlFor="system">Code system</USWDSLabel>
           <Select
             id="system"
             name="system"
@@ -220,15 +221,14 @@ export function CustomCodeModal({
         </div>
 
         <div>
-          <Label htmlFor="name">Code name</Label>
-          <TextInput
-            id="name"
-            name="name"
-            type="text"
-            value={form.name}
-            onChange={handleChange('name')}
-            autoComplete="off"
-          />
+          <Field className="flex flex-col gap-2">
+            <Label>Code name</Label>
+            <TextInput
+              type="text"
+              value={form.name}
+              onChange={handleChange('name')}
+            />
+          </Field>
         </div>
       </div>
 

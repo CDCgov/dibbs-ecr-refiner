@@ -5,13 +5,14 @@ import {
   ModalHeading,
   ModalFooter,
   Icon,
-  Label,
-  TextInput,
+  Label as USWDSLabel,
   Select,
 } from '@trussworks/react-uswds';
 import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '../../../components/Button';
+import { Field, Label } from '@headlessui/react';
+import { TextInput } from '../../../components/TextInput';
 
 // Confirm Modal
 interface ConfirmModalProps {
@@ -169,33 +170,38 @@ export function PreviewEditModal({
         className="mt-5 flex flex-col gap-5 p-0!"
       >
         <div>
-          <Label htmlFor="preview-edit-code">Code #</Label>
-          <TextInput
-            id="preview-edit-code"
-            name="preview-edit-code"
-            type="text"
-            value={previewEditForm.code}
-            onChange={handlePreviewEditChange('code')}
-            onBlur={() => {
-              const trimmedCode = previewEditForm.code.trim();
-              if (
-                previewItems?.some(
-                  (item, idx) =>
-                    item.code === trimmedCode && idx !== previewEditIndex
-                )
-              ) {
-                setError(`The code "${trimmedCode}" already exists.`);
-              } else {
-                setPreviewEditForm((prev) => ({ ...prev, code: trimmedCode }));
-                setError(null);
-              }
-            }}
-            autoComplete="off"
-          />
+          <Field className="flex flex-col gap-2">
+            <Label>Code #</Label>
+            <TextInput
+              id="preview-edit-code"
+              name="preview-edit-code"
+              type="text"
+              value={previewEditForm.code}
+              onChange={handlePreviewEditChange('code')}
+              onBlur={() => {
+                const trimmedCode = previewEditForm.code.trim();
+                if (
+                  previewItems?.some(
+                    (item, idx) =>
+                      item.code === trimmedCode && idx !== previewEditIndex
+                  )
+                ) {
+                  setError(`The code "${trimmedCode}" already exists.`);
+                } else {
+                  setPreviewEditForm((prev) => ({
+                    ...prev,
+                    code: trimmedCode,
+                  }));
+                  setError(null);
+                }
+              }}
+              autoComplete="off"
+            />
+          </Field>
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
         </div>
         <div>
-          <Label htmlFor="preview-edit-system">Code system</Label>
+          <USWDSLabel htmlFor="preview-edit-system">Code system</USWDSLabel>
           <Select
             id="preview-edit-system"
             name="preview-edit-system"
@@ -209,16 +215,14 @@ export function PreviewEditModal({
             ))}
           </Select>
         </div>
-        <div>
-          <Label htmlFor="preview-edit-name">Code name</Label>
+        <Field className="flex flex-col gap-2">
+          <Label>Code name</Label>
           <TextInput
-            id="preview-edit-name"
-            name="preview-edit-name"
             type="text"
             value={previewEditForm.name}
             onChange={handlePreviewEditChange('name')}
           />
-        </div>
+        </Field>
       </div>
       <ModalFooter className="flex justify-end gap-2">
         <Button
