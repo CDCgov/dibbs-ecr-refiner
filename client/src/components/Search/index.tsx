@@ -1,4 +1,4 @@
-import { Input, InputProps } from '../Input';
+import { Input, InputProps } from '@headlessui/react';
 import SearchSvg from '../../assets/sprite.svg';
 import classNames from 'classnames';
 
