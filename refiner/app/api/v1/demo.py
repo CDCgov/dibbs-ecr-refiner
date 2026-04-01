@@ -57,6 +57,84 @@ def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[s
     return upload_refined_file_package
 
 
+async def _build_refined_conditions(
+    original_xml_files: XMLFiles,
+    jurisdiction_id: str,
+    refined_documents: list[RefinedDocument],
+    logger: Logger,
+) -> tuple[list[Condition], list[ZipFileItem]]:
+    """
+    Builds a list of refined conditions.
+
+    Args:
+        original_xml_files (XMLFiles): The original eICR and RR
+        jurisdiction_id (str): Jurisdiction ID of the logged in user
+        refined_documents (list[RefinedDocument]): The list of refined documents
+        logger (Logger): The logger
+
+    Returns:
+        tuple[list[Condition], list[ZippedItem]]: Refined condition list is the first item and the file packaging info is the second item.
+    """
+
+    # Return both of these at the end
+    conditions: list[Condition] = []
+    packaged_files: list[ZipFileItem] = []
+
+    for refined_document in refined_documents:
+        condition = refined_document.reportable_condition
+
+        refined_file_names = create_refined_file_names(
+            jurisdiction_id=jurisdiction_id,
+            condition_name=condition.display_name,
+        )
+
+        html_file = create_html_file(
+            condition=condition,
+            refined_eicr=refined_document.refined_eicr,
+            file_name=refined_file_names.eicr_html_file_name,
+            logger=logger,
+        )
+
+        # Package all refined files for condition
+        packaged_files.append(
+            ZipFileItem(
+                file_name=refined_file_names.eicr_xml_file_name,
+                file_content=refined_document.refined_eicr,
+            )
+        )
+        packaged_files.append(
+            ZipFileItem(
+                file_name=refined_file_names.rr_xml_file_name,
+                file_content=refined_document.refined_rr,
+            )
+        )
+        packaged_files.append(html_file)
+
+        formatted_refined_eicr = format_xml_document_for_display(
+            refined_document.refined_eicr
+        )
+
+        conditions.append(
+            Condition(
+                code=condition.code,
+                display_name=condition.display_name,
+                refined_eicr=formatted_refined_eicr,
+                refined_rr=format_xml_document_for_display(original_xml_files.rr),
+                stats=[
+                    f"eICR file size reduced by {
+                        get_file_size_reduction_percentage(
+                            unrefined_eicr=format_xml_document_for_display(
+                                original_xml_files.eicr
+                            ),
+                            refined_eicr=formatted_refined_eicr,
+                        )
+                    }%",
+                ],
+            )
+        )
+    return (conditions, packaged_files)
+
+
 @router.post(
     "/upload",
     response_model=IndependentTestUploadResponse,
@@ -162,84 +240,6 @@ async def demo_upload(
         unrefined_eicr=format_xml_document_for_display(original_xml_files.eicr),
         refined_download_key=output_file_name if s3_key else "",
     )
-
-
-async def _build_refined_conditions(
-    original_xml_files: XMLFiles,
-    jurisdiction_id: str,
-    refined_documents: list[RefinedDocument],
-    logger: Logger,
-) -> tuple[list[Condition], list[ZipFileItem]]:
-    """
-    Builds a list of refined conditions.
-
-    Args:
-        original_xml_files (XMLFiles): The original eICR and RR
-        jurisdiction_id (str): Jurisdiction ID of the logged in user
-        refined_documents (list[RefinedDocument]): The list of refined documents
-        logger (Logger): The logger
-
-    Returns:
-        tuple[list[Condition], list[ZippedItem]]: Refined condition list is the first item and the file packaging info is the second item.
-    """
-
-    # Return both of these at the end
-    conditions: list[Condition] = []
-    packaged_files: list[ZipFileItem] = []
-
-    for refined_document in refined_documents:
-        condition = refined_document.reportable_condition
-
-        refined_file_names = create_refined_file_names(
-            jurisdiction_id=jurisdiction_id,
-            condition_name=condition.display_name,
-        )
-
-        html_file = create_html_file(
-            condition=condition,
-            refined_eicr=refined_document.refined_eicr,
-            file_name=refined_file_names.eicr_html_file_name,
-            logger=logger,
-        )
-
-        # Package all refined files for condition
-        packaged_files.append(
-            ZipFileItem(
-                file_name=refined_file_names.eicr_xml_file_name,
-                file_content=refined_document.refined_eicr,
-            )
-        )
-        packaged_files.append(
-            ZipFileItem(
-                file_name=refined_file_names.rr_xml_file_name,
-                file_content=refined_document.refined_rr,
-            )
-        )
-        packaged_files.append(html_file)
-
-        formatted_refined_eicr = format_xml_document_for_display(
-            refined_document.refined_eicr
-        )
-
-        conditions.append(
-            Condition(
-                code=condition.code,
-                display_name=condition.display_name,
-                refined_eicr=formatted_refined_eicr,
-                refined_rr=format_xml_document_for_display(original_xml_files.rr),
-                stats=[
-                    f"eICR file size reduced by {
-                        get_file_size_reduction_percentage(
-                            unrefined_eicr=format_xml_document_for_display(
-                                original_xml_files.eicr
-                            ),
-                            refined_eicr=formatted_refined_eicr,
-                        )
-                    }%",
-                ],
-            )
-        )
-    return (conditions, packaged_files)
 
 
 @router.get(
