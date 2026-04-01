@@ -7,7 +7,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.api.v1.demo import XML_FILE_ERROR
 from app.api.validation.file_validation import (
     get_validated_file,
     get_validated_xml_files,
@@ -150,7 +149,8 @@ async def run_configuration_test(
         )
     except XMLValidationError:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=XML_FILE_ERROR
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="XML file(s) could not be processed. Please try again with valid XML files.",
         )
 
     # STEP 3:
