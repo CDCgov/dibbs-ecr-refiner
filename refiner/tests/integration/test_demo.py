@@ -43,7 +43,7 @@ async def test_demo_upload_smoke(
     download_response = await authed_client.get(
         f"{api_route_base}/download/{file_key}",
     )
-    assert download_response.status_code == 200
+    assert download_response.status_code == status.HTTP_200_OK
     assert download_response.headers["content-type"] in {
         "application/zip",
         "application/x-zip-compressed",
