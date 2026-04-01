@@ -17,7 +17,7 @@ import {
 } from '@headlessui/react';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
-import { Input } from '../../../../components/Input';
+import { TextInput } from '../../../../components/TextInput';
 
 interface EditCustomSection {
   name: string;
@@ -190,8 +190,7 @@ function ModalForm({
           <div className="flex w-full flex-col gap-3">
             <Field className="flex flex-col gap-2">
               <Label>Display name (for this section)</Label>
-              <Input
-                className="p-2 outline -outline-offset-1 outline-gray-600"
+              <TextInput
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 type="text"
@@ -200,8 +199,7 @@ function ModalForm({
             </Field>
             <Field className="flex flex-col gap-2">
               <Label>LOINC code</Label>
-              <Input
-                className="p-2 outline -outline-offset-1 outline-gray-600"
+              <TextInput
                 value={newCode}
                 onChange={(e) => setNewCode(e.target.value)}
                 type="text"
