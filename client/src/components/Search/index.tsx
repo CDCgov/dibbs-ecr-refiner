@@ -1,33 +1,42 @@
-import {
-  InputPrefix,
-  InputGroup,
-  TextInput,
-  TextInputProps,
-} from '@trussworks/react-uswds';
-
+import { Input, InputProps } from '../Input';
 import SearchSvg from '../../assets/sprite.svg';
+import classNames from 'classnames';
 
-type SearchProps = Omit<TextInputProps, 'type'>;
+type SearchProps = Omit<InputProps, 'type'>;
 
-export function Search({ placeholder = 'Search', ...props }: SearchProps) {
+export function Search({
+  placeholder = 'Search',
+  className,
+  ...props
+}: SearchProps) {
   return (
-    <InputGroup className="!border-gray-cool-40 !m-0 !rounded-sm bg-white">
-      <InputPrefix>
-        <SearchIcon />
-      </InputPrefix>
-      <TextInput
-        className="!rounded-sm"
+    <div
+      className={classNames(
+        'has-[input:focus-within]:outline-blue-40v flex w-full max-w-120 items-center gap-2 rounded-md bg-white/5 p-1 pl-3 outline-1 -outline-offset-1 outline-gray-600 has-[input:focus-within]:outline-5 has-[input:focus-within]:-outline-offset-2',
+        className
+      )}
+    >
+      <SearchIcon />
+      <Input
+        className="font-public-sans h-4 w-full text-base leading-5 font-normal focus:outline-none!"
         placeholder={placeholder}
         type="search"
         {...props}
       />
-    </InputGroup>
+    </div>
   );
 }
 
 function SearchIcon() {
   return (
-    <svg aria-hidden="true" role="img" focusable="false" className="usa-icon">
+    <svg
+      fontSize={24}
+      color="#919191"
+      aria-hidden="true"
+      role="img"
+      focusable="false"
+      className="usa-icon"
+    >
       <use href={`${SearchSvg}#search`}></use>
     </svg>
   );
