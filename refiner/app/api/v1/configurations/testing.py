@@ -16,7 +16,9 @@ from app.core.exceptions import (
     XMLValidationError,
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
+from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.model import DbConfiguration
 from app.db.demo.model import Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -43,6 +45,30 @@ router = APIRouter(prefix="/test")
 
 def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]]:
     return upload_refined_file_package
+
+
+async def _get_conditions_for_configuration(
+    configuration: DbConfiguration,
+    db: AsyncDatabaseConnection,
+) -> tuple[DbCondition, list[DbCondition]]:
+    primary_condition = await get_condition_by_id_db(
+        id=configuration.condition_id,
+        db=db,
+    )
+    if primary_condition is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Primary condition not found for configuration.",
+        )
+
+    if len(configuration.included_conditions) <= 1:
+        return primary_condition, [primary_condition]
+
+    all_conditions = await get_included_conditions_db(
+        included_conditions=configuration.included_conditions,
+        db=db,
+    )
+    return primary_condition, all_conditions
 
 
 @router.post(
@@ -106,35 +132,28 @@ async def run_configuration_test(
         uploaded_file=uploaded_file, demo_file_path=sample_zip_path, logger=logger
     )
 
+    logger.info("Processing inline test file", extra={"file": file.filename})
+
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
     # get the DbConfiguration row for the jurisdiction
     configuration = await get_configuration_by_id_db(
         id=id, jurisdiction_id=user.jurisdiction_id, db=db
     )
+
     if not configuration:
         raise HTTPException(
             status_code=404, detail="Configuration not found for jurisdiction."
         )
 
     # get the primary DbCondition row that is linked to the DbConfiguration for the jurisdiction
-    primary_condition = await get_condition_by_id_db(
-        id=configuration.condition_id, db=db
+    (
+        primary_condition,
+        all_conditions_for_configuration,
+    ) = await _get_conditions_for_configuration(
+        configuration=configuration,
+        db=db,
     )
-    if not primary_condition:
-        raise HTTPException(
-            status_code=404, detail="Primary condition not found for configuration."
-        )
-
-    # if included_conditions is a list greater than 1, then fetch all conditions
-    # in the list (which includes the primary condition) for the payload and
-    # store the corresponding trace info
-    if len(configuration.included_conditions) > 1:
-        all_conditions_for_configuration = await get_included_conditions_db(
-            included_conditions=configuration.included_conditions, db=db
-        )
-    else:
-        all_conditions_for_configuration = [primary_condition]
 
     # call the testing service
     # business logic around **how** inline testing works is in services/testing.py
@@ -153,7 +172,6 @@ async def run_configuration_test(
             detail="XML file(s) could not be processed. Please try again with valid XML files.",
         )
 
-    # STEP 3:
     # handle the service layer response
     if result.configuration_does_not_match_conditions:
         raise HTTPException(
@@ -209,6 +227,7 @@ async def run_configuration_test(
     output_file_name, output_zip_buffer = create_output_zip(
         zip_package=zip_package,
     )
+
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 

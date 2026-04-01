@@ -172,7 +172,7 @@ async def demo_upload(
         uploaded_file=uploaded_file, demo_file_path=demo_zip_path, logger=logger
     )
 
-    logger.info("Processing demo file", extra={"upload_file": file.filename})
+    logger.info("Processing independent test file", extra={"file": file.filename})
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
