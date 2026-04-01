@@ -8,13 +8,23 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
+from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
     get_validated_file,
     get_validated_xml_files,
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
+from app.db.demo.model import Condition, IndependentTestUploadResponse
+from app.db.pool import AsyncDatabaseConnection, get_db
+from app.db.users.model import DbUser
+from app.services.aws.s3 import (
+    fetch_zip_from_s3,
+    get_refined_user_zip_key,
+    upload_refined_file_package,
+)
 from app.services.ecr.model import RefinedDocument
+from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
@@ -23,34 +33,12 @@ from app.services.file_io import (
     create_refined_file_names,
 )
 from app.services.format import format_xml_document_for_display
+from app.services.logger import get_logger
+from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
-
-from ...api.auth.middleware import get_logged_in_user
-from ...db.demo.model import Condition, IndependentTestUploadResponse
-from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.users.model import DbUser
-from ...services.aws.s3 import (
-    fetch_zip_from_s3,
-    get_refined_user_zip_key,
-    upload_refined_file_package,
-)
-from ...services.ecr.refine import get_file_size_reduction_percentage
-from ...services.logger import get_logger
-from ...services.sample_file import get_sample_zip_path
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
-
-XML_FILE_ERROR = (
-    "XML file(s) could not be processed. Please try again with valid XML files.",
-)
-ZIP_READING_ERROR = (
-    "ZIP archive cannot be read. CDA_eICR.xml and CDA_RR.xml files must be present and can't be empty files.",
-)
-FILE_PROCESSING_ERROR = (
-    "File cannot be processed. Please ensure ZIP archive only contains the required files.",
-)
-GENERIC_SERVER_ERROR = ("Server error occurred. Please check your file and try again.",)
 
 
 def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]]:
@@ -200,7 +188,7 @@ async def demo_upload(
         logger.error("Error in the independent testing flow", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=GENERIC_SERVER_ERROR,
+            detail="Server error occurred. Please check your file and try again.",
         )
 
     # Get the refined condition info and file packages
