@@ -28,7 +28,6 @@ from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
-    create_html_file,
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
 )
@@ -36,6 +35,7 @@ from app.services.format import format_xml_document_for_display
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
+from app.services.xslt import create_refined_eicr_html_file
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -52,7 +52,7 @@ async def _build_refined_conditions(
     logger: Logger,
 ) -> tuple[list[Condition], list[ZipFileItem]]:
     """
-    Builds a list of refined conditions.
+    Builds a tuple that contains refined condition information along with the data required for zip file packaging.
 
     Args:
         original_xml_files (XMLFiles): The original eICR and RR
@@ -76,7 +76,7 @@ async def _build_refined_conditions(
             condition_name=condition.display_name,
         )
 
-        html_file = create_html_file(
+        html_file = create_refined_eicr_html_file(
             condition=condition,
             refined_eicr=refined_document.refined_eicr,
             file_name=refined_file_names.eicr_html_file_name,

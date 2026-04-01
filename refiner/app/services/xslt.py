@@ -11,9 +11,11 @@ from pathlib import Path
 from lxml import etree
 
 from app.services.assets import get_asset_path
+from app.services.ecr.model import ReportableCondition
+from app.services.file_io import ZipFileItem
 
 
-def get_path_to_xslt_stylesheet() -> Path:
+def _get_path_to_xslt_stylesheet() -> Path:
     """Returns the path to the eICR XSLT stylesheet."""
 
     return get_asset_path("xslt", "CDA-phcaserpt-1.1.1-CDAR2_eCR_eICR.xsl")
@@ -25,7 +27,7 @@ class XSLTTransformationError(Exception):
     pass
 
 
-def transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> bytes:
+def _transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> bytes:
     """
     Transforms CDA XML to HTML using the specified XSLT stylesheet.
 
@@ -69,3 +71,44 @@ def transform_xml_to_html(xml_bytes: bytes, xslt_path: Path, logger: Logger) -> 
     except (etree.XSLTApplyError, Exception) as e:
         logger.error(f"XSLT transformation failed: {e}")
         raise XSLTTransformationError("XSLT transformation failed.") from e
+
+
+def create_refined_eicr_html_file(
+    condition: ReportableCondition, refined_eicr: str, file_name: str, logger: Logger
+) -> ZipFileItem:
+    """
+    Creates an HTML file using the refined condition's eICR information.
+
+    Args:
+        condition (ReportableCondition): The reportable condition
+        refined_eicr (str): Condition's refined eICR document
+        file_name (str): Desired HTML file name
+        logger (Logger): The logger
+
+    Returns:
+        ZippedItem: A processed object ready for packing into a zip file.
+    """
+    try:
+        xslt_stylesheet_path = _get_path_to_xslt_stylesheet()
+        html_bytes = _transform_xml_to_html(
+            refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
+        )
+
+        logger.info(
+            f"Successfully transformed XML to HTML for condition: {condition.display_name}",
+            extra={
+                "condition_code": condition.code,
+                "condition_name": condition.display_name,
+            },
+        )
+        return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
+    except XSLTTransformationError as e:
+        logger.error(
+            f"Failed to transform XML to HTML for condition: {condition.display_name}",
+            extra={
+                "condition_code": condition.code,
+                "condition_name": condition.display_name,
+                "error": str(e),
+            },
+        )
+        raise

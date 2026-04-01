@@ -1,7 +1,6 @@
 import io
 from dataclasses import dataclass
 from io import BytesIO
-from logging import Logger
 from uuid import uuid4
 from zipfile import BadZipFile, ZipFile, ZipInfo
 
@@ -10,12 +9,6 @@ from lxml import etree
 from lxml.etree import _Element
 
 from app.services.conditions import get_computed_condition_name
-from app.services.ecr.model import ReportableCondition
-from app.services.xslt import (
-    XSLTTransformationError,
-    get_path_to_xslt_stylesheet,
-    transform_xml_to_html,
-)
 
 from ..core.exceptions import (
     FileProcessingError,
@@ -145,47 +138,6 @@ def create_refined_file_names(
         eicr_html_file_name=f"{jurisdiction_id}/{computed_name}/refined_eICR.html",
         rr_xml_file_name=f"{jurisdiction_id}/{computed_name}/refined_RR.xml",
     )
-
-
-def create_html_file(
-    condition: ReportableCondition, refined_eicr: str, file_name: str, logger: Logger
-) -> ZipFileItem:
-    """
-    Creates an HTML file using the refined condition information.
-
-    Args:
-        condition (ReportableCondition): The reportable condition
-        refined_eicr (str): Condition's refined eICR document
-        file_name (str): Desired HTML file name
-        logger (Logger): The logger
-
-    Returns:
-        ZippedItem: A processed object ready for packing into a zip file.
-    """
-    try:
-        xslt_stylesheet_path = get_path_to_xslt_stylesheet()
-        html_bytes = transform_xml_to_html(
-            refined_eicr.encode("utf-8"), xslt_stylesheet_path, logger
-        )
-
-        logger.info(
-            f"Successfully transformed XML to HTML for condition: {condition.display_name}",
-            extra={
-                "condition_code": condition.code,
-                "condition_name": condition.display_name,
-            },
-        )
-        return ZipFileItem(file_name=file_name, file_content=html_bytes.decode("utf-8"))
-    except XSLTTransformationError as e:
-        logger.error(
-            f"Failed to transform XML to HTML for condition: {condition.display_name}",
-            extra={
-                "condition_code": condition.code,
-                "condition_name": condition.display_name,
-                "error": str(e),
-            },
-        )
-        raise
 
 
 def create_refined_ecr_zip_in_memory(

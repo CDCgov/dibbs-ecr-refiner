@@ -25,7 +25,6 @@ from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
-    create_html_file,
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
 )
@@ -35,6 +34,7 @@ from app.services.format import (
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import inline_testing
+from app.services.xslt import create_refined_eicr_html_file
 
 from .model import ConfigurationTestResponse
 
@@ -185,7 +185,7 @@ async def run_configuration_test(
         condition_name=condition.display_name,
     )
 
-    html_file = create_html_file(
+    html_file = create_refined_eicr_html_file(
         condition=condition,
         refined_eicr=refined_document.refined_eicr,
         file_name=refined_file_names.eicr_html_file_name,

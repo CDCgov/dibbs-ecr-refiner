@@ -378,7 +378,7 @@ async def test_inline_example_file_success(
     test_app.dependency_overrides[_get_upload_zip] = lambda: mock_s3_upload
 
     monkeypatch.setattr(
-        "app.services.file_io.transform_xml_to_html",
+        "app.services.xslt._transform_xml_to_html",
         lambda *args, **kwargs: b"<html>test</html>",
     )
 
@@ -443,7 +443,7 @@ async def test_inline_allow_custom_zip(
     test_app.dependency_overrides[_get_upload_zip] = lambda: mock_s3_upload
 
     monkeypatch.setattr(
-        "app.services.file_io.transform_xml_to_html",
+        "app.services.xslt._transform_xml_to_html",
         lambda *args, **kwargs: b"<html>test</html>",
     )
 
