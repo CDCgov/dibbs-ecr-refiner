@@ -7,7 +7,6 @@ import {
   Select,
   Label as USWDSLabel,
 } from '@trussworks/react-uswds';
-import { Label } from '@headlessui/react';
 import { Button } from '../../../../components/Button';
 import {
   getGetConfigurationQueryKey,
@@ -20,6 +19,7 @@ import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '../../../../components/TextInput';
 import { Field } from '../../../../components/Field';
+import { Label } from '../../../../components/Label';
 
 interface CustomCodeModalProps {
   configurationId: string;

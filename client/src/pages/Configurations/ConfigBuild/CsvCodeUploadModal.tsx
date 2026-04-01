@@ -11,9 +11,9 @@ import {
 import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '../../../components/Button';
-import { Label } from '@headlessui/react';
 import { TextInput } from '../../../components/TextInput';
 import { Field } from '../../../components/Field';
+import { Label } from '../../../components/Label';
 
 // Confirm Modal
 interface ConfirmModalProps {
