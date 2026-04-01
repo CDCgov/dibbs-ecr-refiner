@@ -13,11 +13,11 @@ import {
   DialogPanel,
   DialogTitle,
   Field,
-  Input,
   Label,
 } from '@headlessui/react';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
+import { Input } from '../../../../components/Input';
 
 interface EditCustomSection {
   name: string;
