@@ -18,7 +18,7 @@ export function Search({
     >
       <SearchIcon />
       <Input
-        className="font-public-sans h-4 w-full text-base leading-5 font-normal focus:outline-none!"
+        className="font-public-sans h-4 w-full text-base leading-5 font-normal text-gray-500 focus:outline-none!"
         placeholder={placeholder}
         type="search"
         {...props}
