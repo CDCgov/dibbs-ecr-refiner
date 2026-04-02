@@ -12,7 +12,7 @@ export function Search({
   return (
     <div
       className={classNames(
-        'has-[input:focus-within]:outline-blue-40v flex w-full max-w-120 items-center gap-2 rounded-md bg-white/5 p-1 pl-3 outline-1 -outline-offset-1 outline-gray-600 has-[input:focus-within]:outline-5 has-[input:focus-within]:-outline-offset-2',
+        'has-[input:focus-within]:outline-blue-40v flex w-full max-w-120 items-center gap-2 rounded-md bg-white p-1 pl-3 outline-1 -outline-offset-1 outline-gray-600 has-[input:focus-within]:outline-5 has-[input:focus-within]:-outline-offset-2',
         className
       )}
     >
