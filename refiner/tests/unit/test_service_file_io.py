@@ -245,7 +245,7 @@ def test_zip_contains_only_xml_when_html_fails() -> None:
 
     Simulate by omitting HTML file for ConditionC and including for ConditionD.
     """
-    zip_package = ZipFilePackage()
+    zip_package = ZipFilePackage(name="mock-zip-package")
     files: list[tuple[str, str | bytes]] = [
         ZipFileItem(
             file_name="ConditionC-321.xml", file_content="<xml>TestC</xml>"

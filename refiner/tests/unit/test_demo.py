@@ -147,7 +147,7 @@ def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
 
 
 def test_create_refined_ecr_zip():
-    zip_package = ZipFilePackage()
+    zip_package = ZipFilePackage(name="mock-zip.zip")
     refined_files = [
         ZipFileItem(
             file_name="covid_condition.xml", file_content="<eICR>Covid Data</eICR>"
@@ -166,7 +166,7 @@ def test_create_refined_ecr_zip():
 
     file_name, file_buffer = create_refined_ecr_zip_in_memory(zip_package=zip_package)
 
-    assert "_refined_ecr.zip" in file_name
+    assert file_name == "mock-zip.zip"
 
     with zipfile.ZipFile(file_buffer, "r") as zipf:
         namelist = zipf.namelist()

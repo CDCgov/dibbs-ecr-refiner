@@ -384,6 +384,7 @@ async def test_inline_example_file_success(
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
+        original_eicr_doc_id="mock-doc-id",
         refined_document=RefinedDocument(
             reportable_condition=ReportableCondition(
                 code="12345",
@@ -449,6 +450,7 @@ async def test_inline_allow_custom_zip(
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
+        original_eicr_doc_id="mock-doc-id",
         refined_document=RefinedDocument(
             reportable_condition=ReportableCondition(
                 code="840539006", display_name="COVID-19"
