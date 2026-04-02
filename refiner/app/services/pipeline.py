@@ -6,6 +6,7 @@ from lxml import etree
 from ..core.exceptions import XMLValidationError
 from ..core.models.types import XMLFiles
 from .ecr.augment import (
+    AugmentedResult,
     augment_eicr,
     augment_rr,
     create_augmentation_context,
@@ -84,6 +85,8 @@ class RefinementResult:
     the refinement was executed.
     """
 
+    augmented_eicr_result: AugmentedResult
+    augmented_rr_result: AugmentedResult
     refined_eicr: str
     refined_rr: str
     trace: RefinementTrace
@@ -185,7 +188,7 @@ def refine_for_condition(
             eicr_root=eicr_root,
         )
         refine_eicr(eicr_root=eicr_root, plan=eicr_plan)
-        augment_eicr(eicr_root, eicr_context)
+        augmented_eicr_result = augment_eicr(eicr_root, eicr_context)
         refined_eicr = etree.tostring(eicr_root, encoding="unicode")
 
         # plan -> refine -> augment -> output
@@ -194,7 +197,7 @@ def refine_for_condition(
             processed_configuration=processed_configuration,
         )
         refine_rr(rr_root=rr_root, plan=rr_plan)
-        augment_rr(rr_root, rr_context)
+        augmented_rr_result = augment_rr(rr_root, rr_context)
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
         trace.refinement_outcome = "refined"
@@ -203,6 +206,8 @@ def refine_for_condition(
         )
 
         return RefinementResult(
+            augmented_eicr_result=augmented_eicr_result,
+            augmented_rr_result=augmented_rr_result,
             refined_eicr=refined_eicr,
             refined_rr=refined_rr,
             trace=trace,

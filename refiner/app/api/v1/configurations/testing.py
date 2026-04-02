@@ -121,8 +121,6 @@ async def run_configuration_test(
         A response object containing the original eICR, a URL to download the
         zipped results, and details about the refined condition.
     """
-    # List of files to bundle into the zip
-    zip_package = ZipFilePackage()
 
     # Check that demo file path is valid
     validate_path_or_raise(path=sample_zip_path)
@@ -158,7 +156,7 @@ async def run_configuration_test(
     # call the testing service
     # business logic around **how** inline testing works is in services/testing.py
     try:
-        result = await inline_testing(
+        test_results = await inline_testing(
             xml_files=original_xml_files,
             configuration=configuration,
             primary_condition=primary_condition,
@@ -173,13 +171,13 @@ async def run_configuration_test(
         )
 
     # handle the service layer response
-    if result.configuration_does_not_match_conditions:
+    if test_results.configuration_does_not_match_conditions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.configuration_does_not_match_conditions,
+            detail=test_results.configuration_does_not_match_conditions,
         )
 
-    refined_document = result.refined_document
+    refined_document = test_results.refined_document
     if refined_document is None:
         logger.error(
             msg="Internal logic error: inline_testing returned no error but also no refined eICR."
@@ -190,6 +188,9 @@ async def run_configuration_test(
         )
 
     condition = refined_document.reportable_condition
+
+    # List of files to bundle into the zip
+    zip_package = ZipFilePackage(name=f"{test_results.original_eicr_doc_id}.zip")
 
     zip_package.add(
         ZipFileItem(file_name="CDA_eICR.xml", file_content=original_xml_files.eicr)

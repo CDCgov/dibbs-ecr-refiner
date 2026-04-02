@@ -1,7 +1,6 @@
 import io
 from dataclasses import dataclass
 from io import BytesIO
-from uuid import uuid4
 from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from chardet import detect
@@ -35,11 +34,18 @@ class ZipFilePackage:
     Represents a collection of documents to use for creating a zip file package.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, name: str) -> None:
         """
         ZipFilePackage constructor.
         """
+        self._name = name
         self._packaged_items: list[ZipFileItem] = []
+
+    def get_name(self) -> str:
+        """
+        Get the name of the zip package.
+        """
+        return self._name
 
     def add(self, item: ZipFileItem) -> None:
         """
@@ -159,8 +165,6 @@ def create_refined_ecr_zip_in_memory(
         - If content is str, it is encoded as UTF-8 before writing.
         - Skips any empty files; robust against partial failures (e.g., missing HTML).
     """
-    token = str(uuid4())
-    zip_filename = f"{token}_refined_ecr.zip"
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, "w") as zf:
@@ -174,7 +178,7 @@ def create_refined_ecr_zip_in_memory(
             zf.writestr(filename, data)
 
     zip_buffer.seek(0)
-    return zip_filename, zip_buffer
+    return zip_package.get_name(), zip_buffer
 
 
 def _decode_file(filename: str, zipfile: ZipFile) -> str:

@@ -159,9 +159,6 @@ async def demo_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
-    # List of files to bundle into the zip
-    zip_package = ZipFilePackage()
-
     # Check that demo file path is valid
     validate_path_or_raise(path=demo_zip_path)
 
@@ -175,19 +172,19 @@ async def demo_upload(
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
     # Run the test
-    try:
-        test_results = await independent_testing(
-            db=db,
-            xml_files=original_xml_files,
-            jurisdiction_id=user.jurisdiction_id,
-            logger=logger,
-        )
-    except Exception as e:
-        logger.error("Error in the independent testing flow", extra={"error": str(e)})
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server error occurred. Please check your file and try again.",
-        )
+    # try:
+    test_results = await independent_testing(
+        db=db,
+        xml_files=original_xml_files,
+        jurisdiction_id=user.jurisdiction_id,
+        logger=logger,
+    )
+    # except Exception as e:
+    #     logger.error("Error in the independent testing flow", extra={"error": str(e)})
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail="Server error occurred. Please check your file and try again.",
+    #     )
 
     # Get the refined condition info and file packages
     conditions, zip_file_items = await _build_refined_conditions(
@@ -195,6 +192,9 @@ async def demo_upload(
         refined_documents=test_results.refined_documents,
         logger=logger,
     )
+
+    # List of files to bundle into the zip
+    zip_package = ZipFilePackage(name=f"{test_results.original_eicr_doc_id}.zip")
 
     # Package refined files
     for item in zip_file_items:
@@ -243,17 +243,14 @@ async def download_refined_ecr(
     The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
     server constructs the S3 object key based on the authenticated user.
     """
-
+    print(filename)
     if "/" in filename or "\\" in filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename."
         )
-    if not filename.endswith("_refined_ecr.zip"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename."
-        )
 
-    uuid_prefix = filename.removesuffix("_refined_ecr.zip")
+    uuid_prefix = filename.removesuffix(".zip")
+
     try:
         UUID(uuid_prefix)
     except ValueError:
