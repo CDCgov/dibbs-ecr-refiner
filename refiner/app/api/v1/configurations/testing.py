@@ -199,7 +199,6 @@ async def run_configuration_test(
     )
 
     refined_file_names = create_refined_file_names(
-        jurisdiction_id=user.jurisdiction_id,
         condition_name=condition.display_name,
     )
 

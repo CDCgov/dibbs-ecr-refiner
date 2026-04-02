@@ -12,7 +12,7 @@ api_route_base = "/api/v1/demo"
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_demo_upload_smoke(
-    covid_influenza_v1_1_zip_path: Path, authed_client, test_user_jurisdiction_id
+    covid_influenza_v1_1_zip_path: Path, authed_client
 ) -> None:
     """
     Smoke test for the /api/v1/demo/upload endpoint.
@@ -53,14 +53,13 @@ async def test_demo_upload_smoke(
     zip_bytes = download_response.content
     assert zip_bytes
 
-    jd = test_user_jurisdiction_id
     expected_file_names = [
-        f"{jd}/Influenza/refined_eICR.xml",
-        f"{jd}/Influenza/refined_RR.xml",
-        f"{jd}/Influenza/refined_eICR.html",
-        f"{jd}/COVID19/refined_eICR.xml",
-        f"{jd}/COVID19/refined_RR.xml",
-        f"{jd}/COVID19/refined_eICR.html",
+        "CDA_eICR_Influenza.xml",
+        "CDA_RR_Influenza.xml",
+        "CDA_eICR_Influenza.html",
+        "CDA_eICR_COVID19.xml",
+        "CDA_RR_COVID19.xml",
+        "CDA_eICR_COVID19.html",
         "CDA_eICR.xml",
         "CDA_RR.xml",
     ]

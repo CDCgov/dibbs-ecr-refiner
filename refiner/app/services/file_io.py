@@ -119,7 +119,6 @@ class RefinedFileName:
 
 
 def create_refined_file_names(
-    jurisdiction_id: str,
     condition_name: str,
 ) -> RefinedFileName:
     """
@@ -133,10 +132,12 @@ def create_refined_file_names(
         RefinedFileName: Object with all required file names for packaging
     """
     computed_name = get_computed_condition_name(condition_name=condition_name)
+    eicr_base_name = f"CDA_eICR_{computed_name}"
+
     return RefinedFileName(
-        eicr_xml_file_name=f"{jurisdiction_id}/{computed_name}/refined_eICR.xml",
-        eicr_html_file_name=f"{jurisdiction_id}/{computed_name}/refined_eICR.html",
-        rr_xml_file_name=f"{jurisdiction_id}/{computed_name}/refined_RR.xml",
+        eicr_xml_file_name=f"{eicr_base_name}.xml",
+        eicr_html_file_name=f"{eicr_base_name}.html",
+        rr_xml_file_name=f"CDA_RR_{computed_name}.xml",
     )
 
 

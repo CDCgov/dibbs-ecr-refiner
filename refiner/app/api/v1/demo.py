@@ -47,7 +47,6 @@ def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[s
 
 async def _build_refined_conditions(
     original_xml_files: XMLFiles,
-    jurisdiction_id: str,
     refined_documents: list[RefinedDocument],
     logger: Logger,
 ) -> tuple[list[Condition], list[ZipFileItem]]:
@@ -72,7 +71,6 @@ async def _build_refined_conditions(
         condition = refined_document.reportable_condition
 
         refined_file_names = create_refined_file_names(
-            jurisdiction_id=jurisdiction_id,
             condition_name=condition.display_name,
         )
 
@@ -194,7 +192,6 @@ async def demo_upload(
     # Get the refined condition info and file packages
     conditions, zip_file_items = await _build_refined_conditions(
         original_xml_files=original_xml_files,
-        jurisdiction_id=user.jurisdiction_id,
         refined_documents=test_results.refined_documents,
         logger=logger,
     )
