@@ -440,6 +440,7 @@ async def inline_testing(
             },
         )
         return InlineTestingResult(
+            original_eicr_doc_id="",
             refined_document=None,
             configuration_does_not_match_conditions=f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
         )
