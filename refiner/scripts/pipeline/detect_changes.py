@@ -18,7 +18,7 @@ def _convert_datetimes_to_iso(obj):
         return {k: _convert_datetimes_to_iso(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_convert_datetimes_to_iso(i) for i in obj]
-    if isinstance(obj, datetime | dtlib.datetime):
+    if isinstance(obj, datetime | dtlib.datetime | dtlib.date):
         return obj.isoformat()
     return obj
 
