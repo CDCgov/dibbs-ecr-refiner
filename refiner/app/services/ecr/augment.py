@@ -350,8 +350,8 @@ def _replace_document_id(
     _replace_preserving_tail(doc_root, old_id, new_id)
 
     return AugmentedResult(
-        original_doc_id=_toStr(old_id, "root"),
-        augmented_doc_id=_toStr(new_id, "root"),
+        original_doc_id=_get_attribute_value(old_id, "root"),
+        augmented_doc_id=_get_attribute_value(new_id, "root"),
     )
 
 
@@ -686,7 +686,20 @@ def _replace_preserving_tail(parent: _Element, old: _Element, new: _Element) -> 
     parent.replace(old, new)
 
 
-def _toStr(node: _Element, key: str) -> str:
+def _get_attribute_value(node: _Element, key: str) -> str:
+    """
+    Helper to convert an XML attribute to a string value.
+
+    Args:
+        node (_Element): XML node
+        key (str): The attribute to grab the value from
+
+    Raises:
+        ValueError: Unable to get the value using the given key
+
+    Returns:
+        str: The value from the attribute
+    """
     value = node.get(key)
     if not value:
         raise ValueError("Cannot convert XML to string. No value found at key {key}.")
