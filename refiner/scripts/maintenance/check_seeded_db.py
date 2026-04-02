@@ -11,14 +11,13 @@ from psycopg.rows import dict_row
 from rich.console import Console
 from rich.table import Table
 
-from app.services.terminology import CodeSystem
-
 SCRIPTS_DIR = Path(__file__).parent.parent
 ENV_PATH = SCRIPTS_DIR / ".env"
-TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0"]
+TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0", "5.0.0"]
 
 TABLES_TO_CHECK = [
     "conditions",
+    "condition_context_groupers",
     "configurations",
     "jurisdictions",
     "schema_migrations",
@@ -68,6 +67,68 @@ DB_CHECKS: list[dict[str, Any]] = [
             not all(v in [r["version"] for r in res] for v in TES_CG_VERSIONS)
         ),
         "failure_message": "One or more expected condition grouper versions are missing.",
+    },
+    {
+        "title": "Coverage Level CHECK Constraint Integrity",
+        "query": """
+            SELECT COUNT(*) AS count FROM conditions
+            WHERE
+                -- partial without a reason
+                (coverage_level = 'partial' AND coverage_level_reason IS NULL)
+                -- complete with a reason
+                OR (coverage_level = 'complete' AND coverage_level_reason IS NOT NULL)
+                -- partial with a date
+                OR (coverage_level = 'partial' AND coverage_level_date IS NOT NULL)
+                -- reason or date present without a level
+                OR (coverage_level IS NULL AND (coverage_level_reason IS NOT NULL OR coverage_level_date IS NOT NULL));
+        """,
+        "failure_condition": lambda res: res[0]["count"] > 0,
+        "failure_message": "Found conditions with coverage level fields that violate expected invariants.",
+    },
+    {
+        "title": "Coverage Level Values are Known Codes",
+        "query": """
+            SELECT COUNT(*) AS count FROM conditions
+            WHERE coverage_level IS NOT NULL
+              AND coverage_level NOT IN ('complete', 'partial');
+        """,
+        "failure_condition": lambda res: res[0]["count"] > 0,
+        "failure_message": "Found conditions with unexpected coverage_level values (expected 'complete' or 'partial').",
+    },
+    {
+        "title": "All Context Groupers Reference Valid Conditions",
+        "query": """
+            SELECT COUNT(*) AS count
+            FROM condition_context_groupers cg
+            LEFT JOIN conditions c ON cg.condition_id = c.id
+            WHERE c.id IS NULL;
+        """,
+        "failure_condition": lambda res: res[0]["count"] > 0,
+        "failure_message": "Found context grouper rows with orphaned condition_id references.",
+    },
+    {
+        "title": "Context Grouper Categories are Known Values",
+        "query": """
+            SELECT COUNT(*) AS count
+            FROM condition_context_groupers
+            WHERE category NOT IN (
+                'medication', 'immunization', 'symptom',
+                'specimen_source', 'diagnosis', 'clinical_lab_result'
+            );
+        """,
+        "failure_condition": lambda res: res[0]["count"] > 0,
+        "failure_message": "Found context grouper rows with unexpected category values. "
+        "This may indicate a new ACG category was added in the TES data — check parse_acg_category in lib.py.",
+    },
+    {
+        "title": "No Context Groupers with Zero Code Counts",
+        "query": """
+            SELECT COUNT(*) AS count
+            FROM condition_context_groupers
+            WHERE code_count = 0;
+        """,
+        "failure_condition": lambda res: res[0]["count"] > 0,
+        "failure_message": "Found context grouper rows with zero codes, indicating an empty ACG ValueSet.",
     },
 ]
 
@@ -216,6 +277,90 @@ def display_summary_stats(cursor: Cursor, console: Console) -> None:
     console.print(stats_table)
 
 
+def display_coverage_stats(cursor: Cursor, console: Console) -> None:
+    """
+    Displays the coverage level distribution across condition versions.
+    """
+
+    console.print("\n[bold blue]🏷️  Coverage Level Distribution[/bold blue]\n")
+
+    cursor.execute("""
+        SELECT
+            version,
+            COUNT(*) FILTER (WHERE coverage_level = 'complete') AS complete,
+            COUNT(*) FILTER (WHERE coverage_level = 'partial') AS partial,
+            COUNT(*) FILTER (WHERE coverage_level IS NULL) AS not_declared,
+            COUNT(*) AS total
+        FROM conditions
+        GROUP BY version
+        ORDER BY version;
+    """)
+    results = cursor.fetchall()
+
+    if not results:
+        console.print("    [yellow]No coverage data found.[/yellow]")
+        return
+
+    table = Table(title="Coverage Level by Condition Grouper Version")
+    table.add_column("Version", style="cyan")
+    table.add_column("Complete", style="green", justify="right")
+    table.add_column("Partial", style="yellow", justify="right")
+    table.add_column("Not Declared", style="dim", justify="right")
+    table.add_column("Total", style="magenta", justify="right")
+
+    for row in results:
+        table.add_row(
+            row["version"],
+            str(row["complete"]),
+            str(row["partial"]),
+            str(row["not_declared"]),
+            str(row["total"]),
+        )
+
+    console.print(table)
+
+
+def display_acg_category_stats(cursor: Cursor, console: Console) -> None:
+    """
+    Displays the Additional Context Grouper category distribution for the newest version.
+    """
+
+    console.print("\n[bold blue]📂 Additional Context Grouper Categories[/bold blue]\n")
+
+    cursor.execute("""
+        SELECT
+            cg.category,
+            COUNT(*) AS grouper_count,
+            SUM(cg.code_count) AS total_codes
+        FROM condition_context_groupers cg
+        JOIN conditions c ON cg.condition_id = c.id
+        WHERE c.version = (
+            SELECT MAX(version) FROM conditions
+        )
+        GROUP BY cg.category
+        ORDER BY grouper_count DESC;
+    """)
+    results = cursor.fetchall()
+
+    if not results:
+        console.print("    [yellow]No context grouper data found.[/yellow]")
+        return
+
+    table = Table(title="ACG Categories (newest version)")
+    table.add_column("Category", style="cyan")
+    table.add_column("Conditions", style="magenta", justify="right")
+    table.add_column("Total Codes", style="green", justify="right")
+
+    for row in results:
+        table.add_row(
+            row["category"],
+            str(row["grouper_count"]),
+            f"{row['total_codes']:,}",
+        )
+
+    console.print(table)
+
+
 def run_comparison_check(
     cursor: Cursor, console: Console, title: str, query: str
 ) -> None:
@@ -241,9 +386,14 @@ def run_comparison_check(
 
     for row in results:
         total_codes = 0
-        for s in CodeSystem:
-            column_name_to_check = f"{s.format_system_string()}_codes"
-            total_codes += len(row.get(column_name_to_check) or [])
+        for system_name, column_name in [
+            ("LOINC", "loinc_codes"),
+            ("SNOMED", "snomed_codes"),
+            ("ICD-10", "icd10_codes"),
+            ("RxNorm", "rxnorm_codes"),
+            ("CVX", "cvx_codes"),
+        ]:
+            total_codes += len(row.get(column_name) or [])
 
         table.add_row(
             row["display_name"],
@@ -318,6 +468,8 @@ def main() -> None:
 
                 # display comprehensive statistics
                 display_summary_stats(cursor, console)
+                display_coverage_stats(cursor, console)
+                display_acg_category_stats(cursor, console)
 
                 console.print(
                     "\n[bold green]✨ Database validation complete![/bold green]\n"
