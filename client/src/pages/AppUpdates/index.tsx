@@ -9,14 +9,13 @@ export function AppUpdates() {
   if (isError) return 'Error!';
 
   const releaseContentToRender = releaseFetchResult.data.releases;
-  releaseContentToRender.push(releaseContentToRender[0]);
   return (
     <div className="mx-20 my-10">
       <Title className="mb-2!">App updates</Title>
       <p className="mb-6">Review the latest updates to eCR Refiner</p>
       <section className="bg-base-lightest mx-auto rounded-b-lg px-2 py-2">
         {releaseContentToRender.map((d, i) => {
-          // if (d.prerelease) return <></>;
+          if (d.prerelease) return <></>;
           const summary = d?.body;
 
           const summaryHeaderValuePairs: Record<string, string> =
