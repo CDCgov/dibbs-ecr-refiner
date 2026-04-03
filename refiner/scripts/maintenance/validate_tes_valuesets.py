@@ -67,6 +67,12 @@ class GrouperResolutionSummary:
 
     @property
     def total_referenced(self) -> int:
+        """
+        Returns a count of all references in the compose.includes for the condition grouper.
+
+        This includes all of the reporting specification groupers and additional context groupers.
+        """
+
         return (
             len(self.rsg_children)
             + len(self.additional_context_children)
@@ -75,6 +81,10 @@ class GrouperResolutionSummary:
 
     @property
     def has_acgs(self) -> bool:
+        """
+        Returns True/False if a condition references an additional context grouper in its compose.includes.
+        """
+
         return len(self.additional_context_children) > 0
 
 
