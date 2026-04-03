@@ -49,6 +49,14 @@
     font-size: 1.75rem;
     font-weight: 700;
   }
+
+  ul {
+    list-style: disc;
+  }
+
+  a {
+    @apply text-blue-cool-50 font-bold;
+  }
 }
 @layer utilities {
   .border-thin {
@@ -263,4 +271,8 @@
 
 .usa-modal__close {
   @apply bg-transparent! p-0! pt-2! pr-2! text-base hover:bg-transparent!;
+}
+
+.link-dark-bg {
+  @apply text-blue-cool-5 hover:text-blue-cool-20;
 }
