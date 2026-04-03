@@ -203,6 +203,20 @@ async def run_configuration_test(
         condition_name=condition.display_name,
     )
 
+    zip_package.add(
+        ZipFileItem(
+            file_name=refined_file_names.eicr_xml_file_name,
+            file_content=refined_document.refined_eicr,
+        )
+    )
+
+    zip_package.add(
+        ZipFileItem(
+            file_name=refined_file_names.rr_xml_file_name,
+            file_content=refined_document.refined_rr,
+        )
+    )
+
     html_file = create_refined_eicr_html_file(
         condition=condition,
         refined_eicr=refined_document.refined_eicr,
@@ -210,18 +224,6 @@ async def run_configuration_test(
         logger=logger,
     )
 
-    zip_package.add(
-        ZipFileItem(
-            file_name=refined_file_names.eicr_xml_file_name,
-            file_content=refined_document.refined_eicr,
-        )
-    )
-    zip_package.add(
-        ZipFileItem(
-            file_name=refined_file_names.rr_xml_file_name,
-            file_content=refined_document.refined_rr,
-        )
-    )
     zip_package.add(html_file)
 
     output_file_name, output_zip_buffer = create_output_zip(
