@@ -245,7 +245,7 @@ async def download_refined_ecr(
     The client provides only the filename (e.g. `<uuid>_refined_ecr.zip`). The
     server constructs the S3 object key based on the authenticated user.
     """
-    print(filename)
+
     if "/" in filename or "\\" in filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename."
