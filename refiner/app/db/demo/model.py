@@ -27,4 +27,3 @@ class IndependentTestUploadResponse:
     refined_conditions: list[Condition]
     unrefined_eicr: str
     refined_download_key: str
-    shadow_rr: str | None
