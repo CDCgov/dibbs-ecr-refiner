@@ -46,6 +46,8 @@ extend-select = [
   "I",
   # - python code modernization
   "UP",
+  # - no `print` statements
+  "T201",
 ]
 
 # rules we explicitly disable
@@ -71,11 +73,11 @@ ignore = [
 # file-specific rule exclusions
 [tool.ruff.lint.per-file-ignores]
 # - disable docstring/type/security rules in tests
-"**/tests/*" = ["D", "S", "ANN"]
+"**/tests/*" = ["D", "S", "ANN", "T201"]
 # - disable docstring/type/security rules in lambda
 "**/lambda/*" = ["D", "S", "ANN"]
 # - disable type annotation rules in scripts
-"**/scripts/*" = ["ANN"]
+"**/scripts/*" = ["ANN", "T201"]
 # - allow missing docstrings in __init__
 "__init__.py" = ["D"]
 
