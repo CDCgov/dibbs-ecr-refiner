@@ -210,11 +210,11 @@ async def demo_upload(
         ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
     )
 
-    # add shadow RR (for inactive conditions) to zip
+    # Add shadow RR (for inactive conditions) to zip
     if test_results.shadow_rr:
         zip_package.add(
             ZipFileItem(
-                file_name="CDA_RR_refined.xml", file_content=test_results.shadow_rr
+                file_name="CDA_RR_unrefined_rr.xml", file_content=test_results.shadow_rr
             )
         )
 
