@@ -15,14 +15,14 @@ export function AppUpdates() {
       <p className="mb-6">Review the latest updates to eCR Refiner</p>
       <section className="bg-base-lightest mx-auto rounded-b-lg px-2 py-2">
         {releaseContentToRender.map((d, i) => {
-          if (d.prerelease) return <></>;
+          // if (d.prerelease) return <div key={d.id}></div>;
           const summary = d?.body;
 
           const summaryHeaderValuePairs: Record<string, string> =
             JSON.parse(summary);
           const dateInfo = new Date(d.created_at);
           return (
-            <div className="bg-white px-4 py-4">
+            <div key={d.id} className="bg-white px-4 py-4">
               <h3 className="mb-1 text-base font-bold text-black!">
                 {dateInfo.toLocaleDateString('en-US', {
                   month: 'long',
@@ -36,15 +36,18 @@ export function AppUpdates() {
                 /* the two sections have the summary information we want, so only use that content */
                 Object.entries(summaryHeaderValuePairs)
                   .slice(0, 2)
-                  .map(([, summary_content], content_idx) => {
+                  .map(([, summaryContent], content_idx) => {
+                    const content: Record<string, string> =
+                      JSON.parse(summaryContent);
+
                     return (
-                      <div className="mt-2 pb-4 pl-5">
+                      <div key={content['id']} className="mt-2 pb-4 pl-5">
                         {content_idx == 0 ? (
-                          <Markdown>{summary_content}</Markdown>
+                          <Markdown>{content['content']}</Markdown>
                         ) : (
                           <>
                             <h3 className="text-bold -ml-5">Major changes</h3>
-                            <Markdown>{summary_content}</Markdown>
+                            <Markdown>{content['content']}</Markdown>
                           </>
                         )}
                       </div>

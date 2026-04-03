@@ -49,12 +49,20 @@ export function Header({ displayName }: HeaderProps) {
         </MenuButton>
         <MenuItems
           anchor="bottom"
-          className="ring-opacity-5 absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg focus:outline-none"
+          className="ring-opacity-5 absolute right-0 mt-0.5 w-40 origin-top-right rounded-md bg-white shadow-lg"
         >
           <MenuItem>
             <a
+              href="/app-updates"
+              className="border-gray-cool-40! block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-300 data-focus:text-gray-900"
+            >
+              App updates
+            </a>
+          </MenuItem>
+          <MenuItem>
+            <a
               href="/api/logout"
-              className="!border-gray-cool-40 block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:text-gray-900"
+              className="border-gray-cool-40! block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-300 data-focus:text-gray-900"
             >
               Log out
             </a>
@@ -100,14 +108,15 @@ export function Footer() {
         </div>
         <div className="flex flex-col gap-2 lg:items-end lg:gap-1">
           <p className="text-white">
-            For more information about this solution, send us an email at{' '}
+            For feedback, recommendations, or questions, please reach out to the{' '}
             <a
-              className="font-bold hover:underline"
-              href="mailto:dibbs@cdc.gov"
-              aria-label="Email us at dibbs@cdc.gov (will open your email client)"
+              className="link-dark-bg font-bold hover:underline"
+              href="https://aphlinformatics.atlassian.net/servicedesk/customer/portal/23/group/75&sa=D&source=docs&ust=1774202313083225&usg=AOvVaw2YRGisxYOIbeiR156Pek2p"
+              aria-label="Submit a ticket by filling out the form linked here using the APHL service desk using the eCR Functionality / Enhancement category"
             >
-              dibbs@cdc.gov
-            </a>
+              APHL Service Desk{' '}
+            </a>{' '}
+            using the “eCR Functionality / Enhancements" category
           </p>
           <p className="text-gray-cool-20 text-xs">
             Version code:{' '}

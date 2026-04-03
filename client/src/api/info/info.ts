@@ -48,7 +48,7 @@ export const getReleasesData = (
     
     
     return axios.default.get(
-      `/api/v1/info/releases`,options
+      `/api/v1/releases/releases`,options
     );
   }
 
@@ -57,7 +57,7 @@ export const getReleasesData = (
 
 export const getGetReleasesDataQueryKey = () => {
     return [
-    `/api/v1/info/releases`
+    `/api/v1/releases/releases`
     ] as const;
     }
 
