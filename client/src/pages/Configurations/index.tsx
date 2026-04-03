@@ -19,7 +19,6 @@ import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
-import { CONFIGURATION_CONFIRMATION_CTA } from './utils';
 import { Spinner } from '../../components/Spinner';
 import classNames from 'classnames';
 import {
@@ -93,7 +92,7 @@ export function Configurations() {
         ) : null}
 
         <Button className="m-0!" onClick={() => setIsOpen(true)}>
-          Set up new configuration
+          Set up a new configuration
         </Button>
         <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
       </div>
@@ -123,7 +122,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   return (
     <Modal open={open} onClose={onClose} position="top">
       <ModalHeader>
-        <ModalTitle>Set up a new configuration</ModalTitle>
+        <ModalTitle>Set up new configuration</ModalTitle>
       </ModalHeader>
       <ModalBody>
         <p className="sr-only">
@@ -192,7 +191,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
             );
           }}
         >
-          {CONFIGURATION_CONFIRMATION_CTA}
+          Set up configuration
         </Button>
       </ModalFooter>
     </Modal>
