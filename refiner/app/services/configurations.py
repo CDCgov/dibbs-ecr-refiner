@@ -190,7 +190,7 @@ async def convert_config_to_storage_payload(
 
         for code_system, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
-            coding_by_code_system[code_system.format_system_string()] = [
+            coding_by_code_system[CodeSystem(code_system).format_system_string()] = [
                 asdict(Coding(code=c.code, display=c.display, system=code_system.oid))
                 for c in code_list
             ]

@@ -6,7 +6,7 @@ import boto3
 import pytest
 from moto import mock_aws
 
-from ..services.file_io import get_asset_path
+from app.services.assets import get_asset_path
 
 COVID_CANONICAL_URL_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
 INFLUENZA_CANONICAL_URL_UUID = "38475891-387a-4fa2-bbe9-1dc97ce415d1"
