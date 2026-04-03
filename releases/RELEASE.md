@@ -29,7 +29,7 @@ This document will outline the process for releasing a new version of the eCR Re
    1. Copy this list of commit names and edit it down, removing all entries unimportant to the end user, e.g., test updates, refactors, dependency bumps, chores, etc.
    1. Add the template release notes linked [in the release note template](./RELEASE_NOTE_TEMPLATE.MD) to the notes. **Make sure you copy this directly, as otherwise, the app updates page might not render correctly**
       - Product will own the first and second sections summarizing the release / major features
-      - Engineering will own the content the third section. The generated release notes will go here after the list is edited.
+      - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
    1. Before publishing, **ensure that the “Set as a pre-release” checkbox is marked.** The release should not be marked as the latest release until deployment and testing have been performed. Then click “publish release”!
       ![Screenshot of publish release notes with pre-release](./publish_release.png)
 
