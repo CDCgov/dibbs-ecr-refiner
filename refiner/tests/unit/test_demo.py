@@ -8,7 +8,7 @@ from fastapi.datastructures import Headers
 
 from app.api.validation.file_validation import (
     MAX_ALLOWED_UPLOAD_FILE_SIZE,
-    _validate_zip_file,
+    _validate_ecr_zip_pair,
 )
 from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
@@ -60,7 +60,7 @@ async def test_valid_zip():
         {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
     )
     file = create_mock_upload_file("valid.zip", zip_bytes)
-    validated = await _validate_zip_file(file)
+    validated = await _validate_ecr_zip_pair(file)
     assert validated is file
 
 
@@ -69,7 +69,7 @@ async def test_invalid_extension():
     zip_bytes = create_zip_file({"test.txt": b"abc"})
     file = create_mock_upload_file("invalid.txt", zip_bytes)
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "Only .zip files are allowed" in exc.value.detail
 
 
@@ -77,7 +77,7 @@ async def test_invalid_extension():
 async def test_filename_starts_with_period():
     file = create_mock_upload_file(".hidden.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "cannot start with a period" in exc.value.detail
 
 
@@ -85,7 +85,7 @@ async def test_filename_starts_with_period():
 async def test_filename_with_double_dot():
     file = create_mock_upload_file("bad..name.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "cannot contain multiple periods" in exc.value.detail
 
 
@@ -93,7 +93,7 @@ async def test_filename_with_double_dot():
 async def test_empty_file():
     file = create_mock_upload_file("empty.zip", b"")
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert ".zip must not be empty" in exc.value.detail
 
 
@@ -102,7 +102,7 @@ async def test_file_too_large():
     content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
-        await _validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "must be less than 10MB" in exc.value.detail
 
 

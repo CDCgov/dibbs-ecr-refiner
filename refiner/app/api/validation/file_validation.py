@@ -93,7 +93,7 @@ async def get_validated_file(
         return create_sample_zip_file(sample_zip_path=demo_file_path)
 
     try:
-        return await _validate_zip_file(file=uploaded_file)
+        return await _validate_ecr_zip_pair(file=uploaded_file)
     except ZipValidationError as e:
         logger.error(
             msg="ZipValidationError in validate_zip_file",
@@ -105,7 +105,7 @@ async def get_validated_file(
         )
 
 
-async def _validate_zip_file(file: UploadFile) -> UploadFile:
+async def _validate_ecr_zip_pair(file: UploadFile) -> UploadFile:
     """
     Validate an uploaded eICR/RR pair packaged in a zip file. Ensure it meets criteria necessary for processing.
 
