@@ -12,7 +12,7 @@ import {
   Modal,
   ModalHeading,
   ModalFooter,
-  Label,
+  Label as USWDSLabel,
   ComboBox,
   ModalRef,
   ComboBoxRef,
@@ -27,6 +27,12 @@ import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 import { Spinner } from '../../components/Spinner';
 import classNames from 'classnames';
 import { ModalToggleButton } from '../../components/Button/ModalToggleButton';
+import {
+  Modal as CustomModal,
+  ModalContent,
+  ModalTitle,
+} from '../../components/Modal';
+import { Field, Input, Label } from '@headlessui/react';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -57,6 +63,7 @@ export function Configurations() {
   });
 
   const modalRef = useRef<ModalRef>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
@@ -66,6 +73,27 @@ export function Configurations() {
   return (
     <section className="mx-auto p-3">
       <div className="flex flex-col gap-4 py-10">
+        <Button onClick={() => setIsOpen(true)}>Modal opener</Button>
+        <CustomModal open={isOpen} onClose={() => setIsOpen(false)}>
+          <ModalContent>
+            <ModalTitle>Add a custom section</ModalTitle>
+            <Field className="flex flex-col">
+              <Label>test</Label>
+              <Input className="outline-1" />
+            </Field>
+            <Field className="flex flex-col">
+              <Label>test</Label>
+              <Input className="outline-1" />
+            </Field>
+            <Field className="flex flex-col">
+              <Label>test</Label>
+              <Input className="outline-1" />
+            </Field>
+            <div className="flex w-full justify-end">
+              <Button>Test button</Button>
+            </div>
+          </ModalContent>
+        </CustomModal>
         <Title>Configurations</Title>
         <p>
           Configurations define which patient data is included in refined eCR’s
@@ -146,13 +174,13 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
         </p>
       ) : (
         <>
-          <Label
+          <USWDSLabel
             htmlFor="new-condition"
             className="leading-6!"
             data-focus="true"
           >
             Select condition
-          </Label>
+          </USWDSLabel>
           <ComboBox
             id="new-condition"
             ref={comboBoxRef}
