@@ -71,14 +71,19 @@ function ModalHeader({ children }: ModalSectionProps) {
         <Icon.Close size={4} aria-hidden />
       </Button>
 
-      <div className="mx-auto mt-6 w-full max-w-md pr-10">{children}</div>
+      <div className="mx-auto mt-6 w-full max-w-md pr-10 pl-6">{children}</div>
     </div>
   );
 }
 
-function ModalTitle({ children }: ModalSectionProps) {
+function ModalTitle({ children, className }: ModalSectionProps) {
   return (
-    <DialogTitle className="font-merriweather text-gray-90 px-6 text-3xl font-bold">
+    <DialogTitle
+      className={classNames(
+        'font-merriweather text-gray-90 text-3xl font-bold',
+        className
+      )}
+    >
       {children}
     </DialogTitle>
   );
@@ -92,12 +97,10 @@ function ModalBody({ children, className }: ModalSectionProps) {
   );
 }
 
-function ModalFooter({ children }: ModalSectionProps) {
+function ModalFooter({ children, className }: ModalSectionProps) {
   return (
-    <div className="px-6 py-4">
-      <div className="mx-auto flex w-full max-w-md justify-end gap-3 px-6">
-        {children}
-      </div>
+    <div className={classNames('py-4', className)}>
+      <div className="mx-auto flex w-full max-w-md gap-3 pl-6">{children}</div>
     </div>
   );
 }

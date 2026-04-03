@@ -83,22 +83,22 @@ export function Configurations() {
           <ModalBody>
             <Field className="flex flex-col">
               <Label>test</Label>
-              <Input className="outline-1 w-full" />
+              <Input className="w-full outline-1" />
             </Field>
 
             <Field className="flex flex-col">
               <Label>test</Label>
-              <Input className="outline-1 w-full" />
+              <Input className="w-full outline-1" />
             </Field>
 
             <Field className="flex flex-col">
               <Label>test</Label>
-              <Input className="outline-1 w-full" />
+              <Input className="w-full outline-1" />
             </Field>
           </ModalBody>
 
           <ModalFooter>
-            <Button className='!m-0'>Test button</Button>
+            <Button>Test button</Button>
           </ModalFooter>
         </CustomModal>
         <Title>Configurations</Title>
