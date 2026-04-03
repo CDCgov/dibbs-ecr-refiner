@@ -8,10 +8,14 @@ from fastapi.datastructures import Headers
 
 from app.api.validation.file_validation import (
     MAX_ALLOWED_UPLOAD_FILE_SIZE,
-    validate_zip_file,
+    _validate_ecr_zip_pair,
 )
 from app.services.ecr.refine import get_file_size_reduction_percentage
-from app.services.file_io import create_refined_ecr_zip_in_memory
+from app.services.file_io import (
+    ZipFileItem,
+    ZipFilePackage,
+    create_refined_ecr_zip_in_memory,
+)
 
 api_route_base = "/api/v1/demo"
 
@@ -34,12 +38,12 @@ async def test_demo_file_not_found(authed_client, test_app, mock_logged_in_user)
 
 @pytest.mark.asyncio
 async def test_upload_route_s3_failure(test_app, authed_client):
-    from app.services.aws.s3 import upload_refined_ecr
+    from app.services.aws.s3 import _upload_refined_ecr
 
     def fake_upload_refined_ecr():
         return ""
 
-    test_app.dependency_overrides[upload_refined_ecr] = lambda: fake_upload_refined_ecr
+    test_app.dependency_overrides[_upload_refined_ecr] = lambda: fake_upload_refined_ecr
 
     response = await authed_client.post(f"{api_route_base}/upload")
 
@@ -56,7 +60,7 @@ async def test_valid_zip():
         {"CDA_eICR.xml": b"<xml>eICR</xml>", "CDA_RR.xml": b"<xml>RR</xml>"}
     )
     file = create_mock_upload_file("valid.zip", zip_bytes)
-    validated = await validate_zip_file(file)
+    validated = await _validate_ecr_zip_pair(file)
     assert validated is file
 
 
@@ -65,7 +69,7 @@ async def test_invalid_extension():
     zip_bytes = create_zip_file({"test.txt": b"abc"})
     file = create_mock_upload_file("invalid.txt", zip_bytes)
     with pytest.raises(HTTPException) as exc:
-        await validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "Only .zip files are allowed" in exc.value.detail
 
 
@@ -73,7 +77,7 @@ async def test_invalid_extension():
 async def test_filename_starts_with_period():
     file = create_mock_upload_file(".hidden.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
-        await validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "cannot start with a period" in exc.value.detail
 
 
@@ -81,7 +85,7 @@ async def test_filename_starts_with_period():
 async def test_filename_with_double_dot():
     file = create_mock_upload_file("bad..name.zip", b"fake")
     with pytest.raises(HTTPException) as exc:
-        await validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "cannot contain multiple periods" in exc.value.detail
 
 
@@ -89,7 +93,7 @@ async def test_filename_with_double_dot():
 async def test_empty_file():
     file = create_mock_upload_file("empty.zip", b"")
     with pytest.raises(HTTPException) as exc:
-        await validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert ".zip must not be empty" in exc.value.detail
 
 
@@ -98,7 +102,7 @@ async def test_file_too_large():
     content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
-        await validate_zip_file(file)
+        await _validate_ecr_zip_pair(file)
     assert "must be less than 10MB" in exc.value.detail
 
 
@@ -143,18 +147,26 @@ def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
 
 
 def test_create_refined_ecr_zip():
+    zip_package = ZipFilePackage(name="mock-zip.zip")
     refined_files = [
-        ("covid_condition.xml", "<eICR>Covid Data</eICR>"),
-        ("flu_condition.xml", "<eICR>Flu Data</eICR>"),
+        ZipFileItem(
+            file_name="covid_condition.xml", file_content="<eICR>Covid Data</eICR>"
+        ),
+        ZipFileItem(
+            file_name="flu_condition.xml", file_content="<eICR>Flu Data</eICR>"
+        ),
     ]
 
     eicr = "<eICR>Some RR Data</eICR>"
 
-    refined_files.append(("CDA_eICR.xml", eicr))
+    refined_files.append(ZipFileItem(file_name="CDA_eICR.xml", file_content=eicr))
 
-    file_name, file_buffer = create_refined_ecr_zip_in_memory(files=refined_files)
+    for file in refined_files:
+        zip_package.add(file)
 
-    assert "_refined_ecr.zip" in file_name
+    file_name, file_buffer = create_refined_ecr_zip_in_memory(zip_package=zip_package)
+
+    assert file_name == "mock-zip.zip"
 
     with zipfile.ZipFile(file_buffer, "r") as zipf:
         namelist = zipf.namelist()

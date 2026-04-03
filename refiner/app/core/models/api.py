@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from ...services.file_io import read_json_asset
+from app.services.assets import read_json_asset
 
 ECR_REQUEST_EXAMPLES = read_json_asset("sample_refine_ecr_request.json")
 ECR_RESPONSE_EXAMPLES = read_json_asset("sample_refine_ecr_response.json")

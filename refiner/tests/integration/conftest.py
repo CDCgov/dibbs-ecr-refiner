@@ -100,6 +100,11 @@ def test_username():
 
 
 @pytest.fixture
+def test_user_jurisdiction_id():
+    return TEST_JD_ID
+
+
+@pytest.fixture
 def test_session_token():
     return TEST_SESSION_TOKEN
 
