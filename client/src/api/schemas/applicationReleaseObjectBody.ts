@@ -6,11 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface GithubReleaseObject {
-  id: string;
-  created_at: string;
-  name: string;
-  body: string;
-  prerelease: boolean;
-  html_url: string;
-}
+export type ApplicationReleaseObjectBody = {[key: string]: {[key: string]: string}};

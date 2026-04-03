@@ -8,6 +8,8 @@
 
 export * from './addCustomCodeInput';
 export * from './addSectionInput';
+export * from './applicationReleaseObject';
+export * from './applicationReleaseObjectBody';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
@@ -38,7 +40,6 @@ export * from './getConfigurationResponse';
 export * from './getConfigurationResponseVersion';
 export * from './getConfigurationsResponse';
 export * from './getEventsParams';
-export * from './githubReleaseObject';
 export * from './hTTPValidationError';
 export * from './includedCondition';
 export * from './independentTestUploadResponse';

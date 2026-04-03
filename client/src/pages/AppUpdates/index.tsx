@@ -1,10 +1,11 @@
 import { Link } from '@trussworks/react-uswds';
 import { Spinner } from '../../components/Spinner';
-import { useGetReleasesData } from '../../api/info/info';
 import { Title } from '../../components/Title';
 import Markdown from 'react-markdown';
+import { useGetReleases } from '../../api/releases/releases';
+
 export function AppUpdates() {
-  const { data: releaseFetchResult, isPending, isError } = useGetReleasesData();
+  const { data: releaseFetchResult, isPending, isError } = useGetReleases();
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
 
@@ -15,11 +16,10 @@ export function AppUpdates() {
       <p className="mb-6">Review the latest updates to eCR Refiner</p>
       <section className="bg-base-lightest mx-auto rounded-b-lg px-2 py-2">
         {releaseContentToRender.map((d, i) => {
-          // if (d.prerelease) return <div key={d.id}></div>;
+          if (d.prerelease) return <div key={d.id}></div>;
           const summary = d?.body;
 
-          const summaryHeaderValuePairs: Record<string, string> =
-            JSON.parse(summary);
+          const summaryHeaderValuePairs = summary;
           const dateInfo = new Date(d.created_at);
           return (
             <div key={d.id} className="bg-white px-4 py-4">
@@ -29,7 +29,7 @@ export function AppUpdates() {
                   year: 'numeric',
                 })}
               </h3>
-              <Link target="_blank" href={d.html_url}>
+              <Link target="_blank" href={d.url}>
                 {d.name}
               </Link>
               {
@@ -37,8 +37,7 @@ export function AppUpdates() {
                 Object.entries(summaryHeaderValuePairs)
                   .slice(0, 2)
                   .map(([, summaryContent], content_idx) => {
-                    const content: Record<string, string> =
-                      JSON.parse(summaryContent);
+                    const content = summaryContent;
 
                     return (
                       <div key={content['id']} className="mt-2 pb-4 pl-5">

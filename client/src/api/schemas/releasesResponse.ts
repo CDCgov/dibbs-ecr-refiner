@@ -5,8 +5,8 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { GithubReleaseObject } from './githubReleaseObject';
+import type { ApplicationReleaseObject } from './applicationReleaseObject';
 
 export interface ReleasesResponse {
-  releases: GithubReleaseObject[];
+  releases: ApplicationReleaseObject[];
 }

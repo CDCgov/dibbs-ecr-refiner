@@ -1,4 +1,3 @@
-import json
 import re
 import time
 from dataclasses import dataclass
@@ -14,7 +13,7 @@ router = APIRouter(prefix="/releases")
 
 
 @dataclass
-class GithubReleaseObject(TypedDict):
+class GithubApiReleaseObject(TypedDict):
     """
     Type for release information coming from the GitHub API.
     """
@@ -29,33 +28,47 @@ class GithubReleaseObject(TypedDict):
 
 
 @dataclass
+class ApplicationReleaseObject:
+    """
+    Type for release information sent to the frontend.
+    """
+
+    id: str
+    created_at: datetime
+    name: str
+    body: dict[str, dict[str, str]]
+    prerelease: bool
+    url: str
+
+
+@dataclass
 class ReleasesResponse:
     """
     Response for releases as returned through the GitHub API.
     """
 
-    releases: list[GithubReleaseObject]
+    releases: list[ApplicationReleaseObject]
 
 
 @router.get(
-    "/releases",
-    tags=["info"],
+    "/",
+    tags=["releases"],
     response_model=ReleasesResponse,
-    operation_id="getReleasesData",
+    operation_id="getReleases",
 )
 async def get_releases_data() -> ReleasesResponse:
     """
     Hook to get release data from GitHub and serve it to the frontend.
 
     Returns:
-        ReleasesResponse: Reponse of release information in a list of GithubReleaseObject
+        ReleasesResponse: Reponse of release information in a list of ApplicationReleaseObject
     """
-    github_releases_data = get_releases_data_from_github(ttl_hash=get_ttl_hash())
+    github_releases_data = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
     data: ReleasesResponse = ReleasesResponse(releases=github_releases_data)
     return data
 
 
-def get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> float:
+def _get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> float:
     """Utility function that returns the same value every period to help with cache invalidation.
 
     Args:
@@ -70,9 +83,9 @@ def get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> float:
 
 
 @lru_cache
-def get_releases_data_from_github(
+def _get_releases_data_from_github(
     ttl_hash: int | None = None,
-) -> list[GithubReleaseObject]:
+) -> list[ApplicationReleaseObject]:
     """
     Function to fetch releases data from GitHub.
 
@@ -99,21 +112,30 @@ def get_releases_data_from_github(
             detail="Error getting information from GitHub",
         )
 
-    github_releases_data: list[GithubReleaseObject] = r.json()
+    github_releases_data: list[GithubApiReleaseObject] = r.json()
+    application_release_data: list[ApplicationReleaseObject] = []
 
     for release_data in github_releases_data:
         release_content = release_data.get("body")
+
         if not release_content:
             continue
 
-        formatted_body = format_notes_to_header_content_dict(release_content)
-        if formatted_body:
-            release_data["body"] = json.dumps(formatted_body)
+        formatted_body = _format_notes_to_header_content_dict(release_content)
+        release_object = ApplicationReleaseObject(
+            id=release_data.get("id"),
+            created_at=release_data.get("created_at"),
+            name=release_data.get("name"),
+            body=formatted_body,
+            prerelease=release_data.get("prerelease"),
+            url=release_data.get("html_url"),
+        )
+        application_release_data.append(release_object)
 
-    return github_releases_data
+    return application_release_data
 
 
-def format_notes_to_header_content_dict(content: str) -> dict[str, str]:
+def _format_notes_to_header_content_dict(content: str) -> dict[str, dict[str, str]]:
     """
     Utility function to parse out string of markdown content in GitHub into key-value dict.
 
@@ -129,13 +151,11 @@ def format_notes_to_header_content_dict(content: str) -> dict[str, str]:
     parts = re.split(r"(?m)^(#+ .*)$", content)
     parts = [p.strip() for p in parts if p.strip()]
 
-    result: dict[str, str] = {}
+    result: dict[str, dict[str, str]] = {}
 
     for i in range(0, len(parts), 2):
         header = parts[i]
         section_content = parts[i + 1] if i + 1 < len(parts) else ""
-        result[header] = json.dumps(
-            {"id": str(uuid4()), "content": section_content.strip()}
-        )
+        result[header] = {"id": str(uuid4()), "content": section_content.strip()}
 
     return result
