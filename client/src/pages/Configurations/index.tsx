@@ -11,7 +11,6 @@ import { useToast } from '../../hooks/useToast';
 import {
   Modal,
   ModalHeading,
-  ModalFooter,
   Label as USWDSLabel,
   ComboBox,
   ModalRef,
@@ -29,8 +28,10 @@ import classNames from 'classnames';
 import { ModalToggleButton } from '../../components/Button/ModalToggleButton';
 import {
   Modal as CustomModal,
-  ModalContent,
+  ModalBody,
+  ModalHeader,
   ModalTitle,
+  ModalFooter,
 } from '../../components/Modal';
 import { Field, Input, Label } from '@headlessui/react';
 
@@ -75,24 +76,30 @@ export function Configurations() {
       <div className="flex flex-col gap-4 py-10">
         <Button onClick={() => setIsOpen(true)}>Modal opener</Button>
         <CustomModal open={isOpen} onClose={() => setIsOpen(false)}>
-          <ModalContent>
+          <ModalHeader>
             <ModalTitle>Add a custom section</ModalTitle>
+          </ModalHeader>
+
+          <ModalBody>
             <Field className="flex flex-col">
               <Label>test</Label>
-              <Input className="outline-1" />
+              <Input className="outline-1 w-full" />
             </Field>
+
             <Field className="flex flex-col">
               <Label>test</Label>
-              <Input className="outline-1" />
+              <Input className="outline-1 w-full" />
             </Field>
+
             <Field className="flex flex-col">
               <Label>test</Label>
-              <Input className="outline-1" />
+              <Input className="outline-1 w-full" />
             </Field>
-            <div className="flex w-full justify-end">
-              <Button>Test button</Button>
-            </div>
-          </ModalContent>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button className='!m-0'>Test button</Button>
+          </ModalFooter>
         </CustomModal>
         <Title>Configurations</Title>
         <p>
