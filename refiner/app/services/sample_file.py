@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import UploadFile
 from fastapi.datastructures import Headers
 
-from .file_io import get_asset_path
+from app.services.assets import get_asset_path
 
 
 def get_sample_zip_path() -> Path:

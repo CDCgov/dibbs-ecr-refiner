@@ -1,13 +1,13 @@
 import io
-import json
+from dataclasses import dataclass
 from io import BytesIO
-from pathlib import Path
-from uuid import uuid4
 from zipfile import BadZipFile, ZipFile, ZipInfo
 
 from chardet import detect
 from lxml import etree
 from lxml.etree import _Element
+
+from app.services.conditions import get_computed_condition_name
 
 from ..core.exceptions import (
     FileProcessingError,
@@ -19,36 +19,55 @@ from ..core.models.types import FileUpload, XMLFiles
 MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
-def get_asset_path(*paths: str) -> Path:
+@dataclass
+class ZipFileItem:
     """
-    Get the full path to an asset file or directory.
-
-    Args:
-        *paths: Variable number of path segments to join after 'assets'
-               e.g., get_asset_path('demo', 'monmothma.zip')
-               or get_asset_path('refiner_details.json')
-
-    Returns:
-        Path: Full path to the requested asset
-
-    Example:
-        >>> get_asset_path('demo', 'monmothma.zip')
-        Path('/path/to/project/assets/demo/monmothma.zip')
-        >>> get_asset_path('refiner_details.json')
-        Path('/path/to/project/assets/refiner_details.json')
+    Represents an object to add to a ZipFilePackage.
     """
 
-    base_path = Path(__file__).parent.parent.parent / "assets"
-    return base_path.joinpath(*paths)
+    file_name: str
+    file_content: str
 
 
-def read_json_asset(filename: str) -> dict:
+class ZipFilePackage:
     """
-    Read and parse a JSON file from the assets directory.
+    Represents a collection of documents to use for creating a zip file package.
     """
 
-    with get_asset_path(filename).open() as f:
-        return json.load(f)
+    def __init__(self, name: str) -> None:
+        """
+        ZipFilePackage constructor.
+        """
+        self._name = name
+        self._packaged_items: list[ZipFileItem] = []
+
+    def get_name(self) -> str:
+        """
+        Get the name of the zip package.
+        """
+        return self._name
+
+    def add(self, item: ZipFileItem) -> None:
+        """
+        Adds a zipped item to the package.
+
+        Args:
+            item (ZippedItem): The item to add to the package
+        """
+        if item.file_name in [i.file_name for i in self._packaged_items]:
+            raise ValueError(
+                f"Conflicting ZipFileItem name during packaging: {item.file_name}. Names must be unique."
+            )
+        self._packaged_items.append(item)
+
+    def get_items(self) -> list[ZipFileItem]:
+        """
+        Gets the zip package.
+
+        Returns:
+            list[ZippedItem]: All items in the zip package.
+        """
+        return list(self._packaged_items)
 
 
 def parse_xml(xml_content: str | bytes) -> _Element:
@@ -94,36 +113,49 @@ def parse_xml(xml_content: str | bytes) -> _Element:
         )
 
 
-def create_split_condition_filename(
-    condition_name: str, condition_code: str
-) -> tuple[str, str]:
+@dataclass
+class RefinedFileName:
     """
-    Create a standard file name from a condition's name and code.
+    File name object.
+    """
+
+    eicr_xml_file_name: str
+    eicr_html_file_name: str
+    rr_xml_file_name: str
+
+
+def create_refined_file_names(
+    condition_name: str,
+) -> RefinedFileName:
+    """
+    Create file names for a refined condition given the name and code.
 
     Args:
+        jurisdiction_id: the jurisdiction
         condition_name (str): Name of a condition
-        condition_code (str): Code of a condition
 
     Returns:
-        str: Standard XML file name
+        RefinedFileName: Object with all required file names for packaging
     """
+    computed_name = get_computed_condition_name(condition_name=condition_name)
+    eicr_base_name = f"CDA_eICR_{computed_name}"
 
-    safe_name = condition_name.replace(" ", "_").replace("/", "_")
-    ecr_filename = f"CDA_eICR_{condition_code}_{safe_name}.xml"
-    rr_filename = f"CDA_RR_{condition_code}_{safe_name}.xml"
-
-    return (ecr_filename, rr_filename)
+    return RefinedFileName(
+        eicr_xml_file_name=f"{eicr_base_name}.xml",
+        eicr_html_file_name=f"{eicr_base_name}.html",
+        rr_xml_file_name=f"CDA_RR_{computed_name}.xml",
+    )
 
 
 def create_refined_ecr_zip_in_memory(
     *,
-    files: list[tuple[str, str | bytes]],
+    zip_package: ZipFilePackage,
 ) -> tuple[str, io.BytesIO]:
     """
     Create a zip archive containing all provided (filename, content) pairs (content may be str or bytes).
 
     Args:
-        files (list[tuple[str, str | bytes]]): List of tuples [(filename, content)], content must be a string or bytes.
+        zip_package (ZipFilePackage): A constructed file package
 
     Returns:
         (filename, buffer)
@@ -133,19 +165,20 @@ def create_refined_ecr_zip_in_memory(
         - If content is str, it is encoded as UTF-8 before writing.
         - Skips any empty files; robust against partial failures (e.g., missing HTML).
     """
-    token = str(uuid4())
-    zip_filename = f"{token}_refined_ecr.zip"
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, "w") as zf:
-        for filename, content in files:
+        for item in zip_package.get_items():
+            content = item.file_content
+            filename = item.file_name
+
             if not content:
                 continue
             data = content if isinstance(content, bytes) else content.encode("utf-8")
             zf.writestr(filename, data)
 
     zip_buffer.seek(0)
-    return zip_filename, zip_buffer
+    return zip_package.get_name(), zip_buffer
 
 
 def _decode_file(filename: str, zipfile: ZipFile) -> str:

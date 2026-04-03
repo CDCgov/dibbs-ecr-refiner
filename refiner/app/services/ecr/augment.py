@@ -126,10 +126,20 @@ class _OriginalIdentity:
 # =============================================================================
 
 
+@dataclass
+class AugmentedResult:
+    """
+    This is the result of eICR/RR augmentation.
+    """
+
+    original_doc_id: str
+    augmented_doc_id: str
+
+
 def augment_eicr(
     eicr_root: _Element,
     context: AugmentationContext,
-) -> None:
+) -> AugmentedResult:
     """
     Apply all document-level augmentation to a refined eICR.
 
@@ -160,7 +170,7 @@ def augment_eicr(
 
     # STEP 3:
     # replace document id (new uuid, assigningAuthorityName = tool code)
-    _replace_document_id(eicr_root, context)
+    augmented_result = _replace_document_id(eicr_root, context)
 
     # STEP 4:
     # replace effectiveTime with augmentation timestamp
@@ -182,6 +192,8 @@ def augment_eicr(
     # add relatedDocument with XFRM lineage (CONF:5573-12 through 5573-23)
     _add_related_document(eicr_root, original)
 
+    return augmented_result
+
 
 # NOTE:
 # PUBLIC API — RR
@@ -191,7 +203,7 @@ def augment_eicr(
 def augment_rr(
     rr_root: _Element,
     context: AugmentationContext,
-) -> None:
+) -> AugmentedResult:
     """
     Apply document-level augmentation to a refined RR.
 
@@ -222,7 +234,7 @@ def augment_rr(
 
     # STEP 3:
     # replace document id
-    _replace_document_id(rr_root, context)
+    augmented_result = _replace_document_id(rr_root, context)
 
     # STEP 4:
     # replace effectiveTime
@@ -245,6 +257,8 @@ def augment_rr(
     # STEP 8:
     # add relatedDocument with XFRM lineage
     _add_related_document(rr_root, original)
+
+    return augmented_result
 
 
 # NOTE:
@@ -315,7 +329,9 @@ def _add_augmentation_template_id(doc_root: _Element) -> None:
     doc_id.addprevious(new_template_id)
 
 
-def _replace_document_id(doc_root: _Element, context: AugmentationContext) -> None:
+def _replace_document_id(
+    doc_root: _Element, context: AugmentationContext
+) -> AugmentedResult:
     """
     Replace the document <id> with a new UUID and assigningAuthorityName.
 
@@ -332,6 +348,11 @@ def _replace_document_id(doc_root: _Element, context: AugmentationContext) -> No
     )
 
     _replace_preserving_tail(doc_root, old_id, new_id)
+
+    return AugmentedResult(
+        original_doc_id=_get_attribute_value(old_id, "root"),
+        augmented_doc_id=_get_attribute_value(new_id, "root"),
+    )
 
 
 def _replace_effective_time(doc_root: _Element, context: AugmentationContext) -> None:
@@ -663,3 +684,23 @@ def _replace_preserving_tail(parent: _Element, old: _Element, new: _Element) -> 
 
     new.tail = old.tail
     parent.replace(old, new)
+
+
+def _get_attribute_value(node: _Element, key: str) -> str:
+    """
+    Helper to convert an XML attribute to a string value.
+
+    Args:
+        node (_Element): XML node
+        key (str): The attribute to grab the value from
+
+    Raises:
+        ValueError: Unable to get the value using the given key
+
+    Returns:
+        str: The value from the attribute
+    """
+    value = node.get(key)
+    if not value:
+        raise ValueError("Cannot convert XML to string. No value found at key {key}.")
+    return value

@@ -65,7 +65,8 @@ class NoMatchEntry(TypedDict):
     rc_snomed_codes: list[str]
 
 
-class IndependentTestingResult(TypedDict):
+@dataclass
+class IndependentTestingResult:
     """
     The structured result of the independent_testing function.
 
@@ -77,9 +78,28 @@ class IndependentTestingResult(TypedDict):
            no active configuration for the jurisdiction.
     """
 
+    original_eicr_doc_id: str
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
+
+    def get_condition_names_with_no_matching_config(self) -> list[str]:
+        """
+        Returns a list of condition names that have no matching configuration.
+        """
+        return [
+            missing_condition["display_name"]
+            for missing_condition in self.no_matching_configuration_for_conditions
+        ]
+
+    def get_condition_names_with_no_active_config(self) -> list[str]:
+        """
+        Returns a list of condition names that have no active configuration.
+        """
+        return [
+            missing_condition["display_name"]
+            for missing_condition in self.no_active_configuration_for_conditions
+        ]
 
 
 @dataclass
@@ -97,7 +117,8 @@ class InlineTestingTrace:
     refined_document: RefinedDocument | None = None
 
 
-class InlineTestingResult(TypedDict):
+@dataclass
+class InlineTestingResult:
     """
     The structured result for the inline_testing "validation" workflow.
 
@@ -108,6 +129,7 @@ class InlineTestingResult(TypedDict):
 
     """
 
+    original_eicr_doc_id: str
     refined_document: RefinedDocument | None
     configuration_does_not_match_conditions: str | None
 
@@ -160,11 +182,12 @@ async def independent_testing(
 
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
-        return {
-            "refined_documents": [],
-            "no_matching_configuration_for_conditions": [],
-            "no_active_configuration_for_conditions": [],
-        }
+        return IndependentTestingResult(
+            original_eicr_doc_id="",
+            refined_documents=[],
+            no_matching_configuration_for_conditions=[],
+            no_active_configuration_for_conditions=[],
+        )
 
     # STEP 2:
     # get all configurations for the jurisdiction to create a lookup set of exactly
@@ -244,6 +267,7 @@ async def independent_testing(
     # process each trace; if a configuration exists, refine the eICR
     # if it exists but isn't active, add it to the list of non-active configurations
     # otherwise, add it to the list of non-matches
+    first_original_eicr_doc_id = None
     for trace in all_traces:
         if not trace.matching_configuration:
             no_matching_configurations.append(
@@ -297,6 +321,9 @@ async def independent_testing(
             trace=pipeline_trace,
         )
 
+        if first_original_eicr_doc_id is None:
+            first_original_eicr_doc_id = result.augmented_eicr_result.original_doc_id
+
         # TODO: in the future we might want the ReportableCondition model to use
         # a list instead of a string since technically there could be more than one
         # `rc_snomed_code` that was **in** the RR that matches the condition and
@@ -331,11 +358,14 @@ async def independent_testing(
         if trace.refined_document is not None
     ]
 
-    return {
-        "refined_documents": refined_documents,
-        "no_matching_configuration_for_conditions": no_matching_configurations,
-        "no_active_configuration_for_conditions": no_active_configurations,
-    }
+    return IndependentTestingResult(
+        original_eicr_doc_id=first_original_eicr_doc_id
+        if first_original_eicr_doc_id
+        else "",
+        refined_documents=refined_documents,
+        no_matching_configuration_for_conditions=no_matching_configurations,
+        no_active_configuration_for_conditions=no_active_configurations,
+    )
 
 
 async def inline_testing(
@@ -409,10 +439,11 @@ async def inline_testing(
                 "outcome": "Validation failed: No matching reportable condition code found in file.",
             },
         )
-        return {
-            "refined_document": None,
-            "configuration_does_not_match_conditions": f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
-        }
+        return InlineTestingResult(
+            original_eicr_doc_id="",
+            refined_document=None,
+            configuration_does_not_match_conditions=f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
+        )
 
     # STEP 3:
     # use the first RR code that matched the condition for the RefinedDocument
@@ -469,10 +500,11 @@ async def inline_testing(
         },
     )
 
-    return {
-        "refined_document": trace.refined_document,
-        "configuration_does_not_match_conditions": None,
-    }
+    return InlineTestingResult(
+        original_eicr_doc_id=result.augmented_eicr_result.original_doc_id,
+        refined_document=trace.refined_document,
+        configuration_does_not_match_conditions=None,
+    )
 
 
 # NOTE:
