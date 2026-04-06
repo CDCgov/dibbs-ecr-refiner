@@ -1,6 +1,6 @@
 # eCR Refiner Release Process
 
-### Updated 4/1/26
+_Updated 4/1/26_
 
 This document will outline the process for releasing a new version of the eCR Refiner web application and AWS Lambda function, along with roles and responsibilites of those involved in the release process.
 
@@ -12,6 +12,8 @@ This document will outline the process for releasing a new version of the eCR Re
 
 ## Create a pre-release version with preliminary notes
 
+**STEPS 3 AND 4 CAN BE DONE ASYNC TO THE TESTING STEPS, BUT MUST BE COMPLETED BEFORE PROMOTION**
+
 1. Run the [release candidate builder job](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/build-release-candidate.yml) using the following inputs:
    1. `ref` = `main`
    2. `version` = Semantic version to use (example: `1.4.0`)
@@ -21,15 +23,18 @@ This document will outline the process for releasing a new version of the eCR Re
    - [refiner](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Frefiner)
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
-   - **STEPS 3 AND 4 CAN BE DONE ASYNC TO THE TESTING STEPS, BUT MUST BE COMPLETED BEFORE PROMOTION**
 
 3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases) and find the corresponding release notes for the created release.
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
       ![Screenshot of generate release notes button](./generate_release_notes.png)
    1. Copy this list of commit names and edit it down, removing all entries unimportant to the end user, e.g., test updates, refactors, dependency bumps, chores, etc.
+
+      > [!TIP]
+      > We have a template in `.github/release.yml` that auto-strips out any PR's labeled with the `tech debt` or `chore` labels. If you label any relevant PR's accordingly, it'll save the release captain's time!
+
    1. Add the template release notes linked [in the release note template](./RELEASE_NOTE_TEMPLATE.MD) to the notes. **Make sure you copy this directly, as otherwise, the app updates page might not render correctly**
       - Product will own the first and second sections summarizing the release / major features
-      - Engineering will own the content the third section. The generated release notes will go here after the list is edited.
+      - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
    1. Before publishing, **ensure that the “Set as a pre-release” checkbox is marked.** The release should not be marked as the latest release until deployment and testing have been performed. Then click “publish release”!
       ![Screenshot of publish release notes with pre-release](./publish_release.png)
 

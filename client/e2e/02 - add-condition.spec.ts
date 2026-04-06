@@ -540,26 +540,21 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByText('Edit', { exact: true }).click();
 
     // Wait for the "Edit custom code" modal to appear
-    const modal = page.locator('.usa-modal__main', {
-      hasText: 'Edit custom code',
-    });
-    await expect(modal).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText('Edit custom code', { exact: true })
+    ).toBeVisible();
 
     // Edit the Code #
-    const codeInput = modal.locator('input#code');
-    await codeInput.fill('5678');
+    await page.getByLabel('Code #').fill('5678');
 
     // Change Code system to LOINC
-    const systemSelect = modal.locator('select#system');
-    await systemSelect.selectOption('loinc');
+    await page.getByLabel('Code system').selectOption('loinc');
 
     // Change Code name to test-edit
-    const nameInput = modal.locator('input#name');
-    await nameInput.fill('test-edit');
+    await page.getByLabel('Code name').fill('test-edit');
 
     // Click the Update button
-    const updateButton = modal.locator('button', { hasText: 'Update' });
-    await updateButton.click();
+    await page.getByRole('button', { name: 'Update', exact: true }).click();
 
     // Verify the row reflects updated values
     const updatedRow = page
