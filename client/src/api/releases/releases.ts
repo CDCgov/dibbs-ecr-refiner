@@ -39,7 +39,7 @@ import type {
  * Hook to get release data from GitHub and serve it to the frontend.
 
 Returns:
-    ReleasesResponse: Reponse of release information in a list of ApplicationReleaseObject
+    ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
  * @summary Get Releases Data
  */
 export const getReleases = (

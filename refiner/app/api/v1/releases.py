@@ -28,7 +28,7 @@ class GithubApiReleaseObject(TypedDict):
 
 
 @dataclass
-class ApplicationReleaseObject:
+class ReleaseMetadata:
     """
     Type for release information sent to the frontend.
     """
@@ -47,7 +47,7 @@ class ReleasesResponse:
     Response for releases as returned through the GitHub API.
     """
 
-    releases: list[ApplicationReleaseObject]
+    releases: list[ReleaseMetadata]
 
 
 @router.get(
@@ -61,7 +61,7 @@ async def get_releases_data() -> ReleasesResponse:
     Hook to get release data from GitHub and serve it to the frontend.
 
     Returns:
-        ReleasesResponse: Reponse of release information in a list of ApplicationReleaseObject
+        ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
     """
     github_releases_data = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
     data: ReleasesResponse = ReleasesResponse(releases=github_releases_data)
@@ -85,7 +85,7 @@ def _get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> float:
 @lru_cache
 def _get_releases_data_from_github(
     ttl_hash: int | None = None,
-) -> list[ApplicationReleaseObject]:
+) -> list[ReleaseMetadata]:
     """
     Function to fetch releases data from GitHub.
 
@@ -113,7 +113,7 @@ def _get_releases_data_from_github(
         )
 
     github_releases_data: list[GithubApiReleaseObject] = r.json()
-    application_release_data: list[ApplicationReleaseObject] = []
+    application_release_data: list[ReleaseMetadata] = []
 
     for release_data in github_releases_data:
         release_content = release_data.get("body")
@@ -122,7 +122,7 @@ def _get_releases_data_from_github(
             continue
 
         formatted_body = _format_notes_to_header_content_dict(release_content)
-        release_object = ApplicationReleaseObject(
+        release_object = ReleaseMetadata(
             id=release_data.get("id"),
             created_at=release_data.get("created_at"),
             name=release_data.get("name"),

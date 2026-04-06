@@ -1,6 +1,6 @@
 # eCR Refiner Release Process
 
-### Updated 4/1/26
+_Updated 4/1/26_
 
 This document will outline the process for releasing a new version of the eCR Refiner web application and AWS Lambda function, along with roles and responsibilites of those involved in the release process.
 
