@@ -144,7 +144,7 @@ def _upsert_conditions_and_groupers(
             """
 
             context_grouper_upsert_query = """
-                INSERT INTO condition_context_groupers (
+                INSERT INTO conditions_context_groupers (
                     condition_id,
                     name,
                     category,
@@ -164,9 +164,9 @@ def _upsert_conditions_and_groupers(
                     category = EXCLUDED.category,
                     code_count = EXCLUDED.code_count
                 WHERE
-                    condition_context_groupers.name IS DISTINCT FROM EXCLUDED.name
-                    OR condition_context_groupers.category IS DISTINCT FROM EXCLUDED.category
-                    OR condition_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
+                    conditions_context_groupers.name IS DISTINCT FROM EXCLUDED.name
+                    OR conditions_context_groupers.category IS DISTINCT FROM EXCLUDED.category
+                    OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
             """
 
             for item in processed:

@@ -18,7 +18,7 @@ ALTER TABLE conditions
 
 -- per-category additional context grouper detail
 -- each row represents a single ACG ValueSet referenced by a condition grouper
-CREATE TABLE condition_context_groupers (
+CREATE TABLE conditions_context_groupers (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     condition_id uuid NOT NULL REFERENCES conditions(id) ON DELETE CASCADE,
 
@@ -33,26 +33,26 @@ CREATE TABLE condition_context_groupers (
     UNIQUE (condition_id, canonical_url)
 );
 
-CREATE TRIGGER update_condition_context_groupers_updated_at
-BEFORE UPDATE ON condition_context_groupers
+CREATE TRIGGER update_conditions_context_groupers_updated_at
+BEFORE UPDATE ON conditions_context_groupers
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
-CREATE INDEX condition_context_groupers_condition_id_idx
-    ON condition_context_groupers(condition_id);
+CREATE INDEX conditions_context_groupers_condition_id_idx
+    ON conditions_context_groupers(condition_id);
 
-CREATE INDEX condition_context_groupers_category_idx
-    ON condition_context_groupers(category);
+CREATE INDEX conditions_context_groupers_category_idx
+    ON conditions_context_groupers(category);
 
 
 -- migrate:down
 
-DROP INDEX IF EXISTS condition_context_groupers_category_idx;
-DROP INDEX IF EXISTS condition_context_groupers_condition_id_idx;
+DROP INDEX IF EXISTS conditions_context_groupers_category_idx;
+DROP INDEX IF EXISTS conditions_context_groupers_condition_id_idx;
 
-DROP TRIGGER IF EXISTS update_condition_context_groupers_updated_at ON condition_context_groupers;
+DROP TRIGGER IF EXISTS update_conditions_context_groupers_updated_at ON conditions_context_groupers;
 
-DROP TABLE IF EXISTS condition_context_groupers;
+DROP TABLE IF EXISTS conditions_context_groupers;
 
 ALTER TABLE conditions
     DROP CONSTRAINT IF EXISTS coverage_level_check;

@@ -17,7 +17,7 @@ TES_CG_VERSIONS = ["1.0.0", "2.0.0", "3.0.0", "4.0.0", "5.0.0"]
 
 TABLES_TO_CHECK = [
     "conditions",
-    "condition_context_groupers",
+    "conditions_context_groupers",
     "configurations",
     "jurisdictions",
     "schema_migrations",
@@ -99,7 +99,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "All Context Groupers Reference Valid Conditions",
         "query": """
             SELECT COUNT(*) AS count
-            FROM condition_context_groupers cg
+            FROM conditions_context_groupers cg
             LEFT JOIN conditions c ON cg.condition_id = c.id
             WHERE c.id IS NULL;
         """,
@@ -110,7 +110,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "Context Grouper Categories are Known Values",
         "query": """
             SELECT COUNT(*) AS count
-            FROM condition_context_groupers
+            FROM conditions_context_groupers
             WHERE category NOT IN (
                 'medication', 'immunization', 'symptom',
                 'specimen_source', 'diagnosis', 'clinical_lab_result'
@@ -124,7 +124,7 @@ DB_CHECKS: list[dict[str, Any]] = [
         "title": "No Context Groupers with Zero Code Counts",
         "query": """
             SELECT COUNT(*) AS count
-            FROM condition_context_groupers
+            FROM conditions_context_groupers
             WHERE code_count = 0;
         """,
         "failure_condition": lambda res: res[0]["count"] > 0,
@@ -332,7 +332,7 @@ def display_acg_category_stats(cursor: Cursor, console: Console) -> None:
             cg.category,
             COUNT(*) AS grouper_count,
             SUM(cg.code_count) AS total_codes
-        FROM condition_context_groupers cg
+        FROM conditions_context_groupers cg
         JOIN conditions c ON cg.condition_id = c.id
         WHERE c.version = (
             SELECT MAX(version) FROM conditions
