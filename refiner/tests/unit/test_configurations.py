@@ -8,7 +8,7 @@ import pytest
 from fastapi import status
 
 from app.api.v1.configurations.model import GetConfigurationsResponse
-from app.api.v1.configurations.testing import _upload_to_s3
+from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
@@ -372,13 +372,19 @@ async def test_inline_example_file_success(
         AsyncMock(return_value=mock_condition),
     )
 
-    def mock_s3_upload(*args, **kwargs):
+    async def mock_s3_upload(*args, **kwargs):
         return "5dae47a7-2d5c-405d-b16d-3d2d1320c79d_refined_ecr.zip"
 
-    test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    test_app.dependency_overrides[_get_upload_zip] = lambda: mock_s3_upload
+
+    monkeypatch.setattr(
+        "app.services.xslt._transform_xml_to_html",
+        lambda *args, **kwargs: b"<html>test</html>",
+    )
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
+        original_eicr_doc_id="mock-doc-id",
         refined_document=RefinedDocument(
             reportable_condition=ReportableCondition(
                 code="12345",
@@ -432,13 +438,19 @@ async def test_inline_allow_custom_zip(
         AsyncMock(return_value=mock_condition),
     )
 
-    def mock_s3_upload(*args, **kwargs):
+    async def mock_s3_upload(*args, **kwargs):
         return "5dae47a7-2d5c-405d-b16d-3d2d1320c79d_refined_ecr.zip"
 
-    test_app.dependency_overrides[_upload_to_s3] = lambda: mock_s3_upload
+    test_app.dependency_overrides[_get_upload_zip] = lambda: mock_s3_upload
+
+    monkeypatch.setattr(
+        "app.services.xslt._transform_xml_to_html",
+        lambda *args, **kwargs: b"<html>test</html>",
+    )
 
     # the route now calls `inline_testing`
     mock_result = InlineTestingResult(
+        original_eicr_doc_id="mock-doc-id",
         refined_document=RefinedDocument(
             reportable_condition=ReportableCondition(
                 code="840539006", display_name="COVID-19"

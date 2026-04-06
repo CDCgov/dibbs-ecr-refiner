@@ -7,7 +7,20 @@ from lxml.etree import _Element
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
 
-def strip_comments(xml: str) -> str:
+def format_xml_document_for_display(text: str) -> str:
+    """
+    Helper function to strip comments and perform normalization on a string.
+
+    Args:
+        text (str): XML document
+
+    Returns:
+        str: String with comments stripped and text normalized.
+    """
+    return _strip_comments(_normalize_xml(text))
+
+
+def _strip_comments(xml: str) -> str:
     """
     Remove all XML comments in-place from the tree and return the root.
     """
@@ -28,7 +41,7 @@ def strip_comments(xml: str) -> str:
     )
 
 
-def normalize_xml(xml: str) -> str:
+def _normalize_xml(xml: str) -> str:
     """
     Normalize XML for comparison/reading.
 

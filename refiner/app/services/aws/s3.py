@@ -9,12 +9,14 @@ from uuid import UUID
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from fastapi.concurrency import run_in_threadpool
 
 from app.db.conditions.model import ConditionMappingPayload
 from app.db.configurations.model import (
     ConfigurationStorageMetadata,
     ConfigurationStoragePayload,
 )
+from app.db.users.model import DbUser
 
 from ...core.config import ENVIRONMENT
 from .s3_keys import (
@@ -166,10 +168,17 @@ def upload_condition_mapping_payload(
     return condition_mapping_key
 
 
-def upload_refined_ecr(
-    user_id: UUID,
-    jurisdiction_id: str,
+def _upload_refined_ecr(
     file_buffer: BytesIO,
+    s3_key: str,
+) -> str:
+    s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, s3_key)
+    return s3_key
+
+
+async def upload_refined_file_package(
+    user: DbUser,
+    buffer: BytesIO,
     filename: str,
     logger: Logger,
 ) -> str:
@@ -177,25 +186,19 @@ def upload_refined_ecr(
     Uploads a refined ZIP file to AWS S3.
 
     Args:
-        user_id (UUID): Logged-in user ID
-        jurisdiction_id (str): Logged-in user's ID.
-        file_buffer (BytesIO): ZIP file in memory
+        user (DbUser): Logged in user
+        buffer (BytesIO): ZIP file in memory
         filename (str): The filename that will be written to S3
         logger (Logger): The standard logger
 
     Returns:
         str: The S3 key of the uploaded file (or empty string on error)
     """
-    key = ""
+    key = get_refined_user_zip_key(
+        user_id=user.id, jurisdiction_id=user.jurisdiction_id, filename=filename
+    )
     try:
-        key = get_refined_user_zip_key(
-            user_id=user_id, jurisdiction_id=jurisdiction_id, filename=filename
-        )
-
-        s3_client.upload_fileobj(file_buffer, S3_CONFIGURATION_BUCKET_NAME, key)
-
-        return key
-
+        return await run_in_threadpool(_upload_refined_ecr, buffer, key)
     except ClientError as e:
         logger.error(
             "Attempted refined file upload to S3 failed",
@@ -203,13 +206,13 @@ def upload_refined_ecr(
                 "error": str(e),
                 "bucket": S3_CONFIGURATION_BUCKET_NAME,
                 "key": key,
-                "user_id": user_id,
+                "user_id": user.id,
             },
         )
-        return ""
+    return ""
 
 
-def fetch_zip_from_s3(key: str, logger: Logger) -> dict:
+def fetch_zip_from_s3(key: str) -> dict:
     """
     Fetch file from s3, return botocore response dict.
     """

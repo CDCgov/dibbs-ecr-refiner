@@ -4,8 +4,8 @@ from zipfile import ZipFile
 import pytest
 
 from app.core.models.types import XMLFiles
+from app.services.assets import get_asset_path
 from app.services.ecr.model import JurisdictionReportableConditions
-from app.services.file_io import get_asset_path
 from app.services.pipeline import (
     RefinementResult,
     RefinementTrace,
