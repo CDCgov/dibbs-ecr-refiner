@@ -17,11 +17,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set version variable
-        id: vars
-        run: |
-          echo "version_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-
       - name: Test Refiner app build
         uses: docker/build-push-action@v6
         with:
@@ -31,20 +26,9 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.ref_name }}
+            VITE_GIT_VERSION: ${{ steps.vars.outputs.version_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Print hash tags
-        run: |
-          echo "===== HASH TAGS ====="
-          echo "Hash:    $VITE_GIT_HASH"
-          echo "Branch: $VITE_GIT_BRANCH"
-          echo "Version:    $VITE_GIT_VERSION"
-          echo "=================================="
-        env:
-          VITE_GIT_HASH: ${{ github.sha }}
-          VITE_GIT_BRANCH: ${{ github.ref_name }}
-          VITE_GIT_VERSION: ${{ steps.vars.outputs.version_tag }}
 
   lambda-build:
     runs-on: ubuntu-latest
