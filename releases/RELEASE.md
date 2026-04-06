@@ -12,6 +12,8 @@ This document will outline the process for releasing a new version of the eCR Re
 
 ## Create a pre-release version with preliminary notes
 
+**STEPS 3 AND 4 CAN BE DONE ASYNC TO THE TESTING STEPS, BUT MUST BE COMPLETED BEFORE PROMOTION**
+
 1. Run the [release candidate builder job](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/build-release-candidate.yml) using the following inputs:
    1. `ref` = `main`
    2. `version` = Semantic version to use (example: `1.4.0`)
@@ -21,7 +23,6 @@ This document will outline the process for releasing a new version of the eCR Re
    - [refiner](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Frefiner)
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
-   - **STEPS 3 AND 4 CAN BE DONE ASYNC TO THE TESTING STEPS, BUT MUST BE COMPLETED BEFORE PROMOTION**
 
 3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases) and find the corresponding release notes for the created release.
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
