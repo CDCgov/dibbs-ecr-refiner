@@ -60,12 +60,12 @@ export function Header({ displayName }: HeaderProps) {
             </Link>
           </MenuItem>
           <MenuItem>
-            <Link
-              to="/api/logout"
+            <a
+              href="/api/logout"
               className="border-gray-cool-40! block w-full rounded-md border px-4 py-2 text-sm text-gray-700 data-focus:bg-gray-300 data-focus:text-gray-900"
             >
               Log out
-            </Link>
+            </a>
           </MenuItem>
         </MenuItems>
       </Menu>
