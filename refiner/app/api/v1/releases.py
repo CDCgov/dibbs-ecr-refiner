@@ -98,6 +98,7 @@ def _get_releases_data_from_github(
     Returns:
         list[GithubReleaseObject]: A list of all releases as returned by a call to the GitHub API
     """
+    # throw away param to make mypy happy
     del ttl_hash
     releases_endpoint = "https://api.github.com/repos/cdcgov/dibbs-ecr-refiner/releases"
     headers = {
