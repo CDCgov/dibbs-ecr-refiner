@@ -31,27 +31,23 @@ export function AppUpdates() {
               <Link target="_blank" href={d.url}>
                 {d.name}
               </Link>
-              {
-                /* the two sections have the summary information we want, so only use that content */
-                Object.entries(summaryHeaderValuePairs)
-                  .slice(0, 2)
-                  .map(([, summaryContent], content_idx) => {
-                    const content = summaryContent;
+              {summaryHeaderValuePairs.map((summaryContent, summaryIndex) => {
+                const content = summaryContent;
 
-                    return (
-                      <div key={content['id']} className="mt-2 pb-4 pl-5">
-                        {content_idx == 0 ? (
-                          <Markdown>{content['content']}</Markdown>
-                        ) : (
-                          <>
-                            <h3 className="text-bold -ml-5">Major changes</h3>
-                            <Markdown>{content['content']}</Markdown>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })
-              }
+                return (
+                  <div key={content['id']} className="mt-2 pb-4 pl-5">
+                    {summaryIndex == 0 && (
+                      <Markdown>{content['content']}</Markdown>
+                    )}
+                    {summaryIndex == 1 && (
+                      <>
+                        <h3 className="text-bold -ml-5">Major changes</h3>
+                        <Markdown>{content['content']}</Markdown>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
               {i !== releaseContentToRender.length - 1 && (
                 <hr className="bg-base-lighter h-0.5! border-none"></hr>
               )}

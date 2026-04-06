@@ -44,7 +44,6 @@ export * from './independentTestUploadResponse';
 export * from './lockedByUser';
 export * from './release';
 export * from './releaseNotes';
-export * from './releaseReleaseNotes';
 export * from './releasesResponse';
 export * from './sectionUpdateInput';
 export * from './updateCustomCodeInput';

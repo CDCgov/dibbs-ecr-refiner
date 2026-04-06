@@ -8,5 +8,6 @@
 
 export interface ReleaseNotes {
   id: string;
+  header: string;
   content: string;
 }

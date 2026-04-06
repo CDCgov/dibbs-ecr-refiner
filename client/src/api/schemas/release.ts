@@ -5,13 +5,13 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { ReleaseReleaseNotes } from './releaseReleaseNotes';
+import type { ReleaseNotes } from './releaseNotes';
 
 export interface Release {
   id: string;
   created_at: string;
   name: string;
-  release_notes: ReleaseReleaseNotes;
+  release_notes: ReleaseNotes[];
   prerelease: boolean;
   url: string;
 }

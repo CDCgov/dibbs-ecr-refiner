@@ -33,6 +33,7 @@ class ReleaseNotes:
     """
 
     id: str
+    header: str
     content: str
 
 
@@ -45,8 +46,7 @@ class Release:
     id: str
     created_at: datetime
     name: str
-    # ReleaseNotes are indexed by the most adjacent <h[1-6]> # from GitHub
-    release_notes: dict[str, ReleaseNotes]
+    release_notes: list[ReleaseNotes]
     prerelease: bool
     url: str
 
@@ -154,8 +154,8 @@ def _get_releases_data_from_github(
     application_release_data: list[Release] = []
 
     for release in releases:
-        if release.prerelease:
-            continue
+        # if release.prerelease:
+        #     continue
 
         release_content = release.body
 
@@ -176,7 +176,7 @@ def _get_releases_data_from_github(
     return application_release_data
 
 
-def _format_api_body_to_dict(content: str) -> dict[str, ReleaseNotes]:
+def _format_api_body_to_dict(content: str) -> list[ReleaseNotes]:
     """
     Utility function to parse out string of markdown content in GitHub into key-value dict.
 
@@ -190,14 +190,20 @@ def _format_api_body_to_dict(content: str) -> dict[str, ReleaseNotes]:
     """
     # split out pieces of the release notes based on ## headers
     parts = re.split(r"(?m)^(#+ .*)$", content)
+    # organize list into header and content, where header entries are odd indexed list
+    # elements and content are even indexed.
     parts = [p.strip() for p in parts if p.strip()]
 
-    result: dict[str, ReleaseNotes] = {}
+    result: list[ReleaseNotes] = []
 
-    for i in range(0, len(parts), 2):
+    # as of writing, we only want to render the summary and the list of features,
+    # so stop at the fourth index
+    for i in range(0, 4, 2):
         header = parts[i]
         section_content = parts[i + 1] if i + 1 < len(parts) else ""
-        notes_content = ReleaseNotes(id=str(uuid4()), content=section_content.strip())
-        result[header] = notes_content
+        notes_content = ReleaseNotes(
+            id=str(uuid4()), content=section_content.strip(), header=header
+        )
+        result.append(notes_content)
 
     return result
