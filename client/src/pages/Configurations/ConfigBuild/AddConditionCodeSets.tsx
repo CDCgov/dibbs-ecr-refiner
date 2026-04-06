@@ -35,7 +35,7 @@ export function AddConditionCodeSetsDrawer({
     <Drawer
       title="Add condition code sets"
       subtitle={
-        <p className="pt-2!">
+        <p className="pt-2">
           Codes relevant to each condition are grouped together. These code sets
           are derived from the <TesLink />
         </p>
