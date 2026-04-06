@@ -118,12 +118,27 @@ def _get_releases_data_from_github(
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2026-03-10",
     }
-    r = httpx.get(releases_endpoint, headers=headers)
-
-    if r.status_code != 200:
+    try:
+        r = httpx.get(
+            releases_endpoint,
+            headers=headers,
+            timeout=10,
+        )
+        r.raise_for_status()
+    except httpx.TimeoutException:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="GitHub reponse didn't return success",
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="GitHub request timed out",
+        )
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"GitHub returned error {exc.response.status_code}",
+        )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Error connecting to GitHub",
         )
 
     release_json = r.json()
