@@ -6,5 +6,7 @@ changelog:
       exclude:
         labels:
           - dependencies
+          - tech debt
+          - chore
         authors:
           - dependabot
