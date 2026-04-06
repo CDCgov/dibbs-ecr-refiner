@@ -28,16 +28,14 @@ export function AppUpdates() {
               <Link target="_blank" href={d.url}>
                 {d.name}
               </Link>
-              {d?.release_notes.map((rn, i) => {
-                const content = rn;
-
+              {d.release_notes.map((rn, i) => {
                 return (
-                  <div key={content['id']} className="mt-2 pb-4 pl-5">
-                    {i == 0 && <Markdown>{content['content']}</Markdown>}
+                  <div key={rn.id} className="mt-2 pb-4 pl-5">
+                    {i == 0 && <Markdown>{rn.content}</Markdown>}
                     {i == 1 && (
                       <>
                         <h3 className="text-bold -ml-5">Major changes</h3>
-                        <Markdown>{content['content']}</Markdown>
+                        <Markdown>{rn.content}</Markdown>
                       </>
                     )}
                   </div>
