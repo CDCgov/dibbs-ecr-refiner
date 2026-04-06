@@ -1,0 +1,10 @@
+- changelog:
+  exclude:
+    labels:
+      - dependencies
+    authors:
+      - dependabot
+  categories:
+    - title: What's Changed 🤔🤔🤔
+      labels:
+        - "*"
