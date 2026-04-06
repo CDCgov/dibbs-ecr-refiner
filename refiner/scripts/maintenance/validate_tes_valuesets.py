@@ -11,8 +11,30 @@ from fhir.resources.valueset import ValueSet
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# to check against specific conditions then pass them to this list like ["covid-19", "influenza"]
-TARGET_CONDITIONS: list[str] = []
+# this list holds the specific conditions you want to check; an empty list will check all conditions:
+# TARGET_CONDITIONS: list[str] = [] to check all conditions
+TARGET_CONDITIONS: list[str] = [
+    "COVID-19",
+    "Influenza",
+    "RSV",
+    "Varicella",
+    "Pertussis",
+    "Invasive Haemophilus Influenzae Disease",
+    "Streptoccal Disease",
+    "Rubella",
+    "Measles",
+    "Mumps",
+    "Meningococcal disease",
+    "Escherichia coli Infection",
+    "Campylobacteriosis",
+    "Salmonella",
+    "Hepatitis B",
+    "Hepatitis C",
+    "HIV Infection or AIDS",
+    "Chlamydia trachomatis infection",
+    "Gonorrhea",
+    "Syphilis",
+]
 DATA_DIR = Path(__file__).parent.parent / "data" / "source-tes-groupers"
 
 COVERAGE_LEVEL_URL = (
