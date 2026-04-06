@@ -1,0 +1,12 @@
+changelog:
+  categories:
+    - title: What's Changed 🤔🤔🤔
+      labels:
+        - "*"
+      exclude:
+        labels:
+          - dependencies
+          - tech debt
+          - chore
+        authors:
+          - dependabot

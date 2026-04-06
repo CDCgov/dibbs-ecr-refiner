@@ -107,7 +107,7 @@ export function Drawer({
               </section>
             </div>
 
-            <div className="flex flex-col pt-4">{children}</div>
+            <div className="flex flex-col">{children}</div>
           </div>
         </div>
 
