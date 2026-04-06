@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, TypedDict
 from uuid import UUID
 
@@ -51,7 +52,7 @@ class DbCondition(DbConditionBase):
     # on the condition grouper ValueSet; null when the extension is not present
     coverage_level: str | None = None
     coverage_level_reason: str | None = None
-    coverage_level_date: str | None = None
+    coverage_level_date: datetime | None = None
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbCondition":

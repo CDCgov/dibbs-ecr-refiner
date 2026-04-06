@@ -4,7 +4,7 @@
 ALTER TABLE conditions
     ADD COLUMN coverage_level text,
     ADD COLUMN coverage_level_reason text,
-    ADD COLUMN coverage_level_date text;
+    ADD COLUMN coverage_level_date date;
 
 ALTER TABLE conditions
     ADD CONSTRAINT coverage_level_check CHECK (

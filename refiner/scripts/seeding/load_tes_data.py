@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from typing import TypedDict
 
 from config import ENV_PATH, logger
@@ -37,7 +38,7 @@ class ConditionRow(TypedDict):
     cvx_codes: list[Code] | None
     coverage_level: str | None
     coverage_level_reason: str | None
-    coverage_level_date: str | None
+    coverage_level_date: datetime | None
 
 
 class ContextGrouperRow(TypedDict):
@@ -84,63 +85,87 @@ def _upsert_conditions_and_groupers(
     db_password: str,
     processed: list[ProcessedCondition],
 ) -> None:
+    """
+    Upserts condition rows and their associated context grouper rows.
+
+    Each condition is upserted using a CTE that returns the row's id
+    regardless of whether the row was inserted, updated, or unchanged.
+    Context grouper rows are then upserted as children of that condition.
+
+    Both upserts use IS DISTINCT FROM to avoid touching rows where
+    nothing has changed, preventing spurious updated_at timestamps.
+    """
+
     try:
         with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
             logger.info("⏳ Upserting condition records...")
 
             condition_upsert_query = """
-                INSERT INTO conditions (
-                    canonical_url,
-                    version,
-                    display_name,
-                    child_rsg_snomed_codes,
-                    loinc_codes,
-                    snomed_codes,
-                    icd10_codes,
-                    rxnorm_codes,
-                    cvx_codes,
-                    coverage_level,
-                    coverage_level_reason,
-                    coverage_level_date
+                WITH upsert_condition AS (
+                    INSERT INTO conditions (
+                        canonical_url,
+                        version,
+                        display_name,
+                        child_rsg_snomed_codes,
+                        loinc_codes,
+                        snomed_codes,
+                        icd10_codes,
+                        rxnorm_codes,
+                        cvx_codes,
+                        coverage_level,
+                        coverage_level_reason,
+                        coverage_level_date
+                    )
+                    VALUES (
+                        %(canonical_url)s,
+                        %(version)s,
+                        %(display_name)s,
+                        %(child_rsg_snomed_codes)s,
+                        %(loinc_codes)s,
+                        %(snomed_codes)s,
+                        %(icd10_codes)s,
+                        %(rxnorm_codes)s,
+                        %(cvx_codes)s,
+                        %(coverage_level)s,
+                        %(coverage_level_reason)s,
+                        %(coverage_level_date)s
+                    )
+                    ON CONFLICT (canonical_url, version)
+                    DO UPDATE SET
+                        display_name = EXCLUDED.display_name,
+                        child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
+                        loinc_codes = EXCLUDED.loinc_codes,
+                        snomed_codes = EXCLUDED.snomed_codes,
+                        icd10_codes = EXCLUDED.icd10_codes,
+                        rxnorm_codes = EXCLUDED.rxnorm_codes,
+                        cvx_codes = EXCLUDED.cvx_codes,
+                        coverage_level = EXCLUDED.coverage_level,
+                        coverage_level_reason = EXCLUDED.coverage_level_reason,
+                        coverage_level_date = EXCLUDED.coverage_level_date
+                    WHERE
+                        conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
+                        OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
+                        OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
+                        OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
+                        OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
+                        OR conditions.rxnorm_codes IS DISTINCT FROM EXCLUDED.rxnorm_codes
+                        OR conditions.cvx_codes IS DISTINCT FROM EXCLUDED.cvx_codes
+                        OR conditions.coverage_level IS DISTINCT FROM EXCLUDED.coverage_level
+                        OR conditions.coverage_level_reason IS DISTINCT FROM EXCLUDED.coverage_level_reason
+                        OR conditions.coverage_level_date IS DISTINCT FROM EXCLUDED.coverage_level_date
+                    RETURNING id
                 )
-                VALUES (
-                    %(canonical_url)s,
-                    %(version)s,
-                    %(display_name)s,
-                    %(child_rsg_snomed_codes)s,
-                    %(loinc_codes)s,
-                    %(snomed_codes)s,
-                    %(icd10_codes)s,
-                    %(rxnorm_codes)s,
-                    %(cvx_codes)s,
-                    %(coverage_level)s,
-                    %(coverage_level_reason)s,
-                    %(coverage_level_date)s
-                )
-                ON CONFLICT (canonical_url, version)
-                DO UPDATE SET
-                    display_name = EXCLUDED.display_name,
-                    child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
-                    loinc_codes = EXCLUDED.loinc_codes,
-                    snomed_codes = EXCLUDED.snomed_codes,
-                    icd10_codes = EXCLUDED.icd10_codes,
-                    rxnorm_codes = EXCLUDED.rxnorm_codes,
-                    cvx_codes = EXCLUDED.cvx_codes,
-                    coverage_level = EXCLUDED.coverage_level,
-                    coverage_level_reason = EXCLUDED.coverage_level_reason,
-                    coverage_level_date = EXCLUDED.coverage_level_date
-                WHERE
-                    conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
-                    OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
-                    OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
-                    OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
-                    OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
-                    OR conditions.rxnorm_codes IS DISTINCT FROM EXCLUDED.rxnorm_codes
-                    OR conditions.cvx_codes IS DISTINCT FROM EXCLUDED.cvx_codes
-                    OR conditions.coverage_level IS DISTINCT FROM EXCLUDED.coverage_level
-                    OR conditions.coverage_level_reason IS DISTINCT FROM EXCLUDED.coverage_level_reason
-                    OR conditions.coverage_level_date IS DISTINCT FROM EXCLUDED.coverage_level_date
-                RETURNING id
+                SELECT id FROM upsert_condition
+
+                UNION ALL
+
+                SELECT id
+                FROM conditions
+                WHERE canonical_url = %(canonical_url)s
+                  AND version = %(version)s
+                  AND NOT EXISTS (SELECT 1 FROM upsert_condition)
+
+                LIMIT 1
             """
 
             context_grouper_upsert_query = """
@@ -172,27 +197,25 @@ def _upsert_conditions_and_groupers(
             for item in processed:
                 cond = item["condition"]
 
-                # upsert the condition and get its id
-                # RETURNING id only fires on insert or actual update;
-                # if nothing changed, we need to look up the id
                 cursor.execute(condition_upsert_query, cond)
-                row = cursor.fetchone()
+                condition_id = cursor.fetchone()[0]
 
-                if row:
-                    condition_id = row[0]
-                else:
-                    cursor.execute(
-                        "SELECT id FROM conditions WHERE canonical_url = %s AND version = %s",
-                        (cond["canonical_url"], cond["version"]),
-                    )
-                    condition_id = cursor.fetchone()[0]
+                groupers = item.get("context_groupers", [])
+                if not groupers:
+                    continue
 
-                # upsert context groupers for this condition
-                for cg in item["context_groupers"]:
-                    cursor.execute(
-                        context_grouper_upsert_query,
-                        {**cg, "condition_id": condition_id},
-                    )
+                grouper_params = [
+                    {
+                        "condition_id": condition_id,
+                        "name": cg["name"],
+                        "category": cg["category"],
+                        "canonical_url": cg["canonical_url"],
+                        "code_count": cg["code_count"],
+                    }
+                    for cg in groupers
+                ]
+
+                cursor.executemany(context_grouper_upsert_query, grouper_params)
 
             conn.commit()
 
