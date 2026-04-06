@@ -17,6 +17,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set version variable
+        id: vars
+        run: |
+          echo "version_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
       - name: Test Refiner app build
         uses: docker/build-push-action@v6
         with:
