@@ -3,22 +3,21 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
-from typing import TypedDict
 from uuid import uuid4
 
 import httpx
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, TypeAdapter
 
 router = APIRouter(prefix="/releases")
 
 
 @dataclass
-class GithubApiReleaseObject(TypedDict):
+class GithubReleaseResponse(BaseModel):
     """
     Type for release information coming from the GitHub API.
     """
 
-    id: str
     created_at: datetime
     name: str
     body: str
@@ -28,7 +27,17 @@ class GithubApiReleaseObject(TypedDict):
 
 
 @dataclass
-class ReleaseMetadata:
+class ReleaseNotes:
+    """
+    Content of a release note from GitHub.
+    """
+
+    id: str
+    content: str
+
+
+@dataclass
+class Release:
     """
     Type for release information sent to the frontend.
     """
@@ -36,7 +45,8 @@ class ReleaseMetadata:
     id: str
     created_at: datetime
     name: str
-    body: dict[str, dict[str, str]]
+    # ReleaseNotes are indexed by the most adjacent <h[1-6]> # from GitHub
+    release_notes: dict[str, ReleaseNotes]
     prerelease: bool
     url: str
 
@@ -47,7 +57,7 @@ class ReleasesResponse:
     Response for releases as returned through the GitHub API.
     """
 
-    releases: list[ReleaseMetadata]
+    releases: list[Release]
 
 
 @router.get(
@@ -63,12 +73,15 @@ async def get_releases_data() -> ReleasesResponse:
     Returns:
         ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
     """
-    github_releases_data = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
-    data: ReleasesResponse = ReleasesResponse(releases=github_releases_data)
-    return data
+    try:
+        github_releases_data = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
+    except ValueError as e:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+    return ReleasesResponse(releases=github_releases_data)
 
 
-def _get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> float:
+def _get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> int:
     """Utility function that returns the same value every period to help with cache invalidation.
 
     Args:
@@ -76,16 +89,16 @@ def _get_ttl_hash(period_to_invalidate_in_seconds: int = 300) -> float:
        Defaults to 300 seconds or five minutes
 
     Returns:
-        A float value that is consistent within a period of time. When consumed by
+        An int value that is consistent within a period of time. When consumed by
         an lru_cache decorated function as a parameter, will flush the cache
     """
-    return time.time() // period_to_invalidate_in_seconds
+    return int(time.time() // period_to_invalidate_in_seconds)
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def _get_releases_data_from_github(
     ttl_hash: int | None = None,
-) -> list[ReleaseMetadata]:
+) -> list[Release]:
     """
     Function to fetch releases data from GitHub.
 
@@ -110,33 +123,43 @@ def _get_releases_data_from_github(
     if r.status_code != 200:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error getting information from GitHub",
+            detail="GitHub reponse didn't return success",
         )
 
-    github_releases_data: list[GithubApiReleaseObject] = r.json()
-    application_release_data: list[ReleaseMetadata] = []
+    release_json = r.json()
+    if not isinstance(release_json, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Expected a list of releases from GitHub",
+        )
 
-    for release_data in github_releases_data:
-        release_content = release_data.get("body")
+    releases = TypeAdapter(list[GithubReleaseResponse]).validate_python(release_json)
+    application_release_data: list[Release] = []
+
+    for release in releases:
+        if release.prerelease:
+            continue
+
+        release_content = release.body
 
         if not release_content:
             continue
 
-        formatted_body = _format_notes_to_header_content_dict(release_content)
-        release_object = ReleaseMetadata(
-            id=release_data.get("id"),
-            created_at=release_data.get("created_at"),
-            name=release_data.get("name"),
-            body=formatted_body,
-            prerelease=release_data.get("prerelease"),
-            url=release_data.get("html_url"),
+        release_notes = _format_api_body_to_dict(release_content)
+        release_object = Release(
+            id=str(uuid4()),
+            created_at=release.created_at,
+            name=release.name,
+            release_notes=release_notes,
+            prerelease=release.prerelease,
+            url=release.html_url,
         )
         application_release_data.append(release_object)
 
     return application_release_data
 
 
-def _format_notes_to_header_content_dict(content: str) -> dict[str, dict[str, str]]:
+def _format_api_body_to_dict(content: str) -> dict[str, ReleaseNotes]:
     """
     Utility function to parse out string of markdown content in GitHub into key-value dict.
 
@@ -152,11 +175,12 @@ def _format_notes_to_header_content_dict(content: str) -> dict[str, dict[str, st
     parts = re.split(r"(?m)^(#+ .*)$", content)
     parts = [p.strip() for p in parts if p.strip()]
 
-    result: dict[str, dict[str, str]] = {}
+    result: dict[str, ReleaseNotes] = {}
 
     for i in range(0, len(parts), 2):
         header = parts[i]
         section_content = parts[i + 1] if i + 1 < len(parts) else ""
-        result[header] = {"id": str(uuid4()), "content": section_content.strip()}
+        notes_content = ReleaseNotes(id=str(uuid4()), content=section_content.strip())
+        result[header] = notes_content
 
     return result

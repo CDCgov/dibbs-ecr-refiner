@@ -16,8 +16,7 @@ export function AppUpdates() {
       <p className="mb-6">Review the latest updates to eCR Refiner</p>
       <section className="bg-base-lightest mx-auto rounded-b-lg px-2 py-2">
         {releaseContentToRender.map((d, i) => {
-          if (d.prerelease) return <div key={d.id}></div>;
-          const summary = d?.body;
+          const summary = d?.release_notes;
 
           const summaryHeaderValuePairs = summary;
           const dateInfo = new Date(d.created_at);
