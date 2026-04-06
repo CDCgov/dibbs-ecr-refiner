@@ -68,7 +68,7 @@ def get_file_size_in_megabytes(file_content: str) -> int:
     Returns file size in megabytes.
     """
 
-    return get_file_size_in_bytes(file_content) / 1_000_000
+    return round(get_file_size_in_bytes(file_content) / 1_000_000)
 
 
 def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -> int:
