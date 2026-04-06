@@ -7,6 +7,7 @@
 import json
 import os
 from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import TypedDict
 
 import boto3
@@ -14,7 +15,8 @@ from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
 from app.core.utils import get_env_variable
-from app.db.conditions.model import ConditionMappingPayload
+from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
+from app.services.ecr.model import JurisdictionReportableConditions, ReportableCondition
 
 from ..core.models.types import XMLFiles
 from ..services.aws.s3_keys import (
@@ -24,6 +26,7 @@ from ..services.aws.s3_keys import (
 )
 from ..services.ecr.refine import refine_rr_for_unconfigured_conditions
 from ..services.pipeline import (
+    RefinementResult,
     RefinementTrace,
     discover_reportable_conditions,
     refine_for_condition,
@@ -41,13 +44,18 @@ REFINER_COMPLETE_PREFIX = get_env_variable("REFINER_COMPLETE_PREFIX")
 S3_BUCKET_CONFIG = get_env_variable("S3_BUCKET_CONFIG")
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
+# Type helpers
+JurisdictionCode = str
+ConditionCode = str
+RefinementMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
+
 
 class RefinerCompleteFile(TypedDict):
     """
     Represents the completion file written after all refinement is done.
     """
 
-    RefinerMetadata: dict[str, dict[str, bool]]
+    RefinerMetadata: RefinementMetadata
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
 
@@ -241,13 +249,33 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     return parse_s3_content_to_dict(config_file_content)
 
 
+@dataclass
+class RefinementState:
+    """
+    Mutable state accumulated during refinement processing.
+    """
+
+    output_files: list[str] = field(default_factory=list)
+    metadata: RefinementMetadata = field(default_factory=dict)
+    non_active_reportable_conditions: dict[str, set[str]] = field(
+        default_factory=lambda: defaultdict(set)
+    )
+    traces: list[RefinementTrace] = field(default_factory=list)
+
+
+@dataclass
+class ProcessedResult:
+    output_file_keys: list[str]
+    metadata: RefinementMetadata
+
+
 def process_refiner(
     xml_files: XMLFiles,
     s3_client,
     bucket: str,
     config_bucket: str,
     persistence_id: str,
-) -> tuple[list[str], dict[str, dict[str, bool]]]:
+) -> ProcessedResult:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
 
@@ -267,14 +295,8 @@ def process_refiner(
         persistence_id: The persistence ID for constructing output paths
 
     Returns:
-        tuple: A tuple containing:
-            - list[str]: List of S3 paths for refined output files
-            - dict[str, dict[str, bool]]: Metadata mapping jurisdiction codes
-              to condition codes with True (refined) or False (skipped)
+        ProcessedResult: the result of the refinement process
     """
-
-    # STAGE 1:
-    # use the shared pipeline to discover reportable conditions
     reportable_groups = discover_reportable_conditions(xml_files)
     logger.info(
         "Discovered reportable conditions from RR",
@@ -282,182 +304,356 @@ def process_refiner(
         operation="discovered_reportability",
     )
 
-    refiner_output_files: list[str] = []
-    metadata: dict[str, dict[str, bool]] = {}
-    non_active_reportable_conditions: dict[str, set[str]] = defaultdict(set)
-    all_traces: list[RefinementTrace] = []
+    # mutable state that is updated during the refinement process
+    state = RefinementState()
 
-    # STAGE 2:
-    # resolve configurations from S3 and refine
     for jurisdiction_group in reportable_groups:
-        jurisdiction_code = jurisdiction_group.jurisdiction.upper()
+        process_jurisdiction(
+            jurisdiction_group=jurisdiction_group,
+            xml_files=xml_files,
+            s3_client=s3_client,
+            bucket=bucket,
+            config_bucket=config_bucket,
+            persistence_id=persistence_id,
+            state=state,
+        )
 
-        if jurisdiction_code not in metadata:
-            metadata[jurisdiction_code] = {}
+    write_unrefined_rrs(
+        xml_files=xml_files,
+        s3_client=s3_client,
+        bucket=bucket,
+        persistence_id=persistence_id,
+        state=state,
+    )
 
-            # read the RSG → CG mapping file for this jurisdiction
-            rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(
-                jurisdiction_id=jurisdiction_code
-            )
-            rsg_cg_mapping = read_rsg_cg_mapping_file(
-                s3_client=s3_client, bucket=config_bucket, key=rsg_cg_mapping_file_key
-            )
+    log_refinement_summary(
+        persistence_id=persistence_id,
+        output_files=state.output_files,
+        traces=state.traces,
+    )
 
-            if not rsg_cg_mapping:
-                # no mapping file -> skip all conditions for this jurisdiction
-                for c in jurisdiction_group.conditions:
-                    trace = RefinementTrace(
-                        jurisdiction_code=jurisdiction_code,
-                        rsg_code=c.code,
-                        refinement_outcome="skipped",
-                        skip_reason="no_mapping_file",
-                    )
-                    all_traces.append(trace)
-                    non_active_reportable_conditions[jurisdiction_code].add(c.code)
-                    metadata[jurisdiction_code][c.code] = False
+    return ProcessedResult(
+        output_file_keys=list(set(state.output_files)), metadata=state.metadata
+    )
 
-                logger.info(
-                    "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
-                    key=rsg_cg_mapping_file_key,
-                    jurisdiction_code=jurisdiction_code,
-                    operation="skipped",
-                )
-                continue
 
-            # create the RSG → CG payload
-            rsg_cg_payload = ConditionMappingPayload.from_dict(rsg_cg_mapping)
+def process_jurisdiction(
+    jurisdiction_group: JurisdictionReportableConditions,
+    xml_files: XMLFiles,
+    s3_client,
+    bucket: str,
+    config_bucket: str,
+    persistence_id: str,
+    state: RefinementState,
+) -> None:
+    """
+    Process all reportable conditions for a single jurisdiction.
+    """
+    jurisdiction_code = jurisdiction_group.jurisdiction.upper()
+    state.metadata.setdefault(jurisdiction_code, {})
 
-            # process each condition for this jurisdiction
-            for rsg_metadata in jurisdiction_group.conditions:
-                rsg_code = rsg_metadata.code
+    rsg_cg_payload = load_condition_mapping_for_jurisdiction(
+        s3_client=s3_client,
+        config_bucket=config_bucket,
+        jurisdiction_code=jurisdiction_code,
+    )
 
-                # initialize a trace for this condition
-                trace = RefinementTrace(
-                    jurisdiction_code=jurisdiction_code,
-                    rsg_code=rsg_code,
-                )
+    if rsg_cg_payload is None:
+        skip_all_conditions_for_missing_mapping(
+            jurisdiction_code=jurisdiction_code,
+            jurisdiction_group=jurisdiction_group,
+            state=state,
+        )
+        return
 
-                if rsg_code not in rsg_cg_payload.mappings.keys():
-                    # the RSG isn't in the CG map -> not active
-                    trace.refinement_outcome = "skipped"
-                    trace.skip_reason = "rsg_not_in_mapping"
-                    all_traces.append(trace)
+    for reportable_condition in jurisdiction_group.conditions:
+        process_condition(
+            jurisdiction_code=jurisdiction_code,
+            reportable_condition=reportable_condition,
+            rsg_cg_payload=rsg_cg_payload,
+            xml_files=xml_files,
+            s3_client=s3_client,
+            bucket=bucket,
+            config_bucket=config_bucket,
+            persistence_id=persistence_id,
+            state=state,
+        )
 
-                    metadata[jurisdiction_code][rsg_code] = False
-                    non_active_reportable_conditions[jurisdiction_code].add(rsg_code)
 
-                    logger.info(
-                        "RSG code isn't in the CG map, skipping.",
-                        rsg_code=rsg_code,
-                        rsg_cg_payload=rsg_cg_payload.to_dict(),
-                        jurisdiction_code=jurisdiction_code,
-                        operation="skipped",
-                    )
-                    continue
+def load_condition_mapping_for_jurisdiction(
+    s3_client,
+    config_bucket: str,
+    jurisdiction_code: str,
+) -> ConditionMappingPayload | None:
+    """
+    Load the RSG -> CG mapping payload for a jurisdiction.
+    """
+    rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(
+        jurisdiction_id=jurisdiction_code
+    )
+    rsg_cg_mapping = read_rsg_cg_mapping_file(
+        s3_client=s3_client,
+        bucket=config_bucket,
+        key=rsg_cg_mapping_file_key,
+    )
 
-                cg_metadata = rsg_cg_payload.mappings[rsg_code]
-                trace.condition_grouper_name = cg_metadata.name
+    if not rsg_cg_mapping:
+        logger.info(
+            "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
+            key=rsg_cg_mapping_file_key,
+            jurisdiction_code=jurisdiction_code,
+            operation="skipped",
+        )
+        return None
 
-                # read current.json to find the active version
-                current_file_key = get_current_file_key(
-                    jurisdiction_id=jurisdiction_code,
-                    canonical_url=cg_metadata.canonical_url,
-                )
-                config_version_to_use = read_current_version(
-                    s3_client=s3_client,
-                    bucket=config_bucket,
-                    key=current_file_key,
-                )
-                if not config_version_to_use:
-                    trace.refinement_outcome = "skipped"
-                    trace.skip_reason = "no_active_configuration"
-                    all_traces.append(trace)
+    return ConditionMappingPayload.from_dict(rsg_cg_mapping)
 
-                    metadata[jurisdiction_code][rsg_code] = False
-                    non_active_reportable_conditions[jurisdiction_code].add(rsg_code)
 
-                    logger.info(
-                        "No active configuration identified, skipping.",
-                        key=current_file_key,
-                        jurisdiction_code=jurisdiction_code,
-                        rsg_metadata=rsg_metadata,
-                        operation="skipped",
-                    )
-                    continue
+def skip_all_conditions_for_missing_mapping(
+    jurisdiction_code: str,
+    jurisdiction_group: JurisdictionReportableConditions,
+    state: RefinementState,
+) -> None:
+    """
+    Mark every condition in a jurisdiction as skipped when the mapping file is missing.
+    """
+    for condition in jurisdiction_group.conditions:
+        trace = RefinementTrace(
+            jurisdiction_code=jurisdiction_code,
+            rsg_code=condition.code,
+            refinement_outcome="skipped",
+            skip_reason="no_mapping_file",
+        )
+        state.traces.append(trace)
+        state.non_active_reportable_conditions[jurisdiction_code].add(condition.code)
+        state.metadata[jurisdiction_code][condition.code] = False
 
-                trace.configuration_version = config_version_to_use
 
-                # read the active configuration file
-                serialized_configuration_key = get_active_file_key(
-                    jurisdiction_id=jurisdiction_code,
-                    canonical_url=cg_metadata.canonical_url,
-                    version=config_version_to_use,
-                )
-                serialized_configuration = read_configuration_file(
-                    s3_client=s3_client,
-                    bucket=config_bucket,
-                    key=serialized_configuration_key,
-                )
+def process_condition(
+    jurisdiction_code: str,
+    reportable_condition: ReportableCondition,
+    rsg_cg_payload: ConditionMappingPayload,
+    xml_files: XMLFiles,
+    s3_client,
+    bucket: str,
+    config_bucket: str,
+    persistence_id: str,
+    state: RefinementState,
+) -> None:
+    """
+    Process a single reportable condition for a jurisdiction.
+    """
+    rsg_code = reportable_condition.code
+    trace = RefinementTrace(
+        jurisdiction_code=jurisdiction_code,
+        rsg_code=rsg_code,
+    )
 
-                logger.info(
-                    "Using activated configuration file",
-                    key=serialized_configuration_key,
-                    jurisdiction_code=jurisdiction_code,
-                    canonical_url=cg_metadata.canonical_url,
-                    rsg_code=rsg_code,
-                    config_version=config_version_to_use,
-                    operation="activation_file_read",
-                )
+    cg_metadata = rsg_cg_payload.mappings.get(rsg_code)
 
-                processed_configuration = ProcessedConfiguration.from_dict(
-                    serialized_configuration
-                )
+    if cg_metadata is None:
+        logger.info(
+            "RSG code isn't in the CG map, skipping.",
+            rsg_code=rsg_code,
+            rsg_cg_payload=rsg_cg_payload.to_dict(),
+            jurisdiction_code=jurisdiction_code,
+            operation="skipped",
+        )
+        mark_condition_skipped(
+            trace=trace,
+            jurisdiction_code=jurisdiction_code,
+            condition_code=rsg_code,
+            reason="rsg_not_in_mapping",
+            state=state,
+        )
+        return
 
-                # STAGE 3:
-                # use the shared pipeline to execute refinement
-                result = refine_for_condition(
-                    xml_files=xml_files,
-                    processed_configuration=processed_configuration,
-                    trace=trace,
-                )
-                all_traces.append(trace)
+    trace.condition_grouper_name = cg_metadata.name
 
-                # write refined outputs to S3
-                output_key = f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/{cg_metadata.name}"
+    processed_configuration = load_active_configuration(
+        s3_client=s3_client,
+        config_bucket=config_bucket,
+        jurisdiction_code=jurisdiction_code,
+        cg_metadata=cg_metadata,
+        rsg_metadata=reportable_condition,
+        trace=trace,
+    )
 
-                eicr_output_key = f"{output_key}/refined_eICR.xml"
-                s3_client.put_object(
-                    Bucket=bucket,
-                    Key=eicr_output_key,
-                    Body=result.refined_eicr.encode("utf-8"),
-                    ContentType="application/xml",
-                )
-                refiner_output_files.append(eicr_output_key)
+    if processed_configuration is None:
+        mark_condition_skipped(
+            trace=trace,
+            jurisdiction_code=jurisdiction_code,
+            condition_code=rsg_code,
+            reason="no_active_configuration",
+            state=state,
+        )
+        return
 
-                rr_output_key = f"{output_key}/refined_RR.xml"
-                s3_client.put_object(
-                    Bucket=bucket,
-                    Key=rr_output_key,
-                    Body=result.refined_rr.encode("utf-8"),
-                    ContentType="application/xml",
-                )
-                refiner_output_files.append(rr_output_key)
+    result = refine_for_condition(
+        xml_files=xml_files,
+        processed_configuration=processed_configuration,
+        trace=trace,
+    )
 
-                logger.info(
-                    "Condition refinement complete.",
-                    eicr_key=eicr_output_key,
-                    rr_key=rr_output_key,
-                    eicr_size_reduction_percentage=trace.eicr_size_reduction_percentage,
-                    jurisdiction_code=jurisdiction_code,
-                    condition_code=rsg_code,
-                    operation="condition_refinement_complete",
-                )
+    state.traces.append(trace)
 
-                metadata[jurisdiction_code][rsg_code] = True
+    write_refined_outputs(
+        s3_client=s3_client,
+        bucket=bucket,
+        persistence_id=persistence_id,
+        jurisdiction_code=jurisdiction_code,
+        condition_grouper_name=cg_metadata.name,
+        result=result,
+        trace=trace,
+        condition_code=rsg_code,
+        state=state,
+    )
 
-    # STAGE 4:
-    # create unrefined condition RRs for conditions without active configs
-    for jurisdiction_code, condition_codes in non_active_reportable_conditions.items():
+    state.metadata[jurisdiction_code][rsg_code] = True
+
+
+def mark_condition_skipped(
+    trace: RefinementTrace,
+    jurisdiction_code: str,
+    condition_code: str,
+    reason: str,
+    state: RefinementState,
+) -> None:
+    """
+    Centralize bookkeeping for skipped conditions.
+    """
+    trace.refinement_outcome = "skipped"
+    trace.skip_reason = reason
+
+    state.traces.append(trace)
+    state.metadata[jurisdiction_code][condition_code] = False
+    state.non_active_reportable_conditions[jurisdiction_code].add(condition_code)
+
+
+def load_active_configuration(
+    s3_client,
+    config_bucket: str,
+    jurisdiction_code: str,
+    cg_metadata: ConditionMapValue,
+    rsg_metadata: ReportableCondition,
+    trace: RefinementTrace,
+) -> ProcessedConfiguration | None:
+    """
+    Resolve and load the active processed configuration for a jurisdiction/condition.
+    """
+    current_file_key = get_current_file_key(
+        jurisdiction_id=jurisdiction_code,
+        canonical_url=cg_metadata.canonical_url,
+    )
+
+    config_version_to_use = read_current_version(
+        s3_client=s3_client,
+        bucket=config_bucket,
+        key=current_file_key,
+    )
+
+    if not config_version_to_use:
+        logger.info(
+            "No active configuration identified, skipping.",
+            key=current_file_key,
+            jurisdiction_code=jurisdiction_code,
+            rsg_metadata=rsg_metadata,
+            operation="skipped",
+        )
+        return None
+
+    trace.configuration_version = config_version_to_use
+
+    serialized_configuration_key = get_active_file_key(
+        jurisdiction_id=jurisdiction_code,
+        canonical_url=cg_metadata.canonical_url,
+        version=config_version_to_use,
+    )
+
+    serialized_configuration = read_configuration_file(
+        s3_client=s3_client,
+        bucket=config_bucket,
+        key=serialized_configuration_key,
+    )
+
+    logger.info(
+        "Using activated configuration file",
+        key=serialized_configuration_key,
+        jurisdiction_code=jurisdiction_code,
+        canonical_url=cg_metadata.canonical_url,
+        rsg_code=rsg_metadata.code,
+        config_version=config_version_to_use,
+        operation="activation_file_read",
+    )
+
+    return ProcessedConfiguration.from_dict(serialized_configuration)
+
+
+def write_refined_outputs(
+    s3_client,
+    bucket: str,
+    persistence_id: str,
+    jurisdiction_code: str,
+    condition_code: str,
+    condition_grouper_name: str,
+    result: RefinementResult,
+    trace: RefinementTrace,
+    state: RefinementState,
+) -> None:
+    """
+    Write refined eICR and RR artifacts to S3.
+    """
+    output_key = (
+        f"{REFINER_OUTPUT_PREFIX}"
+        f"{persistence_id}/{jurisdiction_code}/{condition_grouper_name}"
+    )
+
+    eicr_output_key = f"{output_key}/refined_eICR.xml"
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=eicr_output_key,
+        Body=result.refined_eicr.encode("utf-8"),
+        ContentType="application/xml",
+    )
+
+    state.output_files.append(eicr_output_key)
+
+    rr_output_key = f"{output_key}/refined_RR.xml"
+    s3_client.put_object(
+        Bucket=bucket,
+        Key=rr_output_key,
+        Body=result.refined_rr.encode("utf-8"),
+        ContentType="application/xml",
+    )
+
+    state.output_files.append(rr_output_key)
+
+    logger.info(
+        "Condition refinement complete.",
+        eicr_key=eicr_output_key,
+        rr_key=rr_output_key,
+        eicr_size_reduction_percentage=trace.eicr_size_reduction_percentage,
+        jurisdiction_code=jurisdiction_code,
+        condition_code=condition_code,
+        operation="condition_refinement_complete",
+    )
+
+
+def write_unrefined_rrs(
+    xml_files: XMLFiles,
+    s3_client,
+    bucket: str,
+    persistence_id: str,
+    state: RefinementState,
+) -> None:
+    """
+    Write unrefined RR outputs for conditions that were skipped due to missing or
+    inactive configuration.
+    """
+    for (
+        jurisdiction_code,
+        condition_codes,
+    ) in state.non_active_reportable_conditions.items():
         unrefined_rr_content = refine_rr_for_unconfigured_conditions(
             xml_files=xml_files,
             condition_codes=condition_codes,
@@ -466,15 +662,15 @@ def process_refiner(
         output_key = (
             f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/unrefined_rr"
         )
-
         rr_output_key = f"{output_key}/refined_RR.xml"
+
         s3_client.put_object(
             Bucket=bucket,
             Key=rr_output_key,
             Body=unrefined_rr_content.encode("utf-8"),
             ContentType="application/xml",
         )
-        refiner_output_files.append(rr_output_key)
+        state.output_files.append(rr_output_key)
 
         logger.info(
             "Created unrefined conditions RR",
@@ -484,11 +680,19 @@ def process_refiner(
             operation="unrefined_conditions_rr_written",
         )
 
-    # log summary with all traces
+
+def log_refinement_summary(
+    persistence_id: str,
+    output_files: list[str],
+    traces: list[RefinementTrace],
+) -> None:
+    """
+    Log a final summary for the entire refinement run.
+    """
     logger.info(
         "Refinement complete.",
         persistence_id=persistence_id,
-        output_file_urls=refiner_output_files,
+        output_file_urls=output_files,
         traces=[
             {
                 "jurisdiction": t.jurisdiction_code,
@@ -499,11 +703,10 @@ def process_refiner(
                 "config_version": t.configuration_version,
                 "eicr_size_reduction": t.eicr_size_reduction_percentage,
             }
-            for t in all_traces
+            for t in traces
         ],
         operation="refinement_complete",
     )
-    return list(set(refiner_output_files)), metadata
 
 
 def lambda_handler(event, context):
@@ -574,7 +777,7 @@ def lambda_handler(event, context):
 
             # Process Refiner (eICR, RR) -> Refiner Output []
             logger.info("Starting refinement process")
-            refiner_output_files, refiner_metadata = process_refiner(
+            result = process_refiner(
                 xml_files,
                 s3_client,
                 s3_bucket_name,
@@ -584,9 +787,9 @@ def lambda_handler(event, context):
 
             # Create RefinerComplete file
             complete_file: RefinerCompleteFile = {
-                "RefinerMetadata": refiner_metadata,
+                "RefinerMetadata": result.metadata,
                 "RefinerSkip": False,
-                "RefinerOutputFiles": refiner_output_files,
+                "RefinerOutputFiles": result.output_file_keys,
             }
 
             # Construct RefinerComplete path: RefinerComplete/<persistance_id>
@@ -604,7 +807,7 @@ def lambda_handler(event, context):
             )
 
             logger.info(
-                f"Successfully processed {len(refiner_output_files)} refined outputs"
+                f"Successfully processed {len(result.output_file_keys)} refined outputs"
             )
 
         return {"statusCode": 200, "message": "Refiner processed successfully"}
