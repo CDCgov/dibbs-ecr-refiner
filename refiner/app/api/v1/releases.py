@@ -73,10 +73,7 @@ async def get_releases_data() -> ReleasesResponse:
     Returns:
         ReleasesResponse: Reponse of release information in a list of ReleaseMetadata
     """
-    try:
-        github_releases_data = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
-    except ValueError as e:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+    github_releases_data = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
 
     return ReleasesResponse(releases=github_releases_data)
 
@@ -107,6 +104,11 @@ def _get_releases_data_from_github(
     Args:
         ttl_hash: Dummy parameter to force the lru_cache, which stores results based on parameters,
         to refresh if provided
+
+    Raises:
+        HTTPException: 500 if GitHub serves a response that is malformed
+        HTTPException: 504 if GitHub times out
+        HTTPException: 502 if GitHub doesn't respond
 
     Returns:
         list[GithubReleaseObject]: A list of all releases as returned by a call to the GitHub API
