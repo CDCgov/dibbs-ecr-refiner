@@ -8,7 +8,7 @@ import json
 import os
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import boto3
 from aws_lambda_powertools import Logger
@@ -264,18 +264,21 @@ class RefinementState:
 
 
 @dataclass
-class ProcessedResult:
+class ProcessRefinerInput:
+    xml_files: XMLFiles
+    s3_client: Any
+    config_bucket_name: str
+    output_bucket_name: str
+    persistence_id: str
+
+
+@dataclass
+class ProcessRefinerResult:
     output_file_keys: list[str]
     metadata: RefinementMetadata
 
 
-def process_refiner(
-    xml_files: XMLFiles,
-    s3_client,
-    bucket: str,
-    config_bucket: str,
-    persistence_id: str,
-) -> ProcessedResult:
+def process_refiner(input: ProcessRefinerInput) -> ProcessRefinerResult:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
 
@@ -297,7 +300,7 @@ def process_refiner(
     Returns:
         ProcessedResult: the result of the refinement process
     """
-    reportable_groups = discover_reportable_conditions(xml_files)
+    reportable_groups = discover_reportable_conditions(input.xml_files)
     logger.info(
         "Discovered reportable conditions from RR",
         reportable_group_payload=reportable_groups,
@@ -310,40 +313,29 @@ def process_refiner(
     for jurisdiction_group in reportable_groups:
         process_jurisdiction(
             jurisdiction_group=jurisdiction_group,
-            xml_files=xml_files,
-            s3_client=s3_client,
-            bucket=bucket,
-            config_bucket=config_bucket,
-            persistence_id=persistence_id,
+            refiner_input=input,
             state=state,
         )
 
     write_unrefined_rrs(
-        xml_files=xml_files,
-        s3_client=s3_client,
-        bucket=bucket,
-        persistence_id=persistence_id,
+        refiner_input=input,
         state=state,
     )
 
     log_refinement_summary(
-        persistence_id=persistence_id,
+        persistence_id=input.persistence_id,
         output_files=state.output_files,
         traces=state.traces,
     )
 
-    return ProcessedResult(
+    return ProcessRefinerResult(
         output_file_keys=list(set(state.output_files)), metadata=state.metadata
     )
 
 
 def process_jurisdiction(
     jurisdiction_group: JurisdictionReportableConditions,
-    xml_files: XMLFiles,
-    s3_client,
-    bucket: str,
-    config_bucket: str,
-    persistence_id: str,
+    refiner_input: ProcessRefinerInput,
     state: RefinementState,
 ) -> None:
     """
@@ -353,8 +345,8 @@ def process_jurisdiction(
     state.metadata.setdefault(jurisdiction_code, {})
 
     rsg_cg_payload = load_condition_mapping_for_jurisdiction(
-        s3_client=s3_client,
-        config_bucket=config_bucket,
+        s3_client=refiner_input.s3_client,
+        config_bucket=refiner_input.config_bucket_name,
         jurisdiction_code=jurisdiction_code,
     )
 
@@ -371,11 +363,7 @@ def process_jurisdiction(
             jurisdiction_code=jurisdiction_code,
             reportable_condition=reportable_condition,
             rsg_cg_payload=rsg_cg_payload,
-            xml_files=xml_files,
-            s3_client=s3_client,
-            bucket=bucket,
-            config_bucket=config_bucket,
-            persistence_id=persistence_id,
+            refiner_input=refiner_input,
             state=state,
         )
 
@@ -433,11 +421,7 @@ def process_condition(
     jurisdiction_code: str,
     reportable_condition: ReportableCondition,
     rsg_cg_payload: ConditionMappingPayload,
-    xml_files: XMLFiles,
-    s3_client,
-    bucket: str,
-    config_bucket: str,
-    persistence_id: str,
+    refiner_input: ProcessRefinerInput,
     state: RefinementState,
 ) -> None:
     """
@@ -471,8 +455,8 @@ def process_condition(
     trace.condition_grouper_name = cg_metadata.name
 
     processed_configuration = load_active_configuration(
-        s3_client=s3_client,
-        config_bucket=config_bucket,
+        s3_client=refiner_input.s3_client,
+        config_bucket=refiner_input.config_bucket_name,
         jurisdiction_code=jurisdiction_code,
         cg_metadata=cg_metadata,
         rsg_metadata=reportable_condition,
@@ -490,7 +474,7 @@ def process_condition(
         return
 
     result = refine_for_condition(
-        xml_files=xml_files,
+        xml_files=refiner_input.xml_files,
         processed_configuration=processed_configuration,
         trace=trace,
     )
@@ -498,9 +482,9 @@ def process_condition(
     state.traces.append(trace)
 
     write_refined_outputs(
-        s3_client=s3_client,
-        bucket=bucket,
-        persistence_id=persistence_id,
+        s3_client=refiner_input.s3_client,
+        output_bucket_name=refiner_input.output_bucket_name,
+        persistence_id=refiner_input.persistence_id,
         jurisdiction_code=jurisdiction_code,
         condition_grouper_name=cg_metadata.name,
         result=result,
@@ -591,7 +575,7 @@ def load_active_configuration(
 
 def write_refined_outputs(
     s3_client,
-    bucket: str,
+    output_bucket_name: str,
     persistence_id: str,
     jurisdiction_code: str,
     condition_code: str,
@@ -610,7 +594,7 @@ def write_refined_outputs(
 
     eicr_output_key = f"{output_key}/refined_eICR.xml"
     s3_client.put_object(
-        Bucket=bucket,
+        Bucket=output_bucket_name,
         Key=eicr_output_key,
         Body=result.refined_eicr.encode("utf-8"),
         ContentType="application/xml",
@@ -620,7 +604,7 @@ def write_refined_outputs(
 
     rr_output_key = f"{output_key}/refined_RR.xml"
     s3_client.put_object(
-        Bucket=bucket,
+        Bucket=output_bucket_name,
         Key=rr_output_key,
         Body=result.refined_rr.encode("utf-8"),
         ContentType="application/xml",
@@ -640,10 +624,7 @@ def write_refined_outputs(
 
 
 def write_unrefined_rrs(
-    xml_files: XMLFiles,
-    s3_client,
-    bucket: str,
-    persistence_id: str,
+    refiner_input: ProcessRefinerInput,
     state: RefinementState,
 ) -> None:
     """
@@ -655,17 +636,15 @@ def write_unrefined_rrs(
         condition_codes,
     ) in state.non_active_reportable_conditions.items():
         unrefined_rr_content = refine_rr_for_unconfigured_conditions(
-            xml_files=xml_files,
+            xml_files=refiner_input.xml_files,
             condition_codes=condition_codes,
         )
 
-        output_key = (
-            f"{REFINER_OUTPUT_PREFIX}{persistence_id}/{jurisdiction_code}/unrefined_rr"
-        )
+        output_key = f"{REFINER_OUTPUT_PREFIX}{refiner_input.persistence_id}/{jurisdiction_code}/unrefined_rr"
         rr_output_key = f"{output_key}/refined_RR.xml"
 
-        s3_client.put_object(
-            Bucket=bucket,
+        refiner_input.s3_client.put_object(
+            Bucket=refiner_input.output_bucket_name,
             Key=rr_output_key,
             Body=unrefined_rr_content.encode("utf-8"),
             ContentType="application/xml",
