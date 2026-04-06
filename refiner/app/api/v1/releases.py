@@ -154,8 +154,8 @@ def _get_releases_data_from_github(
     application_release_data: list[Release] = []
 
     for release in releases:
-        # if release.prerelease:
-        #     continue
+        if release.prerelease:
+            continue
 
         release_content = release.body
 
