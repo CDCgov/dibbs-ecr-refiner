@@ -22,6 +22,7 @@ from .ecr.model import (
     RefinedDocument,
     ReportableCondition,
 )
+from .ecr.refine import refine_rr_for_unconfigured_conditions
 from .pipeline import (
     RefinementTrace,
     discover_reportable_conditions,
@@ -76,12 +77,14 @@ class IndependentTestingResult:
            no matching configuration for the jurisdiction.
         - 'no_active_configuration_for_conditions': A list of conditions that were found but had
            no active configuration for the jurisdiction.
+        - 'shadow_rr': Optional RR containing only reportable conditions without active configs.
     """
 
     original_eicr_doc_id: str
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
+    shadow_rr: str | None
 
     def get_condition_names_with_no_matching_config(self) -> list[str]:
         """
@@ -187,6 +190,7 @@ async def independent_testing(
             refined_documents=[],
             no_matching_configuration_for_conditions=[],
             no_active_configuration_for_conditions=[],
+            shadow_rr=None,
         )
 
     # STEP 2:
@@ -365,6 +369,36 @@ async def independent_testing(
         refined_documents=refined_documents,
         no_matching_configuration_for_conditions=no_matching_configurations,
         no_active_configuration_for_conditions=no_active_configurations,
+        shadow_rr=_generate_shadow_rr(
+            no_active_configuration_for_conditions=no_active_configurations,
+            xml_files=xml_files,
+        ),
+    )
+
+
+def _generate_shadow_rr(
+    no_active_configuration_for_conditions: list[NoMatchEntry], xml_files: XMLFiles
+) -> str | None:
+    """
+    Given a list of condition codes with no active configuration, return the generated shadow RR or None.
+
+    Args:
+        no_active_configuration_for_conditions (list[NoMatchEntry]): list of no match entries
+        xml_files (XMLFiles): the original XML eCR files
+
+    Returns:
+        str | None: RR content, or None if a shadow RR isn't generated
+    """
+    if not no_active_configuration_for_conditions:
+        return None
+
+    non_active_codes = {
+        code
+        for entry in no_active_configuration_for_conditions
+        for code in entry["rc_snomed_codes"]
+    }
+    return refine_rr_for_unconfigured_conditions(
+        xml_files=xml_files, condition_codes=non_active_codes
     )
 
 
