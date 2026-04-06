@@ -16,9 +16,6 @@ export function AppUpdates() {
       <p className="mb-6">Review the latest updates to eCR Refiner</p>
       <section className="bg-base-lightest mx-auto rounded-b-lg px-2 py-2">
         {releaseContentToRender.map((d, i) => {
-          const summary = d?.release_notes;
-
-          const summaryHeaderValuePairs = summary;
           const dateInfo = new Date(d.created_at);
           return (
             <div key={d.id} className="bg-white px-4 py-4">
@@ -31,15 +28,13 @@ export function AppUpdates() {
               <Link target="_blank" href={d.url}>
                 {d.name}
               </Link>
-              {summaryHeaderValuePairs.map((summaryContent, summaryIndex) => {
-                const content = summaryContent;
+              {d?.release_notes.map((rn, i) => {
+                const content = rn;
 
                 return (
                   <div key={content['id']} className="mt-2 pb-4 pl-5">
-                    {summaryIndex == 0 && (
-                      <Markdown>{content['content']}</Markdown>
-                    )}
-                    {summaryIndex == 1 && (
+                    {i == 0 && <Markdown>{content['content']}</Markdown>}
+                    {i == 1 && (
                       <>
                         <h3 className="text-bold -ml-5">Major changes</h3>
                         <Markdown>{content['content']}</Markdown>
