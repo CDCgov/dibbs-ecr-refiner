@@ -31,6 +31,15 @@ jobs:
 
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Print hash tags
+        run: |
+          echo "===== HASH TAGS ====="
+          echo "Hash:    $VITE_GIT_HASH"
+          echo "Branch: $VITE_GIT_BRANCH"
+          echo "Version:    $VITE_GIT_VERSION"
+          echo "=================================="
+
   lambda-build:
     runs-on: ubuntu-latest
     steps:
