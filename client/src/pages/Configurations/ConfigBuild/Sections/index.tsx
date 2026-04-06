@@ -1,7 +1,6 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
-import { Field, Label } from '@headlessui/react';
 import { DbSectionAction } from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
@@ -17,6 +16,8 @@ import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
 import { Switch } from './Switch';
 import classNames from 'classnames';
+import { Field } from '../../../../components/Field';
+import { Label } from '../../../../components/Label';
 
 /**
  * TODO: please refer to specification.py
@@ -369,7 +370,7 @@ function RefineSwitch({
   const preserveLabelText = 'Preserve & retain all data';
 
   return (
-    <Field className="flex -translate-x-4 items-center">
+    <Field className="flex -translate-x-4 flex-row items-center">
       <Label
         aria-label={
           isRefineToggled
