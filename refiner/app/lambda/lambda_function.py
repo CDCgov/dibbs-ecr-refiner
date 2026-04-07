@@ -757,11 +757,13 @@ def lambda_handler(event, context):
             # Process Refiner (eICR, RR) -> Refiner Output []
             logger.info("Starting refinement process")
             result = process_refiner(
-                xml_files,
-                s3_client,
-                s3_bucket_name,
-                s3_config_bucket_name,
-                persistence_id,
+                input=ProcessRefinerInput(
+                    xml_files=xml_files,
+                    s3_client=s3_client,
+                    config_bucket_name=s3_config_bucket_name,
+                    output_bucket_name=s3_bucket_name,
+                    persistence_id=persistence_id,
+                )
             )
 
             # Create RefinerComplete file
