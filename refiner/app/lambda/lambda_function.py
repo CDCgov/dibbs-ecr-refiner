@@ -78,7 +78,7 @@ class RefinementState:
 
 
 @dataclass
-class ProcessRefinerInput:
+class RefinementInput:
     """
     Information required as an input by the refinement process.
     """
@@ -91,7 +91,7 @@ class ProcessRefinerInput:
 
 
 @dataclass
-class ProcessRefinerResult:
+class RefinementOutput:
     """
     All metadata required by AIMS post-refinement.
     """
@@ -174,8 +174,8 @@ def lambda_handler(event, context) -> dict:
 
             # Process Refiner (eICR, RR) -> Refiner Output []
             logger.info("Starting refinement process")
-            result = process_refiner(
-                input=ProcessRefinerInput(
+            result = run_refinement(
+                input=RefinementInput(
                     xml_files=xml_files,
                     s3_client=s3_client,
                     config_bucket_name=s3_config_bucket_name,
@@ -410,7 +410,7 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     return parse_s3_content_to_dict(config_file_content)
 
 
-def process_refiner(input: ProcessRefinerInput) -> ProcessRefinerResult:
+def run_refinement(input: RefinementInput) -> RefinementOutput:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
 
@@ -466,14 +466,14 @@ def process_refiner(input: ProcessRefinerInput) -> ProcessRefinerResult:
         traces=state.traces,
     )
 
-    return ProcessRefinerResult(
+    return RefinementOutput(
         output_file_keys=list(set(state.output_files)), metadata=state.metadata
     )
 
 
 def process_jurisdiction(
     jurisdiction_group: JurisdictionReportableConditions,
-    refiner_input: ProcessRefinerInput,
+    refiner_input: RefinementInput,
     state: RefinementState,
 ) -> None:
     """
@@ -559,7 +559,7 @@ def process_condition(
     jurisdiction_code: str,
     reportable_condition: ReportableCondition,
     rsg_cg_payload: ConditionMappingPayload,
-    refiner_input: ProcessRefinerInput,
+    refiner_input: RefinementInput,
     state: RefinementState,
 ) -> None:
     """
@@ -710,7 +710,7 @@ def load_active_configuration(
 
 
 def write_refined_outputs(
-    refiner_input: ProcessRefinerInput,
+    refiner_input: RefinementInput,
     jurisdiction_code: str,
     condition_code: str,
     condition_grouper_name: str,
@@ -758,7 +758,7 @@ def write_refined_outputs(
 
 
 def write_unrefined_rrs(
-    refiner_input: ProcessRefinerInput,
+    refiner_input: RefinementInput,
     state: RefinementState,
 ) -> None:
     """
