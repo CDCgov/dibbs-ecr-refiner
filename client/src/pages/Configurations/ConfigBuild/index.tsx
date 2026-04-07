@@ -28,9 +28,8 @@ import { DraftBanner } from './DraftBanner';
 import { ConfigLockBanner } from './ConfigLockBanner';
 import { Status } from './Status';
 import { useConfigLockRelease } from '../../../hooks/useConfigLockRelease';
-import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
 import { ImportCustomCodes } from './CustomCodes/ImportCustomCodes';
-import { Icon, ModalRef } from '@trussworks/react-uswds';
+import { Icon } from '@trussworks/react-uswds';
 import { ConditionCodeTable, CustomCodesDetail } from './CustomCodes/index';
 import { TesLink } from '../TesLink';
 
@@ -161,6 +160,7 @@ function Builder({
   disabled,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [tableView, setTableView] = useState<TableView>('none');
   const [selectedCodesetId, setSelectedCodesetId] = useState<string | null>(
     null
@@ -169,7 +169,6 @@ function Builder({
     null
   );
 
-  const modalRef = useRef<ModalRef | null>(null);
   const codeSetButtonRefs = useRef<Record<string, HTMLButtonElement | null>>(
     {}
   );
@@ -343,23 +342,23 @@ function Builder({
               <h3 className="mb-2 text-xl font-bold">Custom codes</h3>
               <CustomCodeGroupingParagraph />
               <div className="mt-4! flex items-center gap-3">
-                <ModalToggleButton
-                  modalRef={modalRef}
-                  opener
+                <Button
+                  onClick={() => setIsModalOpen(true)}
                   variant="secondary"
                   aria-label="Add new custom code"
                   disabled={disabled}
                 >
                   Add code
-                </ModalToggleButton>
+                </Button>
 
                 <Button onClick={onCsvImportClick} variant="tertiary">
                   Import from CSV
                 </Button>
               </div>
               <CustomCodesDetail
+                isOpen={isModalOpen}
+                setIsOpen={setIsModalOpen}
                 configurationId={id}
-                modalRef={modalRef}
                 customCodes={custom_codes}
                 deduplicated_codes={deduplicated_codes}
                 disabled={disabled}
