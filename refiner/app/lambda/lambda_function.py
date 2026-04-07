@@ -48,15 +48,17 @@ S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live 
 
 JurisdictionCode = str
 ConditionCode = str
-RefinementMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
+RefinerMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
 
 
 class RefinerCompleteFile(TypedDict):
     """
     Represents the completion file written after all refinement is done.
+
+    Required by AIMS infrastructure.
     """
 
-    RefinerMetadata: RefinementMetadata
+    RefinerMetadata: RefinerMetadata
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
 
@@ -64,11 +66,11 @@ class RefinerCompleteFile(TypedDict):
 @dataclass
 class RefinementState:
     """
-    Mutable state accumulated during refinement processing.
+    Internal mutable state accumulated during refinement processing.
     """
 
     output_files: list[str] = field(default_factory=list)
-    metadata: RefinementMetadata = field(default_factory=dict)
+    metadata: RefinerMetadata = field(default_factory=dict)
     non_active_reportable_conditions: dict[str, set[str]] = field(
         default_factory=lambda: defaultdict(set)
     )
@@ -95,7 +97,7 @@ class ProcessRefinerResult:
     """
 
     output_file_keys: list[str]
-    metadata: RefinementMetadata
+    metadata: RefinerMetadata
 
 
 ###############################################
