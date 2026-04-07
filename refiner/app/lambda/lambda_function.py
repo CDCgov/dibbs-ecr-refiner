@@ -506,55 +506,6 @@ def process_jurisdiction(
         )
 
 
-def load_condition_mapping_for_jurisdiction(
-    s3_client,
-    config_bucket: str,
-    jurisdiction_code: str,
-) -> ConditionMappingPayload | None:
-    """
-    Load the RSG -> CG mapping payload for a jurisdiction.
-    """
-    rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(
-        jurisdiction_id=jurisdiction_code
-    )
-    rsg_cg_mapping = read_rsg_cg_mapping_file(
-        s3_client=s3_client,
-        bucket=config_bucket,
-        key=rsg_cg_mapping_file_key,
-    )
-
-    if not rsg_cg_mapping:
-        logger.info(
-            "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
-            key=rsg_cg_mapping_file_key,
-            jurisdiction_code=jurisdiction_code,
-            operation="skipped",
-        )
-        return None
-
-    return ConditionMappingPayload.from_dict(rsg_cg_mapping)
-
-
-def skip_all_conditions_for_missing_mapping(
-    jurisdiction_code: str,
-    jurisdiction_group: JurisdictionReportableConditions,
-    state: RefinementState,
-) -> None:
-    """
-    Mark every condition in a jurisdiction as skipped when the mapping file is missing.
-    """
-    for condition in jurisdiction_group.conditions:
-        trace = RefinementTrace(
-            jurisdiction_code=jurisdiction_code,
-            rsg_code=condition.code,
-            refinement_outcome="skipped",
-            skip_reason="no_mapping_file",
-        )
-        state.traces.append(trace)
-        state.non_active_reportable_conditions[jurisdiction_code].add(condition.code)
-        state.metadata[jurisdiction_code][condition.code] = False
-
-
 def process_condition(
     jurisdiction_code: str,
     reportable_condition: ReportableCondition,
@@ -630,6 +581,55 @@ def process_condition(
     )
 
     state.metadata[jurisdiction_code][rsg_code] = True
+
+
+def load_condition_mapping_for_jurisdiction(
+    s3_client,
+    config_bucket: str,
+    jurisdiction_code: str,
+) -> ConditionMappingPayload | None:
+    """
+    Load the RSG -> CG mapping payload for a jurisdiction.
+    """
+    rsg_cg_mapping_file_key = get_rsg_cg_mapping_file_key(
+        jurisdiction_id=jurisdiction_code
+    )
+    rsg_cg_mapping = read_rsg_cg_mapping_file(
+        s3_client=s3_client,
+        bucket=config_bucket,
+        key=rsg_cg_mapping_file_key,
+    )
+
+    if not rsg_cg_mapping:
+        logger.info(
+            "Mapping file is empty or does not exist, skipping processing for jurisdiction.",
+            key=rsg_cg_mapping_file_key,
+            jurisdiction_code=jurisdiction_code,
+            operation="skipped",
+        )
+        return None
+
+    return ConditionMappingPayload.from_dict(rsg_cg_mapping)
+
+
+def skip_all_conditions_for_missing_mapping(
+    jurisdiction_code: str,
+    jurisdiction_group: JurisdictionReportableConditions,
+    state: RefinementState,
+) -> None:
+    """
+    Mark every condition in a jurisdiction as skipped when the mapping file is missing.
+    """
+    for condition in jurisdiction_group.conditions:
+        trace = RefinementTrace(
+            jurisdiction_code=jurisdiction_code,
+            rsg_code=condition.code,
+            refinement_outcome="skipped",
+            skip_reason="no_mapping_file",
+        )
+        state.traces.append(trace)
+        state.non_active_reportable_conditions[jurisdiction_code].add(condition.code)
+        state.metadata[jurisdiction_code][condition.code] = False
 
 
 def mark_condition_skipped(
