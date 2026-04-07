@@ -1,45 +1,77 @@
 {
-  "last_updated_utc": "2026-01-13T00:24:56.257483+00:00",
+  "last_updated_utc": "2026-04-02T18:57:50.873579+00:00",
   "files": {
     "condition_grouper_1.0.0.json": {
-      "hash": "51053d6adc28a6f615847e863143898538cb647f1edea389ed75be1fca4885ce",
-      "record_count": 201
+      "hash": "630ab3e46cff499e333530567f522c852c8deb8a34fbcb43ee81233497256c39",
+      "record_count": 201,
+      "error_count": 0,
+      "validation_ran": true
     },
     "reporting_spec_grouper_20241008.json": {
-      "hash": "0074f5d12795937491d26d3e7057c8ee845cad38945efc52a2dd484b61f5761e",
-      "record_count": 242
+      "hash": "7a01bdf8ad9090fdeecf1f28729e5c1e3626f42871b9b8047dd3f1084f57612e",
+      "record_count": 242,
+      "error_count": 0,
+      "validation_ran": true
     },
     "condition_grouper_2.0.0.json": {
-      "hash": "de7ef3338a52710a5203831ae203bcf2010bef5d4bb090840e23c029bf8a27a3",
-      "record_count": 218
+      "hash": "bd80085d2cf6966b328997419aca65676e217372f4425734e0636b5233a99615",
+      "record_count": 218,
+      "error_count": 0,
+      "validation_ran": true
     },
     "reporting_spec_grouper_20250328.json": {
-      "hash": "747ca389148f3eda50277918b90ccf1cbed16a3f867788f8b4e1a2e99197caa2",
-      "record_count": 260
+      "hash": "4b750088a65df6f8757106e28604f8932ec6e6487162be35453a1cb5646f4257",
+      "record_count": 260,
+      "error_count": 0,
+      "validation_ran": true
     },
     "additional_context_grouper_2.0.0.json": {
-      "hash": "9a2fbba6623182a79b6162f7e187f9fc44302ba52fc557b34056ccd848119d51",
-      "record_count": 139
+      "hash": "3ca476cd95d58e21859231adcf0dd82ac8b53123c8406421e5c2e9d3566fbd51",
+      "record_count": 139,
+      "error_count": 0,
+      "validation_ran": true
     },
     "condition_grouper_3.0.0.json": {
-      "hash": "3f27c05acfa32bbbe39daeb7cbce1b75ccad83e37e960b908ff873438dd29583",
-      "record_count": 235
+      "hash": "d222a4ce3606f7540b9a9649a4b68ac6bb3c407931407bd4e686edf05f2fd21a",
+      "record_count": 235,
+      "error_count": 0,
+      "validation_ran": true
     },
     "reporting_spec_grouper_20250829.json": {
-      "hash": "82c38c6873edfb64d55b19ddb9279cfe7dee3b64eba4c42bbda350949e447969",
-      "record_count": 278
+      "hash": "61f03e4900f77d40bb5772cf21b971a07ae2750caebcd16f50934f77c0cd5eff",
+      "record_count": 278,
+      "error_count": 0,
+      "validation_ran": true
     },
     "additional_context_grouper_3.0.0.json": {
-      "hash": "f8d26f0df791d28fca170182445fa9d6ee392420ccc02699abe54ef0fd293fea",
-      "record_count": 139
+      "hash": "c1ce7e64bd8b40e5795389c0cceb6c6d290931be082ad1b636f15b90b159b646",
+      "record_count": 139,
+      "error_count": 0,
+      "validation_ran": true
     },
     "additional_context_grouper_4.0.0.json": {
-      "hash": "59d52bb48cbaafc70697c956af0917d46c8b82ff1775aca7dfeaf113a7db6348",
-      "record_count": 143
+      "hash": "ddbdd98c2f9cd975674fecca3955ac25bcf4c311c4e0c94230dcfc05a8bc91ff",
+      "record_count": 143,
+      "error_count": 0,
+      "validation_ran": true
     },
     "condition_grouper_4.0.0.json": {
-      "hash": "de525a9c19efad73f8f7978b4b49c01621dfbadf1affcd43b485891b2cf13d72",
-      "record_count": 235
+      "hash": "27d427ae035e6126e77da31ee42e7278be17a6720492ddddce23a30a5e4849b7",
+      "record_count": 235,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "additional_context_grouper_5.0.0.json": {
+      "hash": "b9fbbf1a66e79f656f2ce4c032fede8df24a25425927c50722365c507b6549b3",
+      "record_count": 143,
+      "error_count": 0,
+      "validation_ran": true
+    },
+    "condition_grouper_5.0.0.json": {
+      "hash": "0d3ea662528e9ab9fa770acc513923ffa70d99297d750b1a13c216721ebd2fa5",
+      "record_count": 235,
+      "error_count": 0,
+      "validation_ran": true
     }
   }
 }

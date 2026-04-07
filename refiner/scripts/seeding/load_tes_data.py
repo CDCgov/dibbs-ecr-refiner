@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from typing import TypedDict
 
 from config import ENV_PATH, logger
@@ -35,71 +36,187 @@ class ConditionRow(TypedDict):
     icd10_codes: list[Code] | None
     rxnorm_codes: list[Code] | None
     cvx_codes: list[Code] | None
+    coverage_level: str | None
+    coverage_level_reason: str | None
+    coverage_level_date: datetime | None
 
 
-def _build_condition_upsert_rows(
+class ContextGrouperRow(TypedDict):
+    """
+    A context grouper row to upsert into the DB.
+    """
+
+    name: str
+    category: str
+    canonical_url: str
+    code_count: int
+
+
+class ProcessedCondition(TypedDict):
+    """
+    A fully processed condition with its associated context grouper rows.
+    """
+
+    condition: ConditionRow
+    context_groupers: list[ContextGrouperRow]
+
+
+def _build_processed_conditions(
     condition_groupers: list[dict],
     valuesets_map: dict[tuple[str, str], dict],
-) -> list[ConditionRow]:
-    conditions: list[ConditionRow] = []
+) -> list[ProcessedCondition]:
+    results: list[ProcessedCondition] = []
 
     for parent in condition_groupers:
-        conditions.append(ConditionData(parent, valuesets_map).payload)
+        data = ConditionData(parent, valuesets_map)
+        results.append(
+            {
+                "condition": data.payload,
+                "context_groupers": data.context_grouper_payloads,
+            }
+        )
 
-    logger.info(f"🛠️  Total condition rows processed: {len(conditions)}")
-    return conditions
+    logger.info(f"🛠️  Total condition rows processed: {len(results)}")
+    return results
 
 
-def _upsert_condition_rows(
-    db_url: str, db_password: str, conditions: list[ConditionRow]
+def _upsert_conditions_and_groupers(
+    db_url: str,
+    db_password: str,
+    processed: list[ProcessedCondition],
 ) -> None:
+    """
+    Upserts condition rows and their associated context grouper rows.
+
+    Each condition is upserted using a CTE that returns the row's id
+    regardless of whether the row was inserted, updated, or unchanged.
+    Context grouper rows are then upserted as children of that condition.
+
+    Both upserts use IS DISTINCT FROM to avoid touching rows where
+    nothing has changed, preventing spurious updated_at timestamps.
+    """
+
     try:
         with get_db_connection(db_url, db_password) as conn, conn.cursor() as cursor:
             logger.info("⏳ Upserting condition records...")
 
-            upsert_query = """
-                INSERT INTO conditions (
-                    canonical_url,
-                    version,
-                    display_name,
-                    child_rsg_snomed_codes,
-                    loinc_codes,
-                    snomed_codes,
-                    icd10_codes,
-                    rxnorm_codes,
-                    cvx_codes
+            condition_upsert_query = """
+                WITH upsert_condition AS (
+                    INSERT INTO conditions (
+                        canonical_url,
+                        version,
+                        display_name,
+                        child_rsg_snomed_codes,
+                        loinc_codes,
+                        snomed_codes,
+                        icd10_codes,
+                        rxnorm_codes,
+                        cvx_codes,
+                        coverage_level,
+                        coverage_level_reason,
+                        coverage_level_date
+                    )
+                    VALUES (
+                        %(canonical_url)s,
+                        %(version)s,
+                        %(display_name)s,
+                        %(child_rsg_snomed_codes)s,
+                        %(loinc_codes)s,
+                        %(snomed_codes)s,
+                        %(icd10_codes)s,
+                        %(rxnorm_codes)s,
+                        %(cvx_codes)s,
+                        %(coverage_level)s,
+                        %(coverage_level_reason)s,
+                        %(coverage_level_date)s
+                    )
+                    ON CONFLICT (canonical_url, version)
+                    DO UPDATE SET
+                        display_name = EXCLUDED.display_name,
+                        child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
+                        loinc_codes = EXCLUDED.loinc_codes,
+                        snomed_codes = EXCLUDED.snomed_codes,
+                        icd10_codes = EXCLUDED.icd10_codes,
+                        rxnorm_codes = EXCLUDED.rxnorm_codes,
+                        cvx_codes = EXCLUDED.cvx_codes,
+                        coverage_level = EXCLUDED.coverage_level,
+                        coverage_level_reason = EXCLUDED.coverage_level_reason,
+                        coverage_level_date = EXCLUDED.coverage_level_date
+                    WHERE
+                        conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
+                        OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
+                        OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
+                        OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
+                        OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
+                        OR conditions.rxnorm_codes IS DISTINCT FROM EXCLUDED.rxnorm_codes
+                        OR conditions.cvx_codes IS DISTINCT FROM EXCLUDED.cvx_codes
+                        OR conditions.coverage_level IS DISTINCT FROM EXCLUDED.coverage_level
+                        OR conditions.coverage_level_reason IS DISTINCT FROM EXCLUDED.coverage_level_reason
+                        OR conditions.coverage_level_date IS DISTINCT FROM EXCLUDED.coverage_level_date
+                    RETURNING id
                 )
-                VALUES (
-                    %(canonical_url)s,
-                    %(version)s,
-                    %(display_name)s,
-                    %(child_rsg_snomed_codes)s,
-                    %(loinc_codes)s,
-                    %(snomed_codes)s,
-                    %(icd10_codes)s,
-                    %(rxnorm_codes)s,
-                    %(cvx_codes)s
-                )
-                ON CONFLICT (canonical_url, version)
-                DO UPDATE SET
-                    display_name = EXCLUDED.display_name,
-                    child_rsg_snomed_codes = EXCLUDED.child_rsg_snomed_codes,
-                    loinc_codes = EXCLUDED.loinc_codes,
-                    snomed_codes = EXCLUDED.snomed_codes,
-                    icd10_codes = EXCLUDED.icd10_codes,
-                    rxnorm_codes = EXCLUDED.rxnorm_codes,
-                    cvx_codes = EXCLUDED.cvx_codes
-                WHERE
-                    conditions.display_name IS DISTINCT FROM EXCLUDED.display_name
-                    OR conditions.child_rsg_snomed_codes IS DISTINCT FROM EXCLUDED.child_rsg_snomed_codes
-                    OR conditions.loinc_codes IS DISTINCT FROM EXCLUDED.loinc_codes
-                    OR conditions.snomed_codes IS DISTINCT FROM EXCLUDED.snomed_codes
-                    OR conditions.icd10_codes IS DISTINCT FROM EXCLUDED.icd10_codes
-                    OR conditions.rxnorm_codes IS DISTINCT FROM EXCLUDED.rxnorm_codes
-                    OR conditions.cvx_codes IS DISTINCT FROM EXCLUDED.cvx_codes
+                SELECT id FROM upsert_condition
+
+                UNION ALL
+
+                SELECT id
+                FROM conditions
+                WHERE canonical_url = %(canonical_url)s
+                  AND version = %(version)s
+                  AND NOT EXISTS (SELECT 1 FROM upsert_condition)
+
+                LIMIT 1
             """
 
-            cursor.executemany(upsert_query, conditions)
+            context_grouper_upsert_query = """
+                INSERT INTO conditions_context_groupers (
+                    condition_id,
+                    name,
+                    category,
+                    canonical_url,
+                    code_count
+                )
+                VALUES (
+                    %(condition_id)s,
+                    %(name)s,
+                    %(category)s,
+                    %(canonical_url)s,
+                    %(code_count)s
+                )
+                ON CONFLICT (condition_id, canonical_url)
+                DO UPDATE SET
+                    name = EXCLUDED.name,
+                    category = EXCLUDED.category,
+                    code_count = EXCLUDED.code_count
+                WHERE
+                    conditions_context_groupers.name IS DISTINCT FROM EXCLUDED.name
+                    OR conditions_context_groupers.category IS DISTINCT FROM EXCLUDED.category
+                    OR conditions_context_groupers.code_count IS DISTINCT FROM EXCLUDED.code_count
+            """
+
+            for item in processed:
+                cond = item["condition"]
+
+                cursor.execute(condition_upsert_query, cond)
+                condition_id = cursor.fetchone()[0]
+
+                groupers = item.get("context_groupers", [])
+                if not groupers:
+                    continue
+
+                grouper_params = [
+                    {
+                        "condition_id": condition_id,
+                        "name": cg["name"],
+                        "category": cg["category"],
+                        "canonical_url": cg["canonical_url"],
+                        "code_count": cg["code_count"],
+                    }
+                    for cg in groupers
+                ]
+
+                cursor.executemany(context_grouper_upsert_query, grouper_params)
+
             conn.commit()
 
     except Exception:
@@ -119,7 +236,7 @@ def _build_condition_groupers(valuesets_map: dict[tuple[str, str], dict]) -> lis
 
 def load_tes_data(db_url: str, db_password: str) -> None:
     """
-    Loads condition grouper data from the TES and upserts condition rows into the database.
+    Loads condition grouper data from the TES and upserts condition rows and their associated context grouper rows into the database.
 
     New rows are inserted. Existing rows with the same (canonical_url, version)
     are updated only when relevant fields have changed.
@@ -133,18 +250,18 @@ def load_tes_data(db_url: str, db_password: str) -> None:
 
     condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
 
-    upsertable_condition_rows = _build_condition_upsert_rows(
+    processed = _build_processed_conditions(
         condition_groupers=condition_groupers,
         valuesets_map=all_valuesets_map,
     )
 
-    if not upsertable_condition_rows:
+    if not processed:
         logger.info("⚠️  No conditions found to upsert.")
         return
 
-    logger.info(f"⬆️  Total conditions to upsert: {len(upsertable_condition_rows)}")
-    _upsert_condition_rows(
-        db_url=db_url, db_password=db_password, conditions=upsertable_condition_rows
+    logger.info(f"⬆️  Total conditions to upsert: {len(processed)}")
+    _upsert_conditions_and_groupers(
+        db_url=db_url, db_password=db_password, processed=processed
     )
 
     logger.info("🏁 Done!")
