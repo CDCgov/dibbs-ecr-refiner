@@ -1,18 +1,17 @@
-import {
-  Icon,
-  Modal,
-  ModalFooter,
-  ModalHeading,
-  ModalRef,
-} from '@trussworks/react-uswds';
+import { Icon } from '@trussworks/react-uswds';
 import { useNavigate } from 'react-router';
 import { useCreateConfiguration } from '../../../api/configurations/configurations';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
 import { Button } from '../../../components/Button';
-import { useRef } from 'react';
-import classNames from 'classnames';
-import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
+import { useState } from 'react';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '../../../components/Modal';
 
 interface DraftBannerProps {
   draftId: string | null;
@@ -27,7 +26,7 @@ export function DraftBanner({
   latestVersion,
   step,
 }: DraftBannerProps) {
-  const modalRef = useRef<ModalRef>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   const newDraftText =
     'Previous versions cannot be modified. You must draft a new version to make changes.';
@@ -53,16 +52,11 @@ export function DraftBanner({
           Go to draft
         </Button>
       ) : (
-        <ModalToggleButton
-          modalRef={modalRef}
-          opener
-          className={classNames('self-start')}
-        >
-          Draft a new version
-        </ModalToggleButton>
+        <Button onClick={() => setIsOpen(true)}>Draft a new version</Button>
       )}
       <NewDraftModal
-        modalRef={modalRef}
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
         conditionId={conditionId}
         version={latestVersion}
       />
@@ -71,11 +65,17 @@ export function DraftBanner({
 }
 
 interface NewDraftModalProps {
-  modalRef: React.Ref<ModalRef | null>;
+  isOpen: boolean;
+  onClose: () => void;
   conditionId: string;
   version: number;
 }
-function NewDraftModal({ modalRef, conditionId, version }: NewDraftModalProps) {
+function NewDraftModal({
+  isOpen,
+  onClose,
+  conditionId,
+  version,
+}: NewDraftModalProps) {
   const { mutate: createConfig } = useCreateConfiguration();
   const showToast = useToast();
   const navigate = useNavigate();
@@ -84,20 +84,18 @@ function NewDraftModal({ modalRef, conditionId, version }: NewDraftModalProps) {
   const newVersion = version + 1;
 
   return (
-    <Modal
-      id="draft-modal"
-      className="align-top!"
-      ref={modalRef}
-      aria-labelledby="draft-modal-heading"
-      aria-describedby="draft-modal-text"
-    >
-      <ModalHeading id="draft-modal-heading">Draft a new version?</ModalHeading>
-      <p id="draft-modal-text" className="my-6">
-        Are you sure you want to draft a new version? This will clone the latest
-        version (Version {version}) as the basis for a new draft version
-        (Version {newVersion}).
-      </p>
-      <ModalFooter className="flex justify-end">
+    <Modal open={isOpen} onClose={onClose} position="top">
+      <ModalHeader>
+        <ModalTitle>Draft a new version?</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p className='max-w-100'>
+          Are you sure you want to draft a new version? This will clone the
+          latest version (Version {version}) as the basis for a new draft
+          version (Version {newVersion}).
+        </p>
+      </ModalBody>
+      <ModalFooter align="right">
         <Button
           onClick={() =>
             createConfig(

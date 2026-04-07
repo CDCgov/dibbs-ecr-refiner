@@ -251,7 +251,7 @@ export function ConditionCodeTable({
             className="w-full border-separate border-spacing-y-4"
             aria-label={`Codes in set with ID ${conditionId}`}
           >
-            <thead className="bg-opacity-100 sticky -top-6 z-10 h-10 bg-white text-left">
+            <thead className="bg-opacity-100 sticky -top-6 h-10 bg-white text-left">
               <tr>
                 <th>Code</th>
                 <th>Code system</th>
