@@ -688,6 +688,7 @@ def log_refinement_summary(
     )
 
 
+@logger.inject_lambda_context(clear_state=True)
 def lambda_handler(event, context):
     """
     Main Lambda handler function.
@@ -713,7 +714,9 @@ def lambda_handler(event, context):
 
         # Process each SQS record
         for record in event["Records"]:
-            logger.info(f"Processing record: {record.get('messageId')}")
+            record_id = record.get("messageId")
+            logger.append_keys(record_id=record_id)
+            logger.info(f"Processing record: {record_id}")
 
             # Initialize the S3 client
             region = record["awsRegion"]
