@@ -106,7 +106,7 @@ export function Footer() {
             </span>
           </ExternalLink>
         </div>
-        <div className="flex max-w-2/5 flex-col gap-2 lg:items-end">
+        <div className="flex max-w-3/5 flex-col gap-2 lg:items-end">
           <p className="text-white">
             For feedback, recommendations, or questions, please reach out to the{' '}
             <ExternalLink
