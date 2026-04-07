@@ -89,7 +89,7 @@ function NewDraftModal({
         <ModalTitle>Draft a new version?</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <p className='max-w-100'>
+        <p className="max-w-100">
           Are you sure you want to draft a new version? This will clone the
           latest version (Version {version}) as the basis for a new draft
           version (Version {newVersion}).
