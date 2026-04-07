@@ -46,7 +46,6 @@ REFINER_COMPLETE_PREFIX = get_env_variable("REFINER_COMPLETE_PREFIX")
 S3_BUCKET_CONFIG = get_env_variable("S3_BUCKET_CONFIG")
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")  # No need to set this in a live env
 
-# Type helpers
 JurisdictionCode = str
 ConditionCode = str
 RefinementMetadata = dict[JurisdictionCode, dict[ConditionCode, bool]]
@@ -60,6 +59,164 @@ class RefinerCompleteFile(TypedDict):
     RefinerMetadata: RefinementMetadata
     RefinerSkip: bool
     RefinerOutputFiles: list[str]
+
+
+@dataclass
+class RefinementState:
+    """
+    Mutable state accumulated during refinement processing.
+    """
+
+    output_files: list[str] = field(default_factory=list)
+    metadata: RefinementMetadata = field(default_factory=dict)
+    non_active_reportable_conditions: dict[str, set[str]] = field(
+        default_factory=lambda: defaultdict(set)
+    )
+    traces: list[RefinementTrace] = field(default_factory=list)
+
+
+@dataclass
+class ProcessRefinerInput:
+    """
+    Information required as an input by the refinement process.
+    """
+
+    xml_files: XMLFiles
+    s3_client: Any
+    config_bucket_name: str
+    output_bucket_name: str
+    persistence_id: str
+
+
+@dataclass
+class ProcessRefinerResult:
+    """
+    All metadata required by AIMS post-refinement.
+    """
+
+    output_file_keys: list[str]
+    metadata: RefinementMetadata
+
+
+###############################################
+# Lambda entry point
+###############################################
+@logger.inject_lambda_context(clear_state=True)
+def lambda_handler(event, context) -> dict:
+    """
+    Main Lambda handler function.
+
+    Processes S3 events from SQS to refine eICR documents.
+
+    Event structure:
+    - Records: List of SQS records
+    - Each record.body contains an EventBridge S3 event JSON string
+    - The S3 event detail contains bucket name and object key
+
+    Parameters:
+        event: Dict containing the Lambda function event data from SQS
+        context: Lambda runtime context
+
+    Returns:
+        Dict containing status message
+    """
+
+    try:
+        logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
+        s3_config_bucket_name = S3_BUCKET_CONFIG
+
+        # Process each SQS record
+        for record in event["Records"]:
+            record_id = record.get("messageId")
+            logger.append_keys(record_id=record_id)
+            logger.info(f"Processing record: {record_id}")
+
+            # Initialize the S3 client
+            region = record["awsRegion"]
+            s3_client = boto3.client(
+                "s3",
+                region_name=region,
+                endpoint_url=S3_ENDPOINT_URL,
+            )
+
+            # Parse the EventBridge S3 event from the SQS message body
+            s3_event = json.loads(record["body"])
+            s3_object_key = s3_event["detail"]["object"]["key"]
+            s3_bucket_name = s3_event["detail"]["bucket"]["name"]
+
+            logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
+
+            # Extract persistence_id from the RR object key
+            persistence_id = extract_persistence_id(s3_object_key, REFINER_INPUT_PREFIX)
+            logger.info(f"Extracted persistence_id: {persistence_id}")
+
+            # S3 GET RR
+            logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
+            rr_content = get_s3_object_content(
+                s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
+            )
+            logger.info("Retrieved RR from s3")
+
+            # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
+            eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
+            logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
+
+            # S3 GET eICR
+            eicr_content = get_s3_object_content(
+                s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
+            )
+            logger.info("Retrieved eICR from s3")
+
+            # Create XMLFiles container
+            xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
+
+            # Process Refiner (eICR, RR) -> Refiner Output []
+            logger.info("Starting refinement process")
+            result = process_refiner(
+                input=ProcessRefinerInput(
+                    xml_files=xml_files,
+                    s3_client=s3_client,
+                    config_bucket_name=s3_config_bucket_name,
+                    output_bucket_name=s3_bucket_name,
+                    persistence_id=persistence_id,
+                )
+            )
+
+            # Create RefinerComplete file
+            complete_file: RefinerCompleteFile = {
+                "RefinerMetadata": result.metadata,
+                "RefinerSkip": False,
+                "RefinerOutputFiles": result.output_file_keys,
+            }
+
+            # Construct RefinerComplete path: RefinerComplete/<persistance_id>
+            complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
+
+            # PUT RefinerCompleteFile
+            logger.info(
+                f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
+            )
+            s3_client.put_object(
+                Bucket=s3_bucket_name,
+                Key=complete_key,
+                Body=json.dumps(complete_file, indent=2),
+                ContentType="application/json",
+            )
+
+            logger.info(
+                f"Successfully processed {len(result.output_file_keys)} refined outputs"
+            )
+
+        return {"statusCode": 200, "message": "Refiner processed successfully"}
+
+    except Exception as e:
+        logger.error(f"Error processing: {str(e)}", exception=e)
+        raise
+
+
+###############################################
+# Helper functions
+###############################################
 
 
 def extract_persistence_id(object_key: str, input_prefix: str) -> str:
@@ -251,35 +408,6 @@ def read_configuration_file(s3_client, bucket: str, key: str) -> dict:
     return parse_s3_content_to_dict(config_file_content)
 
 
-@dataclass
-class RefinementState:
-    """
-    Mutable state accumulated during refinement processing.
-    """
-
-    output_files: list[str] = field(default_factory=list)
-    metadata: RefinementMetadata = field(default_factory=dict)
-    non_active_reportable_conditions: dict[str, set[str]] = field(
-        default_factory=lambda: defaultdict(set)
-    )
-    traces: list[RefinementTrace] = field(default_factory=list)
-
-
-@dataclass
-class ProcessRefinerInput:
-    xml_files: XMLFiles
-    s3_client: Any
-    config_bucket_name: str
-    output_bucket_name: str
-    persistence_id: str
-
-
-@dataclass
-class ProcessRefinerResult:
-    output_file_keys: list[str]
-    metadata: RefinementMetadata
-
-
 def process_refiner(input: ProcessRefinerInput) -> ProcessRefinerResult:
     """
     Process eICR and RR through the refiner for all jurisdictions and conditions.
@@ -347,7 +475,7 @@ def process_jurisdiction(
     state: RefinementState,
 ) -> None:
     """
-    Process all reportable conditions for a single jurisdiction.
+    Process all reportable conditions for a given jurisdiction.
     """
     jurisdiction_code = jurisdiction_group.jurisdiction.upper()
     state.metadata.setdefault(jurisdiction_code, {})
@@ -490,9 +618,7 @@ def process_condition(
     state.traces.append(trace)
 
     write_refined_outputs(
-        s3_client=refiner_input.s3_client,
-        output_bucket_name=refiner_input.output_bucket_name,
-        persistence_id=refiner_input.persistence_id,
+        refiner_input=refiner_input,
         jurisdiction_code=jurisdiction_code,
         condition_grouper_name=cg_metadata.name,
         result=result,
@@ -512,7 +638,7 @@ def mark_condition_skipped(
     state: RefinementState,
 ) -> None:
     """
-    Centralize bookkeeping for skipped conditions.
+    Helper to mark a condition as "skipped" during refinement.
     """
     trace.refinement_outcome = "skipped"
     trace.skip_reason = reason
@@ -531,7 +657,7 @@ def load_active_configuration(
     trace: RefinementTrace,
 ) -> ProcessedConfiguration | None:
     """
-    Resolve and load the active processed configuration for a jurisdiction/condition.
+    Attempts to find and load the active configuration.
     """
     current_file_key = get_current_file_key(
         jurisdiction_id=jurisdiction_code,
@@ -582,9 +708,7 @@ def load_active_configuration(
 
 
 def write_refined_outputs(
-    s3_client,
-    output_bucket_name: str,
-    persistence_id: str,
+    refiner_input: ProcessRefinerInput,
     jurisdiction_code: str,
     condition_code: str,
     condition_grouper_name: str,
@@ -597,12 +721,12 @@ def write_refined_outputs(
     """
     output_key = (
         f"{REFINER_OUTPUT_PREFIX}"
-        f"{persistence_id}/{jurisdiction_code}/{condition_grouper_name}"
+        f"{refiner_input.persistence_id}/{jurisdiction_code}/{condition_grouper_name}"
     )
 
     eicr_output_key = f"{output_key}/refined_eICR.xml"
-    s3_client.put_object(
-        Bucket=output_bucket_name,
+    refiner_input.s3_client.put_object(
+        Bucket=refiner_input.output_bucket_name,
         Key=eicr_output_key,
         Body=result.refined_eicr.encode("utf-8"),
         ContentType="application/xml",
@@ -611,8 +735,8 @@ def write_refined_outputs(
     state.output_files.append(eicr_output_key)
 
     rr_output_key = f"{output_key}/refined_RR.xml"
-    s3_client.put_object(
-        Bucket=output_bucket_name,
+    refiner_input.s3_client.put_object(
+        Bucket=refiner_input.output_bucket_name,
         Key=rr_output_key,
         Body=result.refined_rr.encode("utf-8"),
         ContentType="application/xml",
@@ -695,116 +819,3 @@ def log_refinement_summary(
         ],
         operation="refinement_complete",
     )
-
-
-@logger.inject_lambda_context(clear_state=True)
-def lambda_handler(event, context) -> dict:
-    """
-    Main Lambda handler function.
-
-    Processes S3 events from SQS to refine eICR documents.
-
-    Event structure:
-    - Records: List of SQS records
-    - Each record.body contains an EventBridge S3 event JSON string
-    - The S3 event detail contains bucket name and object key
-
-    Parameters:
-        event: Dict containing the Lambda function event data from SQS
-        context: Lambda runtime context
-
-    Returns:
-        Dict containing status message
-    """
-
-    try:
-        logger.info(f"Received event with {len(event.get('Records', []))} record(s)")
-        s3_config_bucket_name = S3_BUCKET_CONFIG
-
-        # Process each SQS record
-        for record in event["Records"]:
-            record_id = record.get("messageId")
-            logger.append_keys(record_id=record_id)
-            logger.info(f"Processing record: {record_id}")
-
-            # Initialize the S3 client
-            region = record["awsRegion"]
-            s3_client = boto3.client(
-                "s3",
-                region_name=region,
-                endpoint_url=S3_ENDPOINT_URL,
-            )
-
-            # Parse the EventBridge S3 event from the SQS message body
-            s3_event = json.loads(record["body"])
-            s3_object_key = s3_event["detail"]["object"]["key"]
-            s3_bucket_name = s3_event["detail"]["bucket"]["name"]
-
-            logger.info(f"Processing S3 Object: s3://{s3_bucket_name}/{s3_object_key}")
-
-            # Extract persistence_id from the RR object key
-            persistence_id = extract_persistence_id(s3_object_key, REFINER_INPUT_PREFIX)
-            logger.info(f"Extracted persistence_id: {persistence_id}")
-
-            # S3 GET RR
-            logger.info(f"Retrieving RR from s3://{s3_bucket_name}/{s3_object_key}")
-            rr_content = get_s3_object_content(
-                s3_client=s3_client, bucket=s3_bucket_name, key=s3_object_key
-            )
-            logger.info("Retrieved RR from s3")
-
-            # Construct eICR path: s3://<bucket>/<EICR_Input_Prefix>/<persistance_id>
-            eicr_key = f"{EICR_INPUT_PREFIX}{persistence_id}"
-            logger.info(f"Retrieving eICR from s3://{s3_bucket_name}/{eicr_key}")
-
-            # S3 GET eICR
-            eicr_content = get_s3_object_content(
-                s3_client=s3_client, bucket=s3_bucket_name, key=eicr_key
-            )
-            logger.info("Retrieved eICR from s3")
-
-            # Create XMLFiles container
-            xml_files = XMLFiles(eicr=eicr_content, rr=rr_content)
-
-            # Process Refiner (eICR, RR) -> Refiner Output []
-            logger.info("Starting refinement process")
-            result = process_refiner(
-                input=ProcessRefinerInput(
-                    xml_files=xml_files,
-                    s3_client=s3_client,
-                    config_bucket_name=s3_config_bucket_name,
-                    output_bucket_name=s3_bucket_name,
-                    persistence_id=persistence_id,
-                )
-            )
-
-            # Create RefinerComplete file
-            complete_file: RefinerCompleteFile = {
-                "RefinerMetadata": result.metadata,
-                "RefinerSkip": False,
-                "RefinerOutputFiles": result.output_file_keys,
-            }
-
-            # Construct RefinerComplete path: RefinerComplete/<persistance_id>
-            complete_key = f"{REFINER_COMPLETE_PREFIX}{persistence_id}"
-
-            # PUT RefinerCompleteFile
-            logger.info(
-                f"Writing completion file to s3://{s3_bucket_name}/{complete_key}"
-            )
-            s3_client.put_object(
-                Bucket=s3_bucket_name,
-                Key=complete_key,
-                Body=json.dumps(complete_file, indent=2),
-                ContentType="application/json",
-            )
-
-            logger.info(
-                f"Successfully processed {len(result.output_file_keys)} refined outputs"
-            )
-
-        return {"statusCode": 200, "message": "Refiner processed successfully"}
-
-    except Exception as e:
-        logger.error(f"Error processing: {str(e)}", exception=e)
-        raise
