@@ -160,7 +160,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
           </div>
         )}
       </ModalBody>
-      <ModalFooter>
+      <ModalFooter align="right">
         <Button
           variant="primary"
           disabled={!selectedCondition}

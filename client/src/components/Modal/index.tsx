@@ -52,15 +52,34 @@ function Modal({
 
           <DialogPanel
             className={classNames(
-              'border-base-lighter relative z-50 w-full max-w-lg rounded-sm border bg-white shadow-lg',
+              'border-base-lighter relative z-50 w-full max-w-lg rounded-sm border bg-white p-6 shadow-lg',
               className
             )}
           >
+            <ModalCloseButton />
             {children}
           </DialogPanel>
         </div>
       </Dialog>
     </ModalContext.Provider>
+  );
+}
+
+function ModalCloseButton() {
+  const { onClose } = useModalContext();
+
+  return (
+    <button
+      aria-label="Close this window"
+      onClick={onClose}
+      className="absolute top-4 right-4 rounded hover:cursor-pointer"
+    >
+      <Icon.Close
+        className="text-gray-500 hover:text-gray-900"
+        size={4}
+        aria-hidden
+      />
+    </button>
   );
 }
 
@@ -70,25 +89,7 @@ interface ModalSectionProps {
 }
 
 function ModalHeader({ children }: ModalSectionProps) {
-  const { onClose } = useModalContext();
-
-  return (
-    <div className="relative px-6 pt-6 pb-4">
-      <button
-        aria-label="Close this window"
-        onClick={onClose}
-        className="absolute top-4 right-4 rounded hover:cursor-pointer"
-      >
-        <Icon.Close
-          className="text-gray-500 hover:text-gray-900"
-          size={4}
-          aria-hidden
-        />
-      </button>
-
-      <div className="mx-auto mt-6 w-full pr-10 pl-6">{children}</div>
-    </div>
-  );
+  return <div className="mx-auto mt-6 w-full pr-10 pb-6 pl-6">{children}</div>;
 }
 
 function ModalTitle({ children, className }: ModalSectionProps) {
@@ -106,16 +107,33 @@ function ModalTitle({ children, className }: ModalSectionProps) {
 
 function ModalBody({ children, className }: ModalSectionProps) {
   return (
-    <div className={classNames('mx-auto w-full max-w-md px-6 pb-6', className)}>
+    <div className={classNames('px-6 pb-6', className)}>
       <div className="flex flex-col gap-4 text-left">{children}</div>
     </div>
   );
 }
 
-function ModalFooter({ children, className }: ModalSectionProps) {
+interface ModalFooterProps extends ModalSectionProps {
+  align?: 'left' | 'right' | 'between' | 'center';
+}
+
+function ModalFooter({
+  children,
+  className,
+  align = 'left',
+}: ModalFooterProps) {
   return (
     <div className={classNames('py-4', className)}>
-      <div className="mx-auto flex w-full max-w-md gap-3 pl-6">{children}</div>
+      <div
+        className={classNames('mx-auto flex w-full max-w-md gap-3 px-6', {
+          'justify-start': align === 'left',
+          'justify-end': align === 'right',
+          'justify-center': align === 'center',
+          'justify-between': align === 'between',
+        })}
+      >
+        {children}
+      </div>
     </div>
   );
 }
