@@ -69,7 +69,7 @@ class RefinementState:
     Internal mutable state accumulated during refinement processing.
     """
 
-    output_files: list[str] = field(default_factory=list)
+    output_files: set[str] = field(default_factory=set)
     metadata: RefinerMetadata = field(default_factory=dict)
     non_active_reportable_conditions: dict[str, set[str]] = field(
         default_factory=lambda: defaultdict(set)
@@ -467,7 +467,7 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
     )
 
     return RefinementOutput(
-        output_file_keys=list(set(state.output_files)), metadata=state.metadata
+        output_file_keys=list(state.output_files), metadata=state.metadata
     )
 
 
@@ -734,7 +734,7 @@ def write_refined_outputs(
         ContentType="application/xml",
     )
 
-    state.output_files.append(eicr_output_key)
+    state.output_files.add(eicr_output_key)
 
     rr_output_key = f"{output_key}/refined_RR.xml"
     refiner_input.s3_client.put_object(
@@ -744,7 +744,7 @@ def write_refined_outputs(
         ContentType="application/xml",
     )
 
-    state.output_files.append(rr_output_key)
+    state.output_files.add(rr_output_key)
 
     logger.info(
         "Condition refinement complete.",
@@ -783,7 +783,7 @@ def write_unrefined_rrs(
             Body=unrefined_rr_content.encode("utf-8"),
             ContentType="application/xml",
         )
-        state.output_files.append(rr_output_key)
+        state.output_files.add(rr_output_key)
 
         logger.info(
             "Created unrefined conditions RR",
@@ -796,7 +796,7 @@ def write_unrefined_rrs(
 
 def log_refinement_summary(
     persistence_id: str,
-    output_files: list[str],
+    output_files: set[str],
     traces: list[RefinementTrace],
 ) -> None:
     """
@@ -805,7 +805,7 @@ def log_refinement_summary(
     logger.info(
         "Refinement complete.",
         persistence_id=persistence_id,
-        output_file_urls=output_files,
+        output_file_urls=list(output_files),
         traces=[
             {
                 "jurisdiction": t.jurisdiction_code,
