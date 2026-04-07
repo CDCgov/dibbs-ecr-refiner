@@ -106,7 +106,7 @@ export function Footer() {
             </span>
           </ExternalLink>
         </div>
-        <div className="flex flex-col gap-2 lg:items-end lg:gap-1">
+        <div className="flex max-w-2/5 flex-col gap-2 lg:items-end">
           <p className="text-white">
             For feedback, recommendations, or questions, please reach out to the{' '}
             <ExternalLink
@@ -119,7 +119,9 @@ export function Footer() {
           </p>
           <p className="text-gray-cool-20 text-xs">
             Version code:{' '}
-            {import.meta.env.VITE_GIT_HASH?.slice(0, 7) ?? 'local'}
+            {import.meta.env.VITE_GIT_VERSION ||
+              import.meta.env.VITE_GIT_HASH?.slice(0, 7) ||
+              'local'}{' '}
           </p>
         </div>
       </div>
