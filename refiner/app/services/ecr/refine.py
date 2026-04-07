@@ -63,12 +63,13 @@ def get_file_size_in_bytes(file_content: str) -> int:
     return len(file_content.encode("utf-8"))
 
 
-def get_file_size_in_megabytes(file_content: str) -> int:
+def get_file_size_in_mib(file_content: str) -> float:
     """
-    Returns file size in megabytes.
+    Returns file size in mebibytes (MiB).
     """
 
-    return round(get_file_size_in_bytes(file_content) / 1_000_000)
+    size_mb = get_file_size_in_bytes(file_content) / (1024 * 1024)
+    return round(size_mb, 3)
 
 
 def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -> int:

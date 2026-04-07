@@ -24,7 +24,10 @@ from ..services.aws.s3_keys import (
     get_current_file_key,
     get_rsg_cg_mapping_file_key,
 )
-from ..services.ecr.refine import refine_rr_for_unconfigured_conditions
+from ..services.ecr.refine import (
+    get_file_size_in_mib,
+    refine_rr_for_unconfigured_conditions,
+)
 from ..services.pipeline import (
     RefinementResult,
     RefinementTrace,
@@ -300,6 +303,12 @@ def process_refiner(input: ProcessRefinerInput) -> ProcessRefinerResult:
     Returns:
         ProcessedResult: the result of the refinement process
     """
+    logger.info(
+        "Analyzing input eICR",
+        eicr_size_mib=get_file_size_in_mib(file_content=input.xml_files.eicr),
+        operation="input_analysis",
+    )
+
     reportable_groups = discover_reportable_conditions(input.xml_files)
     logger.info(
         "Discovered reportable conditions from RR",
@@ -681,6 +690,7 @@ def log_refinement_summary(
                 "skip_reason": t.skip_reason,
                 "config_version": t.configuration_version,
                 "eicr_size_reduction": t.eicr_size_reduction_percentage,
+                "eicr_size_mb": t.eicr_size_mib,
             }
             for t in traces
         ],
@@ -689,7 +699,7 @@ def log_refinement_summary(
 
 
 @logger.inject_lambda_context(clear_state=True)
-def lambda_handler(event, context):
+def lambda_handler(event, context) -> dict:
     """
     Main Lambda handler function.
 
