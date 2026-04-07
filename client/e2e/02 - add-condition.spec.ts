@@ -328,6 +328,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .getByLabel('Condition')
       .selectOption({ label: configurationToTest });
 
+    await page.getByRole('button', { name: 'Page 2' }).click();
     await expect(
       page
         .getByRole('row')
@@ -337,6 +338,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
           hasText: "Associated 'Down Syndrome' code set",
         })
     ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Page 1' }).click();
 
     await expect(
       page
