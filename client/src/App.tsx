@@ -13,6 +13,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Spinner } from './components/Spinner';
 import { SessionRedirect } from './pages/SessionRedirect';
 import { ActivityLog } from './pages/ActivityLog';
+import { AppUpdates } from './pages/AppUpdates';
 
 export function App() {
   const [user, isLoading] = useLogin();
@@ -46,6 +47,7 @@ export function App() {
           path="/configurations/:id/activate"
           element={<ConfigActivate />}
         />
+        <Route path="/app-updates" element={<AppUpdates />} />
 
         <Route path="/testing" element={<Testing />} />
         <Route path="*" element={<NotFound />} />
