@@ -531,7 +531,7 @@ export function ImportCustomCodes({
                   }
                   id="csv-preview-search"
                   name="csv-preview-search"
-                  className="w-full min-w-[240px]"
+                  className="w-full min-w-60"
                 />
               </div>
             </div>

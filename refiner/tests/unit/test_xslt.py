@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from app.services.xslt import XSLTTransformationError, transform_xml_to_html
+from app.services.xslt import XSLTTransformationError, _transform_xml_to_html
 
 BAD_CDA_XML = b"<ClinicalDocument><bad><xml></ClinicalDocument>"  # Malformed XML
 MINIMAL_XSLT = b"""<?xml version="1.0" encoding="UTF-8"?>
@@ -25,7 +25,7 @@ def test_transform_xml_to_html_malformed_xml() -> None:
         xslt_file.write(MINIMAL_XSLT)
         xslt_file.flush()
         with pytest.raises(XSLTTransformationError):
-            transform_xml_to_html(
+            _transform_xml_to_html(
                 BAD_CDA_XML, xslt_file.name, logging.getLogger("xslt-test")
             )
 
@@ -43,6 +43,6 @@ def test_transform_xml_to_html_malformed_xslt() -> None:
         xslt_file.write(BAD_XSLT)
         xslt_file.flush()
         with pytest.raises(XSLTTransformationError):
-            transform_xml_to_html(
+            _transform_xml_to_html(
                 VALID_CDA_XML, xslt_file.name, logging.getLogger("xslt-test")
             )

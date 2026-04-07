@@ -33,10 +33,10 @@ SECTION_PROCESSING_SKIP: Final[set[str]] = {
 
 # these OIDs are stable, HL7-registered identifiers that have not changed
 # across any version of C-CDA or eICR
-LOINC_OID = "2.16.840.1.113883.6.1"
-ICD10_OID = "2.16.840.1.113883.6.90"
-RXNORM_OID = "2.16.840.1.113883.6.88"
 CVX_OID = "2.16.840.1.113883.12.292"
+ICD10_OID = "2.16.840.1.113883.6.90"
+LOINC_OID = "2.16.840.1.113883.6.1"
+RXNORM_OID = "2.16.840.1.113883.6.88"
 SNOMED_OID = "2.16.840.1.113883.6.96"
 
 # NOTE:
@@ -51,13 +51,23 @@ SNOMED_OID = "2.16.840.1.113883.6.96"
 # - CDAR2_IG_PHCASERPT_R2_STU3_1_1_Vol2_2022JUL_2024OCT
 
 
+# IMPORTANT: code system reversal (rule 2 in diagnosis sections):
+# the IG specifies observation/value SHOULD be SNOMED (CONF:1198-9058) with
+# translation MAY be ICD-10-CM (CONF:1198-16750). however, testing shows some
+# encounter entries and problem entries reverse this -> ICD-10-CM on value,
+# SNOMED on translation. rule 2 catches these using structural precedence:
+# * rule 1 claims entries with SNOMED on value
+# * rule 2 only fires when value has non-SNOMED codes
+
 # Admission Diagnosis (46241-6)
 # IG template: Hospital Admission Diagnosis (V3) wraps Problem Observation (V3)
 #   via entryRelationship[@typeCode='SUBJ'] (CONF:1198-7674, CONF:1198-7675)
-# primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
-# translation:  observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
-# prune level:  act/entryRelationship[@typeCode='SUBJ'] (individual diagnoses)
+# prune level: act/entryRelationship[@typeCode='SUBJ'] (individual diagnoses)
+#   typeCode='SUBJ' is a SHALL constraint (CONF:1198-7675) -> safe to filter on
 _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
+    # rule 1 — IG-conformant: SNOMED on value, ICD-10-CM on translation
+    # primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
+    # translation: observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
@@ -71,6 +81,24 @@ _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
+        prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
+    ),
+    # rule 2 — reversed: ICD-10-CM on value, SNOMED on translation
+    # not IG-conformant but observed in real data; structural precedence
+    # ensures this only fires when rule 1 finds no SNOMED on value
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value"
+        ),
+        code_system_oid=ICD10_OID,
+        translation_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value/hl7:translation"
+        ),
+        translation_code_system_oid=SNOMED_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
@@ -89,11 +117,11 @@ _ADMISSION_MEDICATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
 
 # Discharge Diagnosis (11535-2)
 # IG template: Hospital Discharge Diagnosis (V3) wraps Problem Observation (V3)
-#   via entryRelationship[@typeCode='SUBJ'] (CONF:1198-7680, CONF:1198-7681, CONF:1198-15536)
-# primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
-# translation:  observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
-# prune level:  act/entryRelationship[@typeCode='SUBJ'] (individual diagnoses)
+#   via entryRelationship[@typeCode='SUBJ'] (CONF:1198-7666, CONF:1198-7667, CONF:1198-15536)
+# prune level: act/entryRelationship[@typeCode='SUBJ'] (individual diagnoses)
+#   typeCode='SUBJ' is a SHALL constraint (CONF:1198-7667) — safe to filter on
 _DISCHARGE_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
+    # rule 1 — IG-conformant: SNOMED on value, ICD-10-CM on translation
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
@@ -109,15 +137,36 @@ _DISCHARGE_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         translation_code_system_oid=ICD10_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
+    # rule 2 — reversed: ICD-10-CM on value, SNOMED on translation
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value"
+        ),
+        code_system_oid=ICD10_OID,
+        translation_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value/hl7:translation"
+        ),
+        translation_code_system_oid=SNOMED_OID,
+        prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
+    ),
 ]
 
 # Encounters (46240-8)
 # IG template: Encounter Diagnosis (V3) wraps Problem Observation (V3)
 #   via entryRelationship[@typeCode='SUBJ'] (CONF:1198-14892, CONF:1198-14898)
-# primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
-# translation:  observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
-# prune level:  encounter/entryRelationship[@typeCode='COMP'] (individual diagnoses)
+#
+# prune level: encounter/entryRelationship scoped by Encounter Diagnosis templateId
+#   CONF:1198-15492 does NOT constrain @typeCode on the entryRelationship that wraps Encounter Diagnosis (V3)
+#   * testing has shown a mix of SUBJ, RSON, and COMP entries
+#   scoping by the child act's templateId (CONF:1198-14896, SHALL) is reliable regardless of typeCode
 _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
+    # rule 1 — IG-conformant: SNOMED on value, ICD-10-CM on translation
+    # primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
+    # translation: observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
@@ -131,7 +180,29 @@ _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
-        prune_container_xpath="hl7:encounter/hl7:entryRelationship[@typeCode='COMP']",
+        prune_container_xpath=(
+            "hl7:encounter/hl7:entryRelationship"
+            "[hl7:act/hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.80']]"
+        ),
+    ),
+    # rule 2 — reversed: ICD-10-CM on value, SNOMED on translation
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value"
+        ),
+        code_system_oid=ICD10_OID,
+        translation_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value/hl7:translation"
+        ),
+        translation_code_system_oid=SNOMED_OID,
+        prune_container_xpath=(
+            "hl7:encounter/hl7:entryRelationship"
+            "[hl7:act/hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.80']]"
+        ),
     ),
 ]
 
@@ -175,10 +246,10 @@ _MEDICATIONS_HOME_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # Past Medical History (11348-0)
 # IG template: Problem Concern Act (V3) wraps Problem Observation (V3)
 #   via entryRelationship[@typeCode='SUBJ']
-# primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
-# translation:  observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
-# prune level:  act/entryRelationship[@typeCode='SUBJ'] (individual problems)
+# prune level: act/entryRelationship[@typeCode='SUBJ'] (individual problems)
+#   typeCode='SUBJ' is a SHALL constraint — safe to filter on
 _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
+    # rule 1 — IG-conformant: SNOMED on value, ICD-10-CM on translation
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
@@ -192,6 +263,22 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
+        prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
+    ),
+    # rule 2 — reversed: ICD-10-CM on value, SNOMED on translation
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value"
+        ),
+        code_system_oid=ICD10_OID,
+        translation_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value/hl7:translation"
+        ),
+        translation_code_system_oid=SNOMED_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
@@ -284,10 +371,12 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # Problems (11450-4)
 # IG template: Problem Concern Act (V3) wraps Problem Observation (V3)
 #   via entryRelationship[@typeCode='SUBJ']
-# primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
-# translation:  observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
-# prune level:  act/entryRelationship[@typeCode='SUBJ'] (individual problems)
+# prune level: act/entryRelationship[@typeCode='SUBJ'] (individual problems)
+#   typeCode='SUBJ' is a SHALL constraint — safe to filter on
 _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
+    # rule 1 — IG-conformant: SNOMED on value, ICD-10-CM on translation
+    # primary code: observation/value SHALL be SNOMED (CONF:1198-9058)
+    # translation: observation/value/translation MAY be ICD-10-CM (CONF:1198-16750)
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
@@ -301,6 +390,22 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
+        prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
+    ),
+    # rule 2 — reversed: ICD-10-CM on value, SNOMED on translation
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value"
+        ),
+        code_system_oid=ICD10_OID,
+        translation_xpath=(
+            ".//hl7:observation"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            "/hl7:value/hl7:translation"
+        ),
+        translation_code_system_oid=SNOMED_OID,
         prune_container_xpath="hl7:act/hl7:entryRelationship[@typeCode='SUBJ']",
     ),
 ]
