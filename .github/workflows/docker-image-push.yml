@@ -132,7 +132,7 @@ jobs:
           build-args: |
             VITE_GIT_HASH=${{ github.sha }}
             VITE_GIT_BRANCH=${{ github.event.inputs.ref || github.ref_name }}
-            VITE_GIT_VERSION=${{ steps.vars.outputs.version_tag }}
+            VITE_APP_VERSION=${{ steps.vars.outputs.version_tag }}
             VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Build and push Refiner Lambda image
