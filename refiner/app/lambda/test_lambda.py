@@ -433,7 +433,7 @@ def test_lambda_all_active(
     )
 
     # Run the Lambda
-    response = lambda_handler(lambda_event, context={})
+    response = lambda_handler(lambda_event, MockLambdaContext())
     assert response["statusCode"] == 200
 
     # Check that expected output files were written
