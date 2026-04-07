@@ -14,27 +14,26 @@ import boto3
 from aws_lambda_powertools import Logger
 from botocore.exceptions import ClientError
 
+from app.core.models.types import XMLFiles
 from app.core.utils import get_env_variable
 from app.db.conditions.model import ConditionMappingPayload, ConditionMapValue
-from app.services.ecr.model import JurisdictionReportableConditions, ReportableCondition
-
-from ..core.models.types import XMLFiles
-from ..services.aws.s3_keys import (
+from app.services.aws.s3_keys import (
     get_active_file_key,
     get_current_file_key,
     get_rsg_cg_mapping_file_key,
 )
-from ..services.ecr.refine import (
+from app.services.ecr.model import JurisdictionReportableConditions, ReportableCondition
+from app.services.ecr.refine import (
     get_file_size_in_mib,
     refine_rr_for_unconfigured_conditions,
 )
-from ..services.pipeline import (
+from app.services.pipeline import (
     RefinementResult,
     RefinementTrace,
     discover_reportable_conditions,
     refine_for_condition,
 )
-from ..services.terminology import ProcessedConfiguration
+from app.services.terminology import ProcessedConfiguration
 
 # Initialize the logger
 logger = Logger(service="refiner")
