@@ -217,14 +217,18 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     // Should show "saved"
     await expect(page.getByText('Saved')).toBeVisible();
 
-    // narrative should start off unchecked
+    // narrative should start off checked
     const encountersLabelNarrativeText =
       'Toggle to refine or retain the narrative block in the Encounters section';
+    await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
+
+    // toggle narrative off
+    await page.getByLabel(encountersLabelNarrativeText).click();
     await expect(
       page.getByLabel(encountersLabelNarrativeText)
     ).not.toBeChecked();
 
-    // toggle narrative on
+    // toggle narrative back on
     await page.getByLabel(encountersLabelNarrativeText).click();
     await expect(page.getByLabel(encountersLabelNarrativeText)).toBeChecked();
 
@@ -324,6 +328,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .getByLabel('Condition')
       .selectOption({ label: configurationToTest });
 
+    await page.getByRole('button', { name: 'Page 2' }).click();
     await expect(
       page
         .getByRole('row')
@@ -333,6 +338,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
           hasText: "Associated 'Down Syndrome' code set",
         })
     ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Page 1' }).click();
 
     await expect(
       page

@@ -175,7 +175,7 @@ class TestConfigurations:
             )
             expected_section_defaults = {
                 "include": True,
-                "narrative": False,
+                "narrative": True,
                 "action": "refine",
                 "name": "Admission Diagnosis",
                 "code": "46241-6",
