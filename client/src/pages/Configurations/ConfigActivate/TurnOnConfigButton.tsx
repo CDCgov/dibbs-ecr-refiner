@@ -71,6 +71,9 @@ function TurnOnConfigModal({
         </div>
       </ModalBody>
       <ModalFooter align="right">
+        <Button onClick={onClose} variant="secondary">
+          Cancel
+        </Button>
         <Button onClick={() => handleActivation()}>
           Yes, turn on configuration
         </Button>
