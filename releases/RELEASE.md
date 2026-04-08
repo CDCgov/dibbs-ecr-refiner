@@ -60,6 +60,9 @@ This document will outline the process for releasing a new version of the eCR Re
    2. Make sure the `version` is the same as the release candidate tag without `-rc.x` at the end (e.g., `1.4.0`)
    3. Leave `dry_run` unchecked
    4. After completion, check that the images were successfully pushed to both GHCR and ECR (see job logs)
-2. Communicate to APHL that the final release is ready for them to promote up to prod, along with the version number. They should be able to pull the newly tagged image and promote it up to the prod environment.
+1. Publish the release notes created previously by finding the draft and hitting the "Publish release"
+   ![Screenshot of publishing release](./publish_release.png)
+
+1. Communicate to APHL that the final release is ready for them to promote up to prod, along with the version number. They should be able to pull the newly tagged image and promote it up to the prod environment.
 
 :tada: You have just released the newest version of the DIBBs eCR Refiner! :tada:
