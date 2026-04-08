@@ -34,7 +34,7 @@ This document will outline the process for releasing a new version of the eCR Re
       - Product will own the first and second sections summarizing the release / major features
       - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
    1. Before saving, **ensure that the “Set as a pre-release” checkbox is marked.** The release should not be marked as the latest release until deployment and testing have been performed. Then click save draft”!
-      ![Screenshot of publish release notes with pre-release](./save_release_ase_draft.png)
+      ![Screenshot of publish release notes with pre-release](./save_release_as_draft.png)
 
 4. Once the pre-release is saved, ping product that the notes are available for editing with a link to the draft. Have them fill in the relevant portions.
    - Once they're done, they should ping you that the notes are ready
