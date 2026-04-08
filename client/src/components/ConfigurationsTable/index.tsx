@@ -64,6 +64,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   onClick={() => {
                     void navigate(`/configurations/${id}/build`);
                   }}
+                  data-testid={`${name}-button`}
                 >
                   {name}
                 </button>

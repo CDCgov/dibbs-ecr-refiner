@@ -1,8 +1,11 @@
 import { test, expect } from './fixtures/fixtures';
 import path from 'path';
 import fs from 'fs';
-import { createNewConfiguration, deleteConfigurationArtifacts } from './utils';
-import { Page } from '@playwright/test';
+import {
+  createAndActivateCovidConfig,
+  createAndActivateInfluenzaConfig,
+  deleteConfigurationArtifacts,
+} from './utils';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {
@@ -54,22 +57,15 @@ test.describe('should be able to access independent testing', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    // configure and activate covid-19
+    // configure and activate the relevant configs
     await createAndActivateCovidConfig(page);
+    await createAndActivateInfluenzaConfig(page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
 
     const independentFlowFileInput = page.locator('input#zip-upload');
     await independentFlowFileInput.setInputFiles(filePath);
-
-    await page.getByRole('button', { name: 'Refine .zip file' }).click();
-
-    // configure and activate influenza
-    await createAndActivateInfluenzaConfig(page);
-
-    // go to independent testing flow
-    await page.getByRole('link', { name: 'Testing' }).click();
 
     await independentFlowFileInput.setInputFiles(filePath);
     await page.getByRole('button', { name: 'Refine .zip file' }).click();
@@ -251,21 +247,3 @@ test.describe('should be able to access independent testing', () => {
     );
   });
 });
-
-export async function createAndActivateCovidConfig(page: Page) {
-  await createNewConfiguration('COVID-19', page);
-  await page.getByRole('link', { name: 'Activate' }).click();
-  await page.getByRole('button', { name: 'Turn on configuration' }).click();
-  await page
-    .getByRole('button', { name: 'Yes, turn on configuration' })
-    .click();
-}
-
-export async function createAndActivateInfluenzaConfig(page: Page) {
-  await createNewConfiguration('Influenza', page);
-  await page.getByRole('link', { name: 'Activate' }).click();
-  await page.getByRole('button', { name: 'Turn on configuration' }).click();
-  await page
-    .getByRole('button', { name: 'Yes, turn on configuration' })
-    .click();
-}
