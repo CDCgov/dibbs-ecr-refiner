@@ -96,6 +96,9 @@ function NewDraftModal({
         </p>
       </ModalBody>
       <ModalFooter align="right">
+        <Button onClick={onClose} variant="secondary">
+          Cancel
+        </Button>
         <Button
           onClick={() =>
             createConfig(
