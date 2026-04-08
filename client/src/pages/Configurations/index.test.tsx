@@ -106,7 +106,7 @@ describe('Configurations Page', () => {
       await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Set up a new configuration' })
+      screen.getByRole('button', { name: 'Set up new configuration' })
     ).toBeInTheDocument();
   });
 
@@ -138,7 +138,7 @@ describe('Configurations Page', () => {
     renderPageView();
 
     const setUpButton = screen.getByRole('button', {
-      name: 'Set up a new configuration',
+      name: 'Set up new configuration',
     });
     await user.click(setUpButton);
 
@@ -189,7 +189,7 @@ describe('Configurations Page', () => {
 
     renderPageView();
     const setUpButton = screen.getByRole('button', {
-      name: 'Set up a new configuration',
+      name: 'Set up new configuration',
     });
     await user.click(setUpButton);
 

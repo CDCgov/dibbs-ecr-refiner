@@ -92,7 +92,7 @@ export function Configurations() {
         ) : null}
 
         <Button className="m-0!" onClick={() => setIsOpen(true)}>
-          Set up a new configuration
+          Set up new configuration
         </Button>
         <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
       </div>
