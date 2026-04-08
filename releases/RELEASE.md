@@ -30,8 +30,6 @@ This document will outline the process for releasing a new version of the eCR Re
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
       ![Screenshot of generate release notes button](./generate_release_notes.png)
    1. Copy this list of commit names and edit it down, removing all entries unimportant to the end user, e.g., test updates, refactors, dependency bumps, chores, etc.
-      > [!TIP]
-      > We have a template in `.github/release.yml` that auto-strips out any PR's labeled with the `tech debt` or `chore` labels. If you label any relevant PR's accordingly, it'll save the release captain's time!
    1. Add the template release notes linked [in the release note template](./RELEASE_NOTE_TEMPLATE.MD) to the notes. **Make sure you copy this directly, as otherwise, the app updates page might not render correctly**
       - Product will own the first and second sections summarizing the release / major features
       - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
@@ -40,6 +38,9 @@ This document will outline the process for releasing a new version of the eCR Re
 
 4. Once the pre-release is saved, ping product that the notes are available for editing with a link to the draft. Have them fill in the relevant portions.
    - Once they're done, they should ping you that the notes are ready
+
+> [!TIP]
+> We have a template in `.github/release.yml` that auto-strips out any PR's labeled with the `tech debt` or `chore` labels. If you label any relevant PR's accordingly, it'll save the release captain's time!
 
 ## Test release image in APHL
 
