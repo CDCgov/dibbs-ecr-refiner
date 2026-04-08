@@ -1,12 +1,13 @@
 import IllustrationImg from '../../assets/home/illustration.svg';
+import { Button } from '../../components/Button';
 import { Footer, Header } from '../../components/Layout';
 
 export function Home() {
   return (
     <>
       <Header />
-      <div className="bg-blue-cool-10 flex flex-1 flex-col items-center justify-center gap-16 py-4 py-20 lg:p-38">
-        <div className="flex max-w-[67rem] flex-col items-center gap-16 lg:flex-row">
+      <div className="bg-blue-cool-10 flex flex-1 flex-col items-center justify-center gap-16 py-20 lg:p-38">
+        <div className="flex max-w-268 flex-col items-center gap-16 lg:flex-row">
           <div className="flex flex-col gap-8 px-10 lg:w-2/3 xl:px-0">
             <div className="flex flex-col items-start gap-4">
               <h1 className="font-merriweather font-bold lg:!text-5xl">
@@ -20,12 +21,9 @@ export function Home() {
               </p>
             </div>
             <div>
-              <a
-                className="usa-button usa-button--big !bg-violet-warm-60 hover:!bg-violet-warm-70"
-                href="/api/login"
-              >
+              <Button className="px-6 py-4 text-[1.38rem]" href="/api/login">
                 Log in
-              </a>
+              </Button>
             </div>
           </div>
           <img className="lg:w-1/3" src={IllustrationImg} alt="" />
