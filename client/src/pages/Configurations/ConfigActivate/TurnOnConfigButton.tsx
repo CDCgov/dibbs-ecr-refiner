@@ -57,7 +57,7 @@ function TurnOnConfigModal({
       </ModalHeader>
       <ModalBody>
         <div className="flex flex-col gap-4">
-          <ul>
+          <ul className="list-inside">
             <li>
               Refiner will <span className="text-bold">immediately</span> start
               to refine the eCR's
