@@ -11,7 +11,15 @@ from app.core.exceptions import (
     ZipValidationError,
 )
 from app.core.models.types import XMLFiles
-from app.services import file_io
+from app.services.assets import get_asset_path
+from app.services.file_io import (
+    MAX_UNCOMPRESSED_SIZE,
+    ZipFileItem,
+    ZipFilePackage,
+    create_refined_ecr_zip_in_memory,
+    parse_xml,
+    read_xml_zip,
+)
 
 
 class MockFileUpload:
@@ -27,7 +35,7 @@ def test_parse_xml_valid(covid_influenza_v1_1_files: XMLFiles):
     Test parsing valid XML.
     """
 
-    root = file_io.parse_xml(covid_influenza_v1_1_files.eicr.encode("utf-8"))
+    root = parse_xml(covid_influenza_v1_1_files.eicr.encode("utf-8"))
     assert root is not None
     assert root.tag.endswith("ClinicalDocument")
 
@@ -38,7 +46,7 @@ def test_parse_xml_invalid():
     """
 
     with pytest.raises(XMLValidationError):
-        file_io.parse_xml(b"<not>valid</xml>")
+        parse_xml(b"<not>valid</xml>")
 
 
 @pytest.mark.asyncio
@@ -60,7 +68,7 @@ async def test_read_xml_zip(create_test_zip, fixtures_path: Path):
         zip_bytes = f.read()
 
     mock_file = MockFileUpload(zip_bytes)
-    xml_files = await file_io.read_xml_zip(mock_file)
+    xml_files = await read_xml_zip(mock_file)
 
     assert isinstance(xml_files, XMLFiles)
     assert xml_files.eicr is not None
@@ -79,14 +87,14 @@ async def test_read_invalid_zip():
     mock_file = MockFileUpload(b"not a zip file")
 
     with pytest.raises(ZipValidationError) as exc_info:
-        await file_io.read_xml_zip(mock_file)
+        await read_xml_zip(mock_file)
     assert "Invalid ZIP file" in str(exc_info.value)
 
 
 @pytest.mark.asyncio
 async def test_uncompressed_zip_size_too_large(create_test_zip, fixtures_path: Path):
     # Create a valid ZIP that contains a document that is too large to process
-    big_content = b"x" * (file_io.MAX_UNCOMPRESSED_SIZE + 1)
+    big_content = b"x" * (MAX_UNCOMPRESSED_SIZE + 1)
 
     # Use the create_test_zip fixture to handle temp paths
     zip_path = create_test_zip(
@@ -106,7 +114,7 @@ async def test_uncompressed_zip_size_too_large(create_test_zip, fixtures_path: P
 
     mock_file = MockFileUpload(zip_bytes)
     with pytest.raises(ZipValidationError) as exc:
-        await file_io.read_xml_zip(mock_file)
+        await read_xml_zip(mock_file)
     assert "Uncompressed .zip file must not exceed" in exc.value.message
 
 
@@ -141,7 +149,7 @@ async def test_zip_missing_eicr(create_test_zip, fixtures_path: Path):
         mock_file = MockFileUpload(f.read())
 
     with pytest.raises(ZipValidationError) as exc_info:
-        await file_io.read_xml_zip(mock_file)
+        await read_xml_zip(mock_file)
 
     error = exc_info.value
     assert "CDA_eICR.xml not found" in str(error)
@@ -165,7 +173,7 @@ async def test_zip_missing_rr(create_test_zip, fixtures_path: Path):
         mock_file = MockFileUpload(f.read())
 
     with pytest.raises(ZipValidationError) as exc_info:
-        await file_io.read_xml_zip(mock_file)
+        await read_xml_zip(mock_file)
 
     error = exc_info.value
     assert "CDA_RR.xml not found" in str(error)
@@ -179,7 +187,7 @@ async def test_read_xml_zip_processing_error():
 
     mock_file = MockFileUpload(b"not a zip but also won't raise BadZipFile")
     with pytest.raises(ZipValidationError) as exc_info:
-        await file_io.read_xml_zip(mock_file)
+        await read_xml_zip(mock_file)
     assert "Invalid ZIP file provided" in str(exc_info.value)
 
 
@@ -194,7 +202,7 @@ async def test_read_xml_zip_general_error():
             raise Exception("Simulated error")
 
     with pytest.raises(FileProcessingError) as exc_info:
-        await file_io.read_xml_zip(BrokenFileUpload())
+        await read_xml_zip(BrokenFileUpload())
     assert "Failed to process ZIP file" in str(exc_info.value)
 
 
@@ -203,7 +211,7 @@ def test_get_asset_path_single():
     Test getting asset path with single filename.
     """
 
-    path = file_io.get_asset_path("refiner_details.json")
+    path = get_asset_path("refiner_details.json")
     assert path.name == "refiner_details.json"
     assert path.parent.name == "assets"
     assert isinstance(path, Path)
@@ -214,7 +222,7 @@ def test_get_asset_path_nested():
     Test getting asset path with nested directory structure.
     """
 
-    path = file_io.get_asset_path("demo", "monmothma.zip")
+    path = get_asset_path("demo", "monmothma.zip")
     assert path.name == "monmothma.zip"
     assert path.parent.name == "demo"
     assert path.parent.parent.name == "assets"
@@ -226,7 +234,7 @@ def test_get_asset_path_empty():
     Test getting base assets directory path.
     """
 
-    path = file_io.get_asset_path()
+    path = get_asset_path()
     assert path.name == "assets"
     assert isinstance(path, Path)
 
@@ -237,12 +245,22 @@ def test_zip_contains_only_xml_when_html_fails() -> None:
 
     Simulate by omitting HTML file for ConditionC and including for ConditionD.
     """
+    zip_package = ZipFilePackage(name="mock-zip-package")
     files: list[tuple[str, str | bytes]] = [
-        ("ConditionC-321.xml", "<xml>TestC</xml>"),  # HTML intentionally omitted for C
-        ("ConditionD-654.xml", "<xml>TestD</xml>"),
-        ("ConditionD-654.html", b"<html><body>HTML D</body></html>"),
+        ZipFileItem(
+            file_name="ConditionC-321.xml", file_content="<xml>TestC</xml>"
+        ),  # HTML intentionally omitted for C
+        ZipFileItem(file_name="ConditionD-654.xml", file_content="<xml>TestD</xml>"),
+        ZipFileItem(
+            file_name="ConditionD-654.html",
+            file_content=b"<html><body>HTML D</body></html>",
+        ),
     ]
-    zip_name, zip_buf = file_io.create_refined_ecr_zip_in_memory(files=files)
+
+    for file in files:
+        zip_package.add(file)
+
+    _, zip_buf = create_refined_ecr_zip_in_memory(zip_package=zip_package)
     with zipfile.ZipFile(zip_buf, "r") as zf:
         namelist = zf.namelist()
         assert "ConditionC-321.xml" in namelist

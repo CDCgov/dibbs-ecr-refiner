@@ -928,7 +928,7 @@ Args:
     id: The ID of the configuration to test.
     uploaded_file: An optional user-provided zip file with an eICR and RR.
     create_output_zip: Dependency to create a zip archive in memory.
-    upload_refined_files_to_s3: Dependency to upload the archive to S3.
+    upload_zip: Dependency to upload the archive to S3.
     user: The authenticated user making the request.
     db: The database connection.
     sample_zip_path: Path to the default sample zip file.

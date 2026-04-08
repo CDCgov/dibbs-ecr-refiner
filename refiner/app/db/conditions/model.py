@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, TypedDict
 from uuid import UUID
 
@@ -47,6 +48,11 @@ class DbCondition(DbConditionBase):
     icd10_codes: list[DbConditionCoding]
     rxnorm_codes: list[DbConditionCoding]
     cvx_codes: list[DbConditionCoding]
+    # coverage level from the crmi-curationCoverageLevel extension
+    # on the condition grouper ValueSet; null when the extension is not present
+    coverage_level: str | None = None
+    coverage_level_reason: str | None = None
+    coverage_level_date: datetime | None = None
 
     @classmethod
     def from_db_row(cls, row: dict[str, Any]) -> "DbCondition":
@@ -70,6 +76,9 @@ class DbCondition(DbConditionBase):
             icd10_codes=[DbConditionCoding(**c) for c in row["icd10_codes"]],
             rxnorm_codes=[DbConditionCoding(**c) for c in row["rxnorm_codes"]],
             cvx_codes=[DbConditionCoding(**c) for c in row["cvx_codes"]],
+            coverage_level=row.get("coverage_level"),
+            coverage_level_reason=row.get("coverage_level_reason"),
+            coverage_level_date=row.get("coverage_level_date"),
         )
 
     def get_codes_from_all_systems(self) -> list[DbConditionCoding]:

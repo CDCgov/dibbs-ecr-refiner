@@ -1,7 +1,10 @@
+from io import BytesIO
 from pathlib import Path
 from typing import Any
+from zipfile import ZipFile
 
 import pytest
+from fastapi import status
 
 api_route_base = "/api/v1/demo"
 
@@ -28,9 +31,39 @@ async def test_demo_upload_smoke(
                 )
             },
         )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     data: dict[str, Any] = response.json()
     assert "refined_conditions" in data
     assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
     assert "refined_download_key" in data
+
+    # Check zip download and contents
+    file_key = data["refined_download_key"]
+    download_response = await authed_client.get(
+        f"{api_route_base}/download/{file_key}",
+    )
+    assert download_response.status_code == status.HTTP_200_OK
+    assert download_response.headers["content-type"] in {
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/octet-stream",
+    }
+
+    zip_bytes = download_response.content
+    assert zip_bytes
+
+    expected_file_names = [
+        "CDA_eICR_Influenza.xml",
+        "CDA_RR_Influenza.xml",
+        "CDA_eICR_Influenza.html",
+        "CDA_eICR_COVID19.xml",
+        "CDA_RR_COVID19.xml",
+        "CDA_eICR_COVID19.html",
+        "CDA_eICR.xml",
+        "CDA_RR.xml",
+    ]
+
+    with ZipFile(BytesIO(zip_bytes), "r") as zf:
+        names = zf.namelist()
+        assert set(names) == set(expected_file_names)
