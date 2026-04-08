@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Icon } from '@trussworks/react-uswds';
 import { Button } from '../../../../components/Button';
 import { useMemo, useState } from 'react';
 import {
@@ -7,24 +6,24 @@ import {
   useAddCustomSection,
   useUpdateSection,
 } from '../../../../api/configurations/configurations';
-import {
-  Dialog,
-  DialogBackdrop,
-  DialogPanel,
-  DialogTitle,
-  Field,
-  Label,
-} from '@headlessui/react';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '../../../../components/TextInput';
+import {
+  Modal,
+  ModalHeader,
+  ModalTitle,
+  ModalBody,
+} from '../../../../components/Modal';
+import { Field } from '../../../../components/Field';
+import { Label } from '../../../../components/Label';
 
 interface EditCustomSection {
   name: string;
   currentCode: string;
 }
 
-interface ModalProps {
+interface CustomSectionModalProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   configurationId: string;
@@ -32,13 +31,13 @@ interface ModalProps {
   initialSection?: EditCustomSection | null;
 }
 
-export function Modal({
+export function CustomSectionModal({
   isOpen,
   setIsOpen,
   configurationId,
   initialSection,
   onClose,
-}: ModalProps) {
+}: CustomSectionModalProps) {
   // calculate a key to ensure the form is set properly when adding or editing
   const formKey = useMemo(
     () =>
@@ -52,27 +51,28 @@ export function Modal({
   };
 
   return (
-    <Dialog open={isOpen} onClose={closeModal} unmount>
-      <DialogBackdrop className="fixed inset-0 bg-black/60" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="bg-base-dark/70 fixed inset-0" aria-hidden="true" />
-        <DialogPanel className="border-base-lighter relative z-50 h-90 w-100 rounded-sm border bg-white shadow-lg">
-          {isOpen && (
-            <ModalForm
-              key={formKey}
-              configurationId={configurationId}
-              initialSection={initialSection}
-              closeModal={closeModal}
-            />
-          )}
-        </DialogPanel>
-      </div>
-    </Dialog>
+    <Modal open={isOpen} onClose={closeModal}>
+      <ModalHeader>
+        <ModalTitle>
+          {initialSection ? 'Edit custom section' : 'Add a custom section'}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        {isOpen && (
+          <ModalForm
+            key={formKey}
+            configurationId={configurationId}
+            initialSection={initialSection}
+            closeModal={closeModal}
+          />
+        )}
+      </ModalBody>
+    </Modal>
   );
 }
 
 interface ModalFormProps extends Pick<
-  ModalProps,
+  CustomSectionModalProps,
   'configurationId' | 'initialSection'
 > {
   closeModal: () => void;
@@ -169,49 +169,35 @@ function ModalForm({
   };
 
   return (
-    <div className="pt-5">
-      <div className="p-5 px-6 pb-4">
-        <DialogTitle className="font-merriweather text-gray-90 text-3xl font-bold">
-          {isEditing ? 'Edit custom section' : 'Add a custom section'}
-        </DialogTitle>
-        <Button
-          aria-label="Close this window"
-          onClick={closeModal}
-          className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
-        >
-          <Icon.Close className="h-6! w-6!" aria-hidden />
-        </Button>
-      </div>
-      <div className="px-6 py-5">
-        <div className="flex w-full flex-col items-start">
-          <p id="modal-description" className="sr-only">
-            Enter your custom section information and click "Add section".
-          </p>
-          <div className="flex w-full flex-col gap-3">
-            <Field className="flex flex-col gap-2">
-              <Label>Display name (for this section)</Label>
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                type="text"
-                autoFocus
-              />
-            </Field>
-            <Field className="flex flex-col gap-2">
-              <Label>LOINC code</Label>
-              <TextInput
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value)}
-                type="text"
-              />
-            </Field>
-            {errorText ? (
-              <p className="text-secondary-dark text-sm">{errorText}</p>
-            ) : null}
-          </div>
+    <div className="flex flex-col gap-10">
+      <div className="flex w-full flex-col items-start">
+        <p id="modal-description" className="sr-only">
+          Enter your custom section information and click "Add section".
+        </p>
+        <div className="flex w-full flex-col gap-3">
+          <Field className="flex flex-col gap-2">
+            <Label>Display name (for this section)</Label>
+            <TextInput
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              type="text"
+              autoFocus
+            />
+          </Field>
+          <Field className="flex flex-col gap-2">
+            <Label>LOINC code</Label>
+            <TextInput
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              type="text"
+            />
+          </Field>
+          {errorText ? (
+            <p className="text-secondary-dark text-sm">{errorText}</p>
+          ) : null}
         </div>
       </div>
-      <div className="flex justify-start gap-2 px-6 py-4">
+      <div className="flex justify-start gap-2">
         <Button onClick={onSubmit}>
           {isEditing ? 'Update section' : 'Add section'}
         </Button>
