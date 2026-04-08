@@ -24,7 +24,9 @@ This document will outline the process for releasing a new version of the eCR Re
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
 
-3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases) and find the corresponding release notes for the created release.
+3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). Click the "Draft a new release" button and find the corresponding release tag for the images you just made.
+   1. Title the release notes with "Release < RELEASE NUMBER >" without the `rc` suffix (ie Release 0.0.11) since the notes will only get published after the release is ready for publishing.
+      ![Screenshot of default values](./release_details.png)
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
       ![Screenshot of generate release notes button](./generate_release_notes.png)
    1. Copy this list of commit names and edit it down, removing all entries unimportant to the end user, e.g., test updates, refactors, dependency bumps, chores, etc.
@@ -35,15 +37,15 @@ This document will outline the process for releasing a new version of the eCR Re
    1. Add the template release notes linked [in the release note template](./RELEASE_NOTE_TEMPLATE.MD) to the notes. **Make sure you copy this directly, as otherwise, the app updates page might not render correctly**
       - Product will own the first and second sections summarizing the release / major features
       - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
-   1. Before publishing, **ensure that the “Set as a pre-release” checkbox is marked.** The release should not be marked as the latest release until deployment and testing have been performed. Then click “publish release”!
-      ![Screenshot of publish release notes with pre-release](./publish_release.png)
+   1. Before saving, **ensure that the “Set as a pre-release” checkbox is marked.** The release should not be marked as the latest release until deployment and testing have been performed. Then click save draft”!
+      ![Screenshot of publish release notes with pre-release](./save_release_ase_draft.png)
 
-4. Once the pre-release is published, a message should get sent in the `#proj-cdc-dibbs-ecr-refiner-internal` Slack channel. Tag product that the notes are available for editing, and have them fill in the relevant portions.
+4. Once the pre-release is saved, ping product that the notes are available for editing with a link to the draft. Have them fill in the relevant portions.
    - Once they're done, they should ping you that the notes are ready
 
 ## Test release image in APHL
 
-1. Ping APHL in Teams that there are new release candidates to deploy in lower environments The relevant security scans will run on their end.
+1. Ping APHL in Teams that there are new release candidates to deploy in lower environments and have them run the relevant security scans will run on their end.
    - Check the deploy: Once the deployments to lower environments gets kicked off, check that deployed image makes it to [the APHL dev environment](https://refiner.dev.sandbox2.aimsplatform.org/) with the correct version number and the packages have the correct image tagged latest.
      ![Screenshot of version section of the footer on the dev site](./version_code_dev.png)
 
