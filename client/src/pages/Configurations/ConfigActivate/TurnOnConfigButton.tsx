@@ -56,7 +56,7 @@ function TurnOnConfigModal({
         <ModalTitle>Turn on configuration?</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <div>
+        <div className="flex flex-col gap-4">
           <ul>
             <li>
               Refiner will <span className="text-bold">immediately</span> start
@@ -67,12 +67,10 @@ function TurnOnConfigModal({
               after you activate it
             </li>
           </ul>
-          <p className="my-6">
-            Are you sure you want to turn on the configuration?
-          </p>
+          <p>Are you sure you want to turn on the configuration?</p>
         </div>
       </ModalBody>
-      <ModalFooter>
+      <ModalFooter align="right">
         <Button onClick={() => handleActivation()}>
           Yes, turn on configuration
         </Button>

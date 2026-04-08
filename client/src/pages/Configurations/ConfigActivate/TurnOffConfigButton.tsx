@@ -25,8 +25,7 @@ export function TurnOffConfigButton({
         onClose={() => setIsOpen(false)}
         handleDeactivation={handleDeactivation}
       />
-      <h3 className="mt-6 mb-4 text-lg font-bold">Option 2</h3>
-      <div className="flex flex-row items-center gap-2">
+      <div className="flex flex-row items-center gap-1">
         <Button
           onClick={() => setIsOpen(true)}
           variant="secondary"
@@ -63,13 +62,13 @@ function TurnOffConfigModal({
         <ModalTitle>Turn off current version</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <p id="deactivation-confirmation-modal-text" className="my-6">
+        <p>
           You're about to stop the current version. No versions will be running
           until you turn on a new one. Do you want to continue?
         </p>
       </ModalBody>
 
-      <ModalFooter>
+      <ModalFooter align="right">
         <Button onClick={onClose} variant="secondary">
           Cancel
         </Button>

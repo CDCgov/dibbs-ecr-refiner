@@ -21,8 +21,7 @@ export function SwitchToVersionButton({
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div>
-      <h3 className="mb-4 text-lg font-bold">Option 1</h3>
-      <div className="flex flex-row items-center gap-2">
+      <div className="flex flex-row items-center gap-1">
         <Button onClick={() => setIsOpen(true)} className="self-start">
           Switch to version {curVersion}
         </Button>
@@ -63,8 +62,8 @@ function SwitchToVersionModal({
         <ModalTitle>{`Switch to Version ${curVersion}`}</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <div>
-          <p id="activation-confirmation-modal-text" className="my-6">
+        <div className='flex flex-col gap-4'>
+          <p>
             You're about to stop Version {activeVersion} and start Version{' '}
             {curVersion}
           </p>
@@ -75,7 +74,7 @@ function SwitchToVersionModal({
           <p>Do you want to continue?</p>
         </div>
       </ModalBody>
-      <ModalFooter>
+      <ModalFooter align='right'>
         <div>
           <Button onClick={onClose} variant="secondary">
             Cancel
