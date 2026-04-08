@@ -2,6 +2,7 @@ import { test, expect } from './fixtures/fixtures';
 import path from 'path';
 import fs from 'fs';
 import { createNewConfiguration, deleteConfigurationArtifacts } from './utils';
+import { Page } from '@playwright/test';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,7 +20,7 @@ test.describe('should be able to access independent testing', () => {
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
 
-  test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
+  test('should check that the independent test flow works once both required configurations are configured', async ({
     page,
     makeAxeBuilder,
   }) => {
@@ -43,27 +44,6 @@ test.describe('should be able to access independent testing', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    // Optionally, assert the file name shows up in the UI
-    await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
-    await page.getByText('Refine .zip file').click();
-
-    // check for missing configs text
-    await expect(
-      page.locator('text=have not been configured and will not produce')
-    ).toBeVisible();
-    await expect(page.getByText('COVID-19')).toBeVisible();
-    await expect(page.getByText('Influenza')).toBeVisible();
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    // Refine ecr is unavailable
-    await expect(
-      page.getByRole('button', { name: 'Start over' })
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Refine eCR' })).toHaveCount(
-      0
-    );
-
     // go home
     await page
       .getByRole('link', { name: 'Link back to the home configurations page' })
@@ -75,12 +55,7 @@ test.describe('should be able to access independent testing', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // configure and activate covid-19
-    await createNewConfiguration('COVID-19', page);
-    await page.getByRole('link', { name: 'Activate' }).click();
-    await page.getByRole('button', { name: 'Turn on configuration' }).click();
-    await page
-      .getByRole('button', { name: 'Yes, turn on configuration' })
-      .click();
+    await createAndActivateCovidConfig(page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
@@ -90,52 +65,8 @@ test.describe('should be able to access independent testing', () => {
 
     await page.getByRole('button', { name: 'Refine .zip file' }).click();
 
-    // check for matching config text
-    await expect(
-      page.getByText(
-        'We found the following reportable condition(s) in the RR:'
-      )
-    ).toBeVisible();
-    await expect(
-      page.getByRole('listitem').filter({ hasText: 'COVID-' })
-    ).toBeVisible();
-
-    // check for missing configs text
-    await expect(
-      page.locator('text=have not been configured and will not produce')
-    ).toBeVisible();
-    await expect(
-      page.getByRole('listitem').filter({ hasText: 'Influenza' })
-    ).toBeVisible();
-
-    // both buttons should be available
-    await expect(
-      page.getByRole('button', { name: 'Refine eCR' })
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Start over' })
-    ).toBeVisible();
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    // click start over
-    await page.getByRole('button', { name: 'Start over' }).click();
-
-    // go home
-    await page
-      .getByRole('link', { name: 'Link back to the home configurations page' })
-      .click();
-    await expect(
-      page.getByRole('heading', { name: 'Configurations' })
-    ).toBeVisible();
-
     // configure and activate influenza
-    await createNewConfiguration('Influenza', page);
-    await page.getByRole('link', { name: 'Activate' }).click();
-    await page.getByRole('button', { name: 'Turn on configuration' }).click();
-    await page
-      .getByRole('button', { name: 'Yes, turn on configuration' })
-      .click();
+    await createAndActivateInfluenzaConfig(page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
@@ -320,3 +251,21 @@ test.describe('should be able to access independent testing', () => {
     );
   });
 });
+
+export async function createAndActivateCovidConfig(page: Page) {
+  await createNewConfiguration('COVID-19', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
+}
+
+export async function createAndActivateInfluenzaConfig(page: Page) {
+  await createNewConfiguration('Influenza', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
+}

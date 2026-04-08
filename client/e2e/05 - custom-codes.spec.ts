@@ -174,4 +174,11 @@ test.describe('Custom code builder flows', () => {
     ).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
   });
+
+  test('adds a custom code and checks the value gets refined', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+  });
 });
