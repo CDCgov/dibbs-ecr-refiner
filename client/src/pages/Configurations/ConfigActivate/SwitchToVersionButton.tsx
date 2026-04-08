@@ -62,7 +62,7 @@ function SwitchToVersionModal({
         <ModalTitle>{`Switch to Version ${curVersion}`}</ModalTitle>
       </ModalHeader>
       <ModalBody>
-        <div className='flex flex-col gap-4'>
+        <div className="flex flex-col gap-4">
           <p>
             You're about to stop Version {activeVersion} and start Version{' '}
             {curVersion}
@@ -74,7 +74,7 @@ function SwitchToVersionModal({
           <p>Do you want to continue?</p>
         </div>
       </ModalBody>
-      <ModalFooter align='right'>
+      <ModalFooter align="right">
         <div>
           <Button onClick={onClose} variant="secondary">
             Cancel
