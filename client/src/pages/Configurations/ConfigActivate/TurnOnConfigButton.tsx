@@ -60,7 +60,7 @@ function TurnOnConfigModal({
           <ul className="list-inside">
             <li>
               Refiner will <span className="text-bold">immediately</span> start
-              to refine the eCR's
+              to refine the eCRs
             </li>
             <li>
               You <span className="text-bold">cannot</span> edit this version
@@ -71,9 +71,6 @@ function TurnOnConfigModal({
         </div>
       </ModalBody>
       <ModalFooter align="right">
-        <Button onClick={onClose} variant="secondary">
-          Cancel
-        </Button>
         <Button onClick={() => handleActivation()}>
           Yes, turn on configuration
         </Button>
