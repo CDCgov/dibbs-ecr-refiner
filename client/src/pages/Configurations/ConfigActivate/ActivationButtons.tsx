@@ -1,7 +1,6 @@
 import { GetConfigurationResponse } from '../../../api/schemas';
-import { SwitchFromPrevious } from './buttonDisplays/SwitchFromPreviousButtons';
-import { TurnOffButtons } from './buttonDisplays/TurnOffButtons';
-import { TurnOnButtons } from './buttonDisplays/TurnOnButtons';
+import { SwitchFromPrevious } from './SwitchFromPreviousButtons';
+import { TurnOnConfigButton } from './TurnOnConfigButton';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useActivateConfiguration,
@@ -10,6 +9,7 @@ import {
 } from '../../../api/configurations/configurations';
 import { useToast } from '../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { TurnOffConfigButton } from './TurnOffConfigButton';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
@@ -98,11 +98,14 @@ export function ActivationButtons({
 
   if (activeVersion === null) {
     return (
-      <TurnOnButtons handleActivation={handleActivation} disabled={isLocked} />
+      <TurnOnConfigButton
+        handleActivation={handleActivation}
+        disabled={isLocked}
+      />
     );
   } else if (curVersion === activeVersion) {
     return (
-      <TurnOffButtons
+      <TurnOffConfigButton
         handleDeactivation={handleDeactivation}
         disabled={isLocked}
       />

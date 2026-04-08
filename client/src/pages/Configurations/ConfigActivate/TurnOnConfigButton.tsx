@@ -1,0 +1,82 @@
+import { useState } from 'react';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '../../../components/Modal';
+import { Button } from '../../../components/Button';
+
+interface TurnOnConfigButtonProps {
+  handleActivation: () => void;
+  disabled: boolean;
+}
+export function TurnOnConfigButton({
+  handleActivation,
+  disabled,
+}: TurnOnConfigButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div>
+      <Button
+        onClick={() => setIsOpen(true)}
+        variant="secondary"
+        disabled={disabled}
+      >
+        Turn on configuration
+      </Button>
+
+      <TurnOnConfigModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        handleActivation={handleActivation}
+      />
+    </div>
+  );
+}
+
+type TurnOnConfigModalProps = Pick<
+  TurnOnConfigButtonProps,
+  'handleActivation'
+> & {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+function TurnOnConfigModal({
+  isOpen,
+  onClose,
+  handleActivation,
+}: TurnOnConfigModalProps) {
+  return (
+    <Modal open={isOpen} onClose={onClose} position="top">
+      <ModalHeader>
+        <ModalTitle>Turn on configuration?</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <div>
+          <ul>
+            <li>
+              Refiner will <span className="text-bold">immediately</span> start
+              to refine the eCR's
+            </li>
+            <li>
+              You <span className="text-bold">cannot</span> edit this version
+              after you activate it
+            </li>
+          </ul>
+          <p className="my-6">
+            Are you sure you want to turn on the configuration?
+          </p>
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button onClick={() => handleActivation()}>
+          Yes, turn on configuration
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
