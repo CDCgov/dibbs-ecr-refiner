@@ -91,6 +91,14 @@ export function Header({ displayName }: HeaderProps) {
 }
 
 export function Footer() {
+  const commitHash = import.meta.env.VITE_GIT_HASH?.slice(0, 7);
+  const versionTag = import.meta.env.VITE_APP_VERSION;
+
+  let versionInformation = commitHash || 'local';
+  if (versionTag && versionTag !== 'main') {
+    versionInformation = versionTag;
+  }
+
   return (
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
@@ -118,10 +126,7 @@ export function Footer() {
             using the “eCR Functionality / Enhancements" category
           </p>
           <p className="text-gray-cool-20 text-xs">
-            Version code:{' '}
-            {import.meta.env.VITE_APP_VERSION ||
-              import.meta.env.VITE_GIT_HASH?.slice(0, 7) ||
-              'local'}{' '}
+            Version code: {versionInformation}
           </p>
         </div>
       </div>
