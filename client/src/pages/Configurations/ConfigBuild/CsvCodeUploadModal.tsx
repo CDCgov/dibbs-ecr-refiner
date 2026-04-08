@@ -144,7 +144,7 @@ export function PreviewEditModal({
                   setError(null);
                 }
               }}
-              autoComplete="off"
+              autoFocus
             />
           </Field>
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
