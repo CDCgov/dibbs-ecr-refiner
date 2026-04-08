@@ -16,6 +16,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -169,27 +183,7 @@ CREATE TABLE public.conditions (
     rxnorm_codes jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL,
-    coverage_level text,
-    coverage_level_reason text,
-    coverage_level_date date,
-    CONSTRAINT coverage_level_check CHECK ((((coverage_level IS NULL) AND (coverage_level_reason IS NULL) AND (coverage_level_date IS NULL)) OR ((coverage_level = 'complete'::text) AND (coverage_level_reason IS NULL)) OR ((coverage_level = 'partial'::text) AND (coverage_level_reason IS NOT NULL) AND (coverage_level_date IS NULL))))
-);
-
-
---
--- Name: conditions_context_groupers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.conditions_context_groupers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    condition_id uuid NOT NULL,
-    name text NOT NULL,
-    category text NOT NULL,
-    canonical_url text NOT NULL,
-    code_count integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    cvx_codes jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
@@ -316,22 +310,6 @@ ALTER TABLE ONLY public.conditions
 
 
 --
--- Name: conditions_context_groupers conditions_context_groupers_condition_id_canonical_url_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions_context_groupers
-    ADD CONSTRAINT conditions_context_groupers_condition_id_canonical_url_key UNIQUE (condition_id, canonical_url);
-
-
---
--- Name: conditions_context_groupers conditions_context_groupers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions_context_groupers
-    ADD CONSTRAINT conditions_context_groupers_pkey PRIMARY KEY (id);
-
-
---
 -- Name: conditions conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -444,20 +422,6 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: conditions_context_groupers_category_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX conditions_context_groupers_category_idx ON public.conditions_context_groupers USING btree (category);
-
-
---
--- Name: conditions_context_groupers_condition_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX conditions_context_groupers_condition_id_idx ON public.conditions_context_groupers USING btree (condition_id);
-
-
---
 -- Name: configurations_one_active_per_pair_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -514,13 +478,6 @@ CREATE TRIGGER configurations_set_version_on_insert_trigger BEFORE INSERT ON pub
 
 
 --
--- Name: conditions_context_groupers update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER update_conditions_context_groupers_updated_at BEFORE UPDATE ON public.conditions_context_groupers FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-
-
---
 -- Name: conditions update_conditions_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -546,14 +503,6 @@ CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configur
 --
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-
-
---
--- Name: conditions_context_groupers conditions_context_groupers_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.conditions_context_groupers
-    ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
 
 
 --
@@ -661,5 +610,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260309001833'),
     ('20260309143000'),
     ('20260309151338'),
-    ('20260318125201'),
-    ('20260402215326');
+    ('20260318125201');
