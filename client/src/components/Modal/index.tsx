@@ -29,7 +29,27 @@ interface ModalProps {
   position?: 'center' | 'top';
   className?: string;
 }
+/**
+ * This is a generic Modal component.
+ * @example
+ * function MyCustomModal() {
+    const [isOpen, setIsOpen] = useState(false);
 
+    return (
+      <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+        <ModalHeader>
+          <ModalTitle>My Custom Modal</ModalTitle>
+          <ModalBody>
+            <p>Content goes here</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={() => setIsOpen(false)}>Close the modal</Button>
+          </ModalFooter>
+        </ModalHeader>
+      </Modal>
+    );
+  }
+ */
 function Modal({
   open,
   onClose,
