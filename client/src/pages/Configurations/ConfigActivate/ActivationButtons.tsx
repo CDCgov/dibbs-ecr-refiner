@@ -121,6 +121,7 @@ export function ActivationButtons({
           handleActivation={handleActivation}
           activeVersion={activeVersion}
           curVersion={curVersion}
+          grouped
         />
       </div>
       <div className="flex flex-col gap-4">
@@ -128,6 +129,7 @@ export function ActivationButtons({
         <TurnOffConfigButton
           handleDeactivation={handleDeactivation}
           disabled={isLocked}
+          grouped
         />
       </div>
     </div>

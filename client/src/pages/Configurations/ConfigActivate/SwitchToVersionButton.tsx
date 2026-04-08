@@ -12,23 +12,31 @@ interface SwitchToVersionButtonProps {
   handleActivation: () => void;
   curVersion: number;
   activeVersion: number | null;
+  grouped?: boolean;
 }
 export function SwitchToVersionButton({
   handleActivation,
   curVersion,
   activeVersion,
+  grouped = false,
 }: SwitchToVersionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div>
       <div className="flex flex-row items-center gap-1">
-        <Button onClick={() => setIsOpen(true)} className="self-start">
+        <Button
+          variant={grouped ? 'primary' : 'secondary'}
+          onClick={() => setIsOpen(true)}
+          className="self-start"
+        >
           Switch to version {curVersion}
         </Button>
-        <p>
-          Safely replace the current version with this one — it will begin
-          processing immediately
-        </p>
+        {grouped ? (
+          <p>
+            Safely replace the current version with this one — it will begin
+            processing immediately
+          </p>
+        ) : null}
       </div>
       <SwitchToVersionModal
         isOpen={isOpen}
