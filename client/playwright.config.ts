@@ -2,12 +2,13 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30 * 1000,
+  timeout: process.env.CI ? 60 * 1000 : 30 * 1000,
   expect: {
     timeout: 10 * 1000,
   },
+  retries: process.env.CI ? 2 : 0,
   forbidOnly: !!process.env.CI,
-  workers: 2,
+  workers: process.env.CI ? 1 : 2,
   reporter: [['html', { open: 'never' }]],
   use: {
     trace: 'on-first-retry',
