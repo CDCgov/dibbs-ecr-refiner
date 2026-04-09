@@ -93,7 +93,7 @@ export async function createNewConfiguration(
     .press('Enter');
   await page.getByTestId('combo-box-input').press('Tab');
   await page.getByTestId('combo-box-clear-button').press('Tab');
-  await page.getByTestId('modalFooter').getByTestId('button').click();
+  await page.getByRole('button', { name: 'Set up configuration' }).click();
   await expect(
     page.locator(
       `h4:has-text("New configuration created") + p:has-text("${conditionName}")`

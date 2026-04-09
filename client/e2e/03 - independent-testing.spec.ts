@@ -196,10 +196,11 @@ test.describe('should be able to access independent testing', () => {
     await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
 
     // Click the "Upload .zip file" button
-    const uploadButton = page.locator('button[data-testid="button"]', {
-      hasText: 'Refine .zip file',
-    });
-    await uploadButton.click();
+    await page
+      .getByRole('button', {
+        name: 'Refine .zip file',
+      })
+      .click();
 
     // Assert the reportable conditions text is visible
     // Use regex to ignore line breaks and spacing issues

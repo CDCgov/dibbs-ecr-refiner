@@ -85,7 +85,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByTestId('Select').selectOption('rxnorm');
     await page.getByRole('textbox', { name: 'Code name' }).click();
     await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
-    await page.getByTestId('modalFooter').getByTestId('button').click();
+    await page.getByRole('button', { name: 'Add custom code' }).click();
     await expect(
       page.getByRole('cell', { name: 'qwert', exact: true })
     ).toBeVisible();
@@ -423,7 +423,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByTestId('Select').selectOption('rxnorm');
     await page.getByRole('textbox', { name: 'Code name' }).click();
     await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
-    await page.getByTestId('modalFooter').getByTestId('button').click();
+    await page.getByRole('button', { name: 'Add custom code' }).click();
     await expect(
       page.getByRole('cell', { name: 'qwert', exact: true })
     ).toBeVisible();
