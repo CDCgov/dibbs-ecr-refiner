@@ -41,41 +41,33 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
       </thead>
       <tbody>
         {data.map(({ id, name, status }) => {
+          const isActive = status === DbConfigurationStatus.active;
           return (
-            <tr
-              key={id}
-              aria-label={`View ${status === DbConfigurationStatus.draft || status === DbConfigurationStatus.inactive ? 'inactive' : 'active'} configuration for ${name}`}
-            >
+            <tr key={id} className="relative">
               <td
                 data-label={reportableConditionHeader}
                 className="p-0! font-bold!"
                 scope="row"
               >
                 <Link
-                  aria-label={`Configure the configuration for ${name}`}
+                  aria-label={`Configure ${name}`}
                   to={`/configurations/${id}/build`}
-                  className="flex h-full w-full items-center px-4 py-2 text-left"
+                  className="flex items-center px-4 py-2 after:absolute after:inset-0 after:content-['']"
                 >
                   {name}
                 </Link>
               </td>
-              <td data-label={statusHeader} className="flex p-0! align-middle">
-                <Link
-                  aria-label={`Configure the configuration for ${name}`}
-                  to={`/configurations/${id}/build`}
-                  className="flex h-full w-full items-center px-4 py-2 text-left"
-                >
-                  {status === DbConfigurationStatus.active ? (
-                    <span className="text-success-dark">
-                      <span className="text-color-success not-sr-only pr-1">
-                        ⏺︎
-                      </span>
-                      Active
+              <td data-label={statusHeader} className="p-0! align-middle">
+                {isActive ? (
+                  <span className="text-success-dark flex items-center px-4 py-2">
+                    <span className="pr-1" aria-hidden>
+                      ⏺︎
                     </span>
-                  ) : (
-                    <span>Inactive</span>
-                  )}
-                </Link>
+                    Active
+                  </span>
+                ) : (
+                  <span className="flex items-center px-4 py-2">Inactive</span>
+                )}
               </td>
             </tr>
           );
