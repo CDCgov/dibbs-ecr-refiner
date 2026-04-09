@@ -4,6 +4,7 @@ import {
   Button as HeadlessButton,
   ButtonProps as HeadlessButtonProps,
 } from '@headlessui/react';
+import { forwardRef } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'unstyled';
 
@@ -33,55 +34,67 @@ const variantStyles: Record<ButtonVariant, string> = {
   unstyled: '',
 };
 
+const disabledStyles = 'opacity-50 cursor-not-allowed pointer-events-none';
+
 /**
  * Button component supporting multiple variants and behaviors,
  * including primary, secondary, and disabled styles, with optional
  * routing functionality.
  */
-export function Button({
-  children,
-  variant = 'primary',
-  type = 'button',
-  href,
-  to,
-  onClick,
-  className,
-  disabled,
-  ...props
-}: ButtonProps) {
-  const variantClass = classNames(variantStyles[variant], className);
-
-  if (href) {
-    return (
-      <a href={href} className={variantClass}>
-        {children}
-      </a>
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      children,
+      variant = 'primary',
+      type = 'button',
+      href,
+      to,
+      onClick,
+      className,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const variantClass = classNames(
+      variantStyles[variant],
+      { [disabledStyles]: disabled },
+      className
     );
-  }
 
-  if (to) {
+    if (href) {
+      return (
+        <a href={href} className={variantClass}>
+          {children}
+        </a>
+      );
+    }
+
+    if (to) {
+      return (
+        <Link
+          to={to}
+          onClick={
+            onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>
+          }
+          className={variantClass}
+        >
+          {children}
+        </Link>
+      );
+    }
+
     return (
-      <Link
-        to={to}
-        onClick={
-          onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>
-        }
+      <HeadlessButton
+        ref={ref}
+        type={type}
+        disabled={disabled}
+        onClick={onClick}
         className={variantClass}
+        {...props}
       >
         {children}
-      </Link>
+      </HeadlessButton>
     );
   }
-
-  return (
-    <HeadlessButton
-      type={type}
-      disabled={disabled}
-      onClick={onClick}
-      className={variantClass}
-      {...props}
-    >
-      {children}
-    </HeadlessButton>
-  );
-}
+);

@@ -423,14 +423,13 @@ const ConditionCodeSetButton = forwardRef<
     ref
   ) => {
     return (
-      <button
+      <Button
         ref={ref}
-        className={classNames(
-          'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
-        )}
+        variant="unstyled"
+        className="group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4"
         onClick={onViewCodeSet}
-        {...props}
         aria-label={`View TES code set information for ${codeSetName}`}
+        {...props}
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
@@ -439,7 +438,7 @@ const ConditionCodeSetButton = forwardRef<
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set
         </span>
-      </button>
+      </Button>
     );
   }
 );
