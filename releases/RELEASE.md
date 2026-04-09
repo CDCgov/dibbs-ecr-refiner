@@ -25,7 +25,7 @@ This document will outline the process for releasing a new version of the eCR Re
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
 
-3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). If this is the first time you've made a release for this family of releases, find the created release notes from the job. Optionally, you can also make the release notes manually by clicking "draft release notes"
+3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). If you've enabled "create release notes" in the previous step, find the created release notes from the job. Optionally, you can also make the release notes manually by clicking "draft release notes" and following the below steps.
    1. Title the release notes with "Release < RELEASE NUMBER >" without the `rc` suffix (ie Release 0.0.11) since the notes will only get published after the release is ready for publishing.
       ![Screenshot of default values](./release_details.png)
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
