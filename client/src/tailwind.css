@@ -53,10 +53,6 @@
   ul {
     list-style: disc;
   }
-
-  a {
-    @apply text-blue-cool-50 font-bold;
-  }
 }
 @layer utilities {
   .border-thin {

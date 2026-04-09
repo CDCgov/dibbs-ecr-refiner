@@ -5,7 +5,7 @@ import {
   ButtonProps as HeadlessButtonProps,
 } from '@headlessui/react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'unstyled';
 
 interface ButtonProps extends HeadlessButtonProps {
   children: React.ReactNode;
@@ -30,6 +30,7 @@ const variantStyles: Record<ButtonVariant, string> = {
     sharedStyles,
     'text-blue-cool-60 hover:underline hover:text-blue-cool-50'
   ),
+  unstyled: '',
 };
 
 /**
