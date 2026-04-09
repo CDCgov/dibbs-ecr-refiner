@@ -19,12 +19,13 @@ This document will outline the process for releasing a new version of the eCR Re
    2. `version` = Semantic version to use (example: `1.4.0`)
    3. `rc` = the RC number (example: `rc.1`, note the `.` between `rc` and the number)
    4. `dry_run` = `false` (feel free to try using `true` first if you'd like to run a test without creating anything)
+   5. `release notes` = `true` (if this is a follow-up release candidate creation, leave this false)
 2. The job will push the new RC images to ECR and GHCR, which are ready to be deployed and tested. These images can be found at:
    - [refiner](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Frefiner)
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
 
-3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). Click the "Draft a new release" button and find the corresponding release tag for the images you just made.
+3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). If this is the first time you've made a release for this family of releases, find the created release notes from the job. Optionally, you can also make the release notes manually by clicking "draft release notes"
    1. Title the release notes with "Release < RELEASE NUMBER >" without the `rc` suffix (ie Release 0.0.11) since the notes will only get published after the release is ready for publishing.
       ![Screenshot of default values](./release_details.png)
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
