@@ -297,11 +297,11 @@ test.describe('should be able to access independent testing', () => {
     await page
       .getByRole('link', { name: 'Configurations', exact: true })
       .click();
+
     await page
-      .getByRole('button', {
-        name: 'Configure the configuration for Influenza',
+      .getByRole('link', {
+        name: 'Influenza',
       })
-      .filter({ hasText: 'Influenza' })
       .click();
 
     await page.getByText('Test', { exact: true }).click();
