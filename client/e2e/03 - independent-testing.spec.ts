@@ -280,10 +280,9 @@ test.describe('should be able to access independent testing', () => {
       .getByRole('link', { name: 'Configurations', exact: true })
       .click();
     await page
-      .getByRole('button', {
-        name: 'Configure the configuration for COVID-19',
+      .getByRole('link', {
+        name: 'COVID-19',
       })
-      .filter({ hasText: 'COVID-19' })
       .click();
     await page.getByText('Test', { exact: true }).click();
     await fileUpload.setInputFiles(filePath);

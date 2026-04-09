@@ -538,9 +538,8 @@ test.describe('Adding/modifying configurations by initial condition', () => {
 
     await page
       .getByRole('link', {
-        name: `Configure the configuration for ${configurationToTest} `,
+        name: configurationToTest,
       })
-      .filter({ hasText: configurationToTest })
       .click();
 
     // Open the "Custom codes" section
