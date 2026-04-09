@@ -17,6 +17,15 @@ ECR_INPUT_PREFIX = "eCRMessageV2"
 S3_BUCKET_CONFIG = "dibbs-refiner-dev"
 
 
+class MockLambdaContext:
+    function_name = "test-function"
+    memory_limit_in_mb = 128
+    invoked_function_arn = (
+        "arn:aws:lambda:us-east-1:123456789012:function:test-function"
+    )
+    aws_request_id = "test-request-id"
+
+
 @pytest.fixture
 def aws_mock():
     with mock_aws():
@@ -134,7 +143,7 @@ def test_lambda_inactive(
     from .lambda_function import lambda_handler
 
     # Run the Lambda
-    response = lambda_handler(lambda_event, context={})
+    response = lambda_handler(lambda_event, MockLambdaContext())
     assert response["statusCode"] == 200
 
     # Collect names of all keys that exist after running the lambda
@@ -256,7 +265,7 @@ def test_lambda_one_active(
     )
 
     # Run the Lambda
-    response = lambda_handler(lambda_event, context={})
+    response = lambda_handler(lambda_event, MockLambdaContext())
     assert response["statusCode"] == 200
 
     # Check that expected output files were written
@@ -424,7 +433,7 @@ def test_lambda_all_active(
     )
 
     # Run the Lambda
-    response = lambda_handler(lambda_event, context={})
+    response = lambda_handler(lambda_event, MockLambdaContext())
     assert response["statusCode"] == 200
 
     # Check that expected output files were written
