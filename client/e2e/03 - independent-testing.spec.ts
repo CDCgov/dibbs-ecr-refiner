@@ -217,10 +217,7 @@ test.describe('should be able to access independent testing', () => {
     await expect(influenzaLi).toBeVisible();
 
     // Locate the button by test id and filter by visible text
-    const refineButton = page
-      .getByTestId('button')
-      .filter({ hasText: 'Refine eCR' });
-    await refineButton.click();
+    await page.getByRole('button', { name: 'Refine eCR' }).click();
 
     await expect(page.getByText('eCR refinement results')).toBeVisible();
     await expect(page.getByText('eICR file size reduced by')).toBeVisible();
