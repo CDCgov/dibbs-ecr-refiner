@@ -26,7 +26,10 @@ const variantStyles: Record<ButtonVariant, string> = {
     sharedStyles,
     'bg-white text-violet-warm-60 hover:text-violet-warm-70 hover:border-violet-warm-70 border-violet-warm-60 border-[2px]'
   ),
-  tertiary: sharedStyles,
+  tertiary: classNames(
+    sharedStyles,
+    'text-blue-cool-60 hover:underline hover:text-blue-cool-50'
+  ),
 };
 
 /**
