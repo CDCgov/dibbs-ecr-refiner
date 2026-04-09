@@ -93,12 +93,8 @@ export function Header({ displayName }: HeaderProps) {
 export function Footer() {
   const commitHash = import.meta.env.VITE_GIT_HASH?.slice(0, 7);
   const versionTag = import.meta.env.VITE_APP_VERSION;
-
-  let versionInformation = commitHash || 'local';
-  if (versionTag && versionTag !== 'main') {
-    versionInformation = versionTag;
-  }
-
+  const versionInformation =
+    (versionTag !== 'main' && versionTag) || commitHash || 'local';
   return (
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
