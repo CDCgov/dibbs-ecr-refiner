@@ -289,7 +289,8 @@ function Builder({
             <OptionsListContainer>
               <OptionsList>
                 <li key="custom-codes">
-                  <button
+                  <Button
+                    variant="unstyled"
                     className={classNames(
                       'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                       {
@@ -304,10 +305,11 @@ function Builder({
                   >
                     <span>Custom codes</span>
                     <span>{custom_codes.length}</span>
-                  </button>
+                  </Button>
                 </li>
                 <li key="sections">
-                  <button
+                  <Button
+                    variant="unstyled"
                     className={classNames(
                       'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                       {
@@ -324,7 +326,7 @@ function Builder({
                     aria-pressed={tableView === 'sections'}
                   >
                     <span>Sections</span>
-                  </button>
+                  </Button>
                 </li>
               </OptionsList>
             </OptionsListContainer>
