@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import {
   DbConfigurationStatus,
   GetConfigurationsResponse,
@@ -9,8 +9,6 @@ interface ConfigurationsTableProps {
 }
 
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
-  const navigate = useNavigate();
-
   const reportableConditionHeader = 'Reportable Condition Configurations';
   const statusHeader = 'Status';
 
@@ -53,33 +51,19 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                 className="p-0! font-bold!"
                 scope="row"
               >
-                <button
+                <Link
                   aria-label={`Configure the configuration for ${name}`}
-                  className="block h-full w-full cursor-pointer px-4 py-2 text-left"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      void navigate(`/configurations/${id}/build`);
-                    }
-                  }}
-                  onClick={() => {
-                    void navigate(`/configurations/${id}/build`);
-                  }}
+                  to={`/configurations/${id}/build`}
+                  className="flex h-full w-full items-center px-4 py-2 text-left"
                 >
                   {name}
-                </button>
+                </Link>
               </td>
               <td data-label={statusHeader} className="flex p-0! align-middle">
-                <button
+                <Link
                   aria-label={`Configure the configuration for ${name}`}
-                  className="block h-full w-full cursor-pointer px-4 py-2 text-left"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      void navigate(`/configurations/${id}/build`);
-                    }
-                  }}
-                  onClick={() => {
-                    void navigate(`/configurations/${id}/build`);
-                  }}
+                  to={`/configurations/${id}/build`}
+                  className="flex h-full w-full items-center px-4 py-2 text-left"
                 >
                   {status === DbConfigurationStatus.active ? (
                     <span className="text-success-dark">
@@ -91,7 +75,7 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
                   ) : (
                     <span>Inactive</span>
                   )}
-                </button>
+                </Link>
               </td>
             </tr>
           );
