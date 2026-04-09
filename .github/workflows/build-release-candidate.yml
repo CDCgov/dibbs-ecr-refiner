@@ -162,7 +162,7 @@ jobs:
             VERSION=${{ steps.vars.outputs.version_tag }}
 
       - name: Create draft GitHub release notes
-        if: ${{ github.event.inputs.dry_run == 'false' && github.event.inputs.release_notes == 'true' }}
+        if: ${{ github.event.inputs.release_notes == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.vars.outputs.version_tag }}
