@@ -512,7 +512,8 @@ function DeleteCodeSetButton({
       Default
     </span>
   ) : (
-    <button
+    <Button
+      variant="unstyled"
       className="text-gray-cool-40 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
@@ -523,7 +524,7 @@ function DeleteCodeSetButton({
         size={3}
         aria-hidden
       />
-    </button>
+    </Button>
   );
 }
 
