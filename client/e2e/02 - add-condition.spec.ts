@@ -512,7 +512,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// Test that the condition deletion shows up in the activity log
     /// ==========================================================================
     await page.getByText('Activity log').click();
-    expect(page.getByRole('heading', { name: 'Activity log' }));
+    await expect(
+      page.getByRole('heading', { name: 'Activity log' })
+    ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -533,8 +535,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page
       .getByRole('link', { name: 'Configurations', exact: true })
       .click();
+
     await page
-      .getByRole('button', {
+      .getByRole('link', {
         name: `Configure the configuration for ${configurationToTest} `,
       })
       .filter({ hasText: configurationToTest })
