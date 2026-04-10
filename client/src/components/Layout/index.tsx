@@ -111,7 +111,6 @@ function generateVersionInformation() {
 }
 
 export function Footer() {
-  const versionInformation = generateVersionInformation();
   return (
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
@@ -139,7 +138,7 @@ export function Footer() {
             using the “eCR Functionality / Enhancements" category
           </p>
           <p className="text-gray-cool-20 text-xs">
-            Version code: {versionInformation}
+            Version code: {generateVersionInformation()}
           </p>
         </div>
       </div>
