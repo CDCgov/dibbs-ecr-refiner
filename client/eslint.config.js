@@ -89,6 +89,7 @@ export default defineConfig(
         typescript: {
           alwaysTryTypes: true,
           extensions: ['.js', '.jsx', '.ts', '.tsx'],
+          project: './tsconfig.app.json',
         },
       },
     },
