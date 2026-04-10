@@ -59,7 +59,7 @@ def clinical_elements_v1_1(
 # the generic engine is the unscoped fallback path. tests here exercise it
 # directly via process_section without supplying code_system_sets — the
 # dispatcher routes to the generic engine when code_system_sets is None or
-# when the section has no entry match rules
+# when the section has no entry match rules.
 
 
 def test_process_section_no_clinical_elements() -> None:

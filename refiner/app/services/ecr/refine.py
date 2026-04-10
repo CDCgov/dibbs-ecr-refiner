@@ -99,6 +99,7 @@ def _build_section_rules_map(
     Returns:
         dict[str, DbConfigurationSectionInstructions]: The resulting section rules map
     """
+
     rules_map: dict[str, DbConfigurationSectionInstructions] = {}
 
     for rule in processed_configuration.section_processing:
@@ -127,6 +128,7 @@ def _apply_section_skip_rules(
     Returns:
         dict[str, DbConfigurationSectionInstructions]: The modified map that includes skipped sections
     """
+
     modified_map = rules_map.copy()
 
     for code in SECTION_PROCESSING_SKIP:
@@ -295,7 +297,7 @@ def create_eicr_refinement_plan(
         for code in present_section_codes
     }
 
-    # build provenance before the maps are discarded -> source classification
+    # build provenance before the maps are discarded — source classification
     # requires the pre-merge rules_map to distinguish configured from unconfigured
     section_name_lookup = _build_section_name_lookup(processed_configuration)
     section_provenance = _build_section_provenance(
@@ -324,6 +326,7 @@ def create_eicr_refinement_plan(
 
 
 def _interpret_run_result(
+    section_rules: DbConfigurationSectionInstructions,
     run_result: SectionRunResult,
 ) -> SectionOutcome:
     """
@@ -342,6 +345,14 @@ def _interpret_run_result(
     The justification is that preserving an empty section with an
     orphaned narrative would mislead reviewers — better to surface
     the empty result clearly than to imply there was content here.
+
+    If this policy ever needs to vary (per-section overrides,
+    thresholds, conditional stubbing based on document context, etc.),
+    the right place for that logic is ecr/policy.py — that's where
+    refiner-behavior decisions live, separate from the IG-derived
+    specification and the structural matching engines. For now, the
+    policy is a single condition in this function and adding
+    indirection would obscure rather than clarify it.
 
     Args:
         section_rules: The jurisdiction's configured instructions for
@@ -446,14 +457,16 @@ def refine_eicr(
         outcome: SectionOutcome
 
         if not section_rules.include:
-            # BRANCH 1:
-            # wholesale removal
+            # BRANCH 1: wholesale removal
             create_minimal_section(section=section, removal_reason="configured")
             outcome = SectionOutcome.REMOVED_BY_CONFIG
 
         elif section_rules.action == "retain":
-            # BRANCH 2:
-            # retain entries; honor the narrative setting
+            # BRANCH 2: retain entries; honor the narrative setting.
+            # the narrative=False case used to be a silent no-op (the old
+            # `retain` branch was a literal `pass`); it now correctly
+            # replaces the narrative with the removal notice while
+            # leaving the entries untouched
             if not section_rules.narrative:
                 replace_narrative_with_removal_notice(
                     section=section, namespaces=HL7_NS
@@ -463,8 +476,10 @@ def refine_eicr(
                 outcome = SectionOutcome.RETAINED
 
         else:
-            # BRANCH 3:
-            # refine entries via the matching engines
+            # BRANCH 3: refine entries via the matching engines.
+            # process_section returns a SectionRunResult describing what
+            # actually happened, which _interpret_run_result maps to a
+            # user-facing outcome (including the no-match policy override)
             section_specification = plan.specification.sections.get(section_code)
             run_result = process_section(
                 section=section,
@@ -474,10 +489,13 @@ def refine_eicr(
                 code_system_sets=plan.code_system_sets,
                 include_narrative=section_rules.narrative,
             )
-            outcome = _interpret_run_result(run_result)
+            outcome = _interpret_run_result(section_rules, run_result)
 
         if provenance is not None:
             # finalize the provenance record with the runtime outcome
+            # before rendering the footnote. SectionProvenanceRecord is
+            # frozen, so dataclasses.replace produces a new instance
+            # rather than mutating in place
             finalized = dataclasses.replace(provenance, outcome=outcome)
             append_section_provenance_footnote(
                 section=section,

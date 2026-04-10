@@ -330,6 +330,11 @@ def enrich_surviving_entries(
     (e.g., organizer-level codes, result values claimed by structural
     precedence) but that PHAs still need labeled for readability.
 
+    Called from both matching paths — this module's `process` and
+    `generic_matching.process` — after pruning and before narrative
+    writing. Promoted to public because `generic_matching` imports
+    it as a cross-module helper.
+
     Args:
         section: The section element (already pruned).
         code_system_sets: Structured per-system lookup from the

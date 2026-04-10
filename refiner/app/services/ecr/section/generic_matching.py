@@ -12,6 +12,7 @@ from ..model import (
     HL7_NS,
     NamespaceMap,
     SectionRunResult,
+    SectionSpecification,
 )
 from .entry_matching import enrich_surviving_entries
 from .narrative import (
@@ -30,6 +31,7 @@ def process(
     section: _Element,
     codes_to_match: set[str],
     namespaces: NamespaceMap,
+    section_specification: SectionSpecification | None,
     code_system_sets: CodeSystemSets | None = None,
     include_narrative: bool = True,
 ) -> SectionRunResult:
@@ -43,30 +45,30 @@ def process(
     rules.
 
     Matching is unscoped — any code/value/translation element with a
-    `@code` in `codes_to_match` is considered a hit. Pruning is
-    entry-level only. `displayName` enrichment runs post-prune when
-    `code_system_sets` is available.
+    ``@code`` in ``codes_to_match`` is considered a hit. Pruning is
+    entry-level only. ``displayName`` enrichment runs post-prune when
+    ``code_system_sets`` is available.
 
-    The generic path must neutralize the section's `<code>` and
-    `<text>` elements before searching to prevent false matches.
+    The generic path must neutralize the section's ``<code>`` and
+    ``<text>`` elements before searching to prevent false matches.
     Both are saved as deep copies and restored after processing —
-    `<code>` unconditionally in the finally block (to avoid
-    corrupting the tree on error), and `<text>` conditionally based
-    on `include_narrative`.
+    ``<code>`` unconditionally in the finally block (to avoid
+    corrupting the tree on error), and ``<text>`` conditionally based
+    on ``include_narrative``.
 
-    If no entries match (or `codes_to_match` is empty), the section
-    is reduced to a minimal stub via `create_minimal_section` (the
+    If no entries match (or ``codes_to_match`` is empty), the section
+    is reduced to a minimal stub via ``create_minimal_section`` (the
     no-match policy override) and the function returns a
-    `SectionRunResult` with `matches_found=False`. The orchestrator
-    translates this into `SectionOutcome.REFINED_NO_MATCHES_STUBBED`
+    ``SectionRunResult`` with ``matches_found=False``. The orchestrator
+    translates this into ``SectionOutcome.REFINED_NO_MATCHES_STUBBED``
     regardless of the narrative configuration — see
-    `refine._interpret_run_result`.
+    ``refine._interpret_run_result``.
 
     Returns:
         SectionRunResult reporting whether matches were found and
         what the engine did with the narrative. The
-        `narrative_disposition` field is meaningful only when
-        `matches_found=True`; when no matches are found, the engine
+        ``narrative_disposition`` field is meaningful only when
+        ``matches_found=True``; when no matches are found, the engine
         stubs the entire section and the orchestrator short-circuits
         before reading the narrative disposition.
     """
@@ -100,7 +102,7 @@ def process(
             # treat as no-match and stub the section. same override as
             # the "matched nothing" case below.
             # named as REFINED_NO_MATCHES_STUBBED in
-            # refine._interpret_run_result
+            # refine._interpret_run_result.
             create_minimal_section(section=section, removal_reason="no_match")
             return SectionRunResult(
                 matches_found=False,
@@ -121,7 +123,7 @@ def process(
                 # setting — there's no useful narrative to keep when
                 # there's no clinical content left to describe.
                 # named as REFINED_NO_MATCHES_STUBBED in
-                # refine._interpret_run_result
+                # refine._interpret_run_result.
                 create_minimal_section(section=section, removal_reason="no_match")
                 return SectionRunResult(
                     matches_found=False,
@@ -168,7 +170,7 @@ def process(
                 },
             )
     finally:
-        # always restore <code> **even on error** to avoid leaving
+        # always restore <code> — even on error — to avoid leaving
         # the tree in a modified state for the caller
         if section_code_element is not None and original_code is not None:
             section.replace(section_code_element, original_code)
@@ -192,13 +194,13 @@ def _find_condition_relevant_elements(
 
     Searches for both:
 
-    1. Parent elements that have a `code`/`translation`/`value`
-       child carrying a `@code` attribute (the "candidates_parents"
+    1. Parent elements that have a ``code``/``translation``/``value``
+       child carrying a ``@code`` attribute (the "candidates_parents"
        pattern).
-    2. Direct `code`/`translation`/`value` elements with a
-       `@code` attribute (the "candidates_children" pattern).
+    2. Direct ``code``/``translation``/``value`` elements with a
+       ``@code`` attribute (the "candidates_children" pattern).
 
-    Both result lists are filtered against `codes_to_match` and
+    Both result lists are filtered against ``codes_to_match`` and
     combined, then deduplicated to remove parent/child overlap.
 
     Args:

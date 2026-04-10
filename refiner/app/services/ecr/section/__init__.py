@@ -1,12 +1,8 @@
-from ..model import SectionRunResult
+from lxml.etree import _Element
 
-# NOTE:
-# IMPORTS FOR THE DISPATCHER
-# =============================================================================
-# These modules are imported with aliases so that `process_section` can
-# reference them by their role (section-aware vs. fallback) without
-# colliding on the shared `process` function name.
-#
+from app.services.terminology import CodeSystemSets
+
+from ..model import NamespaceMap, SectionRunResult, SectionSpecification
 from . import entry_matching as _entry_matching
 from . import generic_matching as _generic_matching
 from .narrative import append_section_provenance_footnote, create_minimal_section
@@ -18,11 +14,11 @@ from .traversal import get_section_by_code, get_section_loinc_codes
 
 
 def process_section(
-    section,
-    codes_to_match,
-    namespaces,
-    section_specification,
-    code_system_sets,
+    section: _Element,
+    codes_to_match: set[str],
+    namespaces: NamespaceMap,
+    section_specification: SectionSpecification | None,
+    code_system_sets: CodeSystemSets | None,
     include_narrative: bool = True,
 ) -> SectionRunResult:
     """
