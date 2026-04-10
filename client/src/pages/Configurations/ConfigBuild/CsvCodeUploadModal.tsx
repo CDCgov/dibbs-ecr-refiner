@@ -1,56 +1,42 @@
 import React from 'react';
-import {
-  Modal,
-  ModalRef,
-  ModalHeading,
-  ModalFooter,
-  Icon,
-  Label as USWDSLabel,
-  Select,
-} from '@trussworks/react-uswds';
+import { Label as USWDSLabel, Select } from '@trussworks/react-uswds';
 import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
-import { Button } from '../../../components/Button';
-import { TextInput } from '../../../components/TextInput';
-import { Field } from '../../../components/Field';
-import { Label } from '../../../components/Label';
+import { Button } from '@components/Button';
+import { TextInput } from '@components/TextInput';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@components/Modal';
 
-// Confirm Modal
 interface ConfirmModalProps {
-  confirmModalRef: React.RefObject<ModalRef | null>;
-  closeConfirmModal: () => void;
+  isOpen: boolean;
+  onClose: () => void;
   handleConfirm: () => void;
 }
 
 export function ConfirmModal({
-  confirmModalRef,
-  closeConfirmModal,
+  isOpen,
+  onClose,
   handleConfirm,
 }: ConfirmModalProps) {
   return (
-    <Modal
-      ref={confirmModalRef}
-      id="csv-confirm-modal"
-      aria-describedby="csv-confirm-description"
-      aria-labelledby="csv-confirm-heading"
-      forceAction
-    >
-      <Button
-        aria-label="Close this window"
-        onClick={closeConfirmModal}
-        variant="tertiary"
-        className="absolute top-4 right-2 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
-      >
-        <Icon.Close className="h-5 w-5" aria-hidden />
-      </Button>
-      <ModalHeading id="csv-confirm-heading">
-        Confirm & save codes?
-      </ModalHeading>
-      <div id="csv-confirm-description" className="mt-4 text-sm text-gray-700">
-        Once you save the codes, you will need to edit or delete them
-        individually.
-      </div>
-      <ModalFooter className="flex justify-end gap-2">
+    <Modal open={isOpen} onClose={onClose}>
+      <ModalHeader>
+        <ModalTitle>Confirm & save codes?</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p>
+          Once you save the codes, you will need to edit or delete them
+          individually.
+        </p>
+      </ModalBody>
+      <ModalFooter align="right">
         <Button variant="primary" onClick={handleConfirm}>
           Yes, save codes
         </Button>
@@ -59,45 +45,30 @@ export function ConfirmModal({
   );
 }
 
-// Undo Modal
 interface UndoModalProps {
-  undoModalRef: React.RefObject<ModalRef | null>;
-  closeUndoModal: () => void;
+  isOpen: boolean;
+  onClose: () => void;
   handleDelete: () => void;
 }
 
-export function UndoModal({
-  undoModalRef,
-  closeUndoModal,
-  handleDelete,
-}: UndoModalProps) {
+export function UndoModal({ isOpen, onClose, handleDelete }: UndoModalProps) {
   return (
-    <Modal
-      ref={undoModalRef}
-      id="csv-undo-modal"
-      aria-describedby="csv-undo-description"
-      aria-labelledby="csv-undo-heading"
-      forceAction
-    >
-      <Button
-        aria-label="Close this window"
-        onClick={closeUndoModal}
-        variant="tertiary"
-        className="absolute top-4 right-2 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
-      >
-        <Icon.Close className="h-5 w-5" aria-hidden />
-      </Button>
-      <ModalHeading id="csv-undo-heading">Undo & delete codes</ModalHeading>
-      <div id="csv-undo-description" className="mt-4 text-sm text-gray-700">
-        Are you sure you want to delete all these uploaded codes? If you want to
-        add this list of codes again, you will need to re-upload the
-        spreadsheet.
-      </div>
-      <ModalFooter className="flex justify-end gap-2">
+    <Modal open={isOpen} onClose={onClose}>
+      <ModalHeader>
+        <ModalTitle>Undo & delete codes</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p>
+          Are you sure you want to delete all these uploaded codes? If you want
+          to add this list of codes again, you will need to re-upload the
+          spreadsheet.
+        </p>
+      </ModalBody>
+      <ModalFooter align="right">
         <Button
           variant="primary"
           onClick={() => {
-            closeUndoModal();
+            onClose();
             handleDelete();
           }}
         >
@@ -108,9 +79,8 @@ export function UndoModal({
   );
 }
 
-// PreviewEdit Modal
 interface PreviewEditModalProps {
-  previewEditModalRef: React.RefObject<ModalRef | null>;
+  isOpen: boolean;
   closePreviewEditModal: () => void;
   previewEditForm: UploadCustomCodesPreviewItem;
   setPreviewEditForm: React.Dispatch<
@@ -129,7 +99,7 @@ interface PreviewEditModalProps {
 }
 
 export function PreviewEditModal({
-  previewEditModalRef,
+  isOpen,
   closePreviewEditModal,
   previewEditForm,
   setPreviewEditForm,
@@ -143,39 +113,17 @@ export function PreviewEditModal({
   handlePreviewEditChange,
 }: PreviewEditModalProps) {
   return (
-    <Modal
-      ref={previewEditModalRef}
-      id="preview-edit-modal"
-      aria-describedby="preview-edit-description"
-      aria-labelledby="preview-edit-heading"
-      isLarge
-      className="max-w-100!"
-      forceAction
-    >
-      <Button
-        aria-label="Close this window"
-        onClick={closePreviewEditModal}
-        variant="tertiary"
-        className="absolute top-4 right-2 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
-      >
-        <Icon.Close className="h-5 w-5" aria-hidden />
-      </Button>
-      <ModalHeading
-        id="preview-edit-heading"
-        className="text-bold font-merriweather mb-6 p-0! text-xl"
-      >
-        {previewEditForm.code ? `Edit ${previewEditForm.code}` : 'Edit code'}
-      </ModalHeading>
-      <div
-        id="preview-edit-description"
-        className="mt-5 flex flex-col gap-5 p-0!"
-      >
+    <Modal open={isOpen} onClose={closePreviewEditModal}>
+      <ModalHeader>
+        <ModalTitle>
+          {previewEditForm.code ? `Edit ${previewEditForm.code}` : 'Edit code'}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
         <div>
           <Field>
             <Label>Code #</Label>
             <TextInput
-              id="preview-edit-code"
-              name="preview-edit-code"
               type="text"
               value={previewEditForm.code}
               onChange={handlePreviewEditChange('code')}
@@ -196,7 +144,7 @@ export function PreviewEditModal({
                   setError(null);
                 }
               }}
-              autoComplete="off"
+              autoFocus
             />
           </Field>
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
@@ -224,8 +172,8 @@ export function PreviewEditModal({
             onChange={handlePreviewEditChange('name')}
           />
         </Field>
-      </div>
-      <ModalFooter className="flex justify-end gap-2">
+      </ModalBody>
+      <ModalFooter align="right">
         <Button
           onClick={handlePreviewEditSubmit}
           disabled={isEditSaveDisabled}

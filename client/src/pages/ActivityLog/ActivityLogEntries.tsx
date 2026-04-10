@@ -1,5 +1,5 @@
 import { AuditEvent } from '../../api/schemas';
-import { Table } from '../../components/Table';
+import { Table } from '@components/Table';
 import { useDatetimeFormatter } from '../../hooks/UseDatetimeFormatter';
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];

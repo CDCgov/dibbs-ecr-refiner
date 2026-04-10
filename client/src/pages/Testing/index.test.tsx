@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
 import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
-import { ERROR_UPLOAD_MESSAGE } from '../../components/FileUploadWarning/index.tsx';
+import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
 

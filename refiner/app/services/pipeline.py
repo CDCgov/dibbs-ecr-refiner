@@ -15,6 +15,7 @@ from .ecr.model import JurisdictionReportableConditions
 from .ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
+    get_file_size_in_mib,
     get_file_size_reduction_percentage,
     refine_eicr,
     refine_rr,
@@ -68,6 +69,7 @@ class RefinementTrace:
     refinement_outcome: Literal["refined", "skipped", "error"] = "skipped"
     skip_reason: str | None = None
     eicr_size_reduction_percentage: int | None = None
+    eicr_size_mib: float | None = None
     error_detail: str | None = None
 
 
@@ -213,6 +215,7 @@ def refine_for_condition(
         trace.eicr_size_reduction_percentage = get_file_size_reduction_percentage(
             unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr
         )
+        trace.eicr_size_mib = get_file_size_in_mib(file_content=refined_eicr)
 
         return RefinementResult(
             augmented_eicr_result=augmented_eicr_result,

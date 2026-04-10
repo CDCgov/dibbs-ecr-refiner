@@ -59,6 +59,28 @@ DEFAULT_SECTION_INSTRUCTIONS = DbConfigurationSectionInstructions(
 # =============================================================================
 
 
+def get_file_size_in_bytes(file_content: str) -> int:
+    """
+    Encodes the string as UTF-8 and determines its size in bytes.
+
+    Args:
+        file_content (str): The content of the file as a string
+
+    Returns:
+        int: Size in bytes
+    """
+    return len(file_content.encode("utf-8"))
+
+
+def get_file_size_in_mib(file_content: str) -> float:
+    """
+    Returns file size in mebibytes (MiB).
+    """
+
+    size_mb = get_file_size_in_bytes(file_content) / (1024 * 1024)
+    return round(size_mb, 3)
+
+
 def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -> int:
     """
     Given an unrefined document eICR document and a refined eICR document, calculate the percentage in which the file size was reduced post-refinement.
@@ -70,8 +92,8 @@ def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -
         int: Integer representing the percentage in which the file size was reduced.
     """
 
-    unrefined_bytes = len(unrefined_eicr.encode("utf-8"))
-    refined_bytes = len(refined_eicr.encode("utf-8"))
+    unrefined_bytes = get_file_size_in_bytes(unrefined_eicr)
+    refined_bytes = get_file_size_in_bytes(refined_eicr)
 
     if unrefined_bytes == 0:
         return 0

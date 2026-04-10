@@ -5,22 +5,22 @@ import {
 } from '../layout';
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
-import { Title } from '../../../components/Title';
+import { Title } from '@components/Title';
 import { RunTest } from '../../Testing/RunTest';
 import { useState } from 'react';
 import {
   useGetConfiguration,
   useRunInlineConfigurationTest,
 } from '../../../api/configurations/configurations';
-import { Diff } from '../../../components/Diff';
+import { Diff } from '@components/Diff';
 import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
-import { Spinner } from '../../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import { Uploading } from '../../Testing/Uploading';
 import { Status } from '../ConfigBuild/Status';
 import { VersionMenu } from '../ConfigBuild/VersionMenu';
-import { FileUploadWarning } from '../../../components/FileUploadWarning';
+import { FileUploadWarning } from '@components/FileUploadWarning';
 
 export function ConfigTest() {
   const { id } = useParams<{ id: string }>();
