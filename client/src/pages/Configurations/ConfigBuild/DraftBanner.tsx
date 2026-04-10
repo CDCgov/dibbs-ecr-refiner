@@ -9,10 +9,10 @@ import { useNavigate } from 'react-router';
 import { useCreateConfiguration } from '../../../api/configurations/configurations';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
-import { Button } from '../../../components/Button';
+import { Button } from '@components/Button';
 import { useRef } from 'react';
 import classNames from 'classnames';
-import { ModalToggleButton } from '../../../components/Button/ModalToggleButton';
+import { ModalToggleButton } from '@components/Button/ModalToggleButton';
 
 interface DraftBannerProps {
   draftId: string | null;

@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import { toast, ToastOptions } from 'react-toastify';
-import { Toast } from '../components/Toast';
+import { Toast } from '@components/Toast';
 
 const globalOptions: ToastOptions = {
   // uncomment this to debug toast styling issues
