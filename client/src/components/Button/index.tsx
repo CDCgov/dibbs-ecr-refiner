@@ -34,7 +34,8 @@ const variantStyles: Record<ButtonVariant, string> = {
   unstyled: '',
 };
 
-const disabledStyles = 'opacity-50 cursor-not-allowed pointer-events-none';
+const disabledStyles =
+  'bg-zinc-200 text-gray-600! cursor-not-allowed pointer-events-none';
 
 /**
  * Button component supporting multiple variants and behaviors,
