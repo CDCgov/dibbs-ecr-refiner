@@ -20,7 +20,7 @@ from app.services.terminology import ConfigurationPayload, ProcessedConfiguratio
 # being processed. an empty section_provenance dict means no footnotes
 # get rendered, so the timestamp is never read and the placeholder is
 # safe — the tests focus on refinement behavior (filtering, pruning,
-# enrichment) rather than provenance footnote contents.
+# enrichment) rather than provenance footnote contents
 
 _PLACEHOLDER_AUGMENTATION_TIMESTAMP = "19700101000000+0000"
 
@@ -300,7 +300,7 @@ def test_refine_action_with_matches_v1_1(eicr_root_v1_1: etree._Element):
 # ProcessedConfiguration objects so that the section-aware match rules,
 # component-level pruning, and displayName enrichment all fire
 # * they assert on the shape of the refined XML output rather than testing
-# internal functions, making them resilient to internal refactoring.
+# internal functions, making them resilient to internal refactoring
 
 
 def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: etree._Element):
