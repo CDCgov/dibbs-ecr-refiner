@@ -39,13 +39,13 @@ interface ModalProps {
       <Modal open={isOpen} onClose={() => setIsOpen(false)}>
         <ModalHeader>
           <ModalTitle>My Custom Modal</ModalTitle>
+        </ModalHeader>
           <ModalBody>
             <p>Content goes here</p>
           </ModalBody>
           <ModalFooter>
             <Button onClick={() => setIsOpen(false)}>Close the modal</Button>
           </ModalFooter>
-        </ModalHeader>
       </Modal>
     );
   }
