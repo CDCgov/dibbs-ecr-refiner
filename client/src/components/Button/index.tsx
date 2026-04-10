@@ -10,6 +10,7 @@ interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
   type?: UswdsButtonProps['type'];
   variant?: ButtonVariant;
   to?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -35,6 +36,7 @@ export function Button({
       <Link
         onClick={sideEffect}
         to={to}
+        data-testid={props['data-testid']}
         className={classNames(
           {
             ['usa-button']: variant === 'primary',
@@ -57,6 +59,7 @@ export function Button({
       className={className}
       secondary={variant === 'secondary'}
       unstyled={variant === 'tertiary'}
+      data-testid={props['data-testid']}
       {...props}
     >
       {children}

@@ -49,6 +49,7 @@ export function DraftBanner({
         <Button
           to={`/configurations/${draftId}/${step}`}
           className="self-start"
+          data-testid="go-to-draft-button"
         >
           Go to draft
         </Button>
@@ -57,6 +58,7 @@ export function DraftBanner({
           modalRef={modalRef}
           opener
           className={classNames('self-start')}
+          data-testid="create-draft-button"
         >
           Draft a new version
         </ModalToggleButton>
