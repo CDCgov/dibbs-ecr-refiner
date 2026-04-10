@@ -18,7 +18,6 @@ import {
   PreviewEditModal,
 } from '../CsvCodeUploadModal';
 import { Button } from '@components/Button';
-import { ModalRef } from '@trussworks/react-uswds';
 import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
 import { Search } from '@components/Search';
@@ -74,9 +73,9 @@ export function ImportCustomCodes({
       system: 'ICD-10',
       name: '',
     });
-  const previewEditModalRef = useRef<ModalRef | null>(null);
-  const confirmModalRef = useRef<ModalRef | null>(null);
-  const undoModalRef = useRef<ModalRef | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isUndoModalOpen, setIsUndoModalOpen] = useState(false);
 
   const { mutate: uploadCsvMutation, isPending: isUploadPending } =
     useUploadCustomCodesCsv();
@@ -253,19 +252,19 @@ export function ImportCustomCodes({
   };
 
   const openConfirmModal = () => {
-    confirmModalRef.current?.toggleModal();
+    setIsConfirmModalOpen(true);
   };
 
   const closeConfirmModal = () => {
-    confirmModalRef.current?.toggleModal();
+    setIsConfirmModalOpen(false);
   };
 
   const openUndoModal = () => {
-    undoModalRef.current?.toggleModal();
+    setIsUndoModalOpen(true);
   };
 
   const closeUndoModal = () => {
-    undoModalRef.current?.toggleModal();
+    setIsUndoModalOpen(false);
   };
 
   const handleConfirm = () => {
@@ -333,11 +332,11 @@ export function ImportCustomCodes({
     if (!target) return;
     setPreviewEditIndex(previewIndex);
     setPreviewEditForm({ ...target });
-    previewEditModalRef.current?.toggleModal();
+    setIsPreviewModalOpen(true);
   };
 
   const closePreviewEditModal = () => {
-    previewEditModalRef.current?.toggleModal();
+    setIsPreviewModalOpen(false);
     setPreviewEditIndex(null);
     setPreviewEditForm(EMPTY_PREVIEW_FORM);
   };
@@ -593,19 +592,19 @@ export function ImportCustomCodes({
       </div>
 
       <ConfirmModal
-        confirmModalRef={confirmModalRef}
-        closeConfirmModal={closeConfirmModal}
+        isOpen={isConfirmModalOpen}
+        onClose={closeConfirmModal}
         handleConfirm={handleConfirm}
       />
 
       <UndoModal
-        undoModalRef={undoModalRef}
-        closeUndoModal={closeUndoModal}
+        isOpen={isUndoModalOpen}
+        onClose={closeUndoModal}
         handleDelete={handleDelete}
       />
 
       <PreviewEditModal
-        previewEditModalRef={previewEditModalRef}
+        isOpen={isPreviewModalOpen}
         closePreviewEditModal={closePreviewEditModal}
         previewEditForm={previewEditForm}
         setPreviewEditForm={setPreviewEditForm}
