@@ -22,6 +22,7 @@ def build_schema(console: Console) -> etree.XMLSchema | None:
 
     Returns None and prints an error if schema compilation fails.
     """
+
     try:
         schema_doc = etree.parse(str(ROOT_SCHEMA))
         return etree.XMLSchema(schema_doc)
@@ -47,6 +48,7 @@ def validate_xml_with_xsd(
 
     Raises ValueError if the schema cannot be compiled.
     """
+
     if console is None:
         console = Console()
 
@@ -82,6 +84,7 @@ def display_xsd_results(
     """
     Render XSD validation errors in the same table style as schematron results.
     """
+
     table = Table(
         title="CDA R2 XSD Validation Report",
         show_header=True,
@@ -111,6 +114,7 @@ def display_xsd_summary(
     """
     Display a summary panel matching the schematron validator's style.
     """
+
     error_count = len(validation_results)
     error_style = "bold red" if error_count else "bold green"
 
@@ -131,6 +135,7 @@ def run_xsd_validation(xml_path: Path) -> None:
     """
     Orchestrate XSD validation for a single file and display results.
     """
+
     console = Console()
     console.print(f"Analyzing file: [bold]{xml_path.name}[/bold]")
     console.print(f"Schema root: [dim]{ROOT_SCHEMA.relative_to(BASE_DIR)}[/dim]\n")
@@ -154,6 +159,10 @@ def run_xsd_validation(xml_path: Path) -> None:
 
 
 def main() -> None:
+    """
+    Main function to select a file and run validation.
+    """
+
     import subprocess
 
     console = Console()
