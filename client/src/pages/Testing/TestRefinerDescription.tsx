@@ -1,4 +1,4 @@
-import { Title } from '../../components/Title';
+import { Title } from '@components/Title';
 
 /**
  * Renders the title and description for the Test Refiner module.

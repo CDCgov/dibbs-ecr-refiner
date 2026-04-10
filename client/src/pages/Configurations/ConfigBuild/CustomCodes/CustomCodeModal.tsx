@@ -1,5 +1,5 @@
 import { Select, Label as USWDSLabel } from '@trussworks/react-uswds';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
@@ -9,15 +9,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
-import { TextInput } from '../../../../components/TextInput';
-import { Field } from '../../../../components/Field';
-import { Label } from '../../../../components/Label';
-import {
-  Modal,
-  ModalTitle,
-  ModalHeader,
-  ModalBody,
-} from '../../../../components/Modal';
+import { TextInput } from '@components/TextInput';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
+import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 
 interface CustomCodeModalProps {
   configurationId: string;

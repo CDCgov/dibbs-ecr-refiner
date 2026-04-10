@@ -2,17 +2,17 @@ import React from 'react';
 import { Label as USWDSLabel, Select } from '@trussworks/react-uswds';
 import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
-import { Button } from '../../../components/Button';
-import { TextInput } from '../../../components/TextInput';
-import { Field } from '../../../components/Field';
-import { Label } from '../../../components/Label';
+import { Button } from '@components/Button';
+import { TextInput } from '@components/TextInput';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 import {
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from '../../../components/Modal';
+} from '@components/Modal';
 
 interface ConfirmModalProps {
   isOpen: boolean;

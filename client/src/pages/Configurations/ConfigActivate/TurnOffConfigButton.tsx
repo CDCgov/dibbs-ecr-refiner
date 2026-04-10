@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Button } from '../../../components/Button';
+import { Button } from '@components/Button';
 import {
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from '../../../components/Modal';
+} from '@components/Modal';
 
 interface TurnOffConfigButtonProps {
   handleDeactivation: () => void;

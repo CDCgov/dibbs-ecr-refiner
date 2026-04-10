@@ -5,8 +5,8 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from '../../../components/Modal';
-import { Button } from '../../../components/Button';
+} from '@components/Modal';
+import { Button } from '@components/Button';
 
 interface TurnOnConfigButtonProps {
   handleActivation: () => void;

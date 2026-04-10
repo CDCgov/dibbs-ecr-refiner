@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useCreateConfiguration } from '../../../api/configurations/configurations';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { useToast } from '../../../hooks/useToast';
-import { Button } from '../../../components/Button';
+import { Button } from '@components/Button';
 import { useState } from 'react';
 import {
   Modal,
@@ -11,7 +11,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-} from '../../../components/Modal';
+} from '@components/Modal';
 
 interface DraftBannerProps {
   draftId: string | null;

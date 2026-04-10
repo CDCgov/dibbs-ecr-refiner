@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { Sections } from './Sections';
-import { Title } from '../../../components/Title';
-import { Button } from '../../../components/Button';
+import { Title } from '@components/Title';
+import { Button } from '@components/Button';
 import { useToast } from '../../../hooks/useToast';
 import { Steps, StepsContainer } from '../Steps';
 import {
@@ -22,7 +22,7 @@ import { AddConditionCodeSetsDrawer } from './AddConditionCodeSets';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
-import { Spinner } from '../../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import { VersionMenu } from './VersionMenu';
 import { DraftBanner } from './DraftBanner';
 import { ConfigLockBanner } from './ConfigLockBanner';

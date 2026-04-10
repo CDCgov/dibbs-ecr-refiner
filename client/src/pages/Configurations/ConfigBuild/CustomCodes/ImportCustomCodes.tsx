@@ -17,10 +17,10 @@ import {
   UndoModal,
   PreviewEditModal,
 } from '../CsvCodeUploadModal';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
-import { Search } from '../../../../components/Search';
+import { Search } from '@components/Search';
 
 type PreviewRow = {
   item: SearchPreviewItem;

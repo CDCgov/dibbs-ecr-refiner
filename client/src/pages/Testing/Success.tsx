@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Label, Select } from '@trussworks/react-uswds';
-import { Title } from '../../components/Title';
+import { Title } from '@components/Title';
 import { IndependentTestUploadResponse } from '../../api/schemas';
-import { Diff } from '../../components/Diff';
+import { Diff } from '@components/Diff';
 
 type SuccessProps = Pick<
   IndependentTestUploadResponse,

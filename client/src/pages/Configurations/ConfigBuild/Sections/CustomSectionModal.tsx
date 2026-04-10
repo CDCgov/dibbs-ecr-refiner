@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import { useMemo, useState } from 'react';
 import {
   getGetConfigurationQueryKey,
@@ -8,15 +8,10 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
-import { TextInput } from '../../../../components/TextInput';
-import {
-  Modal,
-  ModalHeader,
-  ModalTitle,
-  ModalBody,
-} from '../../../../components/Modal';
-import { Field } from '../../../../components/Field';
-import { Label } from '../../../../components/Label';
+import { TextInput } from '@components/TextInput';
+import { Modal, ModalHeader, ModalTitle, ModalBody } from '@components/Modal';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 
 interface EditCustomSection {
   name: string;

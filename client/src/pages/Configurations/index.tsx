@@ -1,7 +1,7 @@
-import { Title } from '../../components/Title';
-import { Button } from '../../components/Button';
-import { Search } from '../../components/Search';
-import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { Title } from '@components/Title';
+import { Button } from '@components/Button';
+import { Search } from '@components/Search';
+import { ConfigurationsTable } from '@components/ConfigurationsTable';
 import {
   useCreateConfiguration,
   useGetConfigurations,
@@ -19,7 +19,7 @@ import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import classNames from 'classnames';
 import {
   Modal,
@@ -27,7 +27,7 @@ import {
   ModalHeader,
   ModalTitle,
   ModalFooter,
-} from '../../components/Modal';
+} from '@components/Modal';
 
 enum ConfigurationStatus {
   on = 'on',
