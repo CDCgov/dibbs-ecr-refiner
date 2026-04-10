@@ -172,3 +172,13 @@ jobs:
           GIT_TAG="${{ steps.vars.outputs.git_tag }}"
           git tag -a "$GIT_TAG" -m "Release $GIT_TAG (promoted from ${{ steps.vars.outputs.rc_version }})"
           git push origin "$GIT_TAG"
+
+      - name: Create draft GitHub release notes
+        if: ${{ github.event.inputs.release_notes == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.git_tag }}
+          name: Release ${{ steps.vars.outputs.version }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true

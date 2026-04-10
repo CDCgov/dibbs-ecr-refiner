@@ -19,25 +19,22 @@ This document will outline the process for releasing a new version of the eCR Re
    2. `version` = Semantic version to use (example: `1.4.0`)
    3. `rc` = the RC number (example: `rc.1`, note the `.` between `rc` and the number)
    4. `dry_run` = `false` (feel free to try using `true` first if you'd like to run a test without creating anything)
-   5. `release notes` = `true` (if this is a follow-up release candidate creation, leave this false)
 2. The job will push the new RC images to ECR and GHCR, which are ready to be deployed and tested. These images can be found at:
    - [refiner](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Frefiner)
    - [lambda](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Flambda)
    - [ops](https://github.com/CDCgov/dibbs-ecr-refiner/pkgs/container/dibbs-ecr-refiner%2Fops)
 
-3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). If you've enabled "create release notes" in the previous step, find the created release notes from the job. Optionally, you can also make the release notes manually by clicking "draft release notes" and following the below steps.
+3. Once the release candidate job runs, navigate to the [release page](https://github.com/CDCgov/dibbs-ecr-refiner/releases). If you've enabled "create release notes" in the previous step, find the created release notes from the job. If needed, you can also make the release notes manually by clicking "draft release notes" and following the below steps.
    1. Title the release notes with "Release < RELEASE NUMBER >" without the `rc` suffix (ie Release 0.0.11) since the notes will only get published after the release is ready for publishing.
       ![Screenshot of default values](./release_details.png)
    1. Specify the previous tag using the dropdown and hit _generate release notes_.
       ![Screenshot of generate release notes button](./generate_release_notes.png)
    1. Copy this list of commit names and edit it down, removing all entries unimportant to the end user, e.g., test updates, refactors, dependency bumps, chores, etc.
-   1. Add the template release notes linked [in the release note template](./RELEASE_NOTE_TEMPLATE.MD) to the notes. **Make sure you copy this directly, as otherwise, the app updates page might not render correctly**
-      - Product will own the first and second sections summarizing the release / major features
-      - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
-   1. Before saving, **ensure that the “Set as a pre-release” checkbox is marked.** The release should not be marked as the latest release until deployment and testing have been performed. Then click "save draft”!
-      ![Screenshot of publish release notes with pre-release](./save_release_as_draft.png)
 
-4. Once the pre-release is saved, ping product that the notes are available for editing with a link to the draft. Have them fill in the relevant portions.
+4. Add the template release notes linked [in the release note template](./RELEASE_NOTE_TEMPLATE.MD) to the notes. **Make sure you copy this directly, as otherwise, the app updates page might not render correctly**
+   - Product will own the first and second sections summarizing the release / major features
+   - Engineering will own the content in the third and forth sections. The edited commit list will go in the fourth section.
+5. Click "save draft”! Once the pre-release draft is saved, ping product that the notes are available for editing with a link to the draft. Have them fill in the relevant portions.
    - Once they're done, they should ping you that the notes are ready
 
 > [!TIP]
@@ -60,7 +57,8 @@ This document will outline the process for releasing a new version of the eCR Re
    2. Make sure the `version` is the same as the release candidate tag without `-rc.x` at the end (e.g., `1.4.0`)
    3. Leave `dry_run` unchecked
    4. After completion, check that the images were successfully pushed to both GHCR and ECR (see job logs)
-1. Publish the release notes created previously by finding the draft, unchecking the pre-release checkbox and hitting "Publish release"
+1. Navigate to the releases page and find the created release notes for the final image, as well as the draft notes created in the initial steps. Copy over the content from the draft, and once the content is moved over, delete that draft.
+1. Once you're done, hit "Publish release"
    ![Screenshot of publishing release](./publish_release.png)
 
 1. Communicate to APHL that the final release is ready for them to promote up to prod, along with the version number. They should be able to pull the newly tagged image and promote it up to the prod environment.

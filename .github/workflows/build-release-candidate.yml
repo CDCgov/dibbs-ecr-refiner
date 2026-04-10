@@ -13,9 +13,9 @@ on:
         description: "RC number (e.g. rc.1)"
         required: true
       release_notes:
-        description: "Create release notes? Leave this unchecked if there are already notes created"
+        description: "Create release notes?"
         type: boolean
-        default: false
+        default: true
       dry_run:
         description: "If true, skip creating git tag and pushing Docker images"
         type: boolean
