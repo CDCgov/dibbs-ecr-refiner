@@ -3,6 +3,7 @@ import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { IndependentTestUploadResponse } from '../../api/schemas';
 import classNames from 'classnames';
 import { Button } from '../Button';
+import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -16,23 +17,32 @@ export function Diff({
   unrefined_eicr,
   condition,
 }: DiffProps) {
-  const [downloadError, setDownloadError] = useState<boolean>(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
 
-  function downloadFile(filename: string) {
+  async function downloadFile(filename: string) {
     try {
-      const downloadUrl = `/api/v1/demo/download/${filename}`;
+      const url = getDownloadRefinedEcrQueryKey(filename)[0];
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const { detail } = await response.json();
+        setDownloadError(detail ?? 'An unknown error occurred.');
+        return;
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = '';
-      document.body.appendChild(link);
+      link.href = blobUrl;
+      link.download = filename;
       link.click();
-      document.body.removeChild(link);
-      setDownloadError(false);
+      URL.revokeObjectURL(blobUrl);
+      setDownloadError(null);
     } catch (error) {
       console.error(error);
-      setDownloadError(true);
+      setDownloadError('An unknown error occurred.');
     }
   }
 
@@ -48,14 +58,18 @@ export function Diff({
             ))}
           </div>
           <div>
-            <div className="gapx-2 flex flex-col items-start py-1">
+            <div className="flex flex-col items-start gap-1 py-1">
               <Button
                 variant="tertiary"
                 onClick={() => downloadFile(refined_download_key)}
               >
                 Download results
               </Button>
-              {downloadError && <span>File download has expired.</span>}
+              {downloadError ? (
+                <span className="text-state-error-dark">
+                  Error: {downloadError}
+                </span>
+              ) : null}
             </div>
           </div>
         </div>
