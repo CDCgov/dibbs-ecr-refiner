@@ -86,6 +86,8 @@ interface UploadZipFile {
   onClickSampleFile: () => Promise<void>;
 }
 
+const autoFocus = (element: HTMLElement | null) => element?.focus();
+
 function UploadZipFile({
   onClick,
   selectedFile,
@@ -117,7 +119,9 @@ function UploadZipFile({
         {selectedFile ? <p>{selectedFile.name}</p> : null}
         <div className="flex items-center gap-4">
           {selectedFile ? (
-            <Button onClick={() => void onClick()}>Refine .zip file</Button>
+            <Button ref={autoFocus} onClick={() => void onClick()}>
+              Refine .zip file
+            </Button>
           ) : null}
           <label
             htmlFor="zip-upload"
