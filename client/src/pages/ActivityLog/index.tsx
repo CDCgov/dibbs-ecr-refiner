@@ -1,6 +1,6 @@
 import { Label, Pagination, Select } from '@trussworks/react-uswds';
-import { Spinner } from '../../components/Spinner';
-import { Title } from '../../components/Title';
+import { Spinner } from '@components/Spinner';
+import { Title } from '@components/Title';
 import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
 import { useGetEvents } from '../../api/events/events';

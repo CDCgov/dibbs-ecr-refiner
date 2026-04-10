@@ -1,5 +1,5 @@
 import { CodeSystem } from '../../../../api/schemas/codeSystem';
-import { Search } from '../../../../components/Search';
+import { Search } from '@components/Search';
 import { ModalRef, Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
@@ -14,10 +14,10 @@ import {
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
 import { DbConfigurationCustomCode } from '../../../../api/schemas';
-import { Spinner } from '../../../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
-import { Button } from '../../../../components/Button';
-import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { Button } from '@components/Button';
+import { ModalToggleButton } from '@components/Button/ModalToggleButton';
 import { CustomCodeModal } from './CustomCodeModal';
 
 interface CustomCodesDetailProps {

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
-import { FileUploadWarning } from '../../components/FileUploadWarning';
+import { FileUploadWarning } from '@components/FileUploadWarning';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 type Status =

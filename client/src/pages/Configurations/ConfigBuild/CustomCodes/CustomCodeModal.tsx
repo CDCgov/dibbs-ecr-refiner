@@ -7,7 +7,7 @@ import {
   Select,
   Label as USWDSLabel,
 } from '@trussworks/react-uswds';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
@@ -17,9 +17,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
-import { TextInput } from '../../../../components/TextInput';
-import { Field } from '../../../../components/Field';
-import { Label } from '../../../../components/Label';
+import { TextInput } from '@components/TextInput';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 
 interface CustomCodeModalProps {
   configurationId: string;
