@@ -90,13 +90,28 @@ export function Header({ displayName }: HeaderProps) {
   );
 }
 
-export function Footer() {
+function generateVersionInformation() {
   const commitHash = import.meta.env.VITE_GIT_HASH?.slice(0, 7);
   const versionTag = import.meta.env.VITE_APP_VERSION;
 
-  // if the tag is "main", ie deploys off main to lower env, revert back to the commit hash
-  const versionInformation =
-    (versionTag !== 'main' && versionTag) || commitHash || 'local';
+  const versionInformation = [];
+
+  if (versionTag !== 'main' && versionTag) {
+    versionInformation.push(versionTag);
+  }
+  if (commitHash) {
+    versionInformation.push(commitHash);
+  }
+  // fall back to local if both aren't available
+  if (versionInformation.length === 0) {
+    versionInformation.push('local');
+  }
+
+  return versionInformation.join(' | ');
+}
+
+export function Footer() {
+  const versionInformation = generateVersionInformation();
   return (
     <footer>
       <div className="bg-blue-cool-80 flex flex-col items-center justify-between gap-5 px-5 py-5 md:flex-row md:px-20">
