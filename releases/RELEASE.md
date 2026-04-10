@@ -45,7 +45,7 @@ This document will outline the process for releasing a new version of the eCR Re
 
 ## Test release image in APHL
 
-1. Ping APHL in Teams that there are new release candidates to deploy in lower environments and have them run the relevant security scans will run on their end.
+1. Ping APHL in Teams to let them know that a new release candidate is ready to deploy in lower environments. They will run the relevant security scans and let us know of any issues found.
    - Check the deploy: Once the deployments to lower environments gets kicked off, check that deployed image makes it to [the APHL dev environment](https://refiner.dev.sandbox2.aimsplatform.org/) with the correct version number and the packages have the correct image tagged latest.
      ![Screenshot of version section of the footer on the dev site](./version_code_dev.png)
 
