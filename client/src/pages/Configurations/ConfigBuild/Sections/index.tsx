@@ -10,7 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '@components/Button';
-import { Modal } from './Modal';
+import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Checkbox } from './Checkbox';
 import { Switch } from './Switch';
@@ -69,7 +69,7 @@ export function Sections({
               Add custom section <span aria-hidden>+</span>
             </Button>
           )}
-          <Modal
+          <CustomSectionModal
             isOpen={isOpen}
             setIsOpen={setIsOpen}
             configurationId={configurationId}

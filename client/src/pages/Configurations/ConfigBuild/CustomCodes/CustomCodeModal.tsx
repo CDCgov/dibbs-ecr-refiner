@@ -1,12 +1,4 @@
-import {
-  Icon,
-  Modal,
-  ModalFooter,
-  ModalHeading,
-  ModalRef,
-  Select,
-  Label as USWDSLabel,
-} from '@trussworks/react-uswds';
+import { Select, Label as USWDSLabel } from '@trussworks/react-uswds';
 import { Button } from '@components/Button';
 import {
   getGetConfigurationQueryKey,
@@ -14,19 +6,21 @@ import {
   useEditCustomCodeFromConfiguration,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 
 interface CustomCodeModalProps {
   configurationId: string;
-  modalRef: React.RefObject<ModalRef | null>;
-  onClose: () => void;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedCustomCode: DbConfigurationCustomCode | null;
   deduplicated_codes: string[];
+  onClose: () => void;
 }
 
 function normalizeSystem(system: CodeSystem | string): CodeSystem {
@@ -35,11 +29,55 @@ function normalizeSystem(system: CodeSystem | string): CodeSystem {
 
 export function CustomCodeModal({
   configurationId,
-  modalRef,
-  onClose,
+  isOpen,
+  setIsOpen,
   selectedCustomCode,
   deduplicated_codes,
+  onClose,
 }: CustomCodeModalProps) {
+  const formKey = useMemo(
+    () => `${isOpen ? 'open' : 'closed'}-${selectedCustomCode?.code ?? 'new'}`,
+    [isOpen, selectedCustomCode?.code]
+  );
+
+  const handleCloseCustomCodeModal = () => {
+    onClose();
+    setIsOpen(false);
+  };
+
+  return (
+    <Modal open={isOpen} onClose={handleCloseCustomCodeModal}>
+      <ModalHeader>
+        <ModalTitle>
+          {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        {isOpen && (
+          <CustomCodeForm
+            key={formKey}
+            configurationId={configurationId}
+            deduplicated_codes={deduplicated_codes}
+            onClose={handleCloseCustomCodeModal}
+            selectedCustomCode={selectedCustomCode}
+          />
+        )}
+      </ModalBody>
+    </Modal>
+  );
+}
+
+type CustomCodeFormProps = Pick<
+  CustomCodeModalProps,
+  'selectedCustomCode' | 'configurationId' | 'deduplicated_codes' | 'onClose'
+>;
+
+function CustomCodeForm({
+  selectedCustomCode,
+  configurationId,
+  deduplicated_codes,
+  onClose,
+}: CustomCodeFormProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
   const { mutate: editCode } = useEditCustomCodeFromConfiguration();
   const queryClient = useQueryClient();
@@ -55,46 +93,14 @@ export function CustomCodeModal({
     })),
   ];
 
-  const [form, setForm] = useState({
-    code: selectedCustomCode?.code ?? '',
-    system: selectedCustomCode?.system
-      ? normalizeSystem(selectedCustomCode.system)
-      : '',
-    name: selectedCustomCode?.name ?? '',
-  });
-
-  if (
-    form.code === '' &&
-    form.name === '' &&
-    form.system === '' &&
-    selectedCustomCode
-  ) {
-    setForm({
-      code: selectedCustomCode?.code ?? '',
-      system: selectedCustomCode?.system
-        ? normalizeSystem(selectedCustomCode.system)
-        : '',
-      name: selectedCustomCode?.name ?? '',
-    });
-  }
-
+  const [name, setName] = useState(selectedCustomCode?.name ?? '');
+  const [code, setCode] = useState(selectedCustomCode?.code ?? '');
+  const [system, setSystem] = useState(selectedCustomCode?.system ?? '');
   const [error, setError] = useState<string | null>(null);
 
-  function resetForm() {
-    setForm({ code: '', system: '', name: '' });
-  }
+  const isButtonEnabled = code && system && name;
 
-  const isButtonEnabled =
-    form.code && form.system && form.system !== '' && form.name;
-
-  const handleChange =
-    (field: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const handleSubmit = () => {
     if (selectedCustomCode) {
       editCode(
         {
@@ -103,9 +109,9 @@ export function CustomCodeModal({
             code: selectedCustomCode.code,
             system: normalizeSystem(selectedCustomCode.system),
             name: selectedCustomCode.name,
-            new_code: form.code,
-            new_system: normalizeSystem(form.system),
-            new_name: form.name,
+            new_code: code,
+            new_system: normalizeSystem(system),
+            new_name: name,
           },
         },
         {
@@ -113,8 +119,7 @@ export function CustomCodeModal({
             await queryClient.invalidateQueries({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
-            showToast({ heading: 'Custom code updated', body: form.code });
-            resetForm();
+            showToast({ heading: 'Custom code updated', body: code });
             onClose();
           },
           onError: () => {
@@ -123,7 +128,6 @@ export function CustomCodeModal({
               heading: 'Custom code update failed',
               body: 'The code/system pair already exists.',
             });
-            resetForm();
             onClose();
           },
         }
@@ -133,9 +137,9 @@ export function CustomCodeModal({
         {
           configurationId,
           data: {
-            code: form.code,
-            system: normalizeSystem(form.system),
-            name: form.name,
+            code: code,
+            system: normalizeSystem(system),
+            name: name,
           },
         },
         {
@@ -143,8 +147,7 @@ export function CustomCodeModal({
             await queryClient.invalidateQueries({
               queryKey: getGetConfigurationQueryKey(configurationId),
             });
-            showToast({ heading: 'Custom code added', body: form.code });
-            resetForm();
+            showToast({ heading: 'Custom code added', body: code });
             onClose();
           },
         }
@@ -153,98 +156,63 @@ export function CustomCodeModal({
   };
 
   return (
-    <Modal
-      ref={modalRef}
-      id="custom-code-modal"
-      aria-describedby="modal-heading"
-      aria-labelledby="modal-heading"
-      isLarge
-      className="max-w-100!"
-      forceAction
-    >
-      <ModalHeading
-        id="modal-heading"
-        className="text-bold font-merriweather mb-6 p-0! text-xl"
-      >
-        {selectedCustomCode ? 'Edit custom code' : 'Add custom code'}
-      </ModalHeading>
-
-      <Button
-        aria-label="Close this window"
-        onClick={() => {
-          resetForm();
-          onClose();
-        }}
-        className="absolute top-4 right-0 h-3 w-3 rounded bg-transparent! p-0! text-gray-500! hover:cursor-pointer hover:bg-gray-100 hover:text-gray-900"
-      >
-        <Icon.Close className="h-6! w-6!" aria-hidden />
-      </Button>
-
-      <div className="mt-5 flex flex-col gap-5 p-0!">
-        <div>
-          <Field>
-            <Label>Code #</Label>
-            <TextInput
-              type="text"
-              value={form.code}
-              onChange={(e) => {
-                const value = e.target.value.trimStart(); // trim leading space only while typing
-                setForm((prev) => ({ ...prev, code: value }));
-                if (error) setError(''); // clear error on change
-              }}
-              onBlur={() => {
-                const trimmedCode = form.code.trim(); // full trim (leading + trailing)
-                if (deduplicated_codes.includes(trimmedCode)) {
-                  setError(`The code "${trimmedCode}" already exists.`);
-                } else {
-                  setForm((prev) => ({ ...prev, code: trimmedCode })); // ensure stored value is clean
-                }
-              }}
-              autoFocus
-            />
-          </Field>
-          {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
-        </div>
-        <div>
-          <USWDSLabel htmlFor="system">Code system</USWDSLabel>
-          <Select
-            id="system"
-            name="system"
-            value={form.system}
-            onChange={handleChange('system')}
-          >
-            {systemValues.map((sv) => (
-              <option key={sv.value} value={sv.value}>
-                {sv.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <div>
-          <Field>
-            <Label>Code name</Label>
-            <TextInput
-              type="text"
-              value={form.name}
-              onChange={handleChange('name')}
-            />
-          </Field>
-        </div>
+    <>
+      <Field>
+        <Label>Code #</Label>
+        <TextInput
+          type="text"
+          value={code}
+          onChange={(e) => {
+            const value = e.target.value.trimStart(); // trim leading space only while typing
+            setCode(value);
+            if (error) setError(''); // clear error on change
+          }}
+          onBlur={() => {
+            const trimmedCode = code.trim(); // full trim (leading + trailing)
+            if (deduplicated_codes.includes(trimmedCode)) {
+              setError(`The code "${trimmedCode}" already exists.`);
+            } else {
+              setCode(trimmedCode);
+            }
+          }}
+          autoFocus
+        />
+      </Field>
+      {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
+      <div>
+        <USWDSLabel htmlFor="system">Code system</USWDSLabel>
+        <Select
+          id="system"
+          name="system"
+          value={normalizeSystem(system)}
+          onChange={(e) => setSystem(normalizeSystem(e.target.value.trim()))}
+        >
+          {systemValues.map((sv) => (
+            <option key={sv.value} value={sv.value}>
+              {sv.name}
+            </option>
+          ))}
+        </Select>
       </div>
 
-      <ModalFooter className="flex justify-end p-0">
+      <Field>
+        <Label>Code name</Label>
+        <TextInput
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value.trim())}
+        />
+      </Field>
+
+      <div className="self-end">
         <Button
-          onClick={(e) =>
-            handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)
-          }
+          onClick={handleSubmit}
           disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
           variant="primary"
-          className="m-0!"
         >
           {selectedCustomCode ? 'Update' : 'Add custom code'}
         </Button>
-      </ModalFooter>
-    </Modal>
+      </div>
+    </>
   );
 }

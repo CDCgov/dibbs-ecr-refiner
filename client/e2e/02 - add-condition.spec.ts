@@ -80,12 +80,14 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
 
-    await page.getByRole('textbox', { name: 'Code #' }).click();
-    await page.getByRole('textbox', { name: 'Code #' }).fill('1234');
-    await page.getByTestId('Select').selectOption('rxnorm');
-    await page.getByRole('textbox', { name: 'Code name' }).click();
-    await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
-    await page.getByTestId('modalFooter').getByTestId('button').click();
+    await page.getByLabel('Code #').fill('1234');
+    await page.getByLabel('Code system').selectOption('rxnorm');
+    await page.getByLabel('Code name').fill('qwert');
+    await expect(
+      page.getByRole('button', { name: 'Add custom code' })
+    ).toBeEnabled();
+    await page.getByRole('button', { name: 'Add custom code' }).click();
+
     await expect(
       page.getByRole('cell', { name: 'qwert', exact: true })
     ).toBeVisible();
@@ -418,12 +420,14 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
 
-    await page.getByRole('textbox', { name: 'Code #' }).click();
-    await page.getByRole('textbox', { name: 'Code #' }).fill('1234');
-    await page.getByTestId('Select').selectOption('rxnorm');
-    await page.getByRole('textbox', { name: 'Code name' }).click();
-    await page.getByRole('textbox', { name: 'Code name' }).fill('qwert');
-    await page.getByTestId('modalFooter').getByTestId('button').click();
+    await page.getByLabel('Code #').fill('1234');
+    await page.getByLabel('Code system').selectOption('rxnorm');
+    await page.getByLabel('Code name').fill('qwert');
+    await expect(
+      page.getByRole('button', { name: 'Add custom code' })
+    ).toBeEnabled();
+    await page.getByRole('button', { name: 'Add custom code' }).click();
+
     await expect(
       page.getByRole('cell', { name: 'qwert', exact: true })
     ).toBeVisible();
