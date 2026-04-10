@@ -1535,6 +1535,19 @@
                   <td>03/22/2022</td>
                   <td>Completed</td>
                 </tr>
+                
+            	<tr>
+                  <td>Flucelvax Quadrivalent 2021-2022 Injectable Product</td>
+                  <td>11/07/2020</td>
+                  <td>Completed</td>
+                </tr>
+
+                <tr>
+                  <td>SARS-CoV-2 (COVID-19) vaccine, mRNA-BNT162b2</td>
+                  <td>11/07/2020</td>
+                  <td>Completed</td>
+                </tr>
+
               </tbody>
             </table>
           </text>
@@ -1583,6 +1596,356 @@
                       displayName="Tdap">
                       <originalText>Boostrix (Tdap)</originalText>
                     </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+
+          <entry>
+            <!-- Non trigger code vaccine -->
+            <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+              <!-- [C-CDA 2.1] Immunization Activity (V3) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" extension="2015-08-01" />
+              <id root="00000000-5CF3-EC63-0513-4A4838595787" extension="11369-6_3-1_1.3.6.1.4.1.22812.11.2016.163.1_14168" />
+              <statusCode code="completed" />
+              <effectiveTime value="20201107" />
+              <routeCode nullFlavor="NI" />
+              <doseQuantity nullFlavor="NI" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <!-- [C-CDA R2.1] Immunization Medication Information (V3) -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" extension="2014-06-09" />
+                  <manufacturedMaterial>
+                    <code code="2563008" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Flucelvax Quadrivalent 2021-2022 Injectable Product" />
+                    <lotNumberText nullFlavor="NI" />
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <author>
+                <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                <time value="201308011235-0800" />
+                <assignedAuthor>
+                  <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c" />
+                  <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health
+                    Care Provider Taxonomy" displayName="Registered nurse" />
+                  <assignedPerson>
+                    <name>
+                      <given>Nurse</given>
+                      <family>Nightingale</family>
+                      <suffix>RN</suffix>
+                    </name>
+                  </assignedPerson>
+                  <representedOrganization>
+                    <id root="2.16.840.1.113883.19.5" />
+                    <name>Good Health Hospital</name>
+                  </representedOrganization>
+                </assignedAuthor>
+              </author>
+            
+              <entryRelationship typeCode="RSON">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.9" extension="2014-06-09" />
+                  <id root="4adc1020-7b14-11db-9fe1-0800200c9a64" />
+                  <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
+                  <text>
+                    <reference value="#reaction1" />
+                  </text>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="200802260805-0800" />
+                    <high value="200802281205-0800" />
+                  </effectiveTime>
+                  <value xsi:type="CD" code="422587007" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Nausea" />
+                  <entryRelationship typeCode="RSON" inversionInd="true">
+                    <substanceAdministration classCode="SBADM" moodCode="EVN">
+                      <!-- ** Medication Activity (V2) ** -->
+                      <templateId root="2.16.840.1.113883.10.20.22.4.16"
+                        extension="2014-06-09"/>
+                      <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29"/>
+                      <statusCode code="active"/>
+                      <effectiveTime xsi:type="IVL_TS">
+                        <low value="20120318"/>
+                      </effectiveTime>
+                      <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                        <period value="12" unit="h"/>
+                      </effectiveTime>
+                      <routeCode code="C38288"
+                        codeSystem="2.16.840.1.113883.3.26.1.1"
+                        codeSystemName="NCI Thesaurus"
+                        displayName="ORAL"/>
+                      <doseQuantity value="1"/>
+                      <consumable>
+                        <manufacturedProduct classCode="MANU">
+                          <!-- ** Medication information ** -->
+                          <templateId root="2.16.840.1.113883.10.20.22.4.23"
+                            extension="2014-06-09"/>
+                          <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
+                          <manufacturedMaterial>
+                            <code code="197380"
+                              displayName="Atenolol 25 MG Oral Tablet"
+                              codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"/>
+                          </manufacturedMaterial>
+                        </manufacturedProduct>
+                      </consumable>
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <time value="201308011235-0800" />
+                        <assignedAuthor>
+                          <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c" />
+                          <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health
+                            Care Provider Taxonomy" displayName="Registered nurse" />
+                          <assignedPerson>
+                            <name>
+                              <given>Nurse</given>
+                              <family>Nightingale</family>
+                              <suffix>RN</suffix>
+                            </name>
+                          </assignedPerson>
+                          <representedOrganization>
+                            <id root="2.16.840.1.113883.19.5" />
+                            <name>Good Health Hospital</name>
+                          </representedOrganization>
+                        </assignedAuthor>
+                      </author>
+                    </substanceAdministration>
+                  </entryRelationship>
+                  <entryRelationship typeCode="RSON">
+                    <procedure classCode="PROC" moodCode="EVN">
+                      <!-- [C-CDA R2.1] Procedure Activity Procedure (V2) -->
+                      <templateId root="2.16.840.1.113883.10.20.22.4.14" extension="2014-06-09" />
+                      <templateId root="2.16.840.1.113883.10.20.22.4.14" />
+                      <id root="d68b7e32-7810-4f5b-9cc2-acd54b0fd85d" />
+                      <code code="73761001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Colonoscopy" />
+                      <statusCode code="completed" />
+                      <effectiveTime value="20201115" />
+                      <author>
+                        <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                        <time value="201308011235-0800" />
+                        <assignedAuthor>
+                          <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c" />
+                          <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health
+                            Care Provider Taxonomy" displayName="Registered nurse" />
+                          <assignedPerson>
+                            <name>
+                              <given>Nurse</given>
+                              <family>Nightingale</family>
+                              <suffix>RN</suffix>
+                            </name>
+                          </assignedPerson>
+                          <representedOrganization>
+                            <id root="2.16.840.1.113883.19.5" />
+                            <name>Good Health Hospital</name>
+                          </representedOrganization>
+                        </assignedAuthor>
+                      </author>
+                      <participant typeCode="DEV">
+                        <participantRole classCode="MANU">
+                          <templateId root="2.16.840.1.113883.10.20.22.4.37"/>
+                          <id root="2.16.840.1.113883.3.3719"
+                            extension="(01)51022222233336(11)141231(17)150707(10)A213B1(21)1234"
+                            assigningAuthorityName="FDA"/>
+                          <playingDevice>
+                            <code code="90412006" codeSystem="2.16.840.1.113883.6.96"
+                              displayName="Colonoscope"/>
+                          </playingDevice>
+                          <scopingEntity>
+                            <id root="2.16.840.1.113883.3.3719"/>
+                          </scopingEntity>
+                        </participantRole>
+                      </participant>
+                      <participant typeCode="LOC">
+                        <participantRole classCode="SDLOC">
+                          <templateId root="2.16.840.1.113883.10.20.22.4.32"/>
+                          <code code="1160-1" codeSystem="2.16.840.1.113883.6.259"
+                            codeSystemName="HealthcareServiceLocation" displayName="Urgent Care Center"/>
+                          <addr>
+                            <streetAddressLine>17 Daws Rd.</streetAddressLine>
+                            <city>Blue Bell</city>
+                            <state>MA</state>
+                            <postalCode>02368</postalCode>
+                            <country>US</country>
+                          </addr>
+                          <telecom use="WP" value="tel:+1(555)555-5000"/>
+                          <playingEntity classCode="PLC">
+                            <name>Community Health and Hospitals</name>
+                          </playingEntity>
+                        </participantRole>
+                      </participant>
+                      <entryRelationship typeCode="COMP">
+                        <substanceAdministration classCode="SBADM" moodCode="EVN">
+                          <!-- [C-CDA R1.1] Medication Activity -->
+                          <templateId root="2.16.840.1.113883.10.20.22.4.16" />
+                          <!-- [C-CDA R2.0] Medication Activity (V2) -->
+                          <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09" />
+                          <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29" />
+                          <statusCode code="completed" />
+                          <effectiveTime xsi:type="PIVL_TS" operator="A" value="202011071159-0700" />
+                          <routeCode code="C38288" codeSystem="2.16.840.1.113883.3.26.1.1" codeSystemName="NCI Thesaurus" displayName="ORAL" />
+                          <doseQuantity value="1" unit="g" />
+                          <consumable>
+                            <manufacturedProduct classCode="MANU">
+                              <!-- [C-CDA R2.0] Medication Information (V2) -->
+                              <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09" />
+                              <!-- [eICR R2 STU2] Initial Case Report Trigger Code Medication Information -->
+                              <templateId root="2.16.840.1.113883.10.20.15.2.3.36" extension="2019-04-01" />
+                              <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8" />
+                              <manufacturedMaterial>
+                                <code code="248656" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Azithromycin 500 MG Oral Tablet" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13" />
+                              </manufacturedMaterial>
+                            </manufacturedProduct>
+                          </consumable>
+                          <author>
+                            <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                            <time value="201308011235-0800" />
+                            <assignedAuthor>
+                              <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c" />
+                              <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health
+                                Care Provider Taxonomy" displayName="Registered nurse" />
+                              <assignedPerson>
+                                <name>
+                                  <given>Nurse</given>
+                                  <family>Nightingale</family>
+                                  <suffix>RN</suffix>
+                                </name>
+                              </assignedPerson>
+                              <representedOrganization>
+                                <id root="2.16.840.1.113883.19.5" />
+                                <name>Good Health Hospital</name>
+                              </representedOrganization>
+                            </assignedAuthor>
+                          </author>
+                          <entryRelationship typeCode="REFR">
+                            <supply classCode="SPLY" moodCode="EVN">
+                              <templateId root="2.16.840.1.113883.10.20.22.4.18" extension="2014-06-09" />
+                              <id root="2.16.840.1.113883.19.5" />
+                              <statusCode code="completed"/>
+                              <effectiveTime value="200802260805-0800" />
+                              <product>
+                                <manufacturedProduct classCode="MANU">
+                                  <!-- ** Medication information ** -->
+                                  <templateId root="2.16.840.1.113883.10.20.22.4.23"
+                                    extension="2014-06-09"/>
+                                  <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
+                                  <manufacturedMaterial>
+                                    <code code="248656" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" displayName="Azithromycin 500 MG Oral Tablet" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13" />
+                                  </manufacturedMaterial>
+                                </manufacturedProduct>
+                              </product>
+                            </supply>
+                          </entryRelationship>
+                          <entryRelationship typeCode="CAUS">
+                            <observation classCode="OBS" moodCode="EVN">
+                              <!-- [eICR R2] Therapeutic Medication Response Observation -->
+                              <templateId root="2.16.840.1.113883.10.20.15.2.3.37" extension="2019-04-01" />
+                              <id root="ab1791b0-5c71-11db-b0de-0800200c9a55" />
+                              <code code="67540-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Response to medication" />
+                              <statusCode code="completed" />
+                              <effectiveTime>
+                                <low value="20201101" />
+                              </effectiveTime>
+                              <value code="268910001" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT" displayName="Patient's condition improved (finding)" xsi:type="CD" />
+                            </observation>
+                          </entryRelationship>
+                        </substanceAdministration>
+                      </entryRelationship>
+                      <entryRelationship typeCode="RSON">
+                        <observation classCode="OBS" moodCode="EVN">
+                          <templateId root="2.16.840.1.113883.10.20.22.4.9" extension="2014-06-09" />
+                          <id root="4adc1020-7b14-11db-9fe1-0800200c9a64" />
+                          <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
+                          <text>
+                            <reference value="#reaction1" />
+                          </text>
+                          <statusCode code="completed" />
+                          <effectiveTime>
+                            <low value="200802260805-0800" />
+                            <high value="200802281205-0800" />
+                          </effectiveTime>
+                          <value xsi:type="CD" code="422587007" codeSystem="2.16.840.1.113883.6.96"
+                            displayName="Nausea" />
+                          <entryRelationship typeCode="RSON" inversionInd="true">
+                            <substanceAdministration classCode="SBADM" moodCode="EVN">
+                              <!-- ** Medication Activity (V2) ** -->
+                              <templateId root="2.16.840.1.113883.10.20.22.4.16"
+                                extension="2014-06-09"/>
+                              <id root="6c844c75-aa34-411c-b7bd-5e4a9f206e29"/>
+                              <statusCode code="active"/>
+                              <effectiveTime xsi:type="IVL_TS">
+                                <low value="20120318"/>
+                              </effectiveTime>
+                              <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                                <period value="12" unit="h"/>
+                              </effectiveTime>
+                              <routeCode code="C38288"
+                                codeSystem="2.16.840.1.113883.3.26.1.1"
+                                codeSystemName="NCI Thesaurus"
+                                displayName="ORAL"/>
+                              <doseQuantity value="1"/>
+                              <consumable>
+                                <manufacturedProduct classCode="MANU">
+                                  <!-- ** Medication information ** -->
+                                  <templateId root="2.16.840.1.113883.10.20.22.4.23"
+                                    extension="2014-06-09"/>
+                                  <id root="2a620155-9d11-439e-92b3-5d9815ff4ee8"/>
+                                  <manufacturedMaterial>
+                                    <code code="197380"
+                                      displayName="Atenolol 25 MG Oral Tablet"
+                                      codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"/>
+                                  </manufacturedMaterial>
+                                </manufacturedProduct>
+                              </consumable>
+                              <author>
+                                <templateId root="2.16.840.1.113883.10.20.22.4.119" />
+                                <time value="201308011235-0800" />
+                                <assignedAuthor>
+                                  <id root="20cf14fb-b65c-4c8c-a54d-b0cca834c18c" />
+                                  <code code="163W00000X" codeSystem="2.16.840.1.113883.5.53" codeSystemName="Health
+                                    Care Provider Taxonomy" displayName="Registered nurse" />
+                                  <assignedPerson>
+                                    <name>
+                                      <given>Nurse</given>
+                                      <family>Nightingale</family>
+                                      <suffix>RN</suffix>
+                                    </name>
+                                  </assignedPerson>
+                                  <representedOrganization>
+                                    <id root="2.16.840.1.113883.19.5" />
+                                    <name>Good Health Hospital</name>
+                                  </representedOrganization>
+                                </assignedAuthor>
+                              </author>
+                            </substanceAdministration>
+                          </entryRelationship>
+                        </observation>
+                      </entryRelationship>
+                    </procedure>
+                  </entryRelationship>
+                </observation>
+              </entryRelationship> 
+            </substanceAdministration>
+          </entry>
+          <entry>
+            <!-- Example of a trigger code vaccine -->
+            <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+              <!-- [C-CDA 2.1] Immunization Activity (V3) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" extension="2015-08-01" />
+              <id root="00000000-5CF3-EC63-0513-4A4838595787" extension="11369-6_2-1_1.3.6.1.4.1.22812.11.2016.163.1_14168" />
+              <statusCode code="completed" />
+              <effectiveTime value="20201107" />
+              <routeCode nullFlavor="NI" />
+              <doseQuantity nullFlavor="NI" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <!-- [C-CDA R2.1] Immunization Medication Information (V3) -->
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" extension="2014-06-09" />
+                  <!-- [eICR R2 STU2] Initial Case Report Trigger Code Problem Observation (V2) -->
+                  <templateId root="2.16.840.1.113883.10.20.15.2.3.38" extension="2019-04-01" />
+                  <!-- Trigger code -->
+                  <manufacturedMaterial>
+                    <code code="2468230"  codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm" sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13" />
+                    <lotNumberText nullFlavor="NI" />
                   </manufacturedMaterial>
                 </manufacturedProduct>
               </consumable>

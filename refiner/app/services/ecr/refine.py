@@ -474,7 +474,7 @@ def refine_eicr(
                 code_system_sets=plan.code_system_sets,
                 include_narrative=section_rules.narrative,
             )
-            outcome = _interpret_run_result(section_rules, run_result)
+            outcome = _interpret_run_result(run_result)
 
         if provenance is not None:
             # finalize the provenance record with the runtime outcome
