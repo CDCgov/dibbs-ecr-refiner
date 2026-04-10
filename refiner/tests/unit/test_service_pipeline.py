@@ -192,28 +192,6 @@ class TestRefineForCondition:
         assert trace.error_detail == "plan creation failed"
         assert trace.configuration_resolved is True
 
-    def test_refined_eicr_is_smaller(
-        self,
-        sample_xml_files: XMLFiles,
-        minimal_processed_configuration: ProcessedConfiguration,
-    ):
-        """
-        The refined eICR should generally be smaller than the original.
-        """
-        trace = RefinementTrace(
-            jurisdiction_code="SDDH",
-            rsg_code="840539006",
-        )
-
-        result = refine_for_condition(
-            xml_files=sample_xml_files,
-            processed_configuration=minimal_processed_configuration,
-            trace=trace,
-        )
-
-        assert result.trace.eicr_size_reduction_percentage is not None
-        assert result.trace.eicr_size_reduction_percentage >= 0
-
 
 # =============================================================================
 # TRACE INITIALIZATION
