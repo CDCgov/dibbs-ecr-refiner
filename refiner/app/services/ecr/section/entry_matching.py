@@ -84,26 +84,17 @@ def process(
     elements, so the section's own <code> is never at risk of matching.
 
     If no entries match, the section is reduced to a minimal stub
-    via ``create_minimal_section`` (the no-match policy override) and
-    the function returns a ``SectionRunResult`` with
-    ``matches_found=False``. The orchestrator translates this into
-    ``SectionOutcome.REFINED_NO_MATCHES_STUBBED`` regardless of the
-    narrative configuration — see ``refine._interpret_run_result``.
-
-    matches found?
-    ├─ no  → stub section, return matches_found=False  [policy override]
-    └─ yes → prune section
-            enrich entries
-            remove comments
-            narrative removed?
-            ├─ yes → return narrative_disposition="removed"
-            └─ no  → return narrative_disposition="retained"  [default]
+    via `create_minimal_section` (the no-match policy override) and
+    the function returns a `SectionRunResult` with
+    `matches_found=False`. The orchestrator translates this into
+    `SectionOutcome.REFINED_NO_MATCHES_STUBBED` regardless of the
+    narrative configuration — see `refine._interpret_run_result`.
 
     Returns:
         SectionRunResult reporting whether matches were found and
         what the engine did with the narrative. The
-        ``narrative_disposition`` field is meaningful only when
-        ``matches_found=True``; when no matches are found, the engine
+        `narrative_disposition` field is meaningful only when
+        `matches_found=True`; when no matches are found, the engine
         stubs the entire section and the orchestrator short-circuits
         before reading the narrative disposition.
     """
