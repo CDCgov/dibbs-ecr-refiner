@@ -1,6 +1,6 @@
 import classNames from 'classnames';
-import { Button } from '../../components/Button';
-import { WarningIcon } from '../../components/WarningIcon';
+import { Button } from '@components/Button';
+import { WarningIcon } from '@components/WarningIcon';
 
 interface ReportableConditionsResultsProps {
   matchedConditions: string[];

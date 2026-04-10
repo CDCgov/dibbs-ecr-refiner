@@ -3,7 +3,7 @@ import { SwitchActivationModal } from '../modals/SwitchActivationModal';
 import { useRef } from 'react';
 import classNames from 'classnames';
 import { TurnOffModal } from '../modals/TurnOffModal';
-import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { ModalToggleButton } from '@components/Button/ModalToggleButton';
 
 interface SwitchFromPreviousProps {
   handleActivation: () => void;

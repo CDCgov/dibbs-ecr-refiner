@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import { useMemo, useState } from 'react';
 import {
   getGetConfigurationQueryKey,
@@ -17,7 +17,7 @@ import {
 } from '@headlessui/react';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useToast } from '../../../../hooks/useToast';
-import { TextInput } from '../../../../components/TextInput';
+import { TextInput } from '@components/TextInput';
 
 interface EditCustomSection {
   name: string;

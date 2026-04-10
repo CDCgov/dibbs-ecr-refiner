@@ -9,15 +9,15 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import { Modal } from './Modal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Checkbox } from './Checkbox';
 import { Switch } from './Switch';
 import classNames from 'classnames';
-import { Field } from '../../../../components/Field';
-import { Label } from '../../../../components/Label';
-import { Tooltip } from '../../../../components/Tooltip';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
+import { Tooltip } from '@components/Tooltip';
 
 /**
  * TODO: please refer to specification.py

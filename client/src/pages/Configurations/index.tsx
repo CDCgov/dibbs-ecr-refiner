@@ -1,7 +1,7 @@
-import { Title } from '../../components/Title';
-import { Button } from '../../components/Button';
-import { Search } from '../../components/Search';
-import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { Title } from '@components/Title';
+import { Button } from '@components/Button';
+import { Search } from '@components/Search';
+import { ConfigurationsTable } from '@components/ConfigurationsTable';
 import {
   useCreateConfiguration,
   useGetConfigurations,
@@ -24,9 +24,9 @@ import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import classNames from 'classnames';
-import { ModalToggleButton } from '../../components/Button/ModalToggleButton';
+import { ModalToggleButton } from '@components/Button/ModalToggleButton';
 
 enum ConfigurationStatus {
   on = 'on',
