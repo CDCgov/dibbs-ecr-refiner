@@ -1,5 +1,5 @@
 import { RefObject } from 'react';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import { GenericModal } from './GenericModal';
 import { ModalRef } from '@trussworks/react-uswds';
 

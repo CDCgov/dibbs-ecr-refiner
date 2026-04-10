@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { ConfigLockBanner } from '../ConfigBuild/ConfigLockBanner';
-import { Title } from '../../../components/Title';
+import { Title } from '@components/Title';
 import {
   NavigationContainer,
   SectionContainer,
@@ -9,7 +9,7 @@ import {
 import { StepsContainer, Steps } from '../Steps';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { useGetConfiguration } from '../../../api/configurations/configurations';
-import { Spinner } from '../../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { Status } from '../ConfigBuild/Status';
 import { GetConfigurationResponse } from '../../../api/schemas';

@@ -1,6 +1,6 @@
 import { Icon } from '@trussworks/react-uswds';
-import { Footer, Header } from '../../components/Layout';
-import { Button } from '../../components/Button';
+import { Footer, Header } from '@components/Layout';
+import { Button } from '@components/Button';
 
 interface SessionRedirectProps {
   displayHeaderAndFooter?: boolean;

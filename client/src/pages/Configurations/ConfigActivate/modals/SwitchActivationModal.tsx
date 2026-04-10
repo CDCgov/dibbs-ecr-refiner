@@ -1,8 +1,8 @@
 import { ModalRef } from '@trussworks/react-uswds';
 import { GenericModal } from './GenericModal';
-import { Button } from '../../../../components/Button';
+import { Button } from '@components/Button';
 import { RefObject } from 'react';
-import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { ModalToggleButton } from '@components/Button/ModalToggleButton';
 
 interface SwitchActivationModal {
   curVersion: number;

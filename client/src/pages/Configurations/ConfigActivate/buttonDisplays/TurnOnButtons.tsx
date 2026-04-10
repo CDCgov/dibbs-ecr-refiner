@@ -2,7 +2,7 @@ import { ModalRef } from '@trussworks/react-uswds';
 import { useRef } from 'react';
 
 import { TurnOnModal } from '../modals/TurnOnModal';
-import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { ModalToggleButton } from '@components/Button/ModalToggleButton';
 
 interface TurnOnButtonsProps {
   handleActivation: () => void;
