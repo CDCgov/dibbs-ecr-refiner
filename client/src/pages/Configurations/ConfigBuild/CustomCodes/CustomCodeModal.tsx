@@ -162,30 +162,28 @@ function CustomCodeForm({
 
   return (
     <>
-      <>
-        <Field>
-          <Label>Code #</Label>
-          <TextInput
-            type="text"
-            value={code}
-            onChange={(e) => {
-              const value = e.target.value.trimStart(); // trim leading space only while typing
-              setCode(value);
-              if (error) setError(''); // clear error on change
-            }}
-            onBlur={() => {
-              const trimmedCode = code.trim(); // full trim (leading + trailing)
-              if (deduplicated_codes.includes(trimmedCode)) {
-                setError(`The code "${trimmedCode}" already exists.`);
-              } else {
-                setCode(trimmedCode);
-              }
-            }}
-            autoFocus
-          />
-        </Field>
-        {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
-      </>
+      <Field>
+        <Label>Code #</Label>
+        <TextInput
+          type="text"
+          value={code}
+          onChange={(e) => {
+            const value = e.target.value.trimStart(); // trim leading space only while typing
+            setCode(value);
+            if (error) setError(''); // clear error on change
+          }}
+          onBlur={() => {
+            const trimmedCode = code.trim(); // full trim (leading + trailing)
+            if (deduplicated_codes.includes(trimmedCode)) {
+              setError(`The code "${trimmedCode}" already exists.`);
+            } else {
+              setCode(trimmedCode);
+            }
+          }}
+          autoFocus
+        />
+      </Field>
+      {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
       <div>
         <USWDSLabel htmlFor="system">Code system</USWDSLabel>
         <Select
