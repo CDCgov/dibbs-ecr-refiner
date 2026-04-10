@@ -1,8 +1,8 @@
 import io
+import re
 from collections.abc import Awaitable, Callable
 from logging import Logger
 from pathlib import Path
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
@@ -36,6 +36,15 @@ from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
 from app.services.xslt import create_refined_eicr_html_file
+
+# Only allow:
+# - letters
+# - numbers
+# - hyphens
+# - underscores
+# - periods
+# - spaces
+SAFE_FILENAME_RE = re.compile(r"^[\w\-. ]+\.zip$")
 
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
@@ -254,19 +263,9 @@ async def download_refined_ecr(
     server constructs the S3 object key based on the authenticated user.
     """
 
-    if "/" in filename or "\\" in filename:
+    if not SAFE_FILENAME_RE.match(filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filename."
-        )
-
-    uuid_prefix = filename.removesuffix(".zip")
-
-    try:
-        UUID(uuid_prefix)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid filename.",
         )
 
     key = get_refined_user_zip_key(
