@@ -183,6 +183,12 @@ _IMMUNIZATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
         translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
         translation_code_system_oid=RXNORM_OID,
     ),
+    EntryMatchRule(
+        code_xpath=".//hl7:manufacturedMaterial/hl7:code",
+        code_system_oid=RXNORM_OID,
+        translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
+        translation_code_system_oid=CVX_OID,
+    ),
 ]
 
 
@@ -301,6 +307,16 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   note: catches entries indicated for a matching condition
 #     (e.g., Remdesivir for COVID-19)
 #
+# rule 5 — Immunization Activity (fallback)
+#   IG template: Immunization Activity (V3) (2.16.840.1.113883.10.20.22.4.52)
+#   note: Planned Immunization Activity (4.120) conforms to Immunization
+#     Activity (4.52), so targeting 4.52 catches both planned and
+#     non-planned immunization entries
+#   inner template: Immunization Medication Information (V2)
+#     (2.16.840.1.113883.10.20.22.4.54)
+#   primary code: manufacturedMaterial/code RxNorm
+#   translation:  manufacturedMaterial/code/translation CVX
+#
 # structural precedence: rule 1 claims observation entries, rules 2-3 claim
 # medication/immunization entries respectively (template-scoped so they
 # don't interfere), rule 4 catches unclaimed entries only
@@ -352,6 +368,21 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
+    ),
+    # # rule 5 — immunization activity (scoped to base Immunization Activity template), with CVX as the translation
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:substanceAdministration"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
+            "//hl7:manufacturedMaterial/hl7:code"
+        ),
+        code_system_oid=RXNORM_OID,
+        translation_xpath=(
+            ".//hl7:substanceAdministration"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
+            "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
+        ),
+        translation_code_system_oid=CVX_OID,
     ),
 ]
 
