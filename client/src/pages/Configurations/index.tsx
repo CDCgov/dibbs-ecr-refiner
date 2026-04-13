@@ -193,7 +193,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                     heading: 'New configuration created',
                     body: selectedCondition?.display_name ?? '',
                   });
-                  setSelectedCondition(null);
+                  reset();
                 },
                 onError: (e) => {
                   showToast({
@@ -201,8 +201,6 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                     variant: 'error',
                     body: formatError(e),
                   });
-
-                  setSelectedCondition(null);
                 },
               }
             );
