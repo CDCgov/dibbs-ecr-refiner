@@ -163,6 +163,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               onClose={() => setQuery('')}
             >
               <ComboboxInput<GetConditionsResponse>
+                aria-label="Condition"
                 displayValue={(condition) => condition?.display_name ?? ''}
                 onChange={(event) => setQuery(event.target.value)}
               />
