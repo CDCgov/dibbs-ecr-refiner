@@ -56,7 +56,10 @@ function ComboboxInput<T>({
         }}
         {...props}
       />
-      <HeadlessButton className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center">
+      <HeadlessButton
+        aria-label="Open the condition dropdown menu"
+        className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center"
+      >
         <ArrowDown />
       </HeadlessButton>
     </div>
