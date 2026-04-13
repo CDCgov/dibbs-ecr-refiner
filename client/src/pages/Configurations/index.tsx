@@ -163,10 +163,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               />
               <ComboboxOptions anchor="bottom">
                 {({ option: condition }) => (
-                  <ComboboxOption
-                    key={condition.id}
-                    value={condition}
-                  >
+                  <ComboboxOption key={condition.id} value={condition}>
                     {condition.display_name}
                   </ComboboxOption>
                 )}
