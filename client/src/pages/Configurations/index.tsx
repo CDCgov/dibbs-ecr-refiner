@@ -133,8 +133,13 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
             .includes(query.toLowerCase());
         });
 
+  function reset() {
+    onClose();
+    setSelectedCondition(null);
+  }
+
   return (
-    <Modal open={open} onClose={onClose} position="top">
+    <Modal open={open} onClose={reset} position="top">
       <ModalHeader>
         <ModalTitle>Set up new configuration</ModalTitle>
       </ModalHeader>
