@@ -43,12 +43,37 @@ function ComboboxInput<T>({
           'data-open:focus:outline-none!',
           className
         )}
+        onClick={(e) => {
+          // this opens the menu on input click similar to the way USWDS Combobox component works
+          const isOpen =
+            e.currentTarget.getAttribute('aria-expanded') === 'true';
+          if (!isOpen) {
+            const button = e.currentTarget
+              .closest('.relative')
+              ?.querySelector('button');
+            button?.click();
+          }
+        }}
         {...props}
       />
       <HeadlessButton className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center">
-        <span className="border-t-gray-90 border-x-[5px] border-t-[6px] border-x-transparent" />
+        <ArrowDown />
       </HeadlessButton>
     </div>
+  );
+}
+
+function ArrowDown() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="grey"
+    >
+      <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+    </svg>
   );
 }
 
@@ -64,7 +89,7 @@ function ComboboxOptions({
       transition
       className={classNames(
         'z-50 w-(--input-width) border border-[#565c65] bg-white empty:invisible',
-        'max-h-64 overflow-y-auto',
+        'max-h-52! overflow-y-auto',
         'transition duration-100 ease-in data-leave:data-closed:opacity-0',
         className
       )}
@@ -90,9 +115,7 @@ function ComboboxOption<T>({
       {...props}
     >
       {(bag) => (
-        <span className={bag.selected ? 'ml-0' : 'ml-6'}>
-          {typeof children === 'function' ? children(bag) : children}
-        </span>
+        <span>{typeof children === 'function' ? children(bag) : children}</span>
       )}
     </HeadlessOption>
   );
