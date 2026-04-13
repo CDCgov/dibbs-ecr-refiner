@@ -370,6 +370,7 @@ async def independent_testing(
         no_matching_configuration_for_conditions=no_matching_configurations,
         no_active_configuration_for_conditions=no_active_configurations,
         shadow_rr=_generate_shadow_rr(
+            no_matching_configuration_for_conditions=no_matching_configurations,
             no_active_configuration_for_conditions=no_active_configurations,
             xml_files=xml_files,
         ),
@@ -377,28 +378,34 @@ async def independent_testing(
 
 
 def _generate_shadow_rr(
-    no_active_configuration_for_conditions: list[NoMatchEntry], xml_files: XMLFiles
+    no_matching_configuration_for_conditions: list[NoMatchEntry],
+    no_active_configuration_for_conditions: list[NoMatchEntry],
+    xml_files: XMLFiles,
 ) -> str | None:
     """
-    Given a list of condition codes with no active configuration, return the generated shadow RR or None.
+    Generates a shadow RR based on conditions with no active configuration.
 
     Args:
-        no_active_configuration_for_conditions (list[NoMatchEntry]): list of no match entries
+        no_matching_configuration_for_conditions (list[NoMatchEntry]): list of conditions without a configuration
+        no_active_configuration_for_conditions (list[NoMatchEntry]): list of conditions without an active configuration
         xml_files (XMLFiles): the original XML eCR files
 
     Returns:
         str | None: RR content, or None if a shadow RR isn't generated
     """
-    if not no_active_configuration_for_conditions:
+    no_match_found_conditions = (
+        no_matching_configuration_for_conditions
+        + no_active_configuration_for_conditions
+    )
+    if not no_match_found_conditions:
         return None
 
-    non_active_codes = {
-        code
-        for entry in no_active_configuration_for_conditions
-        for code in entry["rc_snomed_codes"]
+    no_match_codes = {
+        code for entry in no_match_found_conditions for code in entry["rc_snomed_codes"]
     }
+
     return refine_rr_for_unconfigured_conditions(
-        xml_files=xml_files, condition_codes=non_active_codes
+        xml_files=xml_files, condition_codes=no_match_codes
     )
 
 

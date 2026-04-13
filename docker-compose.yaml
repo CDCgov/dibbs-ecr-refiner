@@ -67,7 +67,7 @@ services:
     depends_on:
       - localstack
   auth:
-    image: quay.io/keycloak/keycloak:26.5.7
+    image: quay.io/keycloak/keycloak:26.6.0
     platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     command:
       - "start-dev"
