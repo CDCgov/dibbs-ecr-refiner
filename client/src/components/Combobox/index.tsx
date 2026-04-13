@@ -40,7 +40,7 @@ function ComboboxInput<T>({
         className={classNames(
           'w-full border border-[#565c65] bg-white py-2 pr-10 pl-2',
           'text-gray-90 text-base',
-          'focus:outline-blue-40v focus:outline-4 focus:outline-offset-0',
+          'data-open:focus:outline-none!',
           className
         )}
         {...props}
