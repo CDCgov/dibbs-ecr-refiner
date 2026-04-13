@@ -11,6 +11,13 @@ For more detailed information about the relationship between the eICR and RR doc
 
 ## Running the project locally
 
+> [!TIP]
+> When running containers locally on macOS or Windows, please ensure your host
+> VM's defaults are increased. _Specifically, CPU cores must be set to 2 cores
+> or above, Memory must be set at least 4 GiB, and Disk should be at least 100
+> GiB_. These changes will ensure that all scripting and application code run
+> correctly without issues.
+
 The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `.docker-compose.yaml` file:
 
 ```sh
