@@ -2,6 +2,7 @@
 import { afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { mockAnimationsApi } from 'jsdom-testing-mocks';
 
 /**
  * Simulates index.html having this meta tag
@@ -59,3 +60,5 @@ Object.defineProperty(navigator, 'sendBeacon', {
   writable: true,
   value: vi.fn(),
 });
+
+mockAnimationsApi();
