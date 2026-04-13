@@ -83,7 +83,7 @@ function ComboboxOption<T>({
   return (
     <HeadlessOption
       className={classNames(
-        'text-gray-90 border-gray-10 flex w-full cursor-default items-center border-b px-2 py-2 text-base select-none',
+        'text-gray-90 border-gray-10 flex w-full cursor-pointer items-center border-b px-2 py-2 text-base select-none',
         'hover:ring-blue-40v data-focus:ring-blue-40v hover:ring-4 data-focus:ring-4 data-focus:ring-inset',
         className
       )}
