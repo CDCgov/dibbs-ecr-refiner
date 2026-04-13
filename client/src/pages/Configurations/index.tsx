@@ -7,13 +7,7 @@ import {
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-
-import {
-  Label as USWDSLabel,
-  ComboBox,
-  ComboBoxRef,
-} from '@trussworks/react-uswds';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
@@ -28,6 +22,14 @@ import {
   ModalTitle,
   ModalFooter,
 } from '@components/Modal';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxOption,
+  ComboboxOptions,
+} from '@components/Combobox';
+import { Label } from '@components/Label';
+import { Field } from '@components/Field';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -110,14 +112,26 @@ interface NewConfigModalProps {
 
 function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const showToast = useToast();
-  const comboBoxRef = useRef<ComboBoxRef>(null);
   const { data: response, isPending, isError } = useGetConditions();
+
   const [selectedCondition, setSelectedCondition] =
     useState<GetConditionsResponse | null>(null);
+  const [query, setQuery] = useState('');
 
   const { mutate: createConfig } = useCreateConfiguration();
   const navigate = useNavigate();
   const formatError = useApiErrorFormatter();
+
+  const conditions = response?.data || [];
+
+  const filteredConditions =
+    query === ''
+      ? conditions
+      : conditions.filter((condition) => {
+          return condition.display_name
+            .toLowerCase()
+            .includes(query.toLowerCase());
+        });
 
   return (
     <Modal open={open} onClose={onClose} position="top">
@@ -135,29 +149,30 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
             Failed to load conditions. Please try again.
           </p>
         ) : (
-          <div>
-            <USWDSLabel
-              htmlFor="new-condition"
-              className="leading-6!"
-              data-focus="true"
+          <Field>
+            <Label>Select condition</Label>
+            <Combobox
+              value={selectedCondition}
+              virtual={{ options: filteredConditions }}
+              onChange={setSelectedCondition}
+              onClose={() => setQuery('')}
             >
-              Select condition
-            </USWDSLabel>
-            <ComboBox
-              id="new-condition"
-              ref={comboBoxRef}
-              name="new-condition"
-              options={response?.data.map((condition) => ({
-                value: condition.id,
-                label: condition.display_name,
-              }))}
-              onChange={(conditionId) => {
-                const found =
-                  response.data.find((c) => c.id === conditionId) ?? null;
-                setSelectedCondition(found);
-              }}
-            />
-          </div>
+              <ComboboxInput<GetConditionsResponse>
+                displayValue={(condition) => condition?.display_name ?? ''}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <ComboboxOptions anchor="bottom">
+                {({ option: condition }) => (
+                  <ComboboxOption
+                    key={condition.id}
+                    value={condition}
+                  >
+                    {condition.display_name}
+                  </ComboboxOption>
+                )}
+              </ComboboxOptions>
+            </Combobox>
+          </Field>
         )}
       </ModalBody>
       <ModalFooter align="right">
@@ -171,7 +186,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               {
                 onSuccess: async (resp) => {
                   await navigate(`/configurations/${resp.data.id}/build`);
-                  comboBoxRef.current?.clearSelection();
+
                   showToast({
                     heading: 'New configuration created',
                     body: selectedCondition?.display_name ?? '',
@@ -184,7 +199,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                     variant: 'error',
                     body: formatError(e),
                   });
-                  comboBoxRef.current?.clearSelection();
+
                   setSelectedCondition(null);
                 },
               }
