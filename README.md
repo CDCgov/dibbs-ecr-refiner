@@ -11,6 +11,12 @@ For more detailed information about the relationship between the eICR and RR doc
 
 ## Running the project locally
 
+> [!NOTE]
+> All Docker Compose files are set to use `linux/amd64` for the platform by
+> default. If your system requires a different platform, set the variable
+> `DOCKER_DEFAULT_PLATFORM` to the value your system needs to ensure there are
+> no issues in building OCI images locally on your machine.
+
 The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `.docker-compose.yaml` file:
 
 ```sh

@@ -3,6 +3,7 @@ version: "3.8"
 services:
   keycloak-db:
     image: postgres:alpine
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
@@ -12,6 +13,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.4.0
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     command:
       - "start-dev"
       - "--import-realm"

@@ -1,6 +1,7 @@
 services:
   client:
     image: node:22-alpine3.22
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     working_dir: /app
     volumes:
       - ./client:/app
@@ -12,7 +13,7 @@ services:
       - refiner-service
   refiner-service:
     image: python:3.14-slim
-    platform: linux/amd64
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     command: sh -c "pip install -r requirements.txt -r requirements-dev.txt && uvicorn app.asgi:app --host 0.0.0.0 --port 8080 --reload"
     working_dir: /app
     volumes:
@@ -50,6 +51,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.lambda
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     ports:
       - "9000:8080"
     environment:
@@ -66,6 +68,7 @@ services:
       - localstack
   auth:
     image: quay.io/keycloak/keycloak:26.5.7
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     command:
       - "start-dev"
       - "--import-realm"
@@ -81,6 +84,7 @@ services:
       - ./keycloak/exports:/opt/keycloak/data/import
   db:
     image: postgres:alpine
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     restart: on-failure
     user: postgres
     environment:
@@ -114,6 +118,7 @@ services:
 
   migrate:
     image: ghcr.io/amacneil/dbmate:main
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     working_dir: /app
     entrypoint: ["tail", "-f", "/dev/null"]
     depends_on:
@@ -123,6 +128,7 @@ services:
   # Run with `docker compose run --rm seed`
   seed:
     image: python:3.14-slim
+    platform: ${DOCKER_DEFAULT_PLATFORM:-linux/amd64}
     working_dir: /app
     command: >
       sh -c "pip install --no-cache-dir psycopg[binary] python-dotenv &&

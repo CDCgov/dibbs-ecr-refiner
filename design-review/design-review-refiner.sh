@@ -7,6 +7,17 @@ set -e
 REPO_URL="https://github.com/CDCgov/dibbs-ecr-refiner.git"
 REPO_DIR="dibbs-ecr-refiner"
 APP_URL="http://localhost:8081/"
+DOCKER_DEFAULT_PLATFORM=$(_get_system_arch())
+
+# function to get the user's system architecture in the way Docker expects
+_get_system_arch() {
+  local arch=$(uname -m)
+  if [ "${arch}" = "x86_64" ]; then
+    echo "linux/amd64"
+  elif [ "${arch}" = "arm64" ]; then
+    echo "linux/arm64"
+  fi
+}
 
 # function to display error messages and exit
 error_exit() {
