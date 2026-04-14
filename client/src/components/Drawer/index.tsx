@@ -12,6 +12,7 @@ import { Icon } from '@trussworks/react-uswds';
 import classNames from 'classnames';
 import { Search } from '../Search';
 import { Title } from '../Title';
+import { Button } from '../Button';
 
 type DrawerProps = {
   title: string | React.ReactNode;
@@ -80,14 +81,14 @@ export function Drawer({
         >
           <div className="w-full overflow-y-scroll p-8">
             <div className="max-w-[95%]">
-              <button
+              <Button
+                variant="unstyled"
                 className="absolute top-6 right-4 flex shrink-0 cursor-pointer items-center justify-center border-none bg-none p-0"
                 onClick={handleClose}
                 aria-label="Close drawer"
-                data-testid="close-drawer"
               >
                 <Icon.Close size={3} aria-label="X icon indicating closure" />
-              </button>
+              </Button>
               <section className="p-4">
                 <Title>{title}</Title>
                 {subtitle ? (

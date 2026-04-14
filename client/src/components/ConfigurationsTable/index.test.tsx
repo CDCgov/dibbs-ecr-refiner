@@ -1,19 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { ConfigurationsTable } from '.';
 import userEvent from '@testing-library/user-event';
 import { DbConfigurationStatus } from '../../api/schemas';
-
-const mockNavigate = vi.fn();
-
-vi.mock('react-router', async () => {
-  const actual =
-    await vi.importActual<typeof import('react-router')>('react-router');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
 
 const tableData = {
   data: [
@@ -36,11 +25,7 @@ const tableData = {
 };
 
 describe('Configurations Table component', () => {
-  afterEach(() => {
-    mockNavigate.mockClear();
-  });
-
-  it('should render a table when supplied with data', () => {
+  it('should render a link to the config builder page for each row', () => {
     render(
       <MemoryRouter>
         <ConfigurationsTable data={tableData.data} />
@@ -48,20 +33,20 @@ describe('Configurations Table component', () => {
     );
 
     expect(
-      screen.getByRole('row', {
-        name: /active configuration for chlamydia trachomatis infection/i,
+      screen.getByRole('link', {
+        name: /configure chlamydia trachomatis infection/i,
       })
-    ).toBeInTheDocument();
+    ).toHaveAttribute('href', '/configurations/chlamydia-config-id/build');
+
     expect(
-      screen.getByRole('row', {
-        name: /inactive configuration for disease caused by enterovirus/i,
+      screen.getByRole('link', {
+        name: /configure disease caused by enterovirus/i,
       })
-    ).toBeInTheDocument();
+    ).toHaveAttribute('href', '/configurations/asdf-zxcv-qwer-hjkl/build');
+
     expect(
-      screen.getByRole('row', {
-        name: /inactive configuration for acanthamoeba/i,
-      })
-    ).toBeInTheDocument();
+      screen.getByRole('link', { name: /configure acanthamoeba/i })
+    ).toHaveAttribute('href', '/configurations/1234-5678-9101-1121/build');
   });
 
   it('should render an error message if no data is supplied', () => {
@@ -75,7 +60,7 @@ describe('Configurations Table component', () => {
     expect(screen.getByText('No configurations available')).toBeInTheDocument();
   });
 
-  it('should navigate to the config builder page when a table row is clicked', async () => {
+  it('should focus the row link and activate it with keyboard', async () => {
     const user = userEvent.setup();
 
     render(
@@ -84,55 +69,16 @@ describe('Configurations Table component', () => {
       </MemoryRouter>
     );
 
-    // This ensures the aria-label is correct
-    const rowButton = within(
-      screen.getByRole('row', {
-        name: 'View active configuration for Chlamydia trachomatis infection',
-      })
-    ).getAllByRole('button', {
-      name: 'Configure the configuration for Chlamydia trachomatis infection',
-    })[0];
+    const link = screen.getByRole('link', {
+      name: /configure chlamydia trachomatis infection/i,
+    });
 
-    await user.click(rowButton);
+    link.focus();
+    expect(link).toHaveFocus();
 
-    expect(mockNavigate).toHaveBeenCalledWith(
-      '/configurations/chlamydia-config-id/build'
-    );
-  });
-
-  it('should navigate to the config builder page when Enter or Space is pressed on a table row', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <MemoryRouter>
-        <ConfigurationsTable data={tableData.data} />
-      </MemoryRouter>
-    );
-
-    const rowButton = within(
-      screen.getByRole('row', {
-        name: 'View active configuration for Chlamydia trachomatis infection',
-      })
-    ).getAllByRole('button', {
-      name: 'Configure the configuration for Chlamydia trachomatis infection',
-    })[0];
-
-    rowButton.focus();
-    expect(rowButton).toHaveFocus();
-
-    // Pressing enter
     await user.keyboard('{Enter}');
-
-    expect(mockNavigate).toHaveBeenCalledWith(
-      '/configurations/chlamydia-config-id/build'
-    );
-
-    mockNavigate.mockClear();
-
-    // Pressing space
-    await user.keyboard(' ');
-
-    expect(mockNavigate).toHaveBeenCalledWith(
+    expect(link).toHaveAttribute(
+      'href',
       '/configurations/chlamydia-config-id/build'
     );
   });

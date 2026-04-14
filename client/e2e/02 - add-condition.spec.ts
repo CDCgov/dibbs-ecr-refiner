@@ -57,7 +57,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .getByRole('searchbox', { name: 'Search by condition name' })
       .fill('syndrome');
     await page.getByText('Down Syndrome').click();
-    await page.getByTestId('close-drawer').click();
+    await page.getByRole('button', { name: 'Close drawer' }).click();
     await page.waitForSelector(
       '[role="alert"]:has-text("Condition code set added")',
       { state: 'detached' }
@@ -412,7 +412,7 @@ test.describe('Adding/modifying configurations by initial condition', () => {
       .filter({ hasText: 'Double Outlet Right Ventricle (DORV)' })
       .click();
 
-    await page.getByTestId('close-drawer').click();
+    await page.getByRole('button', { name: 'Close drawer' }).click();
 
     // Wait for prior notifications to clear
     await page.waitForSelector('[role="alert"]', { state: 'detached' });
@@ -516,7 +516,9 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     /// Test that the condition deletion shows up in the activity log
     /// ==========================================================================
     await page.getByText('Activity log').click();
-    expect(page.getByRole('heading', { name: 'Activity log' }));
+    await expect(
+      page.getByRole('heading', { name: 'Activity log' })
+    ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -537,11 +539,11 @@ test.describe('Adding/modifying configurations by initial condition', () => {
     await page
       .getByRole('link', { name: 'Configurations', exact: true })
       .click();
+
     await page
-      .getByRole('button', {
-        name: `Configure the configuration for ${configurationToTest} `,
+      .getByRole('link', {
+        name: configurationToTest,
       })
-      .filter({ hasText: configurationToTest })
       .click();
 
     // Open the "Custom codes" section
