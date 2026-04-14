@@ -130,7 +130,10 @@ async def get_condition_by_id_db(
                 loinc_codes,
                 icd10_codes,
                 rxnorm_codes,
-                cvx_codes
+                cvx_codes,
+                coverage_level,
+                coverage_level_reason,
+                coverage_level_date
             FROM conditions
             WHERE id = %s
             """
@@ -273,7 +276,10 @@ async def get_conditions_by_child_rsg_snomed_codes_db(
             loinc_codes,
             icd10_codes,
             rxnorm_codes,
-            cvx_codes
+            cvx_codes,
+            coverage_level,
+            coverage_level_reason,
+            coverage_level_date
         FROM conditions
         WHERE child_rsg_snomed_codes && %s::text[];
     """

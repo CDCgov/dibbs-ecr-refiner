@@ -1,6 +1,6 @@
 import { CodeSystem } from '../../../../api/schemas/codeSystem';
-import { Search } from '../../../../components/Search';
-import { ModalRef, Label, Select } from '@trussworks/react-uswds';
+import { Search } from '@components/Search';
+import { Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
@@ -14,26 +14,27 @@ import {
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
 import { DbConfigurationCustomCode } from '../../../../api/schemas';
-import { Spinner } from '../../../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
-import { Button } from '../../../../components/Button';
-import { ModalToggleButton } from '../../../../components/Button/ModalToggleButton';
+import { Button } from '@components/Button';
 import { CustomCodeModal } from './CustomCodeModal';
 
 interface CustomCodesDetailProps {
   configurationId: string;
-  modalRef: React.RefObject<ModalRef | null>;
   customCodes: DbConfigurationCustomCode[];
   deduplicated_codes: string[];
   disabled: boolean;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function CustomCodesDetail({
   configurationId,
-  modalRef,
   customCodes,
   deduplicated_codes,
   disabled,
+  isOpen,
+  setIsOpen,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
@@ -41,10 +42,9 @@ export function CustomCodesDetail({
   const queryClient = useQueryClient();
   const showToast = useToast();
 
-  function toggleModal() {
-    modalRef.current?.toggleModal();
+  const resetModal = () => {
     setSelectedCustomCode(null);
-  }
+  };
 
   return (
     <div role="region">
@@ -71,23 +71,21 @@ export function CustomCodesDetail({
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
-              <td className="w-1/2 pb-6 text-right whitespace-nowrap">
+              <td className="flex w-1/2 justify-end pb-6 whitespace-nowrap">
                 {!disabled && (
-                  <>
-                    <ModalToggleButton
-                      modalRef={modalRef}
-                      opener={disabled}
+                  <div className="flex flex-row gap-2">
+                    <Button
                       variant="tertiary"
-                      className="!mr-6"
                       onClick={() => {
                         if (disabled) return;
                         setSelectedCustomCode(customCode);
+                        setIsOpen(true);
                       }}
                       aria-label={`Edit custom code ${customCode.name}`}
                       disabled={disabled}
                     >
                       Edit
-                    </ModalToggleButton>
+                    </Button>
                     <Button
                       variant="tertiary"
                       aria-label={`Delete custom code ${customCode.name}`}
@@ -119,7 +117,7 @@ export function CustomCodesDetail({
                     <div className="sr-only">
                       Editing actions aren't available for previous versions
                     </div>
-                  </>
+                  </div>
                 )}
               </td>
             </tr>
@@ -127,11 +125,12 @@ export function CustomCodesDetail({
         </tbody>
       </table>
       <CustomCodeModal
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
         configurationId={configurationId}
         selectedCustomCode={selectedCustomCode}
         deduplicated_codes={deduplicated_codes}
-        modalRef={modalRef}
-        onClose={toggleModal}
+        onClose={resetModal}
       />
     </div>
   );
@@ -254,7 +253,7 @@ export function ConditionCodeTable({
             className="w-full border-separate border-spacing-y-4"
             aria-label={`Codes in set with ID ${conditionId}`}
           >
-            <thead className="bg-opacity-100 sticky -top-6 z-10 h-10 bg-white text-left">
+            <thead className="bg-opacity-100 sticky -top-6 h-10 bg-white text-left">
               <tr>
                 <th>Code</th>
                 <th>Code system</th>

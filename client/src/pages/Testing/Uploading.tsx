@@ -1,5 +1,5 @@
-import { Spinner } from '../../components/Spinner';
-import { Title } from '../../components/Title';
+import { Spinner } from '@components/Spinner';
+import { Title } from '@components/Title';
 
 export function Uploading() {
   return (

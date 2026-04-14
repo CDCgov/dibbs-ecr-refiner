@@ -90,6 +90,26 @@ export function Header({ displayName }: HeaderProps) {
   );
 }
 
+function generateVersionInformation() {
+  const commitHash = import.meta.env.VITE_GIT_HASH?.slice(0, 7);
+  const versionTag = import.meta.env.VITE_APP_VERSION;
+
+  const versionInformation = [];
+
+  if (versionTag !== 'main' && versionTag) {
+    versionInformation.push(versionTag);
+  }
+  if (commitHash) {
+    versionInformation.push(commitHash);
+  }
+  // fall back to local if both aren't available
+  if (versionInformation.length === 0) {
+    versionInformation.push('local');
+  }
+
+  return versionInformation.join(' | ');
+}
+
 export function Footer() {
   return (
     <footer>
@@ -106,7 +126,7 @@ export function Footer() {
             </span>
           </ExternalLink>
         </div>
-        <div className="flex flex-col gap-2 lg:items-end lg:gap-1">
+        <div className="flex max-w-3/5 flex-col gap-2 lg:items-end">
           <p className="text-white">
             For feedback, recommendations, or questions, please reach out to the{' '}
             <ExternalLink
@@ -118,8 +138,7 @@ export function Footer() {
             using the “eCR Functionality / Enhancements" category
           </p>
           <p className="text-gray-cool-20 text-xs">
-            Version code:{' '}
-            {import.meta.env.VITE_GIT_HASH?.slice(0, 7) ?? 'local'}
+            Version code: {generateVersionInformation()}
           </p>
         </div>
       </div>

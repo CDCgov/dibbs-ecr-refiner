@@ -1,7 +1,5 @@
 import { GetConfigurationResponse } from '../../../api/schemas';
-import { SwitchFromPrevious } from './buttonDisplays/SwitchFromPreviousButtons';
-import { TurnOffButtons } from './buttonDisplays/TurnOffButtons';
-import { TurnOnButtons } from './buttonDisplays/TurnOnButtons';
+import { TurnOnConfigButton } from './TurnOnConfigButton';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useActivateConfiguration,
@@ -10,6 +8,8 @@ import {
 } from '../../../api/configurations/configurations';
 import { useToast } from '../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
+import { TurnOffConfigButton } from './TurnOffConfigButton';
+import { SwitchToVersionButton } from './SwitchToVersionButton';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
@@ -25,7 +25,6 @@ export function ActivationButtons({
   const { mutate: activate } = useActivateConfiguration();
   const { mutate: deactivate } = useDeactivateConfiguration();
   const formatError = useApiErrorFormatter();
-
   const showToast = useToast();
 
   function handleActivation() {
@@ -96,13 +95,18 @@ export function ActivationButtons({
   const curVersion = configurationData.version;
   const activeVersion = configurationData.active_version;
 
-  if (activeVersion === null) {
+  if (!activeVersion) {
     return (
-      <TurnOnButtons handleActivation={handleActivation} disabled={isLocked} />
+      <TurnOnConfigButton
+        handleActivation={handleActivation}
+        disabled={isLocked}
+      />
     );
-  } else if (curVersion === activeVersion) {
+  }
+
+  if (curVersion === activeVersion) {
     return (
-      <TurnOffButtons
+      <TurnOffConfigButton
         handleDeactivation={handleDeactivation}
         disabled={isLocked}
       />
@@ -110,12 +114,24 @@ export function ActivationButtons({
   }
 
   return (
-    <SwitchFromPrevious
-      handleActivation={handleActivation}
-      handleDeactivation={handleDeactivation}
-      curVersion={curVersion}
-      activeVersion={activeVersion}
-      disabled={isLocked}
-    />
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-bold">Option 1</h3>
+        <SwitchToVersionButton
+          handleActivation={handleActivation}
+          activeVersion={activeVersion}
+          curVersion={curVersion}
+          grouped
+        />
+      </div>
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-bold">Option 2</h3>
+        <TurnOffConfigButton
+          handleDeactivation={handleDeactivation}
+          disabled={isLocked}
+          grouped
+        />
+      </div>
+    </div>
   );
 }

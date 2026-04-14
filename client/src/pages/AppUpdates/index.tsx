@@ -1,6 +1,6 @@
 import { Link } from '@trussworks/react-uswds';
-import { Spinner } from '../../components/Spinner';
-import { Title } from '../../components/Title';
+import { Spinner } from '@components/Spinner';
+import { Title } from '@components/Title';
 import Markdown from 'react-markdown';
 import { useGetReleases } from '../../api/releases/releases';
 

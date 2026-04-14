@@ -1,11 +1,11 @@
-import { Button } from '../../components/Button';
+import { Button } from '@components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import { ChangeEvent, useRef } from 'react';
-import { WarningIcon } from '../../components/WarningIcon';
+import { WarningIcon } from '@components/WarningIcon';
 import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
-import { ExternalLink } from '../../components/ExternalLink';
+import { ExternalLink } from '@components/ExternalLink';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;

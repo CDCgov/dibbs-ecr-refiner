@@ -9,7 +9,6 @@ import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
 import { CreateConfigurationResponse } from '../../api/schemas';
 import { ConfigBuild } from './ConfigBuild';
-import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
 
 // Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
@@ -107,7 +106,7 @@ describe('Configurations Page', () => {
       await screen.findByPlaceholderText('Search configurations')
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: CONFIGURATION_CTA })
+      screen.getByRole('button', { name: 'Set up new configuration' })
     ).toBeInTheDocument();
   });
 
@@ -139,7 +138,7 @@ describe('Configurations Page', () => {
     renderPageView();
 
     const setUpButton = screen.getByRole('button', {
-      name: CONFIGURATION_CTA,
+      name: 'Set up new configuration',
     });
     await user.click(setUpButton);
 
@@ -148,7 +147,7 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('already-created');
 
     const addConditionButton = screen.getByRole('button', {
-      name: CONFIGURATION_CONFIRMATION_CTA,
+      name: 'Set up configuration',
     });
     await user.click(addConditionButton);
 
@@ -190,14 +189,13 @@ describe('Configurations Page', () => {
 
     renderPageView();
     const setUpButton = screen.getByRole('button', {
-      name: CONFIGURATION_CTA,
+      name: 'Set up new configuration',
     });
     await user.click(setUpButton);
 
     const dialog = screen.getByRole('dialog');
 
-    // Check to see if the modal has a class of `is-visible`.
-    expect(dialog).toHaveClass('is-visible');
+    expect(dialog).toBeVisible();
 
     const conditionInput = screen.getByLabelText('Select condition');
     expect(conditionInput).toBeInTheDocument();
@@ -210,7 +208,7 @@ describe('Configurations Page', () => {
     expect(screen.getByLabelText('Select condition')).toHaveValue('');
     expect(
       screen.getByRole('button', {
-        name: CONFIGURATION_CONFIRMATION_CTA,
+        name: 'Set up configuration',
       })
     ).toBeDisabled();
 
@@ -219,7 +217,7 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
     const addConditionButton = screen.getByRole('button', {
-      name: CONFIGURATION_CONFIRMATION_CTA,
+      name: 'Set up configuration',
     });
     expect(addConditionButton).toBeEnabled();
     await user.click(addConditionButton);

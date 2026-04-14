@@ -42,11 +42,9 @@ test.describe('Custom code builder flows', () => {
     const submitButton = page.getByRole('button', { name: 'Add custom code' });
     await expect(submitButton).toBeDisabled();
 
-    await page.getByRole('textbox', { name: 'Code #' }).fill('CK-10001');
+    await page.getByLabel('Code #').fill('CK-10001');
     await page.getByLabel('Code system').selectOption('rxnorm');
-    await page
-      .getByRole('textbox', { name: 'Code name' })
-      .fill('Custom Kitsune');
+    await page.getByLabel('Code name').fill('Custom Kitsune');
 
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
@@ -65,11 +63,10 @@ test.describe('Custom code builder flows', () => {
     });
     await editButton.click();
 
-    const modalSaveButton = page.getByRole('button', { name: 'Update' });
-    await page
-      .getByRole('textbox', { name: 'Code name' })
-      .fill('Custom Kitsune Updated');
-    await modalSaveButton.click();
+    await page.getByLabel('Code #').fill('CK-10002');
+    await page.getByLabel('Code name').fill('Custom Kitsune Updated');
+
+    await page.getByRole('button', { name: 'Update' }).click();
     await expect(page.getByText('Custom code updated')).toBeVisible();
     await expect(
       rowLocator.getByRole('cell', {
