@@ -2,43 +2,43 @@
 <!--
     File:               CDAR2_IG_PHCR_R2_RR_D1_2017DEC_SAMPLE.xml
     Specification:      Public Health Case Report, Reportability Response, Release 1, STU Release 1 - US Realm
-    
+
     Created:            Mar 2017            Sarah Gaunt
     Updated:            Aug 2017            Sarah Gaunt       Preliminary updates based on ballot comments
     Updated:            Oct 2017            Sarah Gaunt       Preliminary updates based on ballot comments
     Updated:            Nov 2017            Sarah Gaunt       Example of single single rendering
     Updated:            Dec 2017            Sarah Gaunt       Replaced all temporary codes
-    
-    Revision History:    
+
+    Revision History:
 -->
 <!--
-    Disclaimer:      
+    Disclaimer:
     This sample file is informative only.
-    This sample file contains representative data elements from the RR IG. 
+    This sample file contains representative data elements from the RR IG.
     The file depicts a fictional character's health data. Any resemblance to a real person is coincidental.
-    To illustrate as many data elements as possible, the clinical scenario may not be entirely plausible. 
-    The data in this sample file is not intended to represent a real patients, people or clinical events. 
+    To illustrate as many data elements as possible, the clinical scenario may not be entirely plausible.
+    The data in this sample file is not intended to represent a real patients, people or clinical events.
     This sample is designed to be used in conjunction with the RR IG.
-     
+
     Where guidance has been given to the conformance or cardinality of elements or
     attributes and there is a discrepancy with the IG, the IG is always the normative
     source of truth.
-    
-    Please note:  This sample is valid against the Schema and Schematron for ERRORS (not warnings). 
-    Logical schematron WARNINGS will generate from the sample file. 
+
+    Please note:  This sample is valid against the Schema and Schematron for ERRORS (not warnings).
+    Logical schematron WARNINGS will generate from the sample file.
     It is logical to generate a samples file from a system with valid warnings.
 -->
-<!-- 
-    Templates are identified in comments above their template id.  
+<!--
+    Templates are identified in comments above their template id.
     The IG in which the template version was first published is identified in square brackets before the template name.
-    
+
     e.g.: [C-CDA 2.1] Continuity of Care (CCD) (V3)       indicates that the Discharge Summary (V3) template was first published in IG C-CDA R2.1
           [C-CDA R2.0] Plan of Treatment Section (V2)     indicates that the Plan of Treatment Section (V2) template was first published in IG C-CDA R2.0
           [C-CDA R1.1] History of Present Illness Section indicates that the Hospital Course Section was first published in IG C-CDA R1.1
-          
-    Even though all 3 templates above are included in IG C-CDA 2.1, because there have been no new versions of 
-    the History of Present Illness Section template in IGs later than C-CDA R1.1, it is considered to be published in R1.1. 
-    Similarly, there have been no new versions of the Plan of Treatment Section template later than C-CDA R.2 so it 
+
+    Even though all 3 templates above are included in IG C-CDA 2.1, because there have been no new versions of
+    the History of Present Illness Section template in IGs later than C-CDA R1.1, it is considered to be published in R1.1.
+    Similarly, there have been no new versions of the Plan of Treatment Section template later than C-CDA R.2 so it
     is considered to be published in R2.0.
 -->
 
@@ -83,8 +83,8 @@
         <city>City</city>
         <state>State</state>
         <postalCode>99999</postalCode>
-        <!-- Although "county" is not explicitly specified in the US Realm Address, 
-                     it is not precluded from use and for the purposes of this IG it is 
+        <!-- Although "county" is not explicitly specified in the US Realm Address,
+                     it is not precluded from use and for the purposes of this IG it is
                      recommended to be included. -->
         <county>County</county>
         <country>US</country>
@@ -162,9 +162,9 @@
 
   <!--
         ********************************************************
-        informationRecipient: This primary informationRecipient contains the provider details. 
-        The provider details are obtained from the eICR encompassingEncounter/responsibleParty/assignedEntity 
-        which contains the (Responsible) Provider data. 
+        informationRecipient: This primary informationRecipient contains the provider details.
+        The provider details are obtained from the eICR encompassingEncounter/responsibleParty/assignedEntity
+        which contains the (Responsible) Provider data.
         This data is also contained in the RR encompassingEncounter/responsibleParty/assignedEntity.
         ********************************************************
     -->
@@ -352,10 +352,10 @@
               <templateId root="2.16.840.1.113883.10.20.15.2.3.9" extension="2017-04-01" />
               <id root="6bff7990-f218-4f9d-a5aa-eb7afa6e9a3c" />
               <code code="RR5" codeSystem="2.16.840.1.114222.4.5.232" codeSystemName="PHIN Questions" displayName="Received eICR Information" />
-              <!-- The filename is recommended primarily for dealing with eICR error cases. 
-                   In the case where an eICR document is unreadable for some reason, 
-                   it is likely that the setId and versionNumber would be unavailable, 
-                   and it is possible that the only identifying information is the 
+              <!-- The filename is recommended primarily for dealing with eICR error cases.
+                   In the case where an eICR document is unreadable for some reason,
+                   it is likely that the setId and versionNumber would be unavailable,
+                   and it is possible that the only identifying information is the
                    eICR CDA XML document filename. -->
               <text xsi:type="ST">eICR_Filename.xml</text>
               <statusCode code="completed" />
@@ -456,7 +456,7 @@
                   <templateId root="2.16.840.1.113883.10.20.15.2.3.33" extension="2017-04-01" />
                   <id root="80f7b4ff-4d96-46ef-ae8f-af1f9c1f206e" />
                   <code code="RR10" displayName="eICR Validation Output" codeSystem="2.16.840.1.114222.4.5.232" codeSystemName="PHIN Questions" />
-                  <!-- Validation Output - this could be the actual output from a validator, 
+                  <!-- Validation Output - this could be the actual output from a validator,
                        or a link to a validation output file -->
                   <value xsi:type="ED" mediaType="text/xhtml">
                     <reference value="http://validation.xml" />
@@ -524,28 +524,28 @@
           <code code="55112-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Document Summary" />
           <text>
             <paragraph><content styleCode="Bold">Summary:</content></paragraph>
-            <!-- 
+            <!--
               The following paragraph contains the text from Reportability Response Summary/text (act[templateId/@root="2.16.840.1.113883.10.20.15.2.3.8"]/text)
             -->
             <paragraph>Your organization electronically submitted an initial case report to determine if reporting to public health is needed for a patient. "Zika virus disease (disorder)" is reportable to "State Department of Health". An initial case report was sent to "State Department of Health". Additional information may be required for this report.<br /><br />
             </paragraph>
-            <!-- 
+            <!--
               The following paragraph uses data from the CDA elements:
                       Relevant Reportable Condition Observation/value (observation[templateId/@root="2.16.840.1.113883.10.20.15.2.3.12"]/value)
-                      If Responsible Agency is present use: 
+                      If Responsible Agency is present use:
                           Responsible Agency/participantRole/playingEntity/name (participant[templateId/@root="2.16.840.1.113883.10.20.15.2.4.2"]/participantRole/playingEntity/name)
-                      else if Responsible Agency is not present use: 
+                      else if Responsible Agency is not present use:
                           Rules Authoring Agency/participantRole/playingEntity/name (participant[templateId/@root="2.16.840.1.113883.10.20.15.2.4.3"]/participantRole/playingEntity/name)
             -->
             <paragraph><content styleCode="Bold">"Zika virus disease (disorder)" for "State Department of Health"</content></paragraph>
-            <!-- 
+            <!--
               The following paragraph uses data from the CDA elements:
                       Reporting Timeframe/value (observation[templateId/@root="2.16.840.1.113883.10.20.15.2.3.14"]/value)
                       Reportability Information Organizer/code (Location Relevance) (organizer[templateId/@root="2.16.840.1.113883.10.20.15.2.3.13"]/code)
             -->
             <paragraph>Reporting is required within "24 hours".  Reporting to this Public Health Agency is based on "both patient home address and provider facility address". </paragraph>
             <!-- External Resources -->
-            <!-- 
+            <!--
               The following paragraphs use data from the CDA elements:
                       External Reference/code/originalText (externalDocument[templateId/@root="2.16.840.1.113883.10.20.15.2.3.17"/code/originalText]
                       External Reference/text/reference (externalDocument[templateId/@root="2.16.840.1.113883.10.20.15.2.3.17"/text/reference]
@@ -597,12 +597,12 @@
               <id root="7a0ed3d3-16f3-4fa9-bac5-882f5c7d44b8" />
               <code code="304561000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"
                 displayName="Informing health care professional (procedure)" />
-              <!-- 
+              <!--
               The following element uses data from the CDA elements:
                       Relevant Reportable Condition Observation/value (observation[templateId/@root="2.16.840.1.113883.10.20.15.2.3.12"]/value)
-                      If Responsible Agency is present use: 
+                      If Responsible Agency is present use:
                           Responsible Agency/participantRole/playingEntity/name (participant[templateId/@root="2.16.840.1.113883.10.20.15.2.4.2"]/participantRole/playingEntity/name)
-                      else if Responsible Agency is not present use: 
+                      else if Responsible Agency is not present use:
                           Rules Authoring Agency/participantRole/playingEntity/name (participant[templateId/@root="2.16.840.1.113883.10.20.15.2.4.3"]/participantRole/playingEntity/name)
             -->
               <text>Your organization electronically submitted an initial case report to determine if reporting to public health is needed for a patient. "Zika virus disease (disorder)" is reportable to "State Department of Health". An initial case report was sent to "State Department of Health". Additional information may be required for this report.</text>
@@ -659,7 +659,7 @@
                       <participant typeCode="LOC">
                         <!-- [RR R1S1] Responsible Agency -->
                         <templateId root="2.16.840.1.113883.10.20.15.2.4.2" extension="2017-04-01" />
-                        <!-- If the responsible and authoring agencies are the same 
+                        <!-- If the responsible and authoring agencies are the same
                              then they will have the same identifying and contact details -->
                         <participantRole>
                           <id extension="12341234" root="2.16.840.1.113883.4.6" />
@@ -686,7 +686,7 @@
                       <participant typeCode="LOC">
                         <!-- [RR R1S1] Rules Authoring Agency -->
                         <templateId root="2.16.840.1.113883.10.20.15.2.4.3" extension="2017-04-01" />
-                        <!-- If the responsible and authoring agencies are the same 
+                        <!-- If the responsible and authoring agencies are the same
                              then they will have the same identifying and contact details -->
                         <participantRole>
                           <id extension="12341234" root="2.16.840.1.113883.4.6" />

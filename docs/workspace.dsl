@@ -11,7 +11,7 @@ workspace {
 
         refiner = softwareSystem "DIBBs eCR Refiner" {
             description "The DIBBs eCR Refiner platform"
-        
+
             tags "DIBBs"
 
             group "Network Layer" {

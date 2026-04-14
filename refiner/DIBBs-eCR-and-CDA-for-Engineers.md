@@ -220,7 +220,7 @@ The real power comes from filtering with `[ ]`:
 
 - **Advanced XML, XSLT, XQuery, XPath, etc:**
   - [`SaxonC-HE`](https://www.saxonica.com/saxon-c/index.xml) / [`saxonche`](https://pypi.org/project/saxonche/):
-    - **What is SaxonC?**  
+    - **What is SaxonC?**
       SaxonC is a high-performance, standards-compliant XML processor. It exposes Python APIs for:
       - **XSLT 3.0 transformations** (transform XML documents)
       - **XQuery 3.1 queries** (advanced XML database queries)
@@ -255,7 +255,7 @@ The real power comes from filtering with `[ ]`:
   - **Python support:** Only available via Saxon/SaxonC after converting `.sch` to XSLT.
 
 > [!NOTE]
-> **XPath 1.0** is the universal denominator—supported everywhere and easiest to integrate.  
+> **XPath 1.0** is the universal denominator—supported everywhere and easiest to integrate.
 > **XPath 2.0/3.0** offer greater expressive power (better filtering, grouping, string handling), but fewer toolkits support it natively in Python or JavaScript.
 
 > [!IMPORTANT]

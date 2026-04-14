@@ -2,51 +2,51 @@
 <!--
     File:               CDAR2_IG_PHCASERPT_R2_D3_SAMPLE.xml
     Specification:      Public Health Case Report, Release 1, STU Release 3 - US Realm
-    
+
     Created:            Eric M Haas, Health eData Inc, on behalf of HL7 PHER Working Group
-    
-    Revision History:   11/09/2015              Eric M Haas     Pre-publication 
-                        Oct-Dec 2020            Sarah Gaunt     Additions/Revisions for 1st update to STU Release 1 (Release 2, STU Release 1.1) 
+
+    Revision History:   11/09/2015              Eric M Haas     Pre-publication
+                        Oct-Dec 2020            Sarah Gaunt     Additions/Revisions for 1st update to STU Release 1 (Release 2, STU Release 1.1)
                         Nov 2017                Sarah Gaunt     Updates
                         Feb 2019                David deRoode   Update
                         Mar 2019                Sarah Gaunt     Update
                         Aug-Nov 2019            Sarah Gaunt     Update
                         Jan 2020                Sarah Gaunt     Update for publication of STU2
-                        Sept-Dec 2020           Sarah Gaunt     Additions/Revisions for Release 2, STU Release 3)    
+                        Sept-Dec 2020           Sarah Gaunt     Additions/Revisions for Release 2, STU Release 3)
                         Aug 2021                Sarah Gaunt     Update for publication of STU3
 -->
 <!--
-    Disclaimer: 
+    Disclaimer:
     This sample file is informative only.
-    This sample file contains representative data elements from the eICR IG. 
+    This sample file contains representative data elements from the eICR IG.
     The file depicts a fictional character's health data. Any resemblance to a real person is coincidental.
-    To illustrate as many data elements as possible, the clinical scenario may not be entirely plausible. 
-    The data in this sample file is not intended to represent a real patients, people or clinical events. 
+    To illustrate as many data elements as possible, the clinical scenario may not be entirely plausible.
+    The data in this sample file is not intended to represent a real patients, people or clinical events.
     This sample is designed to be used in conjunction with the eICR IG.
-     
+
     Where guidance has been given to the conformance or cardinality of elements or
     attributes and there is a discrepancy with the IG, the IG is always the normative
     source of truth.
-    
-    Please note:  This sample is valid against the Schema and Schematron for ERRORS (not warnings). 
-    Logical schematron WARNINGS will generate from the sample file. 
+
+    Please note:  This sample is valid against the Schema and Schematron for ERRORS (not warnings).
+    Logical schematron WARNINGS will generate from the sample file.
     It is logical to generate a samples file from a system with valid warnings.
 -->
-<!-- 
-    Templates are identified in comments above their template id.  
+<!--
+    Templates are identified in comments above their template id.
     The IG in which the template version was first published is identified in square brackets before the template name.
-    
+
     e.g.: [C-CDA 2.1] Continuity of Care (CCD) (V3)       indicates that the Discharge Summary (V3) template was first published in IG C-CDA R2.1
           [C-CDA R2.0] Plan of Treatment Section (V2)     indicates that the Plan of Treatment Section (V2) template was first published in IG C-CDA R2.0
           [C-CDA R1.1] History of Present Illness Section indicates that the Hospital Course Section was first published in IG C-CDA R1.1
-          
-    Even though all 3 templates above are included in IG C-CDA 2.1, because there have been no new versions of 
-    the History of Present Illness Section template in IGs later than C-CDA R1.1, it is considered to be published in R1.1. 
-    Similarly, there have been no new versions of the Plan of Treatment Section template later than C-CDA R.2 so it 
+
+    Even though all 3 templates above are included in IG C-CDA 2.1, because there have been no new versions of
+    the History of Present Illness Section template in IGs later than C-CDA R1.1, it is considered to be published in R1.1.
+    Similarly, there have been no new versions of the Plan of Treatment Section template later than C-CDA R.2 so it
     is considered to be published in R2.0.
 -->
 <!--
-    While assertion of conformance with both C-CDA R2.1 and C-CDA R1.1 is NOT a requirement of the eICR IG, it is recommended that, if the 
+    While assertion of conformance with both C-CDA R2.1 and C-CDA R1.1 is NOT a requirement of the eICR IG, it is recommended that, if the
     originating system includes both the versioned and un-versioned templateId, then both these templateIds SHOULD be preserved in the eICR document.
     The examples and sample file included with this IG illustrate the optional use of the C-CDA R1.1 templateId.
 -->
@@ -86,30 +86,30 @@
             <id extension="123453" root="2.16.840.1.113883.19.5" />
             <!--SSN-->
             <id extension="444-22-2222" root="2.16.840.1.113883.4.1" />
-            <!-- For greatest utility to public health, a patient's address 
-        should be a home address if available (PostalAddressUse = 'H' or 'HP'); 
-        would also request a second address, preferably a work address, 
-        (PostalAddressUse='WP') if available. 
+            <!-- For greatest utility to public health, a patient's address
+        should be a home address if available (PostalAddressUse = 'H' or 'HP');
+        would also request a second address, preferably a work address,
+        (PostalAddressUse='WP') if available.
 
-        If the patient is homeless, complete as much address information 
-        as possible (city, zip, county, etc.) and use the 
-        Characteristics of Home Environment template in the 
+        If the patient is homeless, complete as much address information
+        as possible (city, zip, county, etc.) and use the
+        Characteristics of Home Environment template in the
         Social History Section to indicate that the patient is homeless. -->
             <addr use="H">
                 <streetAddressLine>2222 Home Street</streetAddressLine>
                 <city>Ann Arbor</city>
                 <state>MI</state>
                 <postalCode>99999</postalCode>
-                <!-- Although "county" is not explicitly specified in the 
-          US Realm Address, it is not precluded from use and for 
-          the purposes of this IG it SHOULD be included. 
+                <!-- Although "county" is not explicitly specified in the
+          US Realm Address, it is not precluded from use and for
+          the purposes of this IG it SHOULD be included.
           See the IG for more information. -->
                 <county>26001</county>
                 <country>US</country>
                 <!-- usablePeriod is an optional element
                      If present and high is missing, this indicates a current addres
                      If present and high is present, this indicates this address is historical
-                     If present, low indicates the starting period for this address 
+                     If present, low indicates the starting period for this address
                      The following example indicates a current address-->
                 <useablePeriod xsi:type='IVL_TS'>
                     <low value='200007200845'/>
@@ -223,11 +223,11 @@
         <encompassingEncounter>
             <!--encounter ID-->
             <id extension="9937012" root="2.16.840.1.113883.19" />
-            <!-- Where a trigger occurs outside of an encounter use 
-              code="PHC2237" | 
-              codeSystem="2.16.840.1.114222.4.5.274" | 
-              codeSystemName="PHIN VS (CDC Local Coding System)" 
-              (External Historical Encounter) 
+            <!-- Where a trigger occurs outside of an encounter use
+              code="PHC2237" |
+              codeSystem="2.16.840.1.114222.4.5.274" |
+              codeSystemName="PHIN VS (CDC Local Coding System)"
+              (External Historical Encounter)
            and set effectiveTime/low/@nullFlavor="NA" and omit responsibleParty and location. -->
             <!--ActClassEncounterCodes -->
             <code code="AMB" codeSystem="2.16.840.1.113883.5.4" codeSystemName="HL7 ActEncounterCode" displayName="Ambulatory" />
@@ -356,7 +356,7 @@
                             <!-- [eICR R2 STU2] Initial Case Report Trigger Code Lab Test Order (V2) -->
                             <templateId root="2.16.840.1.113883.10.20.15.2.3.4" extension="2019-04-01" />
                             <id root="b52bee94-c34b-4e2c-8c15-5ad9d6def205" />
-                            <!-- This code is from the trigger codes for laboratory test order 
+                            <!-- This code is from the trigger codes for laboratory test order
                    value set (2.16.840.1.113762.1.4.1146.166) -->
                             <code code="80825-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Zika virus envelope (E) gene [Presence] in Serum by Probe and target amplification method"
                                 sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13" />
@@ -1195,7 +1195,7 @@
                                 <high value="20201107" />
                             </effectiveTime>
                             <component>
-                                <!-- This observation is a trigger code final result observation - 
+                                <!-- This observation is a trigger code final result observation -
                    only the code is a trigger code and thus
                    only the code must contain @sdtc:valueSet and @sdtc:valueSetVersion.
                    Final result is indicated by statusCode="final" along with the corresponding
@@ -1208,7 +1208,7 @@
                                     <!-- [eICR R2 STU2] Initial Case Report Trigger Code Result Observation (V2) -->
                                     <templateId root="2.16.840.1.113883.10.20.15.2.3.2" extension="2019-04-01" />
                                     <id root="bf9c0a26-4524-4395-b3ce-100450b9c9ad" />
-                                    <!-- This code is a trigger code from RCTC subset: 
+                                    <!-- This code is a trigger code from RCTC subset:
                        "R4 Lab Obs Test Name Triggers for Public Health Reporting (RCTC subset)"
                        @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
                                     <code code="11585-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" displayName="Bordetella pertussis Ab [Units/volume] in Serum" sdtc:valueSet="2.16.840.1.114222.4.11.7508"
@@ -1216,8 +1216,8 @@
                                     <!-- statusCode is set to completed indicating that this is a final result -->
                                     <statusCode code="completed" />
                                     <effectiveTime value="20201107" />
-                                    <!-- It is not necessary that the result value (contained in value) is a coded value 
-                    (though, in order for a result value to be a trigger, it must be coded), 
+                                    <!-- It is not necessary that the result value (contained in value) is a coded value
+                    (though, in order for a result value to be a trigger, it must be coded),
                     but if codes are available they **SHALL** be used. -->
                                     <!-- This value is a physical quantity and thus cannot be a trigger code -->
                                     <value xsi:type="PQ" unit="[iU]/mL" value="100" />
@@ -1238,7 +1238,7 @@
                                             <value xsi:type="IVL_PQ">
                                                 <high inclusive="false" unit="[iU]/mL" value="45" />
                                             </value>
-                                            <!-- This interpretation code denotes that this reference range is for normal results. 
+                                            <!-- This interpretation code denotes that this reference range is for normal results.
                            This is not the interpretation of a specific patient value-->
                                             <interpretationCode code="N" codeSystem="2.16.840.1.113883.5.83" displayName="Normal" />
                                         </observationRange>
@@ -1262,8 +1262,8 @@
                                 <high value="20201107" />
                             </effectiveTime>
                             <component>
-                                <!-- This observation is a trigger code preliminary result observation - 
-                     both the code and value are trigger codes and thus 
+                                <!-- This observation is a trigger code preliminary result observation -
+                     both the code and value are trigger codes and thus
                      both the code and the value must contain @sdtc:valueSet and @sdtc:valueSetVersion.
                      Preliminary result is indicated by statusCode="active"
                      along with the corresponding value (P) in the Laboratory Observation Result Status (ID) template -->
@@ -1275,8 +1275,8 @@
                                     <!-- [eICR R2 STU2] Initial Case Report Trigger Code Result Observation (V2) -->
                                     <templateId root="2.16.840.1.113883.10.20.15.2.3.2" extension="2019-04-01" />
                                     <id root="bf9c0a26-4524-4395-b3ce-100450b9c9ac" />
-                                    <!-- This code is a trigger code from RCTC subset: 
-                       "R4 Lab Obs Test Name Triggers for Public Health Reporting (RCTC subset)" 
+                                    <!-- This code is a trigger code from RCTC subset:
+                       "R4 Lab Obs Test Name Triggers for Public Health Reporting (RCTC subset)"
                        @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
                                     <!-- Example (fake) of the trigger code contained in the translation element -->
                                     <code code="local_code_pertussis" codeSystem="2.16.840.1.113883.1.2.3.665" codeSystemName="local_coding_system"
@@ -1288,16 +1288,16 @@
                                     <!-- statusCode is set to active indicating that this is a preliminary result -->
                                     <statusCode code="active" />
                                     <effectiveTime value="20201107" />
-                                    <!-- This value is a trigger code from RCTC subset: 
-                       "R4 Organism_Substance Triggers for Public Health Reporting (RCTC subset)" 
+                                    <!-- This value is a trigger code from RCTC subset:
+                       "R4 Organism_Substance Triggers for Public Health Reporting (RCTC subset)"
                        @sdtc:valueSet and @sdtc:valueSetVersion shall be present -->
-                                    <!-- It is not necessary that the result value (contained in value) is a coded value 
-                    (though, in order for a result value to be a trigger, it must be coded), 
+                                    <!-- It is not necessary that the result value (contained in value) is a coded value
+                    (though, in order for a result value to be a trigger, it must be coded),
                     but if codes are available they **SHALL** be used. -->
                                     <!-- This value is a physical quantity and thus cannot be a trigger code -->
                                     <value xsi:type="CD" code="5247005" displayName="Bordetella pertussis (organism)" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"
                                         sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="2020-11-13" />
-                                    <!-- This interpretation code denotes that this patient value is abnormal 
+                                    <!-- This interpretation code denotes that this patient value is abnormal
                        (bordetella pertussis (organism) was present in the culture) -->
                                     <interpretationCode code="A" displayName="Abnormal" codeSystem="2.16.840.1.113883.5.83" codeSystemName="ObservationInterpretation" />
                                     <!-- Laboratory Observation Result Status (ID) -->
@@ -1975,7 +1975,7 @@
                         </act>
                     </entry>
                     <entry typeCode="DRIV">
-                        <!-- Travel History - participant location with addr 
+                        <!-- Travel History - participant location with addr
                          specific to city and state (province) -->
                         <act classCode="ACT" moodCode="EVN">
                             <!-- [eICR R2 STU1.1] Travel History (V2) -->
@@ -2000,7 +2000,7 @@
                         </act>
                     </entry>
                     <entry typeCode="DRIV">
-                        <!-- Travel History - participant location with addr 
+                        <!-- Travel History - participant location with addr
                  specific to city and state -->
                         <act classCode="ACT" moodCode="EVN">
                             <!-- [eICR R2 STU3] Travel History (V2) -->
@@ -2094,11 +2094,11 @@
                             <value xsi:type="BL" value="true" />
                         </observation>
                     </entry>
-                    <!-- Note that, due to tooling limitations, there are templates stated in the Occupational Data 
-                         for Health (ODH) Template Requirements Section in Volume 2 of the eICR IG that are not for 
-                         use in eICR. These templates are not included in the guide and where they are stated they 
-                         are not linked (i.e. not in underlined blue text with hyperlink). The only templates to 
-                         be used in an eICR are linked in the templates that include them. 
+                    <!-- Note that, due to tooling limitations, there are templates stated in the Occupational Data
+                         for Health (ODH) Template Requirements Section in Volume 2 of the eICR IG that are not for
+                         use in eICR. These templates are not included in the guide and where they are stated they
+                         are not linked (i.e. not in underlined blue text with hyperlink). The only templates to
+                         be used in an eICR are linked in the templates that include them.
                          The following includes examples of all the eICR included templates. -->
                     <!-- Usual Occupation Observation -->
                     <entry>
@@ -2362,7 +2362,7 @@
                             <id root="bab77407-f76d-4a51-a2ed-980c8a59fe28" />
                             <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4" />
                             <statusCode code="completed" />
-                            <!-- Use the effectiveTime to indicate the date range over which the patient 
+                            <!-- Use the effectiveTime to indicate the date range over which the patient
                    was pregnant/possibly pregnant/not pregnant/unknown. -->
                             <effectiveTime>
                                 <low value="20170826" />
@@ -2392,8 +2392,8 @@
                                     <!-- [C-CDA PREG] Estimated Date of Delivery (SUPPLEMENTAL PREGNANCY) -->
                                     <templateId root="2.16.840.1.113883.10.20.22.4.297" extension="2020-04-01" />
                                     <id root="f3dfc576-2329-4f71-af3f-d500cab1146b" />
-                                    <!-- If method of determination is known, it is included in the code chosen, 
-                    if the method of determination is not known, 
+                                    <!-- If method of determination is known, it is included in the code chosen,
+                    if the method of determination is not known,
                     use code 11778-8 - Delivery Date estimated (no method specified) -->
                                     <!-- eICR Data element: Estimated date of delivery (EDD) method -->
                                     <code code="11780-4" codeSystem="2.16.840.1.113883.6.1" displayName="Delivery date estimated from ovulation date" codeSystemName="LOINC" />
@@ -2417,8 +2417,8 @@
                                     <effectiveTime value="201710011015" />
                                     <!-- eICR Data element: Estimated gestational age of pregnancy in days -->
                                     <value xsi:type="PQ" unit="d" value="143" />
-                                    <!-- The following entryRelationship only needs to be present if the code used 
-                       is 11887-7 | Gestational age Estimated from selected delivery date. The 
+                                    <!-- The following entryRelationship only needs to be present if the code used
+                       is 11887-7 | Gestational age Estimated from selected delivery date. The
                        Entry Reference template points to the relevant Estimated Date of Delivery template-->
                                     <entryRelationship typeCode="REFR">
                                         <act classCode="ACT" moodCode="EVN">
@@ -2436,8 +2436,8 @@
 
                             <!-- Pregnancy Outcome -->
                             <entryRelationship typeCode="COMP">
-                                <!-- The order born in the delivery, live born or fetal death (1st, 2nd, 3rd, 4th, 5th, 6th, 7th, etc.). 
-                     All live births and fetal losses are included. If the pregnancy plurality is 1 
+                                <!-- The order born in the delivery, live born or fetal death (1st, 2nd, 3rd, 4th, 5th, 6th, 7th, etc.).
+                     All live births and fetal losses are included. If the pregnancy plurality is 1
                      then this value will also be 1. -->
                                 <sequenceNumber value="1" />
                                 <observation classCode="OBS" moodCode="EVN">
@@ -2774,7 +2774,7 @@
                                             <participant typeCode="LOC">
                                                 <!-- [RR R1S1] Responsible Agency -->
                                                 <templateId root="2.16.840.1.113883.10.20.15.2.4.2" extension="2017-04-01" />
-                                                <!-- If the responsible and authoring agencies are the same 
+                                                <!-- If the responsible and authoring agencies are the same
                              then they will have the same identifying and contact details -->
                                                 <participantRole>
                                                     <id extension="12341234" root="2.16.840.1.113883.4.6" />
@@ -2801,7 +2801,7 @@
                                             <participant typeCode="LOC">
                                                 <!-- [RR R1S1] Rules Authoring Agency -->
                                                 <templateId root="2.16.840.1.113883.10.20.15.2.4.3" extension="2017-04-01" />
-                                                <!-- If the responsible and authoring agencies are the same 
+                                                <!-- If the responsible and authoring agencies are the same
                              then they will have the same identifying and contact details -->
                                                 <participantRole>
                                                     <id extension="12341234" root="2.16.840.1.113883.4.6" />
