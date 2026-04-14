@@ -1,10 +1,10 @@
 import {
   Combobox as HeadlessCombobox,
-  ComboboxProps,
   ComboboxInput as HeadlessInput,
   ComboboxButton as HeadlessButton,
   ComboboxOptions as HeadlessOptions,
   ComboboxOption as HeadlessOption,
+  ComboboxProps,
   ComboboxOptionsProps,
   ComboboxOptionProps,
   ComboboxInputProps,
@@ -38,8 +38,8 @@ function ComboboxInput<T>({
     <div className="relative">
       <HeadlessInput
         className={classNames(
-          'w-full border border-[#565c65] bg-white py-2 pr-10 pl-2',
-          'text-gray-90',
+          'w-full border py-2 pr-10 pl-2',
+          'text-gray-90 border-[#565c65] bg-white',
           'data-open:focus:outline-none!',
           className
         )}
@@ -91,9 +91,9 @@ function ComboboxOptions({
       anchor="bottom start"
       transition
       className={classNames(
-        'z-50 w-(--input-width) border border-[#565c65] bg-white empty:invisible',
-        'max-h-52! overflow-y-auto',
-        'transition duration-100 ease-in data-leave:data-closed:opacity-0',
+        'z-50 max-h-52! w-(--input-width) overflow-y-auto border',
+        'border-[#565c65] bg-white',
+        'transition duration-100 ease-in empty:invisible data-leave:data-closed:opacity-0',
         className
       )}
       {...props}
@@ -111,7 +111,8 @@ function ComboboxOption<T>({
   return (
     <HeadlessOption
       className={classNames(
-        'text-gray-90 border-gray-10 flex w-full cursor-pointer items-center border-b px-2 py-2 select-none',
+        'flex w-full cursor-pointer items-center border-b px-2 py-2 select-none',
+        'text-gray-90 border-gray-10',
         'hover:ring-blue-40v data-focus:ring-blue-40v hover:ring-4 data-focus:ring-4 data-focus:ring-inset',
         className
       )}
