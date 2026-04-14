@@ -288,7 +288,8 @@ function Builder({
             <OptionsListContainer>
               <OptionsList>
                 <li key="custom-codes">
-                  <button
+                  <Button
+                    variant="unstyled"
                     className={classNames(
                       'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                       {
@@ -303,10 +304,11 @@ function Builder({
                   >
                     <span>Custom codes</span>
                     <span>{custom_codes.length}</span>
-                  </button>
+                  </Button>
                 </li>
                 <li key="sections">
-                  <button
+                  <Button
+                    variant="unstyled"
                     className={classNames(
                       'flex h-full w-full flex-col justify-between gap-3 rounded p-1 text-left hover:cursor-pointer hover:bg-stone-50 sm:flex-row sm:gap-0 sm:p-4',
                       {
@@ -323,7 +325,7 @@ function Builder({
                     aria-pressed={tableView === 'sections'}
                   >
                     <span>Sections</span>
-                  </button>
+                  </Button>
                 </li>
               </OptionsList>
             </OptionsListContainer>
@@ -420,14 +422,13 @@ const ConditionCodeSetButton = forwardRef<
     ref
   ) => {
     return (
-      <button
+      <Button
         ref={ref}
-        className={classNames(
-          'group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4'
-        )}
+        variant="unstyled"
+        className="group flex h-full w-full flex-row items-center justify-between gap-3 rounded p-1 text-left align-middle hover:cursor-pointer sm:p-4"
         onClick={onViewCodeSet}
-        {...props}
         aria-label={`View TES code set information for ${codeSetName}`}
+        {...props}
       >
         <span aria-hidden>{codeSetName}</span>
         <span aria-hidden className="group-hover:hidden">
@@ -436,7 +437,7 @@ const ConditionCodeSetButton = forwardRef<
         <span className="sr-only">
           {codeSetName}, {codeSetTotalCodes} codes in code set
         </span>
-      </button>
+      </Button>
     );
   }
 );
@@ -510,7 +511,8 @@ function DeleteCodeSetButton({
       Default
     </span>
   ) : (
-    <button
+    <Button
+      variant="unstyled"
       className="text-gray-cool-40 sr-only pr-4! group-hover:not-sr-only hover:cursor-pointer focus:not-sr-only disabled:cursor-not-allowed"
       aria-label={`Delete code set ${conditionName}`}
       onClick={() => handleDisassociateCondition(conditionId)}
@@ -521,7 +523,7 @@ function DeleteCodeSetButton({
         size={3}
         aria-hidden
       />
-    </button>
+    </Button>
   );
 }
 

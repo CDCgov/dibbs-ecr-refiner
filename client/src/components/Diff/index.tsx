@@ -80,7 +80,8 @@ export function Diff({
           <div className="flex items-center gap-2">
             <span className="font-bold">Layout</span>
             <div className="border-blue-cool-60 flex gap-1 rounded-sm border p-0">
-              <button
+              <Button
+                variant="unstyled"
                 aria-label="Show split diff"
                 onClick={() => setSplitView(true)}
                 className={classNames(
@@ -92,8 +93,9 @@ export function Diff({
                 )}
               >
                 <SymbolsIcon isActive={splitView} />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="unstyled"
                 aria-label="Show stacked diff"
                 onClick={() => setSplitView(false)}
                 className={classNames(
@@ -105,7 +107,7 @@ export function Diff({
                 )}
               >
                 <DashboardIcon isActive={!splitView} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -113,7 +115,8 @@ export function Diff({
           <div className="flex items-center gap-2">
             <span className="font-bold">Content</span>
             <div className="border-blue-cool-60 flex gap-1 rounded-sm border p-0">
-              <button
+              <Button
+                variant="unstyled"
                 onClick={() => setShowDiffOnly(false)}
                 className={classNames(
                   'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
@@ -124,8 +127,9 @@ export function Diff({
                 )}
               >
                 Show all
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="unstyled"
                 onClick={() => setShowDiffOnly(true)}
                 className={classNames(
                   'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
@@ -136,7 +140,7 @@ export function Diff({
                 )}
               >
                 Diff only
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -149,6 +153,15 @@ export function Diff({
         compareMethod={DiffMethod.WORDS_WITH_SPACE}
         leftTitle="Original eICR"
         rightTitle="Refined eICR"
+        infiniteLoading={{
+          pageSize: 20,
+          containerHeight: '80vh',
+        }}
+        loadingElement={() => (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            Computing diff...
+          </div>
+        )}
         styles={{
           titleBlock: {
             fontFamily: 'Public Sans, sans-serif',
@@ -186,7 +199,7 @@ function SuccessItem({ children }: SuccessItemProps) {
 interface IconProps {
   isActive: boolean;
 }
-const SymbolsIcon = ({ isActive }: IconProps) => {
+function SymbolsIcon({ isActive }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -208,9 +221,9 @@ const SymbolsIcon = ({ isActive }: IconProps) => {
       />
     </svg>
   );
-};
+}
 
-const DashboardIcon = ({ isActive }: IconProps) => {
+function DashboardIcon({ isActive }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -225,4 +238,4 @@ const DashboardIcon = ({ isActive }: IconProps) => {
       />
     </svg>
   );
-};
+}

@@ -83,14 +83,12 @@ function SwitchToVersionModal({
         </div>
       </ModalBody>
       <ModalFooter align="right">
-        <div>
-          <Button onClick={onClose} variant="secondary">
-            Cancel
-          </Button>
-          <Button onClick={() => handleActivation()}>
-            Yes, switch to Version {curVersion}
-          </Button>
-        </div>
+        <Button onClick={onClose} variant="secondary">
+          Cancel
+        </Button>
+        <Button onClick={() => handleActivation()}>
+          Yes, switch to Version {curVersion}
+        </Button>
       </ModalFooter>
     </Modal>
   );
