@@ -196,7 +196,11 @@ export function ConditionCodeTable({
 
     // Treat inputs like 123, A12, J10, Z21.3 as code-like
     // and avoid fuzzy matching them too loosely.
-    return /^[a-z0-9.-]+$/i.test(trimmed) && !trimmed.includes(' ') && !/[a-z]{2}/i.test(trimmed);
+    return (
+      /^[a-z0-9.-]+$/i.test(trimmed) &&
+      !trimmed.includes(' ') &&
+      !/[a-z]{2}/i.test(trimmed)
+    );
   }
 
   const visibleCodes = useMemo(() => {
