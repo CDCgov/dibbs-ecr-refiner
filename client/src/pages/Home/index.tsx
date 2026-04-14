@@ -1,5 +1,5 @@
 import IllustrationImg from '../../assets/home/illustration.svg';
-import { Footer, Header } from '../../components/Layout';
+import { Footer, Header } from '@components/Layout';
 
 export function Home() {
   return (

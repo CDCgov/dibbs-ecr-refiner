@@ -12,6 +12,10 @@ on:
       rc:
         description: "RC number (e.g. rc.1)"
         required: true
+      release_notes:
+        description: "Create release notes?"
+        type: boolean
+        default: true
       dry_run:
         description: "If true, skip creating git tag and pushing Docker images"
         type: boolean
@@ -156,3 +160,13 @@ jobs:
           tags: ${{ steps.vars.outputs.ops_tags }}
           build-args: |
             VERSION=${{ steps.vars.outputs.version_tag }}
+
+      - name: Create draft GitHub release notes
+        if: ${{ github.event.inputs.release_notes == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.version_tag }}
+          name: Release ${{ github.event.inputs.version }}
+          draft: true
+          prerelease: true
+          generate_release_notes: true

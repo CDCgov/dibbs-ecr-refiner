@@ -9,15 +9,15 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Button } from '../../../../components/Button';
-import { Modal } from './Modal';
+import { Button } from '@components/Button';
+import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
 import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
 import { Switch } from './Switch';
 import classNames from 'classnames';
-import { Field } from '../../../../components/Field';
-import { Label } from '../../../../components/Label';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 
 /**
  * TODO: please refer to specification.py
@@ -69,7 +69,7 @@ export function Sections({
               Add custom section <span aria-hidden>+</span>
             </Button>
           )}
-          <Modal
+          <CustomSectionModal
             isOpen={isOpen}
             setIsOpen={setIsOpen}
             configurationId={configurationId}

@@ -1,7 +1,7 @@
-import { Title } from '../../components/Title';
-import { Button } from '../../components/Button';
-import { Search } from '../../components/Search';
-import { ConfigurationsTable } from '../../components/ConfigurationsTable';
+import { Title } from '@components/Title';
+import { Button } from '@components/Button';
+import { Search } from '@components/Search';
+import { ConfigurationsTable } from '@components/ConfigurationsTable';
 import {
   useCreateConfiguration,
   useGetConfigurations,
@@ -9,12 +9,8 @@ import {
 import { useToast } from '../../hooks/useToast';
 
 import {
-  Modal,
-  ModalHeading,
-  ModalFooter,
-  Label,
+  Label as USWDSLabel,
   ComboBox,
-  ModalRef,
   ComboBoxRef,
 } from '@trussworks/react-uswds';
 import { useMemo, useRef, useState } from 'react';
@@ -23,10 +19,15 @@ import { GetConditionsResponse } from '../../api/schemas';
 import { useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
-import { CONFIGURATION_CONFIRMATION_CTA, CONFIGURATION_CTA } from './utils';
-import { Spinner } from '../../components/Spinner';
+import { Spinner } from '@components/Spinner';
 import classNames from 'classnames';
-import { ModalToggleButton } from '../../components/Button/ModalToggleButton';
+import {
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+} from '@components/Modal';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -56,7 +57,7 @@ export function Configurations() {
     keys: [{ name: 'name', weight: 1 }],
   });
 
-  const modalRef = useRef<ModalRef>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (isPending) return <Spinner variant="centered" />;
   if (isError) return 'Error!';
@@ -90,14 +91,10 @@ export function Configurations() {
           />
         ) : null}
 
-        <ModalToggleButton
-          modalRef={modalRef}
-          opener
-          className="bg-violet-warm-60! hover:bg-violet-warm-70! m-0!"
-        >
-          {CONFIGURATION_CTA}
-        </ModalToggleButton>
-        <NewConfigModal modalRef={modalRef} />
+        <Button className="m-0!" onClick={() => setIsOpen(true)}>
+          Set up new configuration
+        </Button>
+        <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
       </div>
       <ConfigurationsTable
         data={searchText ? results.map((r) => r.item) : configs}
@@ -107,10 +104,11 @@ export function Configurations() {
 }
 
 interface NewConfigModalProps {
-  modalRef: React.RefObject<ModalRef | null>;
+  open: boolean;
+  onClose: () => void;
 }
 
-function NewConfigModal({ modalRef }: NewConfigModalProps) {
+function NewConfigModal({ open, onClose }: NewConfigModalProps) {
   const showToast = useToast();
   const comboBoxRef = useRef<ComboBoxRef>(null);
   const { data: response, isPending, isError } = useGetConditions();
@@ -122,54 +120,47 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
   const formatError = useApiErrorFormatter();
 
   return (
-    <Modal
-      ref={modalRef}
-      id="add-configuration-modal"
-      aria-labelledby="add-configuration-modal-heading"
-      aria-describedby="add-configuration-modal-description"
-      className="!align-top"
-    >
-      <ModalHeading
-        id="add-configuration-modal-heading"
-        className="font-merriweather text-3xl! leading-18! font-bold text-black"
-      >
-        {CONFIGURATION_CTA}
-      </ModalHeading>
-      <p id="add-configuration-modal-description" className="sr-only">
-        Select a reportable condition you'd like to configure.
-      </p>
-      {isPending ? (
-        <Spinner />
-      ) : isError ? (
-        <p className="text-state-error-dark">
-          Failed to load conditions. Please try again.
+    <Modal open={open} onClose={onClose} position="top">
+      <ModalHeader>
+        <ModalTitle>Set up new configuration</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p className="sr-only">
+          Select a reportable condition you'd like to configure.
         </p>
-      ) : (
-        <>
-          <Label
-            htmlFor="new-condition"
-            className="leading-6!"
-            data-focus="true"
-          >
-            Select condition
-          </Label>
-          <ComboBox
-            id="new-condition"
-            ref={comboBoxRef}
-            name="new-condition"
-            options={response?.data.map((condition) => ({
-              value: condition.id,
-              label: condition.display_name,
-            }))}
-            onChange={(conditionId) => {
-              const found =
-                response.data.find((c) => c.id === conditionId) ?? null;
-              setSelectedCondition(found);
-            }}
-          />
-        </>
-      )}
-      <ModalFooter className="flex justify-self-end">
+        {isPending ? (
+          <Spinner />
+        ) : isError ? (
+          <p className="text-state-error-dark">
+            Failed to load conditions. Please try again.
+          </p>
+        ) : (
+          <div>
+            <USWDSLabel
+              htmlFor="new-condition"
+              className="leading-6!"
+              data-focus="true"
+            >
+              Select condition
+            </USWDSLabel>
+            <ComboBox
+              id="new-condition"
+              ref={comboBoxRef}
+              name="new-condition"
+              options={response?.data.map((condition) => ({
+                value: condition.id,
+                label: condition.display_name,
+              }))}
+              onChange={(conditionId) => {
+                const found =
+                  response.data.find((c) => c.id === conditionId) ?? null;
+                setSelectedCondition(found);
+              }}
+            />
+          </div>
+        )}
+      </ModalBody>
+      <ModalFooter align="right">
         <Button
           variant="primary"
           disabled={!selectedCondition}
@@ -181,7 +172,6 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
                 onSuccess: async (resp) => {
                   await navigate(`/configurations/${resp.data.id}/build`);
                   comboBoxRef.current?.clearSelection();
-                  modalRef.current?.toggleModal();
                   showToast({
                     heading: 'New configuration created',
                     body: selectedCondition?.display_name ?? '',
@@ -195,14 +185,13 @@ function NewConfigModal({ modalRef }: NewConfigModalProps) {
                     body: formatError(e),
                   });
                   comboBoxRef.current?.clearSelection();
-                  modalRef.current?.toggleModal();
                   setSelectedCondition(null);
                 },
               }
             );
           }}
         >
-          {CONFIGURATION_CONFIRMATION_CTA}
+          Set up configuration
         </Button>
       </ModalFooter>
     </Modal>
