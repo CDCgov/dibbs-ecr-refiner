@@ -12,12 +12,12 @@ import { useState } from 'react';
 import { Button } from '@components/Button';
 import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
-import { Tooltip } from './Tooltip';
 import { Checkbox } from './Checkbox';
 import { Switch } from './Switch';
 import classNames from 'classnames';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { Tooltip } from '@components/Tooltip';
 
 /**
  * TODO: please refer to specification.py
@@ -103,14 +103,22 @@ export function Sections({
               <div className="flex items-center justify-center gap-1">
                 <span>Data handling approach</span>
                 <Tooltip
-                  text={`Set to "Refine & optimize" if you'd like to filter the content of this section down to coded elements matching the codes in your configuration in your refined output. Set to "Preserve & retain" if you'd like to keep the information in this section in its entirety in the refined output.`}
+                  position="left"
+                  label={`Set to "Refine & optimize" if you'd like to filter the
+                    content of this section down to coded elements matching the
+                    codes in your configuration in your refined output. Set to
+                    "Preserve & retain" if you'd like to keep the information in
+                    this section in its entirety in the refined output.`}
                 />
               </div>
             </th>
             <th scope="col" className="w-1/6 pb-3">
               <div className="flex items-center justify-center gap-1">
                 <span>Narrative</span>
-                <Tooltip text="Enable to retain the narrative block for this section in the refined output or disable to omit it." />
+                <Tooltip
+                  position="left"
+                  label="Enable to retain the narrative block for this section in the refined output or disable to omit it."
+                />
               </div>
             </th>
           </tr>
