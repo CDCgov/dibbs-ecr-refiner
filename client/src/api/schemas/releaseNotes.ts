@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * Content of a release note from GitHub.
+ */
 export interface ReleaseNotes {
   id: string;
   header: string;
