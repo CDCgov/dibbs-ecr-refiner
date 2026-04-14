@@ -1,5 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { execSync } from 'child_process';
+import { db } from './db';
 
 export function refreshDatabase(): string {
   try {
@@ -20,25 +21,18 @@ export function refreshDatabase(): string {
   }
 }
 
-export function deleteConfigurationArtifacts(conditionName: string): string {
-  try {
-    execSync(`just db delete-configuration '${conditionName}'`, {
-      encoding: 'utf-8',
-    });
-    return 'Successfully cleaned up e2e configuration artifacts';
-  } catch (error: unknown) {
-    if (typeof error === 'object' && error !== null) {
-      const err = error as { stderr?: string; message?: string };
-      if (err.stderr) {
-        throw new Error(String(err.stderr));
-      } else if (err.message) {
-        throw new Error(String(err.message));
-      } else {
-        throw new Error(JSON.stringify(err));
-      }
-    }
-    throw new Error(String(error));
-  }
+export async function deleteConfigurationArtifacts(
+  conditionName: string
+): Promise<void> {
+  await db.query(
+    'DELETE FROM configurations_locks WHERE configuration_id IN (SELECT id FROM configurations WHERE name = $1)',
+    [conditionName]
+  );
+  await db.query(
+    'DELETE FROM events WHERE configuration_id IN (SELECT id FROM configurations WHERE name = $1)',
+    [conditionName]
+  );
+  await db.query('DELETE FROM configurations WHERE name = $1', [conditionName]);
 }
 
 export async function login({

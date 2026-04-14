@@ -71,6 +71,6 @@ export const test = defaultFixturesTest.extend<RefinerFixtures>({
 
     // cleanup the configuration artifacts
     const conditionName = configurationPage.getConfigurationName();
-    deleteConfigurationArtifacts(conditionName);
+    await deleteConfigurationArtifacts(conditionName);
   },
 });

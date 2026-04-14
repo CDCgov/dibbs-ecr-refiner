@@ -8,9 +8,9 @@ test.describe('should be able to access independent testing', () => {
     await page.goto('/configurations');
   });
 
-  test.afterAll(() => {
-    deleteConfigurationArtifacts('COVID-19');
-    deleteConfigurationArtifacts('Influenza');
+  test.afterAll(async () => {
+    await deleteConfigurationArtifacts('COVID-19');
+    await deleteConfigurationArtifacts('Influenza');
   });
 
   // Resolve the file path relative to the project root
