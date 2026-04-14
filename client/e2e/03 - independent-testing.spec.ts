@@ -159,14 +159,6 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    async function uploadTestFile(page: Page) {
-      const independentFlowFileInput = page.locator('input#zip-upload');
-      await independentFlowFileInput.setInputFiles(filePath);
-
-      await independentFlowFileInput.setInputFiles(filePath);
-      await page.getByText('Refine .zip file').click();
-    }
   });
 
   test('should be able to upload a file, refine, and download results', async ({
