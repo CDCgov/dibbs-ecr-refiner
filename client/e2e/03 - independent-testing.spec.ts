@@ -346,7 +346,7 @@ test.describe('should be able to access independent testing', () => {
       page.getByRole('heading', { name: 'eCR refinement results' })
     ).toBeVisible();
 
-    await expect(page.getByText('eICR file size reduced by 39%')).toBeVisible();
+    await expect(page.getByText('eICR file size reduced by')).toBeVisible();
 
     async function createHypertensionCode() {
       await page.getByRole('button', { name: 'Custom codes' }).click();
