@@ -10,6 +10,7 @@ import {
   ComboboxInputProps,
 } from '@headlessui/react';
 import classNames from 'classnames';
+import { useRef } from 'react';
 
 function Combobox<TValue, TMultiple extends boolean | undefined = undefined>({
   value,
@@ -34,12 +35,13 @@ function ComboboxInput<T>({
   className,
   ...props
 }: ComboboxInputProps<'input', T>) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
   return (
     <div className="relative">
       <HeadlessInput
         className={classNames(
           'w-full border py-2 pr-10 pl-2',
-          'text-gray-90 border-[#565c65] bg-white',
+          'text-gray-90 border-gray-cool-60 bg-white',
           'data-open:focus:outline-none!',
           className
         )}
@@ -47,16 +49,12 @@ function ComboboxInput<T>({
           // this opens the menu on input click similar to the way USWDS Combobox component works
           const isOpen =
             e.currentTarget.getAttribute('aria-expanded') === 'true';
-          if (!isOpen) {
-            const button = e.currentTarget
-              .closest('.relative')
-              ?.querySelector('button');
-            button?.click();
-          }
+          if (!isOpen) buttonRef.current?.click();
         }}
         {...props}
       />
       <HeadlessButton
+        ref={buttonRef}
         aria-label="Open the condition dropdown menu"
         className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center"
       >
@@ -73,7 +71,7 @@ function ArrowDown() {
       width="32"
       height="32"
       viewBox="0 0 24 24"
-      fill="grey"
+      fill="gray"
     >
       <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
     </svg>
@@ -92,7 +90,7 @@ function ComboboxOptions({
       transition
       className={classNames(
         'z-50 max-h-52! w-(--input-width) overflow-y-auto border',
-        'border-[#565c65] bg-white',
+        'border-gray-cool-60 bg-white',
         'transition duration-100 ease-in empty:invisible data-leave:data-closed:opacity-0',
         className
       )}
