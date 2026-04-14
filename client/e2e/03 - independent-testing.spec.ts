@@ -260,47 +260,16 @@ test.describe('should be able to access independent testing', () => {
       page.getByRole('heading', { name: 'Configurations' })
     ).toBeVisible();
 
-    let covidConfig = page.locator('[data-testid="COVID-19-button"]');
-    const covidButtonCount = await covidConfig.count();
-
-    let createdNewConfig = false;
-
-    if (covidButtonCount === 0) {
-      await createAndActivateCovidConfig(page);
-      createdNewConfig = true;
-    }
-
     await page.goto('/configurations');
-    covidConfig = page.getByTestId('COVID-19-button');
+    const covidConfig = page.getByTestId('COVID-19-button');
 
     await covidConfig.click();
     await expect(
       page.getByRole('heading', { name: 'COVID-19', exact: true })
     ).toBeVisible();
 
-    let someDraftExists = false;
-    const goToDraftButton = page.locator('[data-testid="go-to-draft-button"]');
-    const goToDraftButtonCount = await goToDraftButton.count();
+    const someDraftExists = await createOrNavigateToLatestDraft();
 
-    if (goToDraftButtonCount > 0) {
-      someDraftExists = true;
-      await goToDraftButton.click();
-    }
-
-    const createDraftButton = page.locator(
-      '[data-testid="create-draft-button"]'
-    );
-    const createToDraftButtonCount = await createDraftButton.count();
-
-    if (createToDraftButtonCount > 0) {
-      someDraftExists = true;
-      await createDraftButton.click();
-      await page.getByText('Yes, draft a new version').click();
-    }
-
-    const hyperTensionCode = page.locator(
-      `data-testid=${ESSENTIAL_HYPERTENSION_SNOMED}`
-    );
     await expect(
       page.getByRole('heading', { name: 'Build configuration' })
     ).toBeVisible();
@@ -310,6 +279,9 @@ test.describe('should be able to access independent testing', () => {
       page.getByRole('heading', { name: 'Custom codes' })
     ).toBeVisible();
 
+    const hyperTensionCode = page.locator(
+      `data-testid=${ESSENTIAL_HYPERTENSION_SNOMED}`
+    );
     const hyperTensionCodeCount = await hyperTensionCode.count();
     if (hyperTensionCodeCount === 0) {
       await createHypertensionCode();
@@ -351,11 +323,6 @@ test.describe('should be able to access independent testing', () => {
     // hypertension element should be retained and show up exactly once
     await expect(page.getByText(EXPECTED_HYPERTENSION_ELEMENT)).toBeVisible();
 
-    // tear down made artifacts if we created it
-    if (createdNewConfig) {
-      deleteConfigurationArtifacts('COVID-19');
-    }
-
     async function createHypertensionCode() {
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await expect(
@@ -375,6 +342,32 @@ test.describe('should be able to access independent testing', () => {
 
       await submitButton.click();
       await expect(page.getByText('Custom code added')).toBeVisible();
+    }
+
+    async function createOrNavigateToLatestDraft() {
+      let someDraftExists = false;
+      const goToDraftButton = page.locator(
+        '[data-testid="go-to-draft-button"]'
+      );
+      const goToDraftButtonCount = await goToDraftButton.count();
+
+      if (goToDraftButtonCount > 0) {
+        someDraftExists = true;
+        await goToDraftButton.click();
+      }
+
+      const createDraftButton = page.locator(
+        '[data-testid="create-draft-button"]'
+      );
+      const createToDraftButtonCount = await createDraftButton.count();
+
+      if (createToDraftButtonCount > 0) {
+        someDraftExists = true;
+        await createDraftButton.click();
+        await page.getByText('Yes, draft a new version').click();
+      }
+
+      return someDraftExists;
     }
   });
 });
