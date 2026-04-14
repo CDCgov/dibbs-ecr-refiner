@@ -63,9 +63,7 @@ export function CustomCodesDetail({
               key={customCode.code + customCode.system}
               className="align-middle"
             >
-              <td data-testid={customCode.code} className="w-1/6 pb-6">
-                {customCode.code}
-              </td>
+              <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
                 {customCode.system}
               </td>
