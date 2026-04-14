@@ -1,5 +1,5 @@
 import { test as baseTest, expect, Page, WorkerInfo } from '@playwright/test';
-import { deleteConfigurationArtifacts, login } from '../utils';
+import { deleteConfigurationArtifacts } from '../utils';
 class ConfigurationPage {
   private readonly conditionIndex: number;
   private conditionName: string = '';
@@ -45,12 +45,12 @@ const defaultFixturesTest = baseTest.extend<object>({
   page: async ({ page }, use) => {
     // start in the logged in homepage
     await page.goto('/configurations');
-    const returnToHomepageButton = page.getByRole('button', {
-      name: 'Return to homepage',
-    });
-    if (returnToHomepageButton) {
-      await login({ page, baseUrl: 'http://localhost:8081' });
-    }
+    await expect(
+      page.getByRole('heading', { name: 'Configurations', level: 1 })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Set up new configuration' })
+    ).toBeVisible();
     await use(page);
   },
 });
