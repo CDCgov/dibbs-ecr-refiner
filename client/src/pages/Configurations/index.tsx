@@ -166,6 +166,11 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
                 aria-label="Select condition"
                 displayValue={(condition) => condition?.display_name ?? ''}
                 onChange={(event) => setQuery(event.target.value)}
+                hasValue={!!selectedCondition}
+                onClear={() => {
+                  setSelectedCondition(null);
+                  setQuery('');
+                }}
               />
               <ComboboxOptions anchor="bottom">
                 {({ option: condition }) => (

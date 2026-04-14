@@ -8,6 +8,7 @@ import {
   ComboboxOptionsProps,
   ComboboxOptionProps,
   ComboboxInputProps,
+  Button,
 } from '@headlessui/react';
 import classNames from 'classnames';
 import { useRef } from 'react';
@@ -33,33 +34,57 @@ function Combobox<TValue, TMultiple extends boolean | undefined = undefined>({
 
 function ComboboxInput<T>({
   className,
+  onClear,
+  hasValue,
   ...props
-}: ComboboxInputProps<'input', T>) {
+}: ComboboxInputProps<'input', T> & {
+  onClear?: () => void;
+  hasValue?: boolean;
+}) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className="relative">
       <HeadlessInput
+        ref={inputRef}
         className={classNames(
-          'w-full border py-2 pr-10 pl-2',
+          'w-full border py-2 pl-2',
+          hasValue ? 'pr-20' : 'pr-10',
           'text-gray-90 border-gray-cool-60 bg-white',
           'data-open:focus:outline-none!',
           className
         )}
         onClick={(e) => {
-          // this opens the menu on input click similar to the way USWDS Combobox component works
           const isOpen =
             e.currentTarget.getAttribute('aria-expanded') === 'true';
           if (!isOpen) buttonRef.current?.click();
         }}
         {...props}
       />
-      <HeadlessButton
-        ref={buttonRef}
-        aria-label="Open the condition dropdown menu"
-        className="absolute inset-y-0 right-0 flex w-10 cursor-pointer items-center justify-center"
-      >
-        <ArrowDown />
-      </HeadlessButton>
+      <div className="absolute inset-y-0 right-0 flex">
+        {hasValue && onClear && (
+          <Button
+            type="button"
+            aria-label="Clear selection"
+            className="flex w-10 cursor-pointer items-center justify-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+              inputRef.current?.focus();
+            }}
+          >
+            <XIcon />
+          </Button>
+        )}
+        <HeadlessButton
+          ref={buttonRef}
+          aria-label="Open the condition dropdown menu"
+          className="flex w-10 cursor-pointer items-center justify-center"
+        >
+          <ArrowDown />
+        </HeadlessButton>
+      </div>
     </div>
   );
 }
@@ -74,6 +99,20 @@ function ArrowDown() {
       fill="gray"
     >
       <path d="M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="gray"
+    >
+      <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
     </svg>
   );
 }
