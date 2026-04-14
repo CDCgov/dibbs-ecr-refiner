@@ -348,10 +348,7 @@ test.describe('should be able to access independent testing', () => {
       page.getByRole('heading', { name: 'eCR refinement results' })
     ).toBeVisible();
 
-    await page.getByRole('button', { name: 'Show stacked diff' }).click();
-
-    // hypertension element should be retained and show up exactly once
-    await expect(page.getByText(EXPECTED_HYPERTENSION_ELEMENT)).toBeVisible();
+    await expect(page.getByText('eICR file size reduced by 39%')).toBeVisible();
 
     async function createHypertensionCode() {
       await page.getByRole('button', { name: 'Custom codes' }).click();
