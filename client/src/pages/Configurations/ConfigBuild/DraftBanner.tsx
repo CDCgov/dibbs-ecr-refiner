@@ -53,7 +53,12 @@ export function DraftBanner({
           Go to draft
         </Button>
       ) : (
-        <Button onClick={() => setIsOpen(true)}>Draft a new version</Button>
+        <Button
+          data-testid="create-draft-button"
+          onClick={() => setIsOpen(true)}
+        >
+          Draft a new version
+        </Button>
       )}
       <NewDraftModal
         isOpen={isOpen}
