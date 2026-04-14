@@ -7,6 +7,9 @@
  */
 import type { Condition } from './condition';
 
+/**
+ * Model for the response when uploading a document in the testing suite.
+ */
 export interface IndependentTestUploadResponse {
   message: string;
   conditions_without_matching_configs: string[];

@@ -13,6 +13,9 @@ import type { GetConfigurationResponseVersion } from './getConfigurationResponse
 import type { IncludedCondition } from './includedCondition';
 import type { LockedByUser } from './lockedByUser';
 
+/**
+ * Model for a configration response.
+ */
 export interface GetConfigurationResponse {
   id: string;
   draft_id: string | null;

@@ -7,6 +7,9 @@
  */
 import type { DbConfigurationStatus } from './dbConfigurationStatus';
 
+/**
+ * Model representing a version of a configuration.
+ */
 export interface GetConfigurationResponseVersion {
   id: string;
   version: number;
