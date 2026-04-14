@@ -48,17 +48,11 @@ export function DraftBanner({
         <Button
           to={`/configurations/${draftId}/${step}`}
           className="self-start"
-          data-testid="go-to-draft-button"
         >
           Go to draft
         </Button>
       ) : (
-        <Button
-          data-testid="create-draft-button"
-          onClick={() => setIsOpen(true)}
-        >
-          Draft a new version
-        </Button>
+        <Button onClick={() => setIsOpen(true)}>Draft a new version</Button>
       )}
       <NewDraftModal
         isOpen={isOpen}

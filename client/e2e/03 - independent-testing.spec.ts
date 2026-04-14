@@ -262,7 +262,7 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     await page.goto('/configurations');
-    const covidConfig = page.getByTestId('COVID-19-button');
+    const covidConfig = page.getByText('COVID-19');
 
     await covidConfig.click();
     await expect(
@@ -281,7 +281,7 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     const hyperTensionCode = page.locator(
-      `data-testid=${ESSENTIAL_HYPERTENSION_SNOMED}`
+      `text=${ESSENTIAL_HYPERTENSION_SNOMED}`
     );
     const hyperTensionCodeCount = await hyperTensionCode.count();
     if (hyperTensionCodeCount === 0) {
@@ -347,9 +347,7 @@ test.describe('should be able to access independent testing', () => {
 
     async function createOrNavigateToLatestDraft() {
       let someDraftExists = false;
-      const goToDraftButton = page.locator(
-        '[data-testid="go-to-draft-button"]'
-      );
+      const goToDraftButton = page.locator('text="Go to draft"');
       const goToDraftButtonCount = await goToDraftButton.count();
 
       if (goToDraftButtonCount > 0) {
@@ -357,9 +355,7 @@ test.describe('should be able to access independent testing', () => {
         await goToDraftButton.click();
       }
 
-      const createDraftButton = page.locator(
-        '[data-testid="create-draft-button"]'
-      );
+      const createDraftButton = page.locator('text="Draft a new version"');
       const createToDraftButtonCount = await createDraftButton.count();
 
       if (createToDraftButtonCount > 0) {
