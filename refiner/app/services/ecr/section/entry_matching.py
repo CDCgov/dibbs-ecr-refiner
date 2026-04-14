@@ -231,6 +231,11 @@ def _try_match_entry(
 
         for code_el in code_elements:
             code_val = code_el.get("code")
+            if code_val == "2468230":
+                print(etree.tostring(code_el))
+                print(code_val)
+                print(rule)
+
             if not code_val:
                 continue
 
@@ -257,6 +262,9 @@ def _try_match_entry(
                 candidates_found = any(el.get("code") for el in translation_elements)
 
             for trans_el in translation_elements:
+                print("translation")
+                print(etree.tostring(trans_el))
+
                 trans_code = trans_el.get("code")
                 if not trans_code:
                     continue
