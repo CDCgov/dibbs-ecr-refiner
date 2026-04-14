@@ -216,7 +216,7 @@ export function ConditionCodeTable({
 
         return (
           normalizedCode === normalizedSearch ||
-          normalizedCode.startsWith(normalizedSearch)
+          normalizedCode.includes(normalizedSearch)
         );
       });
     }
