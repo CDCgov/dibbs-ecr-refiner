@@ -6,6 +6,7 @@ import {
   createAndActivateInfluenzaConfig,
   deleteConfigurationArtifacts,
 } from './utils';
+import { Page } from 'playwright-core';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,7 +28,7 @@ test.describe('should be able to access independent testing', () => {
   const EXPECTED_HYPERTENSION_ELEMENT =
     '<value code="59621000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Essential hypertension (disorder)" xsi:type="CD"/>';
 
-  test('should check that the independent test flow works once both required configurations are configured', async ({
+  test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
     page,
     makeAxeBuilder,
   }) => {
@@ -43,11 +44,23 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+    await uploadTestFile(page);
 
-    const fileInput = page.locator('input#zip-upload');
+    // check for missing configs text
+    await expect(
+      page.locator('text=have not been configured and will not produce')
+    ).toBeVisible();
+    await expect(page.getByText('COVID-19')).toBeVisible();
+    await expect(page.getByText('Influenza')).toBeVisible();
 
-    // Upload the file directly
-    await fileInput.setInputFiles(filePath);
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // Refine ecr is unavailable
+    const startOverButton = page.getByRole('button', { name: 'Start over' });
+    await expect(startOverButton).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Refine eCR' })).toHaveCount(
+      0
+    );
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -63,16 +76,55 @@ test.describe('should be able to access independent testing', () => {
 
     // configure and activate the relevant configs
     await createAndActivateCovidConfig(page);
+    await page.getByRole('link', { name: 'Testing' }).click();
+    await uploadTestFile(page);
+
+    // check for matching config text
+    await expect(
+      page.getByText(
+        'We found the following reportable condition(s) in the RR:'
+      )
+    ).toBeVisible();
+    await expect(
+      page.getByRole('listitem').filter({ hasText: 'COVID-' })
+    ).toBeVisible();
+
+    // check for missing configs text
+    await expect(
+      page.locator('text=have not been configured and will not produce')
+    ).toBeVisible();
+    await expect(
+      page.getByRole('listitem').filter({ hasText: 'Influenza' })
+    ).toBeVisible();
+
+    // both buttons should be available
+    await expect(
+      page.getByRole('button', { name: 'Refine eCR' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Start over' })
+    ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // click start over
+    await page.getByRole('button', { name: 'Start over' }).click();
+
+    // go home
+    await page
+      .getByRole('link', { name: 'Link back to the home configurations page' })
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Configurations' })
+    ).toBeVisible();
+
+    // configure and activate influenza
     await createAndActivateInfluenzaConfig(page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
 
-    const independentFlowFileInput = page.locator('input#zip-upload');
-    await independentFlowFileInput.setInputFiles(filePath);
-
-    await independentFlowFileInput.setInputFiles(filePath);
-    await page.getByText('Refine .zip file').click();
+    await uploadTestFile(page);
 
     // check that only matching configs were found
     await expect(
@@ -100,6 +152,14 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    async function uploadTestFile(page: Page) {
+      const independentFlowFileInput = page.locator('input#zip-upload');
+      await independentFlowFileInput.setInputFiles(filePath);
+
+      await independentFlowFileInput.setInputFiles(filePath);
+      await page.getByText('Refine .zip file').click();
+    }
   });
 
   test('should be able to upload a file, refine, and download results', async ({
