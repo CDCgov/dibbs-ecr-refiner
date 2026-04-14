@@ -155,7 +155,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
           </p>
         ) : (
           <Field>
-            <Label id="condition-label">Select condition</Label>
+            <Label>Select condition</Label>
             <Combobox
               value={selectedCondition}
               virtual={{ options: filteredConditions }}
@@ -163,7 +163,7 @@ function NewConfigModal({ open, onClose }: NewConfigModalProps) {
               onClose={() => setQuery('')}
             >
               <ComboboxInput<GetConditionsResponse>
-                aria-labelledby="condition-label"
+                aria-label="Select condition"
                 displayValue={(condition) => condition?.display_name ?? ''}
                 onChange={(event) => setQuery(event.target.value)}
               />
