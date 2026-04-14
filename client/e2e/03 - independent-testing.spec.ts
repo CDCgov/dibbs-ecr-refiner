@@ -32,8 +32,6 @@ test.describe('should be able to access independent testing', () => {
   }
 
   const ESSENTIAL_HYPERTENSION_SNOMED = '59621000';
-  const EXPECTED_HYPERTENSION_ELEMENT =
-    '<value code="59621000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Essential hypertension (disorder)" xsi:type="CD"/>';
 
   test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
     page,
