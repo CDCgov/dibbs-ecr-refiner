@@ -50,7 +50,8 @@ function ComboboxInput<T>({
         ref={inputRef}
         className={classNames(
           'w-full border py-2 pl-2',
-          hasValue ? 'pr-20' : 'pr-10',
+          { 'pr-20': hasValue },
+          { 'pr-10': !hasValue },
           'text-gray-90 border-gray-cool-60 bg-white',
           'data-open:focus:outline-none!',
           className
