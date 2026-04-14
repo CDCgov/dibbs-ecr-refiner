@@ -24,6 +24,13 @@ test.describe('should be able to access independent testing', () => {
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
 
+  async function uploadTestFile(page: Page) {
+    const independentFlowFileInput = page.locator('input#zip-upload');
+    await independentFlowFileInput.setInputFiles(filePath);
+
+    await page.getByText('Refine .zip file').click();
+  }
+
   const ESSENTIAL_HYPERTENSION_SNOMED = '59621000';
   const EXPECTED_HYPERTENSION_ELEMENT =
     '<value code="59621000" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED-CT" displayName="Essential hypertension (disorder)" xsi:type="CD"/>';
@@ -171,27 +178,7 @@ test.describe('should be able to access independent testing', () => {
     /// ==========================================================================
     await page.getByRole('link', { name: 'Testing' }).click();
 
-    // Locate the file input by its id
-    const fileInput = page.locator('input#zip-upload');
-
-    // Resolve the file path relative to the project root
-    const filePath = path.resolve(
-      process.cwd(),
-      'e2e/assets/mon-mothma-two-conditions.zip'
-    );
-
-    // Upload the file directly
-    await fileInput.setInputFiles(filePath);
-
-    // Optionally, assert the file name shows up in the UI
-    await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
-
-    // Click the "Upload .zip file" button
-    await page
-      .getByRole('button', {
-        name: 'Refine .zip file',
-      })
-      .click();
+    await uploadTestFile(page);
 
     // Assert the reportable conditions text is visible
     // Use regex to ignore line breaks and spacing issues
@@ -362,17 +349,7 @@ test.describe('should be able to access independent testing', () => {
     await page.getByRole('link', { name: 'Testing' }).click();
     await expect(page.getByText('Test Refiner')).toBeVisible();
 
-    const fileInput = page.locator('input#zip-upload');
-
-    // Resolve the file path relative to the project root
-    const filePath = path.resolve(
-      process.cwd(),
-      'e2e/assets/mon-mothma-two-conditions.zip'
-    );
-
-    await fileInput.setInputFiles(filePath);
-
-    await page.getByText('Refine .zip file').click();
+    await uploadTestFile(page);
     await page.getByText('Refine eCR').click();
 
     await expect(
