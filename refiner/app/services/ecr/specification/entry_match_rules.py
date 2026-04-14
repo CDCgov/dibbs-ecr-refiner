@@ -340,13 +340,13 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
         code_xpath=(
             ".//hl7:substanceAdministration"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
-            "//hl7:manufacturedMaterial/hl7:code"
+            f"//hl7:manufacturedMaterial/hl7:code[@codeSystem='{CVX_OID}]"
         ),
         code_system_oid=CVX_OID,
         translation_xpath=(
             ".//hl7:substanceAdministration"
             "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
-            "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
+            f"//hl7:manufacturedMaterial/hl7:code[@codeSystem='{RXNORM_OID}]/hl7:translation"
         ),
         translation_code_system_oid=RXNORM_OID,
     ),
@@ -358,6 +358,21 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
+    ),
+    # # rule 5 — immunization activity (scoped to base Immunization Activity template), with CVX as the translation
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:substanceAdministration"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
+            f"//hl7:manufacturedMaterial/hl7:code[@codeSystem='{RXNORM_OID}]"
+        ),
+        code_system_oid=RXNORM_OID,
+        translation_xpath=(
+            ".//hl7:substanceAdministration"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
+            f"//hl7:manufacturedMaterial/hl7:code[@codeSystem='{CVX_OID}]/hl7:translation"
+        ),
+        translation_code_system_oid=CVX_OID,
     ),
 ]
 
