@@ -178,10 +178,16 @@ _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
 
 _IMMUNIZATIONS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
-        code_xpath=".//hl7:manufacturedMaterial/hl7:code",
+        code_xpath=f".//hl7:manufacturedMaterial/hl7:code[@codeSystem='{CVX_OID}']",
         code_system_oid=CVX_OID,
         translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
         translation_code_system_oid=RXNORM_OID,
+    ),
+    EntryMatchRule(
+        code_xpath=f".//hl7:manufacturedMaterial/hl7:code[@codeSystem='{RXNORM_OID}']",
+        code_system_oid=RXNORM_OID,
+        translation_xpath=".//hl7:manufacturedMaterial/hl7:code/hl7:translation",
+        translation_code_system_oid=CVX_OID,
     ),
 ]
 
