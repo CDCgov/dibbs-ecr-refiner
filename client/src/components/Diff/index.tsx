@@ -153,6 +153,15 @@ export function Diff({
         compareMethod={DiffMethod.WORDS_WITH_SPACE}
         leftTitle="Original eICR"
         rightTitle="Refined eICR"
+        infiniteLoading={{
+          pageSize: 20,
+          containerHeight: '80vh',
+        }}
+        loadingElement={() => (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            Computing diff...
+          </div>
+        )}
         styles={{
           titleBlock: {
             fontFamily: 'Public Sans, sans-serif',
