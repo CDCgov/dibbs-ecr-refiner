@@ -179,6 +179,8 @@ export function ConditionCodeTable({
     ],
     includeMatches: true,
     minMatchCharLength: 3,
+    threshold: 0.25,
+    ignoreLocation: true,
   });
 
   const debouncedSearchUpdate = useDebouncedCallback((input: string) => {
@@ -191,8 +193,42 @@ export function ConditionCodeTable({
     setIsLoadingResults(false);
   }
 
-  // Show only the filtered codes if the user isn't searching
-  const visibleCodes = searchText ? results.map((r) => r.item) : filteredCodes;
+  function isCodeLikeQuery(value: string) {
+    const trimmed = value.trim();
+
+    // Treat inputs like 123, A12, J10, Z21.3 as code-like
+    // and avoid fuzzy matching them too loosely.
+    return (
+      /^[a-z0-9.-]+$/i.test(trimmed) &&
+      !trimmed.includes(' ') &&
+      !/[a-z]{2}/i.test(trimmed)
+    );
+  }
+
+  const visibleCodes = useMemo(() => {
+    const trimmedSearch = searchText.trim();
+
+    if (!trimmedSearch) {
+      return filteredCodes;
+    }
+
+    // For code-like input, do exact/prefix matching on code only
+    if (isCodeLikeQuery(trimmedSearch)) {
+      const normalizedSearch = trimmedSearch.toLowerCase();
+
+      return filteredCodes.filter((code) => {
+        const normalizedCode = String(code.code).toLowerCase();
+
+        return (
+          normalizedCode === normalizedSearch ||
+          normalizedCode.includes(normalizedSearch)
+        );
+      });
+    }
+
+    // For regular text input, keep existing Fuse behavior
+    return results.map((r) => r.item);
+  }, [filteredCodes, results, searchText]);
 
   if (isPending)
     return (
@@ -200,7 +236,8 @@ export function ConditionCodeTable({
         <Spinner />
       </div>
     );
-  if (isError) return 'Error!';
+
+  if (isError || !response) return 'Error!';
 
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);
@@ -237,12 +274,11 @@ export function ConditionCodeTable({
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
-
       {isLoadingResults ? (
         <div className="pt-10">
           <p>Loading...</p>
         </div>
-      ) : hasSearched && searchText && (!results || results.length === 0) ? (
+      ) : hasSearched && searchText && visibleCodes.length === 0 ? (
         <div className="pt-10">
           <p>No codes match the search criteria.</p>
         </div>
@@ -261,24 +297,23 @@ export function ConditionCodeTable({
               </tr>
             </thead>
             <tbody>
-              {searchText
-                ? results.map((r) => (
-                    <ConditionCodeRow
-                      key={`${r.item.system}-${r.item.code}`}
-                      codeSystem={r.item.system}
-                      code={r.item.code}
-                      text={r.item.description}
-                      matches={r.matches}
-                    />
-                  ))
-                : visibleCodes.map((code) => (
-                    <ConditionCodeRow
-                      key={`${code.system}-${code.code}`}
-                      codeSystem={code.system}
-                      code={code.code}
-                      text={code.description}
-                    />
-                  ))}
+              {visibleCodes.map((code) => {
+                const matchingResult = results.find(
+                  (r) =>
+                    r.item.code === code.code &&
+                    r.item.description === code.description
+                );
+
+                return (
+                  <ConditionCodeRow
+                    key={`${code.system}-${code.code}`}
+                    codeSystem={code.system}
+                    code={code.code}
+                    text={code.description}
+                    matches={matchingResult?.matches}
+                  />
+                );
+              })}
             </tbody>
           </table>
         </div>

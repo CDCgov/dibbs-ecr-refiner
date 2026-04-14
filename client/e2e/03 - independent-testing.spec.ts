@@ -127,8 +127,11 @@ test.describe('should be able to access independent testing', () => {
     await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
 
     // Click the "Upload .zip file" button
-    const uploadButton = page.getByText('Refine .zip file');
-    await uploadButton.click();
+    await page
+      .getByRole('button', {
+        name: 'Refine .zip file',
+      })
+      .click();
 
     // Assert the reportable conditions text is visible
     // Use regex to ignore line breaks and spacing issues
@@ -145,8 +148,7 @@ test.describe('should be able to access independent testing', () => {
     await expect(influenzaLi).toBeVisible();
 
     // Locate the button by test id and filter by visible text
-    const refineButton = page.getByText('Refine eCR');
-    await refineButton.click();
+    await page.getByRole('button', { name: 'Refine eCR' }).click();
 
     await expect(page.getByText('eCR refinement results')).toBeVisible();
     await expect(page.getByText('eICR file size reduced by')).toBeVisible();
@@ -209,10 +211,9 @@ test.describe('should be able to access independent testing', () => {
       .getByRole('link', { name: 'Configurations', exact: true })
       .click();
     await page
-      .getByRole('button', {
-        name: 'Configure the configuration for COVID-19',
+      .getByRole('link', {
+        name: 'COVID-19',
       })
-      .filter({ hasText: 'COVID-19' })
       .click();
     await page.getByText('Test', { exact: true }).click();
     await fileUpload.setInputFiles(filePath);
@@ -227,11 +228,11 @@ test.describe('should be able to access independent testing', () => {
     await page
       .getByRole('link', { name: 'Configurations', exact: true })
       .click();
+
     await page
-      .getByRole('button', {
-        name: 'Configure the configuration for Influenza',
+      .getByRole('link', {
+        name: 'Influenza',
       })
-      .filter({ hasText: 'Influenza' })
       .click();
 
     await page.getByText('Test', { exact: true }).click();

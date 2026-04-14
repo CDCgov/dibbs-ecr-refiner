@@ -1,68 +1,101 @@
 import { Link } from 'react-router';
-import {
-  ButtonProps as UswdsButtonProps,
-  Button as UswdsButton,
-} from '@trussworks/react-uswds';
 import classNames from 'classnames';
+import {
+  Button as HeadlessButton,
+  ButtonProps as HeadlessButtonProps,
+} from '@headlessui/react';
+import { forwardRef } from 'react';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'selected' | 'tertiary';
-interface ButtonProps extends Omit<UswdsButtonProps, 'type'> {
-  type?: UswdsButtonProps['type'];
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'unstyled';
+
+interface ButtonProps extends HeadlessButtonProps {
+  children: React.ReactNode;
   variant?: ButtonVariant;
   to?: string;
-  'data-testid'?: string;
+  href?: string;
 }
+
+const sharedStyles =
+  'm-0 appearance-none cursor-pointer text-center rounded justify-center items-center gap-2 mr-2 px-5 py-3 font-bold leading-none no-underline inline-flex';
+
+const variantStyles: Record<ButtonVariant, string> = {
+  primary: classNames(
+    sharedStyles,
+    'bg-violet-warm-60 hover:bg-violet-warm-70 text-white border-0'
+  ),
+  secondary: classNames(
+    sharedStyles,
+    'bg-white text-violet-warm-60 hover:text-violet-warm-70 hover:border-violet-warm-70 border-violet-warm-60 border-[2px]'
+  ),
+  tertiary: classNames(
+    sharedStyles,
+    'text-blue-cool-60 hover:underline hover:text-blue-cool-50'
+  ),
+  unstyled: '',
+};
+
+const disabledStyles =
+  'bg-zinc-200 text-gray-600! cursor-not-allowed pointer-events-none';
 
 /**
  * Button component supporting multiple variants and behaviors,
  * including primary, secondary, and disabled styles, with optional
  * routing functionality.
  */
-export function Button({
-  children,
-  variant = 'primary',
-  type = 'button',
-  to,
-  onClick,
-  className,
-  disabled,
-  ...props
-}: ButtonProps) {
-  if (to) {
-    const sideEffect = onClick as
-      | React.MouseEventHandler<HTMLAnchorElement>
-      | undefined;
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      children,
+      variant = 'primary',
+      type = 'button',
+      href,
+      to,
+      onClick,
+      className,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const variantClass = classNames(
+      variantStyles[variant],
+      { [disabledStyles]: disabled },
+      className
+    );
+
+    if (href) {
+      return (
+        <a href={href} className={variantClass}>
+          {children}
+        </a>
+      );
+    }
+
+    if (to) {
+      return (
+        <Link
+          to={to}
+          onClick={
+            onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>
+          }
+          className={variantClass}
+        >
+          {children}
+        </Link>
+      );
+    }
+
     return (
-      <Link
-        onClick={sideEffect}
-        to={to}
-        data-testid={props['data-testid']}
-        className={classNames(
-          {
-            ['usa-button']: variant === 'primary',
-            ['usa-button--secondary']: variant === 'secondary',
-            ['usa-button--unstyled']: variant === 'tertiary',
-          },
-          className
-        )}
+      <HeadlessButton
+        ref={ref}
+        type={type}
+        disabled={disabled}
+        onClick={onClick}
+        className={variantClass}
+        {...props}
       >
         {children}
-      </Link>
+      </HeadlessButton>
     );
   }
-
-  return (
-    <UswdsButton
-      onClick={onClick}
-      type={type}
-      disabled={disabled}
-      className={className}
-      secondary={variant === 'secondary'}
-      unstyled={variant === 'tertiary'}
-      data-testid={props['data-testid']}
-      {...props}
-    >
-      {children}
-    </UswdsButton>
-  );
-}
+);

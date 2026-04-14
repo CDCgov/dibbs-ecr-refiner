@@ -1,5 +1,5 @@
 import { describe, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Drawer } from '.';
 import userEvent from '@testing-library/user-event';
 import { ClassAttributes, InputHTMLAttributes } from 'react';
@@ -43,7 +43,8 @@ describe('Drawer Component', () => {
     expect(screen.getByText('Drawer Content')).toBeInTheDocument();
   });
 
-  it('should close the drawer when the close button is clicked', () => {
+  it('should close the drawer when the close button is clicked', async () => {
+    const user = userEvent.setup();
     const onCloseMock = vi.fn();
     render(
       <Drawer
@@ -56,8 +57,7 @@ describe('Drawer Component', () => {
       </Drawer>
     );
 
-    const closeButton = screen.getByTestId('close-drawer');
-    fireEvent.click(closeButton);
+    await user.click(screen.getByRole('button', { name: 'Close drawer' }));
     expect(onCloseMock).toHaveBeenCalled();
   });
 
@@ -81,8 +81,9 @@ describe('Drawer Component', () => {
     expect(onSearchMock).toHaveBeenCalledWith('test query');
   });
 
-  it('should call onSearch callback correctly when invoked', () => {
+  it('should call onSearch callback correctly when invoked', async () => {
     const onSearchMock = vi.fn();
+    const user = userEvent.setup();
     render(
       <Drawer
         title="Test Drawer"
@@ -96,7 +97,7 @@ describe('Drawer Component', () => {
     );
 
     const searchInput = screen.getByPlaceholderText('Search here...');
-    fireEvent.change(searchInput, { target: { value: 'search term' } });
+    await user.type(searchInput, 'search term');
     expect(onSearchMock).toHaveBeenCalledWith('search term');
   });
 });

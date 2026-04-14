@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import {
   DbConfigurationStatus,
   GetConfigurationsResponse,
@@ -9,8 +9,6 @@ interface ConfigurationsTableProps {
 }
 
 export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
-  const navigate = useNavigate();
-
   const reportableConditionHeader = 'Reportable Condition Configurations';
   const statusHeader = 'Status';
 
@@ -43,56 +41,33 @@ export function ConfigurationsTable({ data }: ConfigurationsTableProps) {
       </thead>
       <tbody>
         {data.map(({ id, name, status }) => {
+          const isActive = status === DbConfigurationStatus.active;
           return (
-            <tr
-              key={id}
-              aria-label={`View ${status === DbConfigurationStatus.draft || status === DbConfigurationStatus.inactive ? 'inactive' : 'active'} configuration for ${name}`}
-            >
+            <tr key={id} className="relative">
               <td
                 data-label={reportableConditionHeader}
                 className="p-0! font-bold!"
                 scope="row"
               >
-                <button
-                  aria-label={`Configure the configuration for ${name}`}
-                  className="block h-full w-full cursor-pointer px-4 py-2 text-left"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      void navigate(`/configurations/${id}/build`);
-                    }
-                  }}
-                  onClick={() => {
-                    void navigate(`/configurations/${id}/build`);
-                  }}
-                  data-testid={`${name}-button`}
+                <Link
+                  aria-label={`Configure ${name}`}
+                  to={`/configurations/${id}/build`}
+                  className="flex items-center px-4 py-2 after:absolute after:inset-0 after:content-['']"
                 >
                   {name}
-                </button>
+                </Link>
               </td>
-              <td data-label={statusHeader} className="flex p-0! align-middle">
-                <button
-                  aria-label={`Configure the configuration for ${name}`}
-                  className="block h-full w-full cursor-pointer px-4 py-2 text-left"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      void navigate(`/configurations/${id}/build`);
-                    }
-                  }}
-                  onClick={() => {
-                    void navigate(`/configurations/${id}/build`);
-                  }}
-                >
-                  {status === DbConfigurationStatus.active ? (
-                    <span className="text-success-dark">
-                      <span className="text-color-success not-sr-only pr-1">
-                        ⏺︎
-                      </span>
-                      Active
+              <td data-label={statusHeader} className="p-0! align-middle">
+                {isActive ? (
+                  <span className="text-success-dark flex items-center px-4 py-2">
+                    <span className="pr-1" aria-hidden>
+                      ⏺︎
                     </span>
-                  ) : (
-                    <span>Inactive</span>
-                  )}
-                </button>
+                    Active
+                  </span>
+                ) : (
+                  <span className="flex items-center px-4 py-2">Inactive</span>
+                )}
               </td>
             </tr>
           );

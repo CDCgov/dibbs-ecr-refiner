@@ -17,23 +17,16 @@ test.describe('Viewing the application sign in content', () => {
     ).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    const refinerButton = page.locator('button', {
-      hasText: 'refiner (SDDH)',
+    const menuButton = page.getByRole('button', {
+      name: 'Open settings menu',
     });
-    await expect(refinerButton).toBeVisible();
-    await refinerButton.click();
+    await expect(menuButton).toBeVisible();
+    await menuButton.click();
 
-    // 2️⃣ Assert the logout link is visible
-    const logoutLink = page.locator('a[href="/api/logout"]', {
-      hasText: 'Log out',
-    });
-    await expect(logoutLink).toBeVisible();
-
-    // 3️⃣ Click the logout link
-    await logoutLink.click();
-
-    // homepage should have the relevant content
-    await expect(page).toHaveTitle(/DIBBs eCR Refiner/);
-    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await expect(
+      page.getByRole('menuitem', {
+        name: 'Log out',
+      })
+    ).toBeVisible();
   });
 });

@@ -73,13 +73,6 @@ export async function login({
   ).toBeVisible();
 }
 
-export async function logout(page: Page) {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'refiner' }).click();
-  await page.getByRole('menuitem', { name: 'Log out' }).click();
-  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
-}
-
 export async function createNewConfiguration(
   conditionName: string,
   page: Page
