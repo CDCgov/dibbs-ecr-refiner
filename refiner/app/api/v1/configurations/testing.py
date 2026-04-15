@@ -249,8 +249,8 @@ async def run_configuration_test(
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
-                        unrefined_eicr=formatted_unrefined_eicr,
-                        refined_eicr=formatted_refined_eicr,
+                        unrefined_eicr=original_xml_files.eicr,
+                        refined_eicr=refined_document.refined_eicr,
                     )
                 }%",
             ],
