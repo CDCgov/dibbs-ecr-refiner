@@ -44,7 +44,7 @@ class EntryMatch:
     Tracks the entry element, the specific code element that matched,
     the Coding from the configuration, and which rule produced the
     match (needed to decide between entry-level and container-level
-    pruning via ``rule.prune_container_xpath``).
+    pruning via `rule.prune_container_xpath`).
     """
 
     entry: _Element
@@ -75,7 +75,7 @@ def process(
     3. Prunes non-matching entries (or containers within entries)
     4. Enriches displayName on all surviving code-bearing elements
     5. Cleans up comments
-    6. Handles narrative <text> based on ``include_narrative``:
+    6. Handles narrative <text> based on `include_narrative`:
 
        - True: the original <text> is left untouched
        - False: <text> is replaced with a removal notice
@@ -203,17 +203,8 @@ def _try_match_entry(
     Try to match a single entry against the match rules.
 
     Returns all matches found within the entry (for container-level
-    pruning).
-
-    Rule precedence: if a rule's code_xpath finds code-bearing elements
-    in this entry (even if none match the code set), that rule "claims"
-    the entry and subsequent rules are NOT evaluated. This prevents
-    fallback rules from matching generic codes (like "Detected") on
-    entries that were already examined by a more specific rule.
-
-    A rule only "claims" an entry if its XPath returns at least one
-    element with a @code attribute. If the XPath returns nothing, or
-    only elements without @code, the next rule is tried.
+    pruning). A rule can contribute multiple matches if the entry has
+    multiple code-bearing elements at the rule's xpath locations.
     """
 
     entry_matches: list[EntryMatch] = []
@@ -225,16 +216,21 @@ def _try_match_entry(
             entry.xpath(rule.code_xpath, namespaces=namespaces),
         )
 
-        # does this rule's xpath find code-bearing elements in this entry?
-        # if so, this rule "claims" the entry regardless of whether codes match
-        candidates_found = any(el.get("code") for el in code_elements)
+        # track whether this rule produced any actual matches
+        # * only actual matches claim the entry under the new structural
+        #   precedence semantics; candidates alone are not enough
+        rule_produced_match = False
 
         for code_el in code_elements:
-            code_val = code_el.get("code")
+            code_val = (code_el.get("code") or "").strip()
             if not code_val:
+                # skip nullFlavor'd and empty-@code elements
+                # * these are real in the wild (the CVX-nullFlavor + RxNorm translation pattern
+                #   is one example) and should not prevent the translation branch below from running
                 continue
 
-            coding = code_system_sets.find_match(code_val, rule.code_system_oid)
+            # unscoped lookup — see docstring for rationale
+            coding = code_system_sets.find_match(code_val, None)
             if coding is not None:
                 _enrich_display_name(code_el, coding)
                 entry_matches.append(
@@ -245,25 +241,28 @@ def _try_match_entry(
                         rule=rule,
                     )
                 )
+                rule_produced_match = True
 
-        # try translation xpath if primary found no matches (but might still claim)
-        if not entry_matches and rule.translation_xpath:
+        # try the translation xpath if the primary produced no match
+        # * this handles the case where the clinical code lives in
+        #   <translation> rather than at the primary location — e.g.
+        #   a SHOULD-but-not-SHALL code system being used in primary
+        #   with the IG-expected system in translation, or the
+        #   nullFlavor'd primary pattern where the only real code is
+        #   in translation
+        if not rule_produced_match and rule.translation_xpath:
             translation_elements = cast(
                 list[_Element],
                 entry.xpath(rule.translation_xpath, namespaces=namespaces),
             )
 
-            if not candidates_found:
-                candidates_found = any(el.get("code") for el in translation_elements)
-
             for trans_el in translation_elements:
-                trans_code = trans_el.get("code")
+                trans_code = (trans_el.get("code") or "").strip()
                 if not trans_code:
                     continue
 
-                coding = code_system_sets.find_match(
-                    trans_code, rule.translation_code_system_oid
-                )
+                # unscoped lookup — same reasoning as the primary path
+                coding = code_system_sets.find_match(trans_code, None)
                 if coding is not None:
                     _enrich_display_name(trans_el, coding)
                     entry_matches.append(
@@ -274,14 +273,13 @@ def _try_match_entry(
                             rule=rule,
                         )
                     )
+                    rule_produced_match = True
 
-        # STRUCTURAL PRECEDENCE: if this rule found code-bearing elements
-        # in this entry, it "claims" the entry — don't try subsequent rules,
-        # regardless of whether any codes actually matched. This prevents the
-        # SNOMED-on-value fallback from matching generic qualifiers like
-        # "Detected" on entries that were already evaluated by the
-        # LOINC-on-code rule.
-        if candidates_found:
+        # structural precedence:
+        # * a rule claims the entry only if it actually produced a match
+        # * rules that found candidates but matched nothing do not claim
+        #   the entry, so subsequent rules get to try
+        if rule_produced_match:
             break
 
     return entry_matches
@@ -321,14 +319,13 @@ def enrich_surviving_entries(
 
     Walks every <entry> in the section after pruning and sets
     `displayName` on any <code>, <value>, or <translation> element
-    that has a `@code` attribute but no `@displayName`. The
-    enrichment lookup uses the element's own `@codeSystem` attribute
-    to scope the search in `code_system_sets`.
-
-    This is how the refiner surfaces human-readable labels on code
-    elements that the structural match rules didn't directly target
-    (e.g., organizer-level codes, result values claimed by structural
-    precedence) but that PHAs still need labeled for readability.
+    that has a `@code` attribute but no `@displayName`. The lookup
+    uses the unscoped form of `code_system_sets.find_match` for the
+    same reason the match evaluation does — the element's own
+    `@codeSystem` attribute may not agree with how the code is
+    tagged in the configured set, and enrichment should behave
+    consistently with matching so that entries preserved by the
+    matcher get readable labels during enrichment.
 
     Called from both matching paths — this module's `process` and
     `generic_matching.process` — after pruning and before narrative
@@ -353,7 +350,7 @@ def enrich_surviving_entries(
             if element.tag not in code_bearing_tags:
                 continue
 
-            code_val = element.get("code")
+            code_val = (element.get("code") or "").strip()
             if not code_val:
                 continue
 
@@ -362,10 +359,10 @@ def enrich_surviving_entries(
             if existing and existing.strip():
                 continue
 
-            # use the element's own codeSystem to scope the lookup
-            code_system_oid = element.get("codeSystem")
-
-            coding = code_system_sets.find_match(code_val, code_system_oid)
+            # unscoped lookup — consistent with the matcher's behavior
+            # * the element's own @codeSystem attribute is deliberately
+            #   not used; see _try_match_entry docstring for the rationale
+            coding = code_system_sets.find_match(code_val, None)
             if coding is not None:
                 _enrich_display_name(element, coding)
 
@@ -387,7 +384,7 @@ def _prune_section_by_matches(
 
     1. Entry-level (default): Remove entire <entry> elements that
        didn't match.
-    2. Component-level (when ``prune_container_xpath`` is set): Within
+    2. Component-level (when `prune_container_xpath` is set): Within
        matched entries, remove individual containers (e.g.,
        organizer/component) that don't contain matched observations.
        Used for the Results section.
@@ -408,12 +405,12 @@ def _prune_section_by_matches(
 
     if prune_rules:
         # COMPONENT-LEVEL PRUNING:
-        # for entries that matched, prune non-matching containers within them
-        # for entries that didn't match at all, remove the whole entry
+        # * for entries that matched, prune non-matching containers within them
+        # * for entries that didn't match at all, remove the whole entry
         _prune_at_container_level(matches, all_entries, namespaces)
     else:
         # ENTRY-LEVEL PRUNING:
-        # simple — remove entries not in the matched set
+        # * simple — remove entries not in the matched set
         for entry in all_entries:
             if id(entry) not in matched_entries:
                 remove_element(entry)
@@ -438,7 +435,7 @@ def _prune_at_container_level(
     3. Remove containers that don't contain any matched elements.
     4. If all containers in an entry are removed, remove the entry too.
 
-    For matched entries without ``prune_container_xpath``, the entry
+    For matched entries without `prune_container_xpath`, the entry
     is kept as-is. For unmatched entries, the entry is removed entirely.
     """
 
