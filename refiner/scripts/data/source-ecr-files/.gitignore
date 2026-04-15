@@ -1,0 +1,2 @@
+# ignore dot directories for files you don't want checked into git
+.*/
