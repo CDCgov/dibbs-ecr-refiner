@@ -206,10 +206,10 @@ function SectionName({
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       {isCustom ? (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <span className="truncate text-sm">{section.code}</span>
           {disabled ? null : (
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               <EditButton setSelectedSection={setSelectedSection} />
               <span className="text-sm" aria-hidden>
                 |
