@@ -582,6 +582,35 @@
                 </tr>
               </tbody>
             </table>
+            <footnote>
+              <paragraph>
+                <content styleCode="Bold">eCR Refiner — Jurisdiction Configuration</content>
+              </paragraph>
+              <table border="1">
+                <thead>
+                  <tr>
+                    <th>Section (LOINC)</th>
+                    <th>Section Name</th>
+                    <th>Included</th>
+                    <th>Action</th>
+                    <th>Retain Narrative</th>
+                    <th>Config Version</th>
+                    <th>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>46240-8</td>
+                    <td>History of Encounters</td>
+                    <td>Yes</td>
+                    <td>refine</td>
+                    <td>Yes</td>
+                    <td>v7</td>
+                    <td>Configured by jurisdiction</td>
+                  </tr>
+                </tbody>
+              </table>
+            </footnote>
           </text>
           <entry typeCode="DRIV">
             <encounter classCode="ENC" moodCode="EVN">

@@ -1,5 +1,5 @@
 import { test as baseTest, expect, Page, WorkerInfo } from '@playwright/test';
-import { deleteConfigurationArtifacts } from '../utils';
+import { deleteConfigurationArtifacts } from '../db';
 class ConfigurationPage {
   private readonly conditionIndex: number;
   private conditionName: string = '';
@@ -72,6 +72,6 @@ export const test = defaultFixturesTest.extend<RefinerFixtures>({
 
     // cleanup the configuration artifacts
     const conditionName = configurationPage.getConfigurationName();
-    deleteConfigurationArtifacts(conditionName);
+    await deleteConfigurationArtifacts(conditionName);
   },
 });

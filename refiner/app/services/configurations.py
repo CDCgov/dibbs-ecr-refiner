@@ -12,8 +12,8 @@ from app.db.configurations.model import (
     DbConfigurationSectionProcessing,
 )
 from app.db.pool import AsyncDatabaseConnection
+from app.services.ecr.policy import SECTION_PROCESSING_SKIP
 from app.services.ecr.specification import (
-    SECTION_PROCESSING_SKIP,
     get_section_version_map,
     load_spec,
 )

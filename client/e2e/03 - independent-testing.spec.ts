@@ -4,18 +4,18 @@ import fs from 'fs';
 import {
   createAndActivateCovidConfig,
   createAndActivateInfluenzaConfig,
-  deleteConfigurationArtifacts,
 } from './utils';
-import { Page } from 'playwright-core';
+import { Page } from '@playwright/test';
+import { deleteConfigurationArtifacts } from './db';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/configurations');
   });
 
-  test.afterAll(() => {
-    deleteConfigurationArtifacts('COVID-19');
-    deleteConfigurationArtifacts('Influenza');
+  test.afterAll(async () => {
+    await deleteConfigurationArtifacts('COVID-19');
+    await deleteConfigurationArtifacts('Influenza');
   });
 
   // Resolve the file path relative to the project root
