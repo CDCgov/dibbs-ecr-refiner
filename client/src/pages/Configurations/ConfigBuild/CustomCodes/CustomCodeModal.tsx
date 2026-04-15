@@ -100,6 +100,14 @@ function CustomCodeForm({
 
   const isButtonEnabled = code && system && name;
 
+  const handleCodeUpdate = (code: string) => {
+    const trimmedCode = code.trim();
+    setCode(trimmedCode);
+
+    if (deduplicated_codes.includes(trimmedCode)) {
+      setError(`The code "${trimmedCode}" already exists.`);
+    }
+  };
   const handleSubmit = () => {
     if (selectedCustomCode) {
       editCode(
@@ -163,16 +171,11 @@ function CustomCodeForm({
           type="text"
           value={code}
           onChange={(e) => {
-            setCode(e.target.value);
             if (error) setError(''); // clear error on change
+            handleCodeUpdate(e.target.value);
           }}
           onBlur={() => {
-            const trimmedCode = code.trim(); // full trim (leading + trailing)
-            if (deduplicated_codes.includes(trimmedCode)) {
-              setError(`The code "${trimmedCode}" already exists.`);
-            } else {
-              setCode(trimmedCode);
-            }
+            handleCodeUpdate(code);
           }}
           autoFocus
         />
@@ -201,7 +204,6 @@ function CustomCodeForm({
           value={name}
           onChange={(e) => {
             setName(e.target.value);
-            if (error) setError('');
           }}
         />
       </Field>
