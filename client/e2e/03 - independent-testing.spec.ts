@@ -1,7 +1,8 @@
 import { test, expect } from './fixtures/fixtures';
 import path from 'path';
 import fs from 'fs';
-import { createNewConfiguration, deleteConfigurationArtifacts } from './utils';
+import { createNewConfiguration } from './utils';
+import { deleteConfigurationArtifacts } from './db';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {

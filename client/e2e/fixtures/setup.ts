@@ -1,5 +1,5 @@
 import { test as baseTest, expect, Page, WorkerInfo } from '@playwright/test';
-import { deleteConfigurationArtifacts } from '../utils';
+import { deleteConfigurationArtifacts } from '../db';
 class ConfigurationPage {
   private readonly conditionIndex: number;
   private conditionName: string = '';

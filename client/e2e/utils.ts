@@ -1,39 +1,4 @@
 import { Page, expect } from '@playwright/test';
-import { execSync } from 'child_process';
-import { db } from './db';
-
-export function refreshDatabase(): string {
-  try {
-    const output = execSync('just db refresh', { encoding: 'utf-8' });
-    return output;
-  } catch (error: unknown) {
-    if (typeof error === 'object' && error !== null) {
-      const err = error as { stderr?: string; message?: string };
-      if (err.stderr) {
-        throw new Error(String(err.stderr));
-      } else if (err.message) {
-        throw new Error(String(err.message));
-      } else {
-        throw new Error(JSON.stringify(err));
-      }
-    }
-    throw new Error(String(error));
-  }
-}
-
-export async function deleteConfigurationArtifacts(
-  conditionName: string
-): Promise<void> {
-  await db.query(
-    'DELETE FROM configurations_locks WHERE configuration_id IN (SELECT id FROM configurations WHERE name = $1)',
-    [conditionName]
-  );
-  await db.query(
-    'DELETE FROM events WHERE configuration_id IN (SELECT id FROM configurations WHERE name = $1)',
-    [conditionName]
-  );
-  await db.query('DELETE FROM configurations WHERE name = $1', [conditionName]);
-}
 
 export async function login({
   page,
