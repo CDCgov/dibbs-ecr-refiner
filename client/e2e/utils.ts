@@ -77,6 +77,7 @@ export async function createNewConfiguration(
   conditionName: string,
   page: Page
 ) {
+  await page.goto('/configurations');
   await page.getByRole('button', { name: 'Set up new configuration' }).click();
   await expect(
     page.getByRole('heading', { name: 'Set up new configuration', level: 2 })
@@ -90,4 +91,22 @@ export async function createNewConfiguration(
   await expect(
     page.getByRole('heading', { name: conditionName, level: 1 })
   ).toBeVisible();
+}
+
+export async function createAndActivateCovidConfig(page: Page) {
+  await createNewConfiguration('COVID-19', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
+}
+
+export async function createAndActivateInfluenzaConfig(page: Page) {
+  await createNewConfiguration('Influenza', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
 }
