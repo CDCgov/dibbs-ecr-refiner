@@ -109,9 +109,9 @@ function CustomCodeForm({
             code: selectedCustomCode.code,
             system: normalizeSystem(selectedCustomCode.system),
             name: selectedCustomCode.name,
-            new_code: code,
+            new_code: code.trim(),
             new_system: normalizeSystem(system),
-            new_name: name,
+            new_name: name.trim(),
           },
         },
         {
@@ -137,9 +137,9 @@ function CustomCodeForm({
         {
           configurationId,
           data: {
-            code: code,
+            code: code.trim(),
             system: normalizeSystem(system),
-            name: name,
+            name: name.trim(),
           },
         },
         {
@@ -163,8 +163,7 @@ function CustomCodeForm({
           type="text"
           value={code}
           onChange={(e) => {
-            const value = e.target.value.trimStart(); // trim leading space only while typing
-            setCode(value);
+            setCode(e.target.value);
             if (error) setError(''); // clear error on change
           }}
           onBlur={() => {
@@ -185,7 +184,7 @@ function CustomCodeForm({
           id="system"
           name="system"
           value={normalizeSystem(system)}
-          onChange={(e) => setSystem(normalizeSystem(e.target.value.trim()))}
+          onChange={(e) => setSystem(normalizeSystem(e.target.value))}
         >
           {systemValues.map((sv) => (
             <option key={sv.value} value={sv.value}>
@@ -200,7 +199,10 @@ function CustomCodeForm({
         <TextInput
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value.trim())}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (error) setError('');
+          }}
         />
       </Field>
 
