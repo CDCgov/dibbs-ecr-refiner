@@ -16,13 +16,16 @@ class ConfigurationPage {
     await page
       .getByRole('button', { name: 'Set up new configuration' })
       .click();
-    await page.getByTestId('combo-box-input').click();
+    await expect(
+      page.getByRole('heading', { name: 'Set up new configuration', level: 2 })
+    ).toBeVisible();
+    await page.getByLabel('Select condition').click();
 
     await page.getByRole('option').nth(this.conditionIndex).click();
 
     await page.keyboard.press('Enter');
     const createdConfigurationName = await page
-      .getByTestId('combo-box-input')
+      .getByLabel('Select condition')
       .inputValue();
 
     this.conditionName = createdConfigurationName;
@@ -30,9 +33,7 @@ class ConfigurationPage {
     await page.getByRole('button', { name: 'Set up configuration' }).click();
 
     await expect(
-      page.locator(
-        `h4:has-text("New configuration created") + p:has-text("${createdConfigurationName}")`
-      )
+      page.getByRole('heading', { name: this.conditionName, level: 1 })
     ).toBeVisible();
   }
 

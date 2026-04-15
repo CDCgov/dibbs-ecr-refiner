@@ -36,22 +36,36 @@ export async function createNewConfiguration(
   conditionName: string,
   page: Page
 ) {
+  await page.goto('/configurations');
   await page.getByRole('button', { name: 'Set up new configuration' }).click();
-  await page.getByTestId('combo-box-input').click();
-  await page.getByTestId('combo-box-input').fill(conditionName);
-  await page.getByTestId('combo-box-input').press('Tab');
-  await page
-    .getByRole('option', { name: conditionName, exact: true })
-    .press('Enter');
-  await page.getByTestId('combo-box-input').press('Tab');
-  await page.getByTestId('combo-box-clear-button').press('Tab');
+  await expect(
+    page.getByRole('heading', { name: 'Set up new configuration', level: 2 })
+  ).toBeVisible();
+  await page.getByLabel('Select condition').fill(conditionName);
+  await page.getByLabel('Select condition').press('Enter');
   await expect(
     page.getByRole('button', { name: 'Set up configuration' })
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Set up configuration' }).click();
   await expect(
-    page.locator(
-      `h4:has-text("New configuration created") + p:has-text("${conditionName}")`
-    )
+    page.getByRole('heading', { name: conditionName, level: 1 })
   ).toBeVisible();
+}
+
+export async function createAndActivateCovidConfig(page: Page) {
+  await createNewConfiguration('COVID-19', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
+}
+
+export async function createAndActivateInfluenzaConfig(page: Page) {
+  await createNewConfiguration('Influenza', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
 }
