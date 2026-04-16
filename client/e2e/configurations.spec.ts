@@ -28,29 +28,10 @@ test.describe('Configurations screen', () => {
 
   test('Check table with configurations', async ({
     page,
-    request,
+    api,
     configurationsPage,
   }) => {
-    const conditionsReq = await request.get('/api/v1/conditions/');
-    expect(conditionsReq.ok()).toBeTruthy();
-    const json = await conditionsReq.json();
-    expect(json).toContainEqual(
-      expect.objectContaining({
-        display_name: 'Anotia',
-      })
-    );
-
-    const anotia = (json as [{ id: string; display_name: string }]).find(
-      (c) => c.display_name === 'Anotia'
-    );
-    expect(anotia).toBeTruthy();
-
-    const configReq = await request.post('/api/v1/configurations/', {
-      data: {
-        condition_id: anotia?.id,
-      },
-    });
-    expect(configReq.ok()).toBeTruthy();
+    const config = await api.createConfiguration('Anotia');
 
     await page.reload();
 
@@ -60,7 +41,7 @@ test.describe('Configurations screen', () => {
     await expect(cells[0]).toHaveText('Anotia');
 
     await configurationsPage.search('ano');
-    await expect(cells[0]).toHaveText('Anotia');
+    await expect(cells[0]).toHaveText(config.name);
 
     await configurationsPage.search('covid');
     await expect(cells[0]).toHaveText('No configurations available');

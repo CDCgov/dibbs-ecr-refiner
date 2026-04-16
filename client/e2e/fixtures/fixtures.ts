@@ -8,20 +8,24 @@ import { ConfigurationPage } from '../pages/ConfigurationPage';
 import { ConfigurationsPage } from '../pages/ConfigurationsPage';
 import { AxeBuilder } from '@axe-core/playwright';
 import { TestingPage } from '../pages/TestingPage';
+import { Api } from './api';
 
 type Fixtures = {
   configurationPage: ConfigurationPage;
   configurationsPage: ConfigurationsPage;
   testingPage: TestingPage;
   makeAxeBuilder: () => AxeBuilder;
+  api: Api;
 };
 
-// See here: https://playwright.dev/docs/accessibility-testing#creating-a-fixture
 const extendedTest = baseTest.extend<Fixtures>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () =>
       new AxeBuilder({ page }).withTags(['wcag21aa']);
     await use(makeAxeBuilder);
+  },
+  api: async ({ request }, use) => {
+    await use(new Api(request));
   },
   configurationPage: async ({ page }, use) => {
     await use(new ConfigurationPage(page));
