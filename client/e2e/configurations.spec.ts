@@ -45,5 +45,12 @@ test.describe('Configurations screen', () => {
 
     await configurationsPage.search('covid');
     await expect(cells[0]).toHaveText('No configurations available');
+
+    await configurationsPage.clearSearch();
+
+    await cells[0].click();
+    await expect(
+      page.getByRole('heading', { name: config.name, level: 1 })
+    ).toBeVisible();
   });
 });
