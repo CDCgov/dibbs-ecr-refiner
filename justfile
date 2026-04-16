@@ -100,15 +100,18 @@ _new title type folder:
     #!/usr/bin/env node
     const fs = require('node:fs');
     const path = require('node:path');
+    const os = require('os');
 
     const today = new Date().toISOString().split('T')[0];
     const title = "{{ title }}";
     const fileTitle = "{{ kebabcase(title) }}";
+    const isCve = "{{ type }}" === "risk assessment"
 
     console.info(`📝 Creating a new {{ type }} on ${today}`);
 
     console.info(`🔍 Found {{ type }} title: ${title}`);
 
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'new-'));
     const runningFromDir = path.join("{{ replace(justfile_directory(), '\', '/') }}");
     const folderPath = '{{ folder }}';
 
@@ -124,37 +127,47 @@ _new title type folder:
       return fs.lstatSync(fileName).isFile() && fileName.match(re);
     };
 
-    console.info(`🔦 Checking for existing {{ type }}s in ${fullWritePath}`);
+    if (isCve) {
+      console.info(`🕵️ This is a {{ type }} and will be saved to a temporary directory`)
+    } else {
+      console.info(`🔦 Checking for existing {{ type }}s in ${fullWritePath}`);
+      const resolvedPath = path.resolve(fullWritePath);
 
-    const resolvedPath = path.resolve(fullWritePath);
+      const files = fs.readdirSync(resolvedPath)
+        .map(fileName => {
+          return path.join(fullWritePath, fileName);
+          })
+        .filter(isFile);
 
-    const template = fs.readFileSync(`${fullWritePath}/.template`)
+      console.info(`🔍 Found ${(files.length + "").padStart(4, '0')} {{ type }}(s)`);
 
-    const files = fs.readdirSync(resolvedPath)
-      .map(fileName => {
-        return path.join(fullWritePath, fileName);
-      })
-      .filter(isFile);
+      const nextNumber = files.length + 1;
+      const nextNumberString = (nextNumber + "").padStart(4, '0');
 
-    console.info(`🔍 Found ${(files.length + "").padStart(4, '0')} {{ type }}(s)`);
-
-    const nextNumber = files.length + 1;
-    const nextNumberString = (nextNumber + "").padStart(4, '0');
-
-    console.info(`🖊️ Setting your new {{ type }} to #${nextNumberString}`);
+      console.info(`🖊️ Setting your new {{ type }} to #${nextNumberString}`);
+    }
 
     const nextFilePath = path.join(
-        resolvedPath,
-        `${nextNumberString}_${today}_${fileTitle}.md`
+        (isCve ? tmpDir : resolvedPath),
+        (isCve ? `${today}_${fileTitle}.md` : `${nextNumberString}_${today}_${fileTitle}.md`)
     );
 
-    console.info(`📊 Attempting to save {{ type }} #${nextNumberString} to ${nextFilePath}`);
+    if (isCve) {
+      console.info(`📊 Attempting to save {{ type }} to ${nextFilePath}`)
+    } else {
+      console.info(`📊 Attempting to save {{ type }} #${nextNumberString} to ${nextFilePath}`);
+    }
 
+    const template = fs.readFileSync(`${fullWritePath}/.template`)
     const content = eval(`\`${template}\``);
 
     try {
       fs.writeFileSync(nextFilePath, content);
-      console.log(`✅ Successfully created {{ type }} #${nextNumberString} for ${title} at ${nextFilePath}`);
+      if (isCve) {
+        console.log(`✅ Successfully created {{ type }} for ${title} at ${nextFilePath}`);
+      } else {
+        console.log(`✅ Successfully created {{ type }} #${nextNumberString} for ${title} at ${nextFilePath}`);
+      }
     } catch (e) {
       console.error(`❌ ${e}`);
     }
