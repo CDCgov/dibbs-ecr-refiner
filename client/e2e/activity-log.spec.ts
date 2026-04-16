@@ -37,5 +37,9 @@ test.describe('Activity log', () => {
 
     expect(rowOne?.action).toBe(expectedAction);
     expect(rowTwo?.action).toBe(expectedAction);
+
+    await activityLogPage.selectConditionFromDropdown(conditionOne);
+    const conditionOneOnlyRows = await activityLogPage.getTableRows();
+    expect(conditionOneOnlyRows).toHaveLength(1);
   });
 });

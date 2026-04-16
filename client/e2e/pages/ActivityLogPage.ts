@@ -25,6 +25,7 @@ export class ActivityLogPage {
     await this.page
       .getByRole('combobox', { name: 'Condition' })
       .selectOption(conditionName);
+    await this.page.waitForLoadState('networkidle');
   }
 
   async selectPage(page: number) {
