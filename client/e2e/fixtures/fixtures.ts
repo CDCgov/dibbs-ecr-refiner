@@ -9,11 +9,13 @@ import { ConfigurationsPage } from '../pages/ConfigurationsPage';
 import { AxeBuilder } from '@axe-core/playwright';
 import { TestingPage } from '../pages/TestingPage';
 import { Api } from './api';
+import { ActivityLogPage } from '../pages/ActivityLogPage';
 
 type Fixtures = {
   configurationPage: ConfigurationPage;
   configurationsPage: ConfigurationsPage;
   testingPage: TestingPage;
+  activityLogPage: ActivityLogPage;
   makeAxeBuilder: () => AxeBuilder;
   api: Api;
 };
@@ -35,6 +37,9 @@ const extendedTest = baseTest.extend<Fixtures>({
   },
   testingPage: async ({ page }, use) => {
     await use(new TestingPage(page));
+  },
+  activityLogPage: async ({ page }, use) => {
+    await use(new ActivityLogPage(page));
   },
 });
 
