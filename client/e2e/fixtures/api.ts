@@ -59,4 +59,21 @@ export class Api {
 
     return json as Configuration;
   }
+
+  async updateConfigurationStatus(
+    configId: string,
+    status: 'active' | 'inactive'
+  ): Promise<void> {
+    const urlStatus = status === 'active' ? 'activate' : 'deactivate';
+    const statusUpdateReq = await this.request.patch(
+      `/api/v1/configurations/${configId}/${urlStatus}`
+    );
+    expect(statusUpdateReq.ok()).toBeTruthy();
+    const json = await statusUpdateReq.json();
+    expect(json).toEqual(
+      expect.objectContaining({
+        status: status,
+      })
+    );
+  }
 }
