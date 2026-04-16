@@ -100,6 +100,14 @@ function CustomCodeForm({
 
   const isButtonEnabled = code && system && name;
 
+  const handleCodeUpdate = (code: string) => {
+    const trimmedCode = code.trim();
+    setCode(trimmedCode);
+
+    if (deduplicated_codes.includes(trimmedCode)) {
+      setError(`The code "${trimmedCode}" already exists.`);
+    }
+  };
   const handleSubmit = () => {
     if (selectedCustomCode) {
       editCode(
@@ -109,9 +117,9 @@ function CustomCodeForm({
             code: selectedCustomCode.code,
             system: normalizeSystem(selectedCustomCode.system),
             name: selectedCustomCode.name,
-            new_code: code,
+            new_code: code.trim(),
             new_system: normalizeSystem(system),
-            new_name: name,
+            new_name: name.trim(),
           },
         },
         {
@@ -137,9 +145,9 @@ function CustomCodeForm({
         {
           configurationId,
           data: {
-            code: code,
+            code: code.trim(),
             system: normalizeSystem(system),
-            name: name,
+            name: name.trim(),
           },
         },
         {
@@ -163,17 +171,11 @@ function CustomCodeForm({
           type="text"
           value={code}
           onChange={(e) => {
-            const value = e.target.value.trimStart(); // trim leading space only while typing
-            setCode(value);
             if (error) setError(''); // clear error on change
+            handleCodeUpdate(e.target.value);
           }}
           onBlur={() => {
-            const trimmedCode = code.trim(); // full trim (leading + trailing)
-            if (deduplicated_codes.includes(trimmedCode)) {
-              setError(`The code "${trimmedCode}" already exists.`);
-            } else {
-              setCode(trimmedCode);
-            }
+            handleCodeUpdate(code);
           }}
           autoFocus
         />
@@ -185,7 +187,7 @@ function CustomCodeForm({
           id="system"
           name="system"
           value={normalizeSystem(system)}
-          onChange={(e) => setSystem(normalizeSystem(e.target.value.trim()))}
+          onChange={(e) => setSystem(normalizeSystem(e.target.value))}
         >
           {systemValues.map((sv) => (
             <option key={sv.value} value={sv.value}>
@@ -200,7 +202,9 @@ function CustomCodeForm({
         <TextInput
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value.trim())}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
         />
       </Field>
 
