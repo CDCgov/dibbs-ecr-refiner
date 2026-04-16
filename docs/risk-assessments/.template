@@ -1,5 +1,9 @@
 # eCR Refiner Risk Assessment
 
+## ${nextNumber}. ${title}
+
+Date: ${today}
+
 <!--
 This template is for any Risk Assessment needs that the eCR Refiner team
 needs when working with the APHL AIMS platform. This needs to be done when we

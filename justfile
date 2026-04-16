@@ -13,6 +13,10 @@ mod c './.justscripts/just/client.just'
 mod db './.justscripts/just/database.just'
 
 [group('alias')]
+[doc('Alias for `risk-assessments`')]
+mod cve './.justscripts/just/risk-assessments.just'
+
+[group('alias')]
 [doc('Alias for `decisions`')]
 mod rfc './.justscripts/just/decisions.just'
 
@@ -65,6 +69,10 @@ mod cloud './.justscripts/just/cloud.just'
 mod structurizr './.justscripts/just/structurizr.just'
 
 [group('sub-command')]
+[doc('Run risk assessments commands')]
+mod risk-assessments './.justscripts/just/risk-assessments.just'
+
+[group('sub-command')]
 [doc('Run decision records commands')]
 mod decisions './.justscripts/just/decisions.just'
 
@@ -85,7 +93,7 @@ test:
 
 # NOTE: The recipe below named `_new` is **only** called from other Justfiles
 # that create files from .template files found next to them. Currently it's
-# used for managing and authoring `docs/decisions`.
+# used for managing and authoring `docs/decisions` and `docs/risk-assessments`
 
 [private]
 _new title type folder:
