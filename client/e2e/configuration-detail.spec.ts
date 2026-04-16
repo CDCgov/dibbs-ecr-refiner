@@ -150,7 +150,9 @@ test.describe('Configuration detail flow', () => {
         name: `Delete custom section ${customSectionName}`,
       })
       .click();
-    await expect(page.getByText(customSectionName)).not.toBeVisible();
+    await expect(
+      page.getByRole('table').getByText(customSectionName)
+    ).not.toBeVisible();
 
     // Activate
     await page.getByRole('link', { name: 'Activate' }).click();
