@@ -8,6 +8,12 @@ export const db = new Pool({
   port: 5432,
 });
 
+export async function deleteAllConfigurations(): Promise<void> {
+  await db.query('DELETE FROM configurations_locks');
+  await db.query('DELETE FROM events');
+  await db.query('DELETE FROM configurations');
+}
+
 export async function deleteConfigurationArtifacts(
   conditionName: string
 ): Promise<void> {
