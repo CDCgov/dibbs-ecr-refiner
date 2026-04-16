@@ -1,4 +1,14 @@
 import { Page, expect } from '@playwright/test';
+import path from 'path';
+
+export async function uploadMonmothmaTestFile(page: Page) {
+  const filePath = path.resolve(
+    process.cwd(),
+    'e2e/assets/mon-mothma-two-conditions.zip'
+  );
+  await page.locator('input#zip-upload').setInputFiles(filePath);
+  await page.getByText('Refine .zip file').click();
+}
 
 export async function login({
   page,
@@ -30,42 +40,4 @@ export async function login({
   await expect(
     page.getByRole('heading', { name: 'Configurations' })
   ).toBeVisible();
-}
-
-export async function createNewConfiguration(
-  conditionName: string,
-  page: Page
-) {
-  await page.goto('/configurations');
-  await page.getByRole('button', { name: 'Set up new configuration' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Set up new configuration', level: 2 })
-  ).toBeVisible();
-  await page.getByLabel('Select condition').fill(conditionName);
-  await page.getByLabel('Select condition').press('Enter');
-  await expect(
-    page.getByRole('button', { name: 'Set up configuration' })
-  ).toBeEnabled();
-  await page.getByRole('button', { name: 'Set up configuration' }).click();
-  await expect(
-    page.getByRole('heading', { name: conditionName, level: 1 })
-  ).toBeVisible();
-}
-
-export async function createAndActivateCovidConfig(page: Page) {
-  await createNewConfiguration('COVID-19', page);
-  await page.getByRole('link', { name: 'Activate' }).click();
-  await page.getByRole('button', { name: 'Turn on configuration' }).click();
-  await page
-    .getByRole('button', { name: 'Yes, turn on configuration' })
-    .click();
-}
-
-export async function createAndActivateInfluenzaConfig(page: Page) {
-  await createNewConfiguration('Influenza', page);
-  await page.getByRole('link', { name: 'Activate' }).click();
-  await page.getByRole('button', { name: 'Turn on configuration' }).click();
-  await page
-    .getByRole('button', { name: 'Yes, turn on configuration' })
-    .click();
 }

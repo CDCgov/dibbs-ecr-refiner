@@ -7,10 +7,12 @@ import {
 import { ConfigurationPage } from '../pages/ConfigurationPage';
 import { ConfigurationsPage } from '../pages/ConfigurationsPage';
 import { AxeBuilder } from '@axe-core/playwright';
+import { TestingPage } from '../pages/TestingPage';
 
 type Fixtures = {
   configurationPage: ConfigurationPage;
   configurationsPage: ConfigurationsPage;
+  testingPage: TestingPage;
   makeAxeBuilder: () => AxeBuilder;
 };
 
@@ -26,6 +28,9 @@ const extendedTest = baseTest.extend<Fixtures>({
   },
   configurationsPage: async ({ page }, use) => {
     await use(new ConfigurationsPage(page));
+  },
+  testingPage: async ({ page }, use) => {
+    await use(new TestingPage(page));
   },
 });
 

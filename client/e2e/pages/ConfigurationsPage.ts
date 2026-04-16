@@ -1,7 +1,18 @@
-import { Page } from '@playwright/test';
+import { expect, Page } from '@playwright/test';
 
 export class ConfigurationsPage {
   constructor(private page: Page) {}
+
+  async goto() {
+    await this.page.goto('/');
+    await expect(
+      this.page.getByRole('heading', {
+        name: 'Configurations',
+        exact: true,
+        level: 1,
+      })
+    ).toBeVisible();
+  }
 
   async createConfiguration(conditionName: string) {
     await this.page
