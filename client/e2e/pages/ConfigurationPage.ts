@@ -45,9 +45,9 @@ export class ConfigurationPage {
     await this.page.getByRole('button', { name: 'Add custom code' }).click();
   }
 
-  async deleteCustomCode(codeName: string) {
+  async deleteCustomCode(code: string) {
     await this.page
-      .getByRole('button', { name: `Delete custom code ${codeName}` })
+      .getByRole('button', { name: `Delete custom code ${code}` })
       .click();
   }
 

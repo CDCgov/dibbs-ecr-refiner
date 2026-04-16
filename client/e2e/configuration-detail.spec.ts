@@ -1,6 +1,6 @@
-import path from 'path';
 import { test, expect } from './fixtures/fixtures';
 import { deleteConfigurationArtifacts } from './db';
+import { uploadMonmothmaTestFile } from './utils';
 
 test.describe('Configuration detail flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,6 +18,9 @@ test.describe('Configuration detail flow', () => {
     configurationPage,
   }) => {
     const condition = 'COVID-19';
+
+    const additionalCodeSetName =
+      'Agricultural Chemicals (Fertilizer) Poisoning';
 
     await expect(
       page.getByRole('heading', {
@@ -38,72 +41,84 @@ test.describe('Configuration detail flow', () => {
     ).toBeVisible();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
     await page.getByLabel('Code system').selectOption('SNOMED');
-    await configurationPage.addCodeSet(
-      'agri',
-      'Agricultural Chemicals (Fertilizer) Poisoning'
-    );
+    await configurationPage.addCodeSet('agri', additionalCodeSetName);
 
     // Configure a custom code
     await page.getByRole('button', { name: 'Custom codes' }).click();
+    const customCodeName = 'my-custom code!';
+    const customCodeSystem = 'snomed';
+    const customCode = '123-! #-$$$';
+
     await configurationPage.addCustomCode(
-      'my-custom code!',
-      'snomed',
-      '123-! #-$$$'
+      customCodeName,
+      customCodeSystem,
+      customCode
     );
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Configure sections
     await page.getByRole('button', { name: 'Sections' }).click();
+    const admissionDiagnosisCheckboxText = 'Include Admission Diagnosis';
     await page
-      .getByRole('checkbox', { name: 'Include Admission Diagnosis' })
+      .getByRole('checkbox', { name: admissionDiagnosisCheckboxText })
       .click();
     await expect(
-      page.getByRole('checkbox', { name: 'Include Admission Diagnosis' })
+      page.getByRole('checkbox', { name: admissionDiagnosisCheckboxText })
     ).not.toBeChecked();
-    await page
-      .getByRole('switch', { name: 'Refine & optimize Admission Medications' })
-      .click();
-    await expect(
-      page.getByRole('switch', {
-        name: 'Preserve & retain all data for Admission Medications',
-      })
-    ).not.toBeChecked();
+
+    const admissionMedicationsText = 'Admission Medications';
     await page
       .getByRole('switch', {
-        name: 'Toggle to refine or retain the narrative block in the Chief Complaint section',
+        name: `Refine & optimize ${admissionMedicationsText}`,
       })
       .click();
     await expect(
       page.getByRole('switch', {
-        name: 'Toggle to refine or retain the narrative block in the Chief Complaint section',
+        name: `Preserve & retain all data for ${admissionMedicationsText}`,
       })
     ).not.toBeChecked();
+
+    const chiefComplaintSwitchText =
+      'Toggle to refine or retain the narrative block in the Chief Complaint section';
+    const chiefComplaintSwitch = page.getByRole('switch', {
+      name: chiefComplaintSwitchText,
+    });
+    await chiefComplaintSwitch.click();
+    await expect(chiefComplaintSwitch).not.toBeChecked();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Check the two that should not be toggleable
+    const emergencyOutbreakIncludeCheckboxText =
+      'Include Emergency Outbreak Information section rules in refined document.';
     await expect(
       page.getByRole('checkbox', {
-        name: 'Include Emergency Outbreak Information section rules in refined document.',
+        name: emergencyOutbreakIncludeCheckboxText,
       })
     ).toBeDisabled();
+
+    const reportabilityResponseIncludeCheckboxText =
+      'Include Reportability Response Information section rules in refined document.';
     await expect(
       page.getByRole('checkbox', {
-        name: 'Include Reportability Response Information section rules in refined document.',
+        name: reportabilityResponseIncludeCheckboxText,
       })
     ).toBeDisabled();
 
     // Custom section
+    const customSectionName = 'My custom section!';
+    const customSectionCode = 'custom section code';
+
     await page.getByRole('button', { name: 'Add custom section' }).click();
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
     await page
       .getByLabel('Display name (for this section)')
-      .fill('my custom section');
-    await page.getByLabel('LOINC code').fill('custom section code');
+      .fill(customSectionName);
+    await page.getByLabel('LOINC code').fill(customSectionCode);
     await page.getByRole('button', { name: 'Add section' }).click();
     await expect(
       page.getByRole('switch', {
-        name: 'Toggle to refine or retain the narrative block in the my custom section section',
+        name: `Toggle to refine or retain the narrative block in the ${customSectionName} section`,
       })
     ).not.toBeChecked();
 
@@ -113,12 +128,9 @@ test.describe('Configuration detail flow', () => {
       page.getByRole('heading', { name: 'Test configuration' })
     ).toBeVisible();
 
-    const filePath = path.resolve(
-      process.cwd(),
-      'e2e/assets/mon-mothma-two-conditions.zip'
-    );
-    await page.locator('input#zip-upload').setInputFiles(filePath);
-    await page.getByText('Refine .zip file').click();
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    await uploadMonmothmaTestFile(page);
     await expect(page.getByText('eICR file size reduced by')).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Download results' })
@@ -126,19 +138,19 @@ test.describe('Configuration detail flow', () => {
 
     // Back to build and delete things
     await page.getByRole('link', { name: 'Build' }).click();
-    await configurationPage.deleteCodeSet(
-      'Agricultural Chemicals (Fertilizer) Poisoning'
-    );
+    await configurationPage.deleteCodeSet(additionalCodeSetName);
 
     await page.getByRole('button', { name: 'Custom codes' }).click();
-    await configurationPage.deleteCustomCode('123-! #-$$$');
-    await expect(page.getByText('123-! #-$$$')).not.toBeVisible();
+    await configurationPage.deleteCustomCode(customCode);
+    await expect(page.getByText(customCode)).not.toBeVisible();
 
     await page.getByRole('button', { name: 'Sections' }).click();
     await page
-      .getByRole('button', { name: 'Delete custom section my custom section' })
+      .getByRole('button', {
+        name: `Delete custom section ${customSectionName}`,
+      })
       .click();
-    await expect(page.getByText('my custom section')).not.toBeVisible();
+    await expect(page.getByText(customSectionName)).not.toBeVisible();
 
     // Activate
     await page.getByRole('link', { name: 'Activate' }).click();
@@ -146,6 +158,8 @@ test.describe('Configuration detail flow', () => {
     await expect(
       page.getByRole('button', { name: 'Turn off current version' })
     ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Draft a new version
     await page.getByRole('link', { name: 'Build' }).click();
@@ -156,6 +170,7 @@ test.describe('Configuration detail flow', () => {
     await page.getByRole('button', { name: 'Draft a new version' }).click();
     await expect(page.getByRole('paragraph')).toContainText('Version 1');
     await expect(page.getByRole('paragraph')).toContainText('Version 2');
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
     await page
       .getByRole('button', { name: 'Yes, draft a new version' })
       .click();
@@ -172,6 +187,9 @@ test.describe('Configuration detail flow', () => {
     await expect(
       page.getByText("You're about to stop Version 1 and start Version 2")
     ).toBeVisible();
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
     await page
       .getByRole('button', { name: 'Yes, switch to Version 2' })
       .click();
