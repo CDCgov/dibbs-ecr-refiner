@@ -38,17 +38,19 @@ test.describe('Configurations screen', () => {
     await expect(page.locator('table tbody tr')).toHaveCount(1);
     await expect(page.getByRole('cell')).toHaveCount(2);
     const cells = await page.getByRole('cell').all();
-    await expect(cells[0]).toHaveText('Anotia');
+
+    const conditionCell = cells[0];
+    await expect(conditionCell).toHaveText('Anotia');
 
     await configurationsPage.search('ano');
-    await expect(cells[0]).toHaveText(config.name);
+    await expect(conditionCell).toHaveText(config.name);
 
     await configurationsPage.search('covid');
-    await expect(cells[0]).toHaveText('No configurations available');
+    await expect(conditionCell).toHaveText('No configurations available');
 
     await configurationsPage.clearSearch();
 
-    await cells[0].click();
+    await conditionCell.click();
     await expect(
       page.getByRole('heading', { name: config.name, level: 1 })
     ).toBeVisible();
