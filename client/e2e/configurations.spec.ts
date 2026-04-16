@@ -6,7 +6,7 @@ test.describe('Configurations screen', () => {
     await page.goto('/');
     await deleteAllConfigurations();
   });
-  test.beforeEach(async () => await deleteAllConfigurations());
+  test.afterEach(async () => await deleteAllConfigurations());
 
   test('Check empty page state', async ({ page }) => {
     await expect(
