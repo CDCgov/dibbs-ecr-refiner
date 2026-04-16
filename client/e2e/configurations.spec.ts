@@ -1,9 +1,17 @@
 import path from 'path';
 import { test, expect } from './fixtures/fixtures';
+import { deleteConfigurationArtifacts } from './db';
+import { Page } from '@playwright/test';
+
+async function clearToasts(page: Page) {
+  await expect(page.locator('.Toastify__toast')).toHaveCount(0, {
+    timeout: 10000,
+  });
+}
 
 test.describe('Configurations', () => {
-  test.beforeEach(async () => {});
-  test.afterEach(async () => {});
+  test.beforeEach(async () => await deleteConfigurationArtifacts('COVID-19'));
+  test.afterEach(async () => await deleteConfigurationArtifacts('COVID-19'));
   test('Successful building and activation', async ({
     page,
     makeAxeBuilder,
@@ -51,19 +59,13 @@ test.describe('Configurations', () => {
       .filter({ hasText: 'Agricultural Chemicals (Fertilizer) Poisoning' })
       .click();
     await page.getByRole('button', { name: 'Close drawer' }).click();
-    await expect(
-      page.getByRole('heading', { name: 'Add condition code sets', level: 1 })
-    ).not.toBeVisible();
 
     // Configure a custom code
     await page.getByRole('button', { name: 'Custom codes' }).click();
-    await expect(
-      page.getByRole('button', { name: 'Add custom code' })
-    ).toBeDisabled();
     await page.getByRole('button', { name: 'Add new custom code' }).click();
-    await page.getByLabel('Code #').fill('my-custom-code');
-    await page.getByTestId('Select').selectOption('snomed');
-    await page.getByRole('textbox', { name: 'Code name' }).fill('123-!-#-$$$');
+    await page.getByLabel('Code #').fill('my-custom code!');
+    await page.getByLabel('Code system').selectOption('snomed');
+    await page.getByLabel('Code name').fill('123-! #-$$$');
     await expect(
       page.getByRole('button', { name: 'Add custom code' })
     ).toBeEnabled();
@@ -79,11 +81,11 @@ test.describe('Configurations', () => {
       page.getByRole('checkbox', { name: 'Include Admission Diagnosis' })
     ).not.toBeChecked();
     await page
-      .getByRole('switch', { name: 'Refine & optimize Admission Diagnosis' })
+      .getByRole('switch', { name: 'Refine & optimize Admission Medications' })
       .click();
     await expect(
       page.getByRole('switch', {
-        name: 'Refine & optimize Admission Diagnosis',
+        name: 'Preserve & retain all data for Admission Medications',
       })
     ).not.toBeChecked();
     await page
@@ -148,6 +150,17 @@ test.describe('Configurations', () => {
 
     // Back to build and try deleting things
     await page.getByRole('link', { name: 'Build' }).click();
+    await clearToasts(page);
+    await page
+      .getByRole('button', {
+        name: 'View TES code set information for Agricultural Chemicals (Fertilizer) Poisoning',
+      })
+      .hover();
+    await expect(
+      page.getByRole('button', {
+        name: 'Delete code set Agricultural Chemicals (Fertilizer) Poisoning',
+      })
+    ).toBeVisible();
     await page
       .getByRole('button', {
         name: 'Delete code set Agricultural Chemicals (Fertilizer) Poisoning',
@@ -157,9 +170,9 @@ test.describe('Configurations', () => {
     // custom codes
     await page.getByRole('button', { name: 'Custom codes' }).click();
     await page
-      .getByRole('button', { name: 'Delete custom code my-custom-code' })
+      .getByRole('button', { name: 'Delete custom code 123-! #-$$$' })
       .click();
-    await expect(page.getByText('my-custom-code')).not.toBeVisible();
+    await expect(page.getByText('123-! #-$$$')).not.toBeVisible();
 
     // sections
     await page.getByRole('button', { name: 'Sections' }).click();
@@ -208,6 +221,6 @@ test.describe('Configurations', () => {
       .getByRole('button', { name: 'Yes, switch to Version 2' })
       .click();
     await expect(page.getByText('Status: Version 2 active')).toBeVisible();
-    await expect(page.getByText('Turn off configuration')).toBeVisible();
+    await expect(page.getByText('Turn off current version')).toBeVisible();
   });
 });
