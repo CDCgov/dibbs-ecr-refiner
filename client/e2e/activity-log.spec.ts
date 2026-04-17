@@ -3,8 +3,8 @@ import { test, expect } from './fixtures';
 
 test.describe('Activity log', () => {
   test.beforeEach(async ({ configurationsPage }) => {
-    await configurationsPage.goto();
     await deleteAllConfigurations();
+    await configurationsPage.goto();
   });
   test.afterEach(async () => {
     await deleteAllConfigurations();

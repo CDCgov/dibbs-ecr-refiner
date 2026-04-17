@@ -2,9 +2,9 @@ import { test, expect } from './fixtures';
 import { deleteAllConfigurations } from './db';
 
 test.describe('Configuration detail flow', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ configurationsPage }) => {
     await deleteAllConfigurations();
+    await configurationsPage.goto();
   });
   test.afterEach(async () => {
     await deleteAllConfigurations();

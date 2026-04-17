@@ -4,6 +4,7 @@ test.describe('App updates', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await configurationsPage.goto();
   });
+
   test('Page is accessible and has expected content', async ({
     makeAxeBuilder,
     page,

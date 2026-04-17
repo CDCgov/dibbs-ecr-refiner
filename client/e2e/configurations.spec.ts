@@ -2,10 +2,11 @@ import { test, expect } from './fixtures';
 import { deleteAllConfigurations } from './db';
 
 test.describe('Configurations screen', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+  test.beforeEach(async ({ configurationsPage }) => {
     await deleteAllConfigurations();
+    await configurationsPage.goto();
   });
+
   test.afterEach(async () => await deleteAllConfigurations());
 
   test('Check empty page state', async ({ page }) => {
