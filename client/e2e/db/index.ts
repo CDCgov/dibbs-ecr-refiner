@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 /**
  * db is not a fixture so that it's not spun up and torn down on a per-test basis.
  *
- * Note: Don't import `db` directly! Please add a function to this file so queries are centralized.
+ * NOTE: Don't import `db` directly! Please add a function to this file so queries are centralized.
  */
 export const db = new Pool({
   user: 'postgres',
