@@ -69,21 +69,21 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
+      VITE_GIT_HASH: ${{ github.sha }}
+      VERSION: ${{ github.sha }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Install Just
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y curl
-          curl -fsSL https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{env.NODE_VERSION}}
+
       - name: Install Dependencies
         run: npm ci
         working-directory: client
+
       - name: Cache Playwright Browsers
         uses: actions/cache@v4
         with:
@@ -93,28 +93,28 @@ jobs:
             ${{ runner.os }}-playwright-browsers-
             ${{ runner.os }}-playwright-
             ${{ runner.os }}-
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
         working-directory: client
-      - name: Start Application
-        run: just dev up --detach
 
-      - name: Migrate Database
-        run: |
-          timeout 60 bash -c 'until pg_isready -h localhost -p 5432; do sleep 2; done'
-          just migrate local
-      - name: Seed Database
-        run: just db seed
+      - name: Start Application
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up --detach --build
+
       - name: Wait for Auth Service to be Ready
         run: |
           timeout 120 bash -c 'until curl -sf http://localhost:8082/realms/refiner > /dev/null 2>&1; do sleep 2; done'
           echo "Auth Service is ready!"
+
       - name: Wait for app server proxy to be ready
         run: |
           timeout 60 bash -c 'until curl -f http://localhost:8081/api/healthcheck > /dev/null 2>&1; do sleep 2; done'
           echo "App server proxy is ready!"
+
       - name: Run Playwright E2E Tests
-        run: just client run e2e
+        run: npm run e2e
+        working-directory: client
+
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
