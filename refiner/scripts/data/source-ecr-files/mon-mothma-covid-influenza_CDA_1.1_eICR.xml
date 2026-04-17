@@ -115,7 +115,7 @@
         <streetAddressLine>500 Republica, Suite 400</streetAddressLine>
         <city>Senate District</city>
         <state>Galactic City</state>
-        <potalCode>GC-500</potalCode>
+        <postalCode>GC-500</postalCode>
         <county>Administrative Core</county>
         <country>Coruscant</country>
       </addr>
@@ -358,13 +358,6 @@
               <code code="99213" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4"
                 displayName="Office outpatient visit 15 minutes" />
               <effectiveTime value="20250216" />
-              <participant typeCode="LOC">
-                <participantRole classCode="SDLOC">
-                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
-                    codeSystemName="HealthcareServiceLocation"
-                    displayName="Grand Republic Medical Facility Clinic" />
-                </participantRole>
-              </participant>
               <performer>
                 <assignedEntity>
                   <id extension="1234567890" root="2.16.840.1.113883.4.6" />
@@ -377,6 +370,14 @@
                   </assignedPerson>
                 </assignedEntity>
               </performer>
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation"
+                    displayName="Grand Republic Medical Facility Clinic" />
+                </participantRole>
+              </participant>
+
             </encounter>
           </entry>
           <!-- Follow-up Visit Entry -->
@@ -388,13 +389,6 @@
               <code code="99213" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4"
                 displayName="Office outpatient visit - followup" />
               <effectiveTime value="20250217" />
-              <participant typeCode="LOC">
-                <participantRole classCode="SDLOC">
-                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
-                    codeSystemName="HealthcareServiceLocation"
-                    displayName="Grand Republic Medical Facility Clinic" />
-                </participantRole>
-              </participant>
               <performer>
                 <assignedEntity>
                   <id extension="1234567890" root="2.16.840.1.113883.4.6" />
@@ -407,6 +401,14 @@
                   </assignedPerson>
                 </assignedEntity>
               </performer>
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation"
+                    displayName="Grand Republic Medical Facility Clinic" />
+                </participantRole>
+              </participant>
+
             </encounter>
           </entry>
           <!-- Results Visit with Diagnoses -->
@@ -418,13 +420,6 @@
               <code code="99212" codeSystem="2.16.840.1.113883.6.12" codeSystemName="CPT-4"
                 displayName="Office outpatient visit - results review" />
               <effectiveTime value="20250221" />
-              <participant typeCode="LOC">
-                <participantRole classCode="SDLOC">
-                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
-                    codeSystemName="HealthcareServiceLocation"
-                    displayName="Grand Republic Medical Facility Clinic" />
-                </participantRole>
-              </participant>
               <performer>
                 <assignedEntity>
                   <id extension="1234567890" root="2.16.840.1.113883.4.6" />
@@ -437,6 +432,14 @@
                   </assignedPerson>
                 </assignedEntity>
               </performer>
+              <participant typeCode="LOC">
+                <participantRole classCode="SDLOC">
+                  <code code="1160-1" codeSystem="2.16.840.1.113883.1.11.20275"
+                    codeSystemName="HealthcareServiceLocation"
+                    displayName="Grand Republic Medical Facility Clinic" />
+                </participantRole>
+              </participant>
+
               <!-- Link to COVID-19 Diagnosis -->
               <entryRelationship typeCode="COMP">
                 <act classCode="ACT" moodCode="EVN">
@@ -518,6 +521,9 @@
               also reported increased muscle aches, headache, and fatigue. Additional testing
               revealed concurrent Influenza A infection. Patient diagnosis updated to confirmed
               COVID-19 and Influenza A co-infection.</paragraph>
+            <paragraph>Patient has pre-existing essential hypertension and type 2 diabetes mellitus,
+              both well-controlled on current medications. Baseline labs including BMP and lipid
+              panel were within normal limits aside from mildly elevated glucose.</paragraph>
           </text>
         </section>
       </component>
@@ -626,6 +632,47 @@
                               <td>2.16.840.1.114222.4.11.7508</td>
                               <td>20250216</td>
                             </tr>
+                            <!-- NEW: COVID-19 pneumonia complication (IN COVID GROUPER) -->
+                            <tr>
+                              <td>condition</td>
+                              <td>Pneumonia caused by SARS-CoV-2</td>
+                              <td>02/22/2025</td>
+                              <td>882784691000119100</td>
+                              <td>SNOMED-CT</td>
+                              <td>2.16.840.1.114222.4.11.7508</td>
+                              <td>20250216</td>
+                            </tr>
+                            <!-- NEW: Dyspnea caused by SARS-CoV-2 (IN COVID GROUPER) - NO
+                            displayName on entry -->
+                            <tr>
+                              <td>condition</td>
+                              <td>119981000146107</td>
+                              <td>02/21/2025</td>
+                              <td>119981000146107</td>
+                              <td>SNOMED-CT</td>
+                              <td>2.16.840.1.114222.4.11.7508</td>
+                              <td>20250216</td>
+                            </tr>
+                            <!-- NON-MATCHING: Essential hypertension (NOT in COVID grouper) -->
+                            <tr>
+                              <td>condition</td>
+                              <td>Essential hypertension (disorder)</td>
+                              <td>01/15/2020</td>
+                              <td>59621000</td>
+                              <td>SNOMED-CT</td>
+                              <td />
+                              <td />
+                            </tr>
+                            <!-- NON-MATCHING: Type 2 diabetes (NOT in COVID grouper) -->
+                            <tr>
+                              <td>condition</td>
+                              <td>Type 2 diabetes mellitus (disorder)</td>
+                              <td>03/10/2021</td>
+                              <td>44054006</td>
+                              <td>SNOMED-CT</td>
+                              <td />
+                              <td />
+                            </tr>
                           </tbody>
                         </table>
                       </item>
@@ -717,7 +764,7 @@
                     xsi:type="CD" />
                 </observation>
               </entryRelationship>
-              <!-- V3: Fourth Problem Observation: Influenza -->
+              <!-- V4: Fourth Problem Observation: Influenza -->
               <entryRelationship typeCode="SUBJ">
                 <observation classCode="OBS" moodCode="EVN" negationInd="false">
                   <templateId root="2.16.840.1.113883.10.20.22.4.4" />
@@ -737,6 +784,96 @@
                     codeSystemName="SNOMED-CT"
                     displayName="Influenza A virus infection (disorder)"
                     sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V5: NEW - COVID Pneumonia complication (IN COVID GROUPER) -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.3" />
+                  <id root="a23d8f91-c4e2-4a67-b019-3f2c5d1e7a84" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="Condition" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20250222" />
+                  </effectiveTime>
+                  <value code="882784691000119100" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Pneumonia caused by severe acute respiratory syndrome coronavirus 2 (disorder)"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V6: NEW - Dyspnea caused by SARS-CoV-2 (IN COVID GROUPER) 
+                   *** MISSING displayName - code 119981000146107 IS in the COVID-19 condition grouper *** -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.3" />
+                  <id root="b47c1e29-83f5-4d10-a7b2-6e0d3c8f9a15" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="Condition" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20250221" />
+                  </effectiveTime>
+                  <!-- MISSING displayName: should be "Dyspnea caused by severe acute respiratory
+                  syndrome coronavirus 2 (disorder)" -->
+                  <value code="119981000146107" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250216"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V7: NON-MATCHING - Essential hypertension (NOT in COVID grouper) -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <id root="c58d2e37-91a4-4f53-b206-7d1e3a8c5b92" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="Condition" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20200115" />
+                  </effectiveTime>
+                  <value code="59621000" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Essential hypertension (disorder)"
+                    xsi:type="CD" />
+                </observation>
+              </entryRelationship>
+              <!-- V8: NON-MATCHING - Type 2 diabetes mellitus (NOT in COVID grouper) -->
+              <entryRelationship typeCode="SUBJ">
+                <observation classCode="OBS" moodCode="EVN" negationInd="false">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.4" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.4" />
+                  <id root="d69e3f48-a2b5-4c64-c317-8e2f4b9d6ca3" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition">
+                    <translation code="64572001" codeSystem="2.16.840.1.113883.6.96"
+                      codeSystemName="SNOMED CT" displayName="Condition" />
+                  </code>
+                  <statusCode code="completed" />
+                  <effectiveTime>
+                    <low value="20210310" />
+                  </effectiveTime>
+                  <value code="44054006" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Type 2 diabetes mellitus (disorder)"
                     xsi:type="CD" />
                 </observation>
               </entryRelationship>
@@ -787,9 +924,10 @@
                 </tr>
               </thead>
               <tbody>
+                <!-- COVID N gene test -->
                 <tr>
-                  <td>SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with
-                    probe detection</td>
+                  <td>SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory system specimen by
+                    NAA with probe detection</td>
                   <td />
                 </tr>
                 <tr>
@@ -813,8 +951,8 @@
                           </thead>
                           <tbody>
                             <tr>
-                              <td>SARS-like Coronavirus N gene [Presence] in Unspecified specimen by
-                                NAA with probe detection</td>
+                              <td>SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory system
+                                specimen by NAA with probe detection</td>
                               <td>2.16.840.1.114222.4.11.7508</td>
                               <td>20250221</td>
                               <td>Detected (qualifier value)</td>
@@ -828,8 +966,81 @@
                     </list>
                   </td>
                 </tr>
+                <!-- COVID Rapid Antigen test -->
                 <tr>
-                  <td>Influenza virus A subtype H5N1 RNA [Presence] in Respiratory specimen by NAA
+                  <td>SARS-CoV-2 (COVID-19) Ag [Presence] in Respiratory system specimen by Rapid
+                    immunoassay</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td>
+                    <list>
+                      <item>
+                        <paragraph>*** In the table below, row entries with values under RCTC
+                          columns triggered this
+                          Electronic Initial Case Report (eICR)</paragraph>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Test</th>
+                              <th>Lab Test RCTC OID ***</th>
+                              <th>Lab Test RCTC Version ***</th>
+                              <th>Outcome</th>
+                              <th>Date(s)</th>
+                              <th>Lab Result RCTC OID ***</th>
+                              <th>Lab Result RCTC Version ***</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>SARS-CoV-2 (COVID-19) Ag [Presence] in Respiratory system
+                                specimen by Rapid immunoassay</td>
+                              <td>2.16.840.1.114222.4.11.7508</td>
+                              <td>20250221</td>
+                              <td>Detected (qualifier value)</td>
+                              <td>02/21/2025</td>
+                              <td />
+                              <td />
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <!-- COVID Nasopharyngeal NAA test -->
+                <tr>
+                  <td>SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe
+                    detection</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td>
+                    <list>
+                      <item>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Test</th>
+                              <th>Outcome</th>
+                              <th>Date(s)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>94759-8</td>
+                              <td>Detected</td>
+                              <td>02/21/2025</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <!-- Influenza test -->
+                <tr>
+                  <td>Influenza virus A RNA [Presence] in Respiratory specimen by NAA
                     with probe detection</td>
                   <td />
                 </tr>
@@ -869,10 +1080,113 @@
                     </list>
                   </td>
                 </tr>
+                <!-- NON-MATCHING: Basic Metabolic Panel -->
+                <tr>
+                  <td>Basic Metabolic Panel</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td>
+                    <list>
+                      <item>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Test</th>
+                              <th>Outcome</th>
+                              <th>Date(s)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Glucose [Mass/volume] in Serum or Plasma</td>
+                              <td>118 mg/dL</td>
+                              <td>02/21/2025</td>
+                            </tr>
+                            <tr>
+                              <td>Creatinine [Mass/volume] in Serum or Plasma</td>
+                              <td>0.9 mg/dL</td>
+                              <td>02/21/2025</td>
+                            </tr>
+                            <tr>
+                              <td>Potassium [Moles/volume] in Serum or Plasma</td>
+                              <td>4.1 mmol/L</td>
+                              <td>02/21/2025</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <!-- NON-MATCHING: D-dimer -->
+                <tr>
+                  <td>Fibrin D-dimer FEU [Mass/volume] in Platelet poor plasma</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td>
+                    <list>
+                      <item>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Test</th>
+                              <th>Outcome</th>
+                              <th>Date(s)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>D-dimer</td>
+                              <td>0.45 mg/L FEU</td>
+                              <td>02/21/2025</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
+                <!-- NON-MATCHING: Chest X-ray -->
+                <tr>
+                  <td>Chest X-ray portable AP</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td>
+                    <list>
+                      <item>
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Test</th>
+                              <th>Outcome</th>
+                              <th>Date(s)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>XR Chest portable AP</td>
+                              <td>Bilateral ground-glass opacities consistent with viral pneumonia</td>
+                              <td>02/21/2025</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </item>
+                    </list>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </text>
-          <!-- COVID-19 Test Result Entry -->
+
+          <!-- ============================================================ -->
+          <!-- COVID-19 N gene Test Result Entry (UPDATED: was 94310-0, now 94533-7) -->
+          <!-- 94310-0 was removed from the COVID-19 condition grouper ValueSet. -->
+          <!-- 94533-7 is in the grouper and is the closest analogue: same N gene -->
+          <!-- target, same NAA method, but in respiratory specimen specifically. -->
+          <!-- ============================================================ -->
           <entry typeCode="DRIV">
             <organizer classCode="BATTERY" moodCode="EVN">
               <!-- [C-CDA R1.1] Result Organizer -->
@@ -880,8 +1194,8 @@
               <!-- [C-CDA R2.1] Result Organizer (V3) -->
               <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
               <id root="2047cca3-559f-45da-8775-406538fa4815" />
-              <code code="94310-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
-                displayName="SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection" />
+              <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory system specimen by NAA with probe detection" />
               <statusCode code="completed" />
               <effectiveTime>
                 <low value="20250221" />
@@ -896,12 +1210,12 @@
                   <!-- [eICR R2 STU1.1] Initial Case Report Trigger Code Result Observation -->
                   <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.2" />
                   <id root="9890e2c3-019a-4168-8403-a0a069994440" />
-                  <code code="94310-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
-                    displayName="SARS-like Coronavirus N gene [Presence] in Unspecified specimen by NAA with probe detection"
+                  <code code="94533-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="SARS-CoV-2 (COVID-19) N gene [Presence] in Respiratory system specimen by NAA with probe detection"
                     sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250221"
                     xsi:type="CD" />
                   <statusCode code="completed" />
-                  <effectiveTime value="20250221" /> <!-- Fixed date from 2020 to 2025 -->
+                  <effectiveTime value="20250221" />
                   <value code="260373001" codeSystem="2.16.840.1.113883.6.96"
                     codeSystemName="SNOMED-CT"
                     displayName="Detected (qualifier value)" xsi:type="CD" />
@@ -909,7 +1223,85 @@
               </component>
             </organizer>
           </entry>
-          <!-- Influenza Test Result Entry -->
+
+          <!-- ============================================================ -->
+          <!-- COVID-19 Rapid Antigen Test (IN COVID GROUPER - LOINC 94558-4) -->
+          <!-- ============================================================ -->
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
+              <id root="e1a2b3c4-d5e6-47f8-9012-3456789abcde" />
+              <code code="94558-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="SARS-CoV-2 (COVID-19) Ag [Presence] in Respiratory system specimen by Rapid immunoassay" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20250221" />
+                <high value="20250221" />
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.2" />
+                  <id root="f2b3c4d5-e6f7-4890-a123-456789abcdef" />
+                  <code code="94558-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="SARS-CoV-2 (COVID-19) Ag [Presence] in Respiratory system specimen by Rapid immunoassay"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250221"
+                    xsi:type="CD" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value code="260373001" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    displayName="Detected (qualifier value)" xsi:type="CD" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+
+          <!-- ============================================================ -->
+          <!-- COVID-19 Nasopharyngeal NAA Test (IN COVID GROUPER - LOINC 94759-8) -->
+          <!-- *** MISSING displayName on observation code - code IS in COVID grouper *** -->
+          <!-- ============================================================ -->
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
+              <id root="a1b2c3d4-e5f6-4789-0123-456789abcdef" />
+              <!-- MISSING displayName on organizer code: should be
+                   "SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection" -->
+              <code code="94759-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20250221" />
+                <high value="20250221" />
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2016-12-01" root="2.16.840.1.113883.10.20.15.2.3.2" />
+                  <id root="b2c3d4e5-f6a7-4890-1234-56789abcdef0" />
+                  <!-- MISSING displayName on observation code: should be
+                       "SARS-CoV-2 (COVID-19) RNA [Presence] in Nasopharynx by NAA with probe detection" -->
+                  <code code="94759-8" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    sdtc:valueSet="2.16.840.1.114222.4.11.7508" sdtc:valueSetVersion="20250221"
+                    xsi:type="CD" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <!-- MISSING displayName on result value: should be
+                       "Detected (qualifier value)" - code 260373001 IS in COVID grouper -->
+                  <value code="260373001" codeSystem="2.16.840.1.113883.6.96"
+                    codeSystemName="SNOMED-CT"
+                    xsi:type="CD" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+
+          <!-- ============================================================ -->
+          <!-- Influenza Test Result Entry (UNCHANGED) -->
+          <!-- ============================================================ -->
           <entry typeCode="DRIV">
             <organizer classCode="BATTERY" moodCode="EVN">
               <!-- [C-CDA R1.1] Result Organizer -->
@@ -942,6 +1334,419 @@
                   <value code="260373001" codeSystem="2.16.840.1.113883.6.96"
                     codeSystemName="SNOMED-CT"
                     displayName="Detected (qualifier value)" xsi:type="CD" />
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+
+          <!-- ============================================================ -->
+          <!-- NON-MATCHING: Basic Metabolic Panel (NOT in COVID grouper)   -->
+          <!-- LOINC 51990-0 is a routine chemistry panel - should be       -->
+          <!-- filtered out as not relevant to COVID-19 reporting.          -->
+          <!-- ============================================================ -->
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
+              <id root="c3d4e5f6-a7b8-4901-2345-6789abcdef01" />
+              <code code="51990-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="Basic Metabolic Panel" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20250221" />
+                <high value="20250221" />
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <id root="d4e5f6a7-b8c9-4012-3456-789abcdef012" />
+                  <code code="2345-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Glucose [Mass/volume] in Serum or Plasma" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="118" unit="mg/dL" />
+                  <interpretationCode code="H" codeSystem="2.16.840.1.113883.5.83"
+                    displayName="High" />
+                  <referenceRange>
+                    <observationRange>
+                      <value xsi:type="IVL_PQ">
+                        <low value="70" unit="mg/dL" />
+                        <high value="100" unit="mg/dL" />
+                      </value>
+                    </observationRange>
+                  </referenceRange>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <id root="e5f6a7b8-c9d0-4123-4567-89abcdef0123" />
+                  <code code="2160-0" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Creatinine [Mass/volume] in Serum or Plasma" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="0.9" unit="mg/dL" />
+                  <referenceRange>
+                    <observationRange>
+                      <value xsi:type="IVL_PQ">
+                        <low value="0.7" unit="mg/dL" />
+                        <high value="1.3" unit="mg/dL" />
+                      </value>
+                    </observationRange>
+                  </referenceRange>
+                </observation>
+              </component>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <id root="f6a7b8c9-d0e1-4234-5678-9abcdef01234" />
+                  <code code="2823-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Potassium [Moles/volume] in Serum or Plasma" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="4.1" unit="mmol/L" />
+                  <referenceRange>
+                    <observationRange>
+                      <value xsi:type="IVL_PQ">
+                        <low value="3.5" unit="mmol/L" />
+                        <high value="5.0" unit="mmol/L" />
+                      </value>
+                    </observationRange>
+                  </referenceRange>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+
+          <!-- ============================================================ -->
+          <!-- NON-MATCHING: D-dimer (NOT in COVID grouper)                 -->
+          <!-- LOINC 48065-7 - often ordered alongside COVID workup but     -->
+          <!-- not itself a COVID trigger code.                             -->
+          <!-- ============================================================ -->
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
+              <id root="a7b8c9d0-e1f2-4345-6789-abcdef012345" />
+              <code code="48065-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="Fibrin D-dimer FEU [Mass/volume] in Platelet poor plasma" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20250221" />
+                <high value="20250221" />
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <id root="b8c9d0e1-f2a3-4456-7890-bcdef0123456" />
+                  <code code="48065-7" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Fibrin D-dimer FEU [Mass/volume] in Platelet poor plasma" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="0.45" unit="mg/L{FEU}" />
+                  <referenceRange>
+                    <observationRange>
+                      <value xsi:type="IVL_PQ">
+                        <low value="0" unit="mg/L{FEU}" />
+                        <high value="0.50" unit="mg/L{FEU}" />
+                      </value>
+                    </observationRange>
+                  </referenceRange>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+
+          <!-- ============================================================ -->
+          <!-- NON-MATCHING: Chest X-ray (NOT in COVID grouper)             -->
+          <!-- LOINC 30746-2 - imaging result, not a lab trigger code       -->
+          <!-- ============================================================ -->
+          <entry typeCode="DRIV">
+            <organizer classCode="BATTERY" moodCode="EVN">
+              <templateId root="2.16.840.1.113883.10.20.22.4.1" />
+              <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.1" />
+              <id root="c9d0e1f2-a3b4-4567-8901-cdef01234567" />
+              <code code="30746-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="Portable XR Chest AP" />
+              <statusCode code="completed" />
+              <effectiveTime>
+                <low value="20250221" />
+                <high value="20250221" />
+              </effectiveTime>
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.2" />
+                  <templateId extension="2015-08-01" root="2.16.840.1.113883.10.20.22.4.2" />
+                  <id root="d0e1f2a3-b4c5-4678-9012-def012345678" />
+                  <code code="30746-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Portable XR Chest AP" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="ED" mediaType="text/plain">Bilateral ground-glass opacities
+                    consistent with viral pneumonia. No pleural effusion. Heart size normal.</value>
+                </observation>
+              </component>
+            </organizer>
+          </entry>
+        </section>
+      </component>
+
+      <!-- ================================================================ -->
+      <!-- Immunizations Section (typical CDA content - NOT COVID-relevant) -->
+      <!-- This section is REQUIRED by the eICR IG (SHALL per CONF:3284-149 -->
+      <!-- in Vol 2 STU1.1) but the specific immunization content here      -->
+      <!-- (seasonal flu vaccine) is not a COVID-19 trigger and should be   -->
+      <!-- filtered out when looking for COVID-relevant data.               -->
+      <!-- ================================================================ -->
+      <component>
+        <section>
+          <!-- [C-CDA R1.1] Immunizations Section (entries optional) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.2" />
+          <!-- [C-CDA R2.1] Immunizations Section (entries optional) (V3) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.2" extension="2015-08-01" />
+          <!-- [C-CDA R1.1] Immunizations Section (entries required) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.2.1" />
+          <!-- [C-CDA R2.1] Immunizations Section (entries required) (V3) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.2.1" extension="2015-08-01" />
+          <code code="11369-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+            displayName="History of immunizations" />
+          <title>Immunizations</title>
+          <text>
+            <table>
+              <thead>
+                <tr>
+                  <th>Vaccine</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Influenza, seasonal, injectable, preservative free (Fluzone)</td>
+                  <td>10/15/2024</td>
+                  <td>Completed</td>
+                </tr>
+                <tr>
+                  <td>Tetanus, diphtheria, acellular pertussis (Tdap)</td>
+                  <td>03/22/2022</td>
+                  <td>Completed</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <!-- Seasonal Flu Vaccine -->
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+              <!-- [C-CDA R1.1] Immunization Activity -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" />
+              <!-- [C-CDA R2.1] Immunization Activity (V3) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" extension="2015-08-01" />
+              <id root="e1f2a3b4-c5d6-4789-0123-ef0123456789" />
+              <statusCode code="completed" />
+              <effectiveTime value="20241015" />
+              <routeCode code="20066007" codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT" displayName="Intramuscular route" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" extension="2014-06-09" />
+                  <manufacturedMaterial>
+                    <code code="141" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CVX"
+                      displayName="Influenza, seasonal, injectable, preservative free">
+                      <originalText>Fluzone Quadrivalent 2024-2025</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+          <!-- Tdap Vaccine -->
+          <entry typeCode="DRIV">
+            <substanceAdministration classCode="SBADM" moodCode="EVN" negationInd="false">
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.52" extension="2015-08-01" />
+              <id root="f2a3b4c5-d6e7-4890-1234-f01234567890" />
+              <statusCode code="completed" />
+              <effectiveTime value="20220322" />
+              <routeCode code="20066007" codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT" displayName="Intramuscular route" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.54" extension="2014-06-09" />
+                  <manufacturedMaterial>
+                    <code code="115" codeSystem="2.16.840.1.113883.12.292" codeSystemName="CVX"
+                      displayName="Tdap">
+                      <originalText>Boostrix (Tdap)</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+            </substanceAdministration>
+          </entry>
+        </section>
+      </component>
+
+      <!-- ================================================================ -->
+      <!-- Vital Signs Section (typical CDA content - NOT COVID-relevant)   -->
+      <!-- Vital signs are standard C-CDA content commonly present in       -->
+      <!-- clinical documents. The codes here (body temp, heart rate, BP,   -->
+      <!-- SpO2, respiratory rate) are NOT in the COVID-19 condition grouper-->
+      <!-- and should be filtered out when looking for COVID-relevant data. -->
+      <!-- ================================================================ -->
+      <component>
+        <section>
+          <!-- [C-CDA R1.1] Vital Signs Section (entries optional) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4" />
+          <!-- [C-CDA R2.1] Vital Signs Section (entries optional) (V3) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4" extension="2015-08-01" />
+          <!-- [C-CDA R1.1] Vital Signs Section (entries required) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1" />
+          <!-- [C-CDA R2.1] Vital Signs Section (entries required) (V3) -->
+          <templateId root="2.16.840.1.113883.10.20.22.2.4.1" extension="2015-08-01" />
+          <code code="8716-3" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+            displayName="Vital Signs" />
+          <title>Vital Signs</title>
+          <text>
+            <table>
+              <thead>
+                <tr>
+                  <th>Vital Sign</th>
+                  <th>Value</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Body Temperature</td>
+                  <td>38.9 Cel</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Heart Rate</td>
+                  <td>98 /min</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Systolic Blood Pressure</td>
+                  <td>128 mm[Hg]</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Diastolic Blood Pressure</td>
+                  <td>82 mm[Hg]</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Oxygen Saturation</td>
+                  <td>94 %</td>
+                  <td>02/21/2025</td>
+                </tr>
+                <tr>
+                  <td>Respiratory Rate</td>
+                  <td>22 /min</td>
+                  <td>02/21/2025</td>
+                </tr>
+              </tbody>
+            </table>
+          </text>
+          <entry typeCode="DRIV">
+            <organizer classCode="CLUSTER" moodCode="EVN">
+              <!-- [C-CDA R1.1] Vital Signs Organizer -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.26" />
+              <!-- [C-CDA R2.1] Vital Signs Organizer (V3) -->
+              <templateId root="2.16.840.1.113883.10.20.22.4.26" extension="2015-08-01" />
+              <id root="a3b4c5d6-e7f8-4901-2345-0123456789ab" />
+              <code code="46680-2" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                displayName="Vital Signs" />
+              <statusCode code="completed" />
+              <effectiveTime value="20250221" />
+              <!-- Body Temperature -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09" />
+                  <id root="b4c5d6e7-f8a9-4012-3456-123456789abc" />
+                  <code code="8310-5" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Body Temperature" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="38.9" unit="Cel" />
+                  <interpretationCode code="H" codeSystem="2.16.840.1.113883.5.83"
+                    displayName="High" />
+                </observation>
+              </component>
+              <!-- Heart Rate -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09" />
+                  <id root="c5d6e7f8-a9b0-4123-4567-23456789abcd" />
+                  <code code="8867-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Heart rate" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="98" unit="/min" />
+                </observation>
+              </component>
+              <!-- Systolic Blood Pressure -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09" />
+                  <id root="d6e7f8a9-b0c1-4234-5678-3456789abcde" />
+                  <code code="8480-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Systolic blood pressure" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="128" unit="mm[Hg]" />
+                </observation>
+              </component>
+              <!-- Diastolic Blood Pressure -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09" />
+                  <id root="e7f8a9b0-c1d2-4345-6789-456789abcdef" />
+                  <code code="8462-4" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Diastolic blood pressure" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="82" unit="mm[Hg]" />
+                </observation>
+              </component>
+              <!-- Oxygen Saturation -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09" />
+                  <id root="f8a9b0c1-d2e3-4456-7890-56789abcdef0" />
+                  <code code="2708-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Oxygen saturation in Arterial blood" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="94" unit="%" />
+                  <interpretationCode code="L" codeSystem="2.16.840.1.113883.5.83"
+                    displayName="Low" />
+                </observation>
+              </component>
+              <!-- Respiratory Rate -->
+              <component>
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.27" extension="2014-06-09" />
+                  <id root="a9b0c1d2-e3f4-4567-8901-6789abcdef01" />
+                  <code code="9279-1" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Respiratory rate" />
+                  <statusCode code="completed" />
+                  <effectiveTime value="20250221" />
+                  <value xsi:type="PQ" value="22" unit="/min" />
+                  <interpretationCode code="H" codeSystem="2.16.840.1.113883.5.83"
+                    displayName="High" />
                 </observation>
               </component>
             </organizer>
@@ -1151,6 +1956,92 @@
               </entryRelationship>
             </substanceAdministration>
           </entry>
+          <!-- NON-MATCHING: Lisinopril for hypertension (not COVID-relevant) -->
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="INT">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09" />
+              <id root="b0c1d2e3-f4a5-4678-9012-789abcdef012" />
+              <statusCode code="active" />
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20200115" />
+              </effectiveTime>
+              <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                <period value="24" unit="h" />
+              </effectiveTime>
+              <routeCode code="26643006" codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT" displayName="Oral route" />
+              <doseQuantity value="1" unit="tablet" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09" />
+                  <id root="c1d2e3f4-a5b6-4789-0123-89abcdef0123" />
+                  <manufacturedMaterial>
+                    <code code="314076" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"
+                      displayName="lisinopril 10 MG Oral Tablet">
+                      <originalText>Lisinopril 10mg PO daily</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="RSON">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" extension="2014-06-09" />
+                  <id root="d2e3f4a5-b6c7-4890-1234-9abcdef01234" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition" />
+                  <statusCode code="completed" />
+                  <value xsi:type="CD" code="59621000" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Essential hypertension (disorder)" />
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
+          <!-- NON-MATCHING: Metformin for diabetes (not COVID-relevant) -->
+          <entry>
+            <substanceAdministration classCode="SBADM" moodCode="INT">
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" />
+              <templateId root="2.16.840.1.113883.10.20.22.4.16" extension="2014-06-09" />
+              <id root="e3f4a5b6-c7d8-4901-2345-abcdef012345" />
+              <statusCode code="active" />
+              <effectiveTime xsi:type="IVL_TS">
+                <low value="20210310" />
+              </effectiveTime>
+              <effectiveTime xsi:type="PIVL_TS" institutionSpecified="true" operator="A">
+                <period value="12" unit="h" />
+              </effectiveTime>
+              <routeCode code="26643006" codeSystem="2.16.840.1.113883.6.96"
+                codeSystemName="SNOMED CT" displayName="Oral route" />
+              <doseQuantity value="1" unit="tablet" />
+              <consumable>
+                <manufacturedProduct classCode="MANU">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.23" extension="2014-06-09" />
+                  <id root="f4a5b6c7-d8e9-4012-3456-bcdef0123456" />
+                  <manufacturedMaterial>
+                    <code code="861007" codeSystem="2.16.840.1.113883.6.88" codeSystemName="RxNorm"
+                      displayName="metFORMIN hydrochloride 500 MG Oral Tablet">
+                      <originalText>Metformin 500mg PO BID</originalText>
+                    </code>
+                  </manufacturedMaterial>
+                </manufacturedProduct>
+              </consumable>
+              <entryRelationship typeCode="RSON">
+                <observation classCode="OBS" moodCode="EVN">
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" />
+                  <templateId root="2.16.840.1.113883.10.20.22.4.19" extension="2014-06-09" />
+                  <id root="a5b6c7d8-e9f0-4123-4567-cdef01234567" />
+                  <code code="75323-6" codeSystem="2.16.840.1.113883.6.1" codeSystemName="LOINC"
+                    displayName="Condition" />
+                  <statusCode code="completed" />
+                  <value xsi:type="CD" code="44054006" codeSystem="2.16.840.1.113883.6.96"
+                    displayName="Type 2 diabetes mellitus (disorder)" />
+                </observation>
+              </entryRelationship>
+            </substanceAdministration>
+          </entry>
           <!-- Follow-up Visit -->
           <entry>
             <!-- This is a planned encounter -->
@@ -1162,7 +2053,7 @@
               <id root="5a784260-6856-4f38-9638-80c751aff2fb" />
               <code code="270427003" codeSystem="2.16.840.1.113883.6.96" codeSystemName="SNOMED CT"
                 displayName="Patient-initiated encounter" />
-              <statusCode code="active" />  <!-- Adding required statusCode -->
+              <statusCode code="active" />
               <effectiveTime value="20250224" />
               <participant typeCode="LOC">
                 <participantRole classCode="SDLOC">

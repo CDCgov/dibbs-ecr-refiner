@@ -120,10 +120,8 @@ async def _build_refined_conditions(
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
-                            unrefined_eicr=format_xml_document_for_display(
-                                original_xml_files.eicr
-                            ),
-                            refined_eicr=formatted_refined_eicr,
+                            unrefined_eicr=original_xml_files.eicr,
+                            refined_eicr=refined_document.refined_eicr,
                         )
                     }%",
                 ],

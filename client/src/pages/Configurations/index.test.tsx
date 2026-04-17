@@ -137,10 +137,11 @@ describe('Configurations Page', () => {
 
     renderPageView();
 
-    const setUpButton = screen.getByRole('button', {
-      name: 'Set up new configuration',
-    });
-    await user.click(setUpButton);
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Set up new configuration',
+      })
+    );
 
     const conditionInput = screen.getByLabelText('Select condition');
     await user.type(conditionInput, 'already-created{enter}');
@@ -188,14 +189,13 @@ describe('Configurations Page', () => {
     });
 
     renderPageView();
-    const setUpButton = screen.getByRole('button', {
-      name: 'Set up new configuration',
-    });
-    await user.click(setUpButton);
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Set up new configuration',
+      })
+    );
 
-    const dialog = screen.getByRole('dialog');
-
-    expect(dialog).toBeVisible();
+    expect(screen.getByRole('dialog')).toBeVisible();
 
     const conditionInput = screen.getByLabelText('Select condition');
     expect(conditionInput).toBeInTheDocument();
@@ -204,13 +204,9 @@ describe('Configurations Page', () => {
     expect(conditionInput).toHaveValue('Anaplasmosis');
 
     // try clearing the input to ensure button gets disabled
-    await user.click(screen.getByTestId('combo-box-clear-button'));
+    await user.clear(screen.getByLabelText('Select condition'));
     expect(screen.getByLabelText('Select condition')).toHaveValue('');
-    expect(
-      screen.getByRole('button', {
-        name: 'Set up configuration',
-      })
-    ).toBeDisabled();
+    expect(screen.getByText('Set up configuration')).toBeDisabled();
 
     // re-enter info
     await user.type(conditionInput, 'Anaplasmosis{enter}');

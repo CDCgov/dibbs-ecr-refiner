@@ -1,45 +1,4 @@
 import { Page, expect } from '@playwright/test';
-import { execSync } from 'child_process';
-
-export function refreshDatabase(): string {
-  try {
-    const output = execSync('just db refresh', { encoding: 'utf-8' });
-    return output;
-  } catch (error: unknown) {
-    if (typeof error === 'object' && error !== null) {
-      const err = error as { stderr?: string; message?: string };
-      if (err.stderr) {
-        throw new Error(String(err.stderr));
-      } else if (err.message) {
-        throw new Error(String(err.message));
-      } else {
-        throw new Error(JSON.stringify(err));
-      }
-    }
-    throw new Error(String(error));
-  }
-}
-
-export function deleteConfigurationArtifacts(conditionName: string): string {
-  try {
-    execSync(`just db delete-configuration '${conditionName}'`, {
-      encoding: 'utf-8',
-    });
-    return 'Successfully cleaned up e2e configuration artifacts';
-  } catch (error: unknown) {
-    if (typeof error === 'object' && error !== null) {
-      const err = error as { stderr?: string; message?: string };
-      if (err.stderr) {
-        throw new Error(String(err.stderr));
-      } else if (err.message) {
-        throw new Error(String(err.message));
-      } else {
-        throw new Error(JSON.stringify(err));
-      }
-    }
-    throw new Error(String(error));
-  }
-}
 
 export async function login({
   page,
@@ -77,22 +36,36 @@ export async function createNewConfiguration(
   conditionName: string,
   page: Page
 ) {
+  await page.goto('/configurations');
   await page.getByRole('button', { name: 'Set up new configuration' }).click();
-  await page.getByTestId('combo-box-input').click();
-  await page.getByTestId('combo-box-input').fill(conditionName);
-  await page.getByTestId('combo-box-input').press('Tab');
-  await page
-    .getByRole('option', { name: conditionName, exact: true })
-    .press('Enter');
-  await page.getByTestId('combo-box-input').press('Tab');
-  await page.getByTestId('combo-box-clear-button').press('Tab');
+  await expect(
+    page.getByRole('heading', { name: 'Set up new configuration', level: 2 })
+  ).toBeVisible();
+  await page.getByLabel('Select condition').fill(conditionName);
+  await page.getByLabel('Select condition').press('Enter');
   await expect(
     page.getByRole('button', { name: 'Set up configuration' })
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Set up configuration' }).click();
   await expect(
-    page.locator(
-      `h4:has-text("New configuration created") + p:has-text("${conditionName}")`
-    )
+    page.getByRole('heading', { name: conditionName, level: 1 })
   ).toBeVisible();
+}
+
+export async function createAndActivateCovidConfig(page: Page) {
+  await createNewConfiguration('COVID-19', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
+}
+
+export async function createAndActivateInfluenzaConfig(page: Page) {
+  await createNewConfiguration('Influenza', page);
+  await page.getByRole('link', { name: 'Activate' }).click();
+  await page.getByRole('button', { name: 'Turn on configuration' }).click();
+  await page
+    .getByRole('button', { name: 'Yes, turn on configuration' })
+    .click();
 }

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from logging import Logger
 from typing import TypedDict
 from uuid import UUID
@@ -349,6 +349,7 @@ async def independent_testing(
                 "triggering_codes": trace.rc_snomed_codes,
                 "configuration_found": trace.matching_configuration.name,
                 "total_conditions_used": trace.number_of_included_conditions,
+                "configuration_settings": asdict(configuration),
                 "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
                 "outcome": "Refinement successful",
             },
@@ -477,6 +478,7 @@ async def inline_testing(
                 "configuration_tested": trace.configuration.name,
                 "primary_condition": trace.primary_condition.display_name,
                 "total_conditions_used": trace.number_of_included_conditions,
+                "configuration_settings": asdict(configuration),
                 "outcome": "Validation failed: No matching reportable condition code found in file.",
             },
         )
@@ -536,6 +538,7 @@ async def inline_testing(
             "primary_condition": trace.primary_condition.display_name,
             "matched_code_in_rr": trace.matched_code,
             "total_conditions_used": trace.number_of_included_conditions,
+            "configuration_settings": asdict(configuration),
             "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
             "outcome": "Refinement successful",
         },
@@ -557,7 +560,7 @@ def _get_reportable_codes_for_jurisdiction(
     xml_files: XMLFiles, jurisdiction_id: str
 ) -> list[str]:
     """
-    Get reportable conditions for jurisdicitons.
+    Get reportable conditions for jurisdictions.
 
     Use the shared pipeline to discover reportable conditions from the RR,
     then extract just the SNOMED codes for the specified jurisdiction.

@@ -153,6 +153,13 @@ def refine_for_condition(
         4. Augment (mutate same trees in place)
         5. Serialize once at the end
 
+    The augmentation context is created up front so the eICR plan, the
+    eICR augmentation, and the RR augmentation all share the same
+    timestamp. The shared timestamp ties the per-section provenance
+    footnotes (built during eICR refinement) to the augmentation author's
+    <time> value (written during eICR/RR augmentation), giving downstream
+    consumers a consistency check they can verify programmatically.
+
     Args:
         xml_files: The eICR/RR pair to refine.
         processed_configuration: The fully resolved configuration. Must
@@ -188,6 +195,8 @@ def refine_for_condition(
         eicr_plan = create_eicr_refinement_plan(
             processed_configuration=processed_configuration,
             eicr_root=eicr_root,
+            augmentation_timestamp=augmentation_time,
+            config_version=trace.configuration_version,
         )
         refine_eicr(eicr_root=eicr_root, plan=eicr_plan)
         augmented_eicr_result = augment_eicr(eicr_root, eicr_context)

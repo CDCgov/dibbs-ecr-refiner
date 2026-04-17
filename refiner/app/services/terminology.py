@@ -452,12 +452,16 @@ class ProcessedConfiguration:
             for code_system, code_list in code_system_map.items():
                 coding_by_code_system[
                     CodeSystem(code_system).format_system_string()
-                ] = [
-                    asdict(
-                        Coding(code=c.code, display=c.display, system=code_system.oid)
-                    )
-                    for c in code_list
-                ]
+                ].extend(
+                    [
+                        asdict(
+                            Coding(
+                                code=c.code, display=c.display, system=code_system.oid
+                            )
+                        )
+                        for c in code_list
+                    ]
+                )
 
         # STEP 2: add custom codes, routing by their system label
         for custom_code in payload.configuration.custom_codes:

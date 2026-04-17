@@ -338,7 +338,8 @@ async def get_included_conditions_db(
     query = """
         SELECT *
         FROM conditions
-        WHERE id = ANY(%s::uuid[]);
+        WHERE id = ANY(%s::uuid[])
+        ORDER BY id;
     """
 
     params = (condition_ids,)

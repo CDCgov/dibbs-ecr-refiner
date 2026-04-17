@@ -7,7 +7,23 @@ from app.db.configurations.model import (
 )
 from app.services.ecr.model import HL7_NS, EICRRefinementPlan
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
+from app.services.ecr.specification import load_spec
 from app.services.terminology import ConfigurationPayload, ProcessedConfiguration
+
+# NOTE:
+# TEST CONSTANTS
+# =============================================================================
+# placeholder values for the EICRRefinementPlan fields that the tests in
+# this file don't actually exercise. refine_eicr only reads
+# augmentation_timestamp when it appends a provenance footnote, and only
+# appends a footnote when section_provenance has an entry for the section
+# being processed. an empty section_provenance dict means no footnotes
+# get rendered, so the timestamp is never read and the placeholder is
+# safe — the tests focus on refinement behavior (filtering, pruning,
+# enrichment) rather than provenance footnote contents
+
+_PLACEHOLDER_AUGMENTATION_TIMESTAMP = "19700101000000+0000"
+
 
 # NOTE:
 # LOCAL TEST HELPER FUNCTIONS - v1.1
@@ -152,6 +168,11 @@ def _make_plan(
     Creates an EICRRefinementPlan from a ProcessedConfiguration and a dict
     of section_code -> action.
 
+    The plan is built with empty section_provenance and a placeholder
+    augmentation_timestamp. The tests in this file exercise refinement
+    behavior, not provenance footnote rendering, so the empty provenance
+    dict means no footnotes get rendered and the timestamp is never read.
+
     Args:
         processed_config: The processed configuration with codes and code_system_sets.
         sections: Dict mapping section LOINC codes to actions ("refine", "retain", "remove").
@@ -166,6 +187,9 @@ def _make_plan(
             )
             for code, action in sections.items()
         },
+        section_provenance={},
+        specification=load_spec("1.1"),
+        augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
     )
 
 
@@ -175,7 +199,7 @@ def _make_plan(
 
 
 def test_retain_action_v1_1(
-    eicr_root_v1_1: etree.Element, original_eicr_root_v1_1: etree.Element
+    eicr_root_v1_1: etree._Element, original_eicr_root_v1_1: etree._Element
 ):
     """
     Tests the 'retain' action, which should not modify the section.
@@ -188,9 +212,12 @@ def test_retain_action_v1_1(
         code_system_sets=empty_config.code_system_sets,
         section_instructions={
             "29762-2": DbConfigurationSectionInstructions(
-                action="retain", include=True, narrative=False
+                action="retain", include=True, narrative=True
             )
         },
+        section_provenance={},
+        specification=load_spec("1.1"),
+        augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
     )
 
     refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
@@ -206,7 +233,7 @@ def test_retain_action_v1_1(
     assert etree.tostring(section_refined) == etree.tostring(section_original)
 
 
-def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: etree.Element):
+def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests 'refine' with a non-matching code, which should create a minimal section.
     """
@@ -221,6 +248,9 @@ def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: etree.Element):
                 action="refine", include=True, narrative=False
             )
         },
+        section_provenance={},
+        specification=load_spec("1.1"),
+        augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
     )
 
     refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
@@ -231,7 +261,7 @@ def test_refine_action_with_no_matches_v1_1(eicr_root_v1_1: etree.Element):
     assert problems_section.get("nullFlavor") == "NI"
 
 
-def test_refine_action_with_matches_v1_1(eicr_root_v1_1: etree.Element):
+def test_refine_action_with_matches_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests the 'refine' action for v1.1, ensuring it correctly uses the
     terminology pipeline to build codes and filter a section.
@@ -249,6 +279,9 @@ def test_refine_action_with_matches_v1_1(eicr_root_v1_1: etree.Element):
                 action="refine", include=True, narrative=False
             )
         },
+        section_provenance={},
+        specification=load_spec("1.1"),
+        augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
     )
 
     refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
@@ -267,10 +300,10 @@ def test_refine_action_with_matches_v1_1(eicr_root_v1_1: etree.Element):
 # ProcessedConfiguration objects so that the section-aware match rules,
 # component-level pruning, and displayName enrichment all fire
 # * they assert on the shape of the refined XML output rather than testing
-# internal functions, making them resilient to internal refactoring.
+# internal functions, making them resilient to internal refactoring
 
 
-def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: etree.Element):
+def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests that the section-aware path correctly filters the Results section:
     keeps entries with LOINC codes in the condition grouper and removes entries
@@ -306,7 +339,7 @@ def test_section_aware_results_filtering_v1_1(eicr_root_v1_1: etree.Element):
     assert "30746-2" not in section_text  # chest X-ray
 
 
-def test_section_aware_problems_component_pruning_v1_1(eicr_root_v1_1: etree.Element):
+def test_section_aware_problems_component_pruning_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests that the Problems section prunes individual problem observations
     within a Problem Concern Act while keeping the act wrapper intact.
@@ -351,7 +384,7 @@ def test_section_aware_problems_component_pruning_v1_1(eicr_root_v1_1: etree.Ele
     assert "44054006" not in section_text  # diabetes
 
 
-def test_display_name_enrichment_v1_1(eicr_root_v1_1: etree.Element):
+def test_display_name_enrichment_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests that missing displayName attributes are filled in from the condition
     grouper, both at match time (observation code) and during the post-prune
@@ -402,7 +435,7 @@ def test_display_name_enrichment_v1_1(eicr_root_v1_1: etree.Element):
     assert "Detected" in detected_values[0].get("displayName", "")
 
 
-def test_plan_of_treatment_heterogeneous_entries_v1_1(eicr_root_v1_1: etree.Element):
+def test_plan_of_treatment_heterogeneous_entries_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests that Plan of Treatment correctly handles heterogeneous entry types:
     keeps matching lab orders (LOINC) and medications (RxNorm), removes
@@ -438,7 +471,7 @@ def test_plan_of_treatment_heterogeneous_entries_v1_1(eicr_root_v1_1: etree.Elem
     assert "270427003" not in section_text  # follow-up encounter
 
 
-def test_encounters_diagnosis_pruning_v1_1(eicr_root_v1_1: etree.Element):
+def test_encounters_diagnosis_pruning_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests that the Encounters section prunes non-matching diagnoses at the
     component level while keeping the encounter wrapper and matching diagnoses.
@@ -472,7 +505,7 @@ def test_encounters_diagnosis_pruning_v1_1(eicr_root_v1_1: etree.Element):
     assert "772828001" not in section_text
 
 
-def test_non_matching_section_becomes_ni_v1_1(eicr_root_v1_1: etree.Element):
+def test_non_matching_section_becomes_ni_v1_1(eicr_root_v1_1: etree._Element):
     """
     Tests that a section with entries but no matching codes becomes nullFlavor NI
     with all entries removed.
@@ -504,7 +537,7 @@ def test_non_matching_section_becomes_ni_v1_1(eicr_root_v1_1: etree.Element):
 # =============================================================================
 
 
-def test_refine_rr_by_condition_v1_1(rr_root_v1_1: etree.Element):
+def test_refine_rr_by_condition_v1_1(rr_root_v1_1: etree._Element):
     """
     Tests RR refinement for v1.1: keeps ONLY the observations for conditions
     specified in the configuration.
@@ -528,7 +561,7 @@ def test_refine_rr_by_condition_v1_1(rr_root_v1_1: etree.Element):
     assert "49727002" not in doc_string
 
 
-def test_refine_rr_by_jurisdiction_v1_1(rr_root_v1_1: etree.Element):
+def test_refine_rr_by_jurisdiction_v1_1(rr_root_v1_1: etree._Element):
     """
     Tests RR refinement for v1.1: doesn't touch observations not for the given jurisdiction.
     """
@@ -549,7 +582,7 @@ def test_refine_rr_by_jurisdiction_v1_1(rr_root_v1_1: etree.Element):
     assert "840539006" in doc_string
 
 
-def test_refine_rr_by_condition_v3_1_1(rr_root_v3_1_1: etree.Element):
+def test_refine_rr_by_condition_v3_1_1(rr_root_v3_1_1: etree._Element):
     """
     Tests RR refinement on the Zika file: confirms the Zika observation is kept
     even if config is for another jurisdiction.
@@ -571,7 +604,7 @@ def test_refine_rr_by_condition_v3_1_1(rr_root_v3_1_1: etree.Element):
     assert "3928002" in doc_string
 
 
-def test_refine_rr_by_jurisdiction_v3_1_1(rr_root_v3_1_1: etree.Element):
+def test_refine_rr_by_jurisdiction_v3_1_1(rr_root_v3_1_1: etree._Element):
     """
     Tests RR refinement on the Zika file: confirms the Zika observation is still
     present even when jurisdiction is different.

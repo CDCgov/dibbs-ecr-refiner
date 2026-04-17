@@ -273,6 +273,7 @@ describe('Testing', () => {
       screen.queryByText('Would you like to refine the eCR?')
     ).not.toBeInTheDocument();
   });
+
   it('should display both reportable conditions with missing configurations and inactive configurations', async () => {
     const user = userEvent.setup();
 

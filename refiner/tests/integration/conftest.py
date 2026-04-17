@@ -36,12 +36,13 @@ from app.core.config import ENVIRONMENT
 from app.db.pool import create_db
 from app.main import create_fastapi_app, create_lifespan
 from app.services.logger import setup_logger
-from scripts.validation.validate_document import (
+from scripts.validation.validate_document_schematron import (
     STANDARDS_MAP,
     display_svrl_results,
     get_document_template_info,
     parse_svrl,
 )
+from scripts.validation.validate_document_xsd import build_schema, display_xsd_results
 
 # Session info
 TEST_SESSION_TOKEN = "test-token"
@@ -690,6 +691,51 @@ def validate_xml_string():
     return _validate
 
 
+@pytest.fixture(scope="session")
+def xsd_schema():
+    """
+    Build the CDA R2 XMLSchema once per session — compilation is expensive.
+    All tests share this single compiled schema instance.
+    """
+    console = Console()
+    schema = build_schema(console)
+    if schema is None:
+        pytest.fail(
+            "Could not compile CDA R2 XSD schema — check cda-r2-schema/ layout."
+        )
+    return schema
+
+
+@pytest.fixture
+def validate_xml_string_xsd(xsd_schema):
+    """
+    Fixture providing CDA R2 XSD validation for an XML string.
+
+    Returns {"errors": int, "details": list[dict]} matching the schematron
+    fixture shape so assert_xsd_valid mirrors assert_schematron_valid exactly.
+    """
+
+    def _validate(xml_string: str) -> dict:
+        try:
+            doc = etree.fromstring(xml_string.encode("utf-8"))
+        except etree.XMLSyntaxError as e:
+            raise ValueError(f"XML parse error before XSD validation: {e}")
+
+        xsd_schema.validate(etree.ElementTree(doc))
+        details = [
+            {
+                "severity": "ERROR",
+                "message": err.message,
+                "location": f"line {err.line}, col {err.column}",
+                "path": err.path or "unknown",
+            }
+            for err in xsd_schema.error_log
+        ]
+        return {"errors": len(details), "details": details}
+
+    return _validate
+
+
 def validate_refined_xml(
     xml_string: str,
     doc_type: str,
@@ -751,6 +797,31 @@ def assert_schematron_valid(
 
     pytest.fail(
         f"[{test_name}] Expected 0 Schematron errors for {item_label}, "
+        f"got {validation_result['errors']} errors (see above for details)"
+    )
+
+
+def assert_xsd_valid(
+    validation_result: dict,
+    item_label: str,
+    test_name: str,
+) -> None:
+    """
+    Assert that a CDA R2 XSD validation result has no errors.
+
+    Fails with detailed error messages if validation errors are present.
+    Mirrors assert_schematron_valid in structure and output style.
+    """
+
+    if validation_result["errors"] == 0:
+        return
+
+    console = Console()
+    console.print(f"\n[bold red]XSD Validation Failed:[/bold red] {item_label}\n")
+    display_xsd_results(validation_result["details"], console)
+
+    pytest.fail(
+        f"[{test_name}] Expected 0 XSD errors for {item_label}, "
         f"got {validation_result['errors']} errors (see above for details)"
     )
 

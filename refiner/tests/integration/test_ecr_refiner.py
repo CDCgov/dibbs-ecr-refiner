@@ -1,6 +1,10 @@
 import pytest
 
-from tests.integration.conftest import assert_schematron_valid, validate_refined_xml
+from tests.integration.conftest import (
+    assert_schematron_valid,
+    assert_xsd_valid,
+    validate_refined_xml,
+)
 
 EXPECTED_COVID_INFLUENZA_CONDITIONS: dict[str, str] = {
     "840539006": "COVID-19",
@@ -34,6 +38,7 @@ async def test_zip_upload_covid_influenza_v1_1(
     authed_client,
     covid_influenza_v1_1_zip_path,
     validate_xml_string,
+    validate_xml_string_xsd,
 ):
     """
     Integration test for /api/v1/demo/upload using Mon Mothma COVID+Influenza v1.1.
@@ -63,13 +68,21 @@ async def test_zip_upload_covid_influenza_v1_1(
 
         # validate RR is well-formed
         validate_refined_xml(condition["refined_rr"], "RR", item_label, test_name)
+
+        # validate RR against schematron and CDA R2 XSD
         rr_result = validate_xml_string(condition["refined_rr"], "rr")
         assert_schematron_valid(rr_result, f"{item_label} RR", test_name)
+        rr_xsd_result = validate_xml_string_xsd(condition["refined_rr"])
+        assert_xsd_valid(rr_xsd_result, f"{item_label} RR", test_name)
 
-        # validate eICR is well-formed and passes Schematron
+        # validate eICR is well-formed
         validate_refined_xml(condition["refined_eicr"], "eICR", item_label, test_name)
+
+        # validate eICR against schematron and CDA R2 XSD
         eicr_result = validate_xml_string(condition["refined_eicr"], "eicr")
         assert_schematron_valid(eicr_result, f"{item_label} eICR", test_name)
+        eicr_xsd_result = validate_xml_string_xsd(condition["refined_eicr"])
+        assert_xsd_valid(eicr_xsd_result, f"{item_label} eICR", test_name)
 
         print(
             f"[{test_name}] ✅ {item_label} passed ({eicr_result['warnings']} warnings)"
@@ -85,6 +98,7 @@ async def test_zip_upload_zika_v3_1_1(
     authed_client,
     zika_v3_1_1_zip_path,
     validate_xml_string,
+    validate_xml_string_xsd,
 ):
     """
     Integration test for /api/v1/demo/upload using Mon Mothma Zika v3.1.1.
@@ -112,14 +126,22 @@ async def test_zip_upload_zika_v3_1_1(
 
         # validate RR is well-formed
         validate_refined_xml(condition["refined_rr"], "RR", item_label, test_name)
+
+        # validate RR against schematron and CDA R2 XSD
         rr_result = validate_xml_string(condition["refined_rr"], "rr")
         assert_schematron_valid(rr_result, f"{item_label} RR", test_name)
+        rr_xsd_result = validate_xml_string_xsd(condition["refined_rr"])
+        assert_xsd_valid(rr_xsd_result, f"{item_label} RR", test_name)
 
         # validate eICR is well-formed
         validate_refined_xml(condition["refined_eicr"], "eICR", item_label, test_name)
+
+        # validate eICR against schematron and CDA R2 XSD
         eicr_result = validate_xml_string(condition["refined_eicr"], "eicr")
         assert_schematron_valid(eicr_result, f"{item_label} eICR", test_name)
+        eicr_xsd_result = validate_xml_string_xsd(condition["refined_eicr"])
+        assert_xsd_valid(eicr_xsd_result, f"{item_label} eICR", test_name)
 
-        print(f"[{test_name}] ✅ {item_label} passed well-formedness checks")
+        print(f"[{test_name}] ✅ {item_label} passed well-formedness and schema checks")
 
     print(f"[{test_name}] 🎉 Zika v3.1.1 test completed!")

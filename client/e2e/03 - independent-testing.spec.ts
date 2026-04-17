@@ -1,16 +1,21 @@
 import { test, expect } from './fixtures/fixtures';
 import path from 'path';
 import fs from 'fs';
-import { createNewConfiguration, deleteConfigurationArtifacts } from './utils';
+import {
+  createAndActivateCovidConfig,
+  createAndActivateInfluenzaConfig,
+} from './utils';
+import { Page } from '@playwright/test';
+import { deleteConfigurationArtifacts } from './db';
 
 test.describe('should be able to access independent testing', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/configurations');
   });
 
-  test.afterAll(() => {
-    deleteConfigurationArtifacts('COVID-19');
-    deleteConfigurationArtifacts('Influenza');
+  test.afterAll(async () => {
+    await deleteConfigurationArtifacts('COVID-19');
+    await deleteConfigurationArtifacts('Influenza');
   });
 
   // Resolve the file path relative to the project root
@@ -18,6 +23,15 @@ test.describe('should be able to access independent testing', () => {
     process.cwd(),
     'e2e/assets/mon-mothma-two-conditions.zip'
   );
+
+  async function uploadTestFile(page: Page) {
+    const independentFlowFileInput = page.locator('input#zip-upload');
+    await independentFlowFileInput.setInputFiles(filePath);
+
+    await page.getByText('Refine .zip file').click();
+  }
+
+  const ESSENTIAL_HYPERTENSION_SNOMED = '59621000';
 
   test('should check that the independent test flow handles display of matching configs, missing configs, and a combination of both', async ({
     page,
@@ -35,17 +49,7 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    const fileInput = page.locator('input#zip-upload');
-
-    // Upload the file directly
-    await fileInput.setInputFiles(filePath);
-
-    await expect(makeAxeBuilder).toHaveNoAxeViolations();
-
-    // Optionally, assert the file name shows up in the UI
-    await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
-    await page.getByText('Refine .zip file').click();
+    await uploadTestFile(page);
 
     // check for missing configs text
     await expect(
@@ -57,12 +61,13 @@ test.describe('should be able to access independent testing', () => {
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // Refine ecr is unavailable
-    await expect(
-      page.getByRole('button', { name: 'Start over' })
-    ).toBeVisible();
+    const startOverButton = page.getByRole('button', { name: 'Start over' });
+    await expect(startOverButton).toBeVisible();
     await expect(page.getByRole('button', { name: 'Refine eCR' })).toHaveCount(
       0
     );
+
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
     // go home
     await page
@@ -74,21 +79,10 @@ test.describe('should be able to access independent testing', () => {
 
     await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-    // configure and activate covid-19
-    await createNewConfiguration('COVID-19', page);
-    await page.getByRole('link', { name: 'Activate' }).click();
-    await page.getByRole('button', { name: 'Turn on configuration' }).click();
-    await page
-      .getByRole('button', { name: 'Yes, turn on configuration' })
-      .click();
-
-    // go to independent testing flow
+    // configure and activate the relevant configs
+    await createAndActivateCovidConfig(page);
     await page.getByRole('link', { name: 'Testing' }).click();
-
-    const independentFlowFileInput = page.locator('input#zip-upload');
-    await independentFlowFileInput.setInputFiles(filePath);
-
-    await page.getByRole('button', { name: 'Refine .zip file' }).click();
+    await uploadTestFile(page);
 
     // check for matching config text
     await expect(
@@ -130,18 +124,12 @@ test.describe('should be able to access independent testing', () => {
     ).toBeVisible();
 
     // configure and activate influenza
-    await createNewConfiguration('Influenza', page);
-    await page.getByRole('link', { name: 'Activate' }).click();
-    await page.getByRole('button', { name: 'Turn on configuration' }).click();
-    await page
-      .getByRole('button', { name: 'Yes, turn on configuration' })
-      .click();
+    await createAndActivateInfluenzaConfig(page);
 
     // go to independent testing flow
     await page.getByRole('link', { name: 'Testing' }).click();
 
-    await independentFlowFileInput.setInputFiles(filePath);
-    await page.getByRole('button', { name: 'Refine .zip file' }).click();
+    await uploadTestFile(page);
 
     // check that only matching configs were found
     await expect(
@@ -180,27 +168,7 @@ test.describe('should be able to access independent testing', () => {
     /// ==========================================================================
     await page.getByRole('link', { name: 'Testing' }).click();
 
-    // Locate the file input by its id
-    const fileInput = page.locator('input#zip-upload');
-
-    // Resolve the file path relative to the project root
-    const filePath = path.resolve(
-      process.cwd(),
-      'e2e/assets/mon-mothma-two-conditions.zip'
-    );
-
-    // Upload the file directly
-    await fileInput.setInputFiles(filePath);
-
-    // Optionally, assert the file name shows up in the UI
-    await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
-
-    // Click the "Upload .zip file" button
-    await page
-      .getByRole('button', {
-        name: 'Refine .zip file',
-      })
-      .click();
+    await uploadTestFile(page);
 
     // Assert the reportable conditions text is visible
     // Use regex to ignore line breaks and spacing issues
@@ -315,5 +283,112 @@ test.describe('should be able to access independent testing', () => {
     expect(independentFlowInfluenzaResult).toStrictEqual(
       inlineFlowInfluenzaResult
     );
+  });
+
+  test('adds a custom code and checks the value gets refined', async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    await expect(makeAxeBuilder).toHaveNoAxeViolations();
+
+    // use the COVID configuration, or make it if it doesn't exist
+    await page.goto('/configurations');
+
+    await expect(
+      page.getByRole('heading', { name: 'Configurations' })
+    ).toBeVisible();
+
+    await page.goto('/configurations');
+    const covidConfig = page.getByText('COVID-19');
+
+    await covidConfig.click();
+    await expect(
+      page.getByRole('heading', { name: 'COVID-19', exact: true })
+    ).toBeVisible();
+
+    const someDraftExists = await createOrNavigateToLatestDraft();
+
+    await expect(
+      page.getByRole('heading', { name: 'Build configuration' })
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Custom codes' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Custom codes' })
+    ).toBeVisible();
+
+    const hyperTensionCode = page.locator(
+      `text=${ESSENTIAL_HYPERTENSION_SNOMED}`
+    );
+    const hyperTensionCodeCount = await hyperTensionCode.count();
+    if (hyperTensionCodeCount === 0) {
+      await createHypertensionCode();
+    }
+
+    await page.getByText('Activate').click();
+
+    if (someDraftExists) {
+      await page.getByRole('button', { name: 'Switch to version' }).click();
+      await page
+        .getByRole('button', { name: 'Yes, switch to Version' })
+        .click();
+    }
+
+    await expect(page.getByText('Configuration activated')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Testing' }).click();
+    await expect(page.getByText('Test Refiner')).toBeVisible();
+
+    await uploadTestFile(page);
+    await page.getByText('Refine eCR').click();
+
+    await expect(
+      page.getByRole('heading', { name: 'eCR refinement results' })
+    ).toBeVisible();
+
+    await expect(page.getByText('eICR file size reduced by')).toBeVisible();
+
+    async function createHypertensionCode() {
+      await page.getByRole('button', { name: 'Custom codes' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Custom codes', level: 3 })
+      ).toBeVisible();
+      await page.getByRole('button', { name: 'Add new custom code' }).click();
+      const submitButton = page.getByRole('button', {
+        name: 'Add custom code',
+      });
+      await page
+        .getByRole('textbox', { name: 'Code #' })
+        .fill(ESSENTIAL_HYPERTENSION_SNOMED);
+      await page.getByLabel('Code system').selectOption('snomed');
+      await page
+        .getByRole('textbox', { name: 'Code name' })
+        .fill('Essential Hypertension');
+
+      await submitButton.click();
+      await expect(page.getByText('Custom code added')).toBeVisible();
+    }
+
+    async function createOrNavigateToLatestDraft() {
+      let someDraftExists = false;
+      const goToDraftButton = page.locator('text="Go to draft"');
+      const goToDraftButtonCount = await goToDraftButton.count();
+
+      if (goToDraftButtonCount > 0) {
+        someDraftExists = true;
+        await goToDraftButton.click();
+      }
+
+      const createDraftButton = page.locator('text="Draft a new version"');
+      const createToDraftButtonCount = await createDraftButton.count();
+
+      if (createToDraftButtonCount > 0) {
+        someDraftExists = true;
+        await createDraftButton.click();
+        await page.getByText('Yes, draft a new version').click();
+      }
+
+      return someDraftExists;
+    }
   });
 });

@@ -1,25 +1,34 @@
+import dataclasses
 from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
 
+from app.core.exceptions import StructureValidationError
+from app.core.models.types import XMLFiles
 from app.db.configurations.model import DbConfigurationSectionInstructions
-from app.services.ecr.model import EICRRefinementPlan
-from app.services.terminology import ProcessedConfiguration
-
-from ...core.exceptions import (
-    StructureValidationError,
+from app.services.ecr.model import (
+    HL7_NS,
+    EICRRefinementPlan,
+    EICRSpecification,
+    RRRefinementPlan,
+    SectionOutcome,
+    SectionProvenanceRecord,
+    SectionRunResult,
+    SectionSource,
 )
-from ...core.models.types import XMLFiles
-from ..format import remove_element
-from .model import HL7_NS, RRRefinementPlan
-from .process_eicr import (
+from app.services.ecr.policy import SECTION_PROCESSING_SKIP
+from app.services.ecr.section import (
+    append_section_provenance_footnote,
     create_minimal_section,
     get_section_by_code,
     get_section_loinc_codes,
     process_section,
 )
-from .specification import SECTION_PROCESSING_SKIP, detect_eicr_version, load_spec
+from app.services.ecr.section.narrative import replace_narrative_with_removal_notice
+from app.services.ecr.specification import detect_eicr_version, load_spec
+from app.services.format import remove_element
+from app.services.terminology import ProcessedConfiguration
 
 # NOTE:
 # CONSTANTS
@@ -112,6 +121,7 @@ def _build_section_rules_map(
     Returns:
         dict[str, DbConfigurationSectionInstructions]: The resulting section rules map
     """
+
     rules_map: dict[str, DbConfigurationSectionInstructions] = {}
 
     for rule in processed_configuration.section_processing:
@@ -140,6 +150,7 @@ def _apply_section_skip_rules(
     Returns:
         dict[str, DbConfigurationSectionInstructions]: The modified map that includes skipped sections
     """
+
     modified_map = rules_map.copy()
 
     for code in SECTION_PROCESSING_SKIP:
@@ -148,21 +159,148 @@ def _apply_section_skip_rules(
     return modified_map
 
 
+def _build_section_name_lookup(
+    processed_configuration: ProcessedConfiguration,
+) -> dict[str, str]:
+    """
+    Build a LOINC code → section name lookup from the processed configuration.
+
+    The name comes from the jurisdiction's configuration (what they see in the
+    UI), not the IG canonical display name. This is the authoritative name for
+    provenance since we're documenting their configuration choices.
+
+    Args:
+        processed_configuration: The processed configuration.
+
+    Returns:
+        dict[str, str]: Map of LOINC code to section name.
+    """
+
+    return {
+        rule["code"]: rule.get("name", rule["code"])
+        for rule in processed_configuration.section_processing
+        if rule.get("code")
+    }
+
+
+def _build_section_provenance(
+    present_section_codes: list[str],
+    rules_map: dict[str, DbConfigurationSectionInstructions],
+    rules_map_with_skips: dict[str, DbConfigurationSectionInstructions],
+    specification: EICRSpecification,
+    section_name_lookup: dict[str, str],
+    config_version: int | None,
+) -> dict[str, SectionProvenanceRecord]:
+    """
+    Build a provenance record for every section present in this document.
+
+    Classifies each section by source — configured by the jurisdiction,
+    held by a system skip rule, or not in the jurisdiction's configuration
+    at all — so downstream rendering can explain why a section looks the
+    way it does in the refined output.
+
+    Source classification (evaluated in priority order):
+        - "system_skip": code is in SECTION_PROCESSING_SKIP (always retain,
+          regardless of configuration)
+        - "configured": code is in the jurisdiction's configuration rules_map
+        - "unconfigured": code is present in the document but absent from both
+          of the above; falls back to SKIP_SECTION_INSTRUCTIONS at refinement time
+
+    Display name priority:
+        - configured sections: jurisdiction's name from section_name_lookup
+          (what they see and set in the UI)
+        - system_skip / unconfigured sections: IG canonical display name from
+          specification, falling back to the LOINC code if not in the catalog
+
+    The `outcome` field on each record is left at its default value
+    here. refine_eicr finalizes it via `dataclasses.replace` after
+    section processing completes — see `_interpret_run_result`.
+
+    Args:
+        present_section_codes: LOINC codes of sections found in the document.
+        rules_map: Pre-skip configuration rules (configured sections only).
+        rules_map_with_skips: Merged map including system skip rules.
+        specification: The eICR spec for this document's version.
+        section_name_lookup: LOINC → jurisdiction-configured name.
+        config_version: The version of the activated configuration, or None
+            if not available (e.g., legacy S3 configs without version).
+
+    Returns:
+        dict[str, SectionProvenanceRecord]: One record per present section,
+            keyed by LOINC code.
+    """
+
+    provenance: dict[str, SectionProvenanceRecord] = {}
+
+    for code in present_section_codes:
+        # classify source before the merged map loses the distinction
+        if code in SECTION_PROCESSING_SKIP:
+            source = SectionSource.SYSTEM_SKIP
+        elif code in rules_map:
+            source = SectionSource.CONFIGURED
+        else:
+            source = SectionSource.UNCONFIGURED
+
+        # resolve display name: jurisdiction name for configured sections,
+        # IG canonical name for everything else
+        if source == SectionSource.CONFIGURED:
+            display_name = section_name_lookup.get(code, code)
+        else:
+            spec_entry = specification.sections.get(code)
+            display_name = spec_entry.display_name if spec_entry else code
+
+        # resolve instructions from the merged map (same fallback as refine_eicr)
+        instructions = rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
+
+        provenance[code] = SectionProvenanceRecord(
+            loinc_code=code,
+            display_name=display_name,
+            include=instructions.include,
+            action=instructions.action,
+            narrative=instructions.narrative,
+            config_version=config_version,
+            source=source,
+        )
+
+    return provenance
+
+
 def create_eicr_refinement_plan(
     processed_configuration: ProcessedConfiguration,
     eicr_root: _Element,
+    augmentation_timestamp: str,
+    config_version: int | None = None,
 ) -> EICRRefinementPlan:
     """
     Create an EICRRefinementPlan by combining configuration rules and the sections present in the parsed eICR document.
+
+    Detects the eICR version and loads the specification once here so that
+    refine_eicr receives a fully resolved plan and does not need to
+    re-inspect the document. The specification is also used by
+    _build_section_provenance to resolve display names for sections not
+    present in the jurisdiction's configuration.
 
     Args:
         processed_configuration: The processed configuration containing terminology
                                  and section processing rules.
         eicr_root: The parsed eICR root element.
+        augmentation_timestamp: The HL7 V3 timestamp from the
+            AugmentationContext shared across this refinement run. Used
+            to stamp the IDs on per-section provenance footnotes so they
+            tie back to the augmentation author's <time> value.
+        config_version: The version number of the activated configuration.
+            Passed through to each SectionProvenanceRecord for audit trail.
+            Optional for backward compatibility with callers that do not yet
+            supply it (defaults to None).
 
     Returns:
         An EICRRefinementPlan containing the exact instructions for `refine_eicr`.
     """
+
+    # detect version and load spec once — result is carried on the plan so
+    # refine_eicr does not need to re-detect or re-load
+    version = detect_eicr_version(eicr_root)
+    specification = load_spec(version)
 
     # discover all sections directly from the parsed tree
     structured_body = eicr_root.find(".//hl7:structuredBody", namespaces=HL7_NS)
@@ -170,10 +308,8 @@ def create_eicr_refinement_plan(
         get_section_loinc_codes(structured_body) if structured_body is not None else []
     )
 
-    # create a map of the rules from the configuration for efficient lookup
+    # build the rules map from the configuration, then overlay system skip rules
     rules_map = _build_section_rules_map(processed_configuration)
-
-    # update the rules map with sections to be skipped (include + retain)
     rules_map_with_skips = _apply_section_skip_rules(rules_map)
 
     section_instructions = {
@@ -183,11 +319,87 @@ def create_eicr_refinement_plan(
         for code in present_section_codes
     }
 
+    # build provenance before the maps are discarded — source classification
+    # requires the pre-merge rules_map to distinguish configured from unconfigured
+    section_name_lookup = _build_section_name_lookup(processed_configuration)
+    section_provenance = _build_section_provenance(
+        present_section_codes=present_section_codes,
+        rules_map=rules_map,
+        rules_map_with_skips=rules_map_with_skips,
+        specification=specification,
+        section_name_lookup=section_name_lookup,
+        config_version=config_version,
+    )
+
     return EICRRefinementPlan(
         codes_to_check=processed_configuration.codes,
         code_system_sets=processed_configuration.code_system_sets,
         section_instructions=section_instructions,
+        section_provenance=section_provenance,
+        specification=specification,
+        augmentation_timestamp=augmentation_timestamp,
+        config_version=config_version,
     )
+
+
+# NOTE:
+# OUTCOME INTERPRETATION
+# =============================================================================
+
+
+def _interpret_run_result(
+    section_rules: DbConfigurationSectionInstructions,
+    run_result: SectionRunResult,
+) -> SectionOutcome:
+    """
+    Map (configuration, run result) to a user-facing SectionOutcome.
+
+    Most of this function is mechanical: the configured action and
+    narrative disposition determine the outcome name. The one
+    exception is the no-match override on the first branch — that's
+    a refiner *policy* decision, not a configuration translation.
+
+    The no-match override: when a section is configured for refinement
+    (action="refine") but the matching engine finds no entries that
+    match the configured codes, the section is stubbed regardless of
+    the narrative configuration. This applies uniformly to all three
+    refine variants (narrative retained, removed, or reconstructed).
+    The justification is that preserving an empty section with an
+    orphaned narrative would mislead reviewers — better to surface
+    the empty result clearly than to imply there was content here.
+
+    If this policy ever needs to vary (per-section overrides,
+    thresholds, conditional stubbing based on document context, etc.),
+    the right place for that logic is ecr/policy.py — that's where
+    refiner-behavior decisions live, separate from the IG-derived
+    specification and the structural matching engines. For now, the
+    policy is a single condition in this function and adding
+    indirection would obscure rather than clarify it.
+
+    Args:
+        section_rules: The jurisdiction's configured instructions for
+            this section. Currently only used for documentation
+            symmetry — the run result alone is sufficient to determine
+            the outcome — but reserved for future policy variations
+            that need to consult the configuration.
+        run_result: What the matching engine reported about the run.
+
+    Returns:
+        The SectionOutcome describing what happened to this section.
+    """
+
+    # policy override: no matches always produces a stub, regardless
+    # of what the narrative configuration said. see the docstring
+    # above for the rationale.
+    if not run_result.matches_found:
+        return SectionOutcome.REFINED_NO_MATCHES_STUBBED
+
+    # matches were found; outcome reflects what happened to the narrative
+    if run_result.narrative_disposition == "removed":
+        return SectionOutcome.REFINED_NARRATIVE_REMOVED
+    if run_result.narrative_disposition == "reconstructed":
+        return SectionOutcome.REFINED_NARRATIVE_RECONSTRUCTED
+    return SectionOutcome.REFINED_WITH_MATCHES
 
 
 # NOTE:
@@ -206,14 +418,35 @@ def refine_eicr(
     beforehand and serializing afterward.
 
     This function is a "pure executor." It does not make decisions; it only
-    carries out the instructions given to it in the plan.
+    carries out the instructions given to it in the plan. Version detection
+    and specification loading are performed during plan creation, so this
+    function receives a fully resolved plan with no document introspection.
 
     Processing behavior:
         - It iterates through the instructions in the plan.
-        - For each section, it performs one of three actions:
-          - retain: Leaves the section completely unmodified.
-          - remove: Replaces the section with a minimal "stub" section.
-          - refine: Processes the section using the plan's XPath to filter entries.
+        - For each section, it executes one of four branches based on the
+          configured (include, action, narrative) combination:
+
+            - include=False                              -> remove (stub)
+            - include=True, action="retain", narrative   -> retain branch
+            - include=True, action="refine"              -> refine via process_section
+
+        - The retain branch honors the narrative setting: when the
+          jurisdiction has configured narrative removal on a retained
+          section, the narrative is replaced with the removal notice
+          while the entries are left untouched.
+        - The refine branch delegates to process_section, which dispatches
+          to the section-aware or generic matching engine based on the
+          section specification. The engine returns a SectionRunResult
+          which is then interpreted into a SectionOutcome via
+          _interpret_run_result.
+        - After each branch, the section's provenance record is finalized
+          with the runtime outcome via dataclasses.replace, and an
+          unanchored provenance footnote is appended to the section's
+          <text> element. The footnote ID is built from the section's
+          LOINC code and the plan's augmentation_timestamp, tying it to
+          the augmentation author's <time> value for forensic
+          traceability.
 
     Args:
         eicr_root: The parsed eICR root element.
@@ -232,14 +465,6 @@ def refine_eicr(
             details={"document_type": "eICR"},
         )
 
-    # STEP 1:
-    # detect version
-    version = detect_eicr_version(eicr_root)
-
-    # STEP 2:
-    # load specification
-    specification = load_spec(version)
-
     for section_code, section_rules in plan.section_instructions.items():
         section = get_section_by_code(
             structured_body=structured_body,
@@ -250,24 +475,55 @@ def refine_eicr(
         if section is None:
             continue
 
+        provenance = plan.section_provenance.get(section_code)
+        outcome: SectionOutcome
+
         if not section_rules.include:
-            # we will just force a minimal section
+            # BRANCH 1: wholesale removal
             create_minimal_section(section=section, removal_reason="configured")
-            continue
+            outcome = SectionOutcome.REMOVED_BY_CONFIG
 
-        if section_rules.action == "retain":
-            # retain means that we're not processing this section so we continue
-            continue
+        elif section_rules.action == "retain":
+            # BRANCH 2: retain entries; honor the narrative setting.
+            # the narrative=False case used to be a silent no-op (the old
+            # `retain` branch was a literal `pass`); it now correctly
+            # replaces the narrative with the removal notice while
+            # leaving the entries untouched
+            if not section_rules.narrative:
+                replace_narrative_with_removal_notice(
+                    section=section, namespaces=HL7_NS
+                )
+                outcome = SectionOutcome.RETAINED_NARRATIVE_REMOVED
+            else:
+                outcome = SectionOutcome.RETAINED
 
-        section_specification = specification.sections.get(section_code)
-        process_section(
-            section=section,
-            codes_to_match=plan.codes_to_check,
-            namespaces=HL7_NS,
-            section_specification=section_specification,
-            code_system_sets=plan.code_system_sets,
-            include_narrative=section_rules.narrative,
-        )
+        else:
+            # BRANCH 3: refine entries via the matching engines.
+            # process_section returns a SectionRunResult describing what
+            # actually happened, which _interpret_run_result maps to a
+            # user-facing outcome (including the no-match policy override)
+            section_specification = plan.specification.sections.get(section_code)
+            run_result = process_section(
+                section=section,
+                codes_to_match=plan.codes_to_check,
+                namespaces=HL7_NS,
+                section_specification=section_specification,
+                code_system_sets=plan.code_system_sets,
+                include_narrative=section_rules.narrative,
+            )
+            outcome = _interpret_run_result(section_rules, run_result)
+
+        if provenance is not None:
+            # finalize the provenance record with the runtime outcome
+            # before rendering the footnote. SectionProvenanceRecord is
+            # frozen, so dataclasses.replace produces a new instance
+            # rather than mutating in place
+            finalized = dataclasses.replace(provenance, outcome=outcome)
+            append_section_provenance_footnote(
+                section=section,
+                provenance=finalized,
+                augmentation_timestamp=plan.augmentation_timestamp,
+            )
 
 
 # NOTE:
