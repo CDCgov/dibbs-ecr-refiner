@@ -1,5 +1,10 @@
 import { Pool } from 'pg';
 
+/**
+ * db is not a fixture so that it's not spun up and torn down on a per-test basis.
+ *
+ * NOTE: Don't import `db` directly! Please add a function to this file so queries are centralized.
+ */
 export const db = new Pool({
   user: 'postgres',
   host: 'localhost',
@@ -8,16 +13,8 @@ export const db = new Pool({
   port: 5432,
 });
 
-export async function deleteConfigurationArtifacts(
-  conditionName: string
-): Promise<void> {
-  await db.query(
-    'DELETE FROM configurations_locks WHERE configuration_id IN (SELECT id FROM configurations WHERE name = $1)',
-    [conditionName]
-  );
-  await db.query(
-    'DELETE FROM events WHERE configuration_id IN (SELECT id FROM configurations WHERE name = $1)',
-    [conditionName]
-  );
-  await db.query('DELETE FROM configurations WHERE name = $1', [conditionName]);
+export async function deleteAllConfigurations(): Promise<void> {
+  await db.query('DELETE FROM configurations_locks');
+  await db.query('DELETE FROM events');
+  await db.query('DELETE FROM configurations');
 }
