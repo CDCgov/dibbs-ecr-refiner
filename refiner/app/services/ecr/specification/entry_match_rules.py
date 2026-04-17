@@ -754,6 +754,7 @@ _SOCIAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=".//hl7:observation/hl7:code | .//hl7:act/hl7:code",
         code_system_oid=None,
+        translation_xpath=".//hl7:observation/hl7:value | .//hl7:act/hl7:value",
         tier=3,
         preserve_whole_entry=True,
     ),
