@@ -101,7 +101,6 @@ test.describe('Independent testing', () => {
     testingPage,
     api,
   }) => {
-    // activate COVID
     const covid = await api.createConfiguration('COVID-19');
     await api.updateConfigurationStatus(covid.id, 'active');
 
