@@ -118,6 +118,9 @@ jobs:
       - name: Render diagrams in PNG format from running instance to `rendered/` directory
         run: cd docs/ && node scripts/export-diagrams.js http://localhost:9001/workspace/diagrams png
 
+      # Commenting this out because of GitHub settings around CI jobs not getting re-kicked after commits made by the
+      # GitHub user. PR's with this commit step had their CI jobs get stuck, so commenting this out until we have time to fix this.
+      # See https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow
       # - name: Commit `rendered/` directory
       #   run: |
       #     git config user.name "github-actions[bot]"
