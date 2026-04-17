@@ -240,16 +240,30 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
     entries with match provenance. The comment is inserted as the
     previous sibling of the entry in its parent element.
 
+    Indentation is derived from the entry's position in the tree so the
+    comment aligns with the entry tag in serialized output. Callers do
+    not need to manage leading whitespace in comment_text — leading and
+    trailing spaces within the comment delimiters are sufficient for
+    readability.
+
     Args:
         entry:        The <entry> element to annotate.
         comment_text: Text for the comment node. Passed directly to
-                      etree.Comment() — callers should include leading/
-                      trailing spaces for readability.
+                      etree.Comment(). Include a leading and trailing
+                      space for readability within the comment delimiters.
     """
 
     comment = etree.Comment(comment_text)
-    comment.tail = "\n"
     parent = entry.getparent()
     if parent is not None:
         idx = list(parent).index(entry)
+        # carry the same leading whitespace as the entry itself so the
+        # comment aligns with it in the serialized output:
+        # * the entry's indentation lives on the tail of its previous sibling
+        #   (or on parent.text if it is the first child)
+        if idx == 0:
+            indent = parent.text or ""
+        else:
+            indent = list(parent)[idx - 1].tail or ""
+        comment.tail = indent
         parent.insert(idx, comment)
