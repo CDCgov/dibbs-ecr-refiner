@@ -1,0 +1,54 @@
+# eCR Refiner Risk Assessment
+
+## ${nextNumber}. ${title}
+
+Date: ${today}
+
+<!--
+This template is for any Risk Assessment needs that the eCR Refiner team
+needs when working with the APHL AIMS platform. This needs to be done when we
+have high or medium vulnerabilities which will cause our application or
+containers to not be able to be deployed in their APHL Production environment.
+-->
+
+## Identity of Origin of Deficiency
+
+<!-- [AUTHOR: Briefly state where and how the deficiency was discovered. Fill in
+here.] -->
+
+## Overall Risk Score of Deficiency
+
+<!-- [AUTHOR: Provide the overall risk score (e.g., High, Medium, Low, or
+numeric rating). Cite your scoring system if needed. Fill in here.] -->
+
+## Identified Deficiency, Vulnerability, or Exception
+
+<!-- [AUTHOR: List the specific identified deficiency, vulnerability, or
+exception, using any official identifier or finding label. Fill in here.] -->
+
+## Description of Deficiency, Vulnerability, or Exception
+
+<!-- [AUTHOR: Summarize the deficiency, including how it impacts the system or
+business. One to two concise paragraphs. Fill in here.] -->
+
+## Justification for Risk Acceptance
+
+<!-- [AUTHOR: If you recommend accepting this risk, explain the rationale, such
+as business case, operational need, or risk trade-off. Up to two paragraphs. Fill
+in here.] -->
+
+## Compensating Control or Remediation Plan
+
+<!-- [AUTHOR: Describe the compensating control in place, or detail the planned
+remediation steps and timeline to address the deficiency. Up to two paragraphs.
+Fill in here.] -->
+
+## Additional Remarks / Scan Results / Release Version
+
+<!--
+[AUTHOR: Pin exceptions to the relevant application or container version as
+necessary. Paste a direct link to the relevant row from the GitHub Code Scanning
+results:
+https://github.com/CDCgov/dibbs-ecr-refiner/security/code-scanning
+(fill in here with the direct finding's URL)]
+-->
