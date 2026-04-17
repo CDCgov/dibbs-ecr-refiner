@@ -30,7 +30,6 @@ We make use of [page object models](https://playwright.dev/docs/pom) (found in [
 
 POMs are available in all test code via fixtures.
 
-
 ## Accessibility Checks
 
 In order to perform automated Axe accessibility checks, we are able to make use of the `toHaveNoAxeViolations()` custom matcher. This matcher should be used any time the view changes for the user. This ensures that we are able to capture potential a11y issues on the various different states of a page.
