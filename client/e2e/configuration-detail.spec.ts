@@ -134,10 +134,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Run inline test', async () => {
-      await page.getByRole('link', { name: 'Test', exact: true }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Test configuration' })
-      ).toBeVisible();
+      await configurationPage.goToTestTab();
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
@@ -149,7 +146,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Delete custom codes and custom sections', async () => {
-      await page.getByRole('link', { name: 'Build' }).click();
+      await configurationPage.goToBuildTab();
       await configurationPage.deleteCodeSet(additionalCodeSetName);
 
       await page.getByRole('button', { name: 'Custom codes' }).click();
@@ -168,7 +165,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Activate configuration', async () => {
-      await page.getByRole('link', { name: 'Activate' }).click();
+      await configurationPage.goToActivateTab();
       await configurationPage.activateConfiguration();
       await expect(
         page.getByRole('button', { name: 'Turn off current version' })
@@ -178,11 +175,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Draft new configuration version', async () => {
-      await page.getByRole('link', { name: 'Build' }).click();
-      await expect(
-        page.getByRole('heading', { name: 'Build configuration', level: 2 })
-      ).toBeVisible();
-
+      await configurationPage.goToBuildTab();
       await page.getByRole('button', { name: 'Draft a new version' }).click();
       await expect(page.getByRole('paragraph')).toContainText('Version 1');
       await expect(page.getByRole('paragraph')).toContainText('Version 2');
@@ -192,7 +185,7 @@ test.describe('Configuration detail flow', () => {
         .click();
 
       await expect(
-        page.getByRole('heading', { name: 'Build configuration' })
+        page.getByRole('heading', { name: 'Build configuration', level: 2 })
       ).toBeVisible();
       await expect(page.getByText('Status: Version 1 active')).toBeVisible();
       await expect(page.getByText('Editing: Version 2')).toBeVisible();
@@ -280,7 +273,7 @@ test.describe('Configuration detail flow', () => {
     });
 
     await test.step('Activate modified draft', async () => {
-      await page.getByRole('link', { name: 'Activate' }).click();
+      await configurationPage.goToActivateTab();
       await expect(page.getByText('Switch to version 2')).toBeVisible();
       await expect(page.getByText('Turn off configuration')).toBeVisible();
 

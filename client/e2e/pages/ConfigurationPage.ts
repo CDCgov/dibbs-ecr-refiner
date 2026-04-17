@@ -9,6 +9,30 @@ export class ConfigurationPage {
     });
   }
 
+  async goToBuildTab() {
+    await this.page.getByRole('link', { name: 'Build' }).click();
+    await this.checkHeading('Build configuration');
+  }
+
+  async goToTestTab() {
+    await this.page.getByRole('link', { name: 'Test' }).click();
+    await this.checkHeading('Test configuration');
+  }
+
+  async goToActivateTab() {
+    await this.page.getByRole('link', { name: 'Activate' }).click();
+    await this.checkHeading('Turn on configuration');
+  }
+
+  private async checkHeading(text: string) {
+    await expect(
+      this.page.getByRole('heading', {
+        name: text,
+        level: 2,
+      })
+    ).toBeVisible();
+  }
+
   async addCodeSet(searchTerm: string, conditionName: string) {
     await this.page
       .getByRole('button', { name: 'Add new code set to configuration' })
