@@ -1,6 +1,5 @@
-import logging
 from copy import deepcopy
-from typing import Final
+from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
@@ -10,7 +9,7 @@ from app.services.format import remove_element
 from app.services.terminology import CodeSystemSets
 
 from ..model import (
-    HL7_NAMESPACE,
+    HL7_NS,
     NamespaceMap,
     SectionRunResult,
     SectionSpecification,
@@ -21,97 +20,11 @@ from .narrative import (
     replace_narrative_with_removal_notice,
     restore_narrative,
 )
-
-logger = logging.getLogger(__name__)
-
-# NOTE:
-# * structural metadata elements that CDA templates almost universally
-# require on clinical statements (Act, Procedure, Observation,
-# SubstanceAdministration, Encounter, etc.). When a clinical statement
-# is preserved as an ancestor of a match, these immediate children are
-# preserved alongside it so the resulting statement remains
-# structurally valid CDA.
-# * this is a generic-CDA approximation. The forward-compatible form
-# would be a template-specific lookup keyed by templateId, returning
-# the exact required children for each template. That registry doesn't
-# exist yet; this set is the intersection of required children across
-# the templates the refiner cares about
-_CDA_STRUCTURAL_METADATA_NAMES: Final[frozenset[str]] = frozenset(
-    {
-        "templateId",
-        "id",
-        "code",
-        "statusCode",
-        "effectiveTime",
-        "value",
-    }
+from .utils import (
+    build_generic_match_comment_text,
+    enrich_surviving_entries,
+    insert_comment_before,
 )
-
-
-def _path_from_entry(matched_element: _Element, entry: _Element) -> str:
-    """
-    Build a slash-separated string of local names from the entry root down to the matched element, for diagnostic logging.
-
-    Returns something like "procedure/participant/participantRole/code"
-    so a reader can see at a glance where in the entry's structure the
-    match lives. Used only for logging — not part of the matching or
-    pruning logic.
-    """
-
-    chain: list[str] = []
-    current: _Element | None = matched_element
-
-    while current is not None and current is not entry:
-        if isinstance(current.tag, str):
-            chain.append(etree.QName(current.tag).localname)
-        current = current.getparent()
-
-    chain.reverse()
-    return "/".join(chain) if chain else "(entry root)"
-
-
-# NOTE:
-# CODE-BEARING ELEMENT TAGS
-# =============================================================================
-# the three CDA element types whose `@code` attribute can carry a clinical
-# concept worth matching against. these are the elements we walk during
-# candidate gathering. anything outside this set is structural CDA scaffolding
-# that the matcher does not look at
-_CODE_BEARING_TAGS: Final[frozenset[str]] = frozenset(
-    {
-        f"{{{HL7_NAMESPACE}}}code",
-        f"{{{HL7_NAMESPACE}}}value",
-        f"{{{HL7_NAMESPACE}}}translation",
-    }
-)
-
-
-# NOTE:
-# MECHANICS-DESCRIBING ELEMENT EXCLUSIONS
-# =============================================================================
-# * elements that carry SNOMED codes describing the *mechanics* of an
-# observation/procedure (how, where, with what device) rather than the
-# clinical assertion itself. SNOMED codes appearing on these elements would
-# match the configured code set if they happen to overlap, but a PHA
-# configuring a condition would not mean to match on "the body site of the
-# measurement" or "the device used to perform the procedure"
-# * this is the only structural exclusion the matcher applies. all other
-# administrative/structural elements (statusCode, interpretationCode,
-# routeCode, priorityCode, functionCode, participantRole/code, and so on)
-# carry codes from vocabularies outside the five systems the refiner stores
-# (LOINC, SNOMED, ICD-10-CM, RxNorm, CVX), so they cannot produce matches
-# regardless of grouper contents and require no exclusion.
-_EXCLUDED_LOCAL_NAMES: Final[frozenset[str]] = frozenset(
-    {
-        "methodCode",  # how the observation/procedure was performed
-        "targetSiteCode",  # body site of the observation/procedure
-        "approachSiteCode",  # approach site, rare but defined in CDA
-        "playingDevice",  # device used (parent of <code>)
-        "specimenPlayingEntity",  # specimen type (parent of <code>)
-        "participantRole",  # role of participating entity (parent of <code>)
-    }
-)
-
 
 # NOTE:
 # PUBLIC ENTRY POINT
@@ -127,68 +40,50 @@ def process(
     include_narrative: bool = True,
 ) -> SectionRunResult:
     """
-    Process a section using path-based generic matching.
+    Process a section using the generic matching logic.
 
-    Used for sections without IG-verified entry match rules. The matcher
-    walks the section, gathers code-bearing elements, checks each one
-    against the configured code set by code value, and for every entry
-    that contains at least one match preserves the union of paths from
-    each match up to the enclosing entry — plus the matched element's
-    coding cluster siblings (`<code>`/`<value>`/`<translation>` in the
-    same parent). Everything else inside matched entries is pruned.
-    Entries with zero matches are removed entirely.
+    Used for sections without IG-verified entry match rules. These are
+    sections where the entry structure is either narrative-only,
+    contains non-condition-specific content, or has not yet been
+    characterized with specific match rules.
 
-    The matching contract:
+    Matching is unscoped — any code/value/translation element with a
+    `@code` in `codes_to_match` is considered a hit. Pruning is
+    entry-level only. `displayName` enrichment runs post-prune when
+    `code_system_sets` is available.
 
-      - any code from the configured set that appears on a non-excluded
-        candidate element is a match. there is no code system check; the
-        configured set already constrains the matchable universe to the
-        five systems the refiner stores (LOINC, SNOMED, ICD-10-CM,
-        RxNorm, CVX), and the structural mechanics exclusion list covers
-        the only places those codes appear non-clinically.
-      - preservation is path-based: the chain from a matched element up
-        to its enclosing <entry> is preserved, plus any code-bearing
-        siblings that travel with the match as a coding cluster. the
-        union of these paths across all matches in an entry defines
-        what survives pruning.
-      - the section's own <code> and <text> are neutralized before
-        matching to prevent the section's defining LOINC and any
-        narrative-embedded codes from producing false matches. both are
-        restored in the finally block.
+    The generic path neutralizes the section's `<code>` and
+    `<text>` elements before searching to prevent false matches.
+    Both are saved as deep copies and restored after processing —
+    `<code>` unconditionally in the finally block (to avoid
+    corrupting the tree on error), and `<text>` conditionally based
+    on `include_narrative`.
 
-    If no entries match (or `codes_to_match` is empty), the section is
-    reduced to a minimal stub via `create_minimal_section` (the no-match
-    policy override) and the function returns a `SectionRunResult` with
-    `matches_found=False`. The orchestrator translates this into
-    `SectionOutcome.REFINED_NO_MATCHES_STUBBED` regardless of the
-    narrative configuration — see `refine._interpret_run_result`.
+    Source document XML comments are stripped before matching begins.
+    Match provenance comments (`eCR Refiner: generic match — ...`)
+    are injected above each surviving entry after pruning; these
+    survive because they are added after the source comment cleanup.
 
-    Args:
-        section: The section element being processed.
-        codes_to_match: Flat set of code values from the active
-            configuration. Code system is not part of the lookup; see
-            the contract notes above for why.
-        namespaces: HL7 namespace map for XPath evaluation.
-        section_specification: Unused by the generic path; accepted for
-            dispatcher signature compatibility.
-        code_system_sets: Used for displayName enrichment on surviving
-            elements after pruning. Not used during match evaluation.
-        include_narrative: Whether to keep the original section
-            narrative. When False, narrative is replaced with a removal
-            notice. Ignored when matches are zero; the engine stubs the
-            section regardless per the no-match policy override.
+    If no entries match (or `codes_to_match` is empty), the section
+    is reduced to a minimal stub via `create_minimal_section` (the
+    no-match policy override) and the function returns a
+    `SectionRunResult` with `matches_found=False`. The orchestrator
+    translates this into `SectionOutcome.REFINED_NO_MATCHES_STUBBED`
+    regardless of the narrative configuration — see
+    `refine._interpret_run_result`.
 
     Returns:
-        SectionRunResult describing what the engine did. Consumed by
-        refine_eicr to compute the user-facing SectionOutcome.
+        SectionRunResult reporting whether matches were found and
+        what the engine did with the narrative. The
+        `narrative_disposition` field is meaningful only when
+        `matches_found=True`; when no matches are found, the engine
+        stubs the entire section and the orchestrator short-circuits
+        before reading the narrative disposition.
     """
 
-    # neutralize the section's own <code>: deep-copy the element so the
-    # original can be restored in the finally block, then strip the @code
-    # attribute so the section's defining LOINC cannot match. this matters
-    # because some configurations carry LOINCs that overlap with section
-    # LOINCs (e.g. a Vital Signs panel LOINC that also identifies the
-    # section), and we never want a match on the section's own identifier
+    # neutralize <code>: remove the @code attribute so the section's
+    # own LOINC code doesn't match during the unscoped search
+    # the full element is deep-copied and restored in the finally block
     section_code_element = section.find("./hl7:code", namespaces=namespaces)
     original_code = (
         deepcopy(section_code_element) if section_code_element is not None else None
@@ -196,12 +91,10 @@ def process(
     if section_code_element is not None and section_code_element.get("code"):
         section_code_element.attrib.pop("code")
 
-    # neutralize <text>: inline narrative may contain code elements (e.g. in
-    # `<content>` references) that would otherwise produce false matches.
-    # if the narrative is being kept, deep-copy it so it can be restored
-    # after match evaluation. if it's being removed, the deep-copy is
-    # unnecessary because the narrative will be replaced by a removal
-    # notice rather than restored.
+    # neutralize <text>: clear it so inline codes in the narrative
+    # don't produce false matches
+    # if include_narrative is True, a deep copy is saved so the original
+    # can be restored after processing
     text_element = section.find("./hl7:text", namespaces=namespaces)
     original_text = (
         deepcopy(text_element)
@@ -213,55 +106,56 @@ def process(
 
     try:
         if not codes_to_match:
-            # no codes to match against → treat as no-match and stub.
-            # same override as the "matched nothing" case below; named as
-            # REFINED_NO_MATCHES_STUBBED in refine._interpret_run_result
+            # refiner policy: when there are no codes to match against,
+            # treat as no-match and stub the section. same override as
+            # the "matched nothing" case below.
+            # named as REFINED_NO_MATCHES_STUBBED in
+            # refine._interpret_run_result.
             create_minimal_section(section=section, removal_reason="no_match")
             return SectionRunResult(
                 matches_found=False,
-                # placeholder — orchestrator short-circuits on
-                # matches_found=False and never reads this field
+                # placeholder — the orchestrator short-circuits on
+                # matches_found=False and never reads this field.
                 narrative_disposition="retained",
             )
 
         try:
-            # STEP 1: gather candidate elements and find matches
-            matches = _find_matches(section, codes_to_match, namespaces)
+            # STEP 1: strip source document comments before matching
+            # so they cannot interfere with candidate gathering.
+            # provenance comments injected after pruning (STEP 3) will
+            # survive because they are added after this cleanup.
+            remove_all_comments(section)
 
-            if not matches:
-                # refiner policy: when no entries match, stub the section
-                # * this overrides the configured narrative setting — there's
-                #   no useful narrative to keep when there's no clinical
-                #   content left to describe.
+            # STEP 2: CONTEXT FILTERING
+            contextual_matches = _find_condition_relevant_elements(
+                section, codes_to_match, namespaces
+            )
+
+            if not contextual_matches:
+                # refiner policy: when no entries match, stub the
+                # section. this overrides the configured narrative
+                # setting — there's no useful narrative to keep when
+                # there's no clinical content left to describe.
+                # named as REFINED_NO_MATCHES_STUBBED in
+                # refine._interpret_run_result.
                 create_minimal_section(section=section, removal_reason="no_match")
                 return SectionRunResult(
                     matches_found=False,
+                    # placeholder — the orchestrator short-circuits on
+                    # matches_found=False and never reads this field.
                     narrative_disposition="retained",
                 )
 
-            # STEP 2: group matches by their enclosing <entry>
-            entry_to_matches = _group_matches_by_entry(matches)
+            # STEP 3: PRUNE non-matching entries and inject provenance
+            # comments above the surviving ones
+            surviving_entries = _preserve_relevant_entries(section, contextual_matches)
+            _inject_generic_match_comments(surviving_entries, contextual_matches)
 
-            # STEP 3: prune each matched entry to the union of paths from
-            # its matches up to itself, plus coding cluster siblings
-            for entry, entry_matches in entry_to_matches.items():
-                _prune_entry_to_match_paths(entry, entry_matches)
-
-            # STEP 4: remove entries that had zero matches
-            _remove_unmatched_entries(section, set(entry_to_matches.keys()), namespaces)
-
-            # STEP 5: enrich displayName on surviving code-bearing elements
-            # cross-module helper from entry_matching, used here too so the
-            # generic path produces the same kind of human-readable output
+            # STEP 4: ENRICH displayName on surviving entries
             if code_system_sets is not None:
-                from .entry_matching import enrich_surviving_entries
-
                 enrich_surviving_entries(section, code_system_sets, namespaces)
 
-            # STEP 6: clean up any leftover comments inside the section
-            remove_all_comments(section)
-
-            # STEP 7: handle narrative <text>
+            # STEP 5: handle narrative <text>
             if include_narrative and original_text is not None:
                 restore_narrative(section, original_text, namespaces)
                 return SectionRunResult(
@@ -275,9 +169,9 @@ def process(
                     narrative_disposition="removed",
                 )
 
-            # include_narrative=True but original_text was None — the
-            # section had no <text> in the source. nothing to restore,
-            # but matches were still found
+            # include_narrative=True but original_text was None —
+            # the section had no <text> in the source. nothing to
+            # restore, but matches were still found.
             return SectionRunResult(
                 matches_found=True,
                 narrative_disposition="retained",
@@ -285,317 +179,399 @@ def process(
 
         except etree.XPathEvalError as e:
             raise XMLParsingError(
-                message="Invalid XPath expression in generic matching",
+                message="Invalid XPath expression",
                 details={
                     "section_details": dict(section.attrib),
                     "error": str(e),
                 },
             )
     finally:
-        # always restore <code> — even on error — to avoid leaving the
-        # tree in a modified state for the caller. <text> restoration
-        # happens in the success path because it depends on the narrative
-        # disposition; on error the cleared <text> is left as-is, which
-        # matches the existing generic_matching behavior
+        # always restore <code> — even on error — to avoid leaving
+        # the tree in a modified state for the caller
         if section_code_element is not None and original_code is not None:
             section.replace(section_code_element, original_code)
 
 
 # NOTE:
-# CANDIDATE GATHERING AND MATCH EVALUATION
+# CONTEXT FILTERING
 # =============================================================================
 
 
-def _find_matches(
+def _find_condition_relevant_elements(
     section: _Element,
     codes_to_match: set[str],
     namespaces: NamespaceMap,
 ) -> list[_Element]:
     """
-    Walk the section and return code-bearing elements whose `@code` is in the configured set, skipping mechanics-describing elements.
+    Find clinical elements matching condition codes.
 
-    Iterates only within `<entry>` children of the section (the section
-    code/text were already neutralized by the caller, so there's no
-    concern about matching them, but restricting to entries also keeps
-    the walk bounded and predictable).
-    Whitespace in the @code attribute is stripped before comparison.
-    Some EHRs emit codes with leading or trailing whitespace (e.g.
-    "94310-0 ") which is well-formed XML but would fail a direct
-    string match against the configured set. XSD token-type semantics
-    collapse this whitespace for a strictly conformant consumer, so
-    stripping is consistent with a correct reading of the underlying
-    datatype.
+    This is the context filter — only elements relevant to the
+    reportable condition should proceed to the next step.
+
+    Searches for both:
+
+    1. Parent elements that have a `code`/`translation`/`value`
+       child carrying a `@code` attribute (the "candidates_parents"
+       pattern).
+    2. Direct `code`/`translation`/`value` elements with a
+       `@code` attribute (the "candidates_children" pattern).
+
+    Both result lists are filtered against `codes_to_match` and
+    combined, then deduplicated to remove parent/child overlap.
+
+    Args:
+        section: The XML section element to search within.
+        codes_to_match: The set of codes to match against.
+        namespaces: XML namespaces for XPath evaluation.
+
+    Returns:
+        Deduplicated list of contextually relevant clinical elements.
+
+    Raises:
+        XMLParsingError: If XPath evaluation fails.
     """
 
-    matches: list[_Element] = []
+    if not codes_to_match:
+        return []
 
-    for entry in section.findall("hl7:entry", namespaces=namespaces):
-        for element in entry.iter():
-            if not isinstance(element.tag, str):
-                continue
+    try:
+        codes_to_check = frozenset(codes_to_match)
 
-            if element.tag not in _CODE_BEARING_TAGS:
-                continue
+        # Pattern 1: parent elements with code/translation/value children
+        # that might have direct codes
+        candidates_parents = cast(
+            list[_Element],
+            section.xpath(
+                ".//hl7:*[hl7:code/@code or hl7:translation/@code or hl7:value/@code]",
+                namespaces=namespaces,
+            ),
+        )
 
-            # strip whitespace from the @code attribute — handles the
-            # "94310-0 " case where some EHRs emit trailing spaces
-            code_val = (element.get("code") or "").strip()
-            if not code_val:
-                continue
+        # Pattern 2: code/translation/value elements that might have
+        # matching codes directly
+        candidates_children = cast(
+            list[_Element],
+            section.xpath(
+                ".//*[self::hl7:code or self::hl7:translation or self::hl7:value][@code]",
+                namespaces=namespaces,
+            ),
+        )
 
-            if _is_mechanics_element(element):
-                continue
+        matched_parents = [
+            el
+            for el in candidates_parents
+            if any(child.get("code") in codes_to_check for child in el)
+        ]
 
-            if code_val in codes_to_match:
-                matches.append(element)
+        matched_children = [
+            el for el in candidates_children if el.get("code") in codes_to_check
+        ]
 
-    return matches
+        clinical_elements = matched_children + matched_parents
 
+        # deduplicate hierarchical matches within the matched set
+        return _deduplicate_clinical_elements(clinical_elements)
 
-def _is_mechanics_element(element: _Element) -> bool:
-    """
-    This is to find out if the element is playing a mechanical role in a pattern within an entry.
-
-    Return True if the element or any of its ancestors up to the
-    enclosing `<entry>` is one of the mechanics-describing local names
-    in `_EXCLUDED_LOCAL_NAMES`.
-
-    CDA encodes the mechanics exclusion in two shapes depending on the
-    template:
-
-      - the element itself (or its immediate parent) carries the
-        mechanics name and `@code`, e.g. `<methodCode code="..."/>` or
-        `<playingDevice><code code="..."/></playingDevice>`
-      - the element is nested several levels deep inside an
-        administrative container, e.g.
-        `<participant><participantRole><playingEntity><code/></playingEntity></participantRole></participant>`
-        — the immediate parent (playingEntity) is not in the exclusion
-        list, but a higher ancestor (participantRole, participant) is
-
-    Walking the full ancestor chain catches both shapes from a single
-    exclusion entry. The walk stops at the enclosing `<entry>` element
-    (exclusive) — anything above that is the section or document
-    structure, not the entry's content.
-    """
-
-    # check the element itself
-    own_local = etree.QName(element.tag).localname
-    if own_local in _EXCLUDED_LOCAL_NAMES:
-        return True
-
-    # walk ancestors up to (but not including) the enclosing <entry>
-    current = element.getparent()
-    while current is not None and isinstance(current.tag, str):
-        local = etree.QName(current.tag).localname
-        if local == "entry":
-            return False
-        if local in _EXCLUDED_LOCAL_NAMES:
-            return True
-        current = current.getparent()
-
-    # if we walked all the way to None without hitting <entry>, the
-    # element isn't actually inside an entry — fall through as not
-    # mechanics. _find_matches only iterates within entries so this
-    # branch shouldn't fire in normal use
-    return False
+    except etree.XPathEvalError as e:
+        raise XMLParsingError(
+            message="Failed to generate candidate elements for code matching",
+            details={
+                "section_details": dict(section.attrib),
+                "error": str(e),
+            },
+        )
 
 
 # NOTE:
-# MATCH GROUPING AND PATH-BASED PRUNING
+# ENTRY PRESERVATION
 # =============================================================================
 
 
-def _group_matches_by_entry(
-    matches: list[_Element],
-) -> dict[_Element, list[_Element]]:
+def _preserve_relevant_entries(
+    section: _Element,
+    contextual_matches: list[_Element],
+) -> list[_Element]:
     """
-    Group matched elements by their enclosing `<entry>`.
+    Preserve entries containing relevant elements; remove the rest.
 
-    Each match is associated with the nearest ancestor `<entry>` element.
-    A match that has no `<entry>` ancestor is unexpected (the candidate
-    walk in `_find_matches` only descends into entries) and raises a
-    `StructureValidationError` to surface the inconsistency rather than
-    silently dropping the match.
-    """
+    For each matched clinical element, walks up the tree to find its
+    enclosing `<entry>`, deduplicates the resulting entry list, and
+    removes any entry not in the deduplicated set.
 
-    grouped: dict[_Element, list[_Element]] = {}
+    Returns the list of surviving `<entry>` elements so the caller
+    can inject match provenance comments above each one.
 
-    for matched_element in matches:
-        entry = _find_enclosing_entry(matched_element)
-        if entry not in grouped:
-            grouped[entry] = []
-        grouped[entry].append(matched_element)
+    Args:
+        section: The section element being processed.
+        contextual_matches: Clinical elements found by the context
+            filter.
 
-    return grouped
-
-
-def _find_enclosing_entry(element: _Element) -> _Element:
-    """
-    Walk up the tree to find the nearest `<entry>` ancestor.
-
-    This is the brought-forward primitive from the older generic matcher
-    (formerly `_find_path_to_entry`). Adapted to return only the entry,
-    since the path collection is now done by `_collect_path_to_entry`.
+    Returns:
+        Deduplicated list of preserved entry elements.
     """
 
-    entry_tag = f"{{{HL7_NAMESPACE}}}entry"
-    current: _Element | None = element
+    entry_paths = []
+    for clinical_element in contextual_matches:
+        entry_path = _find_path_to_entry(clinical_element)
+        entry_paths.append(entry_path)
 
-    while current is not None and current.tag != entry_tag:
-        current = current.getparent()
+    deduplicated_entry_paths = _deduplicate_entry_paths(entry_paths)
 
-    if current is None:
+    _prune_unwanted_siblings(deduplicated_entry_paths, section)
+
+    return deduplicated_entry_paths
+
+
+def _inject_generic_match_comments(
+    surviving_entries: list[_Element],
+    contextual_matches: list[_Element],
+) -> None:
+    """
+    Insert provenance comments above each surviving entry.
+
+    The generic path has no rule index or tier — it's a flat unscoped
+    code scan. Comments attribute the match to the generic engine and
+    identify the code and element path that triggered retention.
+
+    One comment per entry. When multiple matched elements map to the
+    same entry (e.g. two matching codes in one act), only the first
+    matched element is cited — the generic path doesn't distinguish
+    which element is "primary."
+
+    Args:
+        surviving_entries:  Entry elements that survived pruning.
+        contextual_matches: Clinical elements that produced matches,
+            in the order returned by `_find_condition_relevant_elements`.
+    """
+
+    # build a map from entry id → first matching element within it
+    entry_id_to_first_match: dict[int, _Element] = {}
+    for matched_el in contextual_matches:
+        try:
+            entry = _find_path_to_entry(matched_el)
+        except Exception:
+            continue
+        eid = id(entry)
+        if eid not in entry_id_to_first_match:
+            entry_id_to_first_match[eid] = matched_el
+
+    for entry in surviving_entries:
+        matched_el = entry_id_to_first_match.get(id(entry))
+        if matched_el is None:
+            continue
+
+        code = matched_el.get("code") or ""
+        display = matched_el.get("displayName") or ""
+        tag = etree.QName(matched_el.tag).localname
+
+        # build a readable path from entry root to the matched element
+        path_parts: list[str] = []
+        current: _Element | None = matched_el
+        while current is not None and current is not entry:
+            path_parts.append(etree.QName(current.tag).localname)
+            current = current.getparent()
+        path_from_entry = "/".join(reversed(path_parts)) if path_parts else tag
+
+        comment_text = build_generic_match_comment_text(
+            matched_code=code,
+            matched_display=display,
+            matched_tag=tag,
+            path_from_entry=path_from_entry,
+        )
+        insert_comment_before(entry, comment_text)
+
+
+def _find_path_to_entry(element: _Element) -> _Element:
+    """
+    Find the nearest <entry> ancestor of an element.
+
+    Walks up the tree from `element` until it finds an element with
+    the `{urn:hl7-org:v3}entry` tag. Used by `_preserve_relevant_entries`
+    to map matched clinical elements back to the entries that should
+    be kept.
+
+    Raises:
+        StructureValidationError: If no <entry> ancestor is found.
+    """
+
+    current_element: _Element | None = element
+
+    while (
+        current_element is not None and current_element.tag != "{urn:hl7-org:v3}entry"
+    ):
+        current_element = current_element.getparent()
+
+    if current_element is None:
         raise StructureValidationError(
-            message="No <entry> ancestor found for matched element",
+            message="Parent <entry> element not found.",
             details={"element_tag": element.tag},
         )
 
-    return current
+    return current_element
 
 
-def _collect_path_to_entry(
-    matched_element: _Element, entry: _Element
+def _prune_unwanted_siblings(
+    entry_paths: list[_Element],
+    section: _Element,
+) -> None:
+    """
+    Remove top-level <entry> elements not in the preserved set.
+
+    Args:
+        entry_paths: Entry elements to keep.
+        section: The section being processed.
+    """
+
+    preserved_ids = {id(e) for e in entry_paths}
+    all_entries = section.findall("./hl7:entry", namespaces=HL7_NS)
+
+    for entry in all_entries:
+        if id(entry) not in preserved_ids:
+            remove_element(entry)
+
+
+# NOTE:
+# DEDUPLICATION HELPERS
+# =============================================================================
+
+
+def _deduplicate_entry_paths(entry_paths: list[_Element]) -> list[_Element]:
+    """
+    Remove duplicate and nested entry paths.
+
+    When XPath matches find nested elements (e.g., both an <act> and
+    an <observation> inside that <act>), this function ensures we don't
+    end up with duplicate or parent/child entries both being preserved,
+    which would lead to duplicate content in the refined eICR.
+
+    Args:
+        entry_paths: List of entry elements that may contain duplicates
+            or nested relationships.
+
+    Returns:
+        Deduplicated list with no overlapping branches.
+    """
+
+    if not entry_paths:
+        return entry_paths
+
+    # remove exact duplicates first (same entry referenced multiple times)
+    unique_entries: list[_Element] = []
+    seen_entries: set[int] = set()
+
+    for entry in entry_paths:
+        entry_id = id(entry)
+        if entry_id not in seen_entries:
+            unique_entries.append(entry)
+            seen_entries.add(entry_id)
+
+    # remove nested relationships (parent/child entries)
+    final_entries: list[_Element] = []
+
+    for current_entry in unique_entries:
+        is_nested_within_another = False
+
+        for potential_parent_entry in unique_entries:
+            if current_entry is not potential_parent_entry and _is_ancestor(
+                potential_parent_entry, current_entry
+            ):
+                is_nested_within_another = True
+                break
+
+        if not is_nested_within_another:
+            final_entries.append(current_entry)
+
+    return final_entries
+
+
+def _deduplicate_clinical_elements(
+    clinical_elements: list[_Element],
 ) -> list[_Element]:
     """
-    Return the ancestor chain from a matched element up to its enclosing entry, inclusive of both endpoints.
+    Remove nested clinical elements representing the same logical finding.
 
-    Used by `_prune_entry_to_match_paths` to compute the union of nodes
-    to preserve when pruning an entry.
+    When XPath matches both a parent element (like <organizer>) and
+    its child elements (like <observation>), we want to keep only the
+    highest-level parent that contains the complete clinical context.
     """
 
-    chain: list[_Element] = []
-    current: _Element | None = matched_element
+    if not clinical_elements:
+        return clinical_elements
+
+    code_groups: dict[str, list[_Element]] = {}
+
+    for elem in clinical_elements:
+        data = _extract_code_for_grouping(elem)
+        code = data.get("code")
+
+        if isinstance(code, str):
+            if code not in code_groups:
+                code_groups[code] = []
+            code_groups[code].append(elem)
+
+    deduplicated: list[_Element] = []
+
+    for code, elements in code_groups.items():
+        if len(elements) == 1:
+            deduplicated.append(elements[0])
+            continue
+
+        ancestors: list[_Element] = []
+        for elem in elements:
+            is_descendant = False
+            for other_elem in elements:
+                if elem is not other_elem and _is_ancestor(other_elem, elem):
+                    is_descendant = True
+                    break
+
+            if not is_descendant:
+                ancestors.append(elem)
+
+        deduplicated.extend(ancestors)
+
+    return deduplicated
+
+
+def _is_ancestor(
+    potential_ancestor: _Element,
+    potential_descendant: _Element,
+) -> bool:
+    """
+    Check if one element is an ancestor of another in the XML tree.
+
+    Walks up from `potential_descendant` looking for
+    `potential_ancestor`. Returns True if found.
+    """
+
+    current = potential_descendant.getparent()
 
     while current is not None:
-        chain.append(current)
-        if current is entry:
-            return chain
+        if current is potential_ancestor:
+            return True
         current = current.getparent()
 
-    # this would mean the matched element is not actually inside the
-    # entry passed in — a bug in `_group_matches_by_entry` or its caller
-    raise StructureValidationError(
-        message="Matched element is not a descendant of the given entry",
-        details={"element_tag": matched_element.tag, "entry_tag": entry.tag},
-    )
+    return False
 
 
-def _collect_coding_cluster_siblings(matched_element: _Element) -> list[_Element]:
+def _extract_code_for_grouping(element: _Element) -> dict[str, str | None]:
     """
-    Return the matched element's siblings that are also code-bearing elements (`<code>`, `<value>`, or `<translation>`).
+    Extract a clinical element's code for use in grouping during dedup.
 
-    The coding cluster preservation rule: when a match lands on a
-    `<code>`, `<value>`, or `<translation>`, the related coding
-    elements that share its parent travel with the match. This keeps a
-    `<code>`-and-`<value>` pair together when only one of them matched,
-    which is almost always what's clinically meaningful — e.g., a
-    Result Observation where the test LOINC and the SNOMED result
-    value should always survive together.
+    Used by `_deduplicate_clinical_elements` to identify elements
+    representing the same logical finding so that nested duplicates
+    can be collapsed to the outermost ancestor.
 
-    Limited to immediate siblings (not descendants) so this rule does
-    not accidentally drag nested observations along via
-    `entryRelationship`. Path-based pruning handles the structural
-    ancestor chain; the cluster rule only handles same-parent code
-    grouping.
+    Returns:
+        Dictionary with a `code` key (string or None).
     """
 
-    parent = matched_element.getparent()
-    if parent is None:
-        return []
+    tag_local = element.tag.split("}")[-1] if "}" in element.tag else element.tag
 
-    siblings: list[_Element] = []
-    for sibling in parent:
-        if sibling is matched_element:
-            continue
-        if not isinstance(sibling.tag, str):
-            continue
-        if sibling.tag in _CODE_BEARING_TAGS:
-            siblings.append(sibling)
+    if tag_local in ("code", "value", "translation") and element.get("code"):
+        return {"code": element.get("code")}
 
-    return siblings
+    code_element = element.find(".//hl7:code", namespaces=HL7_NS)
+    if code_element is not None:
+        return {"code": code_element.get("code")}
 
-
-def _prune_entry_to_match_paths(
-    entry: _Element,
-    matches: list[_Element],
-) -> None:
-    """
-    Prune an entry back to its entry even when multiple matches are present.
-
-    Prune an entry to the union of paths from each match to the entry
-    root, plus the coding cluster siblings of each match, plus the
-    structurally required immediate children of each preserved
-    clinical statement.
-
-    Algorithm:
-      1. For each match, collect the ancestor chain from the match
-         up to the entry root.
-      2. For each match, collect the coding cluster siblings of the
-         matched element.
-      3. For each preserved ancestor that is a clinical statement
-         container, also preserve its structural metadata children
-         (id, statusCode, effectiveTime, etc.) so the result is
-         structurally valid CDA.
-      4. Remove every element in the entry not in the preserve set.
-    """
-
-    preserve: set[_Element] = {entry}
-
-    # step 1 + 2: collect path-to-entry and cluster siblings for each match
-    for matched_element in matches:
-        for ancestor in _collect_path_to_entry(matched_element, entry):
-            preserve.add(ancestor)
-        for sibling in _collect_coding_cluster_siblings(matched_element):
-            preserve.add(sibling)
-
-    # step 3: for every preserved ancestor, also preserve its immediate
-    # * structural metadata children (id, statusCode, effectiveTime, etc.)
-    #   so the pruned output stays structurally valid CDA. without this,
-    #   path-based pruning would correctly preserve the matched code and
-    #   its enclosing clinical statement (procedure/act/observation) but
-    #   would drop the statement's required children, producing an empty
-    #   shell that fails XSD content-model validation
-    structural_additions: set[_Element] = set()
-    for preserved in preserve:
-        if preserved is entry:
-            continue
-        for child in preserved:
-            if not isinstance(child.tag, str):
-                continue
-            child_local = etree.QName(child.tag).localname
-            if child_local in _CDA_STRUCTURAL_METADATA_NAMES:
-                structural_additions.add(child)
-    preserve.update(structural_additions)
-
-    # step 4: walk the entry and remove anything not in the preserve set
-    to_remove: list[_Element] = []
-    for descendant in entry.iter():
-        if descendant is entry:
-            continue
-        if not isinstance(descendant.tag, str):
-            continue
-        if descendant not in preserve:
-            to_remove.append(descendant)
-
-    for element in to_remove:
-        parent = element.getparent()
-        if parent is not None:
-            remove_element(element)
-
-
-def _remove_unmatched_entries(
-    section: _Element,
-    matched_entries: set[_Element],
-    namespaces: NamespaceMap,
-) -> None:
-    """
-    Remove `<entry>` elements that had no matches.
-
-    Entries with at least one match have already been pruned in place
-    by `_prune_entry_to_match_paths`. This pass removes the entries
-    that contributed nothing.
-    """
-
-    for entry in section.findall("hl7:entry", namespaces=namespaces):
-        if entry not in matched_entries:
-            remove_element(entry)
+    return {"code": None}
