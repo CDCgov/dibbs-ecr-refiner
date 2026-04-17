@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * Model for a Condition.
+ */
 export interface Condition {
   code: string;
   display_name: string;

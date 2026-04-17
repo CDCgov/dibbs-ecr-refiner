@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * An event returned by the DB function.
+ */
 export interface AuditEvent {
   id: string;
   username: string;

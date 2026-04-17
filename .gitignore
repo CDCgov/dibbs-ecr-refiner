@@ -46,3 +46,7 @@ client/e2e/downloads/
 
 # Structurizr
 .structurizr/
+
+# Risk Assessments
+docs/risk-assessments/
+!docs/risk-assessments/.template
