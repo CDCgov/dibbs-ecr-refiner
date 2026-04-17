@@ -248,6 +248,7 @@ def insert_comment_before(entry: _Element, comment_text: str) -> None:
     """
 
     comment = etree.Comment(comment_text)
+    comment.tail = "\n"
     parent = entry.getparent()
     if parent is not None:
         idx = list(parent).index(entry)
