@@ -118,11 +118,11 @@ jobs:
       - name: Render diagrams in PNG format from running instance to `rendered/` directory
         run: cd docs/ && node scripts/export-diagrams.js http://localhost:9001/workspace/diagrams png
 
-      - name: Commit `rendered/` directory
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout $GITHUB_HEAD_REF
-          git add .
-          git commit -m "Updating rendered Structurizr diagrams"
-          git push origin HEAD:$GITHUB_HEAD_REF
+      # - name: Commit `rendered/` directory
+      #   run: |
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      #     git checkout $GITHUB_HEAD_REF
+      #     git add .
+      #     git commit -m "Updating rendered Structurizr diagrams"
+      #     git push origin HEAD:$GITHUB_HEAD_REF
