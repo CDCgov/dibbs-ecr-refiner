@@ -51,6 +51,20 @@ export class ConfigurationPage {
       .click();
   }
 
+  async downloadCustomCodeCsvTemplate(): Promise<string> {
+    const downloadPromise = this.page.waitForEvent('download');
+    await this.page.getByRole('button', { name: 'Download template' }).click();
+    const download = await downloadPromise;
+
+    const savePath = `/tmp/${download.suggestedFilename()}`;
+    await download.saveAs(savePath);
+    return savePath;
+  }
+
+  async uploadCustomCodeCsv(filePath: string) {
+    await this.page.setInputFiles('input[type="file"]', filePath);
+  }
+
   async activateConfiguration() {
     await this.page
       .getByRole('button', { name: 'Turn on configuration' })
