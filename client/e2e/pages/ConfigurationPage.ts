@@ -15,17 +15,19 @@ export class ConfigurationPage {
   }
 
   async goToBuildTab() {
-    await this.page.getByRole('link', { name: 'Build' }).click();
+    await this.page.getByRole('link', { name: 'Build', exact: true }).click();
     await this.checkHeading('Build configuration');
   }
 
   async goToTestTab() {
-    await this.page.getByRole('link', { name: 'Test' }).click();
+    await this.page.getByRole('link', { name: 'Test', exact: true }).click();
     await this.checkHeading('Test configuration');
   }
 
   async goToActivateTab() {
-    await this.page.getByRole('link', { name: 'Activate' }).click();
+    await this.page
+      .getByRole('link', { name: 'Activate', exact: true })
+      .click();
     await this.checkHeading('Turn on configuration');
   }
 
