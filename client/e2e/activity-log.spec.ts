@@ -15,7 +15,7 @@ test.describe('Activity log', () => {
     const rowData = await activityLogPage.getTableRows();
     expect(rowData).toHaveLength(0);
     await expect(
-      page.getByRole('navigation', { name: 'Pagintion' }).getByRole('button')
+      page.getByRole('navigation', { name: 'Pagination' }).getByRole('button')
     ).toHaveCount(1);
   });
 
