@@ -690,138 +690,78 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # NOTE:
 # SOCIAL HISTORY (29762-2)
 # =============================================================================
-# Social History is the section where whole-entry preservation matters most:
-# all clinically useful content (destination, employer, agent, duration) lives
-# in <participant> and entryRelationship chains, not in the top-level coded
-# elements. Matching on the entry code and stripping the rest would give PHAs
-# a code with no context.
+# Social History uses T3 heuristic rules — the only section in the catalog
+# that does. This is intentional and worth explaining.
 #
-# All rules use preserve_whole_entry=True. No container-level pruning.
+# Every other section with entry_match_rules has at least one SHALL or SHOULD
+# binding in the IG that anchors the rule to a specific templateId and element:
 #
-# rule 1 — TIER 1: Travel History (V3)
-#   templateId: 2.16.840.1.113883.10.20.15.2.3.1 (eICR STU3)
-#   match on act/code — Travel History acts use SNOMED 420008001 "Travel"
-#   as the act code. The destination and dates are in participant and
-#   effectiveTime children. Purpose of Travel is in entryRelationship.
-#   All of it must survive.
+#   Problems:      SHALL SNOMED on Problem Observation/value (CONF:1098-31526)
+#   Results:       SHOULD LOINC on Result Observation/code (CONF:1198-7133)
+#   Immunizations: SHALL CVX on manufacturedMaterial/code (CONF:1098-9007)
+#   Vital Signs:   SHALL LOINC on Vital Sign Observation/code (CONF:1098-7301)
 #
-# rule 2 — TIER 1: Exposure/Contact Information (V2)
-#   templateId: 2.16.840.1.113883.10.20.15.2.3.52 (eICR STU3)
-#   match on observation/code — PHIN VS codes identify exposure type.
-#   The exposure agent and location are in participant children.
+# Social History has no equivalent anchor. It is a heterogeneous container
+# for C-CDA demographic templates, ODH occupational templates, and eICR-specific
+# exposure/travel templates. Code systems vary across entries (SNOMED, LOINC,
+# PHIN VS, Census, ISO 3166, HL7ActCode). The clinically meaningful code can
+# be on observation/code (panel header), observation/value (clinical content),
+# or act/code (travel/exposure type) depending entirely on which template the
+# entry uses. No single structural pattern covers the section, and no CONF
+# citation justifies preferring one xpath over another.
 #
-# rule 3 — TIER 1: Past or Present Occupation (Occupational Data for Health)
-#   templateId: 2.16.840.1.113883.10.20.22.4.217 (ODH)
-#   match on observation/value — occupation codes (Census/SNOMED) are
-#   on value, not code. The industry, employer, and work classification
-#   are in entryRelationship children.
+# A previous version of these rules used templateId-scoped T1 rules for each
+# known Social History template (Travel History, Exposure/Contact, Occupation,
+# Country of Residence, Pregnancy). That approach had two problems:
 #
-# rule 4 — TIER 1: Usual Occupation (ODH)
-#   templateId: 2.16.840.1.113883.10.20.22.4.221 (ODH)
-#   same pattern as Past/Present Occupation.
+# 1. Structural precedence blocking. The templateId-scoped rules claimed
+#    entries before the fallback rule could run. A jurisdiction configuring
+#    a LOINC panel code (e.g. 21843-8 "Usual Occupation" on observation/code)
+#    would get no match because the T1 rule for that template targeted
+#    observation/value — found a candidate there, claimed the entry, and
+#    the fallback never evaluated observation/code.
 #
-# rule 5 — TIER 1: Country of Residence / Birth (eICR)
-#   templateId: 2.16.840.1.113883.10.20.15.2.3.53 (eICR STU3)
-#   match on observation/value — ISO 3166 country codes.
+# 2. No output difference. Every Social History rule uses preserve_whole_entry=True
+#    with no prune_container_xpath. Whether the match landed on observation/code,
+#    observation/value, or act/code, the output is always the same: the entire
+#    entry survives intact. If intra-entry pruning is never performed, there is
+#    no benefit to structural precision — the templateId-scoped rules added
+#    complexity without adding any value to the output.
 #
-# rule 6 — TIER 1: Pregnancy Observation (eICR STU 1.1)
-#   templateId: 2.16.840.1.113883.10.20.15.3.8 (eICR STU 1.1)
-#   In STU 1.1, pregnancy status lives in Social History rather than
-#   in a dedicated Pregnancy Section. The pregnancy status code
-#   (e.g. 77386006 "Pregnant") is on observation/value; observation/code
-#   carries ASSERTION (HL7ActCode) which has no condition-grouper relevance.
-#   preserve_whole_entry=True — the observation can contain Estimated Date
-#   of Delivery and other contextual entryRelationships. See also
-#   _PREGNANCY_MATCH_RULES for the STU 3.1.1 Pregnancy Section pattern.
+# Given those two problems, the right model is to scan broadly and let the
+# configured code set be the constraint: if any configured code appears
+# anywhere in the entry — panel header, clinical content, travel type,
+# exposure agent — the whole entry is retained. That is what T3 rules do.
 #
-# rule 7 — TIER 3: observation code fallback
-#   Catches observations where the jurisdiction has configured the LOINC
-#   panel/header code rather than the clinical content code. Fires only
-#   when no earlier rule claimed the entry. Allows users to retain SDH
-#   observations by configuring their structural LOINC codes.
-
+# Rule 1 covers observation/code and act/code (structural/panel codes and
+# type codes like Travel 420008001). Rule 2 covers observation/value and
+# act/value (clinical content codes like Homeless 32911000, country codes
+# like GB, occupation codes like Census 3600). Rule 1 will claim most entries
+# since code elements are nearly universal; rule 2 fires on entries where
+# the only configured code is on a value element and nothing on code matched.
 #
-# OID: None on all rules — the Social History code systems are diverse
-# (SNOMED, PHIN VS, UMLS, Census, ISO 3166) and none have consistent
-# OID enforcement across EHR vendors. Code set membership drives matching.
+# A jurisdiction can configure either the structural panel code or the clinical
+# content code and get the same result. This is intentional — the refiner does
+# not distinguish between "I want this type of SDH data always" and "I want
+# entries with this specific clinical value." Both are valid reasons to retain
+# a Social History entry and both produce identical output.
+#
+# OID: None on both rules. Code system diversity in Social History is too
+# broad for OID constraints to be meaningful, and no EHR vendor is consistent
+# enough in Social History encoding for OID scoping to be reliable.
 _SOCIAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
-    # rule 1 — TIER 1: Travel History act code
+    # rule 1 — TIER 3: any observation or act code
     EntryMatchRule(
-        code_xpath=(
-            ".//hl7:act"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.1']]"
-            "/hl7:code"
-        ),
-        code_system_oid=None,  # intentional — SNOMED expected, OID varies
-        tier=1,
+        code_xpath=".//hl7:observation/hl7:code | .//hl7:act/hl7:code",
+        code_system_oid=None,
+        tier=3,
         preserve_whole_entry=True,
     ),
-    # rule 2 — TIER 1: Exposure/Contact Information observation code
+    # rule 2 — TIER 3: any observation or act value
+    # Fallback for entries where the configured code lives on value rather
+    # than code — clinical content codes, country codes, occupation codes, etc.
     EntryMatchRule(
-        code_xpath=(
-            ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.52']]"
-            "/hl7:code"
-        ),
-        code_system_oid=None,  # intentional — PHIN VS codes
-        tier=1,
-        preserve_whole_entry=True,
-    ),
-    # rule 3 — TIER 1: Past or Present Occupation value
-    # value carries the occupation code; code carries LOINC panel code
-    EntryMatchRule(
-        code_xpath=(
-            ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.217']]"
-            "/hl7:value"
-        ),
-        code_system_oid=None,  # intentional — Census/SNOMED occupation codes
-        tier=1,
-        preserve_whole_entry=True,
-    ),
-    # rule 4 — TIER 1: Usual Occupation value
-    EntryMatchRule(
-        code_xpath=(
-            ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.221']]"
-            "/hl7:value"
-        ),
-        code_system_oid=None,  # intentional — Census/SNOMED occupation codes
-        tier=1,
-        preserve_whole_entry=True,
-    ),
-    # rule 5 — TIER 1: Country of Residence/Birth value
-    EntryMatchRule(
-        code_xpath=(
-            ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.53']]"
-            "/hl7:value"
-        ),
-        code_system_oid=None,  # intentional — ISO 3166 country codes
-        tier=1,
-        preserve_whole_entry=True,
-    ),
-    # rule 6 — TIER 1: Pregnancy Observation (eICR STU 1.1)
-    # In STU 1.1 the pregnancy observation lives in Social History.
-    # The pregnancy status code is on observation/value; observation/code
-    # carries ASSERTION and is not condition-relevant.
-    EntryMatchRule(
-        code_xpath=(
-            ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.3.8']]"
-            "/hl7:value"
-        ),
-        code_system_oid=None,  # intentional — SNOMED pregnancy status codes
-        tier=1,
-        preserve_whole_entry=True,
-    ),
-    # rule 7 — TIER 3: observation code fallback
-    # Catches observations where the jurisdiction has configured the LOINC
-    # panel/header code rather than the clinical content code. Fires only
-    # when no earlier rule claimed the entry. Allows users to retain SDH
-    # observations by configuring their structural LOINC codes.
-    EntryMatchRule(
-        code_xpath=".//hl7:observation/hl7:code",
+        code_xpath=".//hl7:observation/hl7:value | .//hl7:act/hl7:value",
         code_system_oid=None,
         tier=3,
         preserve_whole_entry=True,
