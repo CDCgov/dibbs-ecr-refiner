@@ -734,6 +734,13 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   of Delivery and other contextual entryRelationships. See also
 #   _PREGNANCY_MATCH_RULES for the STU 3.1.1 Pregnancy Section pattern.
 #
+# rule 7 — TIER 3: observation code fallback
+#   Catches observations where the jurisdiction has configured the LOINC
+#   panel/header code rather than the clinical content code. Fires only
+#   when no earlier rule claimed the entry. Allows users to retain SDH
+#   observations by configuring their structural LOINC codes.
+
+#
 # OID: None on all rules — the Social History code systems are diverse
 # (SNOMED, PHIN VS, UMLS, Census, ISO 3166) and none have consistent
 # OID enforcement across EHR vendors. Code set membership drives matching.
@@ -806,6 +813,17 @@ _SOCIAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
         ),
         code_system_oid=None,  # intentional — SNOMED pregnancy status codes
         tier=1,
+        preserve_whole_entry=True,
+    ),
+    # rule 7 — TIER 3: observation code fallback
+    # Catches observations where the jurisdiction has configured the LOINC
+    # panel/header code rather than the clinical content code. Fires only
+    # when no earlier rule claimed the entry. Allows users to retain SDH
+    # observations by configuring their structural LOINC codes.
+    EntryMatchRule(
+        code_xpath=".//hl7:observation/hl7:code",
+        code_system_oid=None,
+        tier=3,
         preserve_whole_entry=True,
     ),
 ]
