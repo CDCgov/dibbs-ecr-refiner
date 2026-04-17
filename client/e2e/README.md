@@ -30,6 +30,21 @@ We make use of [page object models](https://playwright.dev/docs/pom) (found in [
 
 POMs are available in all test code via fixtures.
 
+### Making API Requests
+
+All tests have access to an `api` fixture that allows us to make requests to the Refiner API. This is useful because we can avoid going through an unreleated UI flow to set up test data for what we want to test.
+
+Please see [fixtures/api](fixtures/api.ts).
+
+### Direct Database Access
+
+> [!IMPORTANT]
+> We should prefer to use API requests instead of direct database queries when possible. When we make use of API requests we are still testing public application functionality which is more beneficial to us than running DB queries.
+
+Similar to API requests, direct database access allows us to perform operations that are not available through the API but are useful for testing, such as deleting configuration data.
+
+Please see [db/index.ts](db/index.ts)
+
 ## Accessibility Checks
 
 In order to perform automated Axe accessibility checks, we are able to make use of the `toHaveNoAxeViolations()` custom matcher. This matcher should be used any time the view changes for the user. This ensures that we are able to capture potential a11y issues on the various different states of a page.
