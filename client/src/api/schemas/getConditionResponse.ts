@@ -7,6 +7,9 @@
  */
 import type { GetConditionCode } from './getConditionCode';
 
+/**
+ * Condition response model.
+ */
 export interface GetConditionResponse {
   id: string;
   display_name: string;

@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * Conditions response model.
+ */
 export interface GetConditionsResponse {
   id: string;
   display_name: string;

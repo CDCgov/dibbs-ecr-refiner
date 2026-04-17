@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * Conditions returned to the user to be used for filtering events.
+ */
 export interface EventFilterOption {
   id: string;
   name: string;
