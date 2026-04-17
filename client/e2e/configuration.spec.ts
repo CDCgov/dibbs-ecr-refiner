@@ -142,7 +142,7 @@ test.describe('Configuration detail flow', () => {
       });
     });
 
-    await test.step('Custom sections', async () => {
+    await test.step('Configure custom sections', async () => {
       await page.getByRole('button', { name: 'Add custom section' }).click();
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
       await page
@@ -169,14 +169,16 @@ test.describe('Configuration detail flow', () => {
       ).toBeVisible();
     });
 
-    await test.step('Delete custom codes and custom sections', async () => {
+    await test.step('Delete custom codes', async () => {
       await configurationPage.goToBuildTab();
       await configurationPage.deleteCodeSet(additionalCodeSetName);
 
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await configurationPage.deleteCustomCode(customCode);
       await expect(page.getByText(customCode)).not.toBeVisible();
+    });
 
+    await test.step('Delete custom section', async () => {
       await page.getByRole('button', { name: 'Sections' }).click();
       await page
         .getByRole('button', {
