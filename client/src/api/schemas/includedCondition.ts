@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * Model for a condition that is associated with a configuration.
+ */
 export interface IncludedCondition {
   id: string;
   display_name: string;

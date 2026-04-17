@@ -23,7 +23,7 @@ Key principles:
 Validation and automation targets HL7’s official Schematron and sample files published in [HL7/CDA-phcaserpt](https://github.com/HL7/CDA-phcaserpt), which explicitly references 3.1.1 in its README and assets. Subsequent incremental spec updates (e.g., v3.1.2) will be handled as Python code updates in the config models.
 
 > [!NOTE]
-> **HL7 Repository Versioning Note:**  
+> **HL7 Repository Versioning Note:**
 > The [HL7/CDA-phcaserpt](https://github.com/HL7/CDA-phcaserpt) repo is the canonical source for all eICR releases, including 3.1.1 and beyond, even when the repo or branch name does not change. All compliance, development, and validation are anchored to the assets, Schematron, and documentation present in this repository.
 
 ## Decision Drivers
@@ -46,7 +46,7 @@ Validation and automation targets HL7’s official Schematron and sample files p
 | Pydantic Model                  | Runtime validation, error reporting                                       | Extra overhead, still Python-centric                  |
 | Database/API                    | Dynamic updates, online editing                                           | Overkill for static config                            |
 
-**Chosen Approach:**  
+**Chosen Approach:**
 All configuration is defined as Python TypedDicts and/or dataclasses in code (`refiner_config.py` or related modules). There are no JSON configuration files. Any new version, document, section, or entry is added as a Python code change, type-checked via mypy, and reviewed in PR. This hierarchy encodes all relationships, supported document types/versions, and enables focused, documented updates as standards evolve.
 
 > [!NOTE]
