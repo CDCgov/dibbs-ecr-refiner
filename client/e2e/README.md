@@ -13,8 +13,9 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end (E2E) bro
 
 3. **Run the E2E tests:**
    - `npm run e2e`
-     - By default, tests run in headless mode across Chromium, Firefox, and WebKit.
-   - `npm run e2e:dev` can be used to run the tests using the visual runner
+     - This command will run tests in headless mode using Chrome
+   - `npm run e2e:dev`
+      - This command will run the tests using the visual runner
 
 4. **View the HTML test report:**
    - After running, show the report with `npm run e2e:report`
