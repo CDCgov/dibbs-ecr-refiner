@@ -67,6 +67,9 @@ jobs:
         run: npm test
   run-e2e-tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
     env:
       VITE_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
       VITE_GIT_HASH: ${{ github.sha }}
