@@ -1,0 +1,52 @@
+services:
+  client:
+    image: node:22-alpine3.22
+    working_dir: /app
+    volumes:
+      - ./client:/app
+      - ./refiner/openapi.json:/app/shared/openapi.json
+    command: sh -c "npm i && npm run dev"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - refiner-service
+
+  refiner-service:
+    image: python:3.14-slim
+    command: sh -c "pip install -r requirements.txt -r requirements-dev.txt && uvicorn app.asgi:app --host 0.0.0.0 --port 8080 --reload"
+    working_dir: /app
+    volumes:
+      - ./refiner:/app
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      - ENV=local
+      - VERSION=local
+      - LOG_LEVEL=debug
+      - PIP_ROOT_USER_ACTION=ignore
+
+  localstack:
+    environment:
+      - DEBUG=1
+    volumes:
+      - localstack-data:/var/lib/localstack
+
+  db:
+    volumes:
+      - ./.justscripts/sql/drop-all.sql:/drop-all.sql
+      - pgdata:/var/lib/postgresql/data
+
+  migrate:
+    image: ghcr.io/amacneil/dbmate:main
+    working_dir: /app
+    entrypoint: ["tail", "-f", "/dev/null"]
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:
+  localstack-data:
