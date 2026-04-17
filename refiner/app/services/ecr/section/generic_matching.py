@@ -356,20 +356,21 @@ def _inject_generic_match_comments(
             entry_id_to_first_match[eid] = matched_el
 
     for entry in surviving_entries:
-        matched_el = entry_id_to_first_match.get(id(entry))
-        if matched_el is None:
+        first_match = entry_id_to_first_match.get(id(entry))
+        if first_match is None:
             continue
 
-        code = matched_el.get("code") or ""
-        display = matched_el.get("displayName") or ""
-        tag = etree.QName(matched_el.tag).localname
+        code = first_match.get("code") or ""
+        display = first_match.get("displayName") or ""
+        tag = etree.QName(first_match.tag).localname
 
         # build a readable path from entry root to the matched element
         path_parts: list[str] = []
-        current: _Element | None = matched_el
+        current: _Element | None = first_match
         while current is not None and current is not entry:
             path_parts.append(etree.QName(current.tag).localname)
             current = current.getparent()
+
         path_from_entry = "/".join(reversed(path_parts)) if path_parts else tag
 
         comment_text = build_generic_match_comment_text(
@@ -407,7 +408,11 @@ def _find_path_to_entry(element: _Element) -> _Element:
             details={"element_tag": element.tag},
         )
 
-    return current_element
+    # narrowed: None branch raised above
+    # this makes mypy happy
+    entry_element: _Element = current_element
+
+    return entry_element
 
 
 def _prune_unwanted_siblings(
