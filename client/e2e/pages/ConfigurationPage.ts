@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+import { uploadMonmothmaTestFile } from '../utils';
 
 export class ConfigurationPage {
   constructor(private page: Page) {}
@@ -7,6 +8,10 @@ export class ConfigurationPage {
     await expect(this.page.locator('.Toastify__toast')).toHaveCount(0, {
       timeout: 10000,
     });
+  }
+
+  async uploadInlineTestEcrFile() {
+    await uploadMonmothmaTestFile(this.page);
   }
 
   async goToBuildTab() {

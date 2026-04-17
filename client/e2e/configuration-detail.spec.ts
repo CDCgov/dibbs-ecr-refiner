@@ -1,6 +1,5 @@
 import { test, expect } from './fixtures';
 import { deleteAllConfigurations } from './db';
-import { uploadMonmothmaTestFile } from './utils';
 
 test.describe('Configuration detail flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -9,6 +8,31 @@ test.describe('Configuration detail flow', () => {
   });
   test.afterEach(async () => {
     await deleteAllConfigurations();
+  });
+
+  test('Uploaded file for inline testing has no conditions matching selected configuration', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Cancer';
+    await configurationsPage.createConfiguration(condition);
+    await expect(
+      page.getByRole('heading', { name: condition, level: 1 })
+    ).toBeVisible();
+
+    await configurationPage.goToTestTab();
+    await configurationPage.uploadInlineTestEcrFile();
+    await expect(
+      page.getByRole('heading', { name: 'Error', level: 2 })
+    ).toBeVisible();
+    await expect(
+      page.getByText(`The condition '${condition}' was not found`)
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(
+      page.getByText('Want to refine your own eCR file?')
+    ).toBeVisible();
   });
 
   test('User successfully builds and activates a configuration', async ({
@@ -138,7 +162,7 @@ test.describe('Configuration detail flow', () => {
 
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
 
-      await uploadMonmothmaTestFile(page);
+      await configurationPage.uploadInlineTestEcrFile();
       await expect(page.getByText('eICR file size reduced by')).toBeVisible();
       await expect(
         page.getByRole('button', { name: 'Download results' })
