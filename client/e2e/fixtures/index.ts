@@ -1,22 +1,49 @@
-import { expect as baseExpect, test as baseTest } from '@playwright/test';
+import {
+  mergeTests,
+  mergeExpects,
+  expect as baseExpect,
+  test as baseTest,
+} from '@playwright/test';
+import { ConfigurationPage } from '../pages/ConfigurationPage';
+import { ConfigurationsPage } from '../pages/ConfigurationsPage';
 import { AxeBuilder } from '@axe-core/playwright';
+import { TestingPage } from '../pages/TestingPage';
+import { Api } from './api';
+import { ActivityLogPage } from '../pages/ActivityLogPage';
 
-// See here: https://playwright.dev/docs/accessibility-testing#creating-a-fixture
-
-export type AxeFixture = {
+type Fixtures = {
+  configurationPage: ConfigurationPage;
+  configurationsPage: ConfigurationsPage;
+  testingPage: TestingPage;
+  activityLogPage: ActivityLogPage;
   makeAxeBuilder: () => AxeBuilder;
+  api: Api;
 };
 
-const test = baseTest.extend<AxeFixture>({
+const extendedTest = baseTest.extend<Fixtures>({
   makeAxeBuilder: async ({ page }, use) => {
     const makeAxeBuilder = () =>
       new AxeBuilder({ page }).withTags(['wcag21aa']);
-
     await use(makeAxeBuilder);
+  },
+  api: async ({ request }, use) => {
+    await use(new Api(request));
+  },
+  configurationPage: async ({ page }, use) => {
+    await use(new ConfigurationPage(page));
+  },
+  configurationsPage: async ({ page }, use) => {
+    await use(new ConfigurationsPage(page));
+  },
+  testingPage: async ({ page }, use) => {
+    await use(new TestingPage(page));
+  },
+  activityLogPage: async ({ page }, use) => {
+    await use(new ActivityLogPage(page));
   },
 });
 
-const expect = baseExpect.extend({
+const extendedExpect = baseExpect.extend({
   async toHaveNoAxeViolations(makeAxeBuilder: () => AxeBuilder) {
     const assertionName = 'toHaveNoAxeViolations';
     const axe = makeAxeBuilder();
@@ -57,4 +84,5 @@ const expect = baseExpect.extend({
   },
 });
 
-export { test, expect };
+export const expect = mergeExpects(extendedExpect);
+export const test = mergeTests(extendedTest);
