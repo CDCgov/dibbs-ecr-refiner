@@ -206,11 +206,14 @@ function SectionName({
         {isCustom ? <CustomSectionBadge /> : null}
       </div>
       {isCustom ? (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <span className="truncate text-sm">{section.code}</span>
           {disabled ? null : (
-            <div className="flex gap-1">
-              <EditButton setSelectedSection={setSelectedSection} />
+            <div className="flex items-center gap-1">
+              <EditButton
+                name={section.name}
+                setSelectedSection={setSelectedSection}
+              />
               <span className="text-sm" aria-hidden>
                 |
               </span>
@@ -229,11 +232,13 @@ function SectionName({
 
 interface EditButtonProps {
   setSelectedSection: () => void;
+  name: string;
 }
 
-function EditButton({ setSelectedSection }: EditButtonProps) {
+function EditButton({ setSelectedSection, name }: EditButtonProps) {
   return (
     <Button
+      aria-label={`Edit custom section ${name}`}
       className="text-sm!"
       variant="tertiary"
       onClick={setSelectedSection}
@@ -286,7 +291,12 @@ function DeleteButton({ configurationId, code, name }: DeleteButtonProps) {
   };
 
   return (
-    <Button className="text-sm!" variant="tertiary" onClick={onClick}>
+    <Button
+      aria-label={`Delete custom section ${name}`}
+      className="text-sm!"
+      variant="tertiary"
+      onClick={onClick}
+    >
       Delete
     </Button>
   );
