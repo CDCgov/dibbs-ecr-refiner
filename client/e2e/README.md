@@ -13,37 +13,23 @@ This project uses [Playwright](https://playwright.dev/) for end-to-end (E2E) bro
 
 3. **Run the E2E tests:**
    - `npm run e2e`
-   - By default, tests run in headless mode across Chromium, Firefox, and WebKit.
+     - By default, tests run in headless mode across Chromium, Firefox, and WebKit.
+   - `npm run e2e:dev` can be used to run the tests using the visual runner
 
 4. **View the HTML test report:**
    - After running, show the report with `npm run e2e:report`
 
 ## Writing E2E Tests
 
-- Add new tests as `.spec.ts` files in `client/e2e/`.
+- Add new tests as `*.spec.ts` files in `client/e2e/`.
 - Use Playwright's [test](https://playwright.dev/docs/writing-tests) API and [locators](https://playwright.dev/docs/locators) for resilient, readable tests.
-- Example test:
 
-```ts
-import { test, expect } from './fixtures/fixtures';
+### Page Object Models (POMs)
 
-test('homepage loads', async ({ page }) => {
-  await page.goto('http://localhost:8081');
-  await expect(page).toHaveTitle(/CDC/);
-});
-```
+We make use of [page object models](https://playwright.dev/docs/pom) (found in [/pages](./pages/)) to enable us to write tests more quickly, limit maintenance, and improve general readability of tests.
 
-- Use `test.beforeEach()` for setup (like navigation or login) if needed.
-- Prefer user-facing locators (roles, labels, text) over CSS selectors.
+POMs are available in all test code via fixtures.
 
-## Best Practices
-
-- Tests should be isolated and not depend on data from other tests.
-- Use [web-first assertions](https://playwright.dev/docs/test-assertions) (`await expect(...)`), not manual assertions.
-- Avoid testing third-party sites or dependencies you don't control.
-- Run tests across all major browsers (Chromium, Firefox, WebKit) for full coverage.
-- Keep Playwright and browser binaries up-to-date: `npm install -D @playwright/test@latest` and `npx playwright install --with-deps`
-- Use ESLint and TypeScript for linting and type safety.
 
 ## Accessibility Checks
 
