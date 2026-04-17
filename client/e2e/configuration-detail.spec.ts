@@ -177,7 +177,7 @@ test.describe('Configuration detail flow', () => {
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
     });
 
-    await test.step('Draft new configuration verion', async () => {
+    await test.step('Draft new configuration version', async () => {
       await page.getByRole('link', { name: 'Build' }).click();
       await expect(
         page.getByRole('heading', { name: 'Build configuration', level: 2 })
