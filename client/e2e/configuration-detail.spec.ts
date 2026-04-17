@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures/fixtures';
+import { test, expect } from './fixtures';
 import { deleteAllConfigurations } from './db';
 import { uploadMonmothmaTestFile } from './utils';
 

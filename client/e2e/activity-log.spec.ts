@@ -1,5 +1,5 @@
 import { deleteAllConfigurations } from './db';
-import { test, expect } from './fixtures/fixtures';
+import { test, expect } from './fixtures';
 
 test.describe('Activity log', () => {
   test.beforeEach(async ({ configurationsPage }) => {

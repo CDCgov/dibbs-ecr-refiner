@@ -91,6 +91,9 @@ export default defineConfig(
           extensions: ['.js', '.jsx', '.ts', '.tsx'],
           project: ['./tsconfig.app.json', './e2e/tsconfig.json'],
         },
+        node: {
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        },
       },
     },
   },
