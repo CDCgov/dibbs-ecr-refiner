@@ -11,8 +11,11 @@ from .entry_match_rules import (
     _MEDICATIONS_MATCH_RULES,
     _PAST_MEDICAL_HISTORY_MATCH_RULES,
     _PLAN_OF_TREATMENT_MATCH_RULES,
+    _PREGNANCY_MATCH_RULES,
     _PROBLEM_MATCH_RULES,
+    _PROCEDURES_MATCH_RULES,
     _RESULTS_MATCH_RULES,
+    _SOCIAL_HISTORY_MATCH_RULES,
     _VITAL_SIGNS_MATCH_RULES,
 )
 
@@ -72,6 +75,7 @@ _SECTION_CATALOG: Final[dict[str, SectionSpecification]] = {
         loinc_code="29762-2",
         display_name="Social History Section",
         template_id="2.16.840.1.113883.10.20.22.2.17:2015-08-01",
+        entry_match_rules=_SOCIAL_HISTORY_MATCH_RULES,
     ),
     # sections added in 3.1+
     "10187-3": SectionSpecification(
@@ -94,6 +98,7 @@ _SECTION_CATALOG: Final[dict[str, SectionSpecification]] = {
         loinc_code="47519-4",
         display_name="Procedures Section",
         template_id="2.16.840.1.113883.10.20.22.2.7.1:2014-06-09",
+        entry_match_rules=_PROCEDURES_MATCH_RULES,
     ),
     "46241-6": SectionSpecification(
         loinc_code="46241-6",
@@ -129,6 +134,7 @@ _SECTION_CATALOG: Final[dict[str, SectionSpecification]] = {
         loinc_code="90767-5",
         display_name="Pregnancy Section",
         template_id="2.16.840.1.113883.10.20.22.2.80:2018-04-01",
+        entry_match_rules=_PREGNANCY_MATCH_RULES,
     ),
     "83910-0": SectionSpecification(
         loinc_code="83910-0",

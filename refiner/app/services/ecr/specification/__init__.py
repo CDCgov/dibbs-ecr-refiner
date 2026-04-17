@@ -1,3 +1,7 @@
+"""
+specification module __init__ file
+"""
+
 from .constants import (
     CVX_OID,
     EICR_VERSION_MAP,
