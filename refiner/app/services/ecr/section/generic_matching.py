@@ -14,12 +14,16 @@ from ..model import (
     SectionRunResult,
     SectionSpecification,
 )
-from .entry_matching import enrich_surviving_entries
 from .narrative import (
     create_minimal_section,
     remove_all_comments,
     replace_narrative_with_removal_notice,
     restore_narrative,
+)
+from .utils import (
+    build_generic_match_comment_text,
+    enrich_surviving_entries,
+    insert_comment_before,
 )
 
 # NOTE:
@@ -40,35 +44,39 @@ def process(
 
     Used for sections without IG-verified entry match rules. These are
     sections where the entry structure is either narrative-only,
-    contains non-condition-specific content (vital signs, social
-    history), or has not yet been characterized with specific match
-    rules.
+    contains non-condition-specific content, or has not yet been
+    characterized with specific match rules.
 
     Matching is unscoped — any code/value/translation element with a
-    ``@code`` in ``codes_to_match`` is considered a hit. Pruning is
-    entry-level only. ``displayName`` enrichment runs post-prune when
-    ``code_system_sets`` is available.
+    `@code` in `codes_to_match` is considered a hit. Pruning is
+    entry-level only. `displayName` enrichment runs post-prune when
+    `code_system_sets` is available.
 
-    The generic path must neutralize the section's ``<code>`` and
-    ``<text>`` elements before searching to prevent false matches.
+    The generic path neutralizes the section's `<code>` and
+    `<text>` elements before searching to prevent false matches.
     Both are saved as deep copies and restored after processing —
-    ``<code>`` unconditionally in the finally block (to avoid
-    corrupting the tree on error), and ``<text>`` conditionally based
-    on ``include_narrative``.
+    `<code>` unconditionally in the finally block (to avoid
+    corrupting the tree on error), and `<text>` conditionally based
+    on `include_narrative`.
 
-    If no entries match (or ``codes_to_match`` is empty), the section
-    is reduced to a minimal stub via ``create_minimal_section`` (the
+    Source document XML comments are stripped before matching begins.
+    Match provenance comments (`eCR Refiner: generic match — ...`)
+    are injected above each surviving entry after pruning; these
+    survive because they are added after the source comment cleanup.
+
+    If no entries match (or `codes_to_match` is empty), the section
+    is reduced to a minimal stub via `create_minimal_section` (the
     no-match policy override) and the function returns a
-    ``SectionRunResult`` with ``matches_found=False``. The orchestrator
-    translates this into ``SectionOutcome.REFINED_NO_MATCHES_STUBBED``
+    `SectionRunResult` with `matches_found=False`. The orchestrator
+    translates this into `SectionOutcome.REFINED_NO_MATCHES_STUBBED`
     regardless of the narrative configuration — see
-    ``refine._interpret_run_result``.
+    `refine._interpret_run_result`.
 
     Returns:
         SectionRunResult reporting whether matches were found and
         what the engine did with the narrative. The
-        ``narrative_disposition`` field is meaningful only when
-        ``matches_found=True``; when no matches are found, the engine
+        `narrative_disposition` field is meaningful only when
+        `matches_found=True`; when no matches are found, the engine
         stubs the entire section and the orchestrator short-circuits
         before reading the narrative disposition.
     """
@@ -112,7 +120,13 @@ def process(
             )
 
         try:
-            # STEP 1: CONTEXT FILTERING
+            # STEP 1: strip source document comments before matching
+            # so they cannot interfere with candidate gathering.
+            # provenance comments injected after pruning (STEP 3) will
+            # survive because they are added after this cleanup.
+            remove_all_comments(section)
+
+            # STEP 2: CONTEXT FILTERING
             contextual_matches = _find_condition_relevant_elements(
                 section, codes_to_match, namespaces
             )
@@ -132,14 +146,16 @@ def process(
                     narrative_disposition="retained",
                 )
 
-            # STEP 2: PRUNE non-matching entries
-            _preserve_relevant_entries(section, contextual_matches)
+            # STEP 3: PRUNE non-matching entries and inject provenance
+            # comments above the surviving ones
+            surviving_entries = _preserve_relevant_entries(section, contextual_matches)
+            _inject_generic_match_comments(surviving_entries, contextual_matches)
 
-            # STEP 3: ENRICH displayName on surviving entries
+            # STEP 4: ENRICH displayName on surviving entries
             if code_system_sets is not None:
                 enrich_surviving_entries(section, code_system_sets, namespaces)
 
-            # STEP 4: handle narrative <text>
+            # STEP 5: handle narrative <text>
             if include_narrative and original_text is not None:
                 restore_narrative(section, original_text, namespaces)
                 return SectionRunResult(
@@ -194,13 +210,13 @@ def _find_condition_relevant_elements(
 
     Searches for both:
 
-    1. Parent elements that have a ``code``/``translation``/``value``
-       child carrying a ``@code`` attribute (the "candidates_parents"
+    1. Parent elements that have a `code`/`translation`/`value`
+       child carrying a `@code` attribute (the "candidates_parents"
        pattern).
-    2. Direct ``code``/``translation``/``value`` elements with a
-       ``@code`` attribute (the "candidates_children" pattern).
+    2. Direct `code`/`translation`/`value` elements with a
+       `@code` attribute (the "candidates_children" pattern).
 
-    Both result lists are filtered against ``codes_to_match`` and
+    Both result lists are filtered against `codes_to_match` and
     combined, then deduplicated to remove parent/child overlap.
 
     Args:
@@ -274,18 +290,24 @@ def _find_condition_relevant_elements(
 def _preserve_relevant_entries(
     section: _Element,
     contextual_matches: list[_Element],
-) -> None:
+) -> list[_Element]:
     """
     Preserve entries containing relevant elements; remove the rest.
 
     For each matched clinical element, walks up the tree to find its
-    enclosing ``<entry>``, deduplicates the resulting entry list, and
+    enclosing `<entry>`, deduplicates the resulting entry list, and
     removes any entry not in the deduplicated set.
+
+    Returns the list of surviving `<entry>` elements so the caller
+    can inject match provenance comments above each one.
 
     Args:
         section: The section element being processed.
         contextual_matches: Clinical elements found by the context
             filter.
+
+    Returns:
+        Deduplicated list of preserved entry elements.
     """
 
     entry_paths = []
@@ -297,15 +319,75 @@ def _preserve_relevant_entries(
 
     _prune_unwanted_siblings(deduplicated_entry_paths, section)
 
-    remove_all_comments(section)
+    return deduplicated_entry_paths
+
+
+def _inject_generic_match_comments(
+    surviving_entries: list[_Element],
+    contextual_matches: list[_Element],
+) -> None:
+    """
+    Insert provenance comments above each surviving entry.
+
+    The generic path has no rule index or tier — it's a flat unscoped
+    code scan. Comments attribute the match to the generic engine and
+    identify the code and element path that triggered retention.
+
+    One comment per entry. When multiple matched elements map to the
+    same entry (e.g. two matching codes in one act), only the first
+    matched element is cited — the generic path doesn't distinguish
+    which element is "primary."
+
+    Args:
+        surviving_entries:  Entry elements that survived pruning.
+        contextual_matches: Clinical elements that produced matches,
+            in the order returned by `_find_condition_relevant_elements`.
+    """
+
+    # build a map from entry id → first matching element within it
+    entry_id_to_first_match: dict[int, _Element] = {}
+    for matched_el in contextual_matches:
+        try:
+            entry = _find_path_to_entry(matched_el)
+        except Exception:
+            continue
+        eid = id(entry)
+        if eid not in entry_id_to_first_match:
+            entry_id_to_first_match[eid] = matched_el
+
+    for entry in surviving_entries:
+        first_match = entry_id_to_first_match.get(id(entry))
+        if first_match is None:
+            continue
+
+        code = first_match.get("code") or ""
+        display = first_match.get("displayName") or ""
+        tag = etree.QName(first_match.tag).localname
+
+        # build a readable path from entry root to the matched element
+        path_parts: list[str] = []
+        current: _Element | None = first_match
+        while current is not None and current is not entry:
+            path_parts.append(etree.QName(current.tag).localname)
+            current = current.getparent()
+
+        path_from_entry = "/".join(reversed(path_parts)) if path_parts else tag
+
+        comment_text = build_generic_match_comment_text(
+            matched_code=code,
+            matched_display=display,
+            matched_tag=tag,
+            path_from_entry=path_from_entry,
+        )
+        insert_comment_before(entry, comment_text)
 
 
 def _find_path_to_entry(element: _Element) -> _Element:
     """
     Find the nearest <entry> ancestor of an element.
 
-    Walks up the tree from ``element`` until it finds an element with
-    the ``{urn:hl7-org:v3}entry`` tag. Used by ``_preserve_relevant_entries``
+    Walks up the tree from `element` until it finds an element with
+    the `{urn:hl7-org:v3}entry` tag. Used by `_preserve_relevant_entries`
     to map matched clinical elements back to the entries that should
     be kept.
 
@@ -326,7 +408,11 @@ def _find_path_to_entry(element: _Element) -> _Element:
             details={"element_tag": element.tag},
         )
 
-    return current_element
+    # narrowed: None branch raised above
+    # this makes mypy happy
+    entry_element: _Element = current_element
+
+    return entry_element
 
 
 def _prune_unwanted_siblings(
@@ -458,8 +544,8 @@ def _is_ancestor(
     """
     Check if one element is an ancestor of another in the XML tree.
 
-    Walks up from ``potential_descendant`` looking for
-    ``potential_ancestor``. Returns True if found.
+    Walks up from `potential_descendant` looking for
+    `potential_ancestor`. Returns True if found.
     """
 
     current = potential_descendant.getparent()
@@ -476,12 +562,12 @@ def _extract_code_for_grouping(element: _Element) -> dict[str, str | None]:
     """
     Extract a clinical element's code for use in grouping during dedup.
 
-    Used by ``_deduplicate_clinical_elements`` to identify elements
+    Used by `_deduplicate_clinical_elements` to identify elements
     representing the same logical finding so that nested duplicates
     can be collapsed to the outermost ancestor.
 
     Returns:
-        Dictionary with a ``code`` key (string or None).
+        Dictionary with a `code` key (string or None).
     """
 
     tag_local = element.tag.split("}")[-1] if "}" in element.tag else element.tag
