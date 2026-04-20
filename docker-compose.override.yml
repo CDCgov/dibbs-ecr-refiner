@@ -5,7 +5,7 @@
 
 services:
   client:
-    image: node:22-alpine3.22
+    image: node:24-alpine3.23
     working_dir: /app
     volumes:
       - ./client:/app

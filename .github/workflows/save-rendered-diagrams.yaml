@@ -59,10 +59,10 @@ jobs:
       - if: steps.image-cache.outputs.cache-hit == 'true'
         run: docker load -i ~/image-cache/structurizr.tar
 
-      - name: Setup Node v22.20.x
+      - name: Setup Node v24
         uses: actions/setup-node@v4
         with:
-          node-version: 22.20.x
+          node-version: 24
 
       - name: Cache dependencies
         id: node-cache
