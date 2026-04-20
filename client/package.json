@@ -44,7 +44,7 @@
     "@axe-core/playwright": "^4.11.2",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.2",
-    "@tanstack/eslint-plugin-query": "^5.99.0",
+    "@tanstack/eslint-plugin-query": "^5.99.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

@@ -1,5 +1,5 @@
 boto3==1.42.83
-chardet==7.4.2
-lxml==6.0.4
+chardet==7.4.3
+lxml==6.1.0
 pydantic==2.13.0
 aws-lambda-powertools==3.14.0
