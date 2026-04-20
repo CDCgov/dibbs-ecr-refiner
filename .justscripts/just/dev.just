@@ -12,17 +12,17 @@ alias d := down
 [doc("Start only the project's core services with docker compose.")]
 [group('docker')]
 up *ARGS:
-    {{ docker }} compose -f {{ compose_files }} up {{ ARGS }}
+    {{ docker }} compose {{ compose_files }} up {{ ARGS }}
 
 [doc("Stop the project's core services with docker compose.")]
 [group('docker')]
 down *ARGS:
-    {{ docker }} compose -f {{ compose_files }} down -v {{ ARGS }}
+    {{ docker }} compose {{ compose_files }} down -v {{ ARGS }}
 
 [doc("Remove the project's core services and their volumes with docker compose.")]
 [group('docker')]
 rm:
-    {{ docker }} compose -f {{ compose_files }} rm -v
+    {{ docker }} compose {{ compose_files }} rm -v
 
 show_tbl := 'table {{.Names}}\t{{.Ports}}\t{{.ID}}'
 
