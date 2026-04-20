@@ -123,83 +123,79 @@ class TestConfigurations:
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == medications_admin_code
 
-    async def test_section_updates_success(self, setup, authed_client, db_pool):
+    async def test_section_updates_success(
+        self, setup, authed_client, get_condition_id
+    ):
         # helper function to get section
         def require_section_by_code(sections, code):
             section = next((s for s in sections if s["code"] == code), None)
             assert section is not None, f"Section with code {code} not found"
             return section
 
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                # Grab a draft config
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            draft_id = draft_config["id"]
-            admission_diagnosis_code = "46241-6"
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-            response.status_code == status.HTTP_200_OK
+        draft_id = response.json()["id"]
+        admission_diagnosis_code = "46241-6"
 
-            # Get the admission diagnosis section
-            admission_diagnosis_section = require_section_by_code(
-                response.json()["section_processing"], admission_diagnosis_code
-            )
-            expected_section_defaults = {
-                "include": True,
-                "narrative": True,
-                "action": "refine",
-                "name": "Admission Diagnosis",
-                "code": "46241-6",
-                "versions": ["3.1", "3.1.1"],
-                "section_type": "standard",
-            }
+        response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
+        response.status_code == status.HTTP_200_OK
 
-            assert admission_diagnosis_section is not None
-            assert admission_diagnosis_section == expected_section_defaults
+        # Get the admission diagnosis section
+        admission_diagnosis_section = require_section_by_code(
+            response.json()["section_processing"], admission_diagnosis_code
+        )
+        expected_section_defaults = {
+            "include": True,
+            "narrative": True,
+            "action": "refine",
+            "name": "Admission Diagnosis",
+            "code": "46241-6",
+            "versions": ["3.1", "3.1.1"],
+            "section_type": "standard",
+        }
 
-            url = f"/api/v1/configurations/{draft_id}/sections"
+        assert admission_diagnosis_section is not None
+        assert admission_diagnosis_section == expected_section_defaults
 
-            # set to "retain" and exclude
-            response = await authed_client.patch(
-                url,
-                json={
-                    "action": "retain",
-                    "current_code": admission_diagnosis_code,
-                    "include": False,
-                    "narrative": False,
-                },
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.text == f'"{admission_diagnosis_code}"'
+        url = f"/api/v1/configurations/{draft_id}/sections"
 
-            # Get the updated admission diagnosis section
-            response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-            response.status_code == status.HTTP_200_OK
-            admission_diagnosis_section = require_section_by_code(
-                response.json()["section_processing"], admission_diagnosis_code
-            )
-            expected_section_updates = {
+        # set to "retain" and exclude
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
                 "include": False,
                 "narrative": False,
-                "action": "retain",
-                "name": "Admission Diagnosis",
-                "code": "46241-6",
-                "versions": ["3.1", "3.1.1"],
-                "section_type": "standard",
-            }
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.text == f'"{admission_diagnosis_code}"'
 
-            assert admission_diagnosis_section is not None
-            assert admission_diagnosis_section == expected_section_updates
+        # Get the updated admission diagnosis section
+        response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
+        response.status_code == status.HTTP_200_OK
+        admission_diagnosis_section = require_section_by_code(
+            response.json()["section_processing"], admission_diagnosis_code
+        )
+        expected_section_updates = {
+            "include": False,
+            "narrative": False,
+            "action": "retain",
+            "name": "Admission Diagnosis",
+            "code": "46241-6",
+            "versions": ["3.1", "3.1.1"],
+            "section_type": "standard",
+        }
+
+        assert admission_diagnosis_section is not None
+        assert admission_diagnosis_section == expected_section_updates
 
     async def test_section_updates_failure(self, setup, authed_client, db_pool):
         async with db_pool.get_connection() as conn:
