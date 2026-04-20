@@ -43,7 +43,7 @@ Unit tests
 
 1. From the project root make sure you're in the `refiner/` directory
 2. Activate a virtual environment using your tool of choice
-3. Make sure that both `requirements.txt` and `requirements-dev.txt` are installed
+3. Make sure that both `requirements.txt` and `dev-requirements.txt` are installed
 4. Run the unit tests with `pytest -vv tests/`
 5. Additionally you can check coverage with `pytest --cov=app tests`
 

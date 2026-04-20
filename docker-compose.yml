@@ -1,29 +1,8 @@
+# Base configuration used by both docker-compose.override.yml and docker-compose.ci.yml
+
 services:
-  client:
-    image: node:22-alpine3.22
-    working_dir: /app
-    volumes:
-      - ./client:/app
-      - ./refiner/openapi.json:/app/shared/openapi.json
-    command: sh -c "npm i && npm run dev"
-    ports:
-      - "8081:8081"
-    depends_on:
-      - refiner-service
-  refiner-service:
-    image: python:3.14-slim
-    command: sh -c "pip install -r requirements.txt -r requirements-dev.txt && uvicorn app.asgi:app --host 0.0.0.0 --port 8080 --reload"
-    working_dir: /app
-    volumes:
-      - ./refiner:/app
-    ports:
-      - "8080:8080"
-    extra_hosts:
-      - "localhost:host-gateway"
-    environment:
-      - PIP_ROOT_USER_ACTION=ignore
-      - ENV=local
-      - VERSION=local
+  server:
+    environment: &refiner-environment
       - DB_URL=postgresql://postgres@db:5432/refiner
       - DB_PASSWORD=refiner
       - SESSION_SECRET_KEY=super-secret-key
@@ -33,18 +12,11 @@ services:
       - AUTH_ISSUER=http://localhost:8082/realms/refiner
       - AUTH_ISSUER_INTERNAL=http://auth:8082/realms/refiner
       - AWS_REGION=us-east-1
-      # only used in envs not running on EC2 (ie not on APHL infra)
       - AWS_ACCESS_KEY_ID=refiner
       - AWS_SECRET_ACCESS_KEY=refiner
       - S3_ENDPOINT_URL=http://localstack:4566
       - S3_BUCKET_CONFIG=local-config-bucket
-      - LOG_LEVEL=debug
-    logging:
-      driver: "json-file"
-    depends_on:
-      - db
-      - auth
-      - localstack
+
   lambda:
     build:
       context: .
@@ -56,28 +28,13 @@ services:
       - AWS_SECRET_ACCESS_KEY=refiner
       - S3_ENDPOINT_URL=http://localstack:4566
       - S3_BUCKET_CONFIG=local-config-bucket
-      - VERSION=local
       - EICR_INPUT_PREFIX=eCRMessageV2/
       - REFINER_INPUT_PREFIX=RefinerInput/
       - REFINER_OUTPUT_PREFIX=RefinerOutput/
       - REFINER_COMPLETE_PREFIX=RefinerComplete/
     depends_on:
       - localstack
-  auth:
-    image: quay.io/keycloak/keycloak:26.6.0
-    command:
-      - "start-dev"
-      - "--import-realm"
-      - "--http-port=8082"
-      - "--hostname-strict=false"
-      - "--http-enabled=true"
-    ports:
-      - "8082:8082"
-    environment:
-      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
-    volumes:
-      - ./keycloak/exports:/opt/keycloak/data/import
+
   db:
     image: postgres:alpine
     restart: on-failure
@@ -93,9 +50,22 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
+
+  auth:
+    image: quay.io/keycloak/keycloak:26.6.1
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "--http-port=8082"
+      - "--hostname-strict=false"
+      - "--http-enabled=true"
+    ports:
+      - "8082:8082"
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
     volumes:
-      - ./.justscripts/sql/drop-all.sql:/drop-all.sql
-      - pgdata:/var/lib/postgresql/data
+      - ./keycloak/exports:/opt/keycloak/data/import
 
   localstack:
     image: localstack/localstack:4
@@ -103,23 +73,13 @@ services:
       - "4566:4566"
     environment:
       - SERVICES=s3
-      - DEBUG=1
       - AWS_ACCESS_KEY_ID=refiner
       - AWS_SECRET_ACCESS_KEY=refiner
     volumes:
-      - localstack-data:/var/lib/localstack
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
 
-  migrate:
-    image: ghcr.io/amacneil/dbmate:main
-    working_dir: /app
-    entrypoint: ["tail", "-f", "/dev/null"]
-    depends_on:
-      - db
-    volumes:
-      - .:/app
-  # Run with `docker compose run --rm seed`
+# Run with `docker compose run --rm seed`
   seed:
     image: python:3.14-slim
     working_dir: /app
@@ -134,7 +94,3 @@ services:
       - DB_PASSWORD=refiner
     volumes:
       - .:/app
-
-volumes:
-  pgdata:
-  localstack-data:
