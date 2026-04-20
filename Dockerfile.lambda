@@ -9,8 +9,8 @@ ARG VERSION="0.0.0"
 ENV VERSION=$VERSION
 
 # Install dependencies
-COPY ./refiner/app/lambda/requirements-lambda.txt .
-RUN pip install --no-cache-dir -r requirements-lambda.txt
+COPY ./refiner/app/lambda/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy handler
 COPY ./refiner/app/lambda/lambda_function.py app/lambda/lambda_function.py
