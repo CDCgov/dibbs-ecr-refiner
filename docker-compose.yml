@@ -1,3 +1,5 @@
+# Base configuration used by both docker-compose.override.yml and docker-compose.ci.yml
+
 services:
   server:
     environment: &refiner-environment

@@ -1,3 +1,8 @@
+# CI configuration used for e2e testing in the GH Actions pipeline
+#
+# Run locally with:
+# docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+
 services:
   server:
     build:
