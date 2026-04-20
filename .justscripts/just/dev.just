@@ -1,6 +1,7 @@
 set working-directory := '../..'
 
 docker := require("docker")
+compose_files := "-f " + absolute_path('./docker-compose.yml') + " -f " + absolute_path('./docker-compose.override.yml')
 
 @_default:
     just --list dev
