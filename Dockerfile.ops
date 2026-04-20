@@ -22,8 +22,8 @@ COPY --from=ghcr.io/amacneil/dbmate:main /usr/local/bin/dbmate /usr/local/bin/db
 WORKDIR /app
 
 # Python files
-COPY ./refiner/requirements-scripts.txt ./
-RUN pip install --no-cache-dir -r requirements-scripts.txt
+COPY ./refiner/scripts-requirements.txt ./
+RUN pip install --no-cache-dir -r scripts-requirements.txt
 
 # Copy migration files
 COPY ./refiner/migrations ./migrations

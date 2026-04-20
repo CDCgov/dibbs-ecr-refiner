@@ -1,0 +1,38 @@
+# CI configuration used for e2e testing in the GH Actions pipeline
+#
+# Run locally with:
+# docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+      args:
+        - VITE_GIT_HASH=${VITE_GIT_HASH}
+        - VITE_GIT_BRANCH=${VITE_GIT_BRANCH}
+        - VERSION=${VERSION}
+    ports:
+      - "8080:8080"
+      - "8081:8080"
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      - ENV=local
+      - VERSION=${VERSION}
+      - LOG_LEVEL=info
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.ops
+      args:
+        - VERSION=${VERSION}
+    command: ["prepare-db"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_URL=postgresql://postgres:refiner@db:5432/refiner
+      - DB_PASSWORD=refiner
+      - SSL_MODE=disable
