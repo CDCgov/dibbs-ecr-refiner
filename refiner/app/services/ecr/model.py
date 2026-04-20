@@ -97,6 +97,141 @@ class TriggerCode:
 class EntryMatchRule:
     """
     Each <section> has its own rules for their <entry>s; this object memorializes those rules.
+
+    Rules are evaluated in list order with structural precedence: if a
+    rule's code_xpath finds code-bearing elements in an entry (candidates),
+    that rule claims the entry regardless of whether any codes matched —
+    subsequent rules are not evaluated. This prevents fallback rules from
+    running on entries that were already examined by a more specific rule.
+
+    Attributes:
+        code_xpath:
+            XPath expression (relative to <entry>) targeting the primary
+            code-bearing elements for this rule. Should be scoped to a
+            specific C-CDA templateId predicate where possible so that
+            structural precedence operates at the template level rather
+            than the element level.
+
+        code_system_oid:
+            OID of the expected code system for primary code matches.
+            When set, only codes whose configured code system matches
+            this OID are considered matches. When None, any code system
+            is accepted — use None when vendor coding practice is too
+            varied to rely on the codeSystem attribute, and document
+            the intent with a comment at the call site.
+
+            For rules where the OID encodes semantic meaning (e.g.
+            SNOMED_OID on observation/value means "organism/substance
+            result codes specifically"), retain the OID and document
+            why. For rules where the OID is a validity guard on a
+            structurally unambiguous location (e.g. RxNorm on
+            manufacturedMaterial/code), None is acceptable because the
+            XPath already constrains the match location sufficiently.
+
+        translation_xpath:
+            XPath expression targeting translation elements to check
+            when the primary code_xpath produces no match. Handles the
+            common real-world pattern where the IG-expected code system
+            appears in <translation> rather than at the primary
+            location (e.g. local code as primary, LOINC in translation).
+
+        translation_code_system_oid:
+            OID for translation code matching. Same semantics as
+            code_system_oid. When None, any code system in the
+            translation is accepted.
+
+        prune_container_xpath:
+            XPath expression (relative to <entry>) identifying the
+            container elements to prune within a matched entry. When
+            set, only containers that contain a matched code element
+            are kept; the rest are removed. When None, the matched
+            entry is kept whole — no intra-entry pruning is performed.
+
+            Used for sections where entries contain panels of
+            sub-observations (Results organizer/component, Vital Signs
+            organizer/component) and each sub-observation should be
+            individually retained or removed.
+
+        require_value_set_attr:
+            When True, a code element only qualifies as a match
+            candidate if it also carries an sdtc:valueSet attribute.
+
+            This guard is specifically for result observation value
+            elements where the presence of sdtc:valueSet is the
+            structural indicator that a code was placed there as an
+            RCTC trigger code rather than as a plain clinical finding
+            value. Per CONF:4527-443 (STU 3.1.1), sdtc:valueSet SHALL
+            be present on genuine trigger code values.
+
+            Without this guard, generic SNOMED qualifier codes like
+            260373001 "Detected (qualifier value)" — which appear as
+            plain observation values on any positive test — would match
+            the organism/substance rule and cause unrelated result
+            entries to be retained. The sdtc:valueSet attribute is
+            absent on those elements, so the guard correctly filters
+            them out while still matching codes like 5247005 "Bordetella
+            pertussis (organism)" that are genuine RCTC trigger values
+            and do carry sdtc:valueSet.
+
+            Default False. Only set to True on rules targeting
+            observation/value where this distinction matters.
+
+        tier:
+            IG conformance tier for this rule. Used in match provenance
+            comments to indicate how the rule relates to the spec:
+
+                1 — SHALL: directly mandated by the IG. The primary
+                    conformant path. If a sender follows the spec, this
+                    rule matches.
+
+                2 — SHOULD/MAY: permitted by the IG but not required.
+                    Handles optional patterns (translations, alternate
+                    code locations) that conformant senders may or may
+                    not use.
+
+                3 — HEURISTIC: not IG-conformant but observed in real
+                    EHR output. Accommodates vendor variance. Each tier
+                    3 rule should carry a comment explaining what
+                    real-world pattern it was written for.
+
+            Surfaces in XML match comments as (T1), (T2), or (T3) so
+            readers can immediately tell whether a match fired on a
+            spec-mandated path or a heuristic accommodation.
+
+            Default 1.
+
+        preserve_whole_entry:
+            When True, a matched entry is kept entirely intact —
+            all child elements including entryRelationship chains,
+            performers, authors, participants, and nested clinical
+            statements are preserved without pruning.
+
+            Use this for clinical acts where the entry is the natural
+            unit of preservation and intra-entry pruning would destroy
+            clinical meaning. The canonical cases are:
+
+              - Medication Activity: entryRelationship[@typeCode='CAUS']
+                carries Reaction Observation (V2) — adverse event
+                information that belongs with the medication record
+                per CONF:1098-7552 (MAY, Medication Activity V2).
+              - Procedure Activity: entryRelationship[@typeCode='COMP']
+                carries Reaction Observation (V2) per CONF:1098-32475
+                (MAY, Procedure Activity Procedure V2).
+              - Immunization Activity: entryRelationship carries
+                Reaction Observation (V2) per the Immunization Activity
+                V3 template context table.
+              - Social History structured entries (Travel History,
+                Exposure, Occupation): all meaningful content lives in
+                <participant> and nested entryRelationships, not in the
+                top-level coded elements. Preserving only the match path
+                would strip the location, employer, or agent information
+                that makes the entry useful to the PHA.
+
+            When True, prune_container_xpath is ignored — there is no
+            intra-entry pruning to perform. The match fires, the entry
+            is kept whole.
+
+            Default False.
     """
 
     code_xpath: str
@@ -104,6 +239,9 @@ class EntryMatchRule:
     translation_xpath: str | None = None
     translation_code_system_oid: str | None = None
     prune_container_xpath: str | None = None
+    require_value_set_attr: bool = False
+    tier: int = 1
+    preserve_whole_entry: bool = False
 
 
 @dataclass(frozen=True)
@@ -247,7 +385,7 @@ class SectionProvenanceRecord:
     Built during plan creation (create_eicr_refinement_plan) when the
     configuration-derived fields can be populated. The runtime
     `outcome` field is populated later, after section processing
-    completes — refine_eicr uses ``dataclasses.replace`` to produce a
+    completes — refine_eicr uses `dataclasses.replace` to produce a
     finalized record before passing it to the footnote appender.
 
     The record drives the per-section provenance footnote in the
@@ -377,12 +515,12 @@ class SectionRunResult:
     """
     What the section processing engines actually did at runtime.
 
-    Returned by ``entry_matching.process`` and ``generic_matching.process``
-    (and surfaced through the ``process_section`` dispatcher) so that
-    ``refine.py`` can map the structural facts to a user-facing
-    ``SectionOutcome`` for the provenance footnote.
+    Returned by `entry_matching.process` and `generic_matching.process`
+    (and surfaced through the `process_section` dispatcher) so that
+    `refine.py` can map the structural facts to a user-facing
+    `SectionOutcome` for the provenance footnote.
 
-    The split between this dataclass and ``SectionOutcome`` is
+    The split between this dataclass and `SectionOutcome` is
     deliberate: the matching engines report **facts** (whether matches
     were found, what they did to the narrative), and the orchestrator
     interprets those facts into the user-facing outcome name. Keeping

@@ -1,3 +1,7 @@
+"""
+section module __init__ file
+"""
+
 from lxml.etree import _Element
 
 from app.services.terminology import CodeSystemSets
