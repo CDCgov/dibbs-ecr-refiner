@@ -51,85 +51,77 @@ class TestConfigurations:
         failure_audit_events = response.json()["audit_events"]
         assert len(failure_audit_events) == 1
 
-    async def test_custom_sections(self, setup, authed_client, test_username, db_pool):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                # Grab a draft config to work with
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Glanders'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+    async def test_custom_sections(self, setup, authed_client, get_condition_id):
+        condition_id = await get_condition_id("Glanders")
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            # create a new custom section
-            config_id = draft_config["id"]
-            original_payload = {"name": "test section name", "code": "section-code123"}
-            payload = original_payload
-            response = await authed_client.post(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == "section-code123"
+        # create a new custom section
+        config_id = response.json()["id"]
+        original_payload = {"name": "test section name", "code": "section-code123"}
+        payload = original_payload
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == "section-code123"
 
-            # try adding one with a duplicate name
-            payload = {"name": "test section name", "code": "new-code"}
-            response = await authed_client.post(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert response.json()["detail"] == "Section name is already in use."
+        # try adding one with a duplicate name
+        payload = {"name": "test section name", "code": "new-code"}
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"] == "Section name is already in use."
 
-            # try adding one with a duplicate code
-            payload = {"name": "new name", "code": "section-code123"}
-            response = await authed_client.post(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert response.json()["detail"] == "Section code is already in use."
+        # try adding one with a duplicate code
+        payload = {"name": "new name", "code": "section-code123"}
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"] == "Section code is already in use."
 
-            # editing the custom section with the original values should work
-            payload = {
-                "name": original_payload["name"],
-                "current_code": original_payload["code"],
-                "new_code": original_payload["code"],
-            }
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
+        # editing the custom section with the original values should work
+        payload = {
+            "name": original_payload["name"],
+            "current_code": original_payload["code"],
+            "new_code": original_payload["code"],
+        }
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
 
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == payload["new_code"]
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == payload["new_code"]
 
-            # try editing in a new name and new code
-            payload = {
-                "name": "new name",
-                "current_code": original_payload["code"],
-                "new_code": "new-code",
-            }
+        # try editing in a new name and new code
+        payload = {
+            "name": "new name",
+            "current_code": original_payload["code"],
+            "new_code": "new-code",
+        }
 
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == payload["new_code"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == payload["new_code"]
 
-            # for good measure, try editing a standard section's name and code which shouldn't work
-            medications_admin_code = "29549-3"
-            payload = {
-                "name": "This should not work",
-                "new_code": "This also should not work",
-                "current_code": medications_admin_code,
-            }
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == medications_admin_code
+        # for good measure, try editing a standard section's name and code which shouldn't work
+        medications_admin_code = "29549-3"
+        payload = {
+            "name": "This should not work",
+            "new_code": "This also should not work",
+            "current_code": medications_admin_code,
+        }
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == medications_admin_code
 
     async def test_section_updates_success(self, setup, authed_client, db_pool):
         # helper function to get section
