@@ -1,5 +1,5 @@
 services:
-  refiner-service:
+  server:
     build:
       context: .
       dockerfile: Dockerfile.app

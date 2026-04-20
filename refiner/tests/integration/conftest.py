@@ -227,7 +227,7 @@ def setup(request):
     print("🩺 Seeding conditions...")
     refiner_service.exec_in_container(
         ["python", "/app/scripts/seeding/seed_db.py"],
-        "refiner-service",
+        "server",
     )
 
     print("⏳ Waiting for conditions seeding...")
