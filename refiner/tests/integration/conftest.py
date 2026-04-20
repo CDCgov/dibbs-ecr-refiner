@@ -59,6 +59,46 @@ TEST_JD_STATE_CODE = "GC"
 
 
 @pytest_asyncio.fixture(scope="session")
+async def get_config_by_id(db_pool):
+    async def _get(id: UUID):
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT *
+                    FROM configurations
+                    WHERE id = %s
+                    """,
+                    (id,),
+                )
+                result = await cur.fetchone()
+                assert result, f"Configuration with ID '{id}' not found."
+                return result
+
+    return _get
+
+
+@pytest_asyncio.fixture(scope="session")
+async def get_condition_by_id(db_pool):
+    async def _get(id: UUID):
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT *
+                    FROM conditions
+                    WHERE id = %s
+                    """,
+                    (id,),
+                )
+                result = await cur.fetchone()
+                assert result, f"Condition with ID '{id}' not found."
+                return result
+
+    return _get
+
+
+@pytest_asyncio.fixture(scope="session")
 async def get_condition_id(db_pool):
     async def _get(name: str, version: str = "4.0.0") -> UUID:
         async with db_pool.get_connection() as conn:

@@ -246,113 +246,95 @@ class TestConfigurations:
         # FastAPI shouldn't allow this to work
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_activate_configuration(self, setup, authed_client, db_pool):
-        # Ensure the condition exists
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, display_name, version, canonical_url
-                    FROM conditions
-                    WHERE display_name = 'Drowning and Submersion'
-                    AND version = '4.0.0'
-                    """
-                )
-                condition = await cur.fetchone()
-                assert condition is not None
+    async def test_activate_configuration(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        get_condition_by_id,
+        get_config_by_id,
+    ):
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            # Activate any existing draft configuration for this condition
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            draft_id = draft_config["id"]
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{draft_id}/activate"
-            )
-            assert response.status_code == status.HTTP_200_OK
+        draft_id = response.json()["id"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{draft_id}/activate"
+        )
+        assert response.status_code == status.HTTP_200_OK
 
-            # Mapping file and content
-            mapping_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/rsg_cg_mapping.json"
-            )
+        # Mapping file and content
+        mapping_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/rsg_cg_mapping.json"
+        )
 
-            mapping_file_json = mapping_file.json()
-            assert EXPECTED_DROWNING_RSG_CODE in mapping_file_json
-            assert (
-                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["canonical_url"]
-                == f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{EXPECTED_DROWNING_CG_UUID}"
-            )
-            assert (
-                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["name"]
-                == "DrowningandSubmersion"
-            )
-            assert (
-                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["tes_version"] is not None
-            )
+        mapping_file_json = mapping_file.json()
+        assert EXPECTED_DROWNING_RSG_CODE in mapping_file_json
+        assert (
+            mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["canonical_url"]
+            == f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{EXPECTED_DROWNING_CG_UUID}"
+        )
+        assert (
+            mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["name"]
+            == "DrowningandSubmersion"
+        )
+        assert mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["tes_version"] is not None
 
-            # Activation file and content
-            activation_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/active.json"
-            )
-            activation_file_json = activation_file.json()
+        # Activation file and content
+        activation_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/active.json"
+        )
+        activation_file_json = activation_file.json()
 
-            TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
-            TOTAL_EXPECTED_SECTION_COUNT = 21
-            TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
-                1  # No other conditions were included
-            )
+        TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
+        TOTAL_EXPECTED_SECTION_COUNT = 21
+        TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
+            1  # No other conditions were included
+        )
 
-            assert (
-                len(activation_file_json["codes"])
-                == TOTAL_EXPECTED_CONDITION_CODE_COUNT
-            )
-            assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
-            assert (
-                len(activation_file_json["included_condition_rsg_codes"])
-                == TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES
-            )
-            assert (
-                activation_file_json["included_condition_rsg_codes"][0]
-                == EXPECTED_DROWNING_RSG_CODE
-            )
+        assert len(activation_file_json["codes"]) == TOTAL_EXPECTED_CONDITION_CODE_COUNT
+        assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
+        assert (
+            len(activation_file_json["included_condition_rsg_codes"])
+            == TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES
+        )
+        assert (
+            activation_file_json["included_condition_rsg_codes"][0]
+            == EXPECTED_DROWNING_RSG_CODE
+        )
 
-            # Metadata file and content
-            metadata_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/metadata.json"
-            )
-            metadata_file_json = metadata_file.json()
-            assert metadata_file_json["condition_name"] == condition["display_name"]
-            assert metadata_file_json["canonical_url"] == condition["canonical_url"]
-            assert metadata_file_json["tes_version"] == condition["version"]
-            assert (
-                metadata_file_json["jurisdiction_id"] == draft_config["jurisdiction_id"]
-            )
-            assert (
-                metadata_file_json["configuration_version"] == draft_config["version"]
-            )
-            assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
-            assert (
-                metadata_file_json["child_rsg_snomed_codes"][0]
-                == EXPECTED_DROWNING_RSG_CODE
-            )
+        # Metadata file and content
+        metadata_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/metadata.json"
+        )
+        metadata_file_json = metadata_file.json()
+        condition = await get_condition_by_id(condition_id)
+        draft_config = await get_config_by_id(draft_id)
 
-            # Current file and content
-            current_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
-            )
-            assert current_file.json()["version"] == 1
+        assert metadata_file_json["condition_name"] == condition["display_name"]
+        assert metadata_file_json["canonical_url"] == condition["canonical_url"]
+        assert metadata_file_json["tes_version"] == condition["version"]
+        assert metadata_file_json["jurisdiction_id"] == draft_config["jurisdiction_id"]
+        assert metadata_file_json["configuration_version"] == draft_config["version"]
+        assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
+        assert (
+            metadata_file_json["child_rsg_snomed_codes"][0]
+            == EXPECTED_DROWNING_RSG_CODE
+        )
+
+        # Current file and content
+        current_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
+        )
+        assert current_file.json()["version"] == 1
 
         # Now create a new configuration for activation
-        payload = {"condition_id": str(condition["id"])}
+        payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         config_data = response.json()
