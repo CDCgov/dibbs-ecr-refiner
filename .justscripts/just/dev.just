@@ -11,17 +11,17 @@ alias d := down
 [doc("Start only the project's core services with docker compose.")]
 [group('docker')]
 up *ARGS:
-    {{ docker }} compose -f {{ absolute_path('./docker-compose.yaml') }} up {{ ARGS }}
+    {{ docker }} compose -f {{ absolute_path('./docker-compose.yml') }} -f {{ absolute_path('./docker-compose.override.yml') }} up {{ ARGS }}
 
 [doc("Stop the project's core services with docker compose.")]
 [group('docker')]
 down *ARGS:
-    {{ docker }} compose -f {{ absolute_path('./docker-compose.yaml') }} down -v {{ ARGS }}
+    {{ docker }} compose -f {{ absolute_path('./docker-compose.yml') }} -f {{ absolute_path('./docker-compose.override.yml') }} down -v {{ ARGS }}
 
 [doc("Remove the project's core services and their volumes with docker compose.")]
 [group('docker')]
 rm:
-    {{ docker }} compose -f {{ absolute_path('./docker-compose.yaml') }} rm -v
+    {{ docker }} compose -f {{ absolute_path('./docker-compose.yml') }}  -f {{ absolute_path('./docker-compose.override.yml') }} rm -v
 
 show_tbl := 'table {{.Names}}\t{{.Ports}}\t{{.ID}}'
 
