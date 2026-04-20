@@ -197,58 +197,54 @@ class TestConfigurations:
         assert admission_diagnosis_section is not None
         assert admission_diagnosis_section == expected_section_updates
 
-    async def test_section_updates_failure(self, setup, authed_client, db_pool):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                # Grab a draft config
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+    async def test_section_updates_failure(
+        self, setup, authed_client, get_condition_id
+    ):
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            draft_id = draft_config["id"]
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-            response.status_code == status.HTTP_200_OK
+        draft_id = response.json()["id"]
 
-            url = f"/api/v1/configurations/{draft_id}/sections"
+        response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
+        response.status_code == status.HTTP_200_OK
 
-            # try to update a code that doesn't exist
-            nonexistent_code = "fakecode"
-            response = await authed_client.patch(
-                url,
-                json={
-                    "action": "retain",
-                    "current_code": nonexistent_code,
-                    "include": False,
-                    "narrative": False,
-                },
-            )
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert (
-                response.json()["detail"]
-                == f"Section with code {nonexistent_code} is invalid and can't be updated."
-            )
+        url = f"/api/v1/configurations/{draft_id}/sections"
 
-            admission_diagnosis_code = "46241-6"
-            # try an invalid action
-            response = await authed_client.patch(
-                url,
-                json={
-                    "action": "remove",
-                    "current_code": admission_diagnosis_code,
-                    "include": False,
-                    "narrative": False,
-                },
-            )
-            # FastAPI shouldn't allow this to work
-            assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        # try to update a code that doesn't exist
+        nonexistent_code = "fakecode"
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": nonexistent_code,
+                "include": False,
+                "narrative": False,
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            response.json()["detail"]
+            == f"Section with code {nonexistent_code} is invalid and can't be updated."
+        )
+
+        admission_diagnosis_code = "46241-6"
+        # try an invalid action
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "remove",
+                "current_code": admission_diagnosis_code,
+                "include": False,
+                "narrative": False,
+            },
+        )
+        # FastAPI shouldn't allow this to work
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     async def test_activate_configuration(self, setup, authed_client, db_pool):
         # Ensure the condition exists
