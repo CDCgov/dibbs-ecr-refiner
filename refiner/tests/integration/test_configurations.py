@@ -17,24 +17,13 @@ EXPECTED_DROWNING_RSG_CODE = "212962007"
 @pytest.mark.asyncio
 class TestConfigurations:
     async def test_create_configuration(
-        self, setup, authed_client, test_username, db_pool
+        self, setup, authed_client, test_username, get_condition_id
     ):
-        # Get a condition to use to create a config
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, display_name
-                    FROM conditions
-                    WHERE display_name = 'Drowning and Submersion'
-                    AND version = '4.0.0'
-                    """
-                )
-                condition = await cur.fetchone()
-                assert condition is not None
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
         # Create config
-        payload = {"condition_id": str(condition["id"])}
+        payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         assert "id" in response.json()
@@ -50,7 +39,7 @@ class TestConfigurations:
         creation_event = audit_events[0]
         assert creation_event is not None
         assert creation_event["username"] == test_username
-        assert creation_event["configuration_name"] == condition["display_name"]
+        assert creation_event["configuration_name"] == condition_name
 
         # Attempt to create the same config again (should fail)
         response = await authed_client.post("/api/v1/configurations/", json=payload)

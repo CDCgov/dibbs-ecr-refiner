@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from lxml import etree
+from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
 
@@ -54,6 +56,36 @@ TEST_USER_ID = "673da667-6f92-4a50-a40d-f44c5bc6a2d8"
 TEST_JD_ID = "SDDH"
 TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
+
+
+@pytest_asyncio.fixture(scope="session")
+async def get_condition_id(db_pool):
+    async def _get(name: str, version: str = "4.0.0") -> UUID:
+        async with db_pool.get_connection() as conn:
+            async with conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(
+                    """
+                    SELECT id
+                    FROM conditions
+                    WHERE display_name = %s
+                    AND version = %s
+                    """,
+                    (name, version),
+                )
+                result = await cur.fetchone()
+                assert result, f"Condition '{name}' version '{version}' not found"
+                return result["id"]
+
+    return _get
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def reset_db(db_pool):
+    yield
+    # run after each test
+    async with db_pool.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM configurations")
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -252,352 +284,6 @@ def setup(request):
             "refiner",
             "-c",
             seed_user,
-        ],
-        "db",
-    )
-
-    print(
-        "🔎 Looking up dynamic condition UUIDs and canonical URLs for COVID-19 and Influenza (version 4.0.0)..."
-    )
-
-    def get_id_and_url(exec_result):
-        output = exec_result[0]
-        for line in output.splitlines():
-            line = line.strip()
-            if line:
-                parts = line.split("|")
-                if len(parts) == 2:
-                    return parts[0].strip(), parts[1].strip()
-        raise RuntimeError(f"Could not parse condition id and url from: {output!r}")
-
-    covid_result = refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-t",
-            "-A",
-            "-F",
-            "|",
-            "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'COVID-19' AND version = '4.0.0';",
-        ],
-        "db",
-    )
-    flu_result = refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-t",
-            "-A",
-            "-F",
-            "|",
-            "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Influenza' AND version = '4.0.0';",
-        ],
-        "db",
-    )
-    zika_result = refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-t",
-            "-A",
-            "-F",
-            "|",
-            "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Zika Virus Disease' AND version = '4.0.0';",
-        ],
-        "db",
-    )
-
-    glanders_result = refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-t",
-            "-A",
-            "-F",
-            "|",
-            "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Glanders' AND version = '4.0.0';",
-        ],
-        "db",
-    )
-
-    covid_id, covid_canonical_url = get_id_and_url(covid_result)
-    flu_id, flu_canonical_url = get_id_and_url(flu_result)
-    zika_id, zika_canonical_url = get_id_and_url(zika_result)
-    glanders_id, glanders_canonical_url = get_id_and_url(glanders_result)
-
-    # Add Drowning and Submersion condition lookup
-    drowning_result = refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-t",
-            "-A",
-            "-F",
-            "|",
-            "-c",
-            "SELECT id, canonical_url FROM conditions WHERE display_name = 'Drowning and Submersion' AND version = '4.0.0';",
-        ],
-        "db",
-    )
-    drowning_id, drowning_canonical_url = get_id_and_url(drowning_result)
-
-    if (
-        not covid_id
-        or not flu_id
-        or not zika_id
-        or not drowning_id
-        or not glanders_id
-        or not covid_canonical_url
-        or not flu_canonical_url
-        or not zika_canonical_url
-        or not drowning_canonical_url
-        or not glanders_canonical_url
-    ):
-        raise RuntimeError(
-            f"Could not find COVID-19, Influenza, Zika Virus Disease, or Drowning and Submersion condition UUID/canonical_url for test config seeding. Got: COVID-19=({covid_id}, {covid_canonical_url}), Influenza=({flu_id}, {flu_canonical_url}), Zika=({zika_id}, {zika_canonical_url}), Drowning=({drowning_id}, {drowning_canonical_url})"
-        )
-    print(
-        f"✅ Found COVID-19 condition_id: {covid_id} canonical_url: {covid_canonical_url}"
-    )
-    print(
-        f"✅ Found Influenza condition_id: {flu_id} canonical_url: {flu_canonical_url}"
-    )
-    print(
-        f"✅ Found Zika Virus Disease condition_id: {zika_id} canonical_url: {zika_canonical_url}"
-    )
-    print(
-        f"✅ Found Glanders condition_id: {glanders_id} canonical_url: {glanders_canonical_url}"
-    )
-    print(
-        f"✅ Found Drowning and Submersion condition_id: {drowning_id} canonical_url: {drowning_canonical_url}"
-    )
-
-    print(
-        "📝 Inserting test configurations for integration tests (app-aligned schema)..."
-    )
-
-    # Define the default section processing that matches production behavior
-    section_defaults = [
-        {
-            "code": "46240-8",
-            "name": "History of encounters",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "10164-2",
-            "name": "History of Present Illness",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "11369-6",
-            "name": "History of Immunizations",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "29549-3",
-            "name": "Medications Administered",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "18776-5",
-            "name": "Plan of Treatment",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "11450-4",
-            "name": "Problem List",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "29299-5",
-            "name": "Reason For Visit",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "30954-2",
-            "name": "Relevant diagnostic tests and/or laboratory data",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-        {
-            "code": "29762-2",
-            "name": "Social History",
-            "action": "refine",
-            "versions": ["1.1", "3.1", "3.1.1"],
-            "include": True,
-            "narrative": False,
-        },
-    ]
-
-    config_insert = f"""
-    DO $$
-    DECLARE
-        covid_config_id uuid;
-        flu_config_id uuid;
-        zika_config_id uuid;
-        glanders_config_id uuid;
-    BEGIN
-        INSERT INTO configurations (
-            jurisdiction_id,
-            condition_id,
-            name,
-            created_by,
-            included_conditions,
-            custom_codes,
-            version,
-            status
-        )
-        VALUES (
-            '{TEST_JD_ID}',
-            '{covid_id}',
-            'COVID-19',
-            '{TEST_USER_ID}',
-            '["{covid_id}"]'::jsonb,
-            '[]'::jsonb,
-            1,
-            'active'
-        )
-        ON CONFLICT DO NOTHING
-        RETURNING id INTO covid_config_id;
-
-        IF covid_config_id IS NOT NULL THEN
-            {build_section_insert_sql("covid_config_id", section_defaults)}
-        END IF;
-
-        INSERT INTO configurations (
-            jurisdiction_id,
-            condition_id,
-            name,
-            created_by,
-            included_conditions,
-            custom_codes,
-            version,
-            status
-        )
-        VALUES (
-            '{TEST_JD_ID}',
-            '{flu_id}',
-            'Influenza',
-            '{TEST_USER_ID}',
-            '["{flu_id}"]'::jsonb,
-            '[]'::jsonb,
-            1,
-            'active'
-        )
-        ON CONFLICT DO NOTHING
-        RETURNING id INTO flu_config_id;
-
-        IF flu_config_id IS NOT NULL THEN
-            {build_section_insert_sql("flu_config_id", section_defaults)}
-        END IF;
-
-        INSERT INTO configurations (
-            jurisdiction_id,
-            condition_id,
-            name,
-            created_by,
-            included_conditions,
-            custom_codes,
-            version,
-            status
-        )
-        VALUES (
-            '{TEST_JD_ID}',
-            '{zika_id}',
-            'Zika Virus Disease',
-            '{TEST_USER_ID}',
-            '["{zika_id}"]'::jsonb,
-            '[]'::jsonb,
-            1,
-            'active'
-        )
-        ON CONFLICT DO NOTHING
-        RETURNING id INTO zika_config_id;
-
-        IF zika_config_id IS NOT NULL THEN
-            {build_section_insert_sql("zika_config_id", section_defaults)}
-        END IF;
-
-        INSERT INTO configurations (
-            jurisdiction_id,
-            condition_id,
-            name,
-            created_by,
-            included_conditions,
-            custom_codes,
-            version,
-            status
-        )
-        VALUES (
-            '{TEST_JD_ID}',
-            '{glanders_id}',
-            'Glanders',
-            '{TEST_USER_ID}',
-            '["{glanders_id}"]'::jsonb,
-            '[]'::jsonb,
-            1,
-            'draft'
-        )
-        ON CONFLICT DO NOTHING
-        RETURNING id INTO glanders_config_id;
-
-        IF glanders_config_id IS NOT NULL THEN
-            {build_section_insert_sql("glanders_config_id", section_defaults)}
-        END IF;
-    END $$;
-    """
-
-    refiner_service.exec_in_container(
-        [
-            "psql",
-            "-U",
-            "postgres",
-            "-d",
-            "refiner",
-            "-c",
-            config_insert,
         ],
         "db",
     )
