@@ -1,3 +1,8 @@
+# Local development environment configuration
+#
+# Run locally with:
+# docker compose up -d
+
 services:
   client:
     image: node:22-alpine3.22
