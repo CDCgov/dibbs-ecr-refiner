@@ -181,7 +181,7 @@ def setup(request):
     Manages the lifecycle of the service running via Docker Compose
 
     This fixture will:
-      1. Start the Docker services defined in `docker-compose.yaml`
+      1. Start the Docker services defined in `docker-compose.yml`
       2. Wait for the main application service to become healthy (via its healthcheck endpoint)
       3. Yield control to the test session
       4. After all tests in the session complete, it will tear down (stop) the Docker services
@@ -192,8 +192,10 @@ def setup(request):
 
     print("🚀 Setting up tests...")
     path = Path(__file__).resolve().parent.parent.parent.parent
-    compose_file_name = os.path.join(path, "docker-compose.yaml")
-    refiner_service = DockerCompose(path, compose_file_name=compose_file_name)
+    refiner_service = DockerCompose(
+        path,
+        compose_file_name=["docker-compose.yml", "docker-compose.override.yml"],
+    )
 
     refiner_service.start()
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
@@ -225,7 +227,7 @@ def setup(request):
     print("🩺 Seeding conditions...")
     refiner_service.exec_in_container(
         ["python", "/app/scripts/seeding/seed_db.py"],
-        "refiner-service",
+        "server",
     )
 
     print("⏳ Waiting for conditions seeding...")
