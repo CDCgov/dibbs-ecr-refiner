@@ -41,7 +41,7 @@
     "use-debounce": "^10.1.1"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.1",
+    "@axe-core/playwright": "^4.11.2",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.58.2",
     "@tanstack/eslint-plugin-query": "^5.99.0",
