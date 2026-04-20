@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from lxml import etree
 from saxonche import PySaxonProcessor
@@ -34,8 +33,6 @@ from rich.console import Console
 from app.api.auth.session import get_hashed_token
 from app.core.config import ENVIRONMENT
 from app.db.pool import create_db
-from app.main import create_fastapi_app, create_lifespan
-from app.services.logger import setup_logger
 from scripts.validation.validate_document_schematron import (
     STANDARDS_MAP,
     display_svrl_results,
@@ -73,21 +70,6 @@ async def db_pool():
 
     yield db
     await db.close()
-
-
-@pytest.fixture(scope="session")
-def test_app():
-    db = create_db(
-        db_url=ENVIRONMENT["DB_URL"],
-        db_password=ENVIRONMENT["DB_PASSWORD"],
-        prepare_threshold=None,
-    )
-
-    logger = setup_logger()
-    app = create_fastapi_app(lifespan=create_lifespan(db=db, logger=logger))
-
-    with TestClient(app) as client:
-        yield client.app
 
 
 @pytest.fixture
