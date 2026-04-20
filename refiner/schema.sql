@@ -1,6 +1,6 @@
 \restrict dbmate
 
--- Dumped from database version 18.0
+-- Dumped from database version 18.3
 -- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
@@ -627,11 +627,11 @@ ALTER TABLE ONLY public.configurations_sections
 
 
 --
--- Name: events fk_configuration; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: events fk_events_configurations; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.events
-    ADD CONSTRAINT fk_configuration FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT fk_events_configurations FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
 
 
 --
