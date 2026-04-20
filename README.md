@@ -18,10 +18,16 @@ For more detailed information about the relationship between the eICR and RR doc
 > GiB_. These changes will ensure that all scripting and application code run
 > correctly without issues.
 
-The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `.docker-compose.yaml` file:
+The Refiner is a containerized application and can be easily run using [Docker](https://www.docker.com/). With Docker installed, run the following command from the top-level directory containing the `docker-compose.yml` file:
 
 ```sh
 just dev up -d
+```
+
+or
+
+```sh
+docker compose up -d
 ```
 
 Next run the database migrations:
@@ -48,6 +54,24 @@ credentials:
 - `password`: `refiner2`
 
 You should be redirected to the configurations page upon successful login.
+
+### Docker Compose setup
+
+The Refiner has three Docker compose files:
+
+1. `docker-compose.yml` - This is the base configuration shared by the other two files
+2. `docker-compose.override.yml` - This is the override file used for the local development environment
+3. `docker-compose.ci.yml` - This is a "CI" file used to run an environment that is closer to being production-like. It makes use of the `Dockerfile.app` image and the `Dockerfile.ops` image
+
+Running `docker compose up` will automatically merge `docker-compose.yml` and `docker-compose.override.yml`.
+
+#### Running the CI environment locally
+
+If you'd like to run the CI environment locally for any reason, we can run the following command:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+```
 
 ## Running the eCR Refiner application in production
 
