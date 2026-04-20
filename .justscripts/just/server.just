@@ -43,7 +43,7 @@ install: _venv
 [doc('Install all dependencies locally')]
 [group('dependencies')]
 install-dev: _venv
-    .venv/bin/pip install -r requirements-dev.txt -r requirements.txt
+    .venv/bin/pip install -r dev-requirements.txt -r requirements.txt
 
 [doc('Seed Localstack with the infra needed for manual tests')]
 [group('localstack')]
