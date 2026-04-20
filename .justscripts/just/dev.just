@@ -12,7 +12,7 @@ alias d := down
 [doc("Start only the project's core services with docker compose.")]
 [group('docker')]
 up *ARGS:
-    {{ docker }} compose {{ compose_files }} up {{ ARGS }}
+    {{ docker }} compose up {{ ARGS }}
 
 [doc("Stop the project's core services with docker compose.")]
 [group('docker')]
