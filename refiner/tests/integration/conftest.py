@@ -61,6 +61,12 @@ TEST_JD_STATE_CODE = "GC"
 
 @pytest_asyncio.fixture
 async def activate_config(authed_client):
+    """
+    Returns a function that activates a configuration when given a configuration ID.
+
+    result = await activate_config("config-id")
+    """
+
     async def _get(id: UUID):
         response = await authed_client.patch(f"/api/v1/configurations/{id}/activate")
         assert response.status_code == status.HTTP_200_OK
@@ -71,6 +77,12 @@ async def activate_config(authed_client):
 
 @pytest_asyncio.fixture
 async def create_config(authed_client):
+    """
+    Returns a function that creates a configuration given a condition ID.
+
+    config = await create_config("condition-id")
+    """
+
     async def _get(condition_id: UUID):
         payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
@@ -82,6 +94,12 @@ async def create_config(authed_client):
 
 @pytest_asyncio.fixture(scope="session")
 async def get_config_by_id(db_pool):
+    """
+    Returns a function that fetches a configuration object given its ID.
+
+    config = await get_config_by_id("ID")
+    """
+
     async def _get(id: UUID):
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
@@ -102,6 +120,12 @@ async def get_config_by_id(db_pool):
 
 @pytest_asyncio.fixture(scope="session")
 async def get_condition_by_id(db_pool):
+    """
+    Returns a function that fetches a condition object given its ID.
+
+    condition = await get_condition_by_id("ID")
+    """
+
     async def _get(id: UUID):
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
@@ -122,6 +146,12 @@ async def get_condition_by_id(db_pool):
 
 @pytest_asyncio.fixture(scope="session")
 async def get_condition_id(db_pool):
+    """
+    Returns a function that fetches a condition ID given the condition name, and, optionally version.
+
+    condition_id = await get_condition_id("Condition Name")
+    """
+
     async def _get(name: str, version: str = "4.0.0") -> UUID:
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
@@ -143,6 +173,9 @@ async def get_condition_id(db_pool):
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_db(db_pool):
+    """
+    Automatically resets the database between test runs.
+    """
     yield
     # run after each test
     async with db_pool.get_connection() as conn:
