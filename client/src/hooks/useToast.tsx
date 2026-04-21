@@ -10,10 +10,10 @@ const globalOptions: ToastOptions = {
   className: classNames(
     '!p-0',
     '!m-0',
-    '!min-h-[4.5rem]',
     'lg:!w-[45rem]',
     '!items-center',
-    'rounded-md'
+    'rounded-md',
+    '!bg-transparent'
   ),
   pauseOnFocusLoss: false,
   pauseOnHover: true,
@@ -44,7 +44,6 @@ export function useToast() {
         autoClose: duration ?? 5000,
         hideProgressBar: (hideProgressBar || isMobileViewport) ?? false,
         className: classNames(globalOptions.className, {
-          '!bg-state-success-lighter': defaultedVariant === 'success',
           '!bg-state-error': defaultedVariant === 'error',
         }),
       }
