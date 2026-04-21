@@ -9,7 +9,7 @@ import { highlightMatches } from '../../../../utils';
 import { TesLink } from '../../TesLink';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import StatusBadge, { BadgeStatus } from '@components/StatusBadge';
+import { StatusBadge, BadgeStatus } from '@components/StatusBadge';
 import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,

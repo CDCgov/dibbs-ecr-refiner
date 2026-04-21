@@ -24,16 +24,16 @@ const BG_BY_STATUS: Record<BadgeStatus, string> = {
   [BadgeStatus.FullyComplete]: 'bg-green-300',
 };
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({
+export const StatusBadge = ({
   text,
   status,
   detailsContent,
   className = '',
-}) => {
+}: StatusBadgeProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <span className={`inline-flex items-center`}>
+    <span className="inline-flex items-center">
       <span
         className={`rounded-full px-3 py-1 font-medium text-black lowercase ${BG_BY_STATUS[status]} ${className} `}
         data-testid="status-badge"
@@ -56,5 +56,3 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     </span>
   );
 };
-
-export default StatusBadge;
