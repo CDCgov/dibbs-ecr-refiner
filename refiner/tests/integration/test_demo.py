@@ -1,6 +1,5 @@
 from io import BytesIO
 from pathlib import Path
-from typing import Any
 from zipfile import ZipFile
 
 import pytest
@@ -12,12 +11,24 @@ api_route_base = "/api/v1/demo"
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_demo_upload_smoke(
-    covid_influenza_v1_1_zip_path: Path, authed_client
+    covid_influenza_v1_1_zip_path: Path,
+    authed_client,
+    get_condition_id,
+    create_config,
+    activate_config,
 ) -> None:
     """
     Smoke test for the /api/v1/demo/upload endpoint.
     Verifies that the endpoint processes a demo ZIP file and returns a 200 with expected top-level fields.
     """
+
+    covid_id = await get_condition_id("COVID-19")
+    flu_id = await get_condition_id("Influenza")
+
+    covid_config = await create_config(covid_id)
+    await activate_config(covid_config["id"])
+    flu_config = await create_config(flu_id)
+    await activate_config(flu_config["id"])
 
     uploaded_file = covid_influenza_v1_1_zip_path
     with open(uploaded_file, "rb") as file_data:
@@ -32,7 +43,7 @@ async def test_demo_upload_smoke(
             },
         )
     assert response.status_code == status.HTTP_200_OK
-    data: dict[str, Any] = response.json()
+    data = response.json()
     assert "refined_conditions" in data
     assert "conditions_without_matching_configs" in data
     assert "unrefined_eicr" in data
@@ -43,6 +54,7 @@ async def test_demo_upload_smoke(
     download_response = await authed_client.get(
         f"{api_route_base}/download/{file_key}",
     )
+
     assert download_response.status_code == status.HTTP_200_OK
     assert download_response.headers["content-type"] in {
         "application/zip",

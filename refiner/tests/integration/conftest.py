@@ -30,6 +30,7 @@ os.environ["LOG_LEVEL"] = "debug"
 # ensure session secret is set before `app` imports
 os.environ["SESSION_SECRET_KEY"] = "super-secret-key"
 
+from fastapi import status
 from rich.console import Console
 
 from app.api.auth.session import get_hashed_token
@@ -56,6 +57,27 @@ TEST_USER_ID = "673da667-6f92-4a50-a40d-f44c5bc6a2d8"
 TEST_JD_ID = "SDDH"
 TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
+
+
+@pytest_asyncio.fixture
+async def activate_config(authed_client):
+    async def _get(id: UUID):
+        response = await authed_client.patch(f"/api/v1/configurations/{id}/activate")
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def create_config(authed_client):
+    async def _get(condition_id: UUID):
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
 
 
 @pytest_asyncio.fixture(scope="session")
