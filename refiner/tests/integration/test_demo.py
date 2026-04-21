@@ -23,10 +23,10 @@ async def test_demo_upload_smoke(
     """
 
     covid_id = await get_condition_id("COVID-19")
-    flu_id = await get_condition_id("Influenza")
-
     covid_config = await create_config(covid_id)
     await activate_config(covid_config["id"])
+
+    flu_id = await get_condition_id("Influenza")
     flu_config = await create_config(flu_id)
     await activate_config(flu_config["id"])
 
