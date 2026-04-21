@@ -84,12 +84,12 @@ button:focus:not(:focus-visible),
     background-color: var(--color-state-error);
   }
 
-  .Toastify__progress-bar--success {
-    background-color: var(--color-state-success-lighter);
+  .Toastify__progress-bar-theme--light {
+    background: var(--color-state-success);
   }
 
-  .Toastify__progress-bar--error {
-    background-color: var(--color-state-error-lighter);
+  .Toastify__progress-bar-theme--dark {
+    background: var(--color-state-error);
   }
 }
 
