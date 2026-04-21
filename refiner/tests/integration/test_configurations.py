@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import pytest
 from fastapi import status
-from psycopg.rows import dict_row
 
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
@@ -446,21 +445,25 @@ class TestConfigurations:
             )
             assert new_config.status == "draft"  # Should remain as draft
 
-    async def test_deactivate_configuration(self, setup, authed_client, db_pool):
-        # Get the activated configuration from the previous tests
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, condition_canonical_url, condition_id
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion' AND status = 'active';
-                    """
-                )
-                configuration = await cur.fetchone()
-                assert configuration is not None
+    async def test_deactivate_configuration(
+        self, setup, authed_client, get_condition_id
+    ):
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-        initial_configuration_id = str(configuration["id"])
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        # Activate it
+        config_id = response.json()["id"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/activate"
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        initial_configuration_id = str(config_id)
 
         # Deactivate config
         response = await authed_client.patch(
