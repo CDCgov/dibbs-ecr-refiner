@@ -391,38 +391,33 @@ class TestConfigurations:
         assert validation_response_data["id"] == initial_configuration_id
         assert validation_response_data["status"] == "inactive"
 
-    async def test_transaction_rollback_on_activation_failure(self, db_pool):
+    async def test_transaction_rollback_on_activation_failure(
+        self, authed_client, get_condition_id, db_pool
+    ):
         """
         Verifies rollback when activation fails after deactivation.
         """
-        # Set the config to be active
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    UPDATE configurations
-                    SET status = 'active'
-                    WHERE name = 'Drowning and Submersion'
-                    AND version = 3
-                    RETURNING id, condition_canonical_url, condition_id;
-                    """
-                )
-                configuration = await cur.fetchone()
-                assert configuration is not None
-            old_config_id = str(configuration["id"])
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, condition_canonical_url, condition_id
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND version = 2;
-                    """
-                )
-                configuration = await cur.fetchone()
-                assert configuration is not None
-            new_config_id = str(configuration["id"])
+        # Create v1 config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        # activate v1
+        v1_config_id = response.json()["id"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{v1_config_id}/activate"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        old_config_id = response.json()["configuration_id"]
+
+        # Create v2 draft
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+        new_config_id = response.json()["id"]
 
         # Patch _activate_configuration_db to fail after deactivation
         with patch(
@@ -449,7 +444,7 @@ class TestConfigurations:
             new_config = await get_configuration_by_id_db(
                 id=new_config_id, jurisdiction_id="SDDH", db=db_pool
             )
-            assert new_config.status == "inactive"  # Should remain inactive
+            assert new_config.status == "draft"  # Should remain as draft
 
     async def test_deactivate_configuration(self, setup, authed_client, db_pool):
         # Get the activated configuration from the previous tests
