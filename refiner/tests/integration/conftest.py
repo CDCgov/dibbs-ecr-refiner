@@ -561,35 +561,3 @@ def assert_xsd_valid(
         f"[{test_name}] Expected 0 XSD errors for {item_label}, "
         f"got {validation_result['errors']} errors (see above for details)"
     )
-
-
-def build_section_insert_sql(config_id_sql: str, sections: list[dict]) -> str:
-    values = ",\n".join(
-        f"""(
-            {config_id_sql},
-            '{section["name"]}',
-            '{section["code"]}',
-            '{section["action"]}',
-            {str(section["include"]).lower()},
-            {str(section["narrative"]).lower()},
-            ARRAY[{", ".join(f"'{v}'" for v in section["versions"])}],
-            'standard'
-        )"""
-        for section in sections
-    )
-
-    return f"""
-        INSERT INTO configurations_sections (
-            configuration_id,
-            name,
-            code,
-            action,
-            include,
-            narrative,
-            versions,
-            section_type
-        )
-        VALUES
-        {values}
-        ON CONFLICT DO NOTHING;
-    """
