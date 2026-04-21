@@ -151,7 +151,8 @@ async def reset_db(db_pool):
 
 
 @pytest_asyncio.fixture(scope="session")
-async def db_pool():
+async def db_pool(setup):
+    # setup as a dependency guarantees that the pool isn't created until migrations have run
     db = create_db(
         db_url=ENVIRONMENT["DB_URL"],
         db_password=ENVIRONMENT["DB_PASSWORD"],
@@ -273,7 +274,11 @@ def setup(request):
         compose_file_name=["docker-compose.yml", "docker-compose.override.yml"],
     )
 
+    # restart the environment if it's already running
+    # this will clear the DB volume and prevent caching issues
+    refiner_service.stop()
     refiner_service.start()
+
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
 
