@@ -109,12 +109,19 @@ async def test_zip_upload_zika_v3_1_1(
     zika_v3_1_1_zip_path,
     validate_xml_string,
     validate_xml_string_xsd,
+    get_condition_id,
+    create_config,
+    activate_config,
 ):
     """
     Integration test for /api/v1/demo/upload using Mon Mothma Zika v3.1.1.
     """
 
     test_name = "test_zip_upload_zika_v3_1_1"
+
+    zika_id = await get_condition_id("Zika Virus Disease")
+    zika_config = await create_config(zika_id)
+    await activate_config(zika_config["id"])
 
     with open(zika_v3_1_1_zip_path, "rb") as f:
         files = {"uploaded_file": (zika_v3_1_1_zip_path.name, f, "application/zip")}
