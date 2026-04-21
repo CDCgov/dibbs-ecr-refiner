@@ -3,6 +3,7 @@
     "dbaeumer.vscode-eslint",
     "davidanson.vscode-markdownlint",
     "esbenp.prettier-vscode",
-    "bradlc.vscode-tailwindcss"
+    "bradlc.vscode-tailwindcss",
+    "nefrob.vscode-just-syntax"
   ]
 }
