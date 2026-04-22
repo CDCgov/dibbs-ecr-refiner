@@ -197,7 +197,10 @@ class TestConfigurations:
         assert admission_diagnosis_section == expected_section_updates
 
     async def test_section_updates_failure(
-        self, setup, authed_client, get_condition_id
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
     ):
         condition_name = "Drowning and Submersion"
         condition_id = await get_condition_id(condition_name)
@@ -252,6 +255,7 @@ class TestConfigurations:
         get_condition_id,
         get_condition_by_id,
         get_config_by_id,
+        test_user_jurisdiction_id,
     ):
         condition_name = "Drowning and Submersion"
         condition_id = await get_condition_id(condition_name)
@@ -318,7 +322,7 @@ class TestConfigurations:
         assert metadata_file_json["condition_name"] == condition["display_name"]
         assert metadata_file_json["canonical_url"] == condition["canonical_url"]
         assert metadata_file_json["tes_version"] == condition["version"]
-        assert metadata_file_json["jurisdiction_id"] == draft_config["jurisdiction_id"]
+        assert metadata_file_json["jurisdiction_id"] == test_user_jurisdiction_id
         assert metadata_file_json["configuration_version"] == draft_config["version"]
         assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
         assert (

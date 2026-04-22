@@ -92,28 +92,20 @@ async def create_config(authed_client):
     return _get
 
 
-@pytest_asyncio.fixture(scope="session")
-async def get_config_by_id(db_pool):
+@pytest_asyncio.fixture
+async def get_config_by_id(authed_client):
     """
     Returns a function that fetches a configuration object given its ID.
 
     config = await get_config_by_id("ID")
     """
 
-    async def _get(id: UUID):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT *
-                    FROM configurations
-                    WHERE id = %s
-                    """,
-                    (id,),
-                )
-                result = await cur.fetchone()
-                assert result, f"Configuration with ID '{id}' not found."
-                return result
+    async def _get(config_id: UUID):
+        response = await authed_client.get(f"/api/v1/configurations/{config_id}")
+        assert response.status_code == status.HTTP_200_OK, (
+            f"Configuration with ID '{id}' not found."
+        )
+        return response.json()
 
     return _get
 
