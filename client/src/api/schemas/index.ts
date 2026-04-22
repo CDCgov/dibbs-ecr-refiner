@@ -53,5 +53,7 @@ export * from './uploadCustomCodesPreviewResponse';
 export * from './uploadCustomCodesResponse';
 export * from './uploadCustomCodesResponseErrors';
 export * from './userResponse';
+export * from './validateCustomCodeInput';
+export * from './validateCustomCodeResponse';
 export * from './validationError';
 export * from './validationErrorCtx';

@@ -4,6 +4,7 @@ import {
   getGetConfigurationQueryKey,
   useAddCustomCodeToConfiguration,
   useEditCustomCodeFromConfiguration,
+  useValidateCustomCodeFromConfiguration,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -19,7 +20,6 @@ interface CustomCodeModalProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedCustomCode: DbConfigurationCustomCode | null;
-  deduplicated_codes: string[];
   onClose: () => void;
 }
 
@@ -32,7 +32,7 @@ export function CustomCodeModal({
   isOpen,
   setIsOpen,
   selectedCustomCode,
-  deduplicated_codes,
+
   onClose,
 }: CustomCodeModalProps) {
   const formKey = useMemo(
@@ -57,7 +57,6 @@ export function CustomCodeModal({
           <CustomCodeForm
             key={formKey}
             configurationId={configurationId}
-            deduplicated_codes={deduplicated_codes}
             onClose={handleCloseCustomCodeModal}
             selectedCustomCode={selectedCustomCode}
           />
@@ -69,17 +68,17 @@ export function CustomCodeModal({
 
 type CustomCodeFormProps = Pick<
   CustomCodeModalProps,
-  'selectedCustomCode' | 'configurationId' | 'deduplicated_codes' | 'onClose'
+  'selectedCustomCode' | 'configurationId' | 'onClose'
 >;
 
 function CustomCodeForm({
   selectedCustomCode,
   configurationId,
-  deduplicated_codes,
   onClose,
 }: CustomCodeFormProps) {
   const { mutate: addCode } = useAddCustomCodeToConfiguration();
   const { mutate: editCode } = useEditCustomCodeFromConfiguration();
+  const { mutate: validateCode } = useValidateCustomCodeFromConfiguration();
   const queryClient = useQueryClient();
   const showToast = useToast();
 
@@ -103,11 +102,40 @@ function CustomCodeForm({
   const handleCodeUpdate = (code: string) => {
     const trimmedCode = code.trim();
     setCode(trimmedCode);
-
-    if (deduplicated_codes.includes(trimmedCode)) {
-      setError(`The code "${trimmedCode}" already exists.`);
-    }
   };
+
+  const handleCodeBlur = () => {
+    const trimmedCode = code.trim();
+    handleCodeUpdate(trimmedCode);
+
+    // Skip server validation if code hasn't changed (no-op edit)
+    if (selectedCustomCode && trimmedCode === selectedCustomCode.code) return;
+
+    validateCode(
+      {
+        configurationId,
+        data: {
+          current_code: selectedCustomCode?.code ?? null,
+          desired_code: trimmedCode,
+        },
+      },
+      {
+        onSuccess: (resp) => {
+          if (!resp.data.valid) {
+            setError(`The code "${trimmedCode}" is already in use.`);
+          }
+        },
+        onError: () => {
+          showToast({
+            variant: 'error',
+            heading: 'Validation failed',
+            body: 'Could not validate the code. Please try again.',
+          });
+        },
+      }
+    );
+  };
+
   const handleSubmit = () => {
     if (selectedCustomCode) {
       editCode(
@@ -174,9 +202,7 @@ function CustomCodeForm({
             if (error) setError(''); // clear error on change
             handleCodeUpdate(e.target.value);
           }}
-          onBlur={() => {
-            handleCodeUpdate(code);
-          }}
+          onBlur={handleCodeBlur}
           autoFocus
         />
       </Field>

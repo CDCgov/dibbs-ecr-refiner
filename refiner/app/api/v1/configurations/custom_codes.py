@@ -1,5 +1,6 @@
 import csv
 import io
+from dataclasses import dataclass
 from logging import Logger
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesCsvInput,
     UploadCustomCodesPreviewItem,
 )
+from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
     add_bulk_custom_codes_to_configuration_db,
     add_custom_code_to_configuration_db,
@@ -588,6 +590,85 @@ def _validate_edit_custom_code_input(input: UpdateCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "system" is missing.',
         )
+
+
+class ValidateCustomCodeInput(BaseModel):
+    """
+    Input model when validating a config's custom code.
+    """
+
+    current_code: str | None
+    desired_code: str
+
+
+@dataclass
+class ValidateCustomCodeResponse:
+    """
+    Validation response model.
+    """
+
+    valid: bool
+
+
+@router.post(
+    "/validate",
+    response_model=ValidateCustomCodeResponse,
+    tags=["configurations"],
+    operation_id="validateCustomCodeFromConfiguration",
+)
+async def validate_custom_code(
+    configuration_id: UUID,
+    body: ValidateCustomCodeInput,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> bool:
+    """
+    Determines whether a custom code update is valid or not.
+
+    If the desired code is already associated with the configuration, then the update is
+    invalid.
+
+    Args:
+        configuration_id (UUID): The configuration ID
+        body (ValidateCustomCodeInput): Body including the code to validate
+        user (DbUser, optional): The logged in user
+        db (AsyncDatabaseConnection, optional): The database connection
+
+    Returns:
+        bool: Returns True if the code name has not been used, otherwise returns False
+    """
+
+    current_code = body.current_code
+    desired_code = body.desired_code
+
+    if current_code == desired_code:
+        return ValidateCustomCodeResponse(valid=True)
+
+    # find config
+    config = await get_configuration_by_id_db(
+        id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    # Fetch all included conditions
+    conditions = await get_included_conditions_db(
+        included_conditions=config.included_conditions, db=db
+    )
+
+    # Flatten all codes from all included conditions and custom codes
+    all_codes: set[str] = set()
+
+    for c in conditions:
+        all_codes.update(c.code for c in c.get_codes_from_all_systems())
+
+    # Include custom codes from the configuration
+    for custom_code in config.custom_codes:
+        all_codes.add(custom_code.code)
+
+    all_codes.discard(current_code)
+
+    is_valid = desired_code not in all_codes
+
+    return ValidateCustomCodeResponse(valid=is_valid)
 
 
 @router.put(
