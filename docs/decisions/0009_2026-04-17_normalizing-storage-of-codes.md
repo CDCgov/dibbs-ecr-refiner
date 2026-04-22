@@ -22,6 +22,13 @@ Below are our exploration of 1. Whether / how to refactor our schema to better s
 - If possible, be able to add a code system without having to write a migration
 - Make the engineering team feeling good about the way codes are stored. Does it spark joy?
 
+The work should enable easier development / ongoing maintenance of
+
+- Upcoming work for child RSG rendering / code search
+- Upcoming work for TES update status description and rendering
+- Custom code activity log update
+- The TES update script and internal code relating to code CRUD operations
+
 ## Considered Options
 
 ### 1. Do nothing, store more JSON
@@ -49,6 +56,8 @@ The second option is to store a single code copy of a code and associate it with
 This option would minimize the amount of data that we need to store, with the added complexity of having to manage a centralized table to maintain code <> parent object relationships rather than doing so at the individual row level.
 
 ### 3. Code storage schema
+
+Assuming we will move forward with code normalization, below are the considerations for a potential schema.
 
 #### Base schema
 
@@ -131,10 +140,10 @@ While a Postgres enum would give us stricter data guarentees, enforcing things i
 
 ### Duplicate storage of codes with a composite system / code key, unique per configuration
 
-## Implementation considerations
+## Implementation rollout
 
 1. Seed the new schema
-1. Backport existing data from the `child_rsg_snomed_codes` column into the new table structure
+1. Backport existing data into the new table structure
 1. Add elements of the TES update script to munge and seed existing data into the new table structure
 1. Refactor existing code to use the new data structure
 1. Drop the relevant code columns in the conditions and configurations table
