@@ -1,8 +1,5 @@
 import pytest
 
-# test with COVID-19 condition code
-CONDITION_CODE = "840539006"
-
 
 @pytest.mark.integration
 @pytest.mark.asyncio

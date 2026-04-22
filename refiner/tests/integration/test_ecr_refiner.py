@@ -126,9 +126,8 @@ async def test_zip_upload_zika_v3_1_1(
     with open(zika_v3_1_1_zip_path, "rb") as f:
         files = {"uploaded_file": (zika_v3_1_1_zip_path.name, f, "application/zip")}
         response = await authed_client.post(
-            "http://0.0.0.0:8080/api/v1/demo/upload",
+            "/api/v1/demo/upload",
             files=files,
-            timeout=30.0,
         )
 
     assert response.status_code == 200
