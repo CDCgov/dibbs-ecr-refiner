@@ -95,9 +95,11 @@ function CustomCodeForm({
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
   const [system, setSystem] = useState(selectedCustomCode?.system ?? '');
+
+  const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isButtonEnabled = code && system && name;
+  const isButtonEnabled = code && system && name && !error;
 
   const handleCodeUpdate = (code: string) => {
     const trimmedCode = code.trim();
@@ -105,11 +107,10 @@ function CustomCodeForm({
   };
 
   const handleCodeBlur = () => {
+    setIsValidating(true);
+
     const trimmedCode = code.trim();
     handleCodeUpdate(trimmedCode);
-
-    // Skip server validation if code hasn't changed (no-op edit)
-    if (selectedCustomCode && trimmedCode === selectedCustomCode.code) return;
 
     validateCode(
       {
@@ -121,11 +122,13 @@ function CustomCodeForm({
       },
       {
         onSuccess: (resp) => {
+          setIsValidating(false);
           if (!resp.data.valid) {
             setError(`The code "${trimmedCode}" is already in use.`);
           }
         },
         onError: () => {
+          setIsValidating(false);
           showToast({
             variant: 'error',
             heading: 'Validation failed',
@@ -199,7 +202,7 @@ function CustomCodeForm({
           type="text"
           value={code}
           onChange={(e) => {
-            if (error) setError(''); // clear error on change
+            if (error) setError(null); // clear error on change
             handleCodeUpdate(e.target.value);
           }}
           onBlur={handleCodeBlur}
@@ -237,7 +240,7 @@ function CustomCodeForm({
       <div className="self-end">
         <Button
           onClick={handleSubmit}
-          disabled={!isButtonEnabled || !!error} // disable if form invalid or error exists
+          disabled={!isButtonEnabled || isValidating}
           variant="primary"
         >
           {selectedCustomCode ? 'Update' : 'Add custom code'}
