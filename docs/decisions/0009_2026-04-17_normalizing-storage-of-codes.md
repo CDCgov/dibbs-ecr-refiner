@@ -8,25 +8,24 @@ Proposed
 
 ## Context and Problem Statement
 
-Following a Slack discussion about implementation of [1099](https://app.zenhub.com/workspaces/dibbs-ecr-refiner-67ddd053d70b9f000ffbb542/issues/gh/cdcgov/dibbs-ecr-refiner/1099), it was determined that this feature may be a chance to implement a long-desired refactor of the schema we're using to store codesets. Several forthcoming features will need to retreive granular versions of this data beyond current storage schema allows. The engineering team has acknowledged for a while that this area of the codebase has needed refactoring and is using this opportunity to explore approaches. The current decision to store codes as JSONB was made when the Refiner was a much different application, where codesets reads from the database scoped to a configuration were the optimized operation, over writes/updates and reads outside the configuration context. With the evolution of the lambda, syncing operations for TES updates, and the development of current and upcoming web app features, this storage decision is in need of revisiting.
+Following a Slack discussion about implementation of [1099](https://app.zenhub.com/workspaces/dibbs-ecr-refiner-67ddd053d70b9f000ffbb542/issues/gh/cdcgov/dibbs-ecr-refiner/1099), the team decided to use this planning around this feature to explore a long-desired refactor of our codeset schema. Several forthcoming features will need to manipulate codeset metadata beyond what the existing JSON array pattern conveniently allows, and is a section of the codebase of high maintenance complexity. The current decision to store codes as JSONB was made when the Refiner was a much different application, one where codesets reads scoped to a configuration were the optimized operation and codeset writes/updates weren't as common. With the evolution of the lambda, syncing operations for TES updates, and the development of current and upcoming web app features, this storage decision is in need of revisiting.
 
-Below are our exploration of 1. Whether / how to refactor our schema to better support codeset information and 2. How to roll out the proposed refactorcodebase.
+Below are our exploration of 1. Whether / how to refactor our schema to better support codeset information and 2. How to roll out the proposed refactor and 3. related concerns for future exploration.
 
 ## Decision Drivers
 
-- Support future application development while maintaining current application functionality / validation around codeset information.
-- Allow for dynamic retreival of codeset information, including the code itself and useful metadata (display name, code system, TES version membership, etc.)
+- Support future application development while maintaining current application functionality around codesets.
+- Allow for dynamic retreival of codeset information, including the code itself and useful metadata (display name, code system, TES version membership, etc.) and easy manipulation of metadata for feature needs.
 - Leverage the relational benefits of Postgres. Avoid unnecessary JSONB.
 - Minimize the necessary refactoring needed across seeding, retreival, rendering, and other necessary application functions while maximizing storage flexibility and maintainbility of codeset storage as needed for current and future feature work.
-
 - If possible, be able to add a code system without having to write a migration
 - Make the engineering team feeling good about the way codes are stored. Does it spark joy?
 
 The work should enable easier development / ongoing maintenance of
 
 - Upcoming work for child RSG rendering / code search
-- Upcoming work for TES update status description and rendering
-- Custom code activity log update
+- Upcoming work for TES update status descriptions and rendering
+- Upcoming work around custom code activity log updates
 - The TES update script and internal code relating to code CRUD operations
 
 ## Considered Options
@@ -35,7 +34,7 @@ The work should enable easier development / ongoing maintenance of
 
 The simplest option is to extend the existing JSON storage to support this and other features. This baseline minimally disrupts application code at the cost of extending the data model with more JSON.
 
-To begin, the `child_rsg_snomed_codes` column in the existing conditions table would need to be extended to store display name information. Future features, such as TES updates, condition grouper search, and other improvements would have to implement JSON search, parsing, and update functionality. Existing SQL operations that handle these operations are already quite complex since JSON mainpulation is being done at the data level. This level of complexity would need to be maintained if future code storage remains in JSON.
+To begin, the `child_rsg_snomed_codes` column in the existing conditions table would need to be extended to store display name information. Future features, such as TES updates, condition grouper search, and other improvements would have to implement JSON search, parsing, and update functionality, similar to previous work around [SQL manipulation of JSON](https://github.com/CDCgov/dibbs-ecr-refiner/blob/main/refiner/app/db/configurations/db.py#L456). Existing SQL operations that handle these operations are already quite complex since JSON mainpulation is being done at the data level. This level of complexity would need to be maintained if future code storage remains in JSON.
 
 ### 2. Store normalized codes
 
@@ -63,16 +62,16 @@ Assuming we will move forward with code normalization, below are the considerati
 
 The base schema normalization approaches would include the following columns. These represent the core of the stored code information, which are extended with different options for handling custom codes, relationship to conditions / configurations, and other related considerations.
 
-| column       | datatype       |
-| ------------ | -------------- |
-| id           | UUID           |
-| displayName  | string         |
-| value        | string         |
-| system       | string or Enum |
-| created_at   | DateTime       |
-| last_updated | DateTime       |
+| column       | datatype                                 |
+| ------------ | ---------------------------------------- |
+| id           | UUID                                     |
+| displayName  | string                                   |
+| value        | string                                   |
+| system       | string, Enum, or `fkey to systems table` |
+| created_at   | DateTime                                 |
+| last_updated | DateTime                                 |
 
-The choice of data type for system could either be a raw string (enforced by the `CodeSystem` enum in our backend code) or a Postgres enum that enforces system values at the data level. A discussion of the benefits of each is included in Decision Outcomes.
+The choice of data type for system could either be a raw string (enforced by the `CodeSystem` enum in our backend code) or a Postgres enum or foreign key that enforces system values at the data level. A discussion of the benefits of each is included in Decision Outcomes.
 
 #### 2.1 Storing TES codes together with custom codes
 
@@ -132,9 +131,11 @@ In return, reads and writes from / to this table would require separate services
 
 ## Decision Outcome
 
-### Store system values as raw strings, enforced by the CodeSystem Python enum
+### Store system values as a foreign key to a new systems table
 
-While a Postgres enum would give us stricter data guarentees, enforcing things in backend code would give much more flexibility for adding new system values: specifically, without needing to perform data migrations for additions. Since we control the interfaces for reading / writing codes within Python, the additional data guarentee of storing the enum at the data level are marginal as long as we centralize the interfaces against the database. Thus, we'll store system information as raw strings and enforce conformance to the set of allowed systems at the code level.
+To accomplish the goal of migration-free code system addition while maintaining maximal data guarentees, the new codes table will reference via foreign key a new `systems` table that stores system metadata. Future codeset addition under this schema will involve adding a new row in the systems table that we can include via a seeding script that populates the table with the desired data.
+
+To fully align this new table with the backend code, some refactoring will need to be done in the `CodeSystem` file to derive backend enum values with the values in the new table.
 
 ### Storing TES codes separately from custom codes
 
