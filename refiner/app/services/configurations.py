@@ -164,15 +164,16 @@ async def convert_config_to_storage_payload(
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = cc.system
+        cur_code_system = CodeSystem(cc.system)
+        system_to_extend = cur_code_system.format_system_string()
 
         # route custom codes to the correct system dict
-        coding_by_code_system[cur_code_system].append(
+        coding_by_code_system[system_to_extend].append(
             asdict(
                 Coding(
                     code=cc.code,
                     display=cc.name,
-                    system=CodeSystem(cur_code_system).oid,
+                    system=cur_code_system.oid,
                 )
             )
         )
@@ -190,7 +191,8 @@ async def convert_config_to_storage_payload(
 
         for code_system, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
-            coding_by_code_system[CodeSystem(code_system).format_system_string()] = [
+            system_to_extend = CodeSystem(code_system).format_system_string()
+            coding_by_code_system[system_to_extend] += [
                 asdict(Coding(code=c.code, display=c.display, system=code_system.oid))
                 for c in code_list
             ]
