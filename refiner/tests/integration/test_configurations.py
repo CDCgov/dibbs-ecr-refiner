@@ -3,7 +3,6 @@ from uuid import uuid4
 
 import pytest
 from fastapi import status
-from psycopg.rows import dict_row
 
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
@@ -17,24 +16,13 @@ EXPECTED_DROWNING_RSG_CODE = "212962007"
 @pytest.mark.asyncio
 class TestConfigurations:
     async def test_create_configuration(
-        self, setup, authed_client, test_username, db_pool
+        self, setup, authed_client, test_username, get_condition_id
     ):
-        # Get a condition to use to create a config
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, display_name
-                    FROM conditions
-                    WHERE display_name = 'Drowning and Submersion'
-                    AND version = '4.0.0'
-                    """
-                )
-                condition = await cur.fetchone()
-                assert condition is not None
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
         # Create config
-        payload = {"condition_id": str(condition["id"])}
+        payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         assert "id" in response.json()
@@ -50,7 +38,7 @@ class TestConfigurations:
         creation_event = audit_events[0]
         assert creation_event is not None
         assert creation_event["username"] == test_username
-        assert creation_event["configuration_name"] == condition["display_name"]
+        assert creation_event["configuration_name"] == condition_name
 
         # Attempt to create the same config again (should fail)
         response = await authed_client.post("/api/v1/configurations/", json=payload)
@@ -62,324 +50,294 @@ class TestConfigurations:
         failure_audit_events = response.json()["audit_events"]
         assert len(failure_audit_events) == 1
 
-    async def test_custom_sections(self, setup, authed_client, test_username, db_pool):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                # Grab a draft config to work with
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Glanders'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+    async def test_custom_sections(self, setup, authed_client, get_condition_id):
+        condition_id = await get_condition_id("Glanders")
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            # create a new custom section
-            config_id = draft_config["id"]
-            original_payload = {"name": "test section name", "code": "section-code123"}
-            payload = original_payload
-            response = await authed_client.post(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == "section-code123"
+        # create a new custom section
+        config_id = response.json()["id"]
+        original_payload = {"name": "test section name", "code": "section-code123"}
+        payload = original_payload
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == "section-code123"
 
-            # try adding one with a duplicate name
-            payload = {"name": "test section name", "code": "new-code"}
-            response = await authed_client.post(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert response.json()["detail"] == "Section name is already in use."
+        # try adding one with a duplicate name
+        payload = {"name": "test section name", "code": "new-code"}
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"] == "Section name is already in use."
 
-            # try adding one with a duplicate code
-            payload = {"name": "new name", "code": "section-code123"}
-            response = await authed_client.post(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert response.json()["detail"] == "Section code is already in use."
+        # try adding one with a duplicate code
+        payload = {"name": "new name", "code": "section-code123"}
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"] == "Section code is already in use."
 
-            # editing the custom section with the original values should work
-            payload = {
-                "name": original_payload["name"],
-                "current_code": original_payload["code"],
-                "new_code": original_payload["code"],
-            }
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
+        # editing the custom section with the original values should work
+        payload = {
+            "name": original_payload["name"],
+            "current_code": original_payload["code"],
+            "new_code": original_payload["code"],
+        }
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
 
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == payload["new_code"]
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == payload["new_code"]
 
-            # try editing in a new name and new code
-            payload = {
-                "name": "new name",
-                "current_code": original_payload["code"],
-                "new_code": "new-code",
-            }
+        # try editing in a new name and new code
+        payload = {
+            "name": "new name",
+            "current_code": original_payload["code"],
+            "new_code": "new-code",
+        }
 
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == payload["new_code"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == payload["new_code"]
 
-            # for good measure, try editing a standard section's name and code which shouldn't work
-            medications_admin_code = "29549-3"
-            payload = {
-                "name": "This should not work",
-                "new_code": "This also should not work",
-                "current_code": medications_admin_code,
-            }
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{config_id}/sections", json=payload
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.json() == medications_admin_code
+        # for good measure, try editing a standard section's name and code which shouldn't work
+        medications_admin_code = "29549-3"
+        payload = {
+            "name": "This should not work",
+            "new_code": "This also should not work",
+            "current_code": medications_admin_code,
+        }
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/sections", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == medications_admin_code
 
-    async def test_section_updates_success(self, setup, authed_client, db_pool):
+    async def test_section_updates_success(
+        self, setup, authed_client, get_condition_id
+    ):
         # helper function to get section
         def require_section_by_code(sections, code):
             section = next((s for s in sections if s["code"] == code), None)
             assert section is not None, f"Section with code {code} not found"
             return section
 
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                # Grab a draft config
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            draft_id = draft_config["id"]
-            admission_diagnosis_code = "46241-6"
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-            response.status_code == status.HTTP_200_OK
+        draft_id = response.json()["id"]
+        admission_diagnosis_code = "46241-6"
 
-            # Get the admission diagnosis section
-            admission_diagnosis_section = require_section_by_code(
-                response.json()["section_processing"], admission_diagnosis_code
-            )
-            expected_section_defaults = {
-                "include": True,
-                "narrative": True,
-                "action": "refine",
-                "name": "Admission Diagnosis",
-                "code": "46241-6",
-                "versions": ["3.1", "3.1.1"],
-                "section_type": "standard",
-            }
+        response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
+        response.status_code == status.HTTP_200_OK
 
-            assert admission_diagnosis_section is not None
-            assert admission_diagnosis_section == expected_section_defaults
+        # Get the admission diagnosis section
+        admission_diagnosis_section = require_section_by_code(
+            response.json()["section_processing"], admission_diagnosis_code
+        )
+        expected_section_defaults = {
+            "include": True,
+            "narrative": True,
+            "action": "refine",
+            "name": "Admission Diagnosis",
+            "code": "46241-6",
+            "versions": ["3.1", "3.1.1"],
+            "section_type": "standard",
+        }
 
-            url = f"/api/v1/configurations/{draft_id}/sections"
+        assert admission_diagnosis_section is not None
+        assert admission_diagnosis_section == expected_section_defaults
 
-            # set to "retain" and exclude
-            response = await authed_client.patch(
-                url,
-                json={
-                    "action": "retain",
-                    "current_code": admission_diagnosis_code,
-                    "include": False,
-                    "narrative": False,
-                },
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert response.text == f'"{admission_diagnosis_code}"'
+        url = f"/api/v1/configurations/{draft_id}/sections"
 
-            # Get the updated admission diagnosis section
-            response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-            response.status_code == status.HTTP_200_OK
-            admission_diagnosis_section = require_section_by_code(
-                response.json()["section_processing"], admission_diagnosis_code
-            )
-            expected_section_updates = {
+        # set to "retain" and exclude
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "retain",
+                "current_code": admission_diagnosis_code,
                 "include": False,
                 "narrative": False,
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.text == f'"{admission_diagnosis_code}"'
+
+        # Get the updated admission diagnosis section
+        response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
+        response.status_code == status.HTTP_200_OK
+        admission_diagnosis_section = require_section_by_code(
+            response.json()["section_processing"], admission_diagnosis_code
+        )
+        expected_section_updates = {
+            "include": False,
+            "narrative": False,
+            "action": "retain",
+            "name": "Admission Diagnosis",
+            "code": "46241-6",
+            "versions": ["3.1", "3.1.1"],
+            "section_type": "standard",
+        }
+
+        assert admission_diagnosis_section is not None
+        assert admission_diagnosis_section == expected_section_updates
+
+    async def test_section_updates_failure(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
+
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        draft_id = response.json()["id"]
+
+        response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
+        response.status_code == status.HTTP_200_OK
+
+        url = f"/api/v1/configurations/{draft_id}/sections"
+
+        # try to update a code that doesn't exist
+        nonexistent_code = "fakecode"
+        response = await authed_client.patch(
+            url,
+            json={
                 "action": "retain",
-                "name": "Admission Diagnosis",
-                "code": "46241-6",
-                "versions": ["3.1", "3.1.1"],
-                "section_type": "standard",
-            }
+                "current_code": nonexistent_code,
+                "include": False,
+                "narrative": False,
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert (
+            response.json()["detail"]
+            == f"Section with code {nonexistent_code} is invalid and can't be updated."
+        )
 
-            assert admission_diagnosis_section is not None
-            assert admission_diagnosis_section == expected_section_updates
+        admission_diagnosis_code = "46241-6"
+        # try an invalid action
+        response = await authed_client.patch(
+            url,
+            json={
+                "action": "remove",
+                "current_code": admission_diagnosis_code,
+                "include": False,
+                "narrative": False,
+            },
+        )
+        # FastAPI shouldn't allow this to work
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    async def test_section_updates_failure(self, setup, authed_client, db_pool):
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                # Grab a draft config
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+    async def test_activate_configuration(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        get_condition_by_id,
+        get_config_by_id,
+        test_user_jurisdiction_id,
+    ):
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            draft_id = draft_config["id"]
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
 
-            response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
-            response.status_code == status.HTTP_200_OK
+        draft_id = response.json()["id"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{draft_id}/activate"
+        )
+        assert response.status_code == status.HTTP_200_OK
 
-            url = f"/api/v1/configurations/{draft_id}/sections"
+        # Mapping file and content
+        mapping_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/rsg_cg_mapping.json"
+        )
 
-            # try to update a code that doesn't exist
-            nonexistent_code = "fakecode"
-            response = await authed_client.patch(
-                url,
-                json={
-                    "action": "retain",
-                    "current_code": nonexistent_code,
-                    "include": False,
-                    "narrative": False,
-                },
-            )
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert (
-                response.json()["detail"]
-                == f"Section with code {nonexistent_code} is invalid and can't be updated."
-            )
+        mapping_file_json = mapping_file.json()
+        assert EXPECTED_DROWNING_RSG_CODE in mapping_file_json
+        assert (
+            mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["canonical_url"]
+            == f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{EXPECTED_DROWNING_CG_UUID}"
+        )
+        assert (
+            mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["name"]
+            == "DrowningandSubmersion"
+        )
+        assert mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["tes_version"] is not None
 
-            admission_diagnosis_code = "46241-6"
-            # try an invalid action
-            response = await authed_client.patch(
-                url,
-                json={
-                    "action": "remove",
-                    "current_code": admission_diagnosis_code,
-                    "include": False,
-                    "narrative": False,
-                },
-            )
-            # FastAPI shouldn't allow this to work
-            assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        # Activation file and content
+        activation_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/active.json"
+        )
+        activation_file_json = activation_file.json()
 
-    async def test_activate_configuration(self, setup, authed_client, db_pool):
-        # Ensure the condition exists
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, display_name, version, canonical_url
-                    FROM conditions
-                    WHERE display_name = 'Drowning and Submersion'
-                    AND version = '4.0.0'
-                    """
-                )
-                condition = await cur.fetchone()
-                assert condition is not None
+        TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
+        TOTAL_EXPECTED_SECTION_COUNT = 21
+        TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
+            1  # No other conditions were included
+        )
 
-            # Activate any existing draft configuration for this condition
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, jurisdiction_id, version
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND status = 'draft';
-                    """
-                )
-                draft_config = await cur.fetchone()
-                assert draft_config is not None
+        assert len(activation_file_json["codes"]) == TOTAL_EXPECTED_CONDITION_CODE_COUNT
+        assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
+        assert (
+            len(activation_file_json["included_condition_rsg_codes"])
+            == TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES
+        )
+        assert (
+            activation_file_json["included_condition_rsg_codes"][0]
+            == EXPECTED_DROWNING_RSG_CODE
+        )
 
-            draft_id = draft_config["id"]
-            response = await authed_client.patch(
-                f"/api/v1/configurations/{draft_id}/activate"
-            )
-            assert response.status_code == status.HTTP_200_OK
+        # Metadata file and content
+        metadata_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/metadata.json"
+        )
+        metadata_file_json = metadata_file.json()
+        condition = await get_condition_by_id(condition_id)
+        draft_config = await get_config_by_id(draft_id)
 
-            # Mapping file and content
-            mapping_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/rsg_cg_mapping.json"
-            )
+        assert metadata_file_json["condition_name"] == condition["display_name"]
+        assert metadata_file_json["canonical_url"] == condition["canonical_url"]
+        assert metadata_file_json["tes_version"] == condition["version"]
+        assert metadata_file_json["jurisdiction_id"] == test_user_jurisdiction_id
+        assert metadata_file_json["configuration_version"] == draft_config["version"]
+        assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
+        assert (
+            metadata_file_json["child_rsg_snomed_codes"][0]
+            == EXPECTED_DROWNING_RSG_CODE
+        )
 
-            mapping_file_json = mapping_file.json()
-            assert EXPECTED_DROWNING_RSG_CODE in mapping_file_json
-            assert (
-                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["canonical_url"]
-                == f"https://tes.tools.aimsplatform.org/api/fhir/ValueSet/{EXPECTED_DROWNING_CG_UUID}"
-            )
-            assert (
-                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["name"]
-                == "DrowningandSubmersion"
-            )
-            assert (
-                mapping_file_json[EXPECTED_DROWNING_RSG_CODE]["tes_version"] is not None
-            )
-
-            # Activation file and content
-            activation_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/active.json"
-            )
-            activation_file_json = activation_file.json()
-
-            TOTAL_EXPECTED_CONDITION_CODE_COUNT = 481
-            TOTAL_EXPECTED_SECTION_COUNT = 21
-            TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES = (
-                1  # No other conditions were included
-            )
-
-            assert (
-                len(activation_file_json["codes"])
-                == TOTAL_EXPECTED_CONDITION_CODE_COUNT
-            )
-            assert len(activation_file_json["sections"]) == TOTAL_EXPECTED_SECTION_COUNT
-            assert (
-                len(activation_file_json["included_condition_rsg_codes"])
-                == TOTAL_EXPECTED_INCLUDED_CONDITION_RSG_CODES
-            )
-            assert (
-                activation_file_json["included_condition_rsg_codes"][0]
-                == EXPECTED_DROWNING_RSG_CODE
-            )
-
-            # Metadata file and content
-            metadata_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/1/metadata.json"
-            )
-            metadata_file_json = metadata_file.json()
-            assert metadata_file_json["condition_name"] == condition["display_name"]
-            assert metadata_file_json["canonical_url"] == condition["canonical_url"]
-            assert metadata_file_json["tes_version"] == condition["version"]
-            assert (
-                metadata_file_json["jurisdiction_id"] == draft_config["jurisdiction_id"]
-            )
-            assert (
-                metadata_file_json["configuration_version"] == draft_config["version"]
-            )
-            assert len(metadata_file_json["child_rsg_snomed_codes"]) == 1
-            assert (
-                metadata_file_json["child_rsg_snomed_codes"][0]
-                == EXPECTED_DROWNING_RSG_CODE
-            )
-
-            # Current file and content
-            current_file = await authed_client.get(
-                f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
-            )
-            assert current_file.json()["version"] == 1
+        # Current file and content
+        current_file = await authed_client.get(
+            f"{LOCALSTACK_BASE_URL}/{EXPECTED_DROWNING_CG_UUID}/current.json"
+        )
+        assert current_file.json()["version"] == 1
 
         # Now create a new configuration for activation
-        payload = {"condition_id": str(condition["id"])}
+        payload = {"condition_id": str(condition_id)}
         response = await authed_client.post("/api/v1/configurations/", json=payload)
         assert response.status_code == status.HTTP_200_OK
         config_data = response.json()
@@ -436,38 +394,33 @@ class TestConfigurations:
         assert validation_response_data["id"] == initial_configuration_id
         assert validation_response_data["status"] == "inactive"
 
-    async def test_transaction_rollback_on_activation_failure(self, db_pool):
+    async def test_transaction_rollback_on_activation_failure(
+        self, authed_client, get_condition_id, db_pool
+    ):
         """
         Verifies rollback when activation fails after deactivation.
         """
-        # Set the config to be active
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    UPDATE configurations
-                    SET status = 'active'
-                    WHERE name = 'Drowning and Submersion'
-                    AND version = 3
-                    RETURNING id, condition_canonical_url, condition_id;
-                    """
-                )
-                configuration = await cur.fetchone()
-                assert configuration is not None
-            old_config_id = str(configuration["id"])
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, condition_canonical_url, condition_id
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion'
-                    AND version = 2;
-                    """
-                )
-                configuration = await cur.fetchone()
-                assert configuration is not None
-            new_config_id = str(configuration["id"])
+        # Create v1 config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        # activate v1
+        v1_config_id = response.json()["id"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{v1_config_id}/activate"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        old_config_id = response.json()["configuration_id"]
+
+        # Create v2 draft
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+        new_config_id = response.json()["id"]
 
         # Patch _activate_configuration_db to fail after deactivation
         with patch(
@@ -494,23 +447,27 @@ class TestConfigurations:
             new_config = await get_configuration_by_id_db(
                 id=new_config_id, jurisdiction_id="SDDH", db=db_pool
             )
-            assert new_config.status == "inactive"  # Should remain inactive
+            assert new_config.status == "draft"  # Should remain as draft
 
-    async def test_deactivate_configuration(self, setup, authed_client, db_pool):
-        # Get the activated configuration from the previous tests
-        async with db_pool.get_connection() as conn:
-            async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(
-                    """
-                    SELECT id, condition_canonical_url, condition_id
-                    FROM configurations
-                    WHERE name = 'Drowning and Submersion' AND status = 'active';
-                    """
-                )
-                configuration = await cur.fetchone()
-                assert configuration is not None
+    async def test_deactivate_configuration(
+        self, setup, authed_client, get_condition_id
+    ):
+        condition_name = "Drowning and Submersion"
+        condition_id = await get_condition_id(condition_name)
 
-        initial_configuration_id = str(configuration["id"])
+        # Create config
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        # Activate it
+        config_id = response.json()["id"]
+        response = await authed_client.patch(
+            f"/api/v1/configurations/{config_id}/activate"
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        initial_configuration_id = str(config_id)
 
         # Deactivate config
         response = await authed_client.patch(
