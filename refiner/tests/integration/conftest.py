@@ -252,19 +252,6 @@ def zika_v3_1_1_zip_path(fixtures_path: Path) -> Path:
         pytest.fail(f"Fixture ZIP file not found: {path}")
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_logging():
-    """
-    Configure logging for integration tests
-    """
-
-    import logging
-
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    logger.info("Setting up integration test logging")
-
-
 @pytest.fixture(scope="session")
 def base_url() -> str:
     """
