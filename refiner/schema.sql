@@ -607,7 +607,7 @@ ALTER TABLE ONLY public.configurations
 --
 
 ALTER TABLE ONLY public.configurations_locks
-    ADD CONSTRAINT configurations_locks_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT configurations_locks_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -631,7 +631,7 @@ ALTER TABLE ONLY public.configurations_sections
 --
 
 ALTER TABLE ONLY public.events
-    ADD CONSTRAINT fk_events_configurations FOREIGN KEY (configuration_id) REFERENCES public.configurations(id);
+    ADD CONSTRAINT fk_events_configurations FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -676,4 +676,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260309143000'),
     ('20260309151338'),
     ('20260318125201'),
-    ('20260402215326');
+    ('20260402215326'),
+    ('20260420140437');
