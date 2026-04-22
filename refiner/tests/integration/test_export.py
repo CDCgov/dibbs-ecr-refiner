@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from fastapi import status
 
 
 @pytest.mark.integration
@@ -10,7 +11,7 @@ class TestConfigurationExport:
         """Endpoint must return 404 for a config ID that does not exist."""
         dummy_id = "00000000-0000-0000-0000-000000000000"
         response = await authed_client.get(f"/api/v1/configurations/{dummy_id}/export")
-        assert response.status_code == 404
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_export_returns_csv_with_correct_headers(
         self, setup, authed_client, get_condition_id, create_config
@@ -24,7 +25,7 @@ class TestConfigurationExport:
             f"/api/v1/configurations/{config['id']}/export"
         )
 
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         assert response.headers["content-type"].startswith("text/csv")
 
         cd_header = response.headers.get("content-disposition", "")
@@ -45,7 +46,7 @@ class TestConfigurationExport:
             f"/api/v1/configurations/{config['id']}/export"
         )
 
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         content = response.text
         lines = [line for line in content.splitlines() if line.strip()]
         assert len(lines) >= 1, "Expected at least a CSV header row in the response"
