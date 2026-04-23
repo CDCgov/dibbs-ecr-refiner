@@ -28,7 +28,6 @@ export interface GetConfigurationResponse {
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];
   section_processing: DbConfigurationSectionProcessing[];
-  deduplicated_codes: string[];
   all_versions: GetConfigurationResponseVersion[];
   version: number;
   active_configuration_id: string | null;

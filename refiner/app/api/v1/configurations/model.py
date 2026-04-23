@@ -84,7 +84,6 @@ class GetConfigurationResponse:
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
-    deduplicated_codes: list[str]
     all_versions: list[GetConfigurationResponseVersion]
     version: int
     active_configuration_id: UUID | None
