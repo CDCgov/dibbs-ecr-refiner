@@ -9,6 +9,7 @@ import { highlightMatches } from '../../../../utils';
 import { TesLink } from '../../TesLink';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
+import { StatusBadge, BadgeStatus } from '@components/StatusBadge';
 import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
@@ -243,6 +244,21 @@ export function ConditionCodeTable({
 
   return (
     <div className="min-h-full min-w-full">
+      <StatusBadge
+        status={BadgeStatus.FullyComplete}
+        text="fully complete"
+        detailsContent={
+          <div>
+            <h4 className="mb-2 text-lg font-bold">
+              Code Set Completion Details
+            </h4>
+            <p>
+              This code set is partially complete.&nbsp;
+              {/* Add further details here if you wish, or pull dynamic content */}
+            </p>
+          </div>
+        }
+      />
       <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
