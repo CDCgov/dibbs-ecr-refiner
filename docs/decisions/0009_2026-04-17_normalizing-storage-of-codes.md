@@ -48,16 +48,14 @@ Assuming we will move forward with code normalization, below are the considerati
 
 The core of the stored code information would include the following columns
 
-| column       | datatype                                 |
-| ------------ | ---------------------------------------- |
-| id           | UUID                                     |
-| displayName  | string                                   |
-| value        | string                                   |
-| system       | string, Enum, or `fkey to systems table` |
-| created_at   | DateTime                                 |
-| last_updated | DateTime                                 |
-
-The choice of data type for system could either be a raw string (enforced by the `CodeSystem` enum in our backend code) or a Postgres enum or a foreign key into a systems table that enforces system values at the data level. A discussion of the benefits of each / a final decision is included in Decision Outcomes.
+| column       | datatype                |
+| ------------ | ----------------------- |
+| id           | UUID                    |
+| displayName  | string                  |
+| value        | string                  |
+| system       | `fkey to systems table` |
+| created_at   | DateTime                |
+| last_updated | DateTime                |
 
 ### 2.2 Managing the relationship between codes <> condition/configurations
 
@@ -65,11 +63,13 @@ The choice of data type for system could either be a raw string (enforced by the
 
 The standard option for this many-to-many relationship is to store a single copy of a code and associate it with the condition / configuration in question via a junction table. Minimally, this junction table would be a primary key and the two columns storing the ID's of the code and configuration / condition row requiring a join table respectively. This setup would allow the pulling of other associated metadata needed for that code when performing queries.
 
-This option would minimize the amount of code-related data that we need to store, with the added complexity of having to manage a centralized table to maintain code <> parent object relationships via another table(s). The TES seeding script would need to parse and insert these relationships on update, but would allow referential integrity to be maintained by Postgres should a code be deleted. The seeding script would look something like:
+This option would minimize the amount of code-related data that we need to store, with the added complexity of having to manage a centralized table to maintain code <> parent object relationships via another table(s). The TES seeding script would need to parse and insert these relationships on update, but would allow referential integrity to be maintained by Postgres should a code be deleted.
+
+An example seeding script is stubbed out in `load_tes_data_into_normalized_table.py`
 
 #### 2.2.2 Managing joins via an array of foreign keys
 
-The first option is to replicate the existing JSON storage pattern and store a copy of each code per condition / configuration, with a foreign key array column from the parent entity to the list of codes. This maintains the current way that the application thinks about codes: within the condition / configuration context that the code exists in rather than as a standalone object.
+The second option is to replicate the existing JSON storage pattern and store a copy of each code per condition / configuration, with a foreign key array column from the parent entity to the list of codes. This maintains the current way that the application thinks about codes: within the condition / configuration context that the code exists in rather than as a standalone object.
 
 This option stores more code information than strictly necessary, but allows for row-level relationships via foreign keys to drive the configuration and condition relationships between custom and TES-derived codes. In this pattern, the same code could exist in multiple rows, but would be unique within the configuration / condition entity it's stored within. The TES seeding script would look something like:
 
@@ -77,7 +77,7 @@ This option stores more code information than strictly necessary, but allows for
 
 ### Store system values as a foreign key to a new systems table
 
-To accomplish the goal of migration-free code system addition while maintaining maximal data guarentees, the new codes table will reference via foreign key a new `systems` table that stores system metadata. Future codeset addition under this schema will involve adding a new row in the systems table that we can include via a seeding script that populates the table with the desired data.
+To accomplish the goal of migration-free code system addition while maintaining maximal data guarentees, the `systems` column of the new codes table will reference a foreign key of a new table that stores system metadata. Future codeset addition will be enabled by adding a new row in the systems table that we ca populate via a seeding script.
 
 To fully align this new table with the backend code, some refactoring will need to be done in the `CodeSystem` file to derive backend enum values with the values in the new table.
 
