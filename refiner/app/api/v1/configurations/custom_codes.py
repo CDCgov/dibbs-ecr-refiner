@@ -669,7 +669,9 @@ async def validate_custom_code(
     for custom_code in config.custom_codes:
         all_codes.add(custom_code.code)
 
-    all_codes.discard(current_code)
+    # Using the same code is valid
+    if current_code:
+        all_codes.discard(current_code)
 
     is_valid = desired_code not in all_codes
 
