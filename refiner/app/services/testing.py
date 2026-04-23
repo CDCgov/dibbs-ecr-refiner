@@ -6,6 +6,8 @@ from uuid import UUID
 
 from packaging.version import parse
 
+from app.services.configurations import convert_config_to_storage_payload
+
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
     get_conditions_by_child_rsg_snomed_codes_db,
@@ -303,11 +305,25 @@ async def independent_testing(
 
         trace.all_conditions_for_configuration = all_conditions_for_configuration
 
-        payload = ConfigurationPayload(
-            configuration=configuration,
-            conditions=trace.all_conditions_for_configuration,
+        # Serialize
+        serialized_configuration = await convert_config_to_storage_payload(
+            configuration=configuration, db=db
         )
-        processed_configuration = ProcessedConfiguration.from_payload(payload)
+
+        if not serialized_configuration:
+            logger.error(
+                "Converting configuration to storage payload failed.",
+                extra={configuration},
+            )
+            raise ValueError(
+                f"Configurated could not be converted to a storage payload: {configuration.id}"
+            )
+
+        # Deserialize
+        processed_configuration = ProcessedConfiguration.from_dict(
+            serialized_configuration.to_dict()
+        )
+
         trace.refine_object = processed_configuration
 
         # Use the shared pipeline to execute refinement
