@@ -102,8 +102,7 @@ function CustomCodeForm({
   const isButtonEnabled = code && system && name && !error;
 
   const handleCodeUpdate = (code: string) => {
-    const trimmedCode = code.trim();
-    setCode(trimmedCode);
+    setCode(code);
   };
 
   const handleCodeBlur = () => {
