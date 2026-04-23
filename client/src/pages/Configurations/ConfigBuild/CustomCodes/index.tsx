@@ -89,7 +89,8 @@ export function CustomCodesDetail({
                         if (disabled) return;
                         deleteCode(
                           {
-                            code: customCode.code,
+                            // encode to prevent special characters from breaking the action
+                            code: encodeURIComponent(customCode.code),
                             system: customCode.system,
                             configurationId: configurationId,
                           },
