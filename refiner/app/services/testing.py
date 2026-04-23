@@ -19,7 +19,7 @@ from ..db.configurations.db import (
 )
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
-from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
+from ..services.terminology import ProcessedConfiguration
 from .ecr.model import (
     RefinedDocument,
     ReportableCondition,
@@ -433,6 +433,7 @@ async def inline_testing(
     all_conditions: list[DbCondition],
     jurisdiction_id: str,
     logger: Logger,
+    db: AsyncDatabaseConnection,
 ) -> InlineTestingResult:
     """
     Orchestrates the full inline testing workflow for eICR refinement using an already-fetched configuration and primary condition.
@@ -455,6 +456,7 @@ async def inline_testing(
           of the primary and secondary conditions.
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
         logger: we're passing the logger from the route to the service.
+        db: The database connection
 
     Returns:
         An InlineTestingResult dictionary containing either the refined document or a validation error.
@@ -515,11 +517,25 @@ async def inline_testing(
 
     # STEP 4:
     # prepare and execute the refinement from payload -> processed_configuration -> shared pipeline
-    payload = ConfigurationPayload(
-        configuration=trace.configuration,
-        conditions=trace.all_conditions_for_configuration,
+
+    # Serialize
+    serialized_configuration = await convert_config_to_storage_payload(
+        configuration=configuration, db=db
     )
-    processed_configuration = ProcessedConfiguration.from_payload(payload)
+
+    if not serialized_configuration:
+        logger.error(
+            "Converting configuration to storage payload failed.",
+            extra={configuration},
+        )
+        raise ValueError(
+            f"Configurated could not be converted to a storage payload: {configuration.id}"
+        )
+
+    # Deserialize
+    processed_configuration = ProcessedConfiguration.from_dict(
+        serialized_configuration.to_dict()
+    )
 
     pipeline_trace = RefinementTrace(
         jurisdiction_code=jurisdiction_id,
