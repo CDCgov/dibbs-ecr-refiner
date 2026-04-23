@@ -621,7 +621,7 @@ async def validate_custom_code(
     body: ValidateCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> bool:
+) -> ValidateCustomCodeResponse:
     """
     Determines whether a custom code update is valid or not.
 
@@ -648,6 +648,11 @@ async def validate_custom_code(
     config = await get_configuration_by_id_db(
         id=configuration_id, jurisdiction_id=user.jurisdiction_id, db=db
     )
+
+    if not config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
+        )
 
     # Fetch all included conditions
     conditions = await get_included_conditions_db(
