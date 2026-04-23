@@ -124,7 +124,7 @@ function CustomCodeForm({
         onSuccess: (resp) => {
           setIsValidating(false);
           if (!resp.data.valid) {
-            setError(`The code "${trimmedCode}" is already in use.`);
+            setError(`The code "${trimmedCode}" already exists.`);
           }
         },
         onError: () => {
