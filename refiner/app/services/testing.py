@@ -305,23 +305,8 @@ async def independent_testing(
 
         trace.all_conditions_for_configuration = all_conditions_for_configuration
 
-        # Serialize
-        serialized_configuration = await convert_config_to_storage_payload(
-            configuration=configuration, db=db
-        )
-
-        if not serialized_configuration:
-            logger.error(
-                "Converting configuration to storage payload failed.",
-                extra={configuration},
-            )
-            raise ValueError(
-                f"Configurated could not be converted to a storage payload: {configuration.id}"
-            )
-
-        # Deserialize
-        processed_configuration = ProcessedConfiguration.from_dict(
-            serialized_configuration.to_dict()
+        processed_configuration = await _convert_to_processed_config(
+            configuration=configuration, logger=logger, db=db
         )
 
         trace.refine_object = processed_configuration
@@ -392,6 +377,41 @@ async def independent_testing(
             xml_files=xml_files,
         ),
     )
+
+
+async def _convert_to_processed_config(
+    configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection
+):
+    """
+    Helper function to simulate the serialization/deserialization process Lambda uses.
+
+    Args:
+        configuration (DbConfiguration): The configuration
+        logger (Logger): The logger
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        ValueError: Unable to convert the config to a storage payload
+
+    Returns:
+        ProcessedConfiguration: A ProcessedConfiguration created from a storage payload object
+    """
+    # Convert the config to a storage payload
+    serialized_configuration = await convert_config_to_storage_payload(
+        configuration=configuration, db=db
+    )
+
+    if not serialized_configuration:
+        logger.error(
+            "Converting configuration to storage payload failed.",
+            extra={"configuration": asdict(configuration)},
+        )
+        raise ValueError(
+            f"Configuration could not be converted to a storage payload: {configuration.id}"
+        )
+
+    # Convert to a ProcessedConfiguration from the serialized configuration
+    return ProcessedConfiguration.from_dict(serialized_configuration.to_dict())
 
 
 def _generate_shadow_rr(
@@ -517,24 +537,8 @@ async def inline_testing(
 
     # STEP 4:
     # prepare and execute the refinement from payload -> processed_configuration -> shared pipeline
-
-    # Serialize
-    serialized_configuration = await convert_config_to_storage_payload(
-        configuration=configuration, db=db
-    )
-
-    if not serialized_configuration:
-        logger.error(
-            "Converting configuration to storage payload failed.",
-            extra={configuration},
-        )
-        raise ValueError(
-            f"Configurated could not be converted to a storage payload: {configuration.id}"
-        )
-
-    # Deserialize
-    processed_configuration = ProcessedConfiguration.from_dict(
-        serialized_configuration.to_dict()
+    processed_configuration = await _convert_to_processed_config(
+        configuration=configuration, logger=logger, db=db
     )
 
     pipeline_trace = RefinementTrace(
