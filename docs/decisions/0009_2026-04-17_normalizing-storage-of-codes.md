@@ -10,7 +10,11 @@ Proposed
 
 After deciding to implement [1099](https://app.zenhub.com/workspaces/dibbs-ecr-refiner-67ddd053d70b9f000ffbb542/issues/gh/cdcgov/dibbs-ecr-refiner/1099), the team decided to explore a long-desired refactor of our codeset schema. Several forthcoming features will need to manipulate codeset metadata beyond what the existing JSON array pattern conveniently allows, and the storage of this information is a section of the codebase with high maintenance complexity.
 
-Storing codes as JSONB was a decision made when the Refiner was a much different application, one where codesets reads were optimized operation and writes/updates weren't as common. With the evolution of the lambda, syncing operations for TES updates, and the development of current and upcoming web app features, this storage decision is in need of revisiting. Below are our exploration of 1. Whether / how to refactor our schema to better support codeset information and 2. How to roll out the proposed refactor and 3. related concerns for future exploration.
+Storing codes as JSONB was a decision made when the Refiner was a much different application, one where codesets reads were the optimized operation and writes/updates weren't as common. With the evolution of the lambda, syncing operations for TES updates, and the development of current and upcoming web app features, this storage decision is in need of revisiting. Below are our explorations of
+
+1. Whether / how to refactor our schema to better support codeset information
+2. How to roll out the proposed refactor
+3. Related concerns for future exploration.
 
 ## Decision Drivers
 
@@ -38,13 +42,11 @@ To begin, the conditions table's `child_rsg_snomed_codes` column would need exte
 
 ### 2. Store normalized codes
 
-Storing a normalized version of codeset information is the other way to modify our data model to support future functionality. These approaches would require significant application refactoring, touching our storage of custom codes, storage of conditions / configurations, and ingest from the TES amongst other modules, but would simplify the maintence and data schema related to codeset storage.
+Storing a normalized version of codeset information is the other way to modify our data model to support future functionality. These approaches would require significant application refactoring, touching our storage of custom codes, object creation and storage of related conditions / configurations, and ingest from the TES, amongst other modules. In return, it would simplify the maintence and data schema related to codeset storage and take advantage of oure relational data store for a large piece of relevant application data.
 
-Two main decisions need to be made regarding normalization: the code schema and how to manage join relationship to parent condition / configuration objects. Considerations for both are considered below
+Two main decisions need to be made regarding normalization: the code schema and how to manage join relationship to parent condition / configuration objects.
 
 ### 2.1 Code storage schema
-
-Assuming we will move forward with code normalization, below are the considerations for a potential schema.
 
 The core of the stored code information would include the following columns
 
@@ -57,6 +59,20 @@ The core of the stored code information would include the following columns
 | created_at   | DateTime                |
 | last_updated | DateTime                |
 
+To accomplish the goal of migration-free code system addition while maintaining maximal data guarentees, the `systems` column of the new codes table will reference a foreign key of a new table that stores system metadata that would look something like the below:
+
+| column | datatype |
+| ------ | -------- |
+| id     | UUID     |
+| name   | string   |
+| oid    | string   |
+
+Future code system addition will be enabled by adding a new row in the systems table that we can populate via a seeding script. To fully align this new table with the backend code, some refactoring will need to be done in the `terminology.py` file to derive backend `CodeSystem` enum values with the values in the new table.
+
+#### 2.1.1 Storing codes in one table
+
+#### 2.1.2 Storing custom codes and TES codes in separate tables
+
 ### 2.2 Managing the relationship between codes <> condition/configurations
 
 #### 2.2.1 Managing joins via a junction table
@@ -65,25 +81,21 @@ The standard option for this many-to-many relationship is to store a single copy
 
 This option would minimize the amount of code-related data that we need to store, with the added complexity of having to manage a centralized table to maintain code <> parent object relationships via another table(s). The TES seeding script would need to parse and insert these relationships on update, but would allow referential integrity to be maintained by Postgres should a code be deleted.
 
-An example seeding script is stubbed out in `load_tes_data_into_normalized_table.py`
-
 #### 2.2.2 Managing joins via an array of foreign keys
 
 The second option is to replicate the existing JSON storage pattern and store a copy of each code per condition / configuration, with a foreign key array column from the parent entity to the list of codes. This maintains the current way that the application thinks about codes: within the condition / configuration context that the code exists in rather than as a standalone object.
 
-This option stores more code information than strictly necessary, but allows for row-level relationships via foreign keys to drive the configuration and condition relationships between custom and TES-derived codes. In this pattern, the same code could exist in multiple rows, but would be unique within the configuration / condition entity it's stored within. The TES seeding script would look something like:
+This option stores more code information than strictly necessary, but allows for row-level relationships via foreign keys to drive the configuration and condition relationships between custom and TES-derived codes. In this pattern, the same code could exist in multiple rows, but would be unique within the configuration / condition entity it's stored within.
 
 ## Decision Outcome
 
-### Store system values as a foreign key to a new systems table
+### Store normalized codesets
 
-To accomplish the goal of migration-free code system addition while maintaining maximal data guarentees, the `systems` column of the new codes table will reference a foreign key of a new table that stores system metadata. Future codeset addition will be enabled by adding a new row in the systems table that we ca populate via a seeding script.
+### Manage joins via a junction table
 
-To fully align this new table with the backend code, some refactoring will need to be done in the `CodeSystem` file to derive backend enum values with the values in the new table.
+Compared with the other option of storing code relationships in an array, the junction table approach is the more standard way of modeling relationships. It gives guarentees such as referential integrity, cascade deletes, and key-based queries on the table itself that the array approach doesn't afford.
 
-### Storing TES codes separately from custom codes
-
-### Duplicate storage of codes with a composite system / code key, unique per configuration
+An example seeding script is stubbed out in `load_tes_data_into_normalized_table.py`
 
 ## Implementation rollout
 
