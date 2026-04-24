@@ -6,6 +6,7 @@ from fastapi import status
 
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
+from app.db.configurations.model import DbConfigurationCustomCode
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -247,6 +248,99 @@ class TestConfigurations:
         )
         # FastAPI shouldn't allow this to work
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    async def test_custom_code_validation_fails_on_conflicting_code_set_code(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        associate_codeset,
+        disassociate_codeset,
+    ):
+        """
+        Custom code can't have the value of a code in an associated code set.
+        """
+        condition_id = await get_condition_id("Diphtheria")
+        config = await create_config(condition_id)
+
+        condition_id_to_attach = await get_condition_id("Ebstein Anomaly")
+        config_id = config["id"]
+        await associate_codeset(config_id, condition_id_to_attach)
+
+        existing_code = "Q22.5"
+
+        payload = {"current_code": None, "desired_code": existing_code}
+        response = await authed_client.post(
+            f"api/v1/configurations/{config_id}/custom-codes/validate", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert not response.json()["valid"]
+
+        # Works once the code set is disassociated
+        await disassociate_codeset(config_id, condition_id_to_attach)
+        response = await authed_client.post(
+            f"api/v1/configurations/{config_id}/custom-codes/validate", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["valid"]
+
+    async def test_adding_custom_code_validation_fails_on_conflicting_custom_code(
+        self, setup, authed_client, get_condition_id, create_config, add_custom_code
+    ):
+        """
+        A brand new custom code can't have the value of another custom code attached to the same config.
+        """
+        condition_id = await get_condition_id("Diphtheria")
+        config = await create_config(condition_id)
+
+        config_id = config["id"]
+        same_code = "12345-6"
+        await add_custom_code(
+            config_id,
+            DbConfigurationCustomCode(code=same_code, system="loinc", name="Mock code"),
+        )
+
+        payload = {"current_code": None, "desired_code": same_code}
+        response = await authed_client.post(
+            f"api/v1/configurations/{config_id}/custom-codes/validate", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert not response.json()["valid"]
+
+    async def test_editing_custom_code_validation_fails_on_conflicting_custom_code(
+        self, setup, authed_client, get_condition_id, create_config, add_custom_code
+    ):
+        """
+        An edited custom code can't have the value of another custom code attached to the same config.
+        """
+        condition_id = await get_condition_id("Diphtheria")
+        config = await create_config(condition_id)
+
+        config_id = config["id"]
+
+        desired_code = "12345-6"
+        await add_custom_code(
+            config_id,
+            DbConfigurationCustomCode(
+                code=desired_code, system="loinc", name="Mock code"
+            ),
+        )
+
+        code_to_edit = "6-12345"
+        await add_custom_code(
+            config_id,
+            DbConfigurationCustomCode(
+                code=code_to_edit, system="rxnorm", name="edit me"
+            ),
+        )
+
+        payload = {"current_code": code_to_edit, "desired_code": desired_code}
+        response = await authed_client.post(
+            f"api/v1/configurations/{config_id}/custom-codes/validate", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert not response.json()["valid"]
 
     async def test_activate_configuration(
         self,

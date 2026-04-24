@@ -1,4 +1,5 @@
 import os
+from dataclasses import asdict
 from pathlib import Path
 from uuid import UUID
 
@@ -9,6 +10,8 @@ from lxml import etree
 from psycopg.rows import dict_row
 from saxonche import PySaxonProcessor
 from testcontainers.compose import DockerCompose
+
+from app.db.configurations.model import DbConfigurationCustomCode
 
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "integration-test"
@@ -69,6 +72,56 @@ async def activate_config(authed_client):
 
     async def _get(id: UUID):
         response = await authed_client.patch(f"/api/v1/configurations/{id}/activate")
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def delete_custom_code(authed_client):
+    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
+        response = await authed_client.delete(
+            f"/api/v1/configurations/{config_id}/custom-codes/{custom_code.system}/{custom_code.code}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def add_custom_code(authed_client):
+    async def _get(config_id: UUID, custom_code: DbConfigurationCustomCode):
+        payload = asdict(custom_code)
+        response = await authed_client.post(
+            f"/api/v1/configurations/{config_id}/custom-codes", json=payload
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def disassociate_codeset(authed_client):
+    async def _get(config_id: UUID, condition_id: UUID):
+        response = await authed_client.delete(
+            f"/api/v1/configurations/{config_id}/code-sets/{condition_id}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        return response.json()
+
+    return _get
+
+
+@pytest_asyncio.fixture
+async def associate_codeset(authed_client):
+    async def _get(config_id: UUID, condition_id: UUID):
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.put(
+            f"api/v1/configurations/{config_id}/code-sets", json=payload
+        )
         assert response.status_code == status.HTTP_200_OK
         return response.json()
 
