@@ -1,75 +1,37 @@
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from uuid import UUID, uuid4
 
 from lib import (
+    ConditionData,
+    FhirCodeTuple,
     VsCanonicalUrl,
-    VsDict,
     VsVersion,
-    get_child_rsg_valuesets,
-    get_sibling_context_valuesets,
     load_valuesets_from_all_files,
 )
 
-# parse data from TES groupers like we are currently
+from scripts.seeding.load_tes_data import _build_condition_groupers
+
 type UrlVersionTuple = tuple[VsCanonicalUrl, VsVersion]
-type CodeId = str
+type ConditionId = UUID
+type CodeId = UUID
 
 
 # TODO: to be fleshed out in the actual script
 @dataclass
-class _Code:
-    code_id: UUID
-    code_data: VsDict
+class _IdentifiableCode:
+    code_id: CodeId
+    code_data: FhirCodeTuple
 
 
+# TODO: to be fleshed out in the actual script
 @dataclass
-class _ConditionData:
-    condition_id: UUID
-    condition_data: VsDict
+class _IdentifiableCondition:
+    condition_id: ConditionId
+    condition_data: ConditionData
 
 
-class ConditionCodeList:
-    """Class that represents a condition's relationship to a list of relevant codes."""
-
-    condition: _ConditionData
-    child_rsg_codes: list[_Code]
-    valueset_codes: list[_Code]
-
-    def __init__(
-        self,
-        condition: _ConditionData,
-        child_rsg_codes: list[_Code],
-        valueset_codes: list[_Code],
-    ):
-        """
-        Initalizes a condition based on the ID with empty code arrays.
-        """
-        self.condition = condition
-        self.child_rsg_codes = child_rsg_codes
-        self.valueset_codes = valueset_codes
-
-    def add_child_rsg_codes(self, code_list: list[_Code]):
-        """
-        Extend child_rsg list with code.
-        """
-        self.child_rsg_codes.extend(code_list)
-
-    def add_valueset_codes(self, code_list: list[_Code]):
-        """
-        Extend valueset with code.
-        """
-        self.valueset_codes.extend(code_list)
-
-    def get_deduped_codes(self) -> list[_Code]:
-        """
-        Get list of deduped codes for insert.
-        """
-        code_set = set(self.child_rsg_codes + self.valueset_codes)
-        return list(code_set)
-
-
-def upsert_conditions(conditions: list[_ConditionData]):
+def upsert_conditions(conditions: list[_IdentifiableCondition]):
     """
     Stub for upsert of conditions.
     """
@@ -77,102 +39,94 @@ def upsert_conditions(conditions: list[_ConditionData]):
     return True
 
 
-def upsert_codes(codes: list[list[_Code]]):
+def upsert_codes(codes: list[_IdentifiableCode]):
     """
     Stub for upsert of conditions.
     """
 
-    # do the relevant SQL work
+    # do the relevant SQL work, using the UUID from _Code to insert things into the DB
     return True
 
 
-def upsert_code_to_condition_relationships(
-    conditions: dict[UrlVersionTuple, ConditionCodeList],
+def upsert_condition_to_codes_relationship(
+    condition_to_code_relationships: dict[ConditionId, list[CodeId]],
 ):
     """
-    Stub for upsert of conditions.
+    Stub for upsert of condition to codes relationship.
     """
 
-    # do the relevant SQL work
+    # do the relevant SQL work, using the UUIDs from _ConditionData
+    # to insert store the condition and code entity relationships
     return True
 
 
 # build conditions to insert
-def _build_processed_conditions(
-    vs_map: dict[UrlVersionTuple, VsDict],
-    condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList],
-) -> dict[UrlVersionTuple, _ConditionData]:
-    processed_codes: dict[UrlVersionTuple, _ConditionData] = defaultdict()
+def _build_processed_conditions() -> dict[UrlVersionTuple, _IdentifiableCondition]:
 
-    for url_version_key, condition_data in vs_map.items():
+    conditions_map: dict[UrlVersionTuple, _IdentifiableCondition] = defaultdict()
+
+    # parse out the valuesets from the TES files like we were doing previously
+    all_valuesets_map = load_valuesets_from_all_files()
+    condition_groupers = _build_condition_groupers(valuesets_map=all_valuesets_map)
+
+    for parent in condition_groupers:
         # have the application generate the UUID to make relationships easier to maintain
-        cur_condition_id = uuid4()
+        condition_id = uuid4()
+        data = ConditionData(parent, all_valuesets_map)
+        url = parent.get("url")
+        version = parent.get("version")
 
-        # prepare data from the TES needed for insert
-        condition_to_insert = _ConditionData(
-            condition_id=cur_condition_id,
-            condition_data=condition_data,
+        if not isinstance(url, str) or not isinstance(version, str):
+            raise Exception("url or version is None")
+
+        url_version_key: UrlVersionTuple = (url, version)
+
+        condition_to_insert = _IdentifiableCondition(
+            condition_id=condition_id,
+            condition_data=data,
         )
 
         # note the inserted condition ID in the relationship map
-        condition_to_codes_map[url_version_key] = ConditionCodeList(
-            condition=condition_to_insert, child_rsg_codes=[], valueset_codes=[]
-        )
+        conditions_map[url_version_key] = condition_to_insert
 
-    return processed_codes
+    return conditions_map
 
 
-# build codes to insert
 def _build_processed_codes(
-    vs_map: dict[UrlVersionTuple, VsDict],
-    condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList],
-) -> dict[UrlVersionTuple, list[_Code]]:
-    processed_codes: dict[UrlVersionTuple, list[_Code]] = defaultdict(list)
+    condition_to_codes_map: dict[UrlVersionTuple, _IdentifiableCondition],
+) -> tuple[list[_IdentifiableCode], dict[ConditionId, list[CodeId]]]:
+    codes_to_insert: list[_IdentifiableCode] = []
+    condition_to_code_relationships: dict[ConditionId, list[CodeId]] = defaultdict(list)
 
-    for url_version_key in vs_map.keys():
-        condition_to_code_trace = condition_to_codes_map[url_version_key]
-        related_condition = condition_to_code_trace.condition
+    for c in condition_to_codes_map.values():
+        cur_condition_codes = c.condition_data.all_codes
+        identified_codes = [
+            # generate the UUID in code
+            _IdentifiableCode(code_id=uuid4(), code_data=code)
+            for code in cur_condition_codes
+        ]
+        codes_to_insert.extend(identified_codes)
 
-        # the "get valuesets" functions will need to be modified,
-        # but hopefully illustrative of what we'll need to do
-        child_rsgs = get_child_rsg_valuesets(
-            parent=asdict(related_condition),
-            all_vs_map=all_valuesets_map,
-        )
+        # use generated UUID to mark condition <> code relationship for future processing
+        condition_to_code_relationships[c.condition_id] = [
+            code.code_id for code in identified_codes
+        ]
 
-        # add related codes into trace
-        condition_to_code_trace.add_child_rsg_codes(
-            # have the application generate the UUID to make relationships easier to maintain
-            [_Code(code_id=uuid4(), code_data=c) for c in child_rsgs]
-        )
+    return (codes_to_insert, condition_to_code_relationships)
 
-        sibling_codes = get_sibling_context_valuesets(
-            parent=related_condition.condition_data, all_vs_map=all_valuesets_map
-        )
-        condition_to_code_trace.add_valueset_codes(
-            # have the application generate the UUID to make relationships easier to maintain
-            [_Code(code_id=uuid4(), code_data=c) for c in sibling_codes]
-        )
-
-    return processed_codes
-
-
-condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList] = defaultdict()
-
-# parse out the valuesets from the TES files like we were doing previously
-all_valuesets_map = load_valuesets_from_all_files()
 
 # munge and upsert conditions
-processed_conditions = _build_processed_conditions(
-    vs_map=all_valuesets_map, condition_to_codes_map=condition_to_codes_map
-)
-upsert_conditions(conditions=list(processed_conditions.values()))
+condition_to_codes_map = _build_processed_conditions()
 
-# munge and upsert codes
-processed_codes = _build_processed_codes(
-    vs_map=all_valuesets_map, condition_to_codes_map=condition_to_codes_map
-)
-upsert_codes(codes=list(processed_codes.values()))
+upsert_conditions(conditions=list(condition_to_codes_map.values()))
 
-# parse condition <> codes relationship and upsert the result into table
-upsert_code_to_condition_relationships(condition_to_codes_map)
+codes_to_insert, condition_to_code_relationships = _build_processed_codes(
+    condition_to_codes_map=condition_to_codes_map
+)
+# and codes
+upsert_codes(codes=codes_to_insert)
+
+# and finally their relationships
+upsert_condition_to_codes_relationship(
+    condition_to_code_relationships=condition_to_code_relationships
+)

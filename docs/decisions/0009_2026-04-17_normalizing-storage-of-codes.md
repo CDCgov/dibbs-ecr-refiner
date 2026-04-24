@@ -46,7 +46,21 @@ Storing a normalized version of codeset information is the other way to modify o
 
 Two main decisions need to be made regarding normalization: the code schema and how to manage join relationship to parent condition / configuration objects.
 
-### 2.1 Code storage schema
+### 2.1 Managing the relationship between codes <> condition/configurations
+
+#### 2.1.1 Managing joins via a junction table
+
+The standard option for this many-to-many relationship is to store a single copy of a code and associate it with the condition / configuration in question via a junction table. Minimally, this junction table would be a primary key and the two columns storing the ID's of the code and configuration / condition row requiring a join table respectively. This setup would allow the pulling of other associated metadata needed for that code when performing queries.
+
+This option would minimize the amount of code-related data that we need to store, with the added complexity of having to manage a centralized table to maintain code <> parent object relationships via another table(s). The TES seeding script would need to parse and insert these relationships on update, but would allow referential integrity to be maintained by Postgres should a code be deleted.
+
+#### 2.1.2 Managing joins via an array of foreign keys
+
+The second option is to replicate the existing JSON storage pattern and store a copy of each code per condition / configuration, with a foreign key array column from the parent entity to the list of codes. This maintains the current way that the application thinks about codes: within the condition / configuration context that the code exists in rather than as a standalone object.
+
+This option stores more code information than strictly necessary, but allows for row-level relationships via foreign keys to drive the configuration and condition relationships between custom and TES-derived codes. In this pattern, the same code could exist in multiple rows, but would be unique within the configuration / condition entity it's stored within.
+
+### 2.2 Code storage schema
 
 The core of the stored code information would include the following columns
 
@@ -69,40 +83,68 @@ To accomplish the goal of migration-free code system addition while maintaining 
 
 Future code system addition will be enabled by adding a new row in the systems table that we can populate via a seeding script. To fully align this new table with the backend code, some refactoring will need to be done in the `terminology.py` file to derive backend `CodeSystem` enum values with the values in the new table.
 
-#### 2.1.1 Storing codes in one table
+#### 2.2.1 Storing TES codes together with custom codes
 
-#### 2.1.2 Storing custom codes and TES codes in separate tables
+The most straightforward option for code storage is to store custom codes and TES codes in a single table, using boolean columns to differentiate the two. The main complication would be the need to link custom code rows to configurations and TES code rows to conditions, since custom codes only exist in a configuration context while TES codes exist to condition codesets. The extended schema under this option would look something like the following:
 
-### 2.2 Managing the relationship between codes <> condition/configurations
+| column        | datatype       |
+| ------------- | -------------- |
+| id            | UUID           |
+| displayName   | string         |
+| value         | string         |
+| system        | string or Enum |
+| created_at    | DateTime       |
+| last_updated  | DateTime       |
+| **is_custom** | **Boolean**    |
 
-#### 2.2.1 Managing joins via a junction table
+In return, reads and writes from / to this table would be much more straightforward, since they can be manged by a single database service shared by both the condition and configuration modules. The codes object would provide only the necessary information around custom code / TES status to the caller, which may allow us to simplify the differentiation between the our models of codes.
 
-The standard option for this many-to-many relationship is to store a single copy of a code and associate it with the condition / configuration in question via a junction table. Minimally, this junction table would be a primary key and the two columns storing the ID's of the code and configuration / condition row requiring a join table respectively. This setup would allow the pulling of other associated metadata needed for that code when performing queries.
+#### 2.2.2 Storing TES codes separately from custom codes
 
-This option would minimize the amount of code-related data that we need to store, with the added complexity of having to manage a centralized table to maintain code <> parent object relationships via another table(s). The TES seeding script would need to parse and insert these relationships on update, but would allow referential integrity to be maintained by Postgres should a code be deleted.
+A secondary option is to store custom codes and TES codes separately, duplicating the base schema in both tables and only adding a foreign key to the relevant configuration or conditions table. The main complication would be the need to link custom code rows to configurations and TES code rows to conditions, since custom codes only exist in a configuration context while TES codes exist to condition codesets. The extended schema under this option would look something like the following:
 
-#### 2.2.2 Managing joins via an array of foreign keys
+##### Custom codes table
 
-The second option is to replicate the existing JSON storage pattern and store a copy of each code per condition / configuration, with a foreign key array column from the parent entity to the list of codes. This maintains the current way that the application thinks about codes: within the condition / configuration context that the code exists in rather than as a standalone object.
+| column       | datatype       |
+| ------------ | -------------- |
+| id           | UUID           |
+| display_name | string         |
+| value        | string         |
+| system       | string or Enum |
+| created_at   | DateTime       |
+| last_updated | DateTime       |
 
-This option stores more code information than strictly necessary, but allows for row-level relationships via foreign keys to drive the configuration and condition relationships between custom and TES-derived codes. In this pattern, the same code could exist in multiple rows, but would be unique within the configuration / condition entity it's stored within.
+##### TES codes table
+
+| column       | datatype       |
+| ------------ | -------------- |
+| id           | UUID           |
+| display_name | string         |
+| value        | string         |
+| system       | string or Enum |
+| created_at   | DateTime       |
+| last_updated | DateTime       |
+
+In this configuration, two pairwise tables (TES codes and conditions, custom codes and configurations) would exist in our data schema that encodes the pairwise relationship between the entities in the data schema
 
 ## Decision Outcome
 
 ### Store normalized codesets in a single code table
 
+The team will start by storing normalized TES and custom codesets in a single table. This allows for codeset relationships to be centralized and searched (for things like codeset uniqueness validation and codeset search) to be made within a single table rather than require queries spanning across tables. We suspect that keeping all codes stored within a single table won't create complexity issues given the scale and volume of data we're maintaining, while offering simplicity and centralization improvements compared to the other option of spliting the code storage across tables.
+
 ### Manage joins via a junction table
 
 Compared with the other option of storing code relationships in an array, the junction table approach is the more standard way of modeling relationships. It gives guarentees such as referential integrity, cascade deletes, and key-based queries on the table itself that the array approach doesn't afford.
 
-An example seeding script is stubbed out in `load_tes_data_into_normalized_table.py`
+An example seeding script for this option is stubbed out in `load_tes_data_into_normalized_table.py`. Something similar could be accomplished for the join option of storing code relationships as ID arrays, with inserst at the relationship level being done in the secondary condition insert step rather than in a third relationship management step.
 
 ## Appendix
 
 ### Implementation rollout
 
 1. Seed the new schema
-1. Backport existing data into the new table structure
+1. Backport existing data into the new table structure for the custom codes and child RSG tables
 1. Add elements of the TES update script to munge and seed existing data into the new table structure
 1. Refactor existing code to use the new data structure
 1. Drop the relevant code columns in the conditions and configurations table

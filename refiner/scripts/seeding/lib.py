@@ -179,13 +179,20 @@ class ConditionData:
         )
 
     @property
+    def all_codes(self) -> set[FhirCodeTuple]:
+        """
+        Generates a union of all codes belonging to the condition.
+        """
+        # combine all codes; the union operator `|` correctly merges the sets
+        return self.child_codes | self.sibling_codes
+
+    @property
     def payload(self) -> dict[str, Any]:
         """
         Generates the dictionary payload for database insertion.
         """
 
-        # combine all codes; the union operator `|` correctly merges the sets
-        all_codes = self.child_codes | self.sibling_codes
+        all_codes = self.all_codes
         categorized = categorize_codes_by_system(all_codes)
 
         result = {
