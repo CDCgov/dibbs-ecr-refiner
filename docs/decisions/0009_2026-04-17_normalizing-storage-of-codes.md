@@ -8,7 +8,7 @@ Proposed
 
 ## Context and Problem Statement
 
-After deciding to implement [1099](https://app.zenhub.com/workspaces/dibbs-ecr-refiner-67ddd053d70b9f000ffbb542/issues/gh/cdcgov/dibbs-ecr-refiner/1099), the team decided to explore a long-desired refactor of our codeset schema. Several forthcoming features will need to manipulate codeset metadata beyond what the existing JSON array pattern conveniently allows, and the storage of this information is a section of the codebase with high maintenance complexity.
+After deciding to implement [1099](https://app.zenhub.com/workspaces/dibbs-ecr-refiner-67ddd053d70b9f000ffbb542/issues/gh/cdcgov/dibbs-ecr-refiner/1099), the team decided to explore a long-desired refactor of our codeset schema. Several forthcoming features will need to manipulate codeset metadata beyond what the existing JSON array pattern conveniently allows, and the storage of this information is a section of the codebase with high maintenance complexity, making it a good candidate for refactoring.
 
 Storing codes as JSONB was a decision made when the Refiner was a much different application, one where codesets reads were the optimized operation and writes/updates weren't as common. With the evolution of the lambda, syncing operations for TES updates, and the development of current and upcoming web app features, this storage decision is in need of revisiting. Below are our explorations of
 
@@ -131,21 +131,31 @@ In this configuration, two pairwise tables (TES codes and conditions, custom cod
 
 ### Store normalized codesets in a single code table
 
-The team will start by storing normalized TES and custom codesets in a single table. This allows for codeset relationships to be centralized and searched (for things like codeset uniqueness validation and codeset search) to be made within a single table rather than require queries spanning across tables. We suspect that keeping all codes stored within a single table won't create complexity issues given the scale and volume of data we're maintaining, while offering simplicity and centralization improvements compared to the other option of spliting the code storage across tables.
+The team will store normalized codes over extending the existing JSON configuration to better enable future development and maintenance. Furthermore, TES and custom codesets will be stored in a single table, which allows for codeset relationships to be centralized and searched more convieniently. Storing things in a single table simplifies needed features like codeset uniqueness validation and codeset parsing and search, since a single query can be made rather than aggregating queries across tables. We suspect that keeping all codes stored within a single table won't create complexity issues given the scale and volume of data we're maintaining, while offering simplicity and centralization improvements. One table is also more easily splittable into two should we change our minds in the future rather than joining two tables into one, so this decision can be revisted if needed in the future.
 
 ### Manage joins via a junction table
 
-Compared with the other option of storing code relationships in an array, the junction table approach is the more standard way of modeling relationships. It gives guarentees such as referential integrity, cascade deletes, and key-based queries on the table itself that the array approach doesn't afford.
+Compared with the other option of storing code relationships in an array, the junction table approach is the more standard way of modeling relationships and thus the one we'll implement. This approach gives guarentees such as referential integrity, cascade deletes, and the ability to make key-based queries on the table itself rather than having to parse and mainpulate array structures in SQL that would be necessary with the other approach.
 
-An example seeding script for this option is stubbed out in `load_tes_data_into_normalized_table.py`. Something similar could be accomplished for the join option of storing code relationships as ID arrays, with inserst at the relationship level being done in the secondary condition insert step rather than in a third relationship management step.
+An example seeding script for this option is stubbed out in `load_tes_data_into_normalized_table.py` to illustrate how the data would be parsed from the TES into the shape needed for seeding.
 
 ## Appendix
 
 ### Implementation rollout
 
-1. Seed the new schema
+Below is a rough timeline for rolling out these changes
+
+### Phase 1
+
+1. Seed the new schema and update the seeding script to parse out the necessary codes
 1. Backport existing data into the new table structure for the custom codes and child RSG tables
-1. Add elements of the TES update script to munge and seed existing data into the new table structure
-1. Refactor existing code to use the new data structure
+1. Refactor existing code to use the new data schema
 1. Drop the relevant code columns in the conditions and configurations table
-1. Remove unneeded code in the update script
+1. Remove unneeded code in the updated script
+1. Address any issues that arise
+
+### Phase 2
+
+1. Run the seeding script to seed the remaining data into the new schema
+1. Refactor backend code to handle the new code storage schema
+1. Delete the obsolete columns from the old schema
