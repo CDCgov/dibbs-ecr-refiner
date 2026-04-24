@@ -7,6 +7,7 @@ from fastapi import status
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
+from app.services.terminology import CodeSystem
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -298,7 +299,9 @@ class TestConfigurations:
         same_code = "12345-6"
         await add_custom_code(
             config_id,
-            DbConfigurationCustomCode(code=same_code, system="loinc", name="Mock code"),
+            DbConfigurationCustomCode(
+                code=same_code, system=CodeSystem("loinc"), name="Mock code"
+            ),
         )
 
         payload = {"current_code": None, "desired_code": same_code}
@@ -319,19 +322,19 @@ class TestConfigurations:
 
         config_id = config["id"]
 
-        desired_code = "12345-6"
+        desired_code = "FAKE-DESIRED-CODE-99999"
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=desired_code, system="loinc", name="Mock code"
+                code=desired_code, system=CodeSystem("loinc"), name="Mock code"
             ),
         )
 
-        code_to_edit = "6-12345"
+        code_to_edit = "FAKE-CODE-TO-EDIT-111"
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=code_to_edit, system="rxnorm", name="edit me"
+                code=code_to_edit, system=CodeSystem("rxnorm"), name="edit me"
             ),
         )
 
