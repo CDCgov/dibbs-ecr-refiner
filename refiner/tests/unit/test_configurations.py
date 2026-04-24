@@ -154,7 +154,7 @@ def mock_db_functions(
 
     # for get_total_condition_code_counts_by_configuration_db, could use a list of count objects if needed
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.get_total_condition_code_counts_by_configuration_db",
+        "app.api.v1.configurations.custom_codes.get_total_condition_code_counts_by_configuration_db",
         AsyncMock(return_value=[]),
     )
 
@@ -235,7 +235,7 @@ async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch, code_system
 ):
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
     # Mock adding custom code to a config
@@ -248,7 +248,7 @@ async def test_add_custom_code_to_configuration(
         ],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.add_custom_code_to_configuration_db",
+        "app.api.v1.configurations.custom_codes.add_custom_code_to_configuration_db",
         AsyncMock(return_value=custom_code_config_mock),
     )
 
@@ -269,7 +269,7 @@ async def test_delete_custom_code_from_configuration(
     authed_client, mock_configuration, monkeypatch
 ):
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
     # Mock deleting a custom code from a config
@@ -278,7 +278,7 @@ async def test_delete_custom_code_from_configuration(
         custom_codes=[],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.delete_custom_code_from_configuration_db",
+        "app.api.v1.configurations.custom_codes.delete_custom_code_from_configuration_db",
         AsyncMock(return_value=custom_code_deletion_mock),
     )
 
@@ -308,7 +308,7 @@ async def test_edit_custom_code_from_configuration(
         ],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.edit_custom_code_from_configuration_db",
+        "app.api.v1.configurations.custom_codes.edit_custom_code_from_configuration_db",
         AsyncMock(return_value=custom_code_edit_mock),
     )
 
@@ -335,7 +335,7 @@ async def test_edit_custom_code_from_configuration(
         s3_urls=[],
     )
     monkeypatch.setattr(
-        "app.api.v1.configurations.custom_codes.base.get_configuration_by_id_db",
+        "app.api.v1.configurations.custom_codes.get_configuration_by_id_db",
         AsyncMock(return_value=mock_config),
     )
 

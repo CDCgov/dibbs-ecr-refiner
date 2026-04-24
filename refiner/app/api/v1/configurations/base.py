@@ -21,7 +21,6 @@ from app.db.configurations.db import (
 )
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCustomCode,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
@@ -268,22 +267,6 @@ async def get_configuration(
         included_conditions=config.included_conditions, db=db
     )
 
-    # Flatten all codes from all included conditions and custom codes
-    all_codes: set[str] = set()
-
-    for c in conditions:
-        all_codes.update(c.code for c in c.get_codes_from_all_systems())
-
-    # Include custom codes from the configuration
-    for custom_code in getattr(config, "custom_codes", []):
-        if isinstance(custom_code, DbConfigurationCustomCode) and hasattr(
-            custom_code, "code"
-        ):
-            all_codes.add(custom_code.code)
-
-    # Final flattened, deduplicated list of codes
-    deduplicated_codes = sorted(all_codes)
-
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
@@ -349,7 +332,6 @@ async def get_configuration(
             [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.name.lower(),
         ),
-        deduplicated_codes=deduplicated_codes,
         all_versions=all_versions,
         version=config.version,
         active_version=active_version,
