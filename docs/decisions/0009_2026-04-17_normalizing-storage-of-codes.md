@@ -89,7 +89,7 @@ This option stores more code information than strictly necessary, but allows for
 
 ## Decision Outcome
 
-### Store normalized codesets
+### Store normalized codesets in a single code table
 
 ### Manage joins via a junction table
 
@@ -97,7 +97,9 @@ Compared with the other option of storing code relationships in an array, the ju
 
 An example seeding script is stubbed out in `load_tes_data_into_normalized_table.py`
 
-## Implementation rollout
+## Appendix
+
+### Implementation rollout
 
 1. Seed the new schema
 1. Backport existing data into the new table structure
@@ -105,9 +107,3 @@ An example seeding script is stubbed out in `load_tes_data_into_normalized_table
 1. Refactor existing code to use the new data structure
 1. Drop the relevant code columns in the conditions and configurations table
 1. Remove unneeded code in the update script
-
-## Appendix (OPTIONAL)
-
-Add any links here that are relevant for understanding your proposal or its background.
-
-**Be sure to read the information about this in [CONTRIBUTING](https://github.com/CDCgov/dibbs-ecr-refiner/blob/main/CONTRIBUTING.md##Request-for-comment)**
