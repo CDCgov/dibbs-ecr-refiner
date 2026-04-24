@@ -296,7 +296,7 @@ class TestConfigurations:
         config = await create_config(condition_id)
 
         config_id = config["id"]
-        same_code = "12345-6"
+        same_code = "VERY-FAKE-CODE-00000"
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
