@@ -6,6 +6,8 @@ from uuid import UUID
 
 from packaging.version import parse
 
+from app.services.configurations import convert_config_to_storage_payload
+
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
     get_conditions_by_child_rsg_snomed_codes_db,
@@ -17,7 +19,7 @@ from ..db.configurations.db import (
 )
 from ..db.configurations.model import DbConfiguration
 from ..db.pool import AsyncDatabaseConnection
-from ..services.terminology import ConfigurationPayload, ProcessedConfiguration
+from ..services.terminology import ProcessedConfiguration
 from .ecr.model import (
     RefinedDocument,
     ReportableCondition,
@@ -303,11 +305,10 @@ async def independent_testing(
 
         trace.all_conditions_for_configuration = all_conditions_for_configuration
 
-        payload = ConfigurationPayload(
-            configuration=configuration,
-            conditions=trace.all_conditions_for_configuration,
+        processed_configuration = await _convert_to_processed_config(
+            configuration=configuration, logger=logger, db=db
         )
-        processed_configuration = ProcessedConfiguration.from_payload(payload)
+
         trace.refine_object = processed_configuration
 
         # Use the shared pipeline to execute refinement
@@ -378,6 +379,41 @@ async def independent_testing(
     )
 
 
+async def _convert_to_processed_config(
+    configuration: DbConfiguration, logger: Logger, db: AsyncDatabaseConnection
+):
+    """
+    Helper function to simulate the serialization/deserialization process Lambda uses.
+
+    Args:
+        configuration (DbConfiguration): The configuration
+        logger (Logger): The logger
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        ValueError: Unable to convert the config to a storage payload
+
+    Returns:
+        ProcessedConfiguration: A ProcessedConfiguration created from a storage payload object
+    """
+    # Convert the config to a storage payload
+    serialized_configuration = await convert_config_to_storage_payload(
+        configuration=configuration, db=db
+    )
+
+    if not serialized_configuration:
+        logger.error(
+            "Converting configuration to storage payload failed.",
+            extra={"configuration": asdict(configuration)},
+        )
+        raise ValueError(
+            f"Configuration could not be converted to a storage payload: {configuration.id}"
+        )
+
+    # Convert to a ProcessedConfiguration from the serialized configuration
+    return ProcessedConfiguration.from_dict(serialized_configuration.to_dict())
+
+
 def _generate_shadow_rr(
     no_matching_configuration_for_conditions: list[NoMatchEntry],
     no_active_configuration_for_conditions: list[NoMatchEntry],
@@ -417,6 +453,7 @@ async def inline_testing(
     all_conditions: list[DbCondition],
     jurisdiction_id: str,
     logger: Logger,
+    db: AsyncDatabaseConnection,
 ) -> InlineTestingResult:
     """
     Orchestrates the full inline testing workflow for eICR refinement using an already-fetched configuration and primary condition.
@@ -439,6 +476,7 @@ async def inline_testing(
           of the primary and secondary conditions.
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
         logger: we're passing the logger from the route to the service.
+        db: The database connection
 
     Returns:
         An InlineTestingResult dictionary containing either the refined document or a validation error.
@@ -499,11 +537,9 @@ async def inline_testing(
 
     # STEP 4:
     # prepare and execute the refinement from payload -> processed_configuration -> shared pipeline
-    payload = ConfigurationPayload(
-        configuration=trace.configuration,
-        conditions=trace.all_conditions_for_configuration,
+    processed_configuration = await _convert_to_processed_config(
+        configuration=configuration, logger=logger, db=db
     )
-    processed_configuration = ProcessedConfiguration.from_payload(payload)
 
     pipeline_trace = RefinementTrace(
         jurisdiction_code=jurisdiction_id,

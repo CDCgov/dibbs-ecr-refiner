@@ -90,6 +90,10 @@ def seed_localstack(s3_client):
         "eicr_v3_1_1/multi-condition-multi-covid-CDA_eICR.xml"
     )
 
+    # alternative test files with custom code additions
+    # rr_content = load_fixture_str("eicr_v3_1_1/all_sections_CDA_RR.xml")
+    # eicr_content = load_fixture_str("eicr_v3_1_1/all_sections_CDA_eICR.xml")
+
     # Upload RR to S3
     rr_key = f"RefinerInput/{persistence_id}"
     s3_client.put_object(
