@@ -56,6 +56,11 @@ type SystemCodeList = list[CodePayload]
 type ConditionCodePayload = dict[str, SystemCodeList]
 
 
+type VsCanonicalUrl = str
+type VsVersion = str
+type VsDict = dict
+
+
 @dataclass
 class CoverageLevel:
     """
@@ -85,8 +90,8 @@ class ConditionData:
     Represents a single, processed condition grouper ready for database insertion.
     """
 
-    parent_vs: dict
-    all_vs_map: dict[tuple[str, str], dict]
+    parent_vs: VsDict
+    all_vs_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict]
 
     child_codes: set[FhirCodeTuple] = field(init=False, default_factory=set)
     """
@@ -174,13 +179,20 @@ class ConditionData:
         )
 
     @property
+    def all_codes(self) -> set[FhirCodeTuple]:
+        """
+        Generates a union of all codes belonging to the condition.
+        """
+        # combine all codes; the union operator `|` correctly merges the sets
+        return self.child_codes | self.sibling_codes
+
+    @property
     def payload(self) -> dict[str, Any]:
         """
         Generates the dictionary payload for database insertion.
         """
 
-        # combine all codes; the union operator `|` correctly merges the sets
-        all_codes = self.child_codes | self.sibling_codes
+        all_codes = self.all_codes
         categorized = categorize_codes_by_system(all_codes)
 
         result = {
@@ -455,7 +467,7 @@ def is_condition_grouper(vs: dict) -> bool:
     return any("conditiongroupervalueset" in str(prof).lower() for prof in profiles)
 
 
-def load_valuesets_from_all_files() -> dict[tuple[str, str], dict]:
+def load_valuesets_from_all_files() -> dict[tuple[VsCanonicalUrl, VsVersion], VsDict]:
     """
     Loads all ValueSet resources from JSON files in the TES data directory.
     """

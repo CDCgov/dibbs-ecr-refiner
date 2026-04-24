@@ -79,7 +79,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/s3-init.sh:/etc/localstack/init/ready.d/s3-init.sh
 
-# Run with `docker compose run --rm seed`
+  # Run with `docker compose run --rm seed`
   seed:
     image: python:3.14-slim
     working_dir: /app
