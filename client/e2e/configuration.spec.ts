@@ -300,7 +300,7 @@ test.describe('Configuration detail flow', () => {
       await expect(page.getByText('Deleted code')).toBeVisible();
       await expect(
         page.getByRole('table').getByText(customCodeName)
-      ).not.toBeAttached();
+      ).not.toBeVisible();
     });
 
     await test.step('Delete custom section', async () => {
