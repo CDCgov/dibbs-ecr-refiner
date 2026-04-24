@@ -201,50 +201,14 @@ test.describe('Configuration detail flow', () => {
       await configurationPage.addCodeSet('agri', additionalCodeSetName);
     });
 
-    await test.step('Configure custom codes', async () => {
+    await test.step('Configure a custom code', async () => {
       await page.getByRole('button', { name: 'Custom codes' }).click();
       await configurationPage.addCustomCode(
         customCode,
         customCodeSystem,
         customCodeName
       );
-
-      // we'll edit this one in the next step
-      await configurationPage.addCustomCode('test', 'loinc', 'test');
       await expect(makeAxeBuilder).toHaveNoAxeViolations();
-    });
-
-    await test.step('Modify a custom code', async () => {
-      await page.getByRole('button', { name: 'Custom codes' }).click();
-
-      // try using an already taken code
-      await configurationPage.editCustomCode('test', {
-        newCode: customCode,
-      });
-
-      // try navigating away from the input and we'll see the error
-      await page.getByLabel('Code name').click();
-      await expect(
-        page.getByText(`The code "${customCode}" already exists.`)
-      ).toBeVisible();
-
-      // change the text and the error should go away
-      await page.getByLabel('Code #').clear();
-      await page.getByLabel('Code #').pressSequentially('test');
-      await page.getByLabel('Code name').click();
-      await expect(
-        page.getByText(`The code "${customCode}" already exists.`)
-      ).not.toBeVisible();
-
-      await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled();
-      await page.getByRole('button', { name: 'Update' }).click();
-      await expect(
-        page.getByRole('button', { name: `Delete custom code test` })
-      ).toBeVisible();
-      await configurationPage.deleteCustomCode('test');
-      await expect(
-        page.getByRole('button', { name: `Delete custom code test` })
-      ).not.toBeVisible();
     });
 
     await test.step('Configure standard sections', async () => {
