@@ -10,6 +10,128 @@ test.describe('Configuration detail flow', () => {
     await deleteAllConfigurations();
   });
 
+  test('Individual custom code workflow', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'Amebiasis';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToBuildTab();
+    await page.getByRole('button', { name: 'Custom codes' }).click();
+
+    const customCode1 = {
+      code: '12-! 345#',
+      system: 'other',
+      name: 'original code 1~',
+    };
+
+    const customCode2 = {
+      code: '123-456',
+      system: 'loinc',
+      name: 'original code 2+ =',
+    };
+
+    await test.step('Adding a unique code', async () => {
+      await configurationPage.addCustomCode(
+        customCode1.code,
+        customCode1.system,
+        customCode1.name
+      );
+      await expect(
+        page.getByRole('table').getByText(customCode1.code)
+      ).toBeVisible();
+
+      await configurationPage.addCustomCode(
+        customCode2.code,
+        customCode2.system,
+        customCode2.name
+      );
+      await expect(
+        page.getByRole('table').getByText(customCode2.code)
+      ).toBeVisible();
+    });
+
+    const newCode = 'test';
+
+    await test.step('Editing a custom code shows an error when an already used code is entered', async () => {
+      // try using an already taken code
+      await configurationPage.editCustomCode(customCode1.name, {
+        newCode: customCode2.code,
+      });
+
+      // try navigating away from the input and we'll see the error
+      await page.getByLabel('Code name').click();
+
+      const expectedError = page.getByText(
+        `The code "${customCode2.code}" already exists.`
+      );
+      const updateButton = page.getByRole('button', { name: 'Update' });
+
+      await expect(expectedError).toBeVisible();
+      await expect(updateButton).toBeDisabled();
+
+      // change the text and the error should go away
+      await page.getByLabel('Code #').fill(newCode);
+      await page.getByLabel('Code name').click();
+      await expect(expectedError).not.toBeVisible();
+      await expect(updateButton).toBeEnabled();
+
+      // reassign the code data
+      customCode1.code = newCode;
+
+      await updateButton.click();
+    });
+
+    await test.step('Deleting a custom code removes it from the table', async () => {
+      const deleteButton = page.getByRole('button', {
+        name: `Delete custom code ${customCode1.name}`,
+      });
+      await expect(deleteButton).toBeVisible();
+      await configurationPage.deleteCustomCode(customCode1.name);
+      await expect(deleteButton).not.toBeVisible();
+      await expect(
+        page.getByRole('table').getByText(customCode1.name)
+      ).not.toBeVisible();
+    });
+
+    await test.step('Attempting to add an existing code will display an error', async () => {
+      const addNewCustomCodeButton = page.getByRole('button', {
+        name: 'Add new custom code',
+      });
+      await expect(addNewCustomCodeButton).toBeEnabled();
+      await addNewCustomCodeButton.click();
+
+      const newSystem = 'cvx';
+      const newCode = 'random-code12';
+
+      const expectedError = page.getByText(
+        `The code "${customCode2.code}" already exists.`
+      );
+      const addButton = page.getByRole('button', { name: 'Add custom code' });
+
+      // fill in form
+      await page.getByLabel('Code #').fill(customCode2.code);
+      await page.getByLabel('Code system').selectOption(customCode2.system);
+      await page.getByLabel('Code name').fill(customCode2.name);
+
+      await expect(expectedError).toBeVisible();
+      await expect(addButton).not.toBeEnabled();
+
+      await page.getByLabel('Code #').fill(newCode);
+      await page.getByLabel('Code system').selectOption(newSystem);
+      await page.getByLabel('Code name').click();
+      await expect(expectedError).not.toBeVisible();
+      await expect(addButton).toBeEnabled();
+      await addButton.click();
+
+      const table = page.getByRole('table');
+      await expect(table).toBeVisible();
+      await expect(table.getByText(newCode)).toBeVisible();
+      await expect(table.getByText(newSystem)).toBeVisible();
+    });
+  });
+
   test('Uploaded file for inline testing has no conditions matching selected configuration', async ({
     page,
     configurationsPage,
