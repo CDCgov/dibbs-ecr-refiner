@@ -70,11 +70,18 @@ class ConditionCodeList:
 
 
 def upsert_conditions(conditions: list[_ConditionData]):
+    """
+    Stub for upsert of conditions.
+    """
     # do the relevant SQL work
     return True
 
 
 def upsert_codes(codes: list[list[_Code]]):
+    """
+    Stub for upsert of conditions.
+    """
+
     # do the relevant SQL work
     return True
 
@@ -82,16 +89,18 @@ def upsert_codes(codes: list[list[_Code]]):
 def upsert_code_to_condition_relationships(
     conditions: dict[UrlVersionTuple, ConditionCodeList],
 ):
+    """
+    Stub for upsert of conditions.
+    """
+
     # do the relevant SQL work
     return True
-
-
-condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList] = defaultdict()
 
 
 # build conditions to insert
 def _build_processed_conditions(
     vs_map: dict[UrlVersionTuple, VsDict],
+    condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList],
 ) -> dict[UrlVersionTuple, _ConditionData]:
     processed_codes: dict[UrlVersionTuple, _ConditionData] = defaultdict()
 
@@ -116,6 +125,7 @@ def _build_processed_conditions(
 # build codes to insert
 def _build_processed_codes(
     vs_map: dict[UrlVersionTuple, VsDict],
+    condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList],
 ) -> dict[UrlVersionTuple, list[_Code]]:
     processed_codes: dict[UrlVersionTuple, list[_Code]] = defaultdict(list)
 
@@ -147,15 +157,21 @@ def _build_processed_codes(
     return processed_codes
 
 
+condition_to_codes_map: dict[UrlVersionTuple, ConditionCodeList] = defaultdict()
+
 # parse out the valuesets from the TES files like we were doing previously
 all_valuesets_map = load_valuesets_from_all_files()
 
 # munge and upsert conditions
-processed_conditions = _build_processed_conditions(vs_map=all_valuesets_map)
+processed_conditions = _build_processed_conditions(
+    vs_map=all_valuesets_map, condition_to_codes_map=condition_to_codes_map
+)
 upsert_conditions(conditions=list(processed_conditions.values()))
 
 # munge and upsert codes
-processed_codes = _build_processed_codes(all_valuesets_map)
+processed_codes = _build_processed_codes(
+    vs_map=all_valuesets_map, condition_to_codes_map=condition_to_codes_map
+)
 upsert_codes(codes=list(processed_codes.values()))
 
 # parse condition <> codes relationship and upsert the result into table
