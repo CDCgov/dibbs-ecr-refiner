@@ -7,7 +7,7 @@ from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
-from app.db.events.db import insert_event_db
+from app.db.events.db import insert_custom_code_bulk_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
     clone_section_processing_instructions,
@@ -862,17 +862,12 @@ async def add_bulk_custom_codes_to_configuration_db(
                 return None
 
             # Insert a single audit event if codes were added
-            if new_codes_added:
-                await insert_event_db(
-                    event=EventInput(
-                        jurisdiction_id=config.jurisdiction_id,
-                        user_id=user_id,
-                        configuration_id=config.id,
-                        event_type="bulk_add_custom_code",
-                        action_text=f"Added {len(new_codes_added)} custom codes",
-                    ),
-                    cursor=cur,
-                )
+            await insert_custom_code_bulk_upload_events_db(
+                configuration=config,
+                user_id=user_id,
+                custom_codes=new_codes_added,
+                cursor=cur,
+            )
 
     updated_config = await get_configuration_by_id_db(
         id=config.id, jurisdiction_id=config.jurisdiction_id, db=db

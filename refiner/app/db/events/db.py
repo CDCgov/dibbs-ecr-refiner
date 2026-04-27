@@ -6,6 +6,8 @@ from uuid import UUID
 from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
+from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
 
@@ -89,10 +91,42 @@ async def get_events_by_jd_db(
             return events_rows
 
 
+async def insert_custom_code_bulk_upload_events_db(
+    configuration: DbConfiguration,
+    user_id: UUID,
+    custom_codes: list[DbConfigurationCustomCode],
+    cursor: AsyncCursor[Any],
+) -> None:
+    """
+    Helper function to insert a bulk custom code upload event and its subevents.
+    """
+    if len(custom_codes) < 1:
+        return
+
+    # Bulk upload event info
+    event = EventInput(
+        jurisdiction_id=configuration.jurisdiction_id,
+        user_id=user_id,
+        configuration_id=configuration.id,
+        event_type="bulk_add_custom_code",
+        action_text=f"Added {len(custom_codes)} custom codes from CSV",
+    )
+
+    event_id = await insert_event_db(event=event, cursor=cursor)
+
+    await cursor.executemany(
+        """
+        INSERT INTO events_custom_code_uploads (event_id, system, code, name)
+        VALUES (%s, %s, %s, %s)
+        """,
+        [(event_id, cc.system, cc.code, cc.name) for cc in custom_codes],
+    )
+
+
 async def insert_event_db(
     event: EventInput,
     cursor: AsyncCursor[Any],
-) -> None:
+) -> UUID:
     """
     Inserts an event into the `events` table.
     """
@@ -111,6 +145,7 @@ async def insert_event_db(
             %s,
             %s
         )
+        RETURNING id;
     """
     params = (
         event.user_id,
@@ -121,3 +156,5 @@ async def insert_event_db(
     )
 
     await cursor.execute(query, params)
+    row = await cursor.fetchone()
+    return row["id"]
