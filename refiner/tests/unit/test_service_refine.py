@@ -1,5 +1,3 @@
-import unittest
-
 import pytest
 from lxml import etree
 
@@ -8,11 +6,11 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionInstructions,
 )
-from app.services.configurations import convert_config_to_storage_payload
 from app.services.ecr.model import HL7_NS, EICRRefinementPlan
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
+from tests.unit.helpers.configuration import create_processed_config
 
 # NOTE:
 # TEST CONSTANTS
@@ -147,24 +145,6 @@ async def _make_empty_processed_config() -> ProcessedConfiguration:
     condition = _make_condition_v1_1()
     config = _make_db_configuration_v1_1()
     return await create_processed_config(config=config, conditions=[condition])
-
-
-async def create_processed_config(
-    config: DbConfiguration, conditions: list[DbCondition]
-):
-    with unittest.mock.patch(
-        "app.services.configurations.get_included_conditions_db",
-        return_value=conditions,
-    ):
-        storage_payload = await convert_config_to_storage_payload(
-            configuration=config,
-            db=unittest.mock.AsyncMock(),
-        )
-
-    if storage_payload is None:
-        raise ValueError("convert_config_to_storage_payload returned None unexpectedly")
-
-    return ProcessedConfiguration.from_dict(storage_payload.to_dict())
 
 
 async def _make_processed_config_v1_1(**condition_kwargs) -> ProcessedConfiguration:

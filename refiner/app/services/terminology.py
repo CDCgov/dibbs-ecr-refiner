@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import dataclass, field, fields
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
@@ -419,80 +419,4 @@ class ProcessedConfiguration:
             code_system_sets=code_system_sets,
             section_processing=[s.model_dump() for s in validated.sections],
             included_condition_rsg_codes=validated.included_condition_rsg_codes,
-        )
-
-    @classmethod
-    def from_payload(cls, payload: ConfigurationPayload) -> "ProcessedConfiguration":
-        """
-        Create ProcessedConfiguration from a ConfigurationPayload object.
-
-        This method aggregates codes from both the configuration's associated conditions and
-        any custom codes defined on the configuration itself. Codes are organized by code
-        system for section-aware matching, and a flat set is maintained for sections with no
-        entry matching rules.
-
-        Args:
-            payload: The ConfigurationPayload containing the DbConfiguration and its
-                     related DbConditions.
-
-        Returns:
-            ProcessedConfiguration: An object containing both flat and structured code sets.
-        """
-
-        # STEP 1: build per-system dicts from condition codes
-        # each condition has snomed_codes, loinc_codes, icd10_codes, rxnorm_codes
-        # each code object in those lists has .code and .display
-        coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-        for condition in payload.conditions:
-            # map each db code list to its target dict + OID
-            code_system_map: dict[CodeSystem, list] = (
-                index_condition_code_list_by_system(condition)
-            )
-
-            for code_system, code_list in code_system_map.items():
-                coding_by_code_system[
-                    CodeSystem(code_system).format_system_string()
-                ].extend(
-                    [
-                        asdict(
-                            Coding(
-                                code=c.code, display=c.display, system=code_system.oid
-                            )
-                        )
-                        for c in code_list
-                    ]
-                )
-
-        # STEP 2: add custom codes, routing by their system label
-        for custom_code in payload.configuration.custom_codes:
-            cur_code_system = CodeSystem(custom_code.system).format_system_string()
-            code_val = custom_code.code
-            display_val = custom_code.name
-
-            # route to the correct dict based on system label
-            coding_by_code_system[cur_code_system].append(
-                asdict(
-                    Coding(
-                        code=code_val,
-                        display=display_val,
-                        system=CodeSystem(cur_code_system).oid,
-                    )
-                )
-            )
-
-        # STEP 3: build the CodeSystemSets
-        code_system_sets = CodeSystemSets.from_dict(data=coding_by_code_system)
-
-        # STEP 4: build included_condition_rsg_codes
-        included_condition_rsg_codes = set()
-        for c in payload.conditions:
-            included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
-
-        return cls(
-            codes=code_system_sets.all_codes,
-            code_system_sets=code_system_sets,
-            section_processing=[
-                asdict(section) for section in payload.configuration.section_processing
-            ],
-            included_condition_rsg_codes=included_condition_rsg_codes,
         )
