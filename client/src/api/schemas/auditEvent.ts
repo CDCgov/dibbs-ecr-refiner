@@ -17,5 +17,5 @@ export interface AuditEvent {
   condition_id: string;
   action_text: string;
   created_at: string;
-  has_custom_code_bulk_upload_subevents: boolean;
+  has_custom_code_upload_events: boolean;
 }

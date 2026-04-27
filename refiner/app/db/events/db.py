@@ -25,7 +25,20 @@ class AuditEvent:
     condition_id: UUID
     action_text: str
     created_at: datetime
-    has_custom_code_bulk_upload_subevents: bool
+    has_custom_code_upload_events: bool
+
+
+@dataclass
+class CustomCodeUploadEvent:
+    """
+    Custom code upload event.
+    """
+
+    id: UUID
+    event_id: UUID
+    system: str
+    code: str
+    name: str
 
 
 async def get_event_count_by_condition_db(
@@ -54,6 +67,27 @@ async def get_event_count_by_condition_db(
             return int(row["total_count"])
 
 
+async def is_event_valid(
+    id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> bool:
+    """
+    Check that the event exists within a jurisdiction.
+    """
+
+    query = """
+    SELECT 1
+    FROM events
+    WHERE id = %s
+    AND jurisdiction_id = %s
+    """
+    params = (id, jurisdiction_id)
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row is not None
+
+
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     page: int,
@@ -77,7 +111,7 @@ async def get_events_by_jd_db(
         e.created_at,
         EXISTS (
             SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
-        ) AS has_custom_code_bulk_upload_subevents
+        ) AS has_custom_code_upload_events
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
@@ -95,7 +129,32 @@ async def get_events_by_jd_db(
             return events_rows
 
 
-async def insert_custom_code_bulk_upload_events_db(
+async def get_custom_code_upload_events_by_event_id(
+    event_id: UUID, db: AsyncDatabaseConnection
+) -> list[CustomCodeUploadEvent]:
+    """
+    Returns all custom code upload events for an event ID.
+    """
+    query = """
+    SELECT
+        id,
+        event_id,
+        system,
+        code,
+        name
+    FROM events_custom_code_uploads
+    WHERE event_id = %s
+    """
+    params = (event_id,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(CustomCodeUploadEvent)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+            return rows
+
+
+async def insert_custom_code_upload_events_db(
     configuration: DbConfiguration,
     user_id: UUID,
     custom_codes: list[DbConfigurationCustomCode],

@@ -2,6 +2,16 @@ import { AuditEvent } from '../../api/schemas';
 import { Table } from '@components/Table';
 import { useDatetimeFormatter } from '../../hooks/UseDatetimeFormatter';
 import { Button } from '@components/Button';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@components/Modal';
+import { useState } from 'react';
+import { useGetCustomCodeUploadEvents } from '../../api/events/events';
+import { Spinner } from '@components/Spinner';
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];
 }
@@ -52,10 +62,12 @@ export function ActivityLogEntries({
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
                   <p className="flex flex-col items-start gap-1">
                     <span>{r.action_text}</span>
-                    {r.has_custom_code_bulk_upload_subevents ? (
-                      <Button className="p-0!" variant="tertiary">
-                        View all
-                      </Button>
+                    {r.has_custom_code_upload_events ? (
+                      <ViewAllCustomCodeEventsButton
+                        eventId={r.id}
+                        importedByUsername={r.username}
+                        importDate={date}
+                      />
                     ) : null}
                   </p>
                 </td>
@@ -70,5 +82,75 @@ export function ActivityLogEntries({
           })}
       </tbody>
     </Table>
+  );
+}
+
+interface ViewAllCustomCodeEventsButtonProps {
+  eventId: string;
+  importedByUsername: string;
+  importDate: string;
+}
+
+function ViewAllCustomCodeEventsButton({
+  eventId,
+  importedByUsername,
+  importDate,
+}: ViewAllCustomCodeEventsButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const {
+    data: events,
+    isError,
+    isPending,
+  } = useGetCustomCodeUploadEvents(eventId);
+
+  return (
+    <>
+      <Button
+        className="p-0!"
+        variant="tertiary"
+        onClick={() => setIsOpen(true)}
+      >
+        View all
+      </Button>
+      <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+        <ModalHeader>
+          <ModalTitle>Custom codes</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          {isPending ? (
+            <Spinner />
+          ) : isError ? (
+            <p>An error has occurred</p>
+          ) : (
+            <div>
+              <p>
+                Imported by {importedByUsername} on {importDate}
+              </p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Code system</th>
+                    <th>Code</th>
+                    <th>Display name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.data.map((cc) => (
+                    <tr>
+                      <td>{cc.system}</td>
+                      <td>{cc.code}</td>
+                      <td>{cc.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={() => setIsOpen(false)}>Close the modal</Button>
+        </ModalFooter>
+      </Modal>
+    </>
   );
 }

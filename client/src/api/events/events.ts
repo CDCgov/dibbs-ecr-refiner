@@ -28,6 +28,7 @@ import type {
 } from 'axios';
 
 import type {
+  CustomCodeUploadEventResponse,
   EventsResponse,
   GetEventsParams,
   HTTPValidationError
@@ -132,6 +133,103 @@ export function useGetEvents<TData = Awaited<ReturnType<typeof getEvents>>, TErr
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetEventsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+/**
+ * Returns a list of all custom code upload events associated with a parent event ID.
+
+Args:
+    event_id (UUID): The parent event
+    user (DbUser): The logged in user
+    db (AsyncDatabaseConnection): The database connection
+
+Raises:
+    HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
+ * @summary Get Custom Code Upload Events
+ */
+export const getCustomCodeUploadEvents = (
+    eventId: string, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<CustomCodeUploadEventResponse[]>> => {
+    
+    
+    return axios.default.get(
+      `/api/v1/events/${eventId}/custom-code-uploads`,options
+    );
+  }
+
+
+
+
+export const getGetCustomCodeUploadEventsQueryKey = (eventId: string,) => {
+    return [
+    `/api/v1/events/${eventId}/custom-code-uploads`
+    ] as const;
+    }
+
+    
+export const getGetCustomCodeUploadEventsQueryOptions = <TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
+) => {
+
+const {query: queryOptions, axios: axiosOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomCodeUploadEventsQueryKey(eventId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>> = ({ signal }) => getCustomCodeUploadEvents(eventId, { signal, ...axiosOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(eventId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomCodeUploadEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>>
+export type GetCustomCodeUploadEventsQueryError = AxiosError<HTTPValidationError>
+
+
+export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomCodeUploadEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomCodeUploadEvents>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomCodeUploadEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomCodeUploadEvents>>
+        > , 'initialData'
+      >, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Custom Code Upload Events
+ */
+
+export function useGetCustomCodeUploadEvents<TData = Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError = AxiosError<HTTPValidationError>>(
+ eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData>>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomCodeUploadEventsQueryOptions(eventId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
