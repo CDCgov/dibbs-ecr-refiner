@@ -14,13 +14,6 @@ Both entry points share a common refinement pipeline defined in `app/services/pi
 1. **Discovery** (`discover_reportable_conditions`): Parses the RR to extract which conditions are reportable and to which jurisdictions. Both the webapp and Lambda call this identically.
 2. **Refinement** (`refine_for_condition`): Takes a `ProcessedConfiguration` and an eICR/RR pair, creates refinement plans, and executes them. The refined output is identical regardless of how the configuration was sourced.
 
-The only difference between the two paths is how they resolve a `ProcessedConfiguration`:
-
-- The **webapp** queries the database, builds a `ConfigurationPayload` with full `DbCondition` objects, and calls `ProcessedConfiguration.from_payload()`. This produces a `CodeSystemSets` with codes organized by system (SNOMED, LOINC, ICD-10, RxNorm, CVX) and enriched with display names.
-- **Lambda** reads an `active.json` file from S3 and calls `ProcessedConfiguration.from_dict()`. The `active.json` file contains a `code_system_sets` field that was serialized at activation time, so `from_dict` produces the same `CodeSystemSets` with the same per-system routing and display names.
-
-This design ensures that once a `ProcessedConfiguration` is built, the downstream behavior is byte-for-byte identical in both environments.
-
 ### The activation bridge
 
 The connection between the webapp and Lambda is the activation step. When a user activates a configuration in the webapp, `convert_config_to_storage_payload` in `app/services/configurations.py` serializes the configuration to S3. This includes both a flat `codes` list (for backward compatibility with the generic matching path) and a structured `code_system_sets` field (for section-aware matching). Lambda reads this file at runtime and deserializes it back into the same data structures the webapp uses.
