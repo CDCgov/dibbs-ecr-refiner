@@ -2,20 +2,15 @@ from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
 from enum import StrEnum
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
-if TYPE_CHECKING:
-    from ..db.configurations.model import DbConfiguration
-
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
-# 1. A `Payload` class (e.g., ConfigurationPayload) holds raw DB models.
-# 2. A `Processed` class (e.g., ProcessedConfiguration) holds the final, ready-to-use data.
-# 3. The `Processed` class has a `.from_dict()` factory method that contains all
+# 1. A `Processed` class (e.g., ProcessedConfiguration) holds the final, ready-to-use data.
+# 2. The `Processed` class has a `.from_dict()` factory method that contains all
 #    the logic to transform the raw payload into the processed version.
 # This separates data fetching, data processing, and data usage into clean, testable steps.
 # =============================================================================
@@ -312,29 +307,6 @@ class CodeSystemSets:
 # NOTE:
 # CONFIGURATION PROCESSING
 # =============================================================================
-
-
-@dataclass(frozen=True)
-class ConfigurationPayload:
-    """
-    Model representing the raw configuration data needed for refinement.
-
-    This model is intentionally minimal to support both inline testing (from configuration building)
-    and independent testing (from demo.py processing) patterns. The model focuses on just the
-    essential data needed for refinement:
-
-    - conditions: A list of all DbCondition objects to be considered.
-    - configuration: The specific DbConfiguration object, which may contain custom codes.
-
-    Note on Testing Patterns:
-    - Independent testing: Uses RC SNOMED codes from the RR's coded information organizer to find
-      the matching configuration. The RC SNOMED code comes from the RR, not the configuration itself.
-    - Inline testing: Directly uses a configuration to test against input data, focusing only on
-      the codes defined in that configuration.
-    """
-
-    configuration: "DbConfiguration"
-    conditions: list[DbCondition]
 
 
 class Section(BaseModel):
