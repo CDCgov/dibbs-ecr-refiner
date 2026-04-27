@@ -25,6 +25,7 @@ class AuditEvent:
     condition_id: UUID
     action_text: str
     created_at: datetime
+    has_custom_code_bulk_upload_subevents: bool
 
 
 async def get_event_count_by_condition_db(
@@ -73,7 +74,10 @@ async def get_events_by_jd_db(
         c.version as configuration_version,
         c.id AS condition_id,
         e.action_text,
-        e.created_at
+        e.created_at,
+        EXISTS (
+            SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
+        ) AS has_custom_code_bulk_upload_subevents
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id

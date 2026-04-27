@@ -30,7 +30,7 @@ export * from './dbSectionType';
 export * from './dbTotalConditionCodeCount';
 export * from './deleteSectionInput';
 export * from './eventFilterOption';
-export * from './eventResponse';
+export * from './eventsResponse';
 export * from './getConditionCode';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';

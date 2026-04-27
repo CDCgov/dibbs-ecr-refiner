@@ -31,7 +31,7 @@ class EventFilterOption:
 
 
 @dataclass
-class EventResponse:
+class EventsResponse:
     """
     Response needed for the audit log page.
     """
@@ -43,7 +43,7 @@ class EventResponse:
 
 @router.get(
     "/",
-    response_model=EventResponse,
+    response_model=EventsResponse,
     tags=["events"],
     operation_id="getEvents",
 )
@@ -53,7 +53,7 @@ async def get_events(
     logger: Logger = Depends(get_logger),
     page: int = 1,
     canonical_url: str | None = None,
-) -> EventResponse:
+) -> EventsResponse:
     """
     Returns a list of all events for a jurisdiction, ordered from newest to oldest.
 
@@ -121,8 +121,21 @@ async def get_events(
             configuration_options.append(option)
             seen_urls.add(c.condition_canonical_url)
 
-    return EventResponse(
+    return EventsResponse(
         total_pages=total_pages,
         audit_events=audit_events,
         configuration_options=configuration_options,
     )
+
+
+# @dataclass
+# class CustomCodeEvents:
+#     sub_events:
+
+# @router.get(
+#     "/{event_id}",
+#     response_model=EventsResponse,
+#     tags=["events"],
+#     operation_id="getEvents",
+# )
+# async def get_bulk_custom_code_events()

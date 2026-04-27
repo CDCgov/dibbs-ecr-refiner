@@ -28,7 +28,7 @@ import type {
 } from 'axios';
 
 import type {
-  EventResponse,
+  EventsResponse,
   GetEventsParams,
   HTTPValidationError
 } from '../schemas';
@@ -56,7 +56,7 @@ Returns:
  */
 export const getEvents = (
     params?: GetEventsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<EventResponse>> => {
+ ): Promise<AxiosResponse<EventsResponse>> => {
     
     
     return axios.default.get(

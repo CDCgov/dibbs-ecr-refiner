@@ -1,6 +1,7 @@
 import { AuditEvent } from '../../api/schemas';
 import { Table } from '@components/Table';
 import { useDatetimeFormatter } from '../../hooks/UseDatetimeFormatter';
+import { Button } from '@components/Button';
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];
 }
@@ -49,7 +50,14 @@ export function ActivityLogEntries({
                   </div>
                 </td>
                 <td className="text-gray-cool-90!" data-label={actionHeader}>
-                  {r.action_text}
+                  <p className="flex flex-col items-start gap-1">
+                    <span>{r.action_text}</span>
+                    {r.has_custom_code_bulk_upload_subevents ? (
+                      <Button className="p-0!" variant="tertiary">
+                        View all
+                      </Button>
+                    ) : null}
+                  </p>
                 </td>
                 <td data-label={dateHeader}>
                   <div className="flex flex-col">
