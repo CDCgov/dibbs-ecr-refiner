@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 # This file establishes a consistent pattern for handling terminology data:
 # 1. A `Payload` class (e.g., ConfigurationPayload) holds raw DB models.
 # 2. A `Processed` class (e.g., ProcessedConfiguration) holds the final, ready-to-use data.
-# 3. The `Processed` class has a `.from_payload()` factory method that contains all
+# 3. The `Processed` class has a `.from_dict()` factory method that contains all
 #    the logic to transform the raw payload into the processed version.
 # This separates data fetching, data processing, and data usage into clean, testable steps.
 # =============================================================================
