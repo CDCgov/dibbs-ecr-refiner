@@ -100,6 +100,8 @@ async def insert_custom_code_bulk_upload_events_db(
     """
     Helper function to insert a bulk custom code upload event and its subevents.
     """
+
+    # No events to insert
     if len(custom_codes) < 1:
         return
 
@@ -119,7 +121,7 @@ async def insert_custom_code_bulk_upload_events_db(
         INSERT INTO events_custom_code_uploads (event_id, system, code, name)
         VALUES (%s, %s, %s, %s)
         """,
-        [(event_id, cc.system, cc.code, cc.name) for cc in custom_codes],
+        [(event_id, cc.system.value, cc.code, cc.name) for cc in custom_codes],
     )
 
 
@@ -157,4 +159,6 @@ async def insert_event_db(
 
     await cursor.execute(query, params)
     row = await cursor.fetchone()
+    if row is None:
+        raise Exception(f"Unable to insert event with type: {event.event_type}")
     return row["id"]
