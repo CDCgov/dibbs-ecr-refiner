@@ -26,6 +26,9 @@ from tests.unit.helpers.configuration import create_processed_config
 
 _PLACEHOLDER_AUGMENTATION_TIMESTAMP = "19700101000000+0000"
 
+# ProcessedConfiguration must contain at least one code or otherwise is considered
+# to be invalid. We are using a code that definitely will not appear in a real code set.
+_MOCK_CONDITION_CODES = [DbConditionCoding(code="fake-code-0!", display="")]
 
 # NOTE:
 # LOCAL TEST HELPER FUNCTIONS - v1.1
@@ -142,7 +145,7 @@ async def _make_empty_processed_config() -> ProcessedConfiguration:
     care about matching (e.g., retain, no-match tests).
     """
 
-    condition = _make_condition_v1_1()
+    condition = _make_condition_v1_1(cvx_codes=_MOCK_CONDITION_CODES)
     config = _make_db_configuration_v1_1()
     return await create_processed_config(config=config, conditions=[condition])
 
@@ -561,7 +564,9 @@ class TestRefiningService:
         specified in the configuration.
         """
 
-        covid_condition = _make_condition_v1_1(child_rsg_snomed_codes=["840539006"])
+        covid_condition = _make_condition_v1_1(
+            child_rsg_snomed_codes=["840539006"], rxnorm_codes=_MOCK_CONDITION_CODES
+        )
         config = _make_db_configuration_v1_1()
 
         processed_configuration = await create_processed_config(
@@ -584,7 +589,9 @@ class TestRefiningService:
         Tests RR refinement for v1.1: doesn't touch observations not for the given jurisdiction.
         """
 
-        covid_condition = _make_condition_v1_1(child_rsg_snomed_codes=["840539006"])
+        covid_condition = _make_condition_v1_1(
+            child_rsg_snomed_codes=["840539006"], snomed_codes=_MOCK_CONDITION_CODES
+        )
         config = _make_db_configuration_v1_1(jurisdiction_id="SOME-OTHER-JD")
 
         processed_configuration = await create_processed_config(
@@ -606,7 +613,9 @@ class TestRefiningService:
         even if config is for another jurisdiction.
         """
 
-        zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
+        zika_condition = _make_condition_v3_1_1(
+            child_rsg_snomed_codes=["3928002"], loinc_codes=_MOCK_CONDITION_CODES
+        )
         config = _make_db_configuration_v3_1_1()
 
         processed_configuration = await create_processed_config(
@@ -630,7 +639,9 @@ class TestRefiningService:
         present even when jurisdiction is different.
         """
 
-        zika_condition = _make_condition_v3_1_1(child_rsg_snomed_codes=["3928002"])
+        zika_condition = _make_condition_v3_1_1(
+            child_rsg_snomed_codes=["3928002"], icd10_codes=_MOCK_CONDITION_CODES
+        )
         config = _make_db_configuration_v3_1_1(jurisdiction_id="SOME-OTHER-JD")
 
         processed_configuration = await create_processed_config(
