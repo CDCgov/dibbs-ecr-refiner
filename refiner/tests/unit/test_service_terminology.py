@@ -95,9 +95,3 @@ def test_processed_configuration_duplicate_codes():
     payload = ConfigurationPayload(conditions=[cond1, cond2], configuration=config)
     processed = ProcessedConfiguration.from_payload(payload)
     assert processed.codes == {"DUP"}
-
-
-def test_payload_class_existence():
-    # sanity checks for class existence
-    assert ConfigurationPayload
-    assert ProcessedConfiguration
