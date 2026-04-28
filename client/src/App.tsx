@@ -33,7 +33,11 @@ export function App() {
   }
 
   return (
-    <Layout displayName={`${user.username} (${user.jurisdiction_id})`}>
+    // showAppUpdateBanner={!user.has_dismissed_app_update_notification}
+    <Layout
+      displayName={`${user.username} (${user.jurisdiction_id})`}
+      showAppUpdateBanner={true}
+    >
       <ToastContainer className="bottom-5!" position="bottom-left" stacked />
       <Routes>
         {/* this is the home page for authenticated users */}

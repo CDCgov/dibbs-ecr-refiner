@@ -9,15 +9,23 @@ import { ExternalLink } from '../ExternalLink';
 interface LayoutProps {
   children: React.ReactNode;
   displayName: string;
+  showAppUpdateBanner: boolean;
 }
 
-export function Layout({ displayName, children }: LayoutProps) {
+export function Layout({
+  displayName,
+  children,
+  showAppUpdateBanner,
+}: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <a className="usa-skipnav" href="#main-content">
         Skip to main content
       </a>
       <Header displayName={displayName} />
+
+      {showAppUpdateBanner && <AppUpdateBanner />}
+
       <main
         id="main-content"
         className="bg-primary-container flex grow flex-col"
@@ -28,6 +36,74 @@ export function Layout({ displayName, children }: LayoutProps) {
     </div>
   );
 }
+
+export function AppUpdateBanner() {
+  return (
+    <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
+      <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-4">
+        <div className="flex items-center gap-2">
+          <Icon.Info size={3} aria-hidden className="text-blue-40v" />
+
+          <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
+            There are new updates to eCR Refiner.
+          </span>
+        </div>
+
+        <Link
+          to="/app-updates"
+          className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+        >
+          View updates
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// export function AppUpdateBanner() {
+//   return (
+//     <div
+//       className="px-4 py-3"
+//       style={{
+//         background: 'var(--State-Info-Info-lighter, #E8F5FF)',
+//         boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.15)',
+//       }}
+//     >
+//       <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-4">
+//         <div className="flex items-center gap-2">
+//           <Icon.Info size={3} aria-hidden style={{ color: '#2491FF' }} />
+//           <span
+//             className="font-public-sans text-[16px] leading-[140%] font-bold"
+//             style={{
+//               color: '#112F4E',
+//               fontVariantNumeric: 'lining-nums proportional-nums',
+//             }}
+//           >
+//             There are new updates to eCR Refiner.
+//           </span>
+//         </div>
+//         <Link
+//           to="/app-updates"
+//           className="flex h-[44px] max-h-[44px] min-h-[44px] items-center justify-center rounded-[4px] bg-white px-[20px]"
+//           style={{
+//             color: 'var(--Accent-Violet-Warm-60, #864381)',
+//             border: '2px solid var(--Accent-Violet-Warm-60, #864381)',
+//             textAlign: 'center',
+//             fontVariantNumeric: 'lining-nums proportional-nums',
+//             fontFamily: '"Public Sans", sans-serif',
+//             fontSize: '1rem',
+//             fontStyle: 'normal',
+//             fontWeight: 700,
+//             lineHeight: '1.4rem',
+//             textDecoration: 'none',
+//           }}
+//         >
+//           View updates
+//         </Link>
+//       </div>
+//     </div>
+//   );
+// }
 
 interface HeaderProps {
   displayName?: string;
