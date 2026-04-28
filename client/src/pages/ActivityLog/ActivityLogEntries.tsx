@@ -128,26 +128,30 @@ function ViewAllCustomCodeEventsButton({
                 Imported by {importedByUsername} on {importDate}
               </p>
               <div className="overflow-auto">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                      <th scope="col" className="py-3">
-                        Code system
-                      </th>
-                      <th scope="col">Code</th>
-                      <th scope="col">Display name</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-gray-cool-20 divide-y">
-                    {events.data.map((cc) => (
-                      <tr key={cc.id}>
-                        <td className="py-3">{cc.system}</td>
-                        <td>{cc.code}</td>
-                        <td>{cc.name}</td>
+                {events.data.length === 0 ? (
+                  <p>No custom code events found.</p>
+                ) : (
+                  <table className="w-full table-fixed">
+                    <thead>
+                      <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
+                        <th scope="col" className="py-3">
+                          Code system
+                        </th>
+                        <th scope="col">Code</th>
+                        <th scope="col">Display name</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-gray-cool-20 divide-y">
+                      {events.data.map((cc) => (
+                        <tr key={cc.id}>
+                          <td className="py-3">{cc.system}</td>
+                          <td>{cc.code}</td>
+                          <td>{cc.name}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           )}
