@@ -1,21 +1,16 @@
 from collections import defaultdict
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import dataclass, field, fields
 from enum import StrEnum
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
-if TYPE_CHECKING:
-    from ..db.configurations.model import DbConfiguration
-
 # NOTE:
 # This file establishes a consistent pattern for handling terminology data:
-# 1. A `Payload` class (e.g., ConfigurationPayload) holds raw DB models.
-# 2. A `Processed` class (e.g., ProcessedConfiguration) holds the final, ready-to-use data.
-# 3. The `Processed` class has a `.from_payload()` factory method that contains all
+# 1. A `Processed` class (e.g., ProcessedConfiguration) holds the final, ready-to-use data.
+# 2. The `Processed` class has a `.from_dict()` factory method that contains all
 #    the logic to transform the raw payload into the processed version.
 # This separates data fetching, data processing, and data usage into clean, testable steps.
 # =============================================================================
@@ -314,29 +309,6 @@ class CodeSystemSets:
 # =============================================================================
 
 
-@dataclass(frozen=True)
-class ConfigurationPayload:
-    """
-    Model representing the raw configuration data needed for refinement.
-
-    This model is intentionally minimal to support both inline testing (from configuration building)
-    and independent testing (from demo.py processing) patterns. The model focuses on just the
-    essential data needed for refinement:
-
-    - conditions: A list of all DbCondition objects to be considered.
-    - configuration: The specific DbConfiguration object, which may contain custom codes.
-
-    Note on Testing Patterns:
-    - Independent testing: Uses RC SNOMED codes from the RR's coded information organizer to find
-      the matching configuration. The RC SNOMED code comes from the RR, not the configuration itself.
-    - Inline testing: Directly uses a configuration to test against input data, focusing only on
-      the codes defined in that configuration.
-    """
-
-    configuration: "DbConfiguration"
-    conditions: list[DbCondition]
-
-
 class Section(BaseModel):
     """
     Section data coming from an active.json S3 file.
@@ -419,80 +391,4 @@ class ProcessedConfiguration:
             code_system_sets=code_system_sets,
             section_processing=[s.model_dump() for s in validated.sections],
             included_condition_rsg_codes=validated.included_condition_rsg_codes,
-        )
-
-    @classmethod
-    def from_payload(cls, payload: ConfigurationPayload) -> "ProcessedConfiguration":
-        """
-        Create ProcessedConfiguration from a ConfigurationPayload object.
-
-        This method aggregates codes from both the configuration's associated conditions and
-        any custom codes defined on the configuration itself. Codes are organized by code
-        system for section-aware matching, and a flat set is maintained for sections with no
-        entry matching rules.
-
-        Args:
-            payload: The ConfigurationPayload containing the DbConfiguration and its
-                     related DbConditions.
-
-        Returns:
-            ProcessedConfiguration: An object containing both flat and structured code sets.
-        """
-
-        # STEP 1: build per-system dicts from condition codes
-        # each condition has snomed_codes, loinc_codes, icd10_codes, rxnorm_codes
-        # each code object in those lists has .code and .display
-        coding_by_code_system: dict[str, list[dict]] = defaultdict(list)
-        for condition in payload.conditions:
-            # map each db code list to its target dict + OID
-            code_system_map: dict[CodeSystem, list] = (
-                index_condition_code_list_by_system(condition)
-            )
-
-            for code_system, code_list in code_system_map.items():
-                coding_by_code_system[
-                    CodeSystem(code_system).format_system_string()
-                ].extend(
-                    [
-                        asdict(
-                            Coding(
-                                code=c.code, display=c.display, system=code_system.oid
-                            )
-                        )
-                        for c in code_list
-                    ]
-                )
-
-        # STEP 2: add custom codes, routing by their system label
-        for custom_code in payload.configuration.custom_codes:
-            cur_code_system = CodeSystem(custom_code.system).format_system_string()
-            code_val = custom_code.code
-            display_val = custom_code.name
-
-            # route to the correct dict based on system label
-            coding_by_code_system[cur_code_system].append(
-                asdict(
-                    Coding(
-                        code=code_val,
-                        display=display_val,
-                        system=CodeSystem(cur_code_system).oid,
-                    )
-                )
-            )
-
-        # STEP 3: build the CodeSystemSets
-        code_system_sets = CodeSystemSets.from_dict(data=coding_by_code_system)
-
-        # STEP 4: build included_condition_rsg_codes
-        included_condition_rsg_codes = set()
-        for c in payload.conditions:
-            included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
-
-        return cls(
-            codes=code_system_sets.all_codes,
-            code_system_sets=code_system_sets,
-            section_processing=[
-                asdict(section) for section in payload.configuration.section_processing
-            ],
-            included_condition_rsg_codes=included_condition_rsg_codes,
         )
