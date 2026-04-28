@@ -31,7 +31,7 @@ from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
 )
-from app.services.format import format_xml_document_for_display
+from app.services.format import format_xml_document_for_display_or_raise
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
@@ -107,7 +107,7 @@ async def _build_refined_conditions(
 
         packaged_files.append(html_file)
 
-        formatted_refined_eicr = format_xml_document_for_display(
+        formatted_refined_eicr = format_xml_document_for_display_or_raise(
             refined_document.refined_eicr,
             preserve_comments=True,
         )
@@ -117,7 +117,9 @@ async def _build_refined_conditions(
                 code=condition.code,
                 display_name=condition.display_name,
                 refined_eicr=formatted_refined_eicr,
-                refined_rr=format_xml_document_for_display(original_xml_files.rr),
+                refined_rr=format_xml_document_for_display_or_raise(
+                    original_xml_files.rr
+                ),
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
@@ -240,7 +242,7 @@ async def demo_upload(
         refined_conditions=conditions,
         conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
-        unrefined_eicr=format_xml_document_for_display(
+        unrefined_eicr=format_xml_document_for_display_or_raise(
             original_xml_files.eicr, preserve_comments=True
         ),
         refined_download_key=output_file_name if s3_key else "",
