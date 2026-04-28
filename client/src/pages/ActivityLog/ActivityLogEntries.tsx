@@ -131,9 +131,11 @@ function ViewAllCustomCodeEventsButton({
                 <table className="w-full table-fixed">
                   <thead>
                     <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                      <th className="py-3">Code system</th>
-                      <th>Code</th>
-                      <th>Display name</th>
+                      <th scope="col" className="py-3">
+                        Code system
+                      </th>
+                      <th scope="col">Code</th>
+                      <th scope="col">Display name</th>
                     </tr>
                   </thead>
                   <tbody className="divide-gray-cool-20 divide-y">
