@@ -101,7 +101,11 @@ function ViewAllCustomCodeEventsButton({
     data: events,
     isError,
     isPending,
-  } = useGetCustomCodeUploadEvents(eventId);
+  } = useGetCustomCodeUploadEvents(eventId, {
+    query: {
+      enabled: isOpen,
+    },
+  });
 
   return (
     <>
@@ -120,7 +124,9 @@ function ViewAllCustomCodeEventsButton({
           {isPending ? (
             <Spinner />
           ) : isError ? (
-            <p>An error has occurred</p>
+            <p className="text-state-error">
+              An error has occurred. Please refresh the page and try again.
+            </p>
           ) : (
             <div>
               <p>
@@ -136,7 +142,7 @@ function ViewAllCustomCodeEventsButton({
                 </thead>
                 <tbody>
                   {events.data.map((cc) => (
-                    <tr>
+                    <tr key={cc.id}>
                       <td>{cc.system}</td>
                       <td>{cc.code}</td>
                       <td>{cc.name}</td>
