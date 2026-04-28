@@ -2,16 +2,11 @@ import { AuditEvent } from '../../api/schemas';
 import { Table } from '@components/Table';
 import { useDatetimeFormatter } from '../../hooks/UseDatetimeFormatter';
 import { Button } from '@components/Button';
-import {
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-} from '@components/Modal';
+import { Modal, ModalBody, ModalHeader, ModalTitle } from '@components/Modal';
 import { useState } from 'react';
 import { useGetCustomCodeUploadEvents } from '../../api/events/events';
 import { Spinner } from '@components/Spinner';
+
 interface ActivityLogEntriesProps {
   filteredLogEntries: AuditEvent[];
 }
@@ -128,22 +123,22 @@ function ViewAllCustomCodeEventsButton({
               An error has occurred. Please refresh the page and try again.
             </p>
           ) : (
-            <div>
+            <div className="flex flex-col gap-6">
               <p>
                 Imported by {importedByUsername} on {importDate}
               </p>
-              <table>
+              <table className="w-full table-fixed">
                 <thead>
-                  <tr>
-                    <th>Code system</th>
+                  <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
+                    <th className="py-3">Code system</th>
                     <th>Code</th>
                     <th>Display name</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-gray-cool-20 divide-y">
                   {events.data.map((cc) => (
                     <tr key={cc.id}>
-                      <td>{cc.system}</td>
+                      <td className="py-3">{cc.system}</td>
                       <td>{cc.code}</td>
                       <td>{cc.name}</td>
                     </tr>
@@ -153,9 +148,6 @@ function ViewAllCustomCodeEventsButton({
             </div>
           )}
         </ModalBody>
-        <ModalFooter>
-          <Button onClick={() => setIsOpen(false)}>Close the modal</Button>
-        </ModalFooter>
       </Modal>
     </>
   );
