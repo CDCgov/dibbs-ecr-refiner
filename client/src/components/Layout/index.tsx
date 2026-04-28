@@ -60,51 +60,6 @@ export function AppUpdateBanner() {
   );
 }
 
-// export function AppUpdateBanner() {
-//   return (
-//     <div
-//       className="px-4 py-3"
-//       style={{
-//         background: 'var(--State-Info-Info-lighter, #E8F5FF)',
-//         boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.15)',
-//       }}
-//     >
-//       <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-4">
-//         <div className="flex items-center gap-2">
-//           <Icon.Info size={3} aria-hidden style={{ color: '#2491FF' }} />
-//           <span
-//             className="font-public-sans text-[16px] leading-[140%] font-bold"
-//             style={{
-//               color: '#112F4E',
-//               fontVariantNumeric: 'lining-nums proportional-nums',
-//             }}
-//           >
-//             There are new updates to eCR Refiner.
-//           </span>
-//         </div>
-//         <Link
-//           to="/app-updates"
-//           className="flex h-[44px] max-h-[44px] min-h-[44px] items-center justify-center rounded-[4px] bg-white px-[20px]"
-//           style={{
-//             color: 'var(--Accent-Violet-Warm-60, #864381)',
-//             border: '2px solid var(--Accent-Violet-Warm-60, #864381)',
-//             textAlign: 'center',
-//             fontVariantNumeric: 'lining-nums proportional-nums',
-//             fontFamily: '"Public Sans", sans-serif',
-//             fontSize: '1rem',
-//             fontStyle: 'normal',
-//             fontWeight: 700,
-//             lineHeight: '1.4rem',
-//             textDecoration: 'none',
-//           }}
-//         >
-//           View updates
-//         </Link>
-//       </div>
-//     </div>
-//   );
-// }
-
 interface HeaderProps {
   displayName?: string;
 }
