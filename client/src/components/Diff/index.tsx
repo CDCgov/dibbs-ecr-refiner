@@ -11,6 +11,15 @@ type DiffProps = Pick<
 > & {
   condition: IndependentTestUploadResponse['refined_conditions'][0];
 };
+const LAZY_LOAD_THRESHOLD = 10 ** 7; // 10 MB
+const lazyFragment = () => (
+  <div style={{ padding: '20px', textAlign: 'center' }}>Computing diff...</div>
+);
+const lazyLoadingOptions = {
+  pageSize: 20,
+  containerHeight: '80vh',
+  overscan: 20,
+};
 
 export function Diff({
   refined_download_key,
@@ -21,6 +30,8 @@ export function Diff({
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
 
+  const eicrByteLength = new TextEncoder().encode(unrefined_eicr).length;
+  const shouldLazyLoad = LAZY_LOAD_THRESHOLD < eicrByteLength;
   async function downloadFile(filename: string) {
     try {
       const url = getDownloadRefinedEcrQueryKey(filename)[0];
@@ -153,6 +164,8 @@ export function Diff({
         compareMethod={DiffMethod.WORDS_WITH_SPACE}
         leftTitle="Original eICR"
         rightTitle="Refined eICR"
+        infiniteLoading={shouldLazyLoad ? lazyLoadingOptions : undefined}
+        loadingElement={shouldLazyLoad ? lazyFragment : undefined}
         styles={{
           titleBlock: {
             fontFamily: 'Public Sans, sans-serif',
