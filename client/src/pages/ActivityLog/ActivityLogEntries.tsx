@@ -123,28 +123,30 @@ function ViewAllCustomCodeEventsButton({
               An error has occurred. Please refresh the page and try again.
             </p>
           ) : (
-            <div className="flex flex-col gap-6">
+            <div className="flex max-h-130 flex-col gap-6">
               <p>
                 Imported by {importedByUsername} on {importDate}
               </p>
-              <table className="w-full table-fixed">
-                <thead>
-                  <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
-                    <th className="py-3">Code system</th>
-                    <th>Code</th>
-                    <th>Display name</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-gray-cool-20 divide-y">
-                  {events.data.map((cc) => (
-                    <tr key={cc.id}>
-                      <td className="py-3">{cc.system}</td>
-                      <td>{cc.code}</td>
-                      <td>{cc.name}</td>
+              <div className="overflow-auto">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
+                      <th className="py-3">Code system</th>
+                      <th>Code</th>
+                      <th>Display name</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-gray-cool-20 divide-y">
+                    {events.data.map((cc) => (
+                      <tr key={cc.id}>
+                        <td className="py-3">{cc.system}</td>
+                        <td>{cc.code}</td>
+                        <td>{cc.name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </ModalBody>
