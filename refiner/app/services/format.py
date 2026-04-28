@@ -78,7 +78,8 @@ def _normalize_xml(xml: str) -> str:
     xml = SPACE_BEFORE_FIRST_ATTR.sub(r"<\1 ", xml)
 
     parser = etree.XMLParser(remove_blank_text=True)
-    root: _Element = etree.fromstring(xml, parser=parser)
+    xml_bytes = xml.encode("utf-8")
+    root: _Element = etree.fromstring(xml_bytes, parser=parser)
 
     # Normalize whitespace inside text/tails so pretty_print can indent cleanly
     for el in root.iter():
