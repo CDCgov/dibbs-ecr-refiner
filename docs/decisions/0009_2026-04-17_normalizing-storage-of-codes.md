@@ -132,15 +132,15 @@ In this configuration, two pairwise tables (TES codes and conditions, custom cod
 
 ## Decision Outcome
 
-### Store normalized codesets in a single code table
+### Store normalized codesets in two tables
 
-The team will store normalized codes over extending the existing JSON configuration to better enable future development and maintenance. Furthermore, TES and custom codesets will be stored in a single table, which allows for codeset relationships to be centralized and searched more convieniently. Storing things in a single table simplifies needed features like codeset uniqueness validation and codeset parsing and search, since a single query can be made rather than aggregating queries across tables. We suspect that keeping all codes stored within a single table won't create complexity issues given the scale and volume of data we're maintaining, while offering simplicity and centralization improvements. One table is also more easily splittable into two should we change our minds in the future rather than joining two tables into one, so this decision can be revisted if needed in the future.
+The team will store normalized codes over extending the existing JSON configuration to better enable future development and maintenance. Furthermore, TES and custom codesets will be stored in a two tables, one for custom codes and one for TES codes. After discussion, custom codes have several attributes that make them unique to TES codes: editability, relationship to different parent entities, and provenance from user input compared to ingestion from an API. Thus, two separate tables will be created and seeded based on user input for custom codes and a modified TES ingestion structure. Compared to existing structures, codeset relationships will to be centralized and searched more conveniently .
 
 ### Manage joins via a junction table
 
-Compared with the other option of storing code relationships in an array, the junction table approach is the more standard way of modeling relationships and thus the one we'll implement. This approach gives guarentees such as referential integrity, cascade deletes, and the ability to make key-based queries on the table itself rather than having to parse and mainpulate array structures in SQL that would be necessary with the other approach.
+Compared with the other option of storing code relationships in an array, the junction table approach is the more standard way of modeling relationships and thus the one we'll implement. This approach gives guarentees such as referential integrity, cascade deletes, and the ability to make key-based queries on the table itself rather than having to parse and mainpulate array structures in SQL that would be necessary with the other approach. Given custom and TES codes will be stored separately, we'll create two junction tables to model TEScode <> condition and custom code <> configuration relationships. This will allow us to separately manage the relationship between the various entities.
 
-An example seeding script for this option is stubbed out in `load_tes_data_into_normalized_table.py` to illustrate how the data would be parsed from the TES into the shape needed for seeding.
+An the beginnings of a seeding script for this option is stubbed out in `load_tes_data_into_normalized_table.py` to illustrate how the data would be parsed from the TES into the shape needed for seeding.
 
 ## Appendix
 
@@ -150,15 +150,14 @@ Below is a rough timeline for rolling out these changes
 
 ### Phase 1
 
-1. Seed the new schema and update the seeding script to parse out the necessary codes
-1. Backport existing data into the new table structure for the custom codes and child RSG tables
-1. Refactor existing code to use the new data schema
-1. Drop the relevant code columns in the conditions and configurations table
-1. Remove unneeded code in the updated script
+1. Implement systems table normalization
+1. Seed the new custom codes schema
+1. Refactor existing code to use the new custom codes schema
 1. Address any issues that arise
 
 ### Phase 2
 
-1. Run the seeding script to seed the remaining data into the new schema
+1. Implement schema for the TES codes table
+1. Refactor the seeding script to ingest TES information into the new schema
 1. Refactor backend code to handle the new code storage schema
 1. Delete the obsolete columns from the old schema
