@@ -75,11 +75,14 @@ The core of the stored code information would include the following columns
 
 To accomplish the goal of migration-free code system addition while maintaining maximal data guarentees, the `systems` column of the new codes table will reference a foreign key of a new table that stores system metadata that would look something like the below:
 
-| column | datatype |
-| ------ | -------- |
-| id     | UUID     |
-| name   | string   |
-| oid    | string   |
+| column       | datatype |
+| ------------ | -------- |
+| id           | UUID     |
+| display_name | string   |
+| name         | string   |
+| oid          | string   |
+
+**`name` here is a sanitized string for use in the backend, whereas `display_name` is the user-facing string with special characters**
 
 Future code system addition will be enabled by adding a new row in the systems table that we can populate via a seeding script. To fully align this new table with the backend code, some refactoring will need to be done in the `terminology.py` file to derive backend `CodeSystem` enum values with the values in the new table.
 
