@@ -67,7 +67,7 @@ The core of the stored code information would include the following columns
 | column       | datatype                |
 | ------------ | ----------------------- |
 | id           | UUID                    |
-| displayName  | string                  |
+| display_name | string                  |
 | value        | string                  |
 | system_id    | `fkey to systems table` |
 | created_at   | DateTime                |
@@ -90,7 +90,7 @@ The most straightforward option for code storage is to store custom codes and TE
 | column        | datatype                |
 | ------------- | ----------------------- |
 | id            | UUID                    |
-| displayName   | string                  |
+| display_name  | string                  |
 | value         | string                  |
 | system_id     | `fkey to systems table` |
 | created_at    | DateTime                |
