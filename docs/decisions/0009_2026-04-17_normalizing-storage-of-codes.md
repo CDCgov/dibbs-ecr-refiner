@@ -69,7 +69,7 @@ The core of the stored code information would include the following columns
 | id           | UUID                    |
 | displayName  | string                  |
 | value        | string                  |
-| system       | `fkey to systems table` |
+| system_id    | `fkey to systems table` |
 | created_at   | DateTime                |
 | last_updated | DateTime                |
 
@@ -87,15 +87,15 @@ Future code system addition will be enabled by adding a new row in the systems t
 
 The most straightforward option for code storage is to store custom codes and TES codes in a single table, using boolean columns to differentiate the two. The main complication would be the need to link custom code rows to configurations and TES code rows to conditions, since custom codes only exist in a configuration context while TES codes exist to condition codesets. The extended schema under this option would look something like the following:
 
-| column        | datatype       |
-| ------------- | -------------- |
-| id            | UUID           |
-| displayName   | string         |
-| value         | string         |
-| system        | string or Enum |
-| created_at    | DateTime       |
-| last_updated  | DateTime       |
-| **is_custom** | **Boolean**    |
+| column        | datatype                |
+| ------------- | ----------------------- |
+| id            | UUID                    |
+| displayName   | string                  |
+| value         | string                  |
+| system_id     | `fkey to systems table` |
+| created_at    | DateTime                |
+| last_updated  | DateTime                |
+| **is_custom** | **Boolean**             |
 
 In return, reads and writes from / to this table would be much more straightforward, since they can be manged by a single database service shared by both the condition and configuration modules. The codes object would provide only the necessary information around custom code / TES status to the caller, which may allow us to simplify the differentiation between the our models of codes.
 
@@ -105,25 +105,25 @@ A secondary option is to store custom codes and TES codes separately, duplicatin
 
 ##### Custom codes table
 
-| column       | datatype       |
-| ------------ | -------------- |
-| id           | UUID           |
-| display_name | string         |
-| value        | string         |
-| system       | string or Enum |
-| created_at   | DateTime       |
-| last_updated | DateTime       |
+| column       | datatype                |
+| ------------ | ----------------------- |
+| id           | UUID                    |
+| display_name | string                  |
+| value        | string                  |
+| system_id    | `fkey to systems table` |
+| created_at   | DateTime                |
+| last_updated | DateTime                |
 
 ##### TES codes table
 
-| column       | datatype       |
-| ------------ | -------------- |
-| id           | UUID           |
-| display_name | string         |
-| value        | string         |
-| system       | string or Enum |
-| created_at   | DateTime       |
-| last_updated | DateTime       |
+| column       | datatype                |
+| ------------ | ----------------------- |
+| id           | UUID                    |
+| display_name | string                  |
+| value        | string                  |
+| system_id    | `fkey to systems table` |
+| created_at   | DateTime                |
+| last_updated | DateTime                |
 
 In this configuration, two pairwise tables (TES codes and conditions, custom codes and configurations) would exist in our data schema that encodes the pairwise relationship between the entities in the data schema
 
