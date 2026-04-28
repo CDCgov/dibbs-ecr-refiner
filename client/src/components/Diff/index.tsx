@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import { IndependentTestUploadResponse } from '../../api/schemas';
-import classNames from 'classnames';
 import { Button } from '../Button';
 import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
+import { DiffToggleOptions } from './DiffToggleOptions';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -11,8 +11,9 @@ type DiffProps = Pick<
 > & {
   condition: IndependentTestUploadResponse['refined_conditions'][0];
 };
-const LAZY_LOAD_THRESHOLD = 10 ** 7; // 10 MB
-const lazyFragment = () => (
+const LAZY_LOAD_THRESHOLD = 10 ** 6 * 3; // 3 MB
+const DONT_RENDER_DIFF_THRESHOLD = 10 ** 6 * 5; // 5 MB
+const loadingFragment = () => (
   <div style={{ padding: '20px', textAlign: 'center' }}>Computing diff...</div>
 );
 const lazyLoadingOptions = {
@@ -30,8 +31,6 @@ export function Diff({
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
 
-  const eicrByteLength = new TextEncoder().encode(unrefined_eicr).length;
-  const shouldLazyLoad = LAZY_LOAD_THRESHOLD < eicrByteLength;
   async function downloadFile(filename: string) {
     try {
       const url = getDownloadRefinedEcrQueryKey(filename)[0];
@@ -56,6 +55,10 @@ export function Diff({
       setDownloadError('An unknown error occurred.');
     }
   }
+
+  const eicrByteLength = new TextEncoder().encode(unrefined_eicr).length;
+  const shouldLazyLoad = LAZY_LOAD_THRESHOLD < eicrByteLength;
+  const dontLoadDiffView = DONT_RENDER_DIFF_THRESHOLD < eicrByteLength;
 
   return (
     <div>
@@ -86,101 +89,48 @@ export function Diff({
         </div>
 
         {/* Right section */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-          {/* Layout group */}
-          <div className="flex items-center gap-2">
-            <span className="font-bold">Layout</span>
-            <div className="border-blue-cool-60 flex gap-1 rounded-sm border p-0">
-              <Button
-                variant="unstyled"
-                aria-label="Show split diff"
-                onClick={() => setSplitView(true)}
-                className={classNames(
-                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black',
-                  {
-                    'bg-blue-cool-10 text-blue-cool-60': splitView,
-                    'text-gray-cool-50 bg-white': !splitView,
-                  }
-                )}
-              >
-                <SymbolsIcon isActive={splitView} />
-              </Button>
-              <Button
-                variant="unstyled"
-                aria-label="Show stacked diff"
-                onClick={() => setSplitView(false)}
-                className={classNames(
-                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:text-black focus:outline-offset-0 focus:outline-solid',
-                  {
-                    'bg-blue-cool-10 text-blue-cool-60': !splitView,
-                    'text-gray-cool-50 bg-white': splitView,
-                  }
-                )}
-              >
-                <DashboardIcon isActive={!splitView} />
-              </Button>
-            </div>
-          </div>
-
-          {/* Content toggle */}
-          <div className="flex items-center gap-2">
-            <span className="font-bold">Content</span>
-            <div className="border-blue-cool-60 flex gap-1 rounded-sm border p-0">
-              <Button
-                variant="unstyled"
-                onClick={() => setShowDiffOnly(false)}
-                className={classNames(
-                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
-                  {
-                    'text-gray-cool-50 bg-white': showDiffOnly,
-                    'bg-blue-cool-10 text-blue-cool-60': !showDiffOnly,
-                  }
-                )}
-              >
-                Show all
-              </Button>
-              <Button
-                variant="unstyled"
-                onClick={() => setShowDiffOnly(true)}
-                className={classNames(
-                  'rounded-sm px-3 py-2 text-sm font-medium hover:cursor-pointer hover:bg-blue-100 hover:text-black',
-                  {
-                    'bg-blue-cool-10 text-blue-cool-60': showDiffOnly,
-                    'text-gray-cool-50 bg-white': !showDiffOnly,
-                  }
-                )}
-              >
-                Diff only
-              </Button>
-            </div>
-          </div>
-        </div>
+        {dontLoadDiffView ? null : (
+          <DiffToggleOptions
+            setShowDiffOnly={setShowDiffOnly}
+            showDiffOnly={showDiffOnly}
+            splitView={splitView}
+            setSplitView={setSplitView}
+          />
+        )}
       </div>
-      <ReactDiffViewer
-        oldValue={unrefined_eicr}
-        newValue={condition.refined_eicr}
-        splitView={splitView}
-        showDiffOnly={showDiffOnly}
-        compareMethod={DiffMethod.WORDS_WITH_SPACE}
-        leftTitle="Original eICR"
-        rightTitle="Refined eICR"
-        infiniteLoading={shouldLazyLoad ? lazyLoadingOptions : undefined}
-        loadingElement={shouldLazyLoad ? lazyFragment : undefined}
-        styles={{
-          titleBlock: {
-            fontFamily: 'Public Sans, sans-serif',
-            fontSize: '16px',
-          },
-          diffContainer: {
-            borderRadius: '1px',
-            borderStyle: '',
-          },
-          lineNumber: {
-            color: 'black !important',
-            opacity: '100 !important',
-          },
-        }}
-      />
+
+      {dontLoadDiffView ? (
+        <>
+          Refined result is too large for in-app rendering. Download the file
+          instead
+        </>
+      ) : (
+        <ReactDiffViewer
+          oldValue={unrefined_eicr}
+          newValue={condition.refined_eicr}
+          splitView={splitView}
+          showDiffOnly={showDiffOnly}
+          compareMethod={DiffMethod.WORDS_WITH_SPACE}
+          leftTitle="Original eICR"
+          rightTitle="Refined eICR"
+          infiniteLoading={shouldLazyLoad ? lazyLoadingOptions : undefined}
+          loadingElement={loadingFragment}
+          styles={{
+            titleBlock: {
+              fontFamily: 'Public Sans, sans-serif',
+              fontSize: '16px',
+            },
+            diffContainer: {
+              borderRadius: '1px',
+              borderStyle: '',
+            },
+            lineNumber: {
+              color: 'black !important',
+              opacity: '100 !important',
+            },
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -197,49 +147,5 @@ function SuccessItem({ children }: SuccessItemProps) {
         {children}
       </p>
     </div>
-  );
-}
-
-interface IconProps {
-  isActive: boolean;
-}
-function SymbolsIcon({ isActive }: IconProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <path
-        d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM5 19H11V5H5V19Z"
-        fill={isActive ? '#2E6276' : '#71767A'}
-      />
-      <rect
-        x="13"
-        y="5"
-        width="6"
-        height="14"
-        fill={isActive ? '#2E6276' : '#71767A'}
-      />
-    </svg>
-  );
-}
-
-function DashboardIcon({ isActive }: IconProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <path
-        d="M7 17H14V15H7V17ZM7 13H17V11H7V13ZM7 9H17V7H7V9ZM5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM5 19H19V5H5V19Z"
-        fill={isActive ? '#2E6276' : '#71767A'}
-      />
-    </svg>
   );
 }
