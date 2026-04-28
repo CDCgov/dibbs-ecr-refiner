@@ -1,4 +1,5 @@
 import os
+import subprocess
 from dataclasses import asdict
 from pathlib import Path
 from uuid import UUID
@@ -317,6 +318,21 @@ def base_url() -> str:
     return "http://0.0.0.0:8080/"
 
 
+def _restart_server(compose_path: str) -> None:
+    """
+    Restarts the Refiner server running in Docker.
+
+    This is used during setup to prevent Postgres cache plans from occasionally failing. This
+    often happens if you run a DB refresh while containers are already running and then try
+    to run the tests right after.
+
+    We use subprocess because DockerCompose does not provide an API to restart a single container.
+    """
+    subprocess.run(
+        ["docker", "compose", "restart", "server"], cwd=compose_path, check=True
+    )
+
+
 @pytest.fixture(scope="session")
 def setup(request):
     """
@@ -339,10 +355,10 @@ def setup(request):
         compose_file_name=["docker-compose.yml", "docker-compose.override.yml"],
     )
 
-    # restart the environment if it's already running
-    # this will clear the DB volume and prevent caching issues
-    refiner_service.stop()
     refiner_service.start()
+
+    print("⚙️ Restarting refiner server")
+    _restart_server(compose_path=path)
 
     refiner_service.wait_for("http://0.0.0.0:8080/api/healthcheck")
     print("✨ Message refiner services ready to test!")
