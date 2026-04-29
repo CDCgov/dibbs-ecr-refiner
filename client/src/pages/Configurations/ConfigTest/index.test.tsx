@@ -38,6 +38,7 @@ const mockSuccessfulInlineTestResponse = {
     original_eicr: '<xml>unrefined covid</xml>',
     refined_download_key:
       '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
+    render_diff: true,
   },
 };
 
@@ -76,6 +77,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
           original_eicr: '<xml>unrefined covid</xml>',
           refined_download_key:
             '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
+          render_diff: true,
         },
       },
     })),

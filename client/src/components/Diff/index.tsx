@@ -76,6 +76,7 @@ export function Diff({
                   <Icon.Autorenew
                     role="presentation"
                     className="text-blue-cool-50 h-6! w-6! animate-spin"
+                    aria-label="Spinner icon to indicate download is in progress"
                   />
                   <div>Downloading...</div>
                 </div>
