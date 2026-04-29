@@ -30,7 +30,8 @@ def format_xml_document_for_display_or_raise(
         return format_xml_document_for_display(text, preserve_comments)
     except etree.XMLSyntaxError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Invalid XML: {e}"
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid XML: {e.msg} (line {e.lineno}, column {e.offset})",
         )
 
 
