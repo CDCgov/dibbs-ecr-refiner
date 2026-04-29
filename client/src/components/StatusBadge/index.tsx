@@ -5,8 +5,8 @@ import { Button } from '@components/Button';
 // Define the enum for badge status (TODO below)
 export enum BadgeStatus {
   NotExpanded = 'not_expanded',
-  PartiallyIncomplete = 'partially_incomplete',
-  FullyComplete = 'fully_complete',
+  PartiallyIncomplete = 'partial',
+  FullyComplete = 'complete',
 }
 
 // TODO: Status will eventually come from the server response instead of this enum.
@@ -33,7 +33,7 @@ export const StatusBadge = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <span className="inline-flex items-center">
+    <div className="inline-flex items-center pb-4">
       <span
         className={`rounded-full px-3 py-1 font-medium text-black lowercase ${BG_BY_STATUS[status]} ${className} `}
         data-testid="status-badge"
@@ -53,6 +53,6 @@ export const StatusBadge = ({
           <div className="p-4">{detailsContent}</div>
         </Modal>
       )}
-    </span>
+    </div>
   );
 };

@@ -242,23 +242,35 @@ export function ConditionCodeTable({
     setSelectedCodeSystem(event.target.value);
   }
 
+  const coverage = codes[0];
+
   return (
     <div className="min-h-full min-w-full">
-      <StatusBadge
-        status={BadgeStatus.FullyComplete}
-        text="fully complete"
-        detailsContent={
-          <div>
-            <h4 className="mb-2 text-lg font-bold">
-              Code Set Completion Details
-            </h4>
-            <p>
-              This code set is partially complete.&nbsp;
-              {/* Add further details here if you wish, or pull dynamic content */}
-            </p>
-          </div>
-        }
-      />
+      {coverage?.coverage_level && (
+        <StatusBadge
+          status={
+            coverage.coverage_level === 'complete'
+              ? BadgeStatus.FullyComplete
+              : BadgeStatus.PartiallyIncomplete
+          }
+          text={
+            coverage.coverage_level === 'complete'
+              ? 'fully complete'
+              : 'partially complete'
+          }
+          detailsContent={
+            <div className="flex flex-col gap-2">
+              <h4 className="text-lg font-bold">Code Set Completion Details</h4>
+              <p>{coverage.coverage_level_reason}</p>
+              {coverage.coverage_level_date && (
+                <p className="text-sm text-gray-600">
+                  As of {coverage.coverage_level_date}
+                </p>
+              )}
+            </div>
+          }
+        />
+      )}
       <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
