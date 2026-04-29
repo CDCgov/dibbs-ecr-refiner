@@ -37,23 +37,25 @@ export function Success({
 
   return (
     <div>
-      <div className="flex items-center gap-4">
+      <div className="flex place-items-center justify-between gap-4">
         <Title>eCR refinement results</Title>
-        <Label htmlFor="condition-select" className="text-bold">
-          CONDITION:
-        </Label>
-        <Select
-          id="condition-select"
-          name="condition-select"
-          defaultValue={selectedCondition.code}
-          onChange={onChange}
-        >
-          {refined_conditions.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.display_name}
-            </option>
-          ))}
-        </Select>
+        <div className="w-80">
+          <Label htmlFor="condition-select" className="text-bold">
+            CONDITION:
+          </Label>
+          <Select
+            id="condition-select"
+            name="condition-select"
+            defaultValue={selectedCondition.code}
+            onChange={onChange}
+          >
+            {refined_conditions.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.display_name}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
       <Diff
         condition={selectedCondition}

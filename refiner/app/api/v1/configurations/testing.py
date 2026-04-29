@@ -240,9 +240,10 @@ async def run_configuration_test(
     )
 
     render_diff = len(formatted_refined_eicr.encode()) < RENDER_THRESHOLD_IN_BYTES
+    original_eicr = formatted_unrefined_eicr if render_diff else ""
 
     return ConfigurationTestResponse(
-        original_eicr=formatted_unrefined_eicr,
+        original_eicr=original_eicr,
         refined_download_key=output_file_name if s3_key else "",
         condition=Condition(
             code=condition.code,

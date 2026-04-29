@@ -238,6 +238,9 @@ async def demo_upload(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
+    # if there aren't any rendering needs, don't send the eICR over the wire
+    send_eicr_to_frontend = any(list(test_results.render_condition_map.values()))
+
     return IndependentTestUploadResponse(
         message="Successfully processed eICR with condition-specific refinement",
         refined_conditions_found=len(conditions),
@@ -246,7 +249,9 @@ async def demo_upload(
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
         unrefined_eicr=format_xml_document_for_display_or_raise(
             original_xml_files.eicr, preserve_comments=True
-        ),
+        )
+        if send_eicr_to_frontend
+        else "",
         refined_download_key=output_file_name if s3_key else "",
         render_condition_map=test_results.render_condition_map,
     )

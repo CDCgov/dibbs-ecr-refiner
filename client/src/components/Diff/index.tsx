@@ -4,6 +4,10 @@ import { IndependentTestUploadResponse } from '../../api/schemas';
 import { Button } from '../Button';
 import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
+import { Icon } from '@trussworks/react-uswds';
+import { Warning } from './Warning';
+
+export const UPLOAD_FILE_THRESHOLD_MB = 5;
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -25,10 +29,12 @@ export function Diff({
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [showDiffOnly, setShowDiffOnly] = useState(true);
   const [splitView, setSplitView] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   async function downloadFile(filename: string) {
     try {
       const url = getDownloadRefinedEcrQueryKey(filename)[0];
+      setIsDownloading(true);
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -45,6 +51,7 @@ export function Diff({
       link.click();
       URL.revokeObjectURL(blobUrl);
       setDownloadError(null);
+      setIsDownloading(false);
     } catch (error) {
       console.error(error);
       setDownloadError('An unknown error occurred.');
@@ -64,12 +71,23 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-1 py-1">
-              <Button
-                variant="tertiary"
-                onClick={() => downloadFile(refined_download_key)}
-              >
-                Download results
-              </Button>
+              {isDownloading ? (
+                <div className="ml-4 flex h-10 items-center">
+                  <Icon.Autorenew
+                    role="presentation"
+                    className="text-blue-cool-50 h-6! w-6! animate-spin"
+                  />
+                  <div>Downloading...</div>
+                </div>
+              ) : (
+                <Button
+                  variant="tertiary"
+                  onClick={() => downloadFile(refined_download_key)}
+                >
+                  Download results
+                </Button>
+              )}
+
               {downloadError ? (
                 <span className="text-state-error-dark">
                   Error: {downloadError}
@@ -116,10 +134,10 @@ export function Diff({
           }}
         />
       ) : (
-        <>
-          Refined result is too large for in-app rendering. Download the file
-          instead
-        </>
+        <Warning
+          heading={`Maximum file size is ${UPLOAD_FILE_THRESHOLD_MB} MB`}
+          message="This file is too large to view in-browser. Please download the results to compare them."
+        />
       )}
     </div>
   );
