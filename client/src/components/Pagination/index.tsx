@@ -236,7 +236,8 @@ function PaginationPage({
   return (
     <li>
       {onClickPageNumber ? (
-        <button
+        <Button
+          variant="unstyled"
           type="button"
           className={baseClasses}
           aria-label={`Page ${page}`}
@@ -244,16 +245,16 @@ function PaginationPage({
           onClick={(e) => onClickPageNumber(e, page)}
         >
           {page}
-        </button>
+        </Button>
       ) : (
-        <a
-          href={`${pathname}?page=${page}`}
+        <Link
+          to={`${pathname}?page=${page}`}
           className={baseClasses}
           aria-label={`Page ${page}`}
           aria-current={isCurrent ? 'page' : undefined}
         >
           {page}
-        </a>
+        </Link>
       )}
     </li>
   );
