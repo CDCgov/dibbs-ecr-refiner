@@ -2,7 +2,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { ToastContainer } from 'react-toastify';
 import { TestQueryClientProvider } from '../../test-utils';
 import { ActivityLog } from '.';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { AuditEvent, EventFilterOption } from '../../api/schemas';
 import userEvent from '@testing-library/user-event';
 
@@ -15,6 +15,7 @@ const auditEvents: AuditEvent[] = [
     condition_id: '873bfce9-2a81-4edc-8e93-8c19adf493af',
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:58:45.363325Z',
+    has_custom_code_upload_events: false,
   },
   {
     id: '10e1286d-487e-4f81-bee4-4c6d4df9ed92',
@@ -24,6 +25,17 @@ const auditEvents: AuditEvent[] = [
     configuration_version: 1,
     action_text: 'Created configuration',
     created_at: '2025-10-28T13:57:55.627842Z',
+    has_custom_code_upload_events: false,
+  },
+  {
+    id: '411215db-e623-41c6-90b1-131b9f74ed39',
+    username: 'refiner',
+    condition_id: '569de1f6-f9f4-4a7b-824e-ad805059bb3f',
+    configuration_name: 'COVID-19',
+    configuration_version: 1,
+    action_text: 'Added 3 custom codes from CSV',
+    created_at: '2025-10-28T13:57:55.627842Z',
+    has_custom_code_upload_events: true,
   },
 ];
 const configurations: EventFilterOption[] = [
@@ -74,6 +86,16 @@ function checkActivityLogAgainstMockEvents(conditionFilter?: string) {
     expect(matchingRow).toHaveTextContent(
       new Date(r.created_at).toLocaleDateString()
     );
+
+    /**
+     * Custom code upload events will include a button to open a modal
+     * to view the individual codes uploaded.
+     */
+    if (r.has_custom_code_upload_events && matchingRow) {
+      expect(
+        within(matchingRow).getByRole('button', { name: 'View all' })
+      ).toBeInTheDocument();
+    }
   });
 }
 
