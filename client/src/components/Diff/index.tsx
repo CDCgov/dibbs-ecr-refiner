@@ -10,22 +10,17 @@ type DiffProps = Pick<
   'refined_download_key' | 'unrefined_eicr'
 > & {
   condition: IndependentTestUploadResponse['refined_conditions'][0];
+  renderDiff: boolean;
 };
-const LAZY_LOAD_THRESHOLD = 10 ** 6 * 3; // 3 MB
-const DONT_RENDER_DIFF_THRESHOLD = 10 ** 6 * 5; // 5 MB
 const loadingFragment = () => (
   <div style={{ padding: '20px', textAlign: 'center' }}>Computing diff...</div>
 );
-const lazyLoadingOptions = {
-  pageSize: 20,
-  containerHeight: '80vh',
-  overscan: 20,
-};
 
 export function Diff({
   refined_download_key,
   unrefined_eicr,
   condition,
+  renderDiff,
 }: DiffProps) {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [showDiffOnly, setShowDiffOnly] = useState(true);
@@ -56,10 +51,6 @@ export function Diff({
     }
   }
 
-  const eicrByteLength = new TextEncoder().encode(unrefined_eicr).length;
-  const shouldLazyLoad = LAZY_LOAD_THRESHOLD < eicrByteLength;
-  const dontLoadDiffView = DONT_RENDER_DIFF_THRESHOLD < eicrByteLength;
-
   return (
     <div>
       {/* Main header container */}
@@ -89,22 +80,17 @@ export function Diff({
         </div>
 
         {/* Right section */}
-        {dontLoadDiffView ? null : (
+        {renderDiff ? (
           <DiffToggleOptions
             setShowDiffOnly={setShowDiffOnly}
             showDiffOnly={showDiffOnly}
             splitView={splitView}
             setSplitView={setSplitView}
           />
-        )}
+        ) : null}
       </div>
 
-      {dontLoadDiffView ? (
-        <>
-          Refined result is too large for in-app rendering. Download the file
-          instead
-        </>
-      ) : (
+      {renderDiff ? (
         <ReactDiffViewer
           oldValue={unrefined_eicr}
           newValue={condition.refined_eicr}
@@ -113,7 +99,6 @@ export function Diff({
           compareMethod={DiffMethod.WORDS_WITH_SPACE}
           leftTitle="Original eICR"
           rightTitle="Refined eICR"
-          infiniteLoading={shouldLazyLoad ? lazyLoadingOptions : undefined}
           loadingElement={loadingFragment}
           styles={{
             titleBlock: {
@@ -130,6 +115,11 @@ export function Diff({
             },
           }}
         />
+      ) : (
+        <>
+          Refined result is too large for in-app rendering. Download the file
+          instead
+        </>
       )}
     </div>
   );

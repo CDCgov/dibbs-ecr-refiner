@@ -14,4 +14,5 @@ export interface ConfigurationTestResponse {
   original_eicr: string;
   refined_download_key: string;
   condition: Condition;
+  render_diff: boolean;
 }

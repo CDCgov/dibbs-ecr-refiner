@@ -31,6 +31,9 @@ from .pipeline import (
     refine_for_condition,
 )
 
+# threshold to render a refined eICR so that the app / APHL server won't crash
+RENDER_THRESHOLD_IN_BYTES = 10**6 * 2  # 2MB
+
 # NOTE:
 # DATA STRUCTURES
 # =============================================================================
@@ -80,6 +83,7 @@ class IndependentTestingResult:
         - 'no_active_configuration_for_conditions': A list of conditions that were found but had
            no active configuration for the jurisdiction.
         - 'shadow_rr': Optional RR containing only reportable conditions without active configs.
+        - 'render_condition_map': Boolean dict to determine whether the produced condition document is small enough to render the diff view.
     """
 
     original_eicr_doc_id: str
@@ -87,6 +91,7 @@ class IndependentTestingResult:
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
     shadow_rr: str | None
+    render_condition_map: dict[str, bool]
 
     def get_condition_names_with_no_matching_config(self) -> list[str]:
         """
@@ -185,6 +190,8 @@ async def independent_testing(
         db=db, rc_codes=rc_codes_for_jurisdiction
     )
 
+    render_dict = defaultdict(bool)
+
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
         return IndependentTestingResult(
@@ -193,6 +200,7 @@ async def independent_testing(
             no_matching_configuration_for_conditions=[],
             no_active_configuration_for_conditions=[],
             shadow_rr=None,
+            render_condition_map=render_dict,
         )
 
     # STEP 2:
@@ -326,6 +334,10 @@ async def independent_testing(
             trace=pipeline_trace,
         )
 
+        render_dict[trace.matching_condition.display_name] = (
+            len(result.refined_eicr.encode()) < RENDER_THRESHOLD_IN_BYTES
+        )
+
         if first_original_eicr_doc_id is None:
             first_original_eicr_doc_id = result.augmented_eicr_result.original_doc_id
 
@@ -334,6 +346,7 @@ async def independent_testing(
         # `rc_snomed_code` that was **in** the RR that matches the condition and
         # has a configuration. picking the first entry in an index isn't correct but
         # we should wait to see how the testing service evolves with the routes
+
         trace.refined_document = RefinedDocument(
             reportable_condition=ReportableCondition(
                 code=rr_code_used,
@@ -352,12 +365,14 @@ async def independent_testing(
                 "total_conditions_used": trace.number_of_included_conditions,
                 "configuration_settings": asdict(configuration),
                 "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
+                "render_condition_map": render_dict,
                 "outcome": "Refinement successful",
             },
         )
 
     # STEP 6:
     # build the final result object from the processed traces
+
     refined_documents = [
         trace.refined_document
         for trace in all_traces
@@ -376,6 +391,7 @@ async def independent_testing(
             no_active_configuration_for_conditions=no_active_configurations,
             xml_files=xml_files,
         ),
+        render_condition_map=render_dict,
     )
 
 

@@ -169,6 +169,7 @@ class ConfigurationTestResponse:
     original_eicr: str
     refined_download_key: str
     condition: Condition
+    render_diff: bool
 
 
 class SectionInputBase(BaseModel):

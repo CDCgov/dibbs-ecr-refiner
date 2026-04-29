@@ -33,7 +33,7 @@ from app.services.file_io import (
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
-from app.services.testing import inline_testing
+from app.services.testing import RENDER_THRESHOLD_IN_BYTES, inline_testing
 from app.services.xslt import create_refined_eicr_html_file
 
 from .model import ConfigurationTestResponse
@@ -239,6 +239,8 @@ async def run_configuration_test(
         refined_document.refined_eicr
     )
 
+    render_diff = len(formatted_refined_eicr.encode()) < RENDER_THRESHOLD_IN_BYTES
+
     return ConfigurationTestResponse(
         original_eicr=formatted_unrefined_eicr,
         refined_download_key=output_file_name if s3_key else "",
@@ -258,4 +260,5 @@ async def run_configuration_test(
                 }%",
             ],
         ),
+        render_diff=render_diff,
     )

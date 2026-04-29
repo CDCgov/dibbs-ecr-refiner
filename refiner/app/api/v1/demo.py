@@ -45,7 +45,6 @@ from app.services.xslt import create_refined_eicr_html_file
 # - periods
 # - spaces
 SAFE_FILENAME_RE = re.compile(r"^[\w\-. ]+\.zip$")
-
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
 
@@ -131,6 +130,9 @@ async def _build_refined_conditions(
             )
         )
     return (conditions, packaged_files)
+
+
+DIFF_RENDER_THRESHOLD = 10**6 * 2  # 2MB
 
 
 @router.post(
@@ -246,6 +248,7 @@ async def demo_upload(
             original_xml_files.eicr, preserve_comments=True
         ),
         refined_download_key=output_file_name if s3_key else "",
+        render_condition_map=test_results.render_condition_map,
     )
 
 
