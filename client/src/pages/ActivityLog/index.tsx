@@ -1,8 +1,4 @@
-import {
-  Label,
-  Pagination as USWDSPagination,
-  Select,
-} from '@trussworks/react-uswds';
+import { Label, Select } from '@trussworks/react-uswds';
 import { Spinner } from '@components/Spinner';
 import { Title } from '@components/Title';
 import { useState } from 'react';
