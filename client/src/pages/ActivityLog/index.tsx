@@ -78,17 +78,6 @@ export function ActivityLog() {
           }}
           totalPages={total_pages}
         />
-        <USWDSPagination
-          pathname="/events"
-          currentPage={selectedPage}
-          maxSlots={6}
-          onClickNext={() => setSelectedPage((p) => p + 1)}
-          onClickPrevious={() => setSelectedPage((p) => p - 1)}
-          onClickPageNumber={(_, pageNumber) => {
-            setSelectedPage(pageNumber);
-          }}
-          totalPages={total_pages}
-        />
       </div>
     </section>
   );

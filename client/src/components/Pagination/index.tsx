@@ -95,7 +95,7 @@ export function Pagination({
   return (
     <nav
       aria-label="Pagination"
-      className={classNames('flex items-center justify-center', className)}
+      className={classNames('my-4 flex items-center justify-center', className)}
       {...props}
     >
       <ul className="flex list-none items-center gap-2">
