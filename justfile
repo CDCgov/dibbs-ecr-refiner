@@ -84,8 +84,8 @@ lint:
     just client::run lint fmt
     just server::lint
 
-[group('test')]
 [doc('Run tests on all code')]
+[group('test')]
 test:
     just server::test
     just client::run test:coverage
@@ -126,12 +126,16 @@ _new title type folder:
       const re = /[0-9]{4}/g;
       return fs.lstatSync(fileName).isFile() && fileName.match(re);
     };
+    let resolvedPath = ''
+    let nextNumberString = ''
+    let nextNumber = ''
 
     if (isCve) {
       console.info(`🕵️ This is a {{ type }} and will be saved to a temporary directory`)
     } else {
       console.info(`🔦 Checking for existing {{ type }}s in ${fullWritePath}`);
-      const resolvedPath = path.resolve(fullWritePath);
+      resolvedPath = path.resolve(fullWritePath);
+
 
       const files = fs.readdirSync(resolvedPath)
         .map(fileName => {
@@ -141,8 +145,9 @@ _new title type folder:
 
       console.info(`🔍 Found ${(files.length + "").padStart(4, '0')} {{ type }}(s)`);
 
-      const nextNumber = files.length + 1;
-      const nextNumberString = (nextNumber + "").padStart(4, '0');
+      nextNumber = files.length + 1;
+      nextNumberString = (nextNumber + "").padStart(4, '0');
+
 
       console.info(`🖊️ Setting your new {{ type }} to #${nextNumberString}`);
     }
