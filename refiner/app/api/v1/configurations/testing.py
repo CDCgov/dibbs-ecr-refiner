@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
     validate_path_or_raise,
@@ -29,9 +30,6 @@ from app.services.file_io import (
     ZipFilePackage,
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
-)
-from app.services.format import (
-    format_xml_document_for_display_or_raise,
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path

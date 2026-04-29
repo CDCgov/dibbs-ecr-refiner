@@ -1,24 +1,10 @@
 import re
 from typing import cast
 
-from fastapi import HTTPException
 from lxml import etree
 from lxml.etree import _Element
 
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
-
-
-def format_xml_document_for_display_or_raise(
-    text: str,
-    preserve_comments: bool = False,
-) -> str:
-    """
-    Wrapper to handle raising a 422 in the API route if formatting fails.
-    """
-    try:
-        return format_xml_document_for_display(text, preserve_comments)
-    except (ValueError, etree.XMLSyntaxError) as e:
-        raise HTTPException(status_code=422, detail=f"Invalid XML: {e}")
 
 
 def format_xml_document_for_display(
