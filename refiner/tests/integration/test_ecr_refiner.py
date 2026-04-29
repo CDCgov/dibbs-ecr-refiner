@@ -39,6 +39,9 @@ async def test_zip_upload_covid_influenza_v1_1(
     covid_influenza_v1_1_zip_path,
     validate_xml_string,
     validate_xml_string_xsd,
+    get_condition_id,
+    create_config,
+    activate_config,
 ):
     """
     Integration test for /api/v1/demo/upload using Mon Mothma COVID+Influenza v1.1.
@@ -46,14 +49,21 @@ async def test_zip_upload_covid_influenza_v1_1(
 
     test_name = "test_zip_upload_covid_influenza_v1_1"
 
+    covid_id = await get_condition_id("COVID-19")
+    covid_config = await create_config(covid_id)
+    await activate_config(covid_config["id"])
+
+    flu_id = await get_condition_id("Influenza")
+    flu_config = await create_config(flu_id)
+    await activate_config(flu_config["id"])
+
     with open(covid_influenza_v1_1_zip_path, "rb") as f:
         files = {
             "uploaded_file": (covid_influenza_v1_1_zip_path.name, f, "application/zip")
         }
         response = await authed_client.post(
-            "http://0.0.0.0:8080/api/v1/demo/upload",
+            "/api/v1/demo/upload",
             files=files,
-            timeout=30.0,
         )
 
     assert response.status_code == 200
@@ -99,6 +109,9 @@ async def test_zip_upload_zika_v3_1_1(
     zika_v3_1_1_zip_path,
     validate_xml_string,
     validate_xml_string_xsd,
+    get_condition_id,
+    create_config,
+    activate_config,
 ):
     """
     Integration test for /api/v1/demo/upload using Mon Mothma Zika v3.1.1.
@@ -106,12 +119,15 @@ async def test_zip_upload_zika_v3_1_1(
 
     test_name = "test_zip_upload_zika_v3_1_1"
 
+    zika_id = await get_condition_id("Zika Virus Disease")
+    zika_config = await create_config(zika_id)
+    await activate_config(zika_config["id"])
+
     with open(zika_v3_1_1_zip_path, "rb") as f:
         files = {"uploaded_file": (zika_v3_1_1_zip_path.name, f, "application/zip")}
         response = await authed_client.post(
-            "http://0.0.0.0:8080/api/v1/demo/upload",
+            "/api/v1/demo/upload",
             files=files,
-            timeout=30.0,
         )
 
     assert response.status_code == 200

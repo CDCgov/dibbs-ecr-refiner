@@ -114,7 +114,6 @@ export function ConfigBuild() {
           custom_codes={configuration.data.custom_codes}
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
-          deduplicated_codes={configuration.data.deduplicated_codes}
           disabled={isDisabled}
         />
       </SectionContainer>
@@ -146,7 +145,6 @@ type BuilderProps = Pick<
   | 'included_conditions'
   | 'section_processing'
   | 'display_name'
-  | 'deduplicated_codes'
 > & { disabled: boolean };
 
 function Builder({
@@ -156,7 +154,6 @@ function Builder({
   included_conditions,
   section_processing,
   display_name: default_condition_name,
-  deduplicated_codes,
   disabled,
 }: BuilderProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -362,7 +359,6 @@ function Builder({
                 setIsOpen={setIsModalOpen}
                 configurationId={id}
                 customCodes={custom_codes}
-                deduplicated_codes={deduplicated_codes}
                 disabled={disabled}
               />
             </div>

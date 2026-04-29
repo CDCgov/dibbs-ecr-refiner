@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+import pytest
+
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
@@ -7,9 +9,8 @@ from app.db.configurations.model import (
 )
 from app.services.terminology import (
     CodeSystem,
-    ConfigurationPayload,
-    ProcessedConfiguration,
 )
+from tests.unit.helpers.configuration import create_processed_config
 
 
 def make_db_condition_coding(code, display):
@@ -54,50 +55,37 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
     return DbConfiguration(**defaults)
 
 
-def test_processed_configuration_from_payload_and_xpath():
-    cond1: DbCondition = make_condition(
-        snomed_codes=[make_db_condition_coding("A", "SNOMED")]
-    )
-    config: DbConfiguration = make_dbconfiguration(
-        custom_codes=[
-            DbConfigurationCustomCode(
-                code="B", system=CodeSystem.LOINC, name="Custom LOINC"
-            )
-        ]
-    )
-    payload = ConfigurationPayload(conditions=[cond1], configuration=config)
-    processed = ProcessedConfiguration.from_payload(payload)
-    assert processed.codes == {"A", "B"}
+@pytest.mark.asyncio
+class TestTerminologyService:
+    async def test_processed_configuration_from_payload_and_xpath(self):
+        cond1: DbCondition = make_condition(
+            snomed_codes=[make_db_condition_coding("A", "SNOMED")]
+        )
+        config: DbConfiguration = make_dbconfiguration(
+            custom_codes=[
+                DbConfigurationCustomCode(
+                    code="B", system=CodeSystem.LOINC, name="Custom LOINC"
+                )
+            ]
+        )
+        processed = await create_processed_config(config=config, conditions=[cond1])
+        assert processed.codes == {"A", "B"}
 
-
-def test_processed_configuration_empty_codes():
-    cond: DbCondition = make_condition()
-    config: DbConfiguration = make_dbconfiguration()
-    payload = ConfigurationPayload(conditions=[cond], configuration=config)
-    processed = ProcessedConfiguration.from_payload(payload)
-    assert processed.codes == set()
-
-
-def test_processed_configuration_duplicate_codes():
-    cond1: DbCondition = make_condition(
-        snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
-    )
-    cond2: DbCondition = make_condition(
-        loinc_codes=[make_db_condition_coding("DUP", "LOINC")]
-    )
-    config: DbConfiguration = make_dbconfiguration(
-        custom_codes=[
-            DbConfigurationCustomCode(
-                code="DUP", system=CodeSystem.LOINC, name="Custom"
-            )
-        ]
-    )
-    payload = ConfigurationPayload(conditions=[cond1, cond2], configuration=config)
-    processed = ProcessedConfiguration.from_payload(payload)
-    assert processed.codes == {"DUP"}
-
-
-def test_payload_class_existence():
-    # sanity checks for class existence
-    assert ConfigurationPayload
-    assert ProcessedConfiguration
+    async def test_processed_configuration_duplicate_codes(self):
+        cond1: DbCondition = make_condition(
+            snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
+        )
+        cond2: DbCondition = make_condition(
+            loinc_codes=[make_db_condition_coding("DUP", "LOINC")]
+        )
+        config: DbConfiguration = make_dbconfiguration(
+            custom_codes=[
+                DbConfigurationCustomCode(
+                    code="DUP", system=CodeSystem.LOINC, name="Custom"
+                )
+            ]
+        )
+        processed = await create_processed_config(
+            config=config, conditions=[cond1, cond2]
+        )
+        assert processed.codes == {"DUP"}

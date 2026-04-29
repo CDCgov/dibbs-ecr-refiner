@@ -14,7 +14,5 @@ export const db = new Pool({
 });
 
 export async function deleteAllConfigurations(): Promise<void> {
-  await db.query('DELETE FROM configurations_locks');
-  await db.query('DELETE FROM events');
   await db.query('DELETE FROM configurations');
 }

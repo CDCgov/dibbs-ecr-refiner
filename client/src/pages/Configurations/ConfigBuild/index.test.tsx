@@ -17,6 +17,7 @@ import {
   useDeleteCustomCodeFromConfiguration,
   useGetConfiguration,
   useUploadCustomCodesCsv,
+  useValidateCustomCodeFromConfiguration,
 } from '../../../api/configurations/configurations';
 
 // Mock all API requests.
@@ -76,7 +77,6 @@ const baseMockConfig: GetConfigurationResponse = {
     },
   ],
   included_conditions: [],
-  deduplicated_codes: ['123456'],
   all_versions: mockVersions,
   version: 2,
   active_version: null,
@@ -99,6 +99,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
     useDeleteCustomCodeFromConfiguration: vi.fn(),
     useEditCustomCodeFromConfiguration: vi.fn(),
     useUploadCustomCodesCsv: vi.fn(),
+    useValidateCustomCodeFromConfiguration: vi.fn(),
     useGetConfiguration: vi.fn(() => ({
       data: {
         data: baseMockConfig,
@@ -138,6 +139,7 @@ vi.mock('../../../api/conditions/conditions', async () => {
 
 describe('Config builder page', () => {
   it('shows lock banner and disables edit controls when locked by another user', async () => {
+    const user = userEvent.setup();
     (useGetConfiguration as unknown as Mock).mockReturnValue({
       data: {
         data: {
@@ -185,7 +187,7 @@ describe('Config builder page', () => {
     const customCodesTab = await screen.findByRole('button', {
       name: /custom codes/i,
     });
-    await userEvent.click(customCodesTab);
+    await user.click(customCodesTab);
     // Assert the "Custom codes" heading is present
     expect(
       await screen.findByRole('heading', { name: /custom codes/i })
@@ -217,15 +219,14 @@ describe('Config builder page', () => {
     expect(
       await screen.findByText('Test', { selector: 'a' })
     ).toBeInTheDocument();
-    // TODO: Uncomment this when we want to show the Activate screen again
-    // expect(
-    //   await screen.findByText('Activate', { selector: 'a' })
-    // ).toBeInTheDocument();
+    expect(
+      await screen.findByText('Activate', { selector: 'a' })
+    ).toBeInTheDocument();
   });
 
   it('should render a version menu with previous versions', async () => {
-    const expectedMenuText = 'Editing: Version 2';
     const user = userEvent.setup();
+    const expectedMenuText = 'Editing: Version 2';
     renderPage();
     expect(await screen.findByText(expectedMenuText)).toBeInTheDocument();
     await user.click(await screen.findByText(expectedMenuText));
@@ -255,6 +256,7 @@ describe('Config builder page', () => {
   });
 
   it('should render banner to make a new draft configuration', async () => {
+    const user = userEvent.setup();
     (useGetConfiguration as unknown as Mock).mockReturnValue({
       data: {
         data: {
@@ -273,12 +275,12 @@ describe('Config builder page', () => {
     ).toBeInTheDocument();
 
     // editing should be disabled
-    await userEvent.click(screen.getByText('Custom codes'));
+    await user.click(screen.getByText('Custom codes'));
     expect(
       await screen.findByRole('button', { name: 'Add new custom code' })
     ).toBeDisabled();
 
-    await userEvent.click(screen.getByText('Sections'));
+    await user.click(screen.getByText('Sections'));
     expect(screen.getByRole('checkbox')).toHaveAttribute('data-disabled'); // headless UI's checkbox uses this attribute to say its disabled
     expect(
       await screen.findByRole('button', { name: 'Draft a new version' })
@@ -419,8 +421,13 @@ describe('Config builder page', () => {
   });
 
   it('should throw an error when adding an existing custom code', async () => {
-    const user = userEvent.setup();
-    renderPage();
+    (useValidateCustomCodeFromConfiguration as unknown as Mock).mockReturnValue(
+      {
+        mutate: vi.fn().mockImplementation((_vars, { onSuccess }) => {
+          onSuccess({ data: { valid: false } });
+        }),
+      }
+    );
 
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
@@ -436,6 +443,9 @@ describe('Config builder page', () => {
       mutate: vi.fn().mockReturnValue({ data: {} }),
       reset: vi.fn(),
     });
+
+    const user = userEvent.setup();
+    renderPage();
 
     await user.click(screen.getByText('Custom codes', { selector: 'span' }));
     expect(
@@ -456,7 +466,7 @@ describe('Config builder page', () => {
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
     await user.type(screen.getByLabelText('Code #'), '123456');
-    await userEvent.tab(); // triggers onBlur
+    await user.tab(); // triggers onBlur
 
     expect(
       await screen.findByText('The code "123456" already exists.', {
@@ -469,8 +479,13 @@ describe('Config builder page', () => {
   });
 
   it('should add a custom code', async () => {
-    const user = userEvent.setup();
-    renderPage();
+    (useValidateCustomCodeFromConfiguration as unknown as Mock).mockReturnValue(
+      {
+        mutate: vi.fn().mockImplementation((_vars, { onSuccess }) => {
+          onSuccess({ data: { valid: true } });
+        }),
+      }
+    );
 
     (useAddCustomCodeToConfiguration as unknown as Mock).mockReturnValue({
       mutate: vi.fn().mockReturnValue({ data: {} }),
@@ -486,6 +501,8 @@ describe('Config builder page', () => {
       mutate: vi.fn().mockReturnValue({ data: {} }),
       reset: vi.fn(),
     });
+    const user = userEvent.setup();
+    renderPage();
 
     await user.click(screen.getByText('Custom codes', { selector: 'span' }));
     expect(
@@ -505,6 +522,7 @@ describe('Config builder page', () => {
     expect(
       screen.getByText('Add custom code', { selector: 'button' })
     ).toBeDisabled();
+
     await user.type(screen.getByLabelText('Code #'), '12345');
     await user.selectOptions(screen.getByLabelText('Code system'), 'SNOMED');
     await user.type(screen.getByLabelText('Code name'), 'Test code name');

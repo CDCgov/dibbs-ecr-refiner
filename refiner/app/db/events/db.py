@@ -6,6 +6,8 @@ from uuid import UUID
 from psycopg import AsyncCursor
 from psycopg.rows import class_row, dict_row
 
+from app.db.configurations.model import DbConfiguration, DbConfigurationCustomCode
+
 from ..pool import AsyncDatabaseConnection
 from .model import EventInput
 
@@ -23,6 +25,20 @@ class AuditEvent:
     condition_id: UUID
     action_text: str
     created_at: datetime
+    has_custom_code_upload_events: bool
+
+
+@dataclass
+class CustomCodeUploadEvent:
+    """
+    Custom code upload event.
+    """
+
+    id: UUID
+    event_id: UUID
+    system: str
+    code: str
+    name: str
 
 
 async def get_event_count_by_condition_db(
@@ -51,6 +67,27 @@ async def get_event_count_by_condition_db(
             return int(row["total_count"])
 
 
+async def is_event_valid(
+    id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> bool:
+    """
+    Check that the event exists within a jurisdiction.
+    """
+
+    query = """
+    SELECT 1
+    FROM events
+    WHERE id = %s
+    AND jurisdiction_id = %s
+    """
+    params = (id, jurisdiction_id)
+    async with db.get_connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            return row is not None
+
+
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     page: int,
@@ -71,7 +108,10 @@ async def get_events_by_jd_db(
         c.version as configuration_version,
         c.id AS condition_id,
         e.action_text,
-        e.created_at
+        e.created_at,
+        EXISTS (
+            SELECT 1 FROM events_custom_code_uploads ecu WHERE ecu.event_id = e.id
+        ) AS has_custom_code_upload_events
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN configurations c ON e.configuration_id = c.id
@@ -89,10 +129,69 @@ async def get_events_by_jd_db(
             return events_rows
 
 
+async def get_custom_code_upload_events_by_event_id(
+    event_id: UUID, db: AsyncDatabaseConnection
+) -> list[CustomCodeUploadEvent]:
+    """
+    Returns all custom code upload events for an event ID.
+    """
+    query = """
+    SELECT
+        id,
+        event_id,
+        system,
+        code,
+        name
+    FROM events_custom_code_uploads
+    WHERE event_id = %s
+    """
+    params = (event_id,)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(CustomCodeUploadEvent)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+            return rows
+
+
+async def insert_custom_code_upload_events_db(
+    configuration: DbConfiguration,
+    user_id: UUID,
+    custom_codes: list[DbConfigurationCustomCode],
+    cursor: AsyncCursor[Any],
+) -> None:
+    """
+    Helper function to insert a bulk custom code upload event and its subevents.
+    """
+
+    # No events to insert
+    if len(custom_codes) < 1:
+        return
+
+    # Bulk upload event info
+    event = EventInput(
+        jurisdiction_id=configuration.jurisdiction_id,
+        user_id=user_id,
+        configuration_id=configuration.id,
+        event_type="bulk_add_custom_code",
+        action_text=f"Added {len(custom_codes)} custom codes from CSV",
+    )
+
+    event_id = await insert_event_db(event=event, cursor=cursor)
+
+    await cursor.executemany(
+        """
+        INSERT INTO events_custom_code_uploads (event_id, system, code, name)
+        VALUES (%s, %s, %s, %s)
+        """,
+        [(event_id, cc.system.value, cc.code, cc.name) for cc in custom_codes],
+    )
+
+
 async def insert_event_db(
     event: EventInput,
     cursor: AsyncCursor[Any],
-) -> None:
+) -> UUID:
     """
     Inserts an event into the `events` table.
     """
@@ -111,6 +210,7 @@ async def insert_event_db(
             %s,
             %s
         )
+        RETURNING id;
     """
     params = (
         event.user_id,
@@ -121,3 +221,7 @@ async def insert_event_db(
     )
 
     await cursor.execute(query, params)
+    row = await cursor.fetchone()
+    if row is None:
+        raise Exception(f"Unable to insert event with type: {event.event_type}")
+    return row["id"]

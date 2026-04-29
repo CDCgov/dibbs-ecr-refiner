@@ -2,6 +2,7 @@ from logging import Logger
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
+from lxml import etree
 
 from app.core.exceptions import (
     FileProcessingError,
@@ -10,11 +11,28 @@ from app.core.exceptions import (
 )
 from app.core.models.types import XMLFiles
 from app.services import file_io
+from app.services.format import format_xml_document_for_display
 from app.services.sample_file import create_sample_zip_file
 
 # File uploads
 MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
+
+
+def format_xml_document_for_display_or_raise(
+    text: str,
+    preserve_comments: bool = False,
+) -> str:
+    """
+    Formats XML for display purposes. Raises a 422 if the input is not valid XML.
+    """
+    try:
+        return format_xml_document_for_display(text, preserve_comments)
+    except etree.XMLSyntaxError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid XML: {e.msg} (line {e.lineno}, column {e.offset})",
+        )
 
 
 async def get_validated_xml_files(file: UploadFile, logger: Logger) -> XMLFiles:

@@ -23,7 +23,6 @@ import { CustomCodeModal } from './CustomCodeModal';
 interface CustomCodesDetailProps {
   configurationId: string;
   customCodes: DbConfigurationCustomCode[];
-  deduplicated_codes: string[];
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -32,7 +31,6 @@ interface CustomCodesDetailProps {
 export function CustomCodesDetail({
   configurationId,
   customCodes,
-  deduplicated_codes,
   disabled,
   isOpen,
   setIsOpen,
@@ -92,7 +90,8 @@ export function CustomCodesDetail({
                         if (disabled) return;
                         deleteCode(
                           {
-                            code: customCode.code,
+                            // encode to prevent special characters from breaking the action
+                            code: encodeURIComponent(customCode.code),
                             system: customCode.system,
                             configurationId: configurationId,
                           },
@@ -128,7 +127,6 @@ export function CustomCodesDetail({
         setIsOpen={setIsOpen}
         configurationId={configurationId}
         selectedCustomCode={selectedCustomCode}
-        deduplicated_codes={deduplicated_codes}
         onClose={resetModal}
       />
     </div>

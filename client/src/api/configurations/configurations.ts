@@ -51,7 +51,9 @@ import type {
   UpdateCustomCodeInput,
   UploadCustomCodesCsvInput,
   UploadCustomCodesPreviewResponse,
-  UploadCustomCodesResponse
+  UploadCustomCodesResponse,
+  ValidateCustomCodeInput,
+  ValidateCustomCodeResponse
 } from '../schemas';
 
 
@@ -818,6 +820,80 @@ export const useDeleteCustomCodeFromConfiguration = <TError = AxiosError<HTTPVal
         TContext
       > => {
       return useMutation(getDeleteCustomCodeFromConfigurationMutationOptions(options), queryClient);
+    }
+    /**
+ * Determines whether a custom code update is valid or not.
+
+If the desired code is already associated with the configuration, then the update is
+invalid.
+
+Args:
+    configuration_id (UUID): The configuration ID
+    body (ValidateCustomCodeInput): Body including the code to validate
+    user (DbUser, optional): The logged in user
+    db (AsyncDatabaseConnection, optional): The database connection
+
+Returns:
+    bool: Returns True if the code name has not been used, otherwise returns False
+ * @summary Validate Custom Code
+ */
+export const validateCustomCodeFromConfiguration = (
+    configurationId: string,
+    validateCustomCodeInput: ValidateCustomCodeInput, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<ValidateCustomCodeResponse>> => {
+    
+    
+    return axios.default.post(
+      `/api/v1/configurations/${configurationId}/custom-codes/validate`,
+      validateCustomCodeInput,options
+    );
+  }
+
+
+
+export const getValidateCustomCodeFromConfigurationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateCustomCodeFromConfiguration>>, TError,{configurationId: string;data: ValidateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof validateCustomCodeFromConfiguration>>, TError,{configurationId: string;data: ValidateCustomCodeInput}, TContext> => {
+
+const mutationKey = ['validateCustomCodeFromConfiguration'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validateCustomCodeFromConfiguration>>, {configurationId: string;data: ValidateCustomCodeInput}> = (props) => {
+          const {configurationId,data} = props ?? {};
+
+          return  validateCustomCodeFromConfiguration(configurationId,data,axiosOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidateCustomCodeFromConfigurationMutationResult = NonNullable<Awaited<ReturnType<typeof validateCustomCodeFromConfiguration>>>
+    export type ValidateCustomCodeFromConfigurationMutationBody = ValidateCustomCodeInput
+    export type ValidateCustomCodeFromConfigurationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Validate Custom Code
+ */
+export const useValidateCustomCodeFromConfiguration = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateCustomCodeFromConfiguration>>, TError,{configurationId: string;data: ValidateCustomCodeInput}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof validateCustomCodeFromConfiguration>>,
+        TError,
+        {configurationId: string;data: ValidateCustomCodeInput},
+        TContext
+      > => {
+      return useMutation(getValidateCustomCodeFromConfigurationMutationOptions(options), queryClient);
     }
     /**
  * Create a CSV export of a configuration and all associated codes.

@@ -41,7 +41,7 @@ services:
   db:
     volumes:
       - ./.justscripts/sql/drop-all.sql:/drop-all.sql
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
 
   migrate:
     image: ghcr.io/amacneil/dbmate:main
