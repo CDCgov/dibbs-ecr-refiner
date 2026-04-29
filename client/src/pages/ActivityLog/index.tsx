@@ -1,9 +1,14 @@
-import { Label, Pagination, Select } from '@trussworks/react-uswds';
+import {
+  Label,
+  Pagination as USWDSPagination,
+  Select,
+} from '@trussworks/react-uswds';
 import { Spinner } from '@components/Spinner';
 import { Title } from '@components/Title';
 import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
 import { useGetEvents } from '../../api/events/events';
+import { Pagination } from '@components/Pagination';
 
 export function ActivityLog() {
   const ALL_CONDITIONS_LITERAL = 'All conditions';
@@ -63,6 +68,17 @@ export function ActivityLog() {
           filteredLogEntries={eventResponse.data.audit_events}
         />
         <Pagination
+          pathname="/events"
+          currentPage={selectedPage}
+          maxSlots={6}
+          onClickNext={() => setSelectedPage((p) => p + 1)}
+          onClickPrevious={() => setSelectedPage((p) => p - 1)}
+          onClickPageNumber={(_, pageNumber) => {
+            setSelectedPage(pageNumber);
+          }}
+          totalPages={total_pages}
+        />
+        <USWDSPagination
           pathname="/events"
           currentPage={selectedPage}
           maxSlots={6}
