@@ -4,6 +4,8 @@
  */
 import React, { type JSX } from 'react';
 import classNames from 'classnames';
+import { Button } from '@components/Button';
+import { Link } from 'react-router';
 
 export type PaginationProps = {
   pathname: string;
@@ -102,25 +104,25 @@ export function Pagination({
         {prevPage && (
           <li>
             {onClickPrevious ? (
-              <button
+              <Button
+                variant="unstyled"
                 type="button"
                 className={prevNextBase}
                 aria-label="Previous page"
-                data-testid="pagination-previous"
                 onClick={onClickPrevious}
               >
                 <ChevronLeft />
                 Previous
-              </button>
+              </Button>
             ) : (
-              <a
-                href={`${pathname}?page=${prevPage}`}
+              <Link
+                to={`${pathname}?page=${prevPage}`}
                 className={prevNextBase}
                 aria-label="Previous page"
               >
                 <ChevronLeft />
                 Previous
-              </a>
+              </Link>
             )}
           </li>
         )}
@@ -142,25 +144,25 @@ export function Pagination({
         {nextPage && (
           <li>
             {onClickNext ? (
-              <button
+              <Button
+                variant="unstyled"
                 type="button"
                 className={prevNextBase}
                 aria-label="Next page"
-                data-testid="pagination-next"
                 onClick={onClickNext}
               >
                 Next
                 <ChevronRight />
-              </button>
+              </Button>
             ) : (
-              <a
-                href={`${pathname}?page=${nextPage}`}
+              <Link
+                to={`${pathname}?page=${nextPage}`}
                 className={prevNextBase}
                 aria-label="Next page"
               >
                 Next
                 <ChevronRight />
-              </a>
+              </Link>
             )}
           </li>
         )}
