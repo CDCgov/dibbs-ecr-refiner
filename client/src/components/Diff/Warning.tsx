@@ -8,10 +8,12 @@ type WarningProps = {
 export function Warning({ heading, message }: WarningProps) {
   return (
     <div className="text-state-error-dark bg-state-error-lighter flex w-100 items-start p-4">
-      <Icon.Warning aria-hidden className="-mt-0.5 h-5! w-7!" />
-      <div className="ml-4">
-        <div className="mb-2 font-bold"> {heading}</div>
-        <p>{message}</p>
+      <div className="flex gap-4">
+        <Icon.Warning className="h-5! w-7!" aria-hidden />
+        <div className="flex flex-col gap-2">
+          <p className="font-bold">{heading}</p>
+          <p>{message}</p>
+        </div>
       </div>
     </div>
   );
