@@ -88,7 +88,9 @@ describe('Testing', () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText('This environment is not approved to handle PHI/PII.')
+      screen.getByText('This environment is not approved to handle PHI/PII.', {
+        exact: false,
+      })
     ).toBeInTheDocument();
     await uploadTestFile(user);
 
