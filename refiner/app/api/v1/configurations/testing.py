@@ -33,7 +33,7 @@ from app.services.file_io import (
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
-from app.services.testing import RENDER_THRESHOLD_IN_BYTES, inline_testing
+from app.services.testing import FileUploadLimits, inline_testing
 from app.services.xslt import create_refined_eicr_html_file
 
 from .model import ConfigurationTestResponse
@@ -239,7 +239,9 @@ async def run_configuration_test(
         refined_document.refined_eicr
     )
 
-    render_diff = len(formatted_refined_eicr.encode()) < RENDER_THRESHOLD_IN_BYTES
+    render_diff = (
+        len(formatted_refined_eicr.encode()) < FileUploadLimits.THRESHOLD_IN_BYTES
+    )
     original_eicr = formatted_unrefined_eicr if render_diff else ""
 
     return ConfigurationTestResponse(

@@ -132,9 +132,6 @@ async def _build_refined_conditions(
     return (conditions, packaged_files)
 
 
-DIFF_RENDER_THRESHOLD = 10**6 * 2  # 2MB
-
-
 @router.post(
     "/upload",
     response_model=IndependentTestUploadResponse,

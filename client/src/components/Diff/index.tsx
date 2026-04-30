@@ -7,8 +7,6 @@ import { DiffToggleOptions } from './DiffToggleOptions';
 import { Icon } from '@trussworks/react-uswds';
 import { Warning } from './Warning';
 
-export const UPLOAD_FILE_THRESHOLD_MB = 5;
-
 type DiffProps = Pick<
   IndependentTestUploadResponse,
   'refined_download_key' | 'unrefined_eicr'
@@ -136,7 +134,7 @@ export function Diff({
         />
       ) : (
         <Warning
-          heading={`Maximum file size is ${UPLOAD_FILE_THRESHOLD_MB} MB`}
+          heading={`Maximum file size is ${FileUploadLimits.THRESHOLD_IN_BYTES} MB`}
           message="This file is too large to view in-browser. Please download the results to compare them."
         />
       )}
