@@ -22,12 +22,12 @@ const BG_BY_STATUS: Record<string, string> = {
   complete: 'bg-green-300',
 };
 
-export const StatusBadge = ({
+export function StatusBadge({
   text,
   status,
   coverage,
   className = '',
-}: StatusBadgeProps) => {
+}: StatusBadgeProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -64,8 +64,8 @@ export const StatusBadge = ({
               <p>{coverage.coverage_level_reason}</p>
             </div>
 
-            <ModalFooter className="flex flex-row">
-              <p className="max-w-[70%] italic">
+            <ModalFooter>
+              <p className="italic">
                 Use custom codes to add codes you want to retain that are not
                 included in the code set.
               </p>
@@ -81,4 +81,4 @@ export const StatusBadge = ({
       )}
     </div>
   );
-};
+}
