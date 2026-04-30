@@ -1,8 +1,8 @@
+import uuid
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final
-from uuid import uuid4
 
 from lxml import etree
 from lxml.etree import _Element
@@ -17,16 +17,144 @@ from .model import HL7_NAMESPACE, HL7_NS
 ECR_DATA_AUG_CODE_SYSTEM: Final[str] = "2.16.840.1.113883.10.20.15.2.7.1"
 ECR_DATA_AUG_CODE_SYSTEM_NAME: Final[str] = "eCRDataAugmentation"
 
-# template identifiers
-AUG_HEADER_TEMPLATE_ROOT: Final[str] = "2.16.840.1.113883.10.20.15.2.1.3"
-AUG_HEADER_TEMPLATE_EXT: Final[str] = "2025-11-01"
+# template identifiers — eICR Data Augmentation Header
+EICR_AUG_HEADER_TEMPLATE_ROOT: Final[str] = "2.16.840.1.113883.10.20.15.2.1.3"
+EICR_AUG_HEADER_TEMPLATE_EXT: Final[str] = "2025-11-01"
 
-# refiner tool identity -> from data augmentation tool value set
-REFINER_TOOL_CODE: Final[str] = "ecr-refinement"
+# template identifiers — RR Data Augmentation Header (added in v4 — see
+# Vol 1 §2 and Vol 2 §1.2)
+RR_AUG_HEADER_TEMPLATE_ROOT: Final[str] = "2.16.840.1.113883.10.20.15.2.1.4"
+RR_AUG_HEADER_TEMPLATE_EXT: Final[str] = "2026-04-01"
+
+# refiner tool identity -> from data augmentation tool value set (Vol 2 Table 2)
+# we need them to change it from "ecr-refinement" -> "ecr-refiner"
+REFINER_TOOL_CODE: Final[str] = "ecr-refiner"
 REFINER_TOOL_DISPLAY: Final[str] = "eCR Refiner"
 
-# document source label -> from data augmentation document source value set
+# document source label -> from data augmentation document source value set (Vol 2 Table 3)
 ORIGINAL_DOCUMENT_SOURCE: Final[str] = "original-document"
+
+
+# NOTE:
+# DETERMINISTIC SEEDING FOR AUGMENTED DOCUMENT IDENTIFIERS
+# =============================================================================
+#
+# deterministic UUIDv5-based augmented identifiers; seed string shape:
+#
+#     {jurisdiction_id}|{condition_grouper_name}|{prefix:}{source}
+#
+# the namespace UUID, the seed prefix labels, the field separator,
+# and the field ordering are all part of the wire-protocol contract
+# and cannot be changed without breaking idempotency for every
+# augmented document previously produced
+#
+# see DIBBs-eCR-Refiner-Augmentation-Guide.md for: the full
+# rationale, worked examples covering multi-jurisdiction and
+# multi-condition cases, the wire-protocol contract details,
+# and open IG questions tracked against this design
+
+REFINER_DETERMINISTIC_NS: Final[uuid.UUID] = uuid.UUID(
+    "cdcd1bb5-ecdc-4cdc-8cdc-d1bb5ecdc0dc"
+)
+
+_SEED_PREFIX_EICR_SETID: Final[str] = "eicr-setid"
+_SEED_PREFIX_RR_SETID: Final[str] = "rr-setid"
+_SEED_FIELD_SEPARATOR: Final[str] = "|"
+
+
+def _derive_augmented_eicr_id(
+    original_eicr_id_root: str,
+    jurisdiction_id: str,
+    condition_grouper_name: str,
+) -> str:
+    """
+    Deterministic id for the augmented eICR.
+
+    Same input pair + same (jurisdiction, condition) scope yields
+    the same output (idempotent). See AUGMENT.md for the seed
+    derivation rationale and worked examples.
+    """
+
+    return str(
+        uuid.uuid5(
+            REFINER_DETERMINISTIC_NS,
+            f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{original_eicr_id_root}",
+        )
+    )
+
+
+def _derive_augmented_rr_id(
+    original_rr_id_root: str,
+    jurisdiction_id: str,
+    condition_grouper_name: str,
+) -> str:
+    """
+    Deterministic id for the augmented RR.
+
+    Same input pair + same (jurisdiction, condition) scope yields
+    the same output (idempotent). See AUGMENT.md for the seed
+    derivation rationale.
+    """
+
+    return str(
+        uuid.uuid5(
+            REFINER_DETERMINISTIC_NS,
+            f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{original_rr_id_root}",
+        )
+    )
+
+
+def _derive_augmented_eicr_setid(
+    original_eicr_setid_root: str,
+    jurisdiction_id: str,
+    condition_grouper_name: str,
+) -> str:
+    """
+    Deterministic setId for the augmented eICR.
+
+    PHAs grouping by setId see one augmented setId per (jurisdiction,
+    EHR conceptual document, condition) tuple, with versionNumber
+    distinguishing iterations within the case. See AUGMENT.md for
+    the seed derivation rationale.
+    """
+
+    return str(
+        uuid.uuid5(
+            REFINER_DETERMINISTIC_NS,
+            f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{_SEED_PREFIX_EICR_SETID}:{original_eicr_setid_root}",
+        )
+    )
+
+
+def _derive_augmented_rr_setid(
+    original_eicr_setid_root: str,
+    jurisdiction_id: str,
+    condition_grouper_name: str,
+) -> str:
+    """
+    Deterministic setId for the augmented RR.
+
+    Note: seeds from the original *eICR's* setId, not the RR's. This
+    gives PHAs pair recoverability — the augmented RR's setId is
+    derivable from eICR-side identity alone (plus the scope
+    discriminators). See AUGMENT.md §"Why both setIds seed from the
+    eICR's setId" for rationale.
+    """
+
+    return str(
+        uuid.uuid5(
+            REFINER_DETERMINISTIC_NS,
+            f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{_SEED_PREFIX_RR_SETID}:{original_eicr_setid_root}",
+        )
+    )
 
 
 # NOTE:
@@ -37,52 +165,79 @@ ORIGINAL_DOCUMENT_SOURCE: Final[str] = "original-document"
 @dataclass(frozen=True)
 class AugmentationContext:
     """
-    Pre-computed values needed to stamp a refined document.
+    Pre-computed values needed to stamp an augmented eICR/RR pair.
 
-    Created once per document by the pipeline before augmentation begins.
-    Keeps the XML-manipulation functions pure — no UUID generation or
-    clock reads happen inside them.
+    Created once per pair by the pipeline. Both augment_eicr and
+    augment_rr read from this single context, which guarantees the
+    augmented documents share effectiveTime and inherit versionNumber
+    from the source eICR.
 
-    Attributes:
-        new_doc_id: UUID for the augmented document's <id>.
-        new_set_id: UUID for the augmented document's <setId>.
-        augmentation_time: HL7 V3 formatted timestamp with timezone
-            offset (e.g., "20250108124500-0500"). Conforms to
-            DTM.US.FIELDED (urn:oid:2.16.840.1.113883.10.20.22.5.4).
-        tool_code: Code from the Data Augmentation Tool value set
-            (Table 2). Defaults to "ecr-refinement".
-        tool_display: Human-readable display name for the tool.
-            Defaults to "eCR Refiner".
+    The four augmented_* identifiers are deterministic UUIDv5
+    derivations from the input pair, jurisdiction, and condition.
+    augmentation_time conforms to DTM.US.FIELDED
+    (urn:oid:2.16.840.1.113883.10.20.22.5.4) and is stamped on both
+    documents' <effectiveTime> and on the augmentation author's
+    <time>. tool_code and tool_display come from the Data Augmentation
+    Tool value set (Vol 2 Table 2).
+
+    See AUGMENT.md for the seed-derivation rationale, the operational
+    invariants this design rests on, and worked examples covering
+    multi-jurisdiction and multi-condition cases.
     """
 
-    new_doc_id: str
-    new_set_id: str
+    augmented_eicr_id: str
+    augmented_eicr_setid: str
+    augmented_rr_id: str
+    augmented_rr_setid: str
     augmentation_time: str
+    version_number: str
     tool_code: str = REFINER_TOOL_CODE
     tool_display: str = REFINER_TOOL_DISPLAY
 
 
 def create_augmentation_context(
+    original_eicr_id_root: str,
+    original_eicr_setid_root: str,
+    original_eicr_version: str,
+    original_rr_id_root: str,
+    jurisdiction_id: str,
+    condition_grouper_name: str,
+    augmentation_time: str | None = None,
     tool_code: str = REFINER_TOOL_CODE,
     tool_display: str = REFINER_TOOL_DISPLAY,
-    augmentation_time: str | None = None,
 ) -> AugmentationContext:
     """
-    Factory that generates UUIDs and captures a timestamp.
+    Build an AugmentationContext from raw input identifiers.
 
-    The timestamp includes a UTC offset per DTM.US.FIELDED requirements
-    (eICR IG Vol. 2 STU3.1.1, author/time conformance).
+    Most callers should use create_augmentation_context_for_pair,
+    which reads the four input identifiers off the parsed XML for you.
+    This explicit factory is useful for tests and for callers that
+    have the identifiers already extracted.
+
+    See AUGMENT.md for the seed derivation rationale and for why
+    jurisdiction_id and condition_grouper_name are required scope
+    discriminators.
 
     Args:
+        original_eicr_id_root: The eICR's id/@root attribute value.
+        original_eicr_setid_root: The eICR's setId/@root attribute
+            value.
+        original_eicr_version: The eICR's versionNumber/@value
+            attribute value.
+        original_rr_id_root: The RR's id/@root attribute value.
+        jurisdiction_id: The jurisdiction code (e.g., "sddh", "lac")
+            this refinement is scoped to. Comes from the RR's
+            reportability metadata via the trace.
+        condition_grouper_name: The name of the condition grouper
+            used to produce this refinement (e.g., "COVID-19").
+        augmentation_time: Optional pre-formatted HL7 timestamp.
+            When None, the current time is captured.
         tool_code: Code from the Data Augmentation Tool value set.
         tool_display: Human-readable display name for the tool.
-        augmentation_time: Optional pre-formatted HL7 timestamp. When
-            provided, this timestamp is used instead of capturing the
-            current time. Useful when multiple documents should share
-            the same augmentation timestamp (e.g., eICR/RR pairs).
 
     Returns:
-        A fully populated AugmentationContext ready for use.
+        A fully populated AugmentationContext ready for use by both
+        augment_eicr and augment_rr.
     """
 
     if augmentation_time is None:
@@ -90,8 +245,72 @@ def create_augmentation_context(
         augmentation_time = now.strftime("%Y%m%d%H%M%S%z")
 
     return AugmentationContext(
-        new_doc_id=str(uuid4()),
-        new_set_id=str(uuid4()),
+        augmented_eicr_id=_derive_augmented_eicr_id(
+            original_eicr_id_root, jurisdiction_id, condition_grouper_name
+        ),
+        augmented_eicr_setid=_derive_augmented_eicr_setid(
+            original_eicr_setid_root, jurisdiction_id, condition_grouper_name
+        ),
+        augmented_rr_id=_derive_augmented_rr_id(
+            original_rr_id_root, jurisdiction_id, condition_grouper_name
+        ),
+        augmented_rr_setid=_derive_augmented_rr_setid(
+            original_eicr_setid_root, jurisdiction_id, condition_grouper_name
+        ),
+        augmentation_time=augmentation_time,
+        version_number=original_eicr_version,
+        tool_code=tool_code,
+        tool_display=tool_display,
+    )
+
+
+def create_augmentation_context_for_pair(
+    eicr_root: _Element,
+    rr_root: _Element,
+    jurisdiction_id: str,
+    condition_grouper_name: str,
+    augmentation_time: str | None = None,
+    tool_code: str = REFINER_TOOL_CODE,
+    tool_display: str = REFINER_TOOL_DISPLAY,
+) -> AugmentationContext:
+    """
+    Read the four input identifiers off the parsed eICR/RR pair and build the AugmentationContext.
+
+    The pipeline's natural entry point — equivalent to calling
+    create_augmentation_context after extracting the identifiers,
+    but keeps the XML reads next to the augmentation logic.
+
+    Raises:
+        ValueError: If the input eICR is missing setId or
+            versionNumber. Both are required by eICR STU 3.1.1 and
+            the augmentation IG v4 (CONF:5573-15, CONF:5573-16).
+    """
+
+    eicr_id_el = _find_required(eicr_root, "hl7:id")
+    eicr_setid_el = eicr_root.find("hl7:setId", HL7_NS)
+    eicr_version_el = eicr_root.find("hl7:versionNumber", HL7_NS)
+    rr_id_el = _find_required(rr_root, "hl7:id")
+
+    if eicr_setid_el is None:
+        raise ValueError(
+            "Cannot build augmentation context: input eICR has no "
+            "<setId>. Required by eICR STU 3.1.1 and the augmentation "
+            "IG v4 (CONF:5573-15)."
+        )
+    if eicr_version_el is None:
+        raise ValueError(
+            "Cannot build augmentation context: input eICR has no "
+            "<versionNumber>. Required by eICR STU 3.1.1 and the "
+            "augmentation IG v4 (CONF:5573-16)."
+        )
+
+    return create_augmentation_context(
+        original_eicr_id_root=_get_attribute_value(eicr_id_el, "root"),
+        original_eicr_setid_root=_get_attribute_value(eicr_setid_el, "root"),
+        original_eicr_version=_get_attribute_value(eicr_version_el, "value"),
+        original_rr_id_root=_get_attribute_value(rr_id_el, "root"),
+        jurisdiction_id=jurisdiction_id,
+        condition_grouper_name=condition_grouper_name,
         augmentation_time=augmentation_time,
         tool_code=tool_code,
         tool_display=tool_display,
@@ -108,17 +327,20 @@ class _OriginalIdentity:
     """
     The document-identity elements captured from the input document before they are replaced.
 
-    Used to populate the relatedDocument/parentDocument block.
+    Used to build the new relatedDocument block we add for the input
+    we just augmented, and to carry forward any prior relatedDocument
+    blocks unchanged.
 
-    set_id_element and version_number_element may be None — these are
-    optional in CDA R2 and many real-world eICRs (especially 1.1-era
-    documents) omit them.
+    set_id_element and version_number_element are None when the input
+    lacked them. The relatedDocument builder honors that by omitting
+    the corresponding child elements rather than synthesizing
+    substitutes.
     """
 
     id_element: _Element
     set_id_element: _Element | None
     version_number_element: _Element | None
-    existing_xfrm_parent_doc_ids: list[_Element]
+    prior_related_documents: list[_Element]
 
 
 # NOTE:
@@ -141,55 +363,45 @@ def augment_eicr(
     context: AugmentationContext,
 ) -> AugmentedResult:
     """
-    Apply all document-level augmentation to a refined eICR.
+    Apply document-level augmentation to a refined eICR.
 
-    Mutates `eicr_root` in place.
+    Mutates `eicr_root` in place. Implements the eICR Data
+    Augmentation Header template (Vol 2 §1.1).
 
-    Implements the eICR Data Augmentation Header template constraints
-    (CONF:5573-1 through CONF:5573-39).
-
-    The steps execute in a specific order that respects the CDA R2
-    schema's required element sequence within <ClinicalDocument>:
-    templateId → id → effectiveTime → setId → versionNumber → author
-    → relatedDocument.
-
-    Args:
-        eicr_root: The parsed root <ClinicalDocument> element. Must
-            be namespace-qualified (urn:hl7-org:v3).
-        context: Pre-computed augmentation values (UUIDs, timestamp, tool
-            identity).
+    The steps execute in CDA R2 schema order: templateId → id →
+    effectiveTime → setId → versionNumber → author → relatedDocument.
     """
 
-    # STEP 1:
-    # snapshot the current identity before we overwrite anything
+    # STEP 1: snapshot identity before overwriting
     original = _capture_original_identity(eicr_root)
 
-    # STEP 2:
-    # add augmentation templateId (CONF:5573-18/19/20)
-    _add_augmentation_template_id(eicr_root)
+    # STEP 2: add eICR augmentation templateId (CONF:5573-18/19/20)
+    _add_augmentation_template_id(
+        eicr_root,
+        EICR_AUG_HEADER_TEMPLATE_ROOT,
+        EICR_AUG_HEADER_TEMPLATE_EXT,
+    )
 
-    # STEP 3:
-    # replace document id (new uuid, assigningAuthorityName = tool code)
-    augmented_result = _replace_document_id(eicr_root, context)
+    # STEP 3: replace document id
+    augmented_result = _replace_document_id(
+        eicr_root,
+        new_doc_id=context.augmented_eicr_id,
+        assigning_authority_name=context.tool_code,
+    )
 
-    # STEP 4:
-    # replace effectiveTime with augmentation timestamp
-    _replace_effective_time(eicr_root, context)
+    # STEP 4: replace effectiveTime
+    _replace_effective_time(eicr_root, context.augmentation_time)
 
-    # STEP 5:
-    # replace setId with new uuid
-    _replace_set_id(eicr_root, context)
+    # STEP 5: replace setId
+    _replace_set_id(eicr_root, context.augmented_eicr_setid, context.tool_code)
 
-    # STEP 6:
-    # reset versionNumber to 1
-    _replace_version_number(eicr_root)
+    # STEP 6: set versionNumber (inherited from source eICR)
+    _replace_version_number(eicr_root, context.version_number)
 
-    # STEP 7:
-    # add header-level augmentation author (CONF:5573-1 through 5573-17)
+    # STEP 7: add header-level augmentation author
     _add_augmentation_author(eicr_root, context)
 
-    # STEP 8:
-    # add relatedDocument with XFRM lineage (CONF:5573-12 through 5573-23)
+    # STEP 8: restructure relatedDocument chain into v4-shape siblings
     _add_related_document(eicr_root, original)
 
     return augmented_result
@@ -207,55 +419,45 @@ def augment_rr(
     """
     Apply document-level augmentation to a refined RR.
 
-    Mutates `rr_root` in place.
+    Mutates `rr_root` in place. Implements the RR Data Augmentation
+    Header template (Vol 2 §1.2), introduced in IG v4.
 
-    The augmentation IG does not define RR-specific templates, so this
-    applies the same document-identity and provenance patterns used for
-    the eICR, adapted for the RR's simpler header:
-
-    - NO augmentation templateId (that template conforms to eICR V5,
-      not the RR)
-    - setId and versionNumber are only replaced if the original had
-      them. RRs are typically one-shot response documents without
-      versioning, so these elements are usually absent. We don't
-      fabricate them.
-
-    Args:
-        rr_root: The parsed root <ClinicalDocument> element of the RR.
-        context: Pre-computed augmentation values.
+    Mirrors augment_eicr's eight-step structure with RR-specific
+    identifiers and templateId. setId and versionNumber are
+    replaced unconditionally — under v4 they are 1..1 SHALL on the
+    augmented document, regardless of whether the input RR had them.
     """
 
-    # STEP 1:
-    # snapshot the current identity
+    # STEP 1: snapshot identity before overwriting
     original = _capture_original_identity(rr_root)
 
-    # STEP 2:
-    # NO augmentation templateId for RR
+    # STEP 2: add RR augmentation templateId (CONF:5573-66/80/81)
+    _add_augmentation_template_id(
+        rr_root,
+        RR_AUG_HEADER_TEMPLATE_ROOT,
+        RR_AUG_HEADER_TEMPLATE_EXT,
+    )
 
-    # STEP 3:
-    # replace document id
-    augmented_result = _replace_document_id(rr_root, context)
+    # STEP 3: replace document id
+    augmented_result = _replace_document_id(
+        rr_root,
+        new_doc_id=context.augmented_rr_id,
+        assigning_authority_name=context.tool_code,
+    )
 
-    # STEP 4:
-    # replace effectiveTime
-    _replace_effective_time(rr_root, context)
+    # STEP 4: replace effectiveTime
+    _replace_effective_time(rr_root, context.augmentation_time)
 
-    # STEP 5:
-    # replace setId only if original had one
-    if original.set_id_element is not None:
-        _replace_set_id(rr_root, context)
+    # STEP 5: replace setId (unconditional under v4)
+    _replace_set_id(rr_root, context.augmented_rr_setid, context.tool_code)
 
-    # STEP 6:
-    # reset versionNumber only if original had one
-    if original.version_number_element is not None:
-        _replace_version_number(rr_root)
+    # STEP 6: set versionNumber (inherited from source eICR; unconditional under v4)
+    _replace_version_number(rr_root, context.version_number)
 
-    # STEP 7:
-    # add header-level augmentation author
+    # STEP 7: add header-level augmentation author
     _add_augmentation_author(rr_root, context)
 
-    # STEP 8:
-    # add relatedDocument with XFRM lineage
+    # STEP 8: restructure relatedDocument chain into v4-shape siblings
     _add_related_document(rr_root, original)
 
     return augmented_result
@@ -270,38 +472,29 @@ def _capture_original_identity(doc_root: _Element) -> _OriginalIdentity:
     """
     Snapshot the input document's identity elements before replacement.
 
-    Also inspects whether the input is itself an augmented document
-    (has a relatedDocument[@typeCode='XFRM']) and, if so, captures the
-    existing parentDocument/id chain for cumulative lineage per
-    CONF:5573-14 ("cumulative list of all prior document ids").
+    Captures three things:
+        1. The document's own id, setId, versionNumber. setId and
+           versionNumber are captured as None when missing (both are
+           optional in CDA R2 and commonly absent on RRs from RCKMS).
+        2. All prior relatedDocument[@typeCode='XFRM'] elements,
+           verbatim. Carried forward into the augmented document
+           unchanged — we don't inspect or rebuild them.
 
-    Works for both eICR and RR documents — both are CDA
-    ClinicalDocuments with the same header structure.
-
-    Note: <setId> and <versionNumber> are optional in CDA R2 and may
-    be absent in real-world eICRs. They are captured as None when missing.
+    Works for both eICR and RR documents.
     """
 
     doc_id = _find_required(doc_root, "hl7:id")
-
-    # setId and versionNumber are optional in CDA R2
     set_id = doc_root.find("hl7:setId", HL7_NS)
     version = doc_root.find("hl7:versionNumber", HL7_NS)
+    prior_related_docs = doc_root.findall(
+        "hl7:relatedDocument[@typeCode='XFRM']", HL7_NS
+    )
 
-    # check for an existing XFRM relatedDocument (input was already augmented)
-    existing_parent_ids: list[_Element] = []
-    existing_xfrm = doc_root.find("hl7:relatedDocument[@typeCode='XFRM']", HL7_NS)
-    if existing_xfrm is not None:
-        parent_doc = existing_xfrm.find("hl7:parentDocument", HL7_NS)
-        if parent_doc is not None:
-            existing_parent_ids = parent_doc.findall("hl7:id", HL7_NS)
-
-    # deep-copy so mutations to the tree don't affect our snapshot
     return _OriginalIdentity(
         id_element=deepcopy(doc_id),
         set_id_element=deepcopy(set_id) if set_id is not None else None,
         version_number_element=deepcopy(version) if version is not None else None,
-        existing_xfrm_parent_doc_ids=[deepcopy(e) for e in existing_parent_ids],
+        prior_related_documents=[deepcopy(rd) for rd in prior_related_docs],
     )
 
 
@@ -310,9 +503,18 @@ def _capture_original_identity(doc_root: _Element) -> _OriginalIdentity:
 # =============================================================================
 
 
-def _add_augmentation_template_id(doc_root: _Element) -> None:
+def _add_augmentation_template_id(
+    doc_root: _Element,
+    template_root: str,
+    template_extension: str,
+) -> None:
     """
-    Insert the eICR Data Augmentation Header templateId (CONF:5573-18/19/20).
+    Insert an augmentation-header templateId on the document.
+
+    Used for both the eICR Data Augmentation Header
+    (root=2.16.840.1.113883.10.20.15.2.1.3, ext=2025-11-01) and the RR
+    Data Augmentation Header (root=2.16.840.1.113883.10.20.15.2.1.4,
+    ext=2026-04-01).
 
     Placed immediately before the document <id>, after any existing
     templateId elements, to maintain CDA schema element ordering.
@@ -320,8 +522,8 @@ def _add_augmentation_template_id(doc_root: _Element) -> None:
 
     new_template_id = _make_element(
         "templateId",
-        root=AUG_HEADER_TEMPLATE_ROOT,
-        extension=AUG_HEADER_TEMPLATE_EXT,
+        root=template_root,
+        extension=template_extension,
     )
 
     # insert just before <id> — all templateIds precede <id> in the CDA schema
@@ -330,21 +532,24 @@ def _add_augmentation_template_id(doc_root: _Element) -> None:
 
 
 def _replace_document_id(
-    doc_root: _Element, context: AugmentationContext
+    doc_root: _Element,
+    new_doc_id: str,
+    assigning_authority_name: str,
 ) -> AugmentedResult:
     """
-    Replace the document <id> with a new UUID and assigningAuthorityName.
+    Replace the document <id> with a new id root and assigningAuthorityName.
 
-    The assigningAuthorityName is set to the tool code ("ecr-refinement")
-    per the Data Augmentation Document Source value set (Table 3).
+    The assigningAuthorityName is drawn from the Data Augmentation
+    Document Source value set, we use "ecr-refiner" for
+    Refiner-produced documents.
     """
 
     old_id = _find_required(doc_root, "hl7:id")
 
     new_id = _make_element(
         "id",
-        root=context.new_doc_id,
-        assigningAuthorityName=context.tool_code,
+        root=new_doc_id,
+        assigningAuthorityName=assigning_authority_name,
     )
 
     _replace_preserving_tail(doc_root, old_id, new_id)
@@ -355,34 +560,43 @@ def _replace_document_id(
     )
 
 
-def _replace_effective_time(doc_root: _Element, context: AugmentationContext) -> None:
+def _replace_effective_time(doc_root: _Element, augmentation_time: str) -> None:
     """
     Replace the document <effectiveTime> with the augmentation timestamp.
     """
 
     old_eff = _find_required(doc_root, "hl7:effectiveTime")
-    new_eff = _make_element("effectiveTime", value=context.augmentation_time)
+    new_eff = _make_element("effectiveTime", value=augmentation_time)
     _replace_preserving_tail(doc_root, old_eff, new_eff)
 
 
-def _replace_set_id(doc_root: _Element, context: AugmentationContext) -> None:
+def _replace_set_id(
+    doc_root: _Element,
+    new_set_id_root: str,
+    assigning_authority_name: str,
+) -> None:
     """
-    Replace or insert the document <setId> with a new UUID.
+    Replace or insert the document <setId>.
+
+    The augmented setId carries assigningAuthorityName from the Data
+    Augmentation Document Source value set (we use "ecr-refiner"
+    for Refiner-produced documents).
 
     If <setId> doesn't exist (optional in CDA R2), inserts one in the
-    correct schema position: after <languageCode> or <confidentialityCode>,
-    before <versionNumber> or <recordTarget>.
+    correct schema position: after <languageCode> or
+    <confidentialityCode>, before <versionNumber> or <recordTarget>.
     """
 
-    new_set_id = _make_element("setId", root=context.new_set_id)
+    new_set_id = _make_element(
+        "setId",
+        root=new_set_id_root,
+        assigningAuthorityName=assigning_authority_name,
+    )
     old_set_id = doc_root.find("hl7:setId", HL7_NS)
 
     if old_set_id is not None:
         _replace_preserving_tail(doc_root, old_set_id, new_set_id)
     else:
-        # insert in correct CDA schema position
-        # setId comes after languageCode/confidentialityCode, before
-        # versionNumber/recordTarget
         _insert_before_first_found(
             doc_root,
             new_set_id,
@@ -390,18 +604,20 @@ def _replace_set_id(doc_root: _Element, context: AugmentationContext) -> None:
         )
 
 
-def _replace_version_number(doc_root: _Element) -> None:
+def _replace_version_number(doc_root: _Element, version_value: str) -> None:
     """
-    Replace or insert <versionNumber>, set to 1.
+    Replace or insert <versionNumber>.
 
-    Per the augmentation IG examples, each augmentation produces a new
-    document (new id, new setId) with versionNumber starting at 1.
+    The augmented document inherits versionNumber from the source
+    eICR (passed in via the AugmentationContext), so an augmented
+    eICR/RR pair tracks the EHR's clinical-case versioning stream.
 
-    If <versionNumber> doesn't exist (optional in CDA R2), inserts one
-    in the correct schema position: after <setId>, before <recordTarget>.
+    If <versionNumber> doesn't exist (optional in CDA R2), inserts
+    one in the correct schema position: after <setId>, before
+    <recordTarget>.
     """
 
-    new_version = _make_element("versionNumber", value="1")
+    new_version = _make_element("versionNumber", value=version_value)
     old_version = doc_root.find("hl7:versionNumber", HL7_NS)
 
     if old_version is not None:
@@ -421,59 +637,43 @@ def _replace_version_number(doc_root: _Element) -> None:
 
 def _add_augmentation_author(doc_root: _Element, context: AugmentationContext) -> None:
     """
-    Add the header-level augmentation author (CONF:5573-1 through 5573-17).
+    Add the header-level augmentation author per IG v4.
 
-    The author is appended after any existing <author> elements. CDA R2
-    allows multiple authors on a document and the schema requires they
-    appear in sequence after <recordTarget> but before <custodian>.
+    The eICR and RR augmentation headers share the same author shape,
+    so a single helper produces a conformant author for both. Tool
+    identity is carried via softwareName's coded attributes (no
+    functionCode at the header level under v4.
 
-    Under the current (pre-March-2026-update) spec:
-        - functionCode carries the tool identity from the Data Augmentation
-          Tool value set (Table 2): code="ecr-refinement"
-        - softwareName/@displayName is set to "Data Augmentation Tool"
-          per CONF:5573-17
-
-    Under the March 2026 update:
-        - functionCode is removed from the header-level author
-        - softwareName gets a value set binding to the Data Augmentation
-          Tool value set, carrying the tool identity as coded attributes
-        To adopt the update, remove the functionCode block and add
-        @code/@codeSystem to the softwareName element.
+    The author is appended after any existing <author> elements per
+    CDA R2 element ordering.
     """
 
     ns = HL7_NAMESPACE
 
     author = _make_element("author")
 
-    # functionCode — Data Augmentation Tool value set (CONF:5573-2)
-    # TODO: remove this block when adopting the march 2026 update
-    function_code = etree.SubElement(author, f"{{{ns}}}functionCode")
-    function_code.set("code", context.tool_code)
-    function_code.set("codeSystem", ECR_DATA_AUG_CODE_SYSTEM)
-    function_code.set("codeSystemName", ECR_DATA_AUG_CODE_SYSTEM_NAME)
-
-    # time -> augmentation operation timestamp (CONF:5573-3)
+    # time -> augmentation operation timestamp
     time_el = etree.SubElement(author, f"{{{ns}}}time")
     time_el.set("value", context.augmentation_time)
 
-    # assignedAuthor (CONF:5573-4)
+    # assignedAuthor
     assigned_author = etree.SubElement(author, f"{{{ns}}}assignedAuthor")
 
-    # id nullFlavor="NA" (CONF:5573-5/6)
+    # id, addr, telecom: nullFlavor="NA"
     _add_null_flavor_child(assigned_author, "id")
-
-    # addr nullFlavor="NA" (CONF:5573-7/9)
     _add_null_flavor_child(assigned_author, "addr")
-
-    # telecom nullFlavor="NA" (CONF:5573-8/10)
     _add_null_flavor_child(assigned_author, "telecom")
 
-    # assignedAuthoringDevice (CONF:5573-11)
+    # assignedAuthoringDevice
     device = etree.SubElement(assigned_author, f"{{{ns}}}assignedAuthoringDevice")
 
-    # softwareName (CONF:5573-17)
+    # softwareName — carries tool identity via coded attributes from
+    # the Data Augmentation Tool value set
     software_name = etree.SubElement(device, f"{{{ns}}}softwareName")
-    software_name.set("displayName", "Data Augmentation Tool")
+    software_name.set("code", context.tool_code)
+    software_name.set("codeSystem", ECR_DATA_AUG_CODE_SYSTEM)
+    software_name.set("codeSystemName", ECR_DATA_AUG_CODE_SYSTEM_NAME)
+    software_name.set("displayName", context.tool_display)
 
     # insert after the last existing <author> and before <custodian>
     _insert_author(doc_root, author)
@@ -515,62 +715,91 @@ def _add_related_document(
     original: _OriginalIdentity,
 ) -> None:
     """
-    Add (or replace) the relatedDocument[@typeCode='XFRM'] block.
+    Replace the relatedDocument chain with v4-shaped sibling blocks.
 
-    Per CONF:5573-12 through 5573-23, the parentDocument must contain
-    a cumulative list of all prior document IDs with their
-    assigningAuthorityName drawn from the Data Augmentation Document
-    Source value set (Table 3).
+    Per IG v4 (Vol 2 §1.1 / §1.2), each prior augmentation contributes
+    its own <relatedDocument> sibling rather than appending an <id>
+    to a shared parentDocument.
 
-    Chaining logic:
-        - If the input was an original document (no existing XFRM):
-            parentDocument gets one <id> with
-            assigningAuthorityName="original-document"
-        - If the input was already augmented (has existing XFRM):
-            parentDocument gets all prior IDs carried forward, plus the
-            input document's own <id> with its assigningAuthorityName
+    Steps:
+        1. Remove all existing relatedDocument[@typeCode='XFRM'] from
+           the document.
+        2. Build a new relatedDocument for the input we just
+           augmented.
+        3. Insert prior relatedDocuments first (verbatim, preserving
+           original order), then the new sibling, in the correct CDA
+           schema position (after custodian, before componentOf).
     """
 
-    ns = HL7_NAMESPACE
+    # 1. clear existing
+    for old in doc_root.findall("hl7:relatedDocument[@typeCode='XFRM']", HL7_NS):
+        doc_root.remove(old)
 
-    # remove any existing XFRM relatedDocument — we'll rebuild it
-    existing_xfrm = doc_root.find("hl7:relatedDocument[@typeCode='XFRM']", HL7_NS)
-    if existing_xfrm is not None:
-        doc_root.remove(existing_xfrm)
+    # 2. build the new sibling for the input we just augmented
+    new_related_doc = _build_related_document_for_input(original)
 
-    # build the new relatedDocument
+    # 3. insert prior siblings (verbatim) first, then the new one. each
+    #    call to _insert_related_document inserts before componentOf
+    #    (or component as fallback), and repeated calls produce
+    #    siblings in call order at that position.
+    for prior in original.prior_related_documents:
+        _insert_related_document(doc_root, prior)
+    _insert_related_document(doc_root, new_related_doc)
+
+
+def _build_related_document_for_input(original: _OriginalIdentity) -> _Element:
+    """
+    Build a v4-shape <relatedDocument> referencing the input we just augmented.
+
+    Honestly emits whatever identity the input had — id is always
+    present (every CDA document has one), setId and versionNumber
+    are emitted only when the input had them.
+
+    When the input lacks setId or versionNumber (common for RRs),
+    the parentDocument block omits those children. This is
+    a deliberate violation of v4 CONF:5573-77 / CONF:5573-78.
+
+    assigningAuthorityName values:
+        - Original input (no prior relatedDocs): id and setId carry
+          "original-document".
+        - Augmented input: id carries the input's own authority;
+          setId inherits its own authority if set, else falls back
+          to the id's authority, else to "original-document".
+    """
+
+    is_original = not original.prior_related_documents
+
     related_doc = _make_element("relatedDocument", typeCode="XFRM")
-    parent_doc = etree.SubElement(related_doc, f"{{{ns}}}parentDocument")
+    parent_doc = etree.SubElement(related_doc, f"{{{HL7_NAMESPACE}}}parentDocument")
 
-    # build the cumulative ID chain
-    if original.existing_xfrm_parent_doc_ids:
-        # input was already augmented — carry forward all prior ids
-        for prior_id in original.existing_xfrm_parent_doc_ids:
-            parent_doc.append(prior_id)
-
-        # add the input document's own id (the one we just replaced)
-        input_id = original.id_element
-        # ensure it has an assigningAuthorityName
-        if input_id.get("assigningAuthorityName") is None:
-            input_id.set("assigningAuthorityName", ORIGINAL_DOCUMENT_SOURCE)
-        parent_doc.append(input_id)
+    # id — always present; every CDA document has one
+    id_for_parent = deepcopy(original.id_element)
+    if is_original:
+        id_authority = ORIGINAL_DOCUMENT_SOURCE
     else:
-        # input was an original document — single id entry
-        original_id = original.id_element
-        if original_id.get("assigningAuthorityName") is None:
-            original_id.set("assigningAuthorityName", ORIGINAL_DOCUMENT_SOURCE)
-        parent_doc.append(original_id)
+        id_authority = (
+            id_for_parent.get("assigningAuthorityName") or ORIGINAL_DOCUMENT_SOURCE
+        )
+    id_for_parent.set("assigningAuthorityName", id_authority)
+    parent_doc.append(id_for_parent)
 
-    # setId and versionNumber from the input document (CONF:5573-15/16)
-    # only include if they were present in the original
+    # setId — emit only when input had one
     if original.set_id_element is not None:
-        parent_doc.append(original.set_id_element)
-    if original.version_number_element is not None:
-        parent_doc.append(original.version_number_element)
+        set_id_for_parent = deepcopy(original.set_id_element)
+        if is_original:
+            setid_authority = ORIGINAL_DOCUMENT_SOURCE
+        else:
+            setid_authority = (
+                set_id_for_parent.get("assigningAuthorityName") or id_authority
+            )
+        set_id_for_parent.set("assigningAuthorityName", setid_authority)
+        parent_doc.append(set_id_for_parent)
 
-    # insert in the correct CDA position -> relatedDocument comes after
-    # -> custodian and before -> componentOf
-    _insert_related_document(doc_root, related_doc)
+    # versionNumber — emit only when input had one
+    if original.version_number_element is not None:
+        parent_doc.append(deepcopy(original.version_number_element))
+
+    return related_doc
 
 
 def _insert_related_document(doc_root: _Element, related_doc: _Element) -> None:
@@ -700,6 +929,7 @@ def _get_attribute_value(node: _Element, key: str) -> str:
     Returns:
         str: The value from the attribute
     """
+
     value = node.get(key)
     if not value:
         raise ValueError("Cannot convert XML to string. No value found at key {key}.")

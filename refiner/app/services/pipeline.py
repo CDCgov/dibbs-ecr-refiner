@@ -9,7 +9,7 @@ from .ecr.augment import (
     AugmentedResult,
     augment_eicr,
     augment_rr,
-    create_augmentation_context,
+    create_augmentation_context_for_pair,
 )
 from .ecr.model import JurisdictionReportableConditions
 from .ecr.refine import (
@@ -153,12 +153,23 @@ def refine_for_condition(
         4. Augment (mutate same trees in place)
         5. Serialize once at the end
 
-    The augmentation context is created up front so the eICR plan, the
-    eICR augmentation, and the RR augmentation all share the same
-    timestamp. The shared timestamp ties the per-section provenance
-    footnotes (built during eICR refinement) to the augmentation author's
-    <time> value (written during eICR/RR augmentation), giving downstream
-    consumers a consistency check they can verify programmatically.
+    The augmentation context is created up front from the parsed
+    eICR/RR pair, deterministically deriving augmented identifiers
+    from the input identifiers, the jurisdiction id, and the
+    condition grouper name per IG v4 Vol 1 Appendix A. The
+    jurisdiction id and grouper name are required because the
+    Refiner produces scope-specific output: a single eICR/RR pair
+    can be reportable to up to four jurisdictions simultaneously,
+    each with its own configuration and its own set of reportable
+    conditions, and the Refiner produces one augmented document quad
+    per (jurisdiction, condition) combination.
+
+    Both augment_eicr and augment_rr read from the same single
+    context, so the augmented eICR and RR share an effectiveTime and
+    inherit versionNumber from the source eICR. The shared timestamp
+    also propagates to the per-section provenance footnotes (built
+    during eICR refinement), giving downstream consumers a
+    consistency check they can verify programmatically.
 
     Args:
         xml_files: The eICR/RR pair to refine.
@@ -167,7 +178,9 @@ def refine_for_condition(
             by system with display names, section processing rules, and
             included RSG codes.
         trace: A pre-populated trace with jurisdiction and condition
-            context. This function fills in the execution details.
+            context. This function fills in the execution details. The
+            trace's condition_grouper_name must be set before calling —
+            it participates in the deterministic identifier derivation.
 
     Returns:
         RefinementResult containing the refined eICR and RR XML strings
@@ -176,39 +189,63 @@ def refine_for_condition(
     Raises:
         XMLValidationError: If the eICR or RR XML is malformed.
         StructureValidationError: If required document structure is missing.
+        ValueError: If trace.condition_grouper_name is None, or if the
+            input eICR is missing setId or versionNumber (both required
+            by STU 3.1.1 and the augmentation IG v4 to derive augmented
+            identifiers).
     """
 
     trace.configuration_resolved = True
 
-    try:
-        # augmentation contexts (created up front so both documents
-        # share the same augmentation_time since we don't have a way to
-        # point at the eicr by document id; may need to talk with aphl
-        # about how they want this handled
-        shared_context = create_augmentation_context()
-        augmentation_time = shared_context.augmentation_time
-        eicr_context = shared_context
-        rr_context = create_augmentation_context(augmentation_time=augmentation_time)
+    # condition_grouper_name participates in the deterministic ID
+    # derivation; it must be resolved before refinement begins
+    # callers (testing.py, lambda_function.py) set this when they
+    # resolve the RSG → grouper mapping before calling us
+    if trace.condition_grouper_name is None:
+        raise ValueError(
+            "Cannot run refine_for_condition without a resolved "
+            "condition_grouper_name on the trace. Caller must set "
+            "this field after resolving the RSG → grouper mapping."
+        )
 
-        # plan -> refine -> augment -> output
+    try:
+        # parse both documents up front so the pair-aware augmentation
+        # context can read input identifiers from both halves before
+        # any refinement work begins. parse failures surface here
+        # rather than after wasted work on the eICR side.
         eicr_root = xml_files.parse_eicr()
+        rr_root = xml_files.parse_rr()
+
+        # one context for the pair--both augment_eicr and augment_rr
+        # read from this single object, so the augmented documents
+        # share effectiveTime and versionNumber by construction. the
+        # context also carries deterministic UUIDv5-derived identifiers
+        # for both halves seeded from the input pair, the jurisdiction
+        # id, and the condition grouper name.
+        context = create_augmentation_context_for_pair(
+            eicr_root,
+            rr_root,
+            jurisdiction_id=trace.jurisdiction_code,
+            condition_grouper_name=trace.condition_grouper_name,
+        )
+
+        # plan -> refine -> augment -> output (eICR)
         eicr_plan = create_eicr_refinement_plan(
             processed_configuration=processed_configuration,
             eicr_root=eicr_root,
-            augmentation_timestamp=augmentation_time,
+            augmentation_timestamp=context.augmentation_time,
             config_version=trace.configuration_version,
         )
         refine_eicr(eicr_root=eicr_root, plan=eicr_plan)
-        augmented_eicr_result = augment_eicr(eicr_root, eicr_context)
+        augmented_eicr_result = augment_eicr(eicr_root, context)
         refined_eicr = etree.tostring(eicr_root, encoding="unicode")
 
-        # plan -> refine -> augment -> output
-        rr_root = xml_files.parse_rr()
+        # plan -> refine -> augment -> output (RR)
         rr_plan = create_rr_refinement_plan(
             processed_configuration=processed_configuration,
         )
         refine_rr(rr_root=rr_root, plan=rr_plan)
-        augmented_rr_result = augment_rr(rr_root, rr_context)
+        augmented_rr_result = augment_rr(rr_root, context)
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
         trace.refinement_outcome = "refined"
