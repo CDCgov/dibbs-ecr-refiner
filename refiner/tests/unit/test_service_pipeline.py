@@ -122,7 +122,7 @@ class TestRefineForCondition:
         trace = RefinementTrace(
             jurisdiction_code="SDDH",
             rsg_code="840539006",
-            condition_grouper_name="COVID19",
+            condition_grouper_name="COVID-19",
             configuration_version=1,
         )
 
@@ -150,7 +150,7 @@ class TestRefineForCondition:
         trace = RefinementTrace(
             jurisdiction_code="SDDH",
             rsg_code="840539006",
-            condition_grouper_name="COVID19",
+            condition_grouper_name="COVID-19",
             configuration_version=1,
         )
 
@@ -173,6 +173,7 @@ class TestRefineForCondition:
         trace = RefinementTrace(
             jurisdiction_code="SDDH",
             rsg_code="840539006",
+            condition_grouper_name="COVID-19",
         )
 
         # Create an invalid ProcessedConfiguration that will cause an error
@@ -191,6 +192,30 @@ class TestRefineForCondition:
         assert trace.refinement_outcome == "error"
         assert trace.error_detail == "plan creation failed"
         assert trace.configuration_resolved is True
+
+    def test_raises_when_trace_has_no_condition_grouper_name(
+        self, sample_xml_files: XMLFiles
+    ):
+        """
+        condition_grouper_name participates in the deterministic
+        identifier derivation. Refinement must not run without it
+        resolved on the trace; the pipeline raises a clear ValueError
+        rather than silently producing identifiers seeded with
+        "None".
+        """
+
+        trace = RefinementTrace(
+            jurisdiction_code="SDDH",
+            rsg_code="840539006",
+            # condition_grouper_name intentionally omitted
+        )
+
+        with pytest.raises(ValueError, match="condition_grouper_name"):
+            refine_for_condition(
+                xml_files=sample_xml_files,
+                processed_configuration=MagicMock(),
+                trace=trace,
+            )
 
 
 # =============================================================================
