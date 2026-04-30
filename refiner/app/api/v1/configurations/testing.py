@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
     validate_path_or_raise,
@@ -29,9 +30,6 @@ from app.services.file_io import (
     ZipFilePackage,
     create_refined_ecr_zip_in_memory,
     create_refined_file_names,
-)
-from app.services.format import (
-    format_xml_document_for_display,
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
@@ -234,8 +232,10 @@ async def run_configuration_test(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
-    formatted_unrefined_eicr = format_xml_document_for_display(original_xml_files.eicr)
-    formatted_refined_eicr = format_xml_document_for_display(
+    formatted_unrefined_eicr = format_xml_document_for_display_or_raise(
+        original_xml_files.eicr
+    )
+    formatted_refined_eicr = format_xml_document_for_display_or_raise(
         refined_document.refined_eicr
     )
 
@@ -246,7 +246,9 @@ async def run_configuration_test(
             code=condition.code,
             display_name=condition.display_name,
             refined_eicr=formatted_refined_eicr,
-            refined_rr=format_xml_document_for_display(refined_document.refined_rr),
+            refined_rr=format_xml_document_for_display_or_raise(
+                refined_document.refined_rr
+            ),
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

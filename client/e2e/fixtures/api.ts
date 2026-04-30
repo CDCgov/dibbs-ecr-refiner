@@ -10,6 +10,8 @@ type Condition = {
   display_name: string;
 };
 
+type CustomCode = { code: string; system: string; name: string };
+
 export class Api {
   constructor(private request: APIRequestContext) {}
 
@@ -58,6 +60,30 @@ export class Api {
     }
 
     return json as Configuration;
+  }
+
+  async uploadCustomCodeCsv(configId: string, codes: CustomCode[]) {
+    const payload = [];
+    let row = 2;
+    for (const c of codes) {
+      payload.push({ ...c, row });
+      row++;
+    }
+    const uploadCsvReq = await this.request.post(
+      `/api/v1/configurations/${configId}/custom-codes/confirm`,
+      {
+        data: {
+          custom_codes: payload,
+        },
+      }
+    );
+    expect(uploadCsvReq.ok()).toBeTruthy();
+    const json = await uploadCsvReq.json();
+    expect(json).toEqual(
+      expect.objectContaining({
+        errors: null,
+      })
+    );
   }
 
   async updateConfigurationStatus(

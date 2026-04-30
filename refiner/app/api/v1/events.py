@@ -12,8 +12,10 @@ from app.services.logger import get_logger
 
 from ...db.events.db import (
     AuditEvent,
+    get_custom_code_upload_events_by_event_id,
     get_event_count_by_condition_db,
     get_events_by_jd_db,
+    is_event_valid,
 )
 
 router = APIRouter(prefix="/events")
@@ -31,7 +33,7 @@ class EventFilterOption:
 
 
 @dataclass
-class EventResponse:
+class EventsResponse:
     """
     Response needed for the audit log page.
     """
@@ -43,7 +45,7 @@ class EventResponse:
 
 @router.get(
     "/",
-    response_model=EventResponse,
+    response_model=EventsResponse,
     tags=["events"],
     operation_id="getEvents",
 )
@@ -53,7 +55,7 @@ async def get_events(
     logger: Logger = Depends(get_logger),
     page: int = 1,
     canonical_url: str | None = None,
-) -> EventResponse:
+) -> EventsResponse:
     """
     Returns a list of all events for a jurisdiction, ordered from newest to oldest.
 
@@ -121,8 +123,63 @@ async def get_events(
             configuration_options.append(option)
             seen_urls.add(c.condition_canonical_url)
 
-    return EventResponse(
+    return EventsResponse(
         total_pages=total_pages,
         audit_events=audit_events,
         configuration_options=configuration_options,
     )
+
+
+@dataclass
+class CustomCodeUploadEventResponse:
+    """
+    Response model for a custom code upload event.
+    """
+
+    id: UUID
+    system: str
+    code: str
+    name: str
+
+
+@router.get(
+    "/{event_id}/custom-code-uploads",
+    response_model=list[CustomCodeUploadEventResponse],
+    tags=["events"],
+    operation_id="getCustomCodeUploadEvents",
+)
+async def get_custom_code_upload_events(
+    event_id: UUID,
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+) -> list[CustomCodeUploadEventResponse]:
+    """
+    Returns a list of all custom code upload events associated with a parent event ID.
+
+    Args:
+        event_id (UUID): The parent event
+        user (DbUser): The logged in user
+        db (AsyncDatabaseConnection): The database connection
+
+    Raises:
+        HTTPException: 404 if event with requested ID is not found or does not belong to user's jurisdiction
+    """
+    jd = user.jurisdiction_id
+    event_exists = await is_event_valid(id=event_id, jurisdiction_id=jd, db=db)
+
+    if not event_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No event found for ID: {event_id}",
+        )
+
+    custom_code_events = await get_custom_code_upload_events_by_event_id(
+        event_id=event_id, db=db
+    )
+
+    return [
+        CustomCodeUploadEventResponse(
+            id=cc.id, system=cc.system, code=cc.code, name=cc.name
+        )
+        for cc in custom_code_events
+    ]

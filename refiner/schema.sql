@@ -276,6 +276,19 @@ CREATE TABLE public.events (
 
 
 --
+-- Name: events_custom_code_uploads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.events_custom_code_uploads (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_id uuid NOT NULL,
+    system text NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL
+);
+
+
+--
 -- Name: jurisdictions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -411,6 +424,14 @@ ALTER TABLE ONLY public.configurations_sections
 
 ALTER TABLE ONLY public.configurations_sections
     ADD CONSTRAINT configurations_sections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: events_custom_code_uploads events_custom_code_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events_custom_code_uploads
+    ADD CONSTRAINT events_custom_code_uploads_pkey PRIMARY KEY (id);
 
 
 --
@@ -655,6 +676,14 @@ ALTER TABLE ONLY public.configurations_sections
 
 
 --
+-- Name: events_custom_code_uploads events_custom_code_uploads_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.events_custom_code_uploads
+    ADD CONSTRAINT events_custom_code_uploads_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
 -- Name: events fk_events_configurations; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -707,3 +736,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260402215326'),
     ('20260420140437'),
     ('20260428155732');
+    ('20260427151426');

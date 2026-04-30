@@ -45,4 +45,58 @@ test.describe('Activity log', () => {
     const conditionOneOnlyRows = await activityLogPage.getTableRows();
     expect(conditionOneOnlyRows).toHaveLength(1);
   });
+
+  test('Check individual custom code entries from CSV upload', async ({
+    page,
+    api,
+    activityLogPage,
+  }) => {
+    const condition = 'Lead in Blood';
+    const config = await api.createConfiguration(condition);
+
+    // Create 50 codes to upload
+    const systems = ['LOINC', 'ICD-10', 'SNOMED', 'RxNorm', 'CVX'];
+    const customCodes = Array.from({ length: 50 }, (_, i) => ({
+      code: `mc-${i + 1}`,
+      name: `mock code ${i + 1}`,
+      system: systems[i % systems.length],
+    }));
+
+    await api.uploadCustomCodeCsv(config.id, customCodes);
+    await activityLogPage.goto();
+    const rowData = await activityLogPage.getTableRows();
+
+    const expectedAction = `Added ${customCodes.length} custom codes from CSV`;
+    const expectedRow = rowData.find((r) => r.action.includes(expectedAction));
+    expect(expectedRow?.action).toContain(expectedAction);
+
+    const modalButton = page.getByRole('button', { name: 'View all' });
+    await expect(modalButton).toBeVisible();
+    await expect(modalButton).toBeEnabled();
+    await modalButton.click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Custom codes', level: 2 })
+    ).toBeVisible();
+    await expect(page.getByText('Imported by refiner on')).toBeVisible();
+    await expect(page.getByRole('table').getByRole('row')).toHaveCount(
+      customCodes.length + 1 // including header row
+    );
+    await expect(
+      page.getByText(customCodes[1].name, { exact: true })
+    ).toBeInViewport();
+
+    // We shouldn't be able to see the last row until we scroll
+    const lastRow = page.getByRole('table').getByRole('row').last();
+    await expect(lastRow).not.toBeInViewport();
+
+    // Scroll and check again
+    await lastRow.scrollIntoViewIfNeeded();
+    await expect(lastRow).toBeInViewport();
+
+    await page.getByRole('button', { name: 'Close this window' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Activity log' })
+    ).toBeVisible();
+  });
 });
