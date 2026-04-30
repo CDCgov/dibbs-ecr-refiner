@@ -9,7 +9,7 @@ import { highlightMatches } from '../../../../utils';
 import { TesLink } from '../../TesLink';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
-import { StatusBadge, BadgeStatus } from './StatusBadge';
+import { StatusBadge } from './StatusBadge';
 import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
@@ -248,25 +248,19 @@ export function ConditionCodeTable({
         <StatusBadge
           status={
             coverage.coverage_level === 'complete'
-              ? BadgeStatus.FullyComplete
-              : BadgeStatus.PartiallyIncomplete
+              ? 'complete'
+              : coverage.coverage_level === 'partial'
+                ? 'partial'
+                : 'incomplete'
           }
           text={
             coverage.coverage_level === 'complete'
               ? 'fully complete'
-              : 'partially complete'
+              : coverage.coverage_level === 'partial'
+                ? 'partially complete'
+                : 'not expanded'
           }
-          detailsContent={
-            <div className="flex flex-col gap-2">
-              <h4 className="text-lg font-bold">Code Set Completion Details</h4>
-              <p>{coverage.coverage_level_reason}</p>
-              {coverage.coverage_level_date && (
-                <p className="text-sm text-gray-600">
-                  As of {coverage.coverage_level_date}
-                </p>
-              )}
-            </div>
-          }
+          coverage={coverage}
         />
       )}
       <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
