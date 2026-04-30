@@ -6,7 +6,8 @@ import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
 import { ExternalLink } from '@components/ExternalLink';
 import { Warning } from '@components/Diff/Warning';
-import { UPLOAD_FILE_THRESHOLD_MB } from '@components/Diff';
+
+export const UPLOAD_FILE_THRESHOLD_MB = 5;
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
