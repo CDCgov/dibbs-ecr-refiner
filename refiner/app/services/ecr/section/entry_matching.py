@@ -22,6 +22,7 @@ from .narrative import (
 )
 from .utils import (
     SDTC_NAMESPACE,
+    _enrich_display_name,
     build_entry_match_comment_text,
     enrich_surviving_entries,
     insert_comment_before,
@@ -329,27 +330,6 @@ def _inject_entry_match_comments(
 
         comment_text = build_entry_match_comment_text(entry_matches, match_rules)
         insert_comment_before(entry, comment_text)
-
-
-# NOTE:
-# DISPLAYNAME ENRICHMENT (matched code elements only)
-# =============================================================================
-
-
-def _enrich_display_name(code_element: _Element, coding: Coding) -> None:
-    """
-    Set `displayName` on a code-bearing element from a Coding.
-
-    Only sets if absent or empty. Post-prune enrichment of all surviving
-    elements is handled by `utils.enrich_surviving_entries`.
-    """
-
-    existing = code_element.get("displayName")
-    if existing and existing.strip():
-        return
-
-    if coding.display:
-        code_element.set("displayName", coding.display)
 
 
 # NOTE:
