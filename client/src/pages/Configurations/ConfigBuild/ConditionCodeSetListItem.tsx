@@ -37,9 +37,11 @@ export function ConditionCodeSetListItem({
   const queryClient = useQueryClient();
   const formatError = useApiErrorFormatter();
 
-  React.useEffect(() => {
+  const [prevAssociation, setPrevAssociation] = useState(condition.associated);
+  if (prevAssociation !== condition.associated) {
+    setPrevAssociation(condition.associated);
     setShowButton(condition.associated);
-  }, [condition.associated]);
+  }
 
   function handleAssociate() {
     associateMutation(
