@@ -71,7 +71,7 @@ export function ReportableConditionsResults({
             relevant only to that condition as defined in its configuration.
           </p>
         </div>
-        <div className="flex flex-col gap-0 sm:flex-row sm:gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
           <Button onClick={goToSuccessScreen}>Refine eCR</Button>
           <Button variant="secondary" onClick={startOver}>
             Start over
