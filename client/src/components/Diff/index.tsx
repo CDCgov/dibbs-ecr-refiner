@@ -134,7 +134,7 @@ export function Diff({
         />
       ) : (
         <Warning
-          heading={`Maximum file size is ${FileUploadLimits.THRESHOLD_IN_BYTES} MB`}
+          heading={`Maximum file size is ${FILE_UPLOAD_LIMIT_MB}`}
           message="This file is too large to view in-browser. Please download the results to compare them."
         />
       )}

@@ -7,7 +7,7 @@ import classNames from 'classnames';
 import { ExternalLink } from '@components/ExternalLink';
 import { Warning } from '@components/Diff/Warning';
 
-export const UPLOAD_FILE_THRESHOLD_MB = 5;
+export const FILE_UPLOAD_THRESHOLD_IN_MB = 5;
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -156,7 +156,7 @@ function UploadFileWarning() {
   return (
     <Warning
       heading="Do not upload files that contain PHI/PII"
-      message={`This environment is not approved to handle PHI/PII. The maximum file size is ${UPLOAD_FILE_THRESHOLD_MB} MB.`}
+      message={`This environment is not approved to handle PHI/PII. The maximum file size is ${FILE_UPLOAD_THRESHOLD_IN_MB} MB.`}
     />
   );
 }

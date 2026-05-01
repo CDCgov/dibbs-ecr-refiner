@@ -1,12 +1,12 @@
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
-from enum import IntEnum
 from logging import Logger
 from typing import TypedDict
 from uuid import UUID
 
 from packaging.version import parse
 
+from app.db.demo.model import FILE_UPLOAD_THRESHOLD_IN_MB
 from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
@@ -140,15 +140,6 @@ class InlineTestingResult:
     original_eicr_doc_id: str
     refined_document: RefinedDocument | None
     configuration_does_not_match_conditions: str | None
-
-
-class FileUploadLimits(IntEnum):
-    """
-    Enum class to hold a constant for file upload size, which is picked up by Orval and packaged for the frontend to consume.
-    """
-
-    THRESHOLD_IN_MB = 5
-    THRESHOLD_IN_BYTES = 10**6 * THRESHOLD_IN_MB
 
 
 # NOTE:
@@ -342,7 +333,7 @@ async def independent_testing(
         )
 
         render_dict[trace.matching_condition.display_name] = (
-            len(result.refined_eicr.encode()) < FileUploadLimits.THRESHOLD_IN_BYTES
+            len(result.refined_eicr.encode()) < FILE_UPLOAD_THRESHOLD_IN_MB
         )
 
         if first_original_eicr_doc_id is None:

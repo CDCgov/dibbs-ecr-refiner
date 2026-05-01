@@ -20,7 +20,7 @@ from app.db.conditions.db import get_condition_by_id_db, get_included_conditions
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfiguration
-from app.db.demo.model import Condition
+from app.db.demo.model import FILE_UPLOAD_THRESHOLD_IN_BYTES, Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
@@ -33,7 +33,7 @@ from app.services.file_io import (
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
-from app.services.testing import FileUploadLimits, inline_testing
+from app.services.testing import inline_testing
 from app.services.xslt import create_refined_eicr_html_file
 
 from .model import ConfigurationTestResponse
@@ -239,9 +239,7 @@ async def run_configuration_test(
         refined_document.refined_eicr
     )
 
-    render_diff = (
-        len(formatted_refined_eicr.encode()) < FileUploadLimits.THRESHOLD_IN_BYTES
-    )
+    render_diff = len(formatted_refined_eicr.encode()) < FILE_UPLOAD_THRESHOLD_IN_BYTES
     original_eicr = formatted_unrefined_eicr if render_diff else ""
 
     return ConfigurationTestResponse(
