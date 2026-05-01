@@ -13,5 +13,6 @@ import type { CodeSetStatus } from './codeSetStatus';
  */
 export interface CompletenessStatus {
   overall_status: CodeSetStatus;
-  code_categories: CodeCategoryCompletenessStatus[];
+  last_updated_at: string | null;
+  code_category_statuses: CodeCategoryCompletenessStatus[];
 }

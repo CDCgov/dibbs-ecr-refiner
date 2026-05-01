@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -74,7 +75,8 @@ class CompletenessStatus:
     """
 
     overall_status: CodeSetStatus
-    code_categories: list[CodeCategoryCompletenessStatus]
+    last_updated_at: str | None
+    code_category_statuses: list[CodeCategoryCompletenessStatus]
 
 
 @dataclass(frozen=True)
@@ -97,6 +99,13 @@ def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
         return "partially complete"
 
     return "not expanded"
+
+
+def _get_last_updated_at_code_set_status_date(date: str | None) -> str | None:
+    if date is None:
+        return None
+
+    return datetime.strptime(date, "%Y-%m-%d").strftime("%m/%d/%Y")
 
 
 @router.get(
@@ -133,12 +142,17 @@ async def get_condition(
     )
 
     overall_status = _get_code_set_status(condition.coverage_level)
+    last_updated_up = _get_last_updated_at_code_set_status_date(
+        condition.coverage_level_date
+    )
 
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
         completeness_status=CompletenessStatus(
-            overall_status=overall_status, code_categories=[]
+            overall_status=overall_status,
+            last_updated_at=last_updated_up,
+            code_category_statuses=[],
         ),
         codes=condition_codes,
     )

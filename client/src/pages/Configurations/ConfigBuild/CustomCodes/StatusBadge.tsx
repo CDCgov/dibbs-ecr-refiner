@@ -64,7 +64,7 @@ export function StatusBadge({
               Use custom codes to add codes you want to retain that are not
               included in the code set.
             </p>
-            <p>wip</p>
+            <p>{coverage.last_updated_at}</p>
           </ModalFooter>
         </Modal>
       )}
