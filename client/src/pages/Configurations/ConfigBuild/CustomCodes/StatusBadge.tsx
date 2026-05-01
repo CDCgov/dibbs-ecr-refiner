@@ -7,76 +7,65 @@ import {
   ModalFooter,
 } from '@components/Modal';
 import { Button } from '@components/Button';
-import { GetConditionCode } from '../../../../api/schemas';
+import { CompletenessStatus } from '../../../../api/schemas';
+import classNames from 'classnames';
 
 export interface StatusBadgeProps {
-  text: string;
-  status: 'incomplete' | 'partial' | 'complete';
-  coverage: GetConditionCode;
-  className?: string;
+  completenessStatus: CompletenessStatus;
 }
 
-const BG_BY_STATUS: Record<string, string> = {
-  incomplete: 'bg-red-400',
-  partial: 'bg-yellow-300',
-  complete: 'bg-green-300',
-};
-
 export function StatusBadge({
-  text,
-  status,
-  coverage,
-  className = '',
+  completenessStatus: coverage,
 }: StatusBadgeProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="inline-flex items-center pb-4">
-      <span
-        className={`rounded-full px-3 py-1 font-medium text-black lowercase ${BG_BY_STATUS[status]} ${className} `}
-      >
-        {text}
-      </span>
-      <Button
-        variant="tertiary"
-        onClick={() => setIsOpen(true)}
-        aria-label="Open details modal"
-      >
-        Details
-      </Button>
-      {/* Modal opens when Details is clicked */}
+    <div>
+      <div className="flex flex-row items-center gap-2">
+        <p
+          className={classNames(
+            'rounded-2xl px-2 py-1',
+            {
+              'bg-green': coverage.overall_status === 'fully complete',
+            },
+            {
+              'bg-red': coverage.overall_status === 'not expanded',
+            },
+            {
+              'bg-yellow-100': coverage.overall_status === 'partially complete',
+            }
+          )}
+        >
+          {coverage.overall_status}
+        </p>
+        <Button
+          variant="tertiary"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open details modal"
+          className="p-0!"
+        >
+          Details
+        </Button>
+      </div>
+
       {isOpen && (
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
           <ModalHeader>
-            <span
-              className={`rounded-full px-3 py-1 font-medium text-black lowercase ${BG_BY_STATUS[status]} ${className} `}
-            >
-              {text}
-            </span>
-            <ModalTitle className="mt-4">Code set details</ModalTitle>
-            <p className="italic">
-              Understand what is and is not included in this code set.
-            </p>
+            <ModalTitle>Code set details</ModalTitle>
+            <p>Understand what is and is not included in this code set.</p>
           </ModalHeader>
 
           <ModalBody>
-            <div className="flex flex-col gap-2">
-              <p>{coverage.coverage_level_reason}</p>
-            </div>
-
-            <ModalFooter>
-              <p className="italic">
-                Use custom codes to add codes you want to retain that are not
-                included in the code set.
-              </p>
-              <div className="text-small">
-                <em className="block">
-                  Updated on {coverage.coverage_level_date ?? 'n/a'}
-                </em>
-                <span className="block">(Version 3.0.0)</span>
-              </div>
-            </ModalFooter>
+            <p>wip</p>
           </ModalBody>
+
+          <ModalFooter>
+            <p>
+              Use custom codes to add codes you want to retain that are not
+              included in the code set.
+            </p>
+            <p>wip</p>
+          </ModalFooter>
         </Modal>
       )}
     </div>

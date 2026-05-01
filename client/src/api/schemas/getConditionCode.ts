@@ -13,7 +13,4 @@ export interface GetConditionCode {
   code: string;
   system: string;
   description: string;
-  coverage_level?: string | null;
-  coverage_level_reason?: string | null;
-  coverage_level_date?: string | null;
 }

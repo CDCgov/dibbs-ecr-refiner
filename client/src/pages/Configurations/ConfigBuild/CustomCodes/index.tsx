@@ -240,29 +240,9 @@ export function ConditionCodeTable({
     setSelectedCodeSystem(event.target.value);
   }
 
-  const coverage = codes[0];
-
   return (
     <div className="min-h-full min-w-full">
-      {coverage?.coverage_level && (
-        <StatusBadge
-          status={
-            coverage.coverage_level === 'complete'
-              ? 'complete'
-              : coverage.coverage_level === 'partial'
-                ? 'partial'
-                : 'incomplete'
-          }
-          text={
-            coverage.coverage_level === 'complete'
-              ? 'fully complete'
-              : coverage.coverage_level === 'partial'
-                ? 'partially complete'
-                : 'not expanded'
-          }
-          coverage={coverage}
-        />
-      )}
+      <StatusBadge completenessStatus={response.data.completeness_status} />
       <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search

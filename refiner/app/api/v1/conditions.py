@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -53,6 +54,29 @@ async def get_conditions(
     ]
 
 
+type CodeSetStatus = Literal["not expanded", "partially complete", "fully complete"]
+
+
+@dataclass
+class CodeCategoryCompletenessStatus:
+    """
+    Code category completeness status model.
+    """
+
+    name: str
+    status: CodeSetStatus
+
+
+@dataclass
+class CompletenessStatus:
+    """
+    Condition completeness status model.
+    """
+
+    overall_status: CodeSetStatus
+    code_categories: list[CodeCategoryCompletenessStatus]
+
+
 @dataclass(frozen=True)
 class GetConditionResponse:
     """
@@ -61,7 +85,18 @@ class GetConditionResponse:
 
     id: UUID
     display_name: str
+    completeness_status: CompletenessStatus
     codes: list[GetConditionCode]
+
+
+def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
+    if coverage_level == "complete":
+        return "fully complete"
+
+    if coverage_level == "partial":
+        return "partially complete"
+
+    return "not expanded"
 
 
 @router.get(
@@ -97,8 +132,13 @@ async def get_condition(
         id=condition.id, db=db
     )
 
+    overall_status = _get_code_set_status(condition.coverage_level)
+
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
+        completeness_status=CompletenessStatus(
+            overall_status=overall_status, code_categories=[]
+        ),
         codes=condition_codes,
     )

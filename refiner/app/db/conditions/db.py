@@ -165,9 +165,6 @@ class GetConditionCode:
     code: str
     system: str
     description: str
-    coverage_level: str | None = None
-    coverage_level_reason: str | None = None
-    coverage_level_date: str | None = None
 
 
 async def get_condition_codes_by_condition_id_db(
@@ -187,15 +184,12 @@ async def get_condition_codes_by_condition_id_db(
                 FROM conditions
                 WHERE id = %s
             )
-            SELECT DISTINCT code, system, description, coverage_level, coverage_level_reason, coverage_level_date
+            SELECT DISTINCT code, system, description
             FROM (
                 SELECT
                     code_elem->>'code' AS code,
                     'LOINC' AS system,
-                    code_elem->>'display' AS description,
-                    c.coverage_level,
-                    c.coverage_level_reason,
-                    c.coverage_level_date
+                    code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
 
@@ -204,10 +198,7 @@ async def get_condition_codes_by_condition_id_db(
                 SELECT
                     code_elem->>'code' AS code,
                     'SNOMED' AS system,
-                    code_elem->>'display' AS description,
-                    c.coverage_level,
-                    c.coverage_level_reason,
-                    c.coverage_level_date
+                    code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
 
@@ -216,10 +207,7 @@ async def get_condition_codes_by_condition_id_db(
                 SELECT
                     code_elem->>'code' AS code,
                     'ICD-10' AS system,
-                    code_elem->>'display' AS description,
-                    c.coverage_level,
-                    c.coverage_level_reason,
-                    c.coverage_level_date
+                    code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
 
@@ -228,10 +216,7 @@ async def get_condition_codes_by_condition_id_db(
                 SELECT
                     code_elem->>'code' AS code,
                     'RxNorm' AS system,
-                    code_elem->>'display' AS description,
-                    c.coverage_level,
-                    c.coverage_level_reason,
-                    c.coverage_level_date
+                    code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
 
@@ -240,10 +225,7 @@ async def get_condition_codes_by_condition_id_db(
                 SELECT
                     code_elem->>'code' AS code,
                     'CVX' AS system,
-                    code_elem->>'display' AS description,
-                    c.coverage_level,
-                    c.coverage_level_reason,
-                    c.coverage_level_date
+                    code_elem->>'display' AS description
                 FROM c
                 CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.CVX_codes, '[]'::jsonb)) AS code_elem
             ) t
