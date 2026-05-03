@@ -2,19 +2,29 @@ from lxml import etree
 
 from app.services.ecr.augment import (
     AugmentationContext,
+    _create_augmentation_context,
     _derive_augmented_eicr_id,
     _derive_augmented_eicr_setid,
     _derive_augmented_rr_id,
     _derive_augmented_rr_setid,
+    _extract_uuid_from_canonical_url,
     augment_eicr,
     augment_rr,
-    create_augmentation_context,
+    create_augmentation_context_for_pair,
 )
 from app.services.ecr.model import HL7_NS
 
 # NOTE:
 # HELPERS
 # =============================================================================
+
+# realistic-shaped TES canonical URL for tests that need one. the trailing UUID
+# is what feeds the deterministic derivation; everything before it is cosmetic.
+_TEST_CANONICAL_URL = (
+    "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+    "07221093-b8a1-4b1d-8678-259277bfba64"
+)
+_TEST_CONDITION_GROUPER_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
 
 
 def _make_context(**overrides) -> AugmentationContext:
@@ -25,8 +35,15 @@ def _make_context(**overrides) -> AugmentationContext:
     time. The four augmented identifiers default to recognizable
     placeholder strings rather than real UUIDv5 derivations — tests
     that need real derivations should construct a context via
-    create_augmentation_context with known input identifiers, or
-    override the relevant fields here.
+    _create_augmentation_context with known input identifiers (or
+    create_augmentation_context_for_pair with parsed XML), or override
+    the relevant fields here.
+
+    Tool identity is not on AugmentationContext — it travels as
+    default-valued kwargs on augment_eicr / augment_rr. Tests that
+    need to simulate a non-Refiner upstream tool pass tool_code /
+    tool_display directly to those functions; see
+    test_augment_eicr_chains_prior_relatedDocs_as_siblings.
     """
 
     defaults = {
@@ -36,8 +53,6 @@ def _make_context(**overrides) -> AugmentationContext:
         "augmented_rr_setid": "99999999-2222-3333-4444-555555555555",
         "augmentation_time": "20260325120000+0000",
         "version_number": "1",
-        "tool_code": "ecr-refiner",
-        "tool_display": "eCR Refiner",
     }
     defaults.update(overrides)
     return AugmentationContext(**defaults)
@@ -359,25 +374,31 @@ def test_augment_eicr_chains_prior_relatedDocs_as_siblings(
     first, followed by augmentation siblings in chronological order.
     """
 
-    # first augmentation simulates a prior tool (e.g., text-to-code)
-    first_context = _make_context(
-        augmented_eicr_id="first-augmented-id",
-        augmented_eicr_setid="first-set-id",
+    original_id = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+
+    # first augmentation simulates a prior tool (e.g., text-to-code).
+    # tool_code/tool_display travel as kwargs on augment_eicr — they
+    # default to the Refiner's identity in production but tests can
+    # override to simulate other tools in the chain.
+    augment_eicr(
+        eicr_root_v1_1,
+        _make_context(
+            augmented_eicr_id="first-augmented-id",
+            augmented_eicr_setid="first-set-id",
+        ),
         tool_code="text-to-code",
         tool_display="Text-to-Code",
     )
-    original_id = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
 
-    augment_eicr(eicr_root_v1_1, first_context)
-
-    # second augmentation simulates the Refiner running on the prior output
-    second_ctx = _make_context(
-        augmented_eicr_id="second-augmented-id",
-        augmented_eicr_setid="second-set-id",
-        tool_code="ecr-refiner",
-        tool_display="eCR Refiner",
+    # second augmentation simulates the Refiner running on the prior
+    # output — uses the default tool identity.
+    augment_eicr(
+        eicr_root_v1_1,
+        _make_context(
+            augmented_eicr_id="second-augmented-id",
+            augmented_eicr_setid="second-set-id",
+        ),
     )
-    augment_eicr(eicr_root_v1_1, second_ctx)
 
     # there should be two relatedDocument siblings now
     related_docs = eicr_root_v1_1.findall(
@@ -422,11 +443,11 @@ def test_create_augmentation_context_is_deterministic():
         "original_eicr_version": "3",
         "original_rr_id_root": "orig-rr-5678",
         "jurisdiction_id": "SDDH",
-        "condition_grouper_name": "COVID-19",
+        "condition_grouper_uuid": _TEST_CONDITION_GROUPER_UUID,
         "augmentation_time": "20260101120000+0000",
     }
-    context_1 = create_augmentation_context(**common)
-    context_2 = create_augmentation_context(**common)
+    context_1 = _create_augmentation_context(**common)
+    context_2 = _create_augmentation_context(**common)
 
     assert context_1.augmented_eicr_id == context_2.augmented_eicr_id
     assert context_1.augmented_eicr_setid == context_2.augmented_eicr_setid
@@ -445,13 +466,13 @@ def test_create_augmentation_context_distinct_inputs_distinct_outputs():
         labels; they must also be distinct.
     """
 
-    context = create_augmentation_context(
+    context = _create_augmentation_context(
         original_eicr_id_root="orig-eicr-1234",
         original_eicr_setid_root="orig-set-2222",
         original_eicr_version="3",
         original_rr_id_root="orig-rr-5678",
         jurisdiction_id="SDDH",
-        condition_grouper_name="COVID-19",
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
         augmentation_time="20260101120000+0000",
     )
 
@@ -463,7 +484,7 @@ def test_create_augmentation_context_pair_recoverability():
     """
     A PHA holding the original eICR's setId can derive the augmented
     RR's setId without seeing the RR — given the condition grouper
-    name. This pair-recoverability property is what justifies seeding
+    UUID. This pair-recoverability property is what justifies seeding
     the augmented RR setId from the eICR's setId rather than the
     RR's.
     """
@@ -471,16 +492,18 @@ def test_create_augmentation_context_pair_recoverability():
     eicr_setid = "orig-set-2222"
 
     # PHA-side derivation using only the eICR setId and the condition
-    derived_directly = _derive_augmented_rr_setid(eicr_setid, "SDDH", "COVID-19")
+    derived_directly = _derive_augmented_rr_setid(
+        eicr_setid, "SDDH", _TEST_CONDITION_GROUPER_UUID
+    )
 
     # Refiner-side derivation via the full context
-    context = create_augmentation_context(
+    context = _create_augmentation_context(
         original_eicr_id_root="orig-eicr-1234",
         original_eicr_setid_root=eicr_setid,
         original_eicr_version="3",
         original_rr_id_root="orig-rr-5678",
         jurisdiction_id="SDDH",
-        condition_grouper_name="COVID-19",
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
         augmentation_time="20260101120000+0000",
     )
 
@@ -495,13 +518,13 @@ def test_create_augmentation_context_inherits_version_number():
     versionNumber tracks the EHR's clinical-case versioning stream.
     """
 
-    context = create_augmentation_context(
+    context = _create_augmentation_context(
         original_eicr_id_root="orig-eicr-1234",
         original_eicr_setid_root="orig-set-2222",
         original_eicr_version="7",
         original_rr_id_root="orig-rr-5678",
         jurisdiction_id="SDDH",
-        condition_grouper_name="COVID-19",
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
         augmentation_time="20260101120000+0000",
     )
 
@@ -516,13 +539,13 @@ def test_create_augmentation_context_shared_timestamp():
     """
 
     shared_time = "20260101120000+0000"
-    context = create_augmentation_context(
+    context = _create_augmentation_context(
         original_eicr_id_root="orig-eicr-1234",
         original_eicr_setid_root="orig-set-2222",
         original_eicr_version="3",
         original_rr_id_root="orig-rr-5678",
         jurisdiction_id="SDDH",
-        condition_grouper_name="COVID-19",
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
         augmentation_time=shared_time,
     )
 
@@ -530,20 +553,154 @@ def test_create_augmentation_context_shared_timestamp():
 
 
 # NOTE:
+# CONTEXT FACTORY TESTS — pair-aware entry point
+# =============================================================================
+
+
+def test_create_augmentation_context_for_pair_extracts_uuid_from_canonical_url(
+    eicr_root_v1_1: etree.Element, rr_root_v1_1: etree.Element
+):
+    """
+    create_augmentation_context_for_pair is the public entry point
+    used by the pipeline. It accepts a TES canonical_url and extracts
+    the trailing UUID internally before feeding it into the
+    deterministic derivation.
+
+    Contexts built from a canonical_url and its bare UUID suffix should
+    produce identical augmented identifiers — confirming that only the
+    UUID participates in the hash, not the host or path.
+    """
+
+    via_for_pair = create_augmentation_context_for_pair(
+        eicr_root=eicr_root_v1_1,
+        rr_root=rr_root_v1_1,
+        jurisdiction_id="SDDH",
+        canonical_url=_TEST_CANONICAL_URL,
+        augmentation_time="20260101120000+0000",
+    )
+
+    # extract the inputs the pair-aware path would have read off the XML,
+    # then build the same context via the lower-level factory using the
+    # bare UUID suffix
+    eicr_id = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+    eicr_setid = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
+    eicr_version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS).get("value")
+    rr_id = rr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+
+    via_direct = _create_augmentation_context(
+        original_eicr_id_root=eicr_id,
+        original_eicr_setid_root=eicr_setid,
+        original_eicr_version=eicr_version,
+        original_rr_id_root=rr_id,
+        jurisdiction_id="SDDH",
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+        augmentation_time="20260101120000+0000",
+    )
+
+    assert via_for_pair.augmented_eicr_id == via_direct.augmented_eicr_id
+    assert via_for_pair.augmented_eicr_setid == via_direct.augmented_eicr_setid
+    assert via_for_pair.augmented_rr_id == via_direct.augmented_rr_id
+    assert via_for_pair.augmented_rr_setid == via_direct.augmented_rr_setid
+
+
+def test_create_augmentation_context_for_pair_url_drift_doesnt_affect_ids(
+    eicr_root_v1_1: etree.Element, rr_root_v1_1: etree.Element
+):
+    """
+    The whole point of seeding from the canonical_url's UUID suffix
+    rather than the full URL is that operational changes to host or
+    path (which don't change the identity of the grouper) should not
+    change the augmented identifiers.
+
+    A canonical_url with a different host but the same UUID suffix
+    must produce identical augmented identifiers.
+    """
+
+    different_host_same_uuid = (
+        "https://some-other-host.example.com/v2/fhir/ValueSet/"
+        f"{_TEST_CONDITION_GROUPER_UUID}"
+    )
+
+    a = create_augmentation_context_for_pair(
+        eicr_root=eicr_root_v1_1,
+        rr_root=rr_root_v1_1,
+        jurisdiction_id="SDDH",
+        canonical_url=_TEST_CANONICAL_URL,
+        augmentation_time="20260101120000+0000",
+    )
+    b = create_augmentation_context_for_pair(
+        eicr_root=eicr_root_v1_1,
+        rr_root=rr_root_v1_1,
+        jurisdiction_id="SDDH",
+        canonical_url=different_host_same_uuid,
+        augmentation_time="20260101120000+0000",
+    )
+
+    assert a.augmented_eicr_id == b.augmented_eicr_id
+    assert a.augmented_eicr_setid == b.augmented_eicr_setid
+    assert a.augmented_rr_id == b.augmented_rr_id
+    assert a.augmented_rr_setid == b.augmented_rr_setid
+
+
+# NOTE:
+# CANONICAL URL UUID EXTRACTION
+# =============================================================================
+
+
+def test_extract_uuid_from_canonical_url_returns_trailing_uuid_verbatim():
+    """
+    The extractor returns the trailing UUID exactly as it appears in
+    the canonical_url — no normalization. Whatever casing TES delivers
+    is what we seed with. URL shape validation lives at the data-ingest
+    seam (the conditions table is populated from reviewed PRs), not
+    here.
+    """
+
+    url = (
+        "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+        "07221093-b8a1-4b1d-8678-259277bfba64"
+    )
+    assert (
+        _extract_uuid_from_canonical_url(url) == "07221093-b8a1-4b1d-8678-259277bfba64"
+    )
+
+
+def test_extract_uuid_from_canonical_url_tolerates_trailing_slash():
+    """
+    urlparse + rstrip("/") handles both "/<uuid>" and "/<uuid>/" forms.
+    """
+
+    base = (
+        "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+        "07221093-b8a1-4b1d-8678-259277bfba64"
+    )
+    assert _extract_uuid_from_canonical_url(base) == _extract_uuid_from_canonical_url(
+        base + "/"
+    )
+
+
+# NOTE:
 # DERIVATION HELPER TESTS
 # =============================================================================
+
+# two distinct condition grouper UUIDs for tests that need to verify
+# discrimination on condition. these are realistic-shape UUIDs but are
+# not actual TES UUIDs.
+_COVID_GROUPER_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
+_FLU_GROUPER_UUID = "1c5ed2a0-5a4f-4d3e-a1b2-7f8e9d0c3b4a"
 
 
 def test_derive_augmented_eicr_id_is_pure_function_of_inputs():
     """
-    The eICR id derivation depends only on (original eICR id, condition
-    grouper name) and produces deterministic output.
+    The eICR id derivation depends only on (original eICR id,
+    jurisdiction, condition grouper UUID) and produces deterministic
+    output.
     """
 
-    a = _derive_augmented_eicr_id("doc-1234", "SDDH", "COVID-19")
-    b = _derive_augmented_eicr_id("doc-1234", "SDDH", "COVID-19")
-    c = _derive_augmented_eicr_id("doc-5678", "SDDH", "COVID-19")
-    d = _derive_augmented_eicr_id("doc-1234", "SDDH", "INFLUENZA")
+    a = _derive_augmented_eicr_id("doc-1234", "SDDH", _COVID_GROUPER_UUID)
+    b = _derive_augmented_eicr_id("doc-1234", "SDDH", _COVID_GROUPER_UUID)
+    c = _derive_augmented_eicr_id("doc-5678", "SDDH", _COVID_GROUPER_UUID)
+    d = _derive_augmented_eicr_id("doc-1234", "SDDH", _FLU_GROUPER_UUID)
     assert a == b  # same inputs → same output
     assert a != c  # different document id → different output
     assert a != d  # different condition → different output
@@ -562,7 +719,9 @@ def test_derive_augmented_eicr_setid_uses_prefix():
     from app.services.ecr.augment import REFINER_DETERMINISTIC_NS
 
     naked = str(uuid.uuid5(REFINER_DETERMINISTIC_NS, "orig-set-2222"))
-    prefixed = _derive_augmented_eicr_setid("orig-set-2222", "SDDH", "COVID-19")
+    prefixed = _derive_augmented_eicr_setid(
+        "orig-set-2222", "SDDH", _COVID_GROUPER_UUID
+    )
     assert naked != prefixed
 
 
@@ -574,8 +733,8 @@ def test_derive_augmented_rr_setid_distinct_from_eicr_setid():
     """
 
     source = "orig-set-2222"
-    eicr_setid = _derive_augmented_eicr_setid(source, "SDDH", "COVID-19")
-    rr_setid = _derive_augmented_rr_setid(source, "SDDH", "COVID-19")
+    eicr_setid = _derive_augmented_eicr_setid(source, "SDDH", _COVID_GROUPER_UUID)
+    rr_setid = _derive_augmented_rr_setid(source, "SDDH", _COVID_GROUPER_UUID)
     assert eicr_setid != rr_setid
 
 
@@ -583,25 +742,25 @@ def test_derive_helpers_discriminate_on_condition():
     """
     All four derivation helpers produce condition-discriminated output:
     given the same input identifier, two different condition grouper
-    names produce two different UUIDs. This is the property that lets
-    a single eICR/RR pair be refined for multiple conditions without
-    producing colliding augmented identifiers.
+    UUIDs produce two different output UUIDs. This is the property that
+    lets a single eICR/RR pair be refined for multiple conditions
+    without producing colliding augmented identifiers.
     """
 
-    eicr_id = _derive_augmented_eicr_id("doc-1234", "SDDH", "COVID-19")
-    eicr_id_flu = _derive_augmented_eicr_id("doc-1234", "SDDH", "INFLUENZA")
+    eicr_id = _derive_augmented_eicr_id("doc-1234", "SDDH", _COVID_GROUPER_UUID)
+    eicr_id_flu = _derive_augmented_eicr_id("doc-1234", "SDDH", _FLU_GROUPER_UUID)
     assert eicr_id != eicr_id_flu
 
-    eicr_setid = _derive_augmented_eicr_setid("set-2222", "SDDH", "COVID-19")
-    eicr_setid_flu = _derive_augmented_eicr_setid("set-2222", "SDDH", "INFLUENZA")
+    eicr_setid = _derive_augmented_eicr_setid("set-2222", "SDDH", _COVID_GROUPER_UUID)
+    eicr_setid_flu = _derive_augmented_eicr_setid("set-2222", "SDDH", _FLU_GROUPER_UUID)
     assert eicr_setid != eicr_setid_flu
 
-    rr_id = _derive_augmented_rr_id("rr-5678", "SDDH", "COVID-19")
-    rr_id_flu = _derive_augmented_rr_id("rr-5678", "SDDH", "INFLUENZA")
+    rr_id = _derive_augmented_rr_id("rr-5678", "SDDH", _COVID_GROUPER_UUID)
+    rr_id_flu = _derive_augmented_rr_id("rr-5678", "SDDH", _FLU_GROUPER_UUID)
     assert rr_id != rr_id_flu
 
-    rr_setid = _derive_augmented_rr_setid("set-2222", "SDDH", "COVID-19")
-    rr_setid_flu = _derive_augmented_rr_setid("set-2222", "SDDH", "INFLUENZA")
+    rr_setid = _derive_augmented_rr_setid("set-2222", "SDDH", _COVID_GROUPER_UUID)
+    rr_setid_flu = _derive_augmented_rr_setid("set-2222", "SDDH", _FLU_GROUPER_UUID)
     assert rr_setid != rr_setid_flu
 
 
@@ -616,18 +775,20 @@ def test_derive_helpers_discriminate_on_jurisdiction():
     identifiers.
     """
 
-    eicr_id_lac = _derive_augmented_eicr_id("doc-1234", "LAC", "COVID-19")
-    eicr_id_ca = _derive_augmented_eicr_id("doc-1234", "CA", "COVID-19")
+    eicr_id_lac = _derive_augmented_eicr_id("doc-1234", "LAC", _COVID_GROUPER_UUID)
+    eicr_id_ca = _derive_augmented_eicr_id("doc-1234", "CA", _COVID_GROUPER_UUID)
     assert eicr_id_lac != eicr_id_ca
 
-    eicr_setid_lac = _derive_augmented_eicr_setid("set-2222", "LAC", "COVID-19")
-    eicr_setid_ca = _derive_augmented_eicr_setid("set-2222", "CA", "COVID-19")
+    eicr_setid_lac = _derive_augmented_eicr_setid(
+        "set-2222", "LAC", _COVID_GROUPER_UUID
+    )
+    eicr_setid_ca = _derive_augmented_eicr_setid("set-2222", "CA", _COVID_GROUPER_UUID)
     assert eicr_setid_lac != eicr_setid_ca
 
-    rr_id_lac = _derive_augmented_rr_id("rr-5678", "LAC", "COVID-19")
-    rr_id_ca = _derive_augmented_rr_id("rr-5678", "CA", "COVID-19")
+    rr_id_lac = _derive_augmented_rr_id("rr-5678", "LAC", _COVID_GROUPER_UUID)
+    rr_id_ca = _derive_augmented_rr_id("rr-5678", "CA", _COVID_GROUPER_UUID)
     assert rr_id_lac != rr_id_ca
 
-    rr_setid_lac = _derive_augmented_rr_setid("set-2222", "LAC", "COVID-19")
-    rr_setid_ca = _derive_augmented_rr_setid("set-2222", "CA", "COVID-19")
+    rr_setid_lac = _derive_augmented_rr_setid("set-2222", "LAC", _COVID_GROUPER_UUID)
+    rr_setid_ca = _derive_augmented_rr_setid("set-2222", "CA", _COVID_GROUPER_UUID)
     assert rr_setid_lac != rr_setid_ca

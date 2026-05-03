@@ -3,6 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final
+from urllib.parse import urlparse
 
 from lxml import etree
 from lxml.etree import _Element
@@ -41,14 +42,23 @@ ORIGINAL_DOCUMENT_SOURCE: Final[str] = "original-document"
 #
 # deterministic UUIDv5-based augmented identifiers; seed string shape:
 #
-#     {jurisdiction_id}|{condition_grouper_name}|{prefix:}{source}
+#     {jurisdiction_id}|{condition_grouper_uuid}|{prefix:}{source}
 #
+# * condition_grouper_uuid is the UUID suffix extracted from the TES
+# condition grouper's canonical_url (e.g.,
+# https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64
+# yields 07221093-b8a1-4b1d-8678-259277bfba64)
+# * seeding with the UUID alone--not the full URL--keeps the hash input stable against
+# operational changes to the host or path that don't change the identity of the grouper
+# * the UUID is the part TES guarantees will not change
+#
+# IMPORTANT:
 # the namespace UUID, the seed prefix labels, the field separator,
 # and the field ordering are all part of the wire-protocol contract
 # and cannot be changed without breaking idempotency for every
 # augmented document previously produced
 #
-# see DIBBs-eCR-Refiner-Augmentation-Guide.md for: the full
+# * see DIBBs-eCR-Refiner-Augmentation-Guide.md for: the full
 # rationale, worked examples covering multi-jurisdiction and
 # multi-condition cases, the wire-protocol contract details,
 # and open IG questions tracked against this design
@@ -62,10 +72,27 @@ _SEED_PREFIX_RR_SETID: Final[str] = "rr-setid"
 _SEED_FIELD_SEPARATOR: Final[str] = "|"
 
 
+def _extract_uuid_from_canonical_url(canonical_url: str) -> str:
+    """
+    Extract the trailing UUID from a TES condition grouper canonical_url.
+
+    TES canonical URLs end with the UUID that uniquely identifies the
+    condition grouper across versions. That UUID is the part we seed
+    deterministic augmented identifiers from.
+
+    Returns the UUID as it appears in the URL — no normalization. The
+    Refiner treats the canonical_url as authoritative; whatever casing
+    TES uses is what we seed with. URL shape validation lives at the
+    data-ingest seam, not here.
+    """
+
+    return urlparse(canonical_url).path.rstrip("/").rsplit("/", 1)[-1]
+
+
 def _derive_augmented_eicr_id(
     original_eicr_id_root: str,
     jurisdiction_id: str,
-    condition_grouper_name: str,
+    condition_grouper_uuid: str,
 ) -> str:
     """
     Deterministic id for the augmented eICR.
@@ -79,7 +106,7 @@ def _derive_augmented_eicr_id(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_uuid}{_SEED_FIELD_SEPARATOR}"
             f"{original_eicr_id_root}",
         )
     )
@@ -88,7 +115,7 @@ def _derive_augmented_eicr_id(
 def _derive_augmented_rr_id(
     original_rr_id_root: str,
     jurisdiction_id: str,
-    condition_grouper_name: str,
+    condition_grouper_uuid: str,
 ) -> str:
     """
     Deterministic id for the augmented RR.
@@ -102,7 +129,7 @@ def _derive_augmented_rr_id(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_uuid}{_SEED_FIELD_SEPARATOR}"
             f"{original_rr_id_root}",
         )
     )
@@ -111,7 +138,7 @@ def _derive_augmented_rr_id(
 def _derive_augmented_eicr_setid(
     original_eicr_setid_root: str,
     jurisdiction_id: str,
-    condition_grouper_name: str,
+    condition_grouper_uuid: str,
 ) -> str:
     """
     Deterministic setId for the augmented eICR.
@@ -126,7 +153,7 @@ def _derive_augmented_eicr_setid(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_uuid}{_SEED_FIELD_SEPARATOR}"
             f"{_SEED_PREFIX_EICR_SETID}:{original_eicr_setid_root}",
         )
     )
@@ -135,7 +162,7 @@ def _derive_augmented_eicr_setid(
 def _derive_augmented_rr_setid(
     original_eicr_setid_root: str,
     jurisdiction_id: str,
-    condition_grouper_name: str,
+    condition_grouper_uuid: str,
 ) -> str:
     """
     Deterministic setId for the augmented RR.
@@ -151,7 +178,7 @@ def _derive_augmented_rr_setid(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{condition_grouper_name}{_SEED_FIELD_SEPARATOR}"
+            f"{condition_grouper_uuid}{_SEED_FIELD_SEPARATOR}"
             f"{_SEED_PREFIX_RR_SETID}:{original_eicr_setid_root}",
         )
     )
@@ -177,12 +204,19 @@ class AugmentationContext:
     augmentation_time conforms to DTM.US.FIELDED
     (urn:oid:2.16.840.1.113883.10.20.22.5.4) and is stamped on both
     documents' <effectiveTime> and on the augmentation author's
-    <time>. tool_code and tool_display come from the Data Augmentation
-    Tool value set (Vol 2 Table 2).
+    <time>.
 
-    See AUGMENT.md for the seed-derivation rationale, the operational
-    invariants this design rests on, and worked examples covering
-    multi-jurisdiction and multi-condition cases.
+    Tool identity (the Data Augmentation Tool value set entry that
+    identifies who produced the augmentation) is intentionally NOT
+    on the context. It travels as a default-valued kwarg on
+    augment_eicr / augment_rr — production callers always use the
+    Refiner defaults, while tests can simulate prior augmentations
+    by other tools without bypassing dataclass invariants.
+
+    See DIBBs-eCR-Refiner-Augmentation-Guide.md for the
+    seed-derivation rationale, the operational invariants this
+    design rests on, and worked examples covering multi-jurisdiction
+    and multi-condition cases.
     """
 
     augmented_eicr_id: str
@@ -191,31 +225,28 @@ class AugmentationContext:
     augmented_rr_setid: str
     augmentation_time: str
     version_number: str
-    tool_code: str = REFINER_TOOL_CODE
-    tool_display: str = REFINER_TOOL_DISPLAY
 
 
-def create_augmentation_context(
+def _create_augmentation_context(
     original_eicr_id_root: str,
     original_eicr_setid_root: str,
     original_eicr_version: str,
     original_rr_id_root: str,
     jurisdiction_id: str,
-    condition_grouper_name: str,
+    condition_grouper_uuid: str,
     augmentation_time: str | None = None,
-    tool_code: str = REFINER_TOOL_CODE,
-    tool_display: str = REFINER_TOOL_DISPLAY,
 ) -> AugmentationContext:
     """
     Build an AugmentationContext from raw input identifiers.
 
-    Most callers should use create_augmentation_context_for_pair,
-    which reads the four input identifiers off the parsed XML for you.
-    This explicit factory is useful for tests and for callers that
-    have the identifiers already extracted.
+    Private — most callers should use create_augmentation_context_for_pair,
+    which reads the four input identifiers off the parsed XML and
+    extracts the condition grouper UUID from a canonical_url. This
+    factory is the lower-level helper used by _for_pair and by tests
+    that already have all the inputs in their derived form.
 
     See AUGMENT.md for the seed derivation rationale and for why
-    jurisdiction_id and condition_grouper_name are required scope
+    jurisdiction_id and the condition grouper UUID are required scope
     discriminators.
 
     Args:
@@ -228,12 +259,11 @@ def create_augmentation_context(
         jurisdiction_id: The jurisdiction code (e.g., "sddh", "lac")
             this refinement is scoped to. Comes from the RR's
             reportability metadata via the trace.
-        condition_grouper_name: The name of the condition grouper
-            used to produce this refinement (e.g., "COVID-19").
+        condition_grouper_uuid: The UUID suffix from the TES condition
+            grouper's canonical_url. The stable part TES guarantees
+            won't change across versions.
         augmentation_time: Optional pre-formatted HL7 timestamp.
             When None, the current time is captured.
-        tool_code: Code from the Data Augmentation Tool value set.
-        tool_display: Human-readable display name for the tool.
 
     Returns:
         A fully populated AugmentationContext ready for use by both
@@ -246,21 +276,19 @@ def create_augmentation_context(
 
     return AugmentationContext(
         augmented_eicr_id=_derive_augmented_eicr_id(
-            original_eicr_id_root, jurisdiction_id, condition_grouper_name
+            original_eicr_id_root, jurisdiction_id, condition_grouper_uuid
         ),
         augmented_eicr_setid=_derive_augmented_eicr_setid(
-            original_eicr_setid_root, jurisdiction_id, condition_grouper_name
+            original_eicr_setid_root, jurisdiction_id, condition_grouper_uuid
         ),
         augmented_rr_id=_derive_augmented_rr_id(
-            original_rr_id_root, jurisdiction_id, condition_grouper_name
+            original_rr_id_root, jurisdiction_id, condition_grouper_uuid
         ),
         augmented_rr_setid=_derive_augmented_rr_setid(
-            original_eicr_setid_root, jurisdiction_id, condition_grouper_name
+            original_eicr_setid_root, jurisdiction_id, condition_grouper_uuid
         ),
         augmentation_time=augmentation_time,
         version_number=original_eicr_version,
-        tool_code=tool_code,
-        tool_display=tool_display,
     )
 
 
@@ -268,22 +296,37 @@ def create_augmentation_context_for_pair(
     eicr_root: _Element,
     rr_root: _Element,
     jurisdiction_id: str,
-    condition_grouper_name: str,
+    canonical_url: str,
     augmentation_time: str | None = None,
-    tool_code: str = REFINER_TOOL_CODE,
-    tool_display: str = REFINER_TOOL_DISPLAY,
 ) -> AugmentationContext:
     """
     Read the four input identifiers off the parsed eICR/RR pair and build the AugmentationContext.
 
-    The pipeline's natural entry point — equivalent to calling
-    create_augmentation_context after extracting the identifiers,
-    but keeps the XML reads next to the augmentation logic.
+    The pipeline's natural entry point. The TES canonical_url is
+    accepted as-is; this function extracts the trailing UUID suffix
+    internally before feeding it into the deterministic derivation.
+    Callers carry the full canonical_url because that's the
+    domain-clear field name in our database (it matches
+    conditions.canonical_url and configurations.condition_canonical_url),
+    but only the UUID suffix participates in the hash.
+
+    Args:
+        eicr_root: The parsed eICR root element.
+        rr_root: The parsed RR root element.
+        jurisdiction_id: The jurisdiction code this refinement is
+            scoped to.
+        canonical_url: The TES condition grouper's canonical_url
+            (e.g., "https://tes.tools.aimsplatform.org/api/fhir/
+            ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"). The
+            UUID suffix is extracted and used as the stable seed.
+        augmentation_time: Optional pre-formatted HL7 timestamp.
+            When None, the current time is captured.
 
     Raises:
         ValueError: If the input eICR is missing setId or
-            versionNumber. Both are required by eICR STU 3.1.1 and
-            the augmentation IG v4 (CONF:5573-15, CONF:5573-16).
+            versionNumber (both required by eICR STU 3.1.1 and the
+            augmentation IG v4 — CONF:5573-15, CONF:5573-16), or if
+            canonical_url does not end with a valid UUID.
     """
 
     eicr_id_el = _find_required(eicr_root, "hl7:id")
@@ -304,16 +347,16 @@ def create_augmentation_context_for_pair(
             "augmentation IG v4 (CONF:5573-16)."
         )
 
-    return create_augmentation_context(
+    condition_grouper_uuid = _extract_uuid_from_canonical_url(canonical_url)
+
+    return _create_augmentation_context(
         original_eicr_id_root=_get_attribute_value(eicr_id_el, "root"),
         original_eicr_setid_root=_get_attribute_value(eicr_setid_el, "root"),
         original_eicr_version=_get_attribute_value(eicr_version_el, "value"),
         original_rr_id_root=_get_attribute_value(rr_id_el, "root"),
         jurisdiction_id=jurisdiction_id,
-        condition_grouper_name=condition_grouper_name,
+        condition_grouper_uuid=condition_grouper_uuid,
         augmentation_time=augmentation_time,
-        tool_code=tool_code,
-        tool_display=tool_display,
     )
 
 
@@ -361,6 +404,8 @@ class AugmentedResult:
 def augment_eicr(
     eicr_root: _Element,
     context: AugmentationContext,
+    tool_code: str = REFINER_TOOL_CODE,
+    tool_display: str = REFINER_TOOL_DISPLAY,
 ) -> AugmentedResult:
     """
     Apply document-level augmentation to a refined eICR.
@@ -370,6 +415,11 @@ def augment_eicr(
 
     The steps execute in CDA R2 schema order: templateId → id →
     effectiveTime → setId → versionNumber → author → relatedDocument.
+
+    tool_code and tool_display default to the Refiner's identity from
+    the Data Augmentation Tool value set (Vol 2 Table 2). Production
+    callers always use the defaults; tests may override to simulate
+    augmentations performed by other tools.
     """
 
     # STEP 1: snapshot identity before overwriting
@@ -386,20 +436,20 @@ def augment_eicr(
     augmented_result = _replace_document_id(
         eicr_root,
         new_doc_id=context.augmented_eicr_id,
-        assigning_authority_name=context.tool_code,
+        assigning_authority_name=tool_code,
     )
 
     # STEP 4: replace effectiveTime
     _replace_effective_time(eicr_root, context.augmentation_time)
 
     # STEP 5: replace setId
-    _replace_set_id(eicr_root, context.augmented_eicr_setid, context.tool_code)
+    _replace_set_id(eicr_root, context.augmented_eicr_setid, tool_code)
 
     # STEP 6: set versionNumber (inherited from source eICR)
     _replace_version_number(eicr_root, context.version_number)
 
     # STEP 7: add header-level augmentation author
-    _add_augmentation_author(eicr_root, context)
+    _add_augmentation_author(eicr_root, context, tool_code, tool_display)
 
     # STEP 8: restructure relatedDocument chain into v4-shape siblings
     _add_related_document(eicr_root, original)
@@ -415,6 +465,8 @@ def augment_eicr(
 def augment_rr(
     rr_root: _Element,
     context: AugmentationContext,
+    tool_code: str = REFINER_TOOL_CODE,
+    tool_display: str = REFINER_TOOL_DISPLAY,
 ) -> AugmentedResult:
     """
     Apply document-level augmentation to a refined RR.
@@ -426,6 +478,11 @@ def augment_rr(
     identifiers and templateId. setId and versionNumber are
     replaced unconditionally — under v4 they are 1..1 SHALL on the
     augmented document, regardless of whether the input RR had them.
+
+    tool_code and tool_display default to the Refiner's identity from
+    the Data Augmentation Tool value set (Vol 2 Table 2). Production
+    callers always use the defaults; tests may override to simulate
+    augmentations performed by other tools.
     """
 
     # STEP 1: snapshot identity before overwriting
@@ -442,20 +499,20 @@ def augment_rr(
     augmented_result = _replace_document_id(
         rr_root,
         new_doc_id=context.augmented_rr_id,
-        assigning_authority_name=context.tool_code,
+        assigning_authority_name=tool_code,
     )
 
     # STEP 4: replace effectiveTime
     _replace_effective_time(rr_root, context.augmentation_time)
 
     # STEP 5: replace setId (unconditional under v4)
-    _replace_set_id(rr_root, context.augmented_rr_setid, context.tool_code)
+    _replace_set_id(rr_root, context.augmented_rr_setid, tool_code)
 
     # STEP 6: set versionNumber (inherited from source eICR; unconditional under v4)
     _replace_version_number(rr_root, context.version_number)
 
     # STEP 7: add header-level augmentation author
-    _add_augmentation_author(rr_root, context)
+    _add_augmentation_author(rr_root, context, tool_code, tool_display)
 
     # STEP 8: restructure relatedDocument chain into v4-shape siblings
     _add_related_document(rr_root, original)
@@ -635,14 +692,19 @@ def _replace_version_number(doc_root: _Element, version_value: str) -> None:
 # =============================================================================
 
 
-def _add_augmentation_author(doc_root: _Element, context: AugmentationContext) -> None:
+def _add_augmentation_author(
+    doc_root: _Element,
+    context: AugmentationContext,
+    tool_code: str,
+    tool_display: str,
+) -> None:
     """
     Add the header-level augmentation author per IG v4.
 
     The eICR and RR augmentation headers share the same author shape,
     so a single helper produces a conformant author for both. Tool
     identity is carried via softwareName's coded attributes (no
-    functionCode at the header level under v4.
+    functionCode at the header level under v4).
 
     The author is appended after any existing <author> elements per
     CDA R2 element ordering.
@@ -670,10 +732,10 @@ def _add_augmentation_author(doc_root: _Element, context: AugmentationContext) -
     # softwareName — carries tool identity via coded attributes from
     # the Data Augmentation Tool value set
     software_name = etree.SubElement(device, f"{{{ns}}}softwareName")
-    software_name.set("code", context.tool_code)
+    software_name.set("code", tool_code)
     software_name.set("codeSystem", ECR_DATA_AUG_CODE_SYSTEM)
     software_name.set("codeSystemName", ECR_DATA_AUG_CODE_SYSTEM_NAME)
-    software_name.set("displayName", context.tool_display)
+    software_name.set("displayName", tool_display)
 
     # insert after the last existing <author> and before <custodian>
     _insert_author(doc_root, author)
