@@ -6,9 +6,9 @@ from packaging.version import parse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
-    MAX_MB_FOR_DIFF_RENDERING,
-    MAX_MB_FOR_UNCOMPRESSED,
-    MAX_MB_FOR_UPLOAD,
+    DIFF_RENDERING_MAX_MB,
+    UNCOMPRESSED_MAX_MB,
+    UPLOAD_MAX_MB,
 )
 from app.core.config import ENVIRONMENT
 from app.db.conditions.db import get_loaded_tes_versions_db
@@ -100,7 +100,7 @@ async def get_file_upload_limits() -> FileInfoResponse:
         FileInfoResponse: Application state information.
     """
     return FileInfoResponse(
-        max_mb_for_diff_rendering=MAX_MB_FOR_DIFF_RENDERING,
-        max_mb_for_upload=MAX_MB_FOR_UPLOAD,
-        max_mb_for_uncompressed=MAX_MB_FOR_UNCOMPRESSED,
+        max_mb_for_diff_rendering=DIFF_RENDERING_MAX_MB,
+        max_mb_for_upload=UPLOAD_MAX_MB,
+        max_mb_for_uncompressed=UNCOMPRESSED_MAX_MB,
     )

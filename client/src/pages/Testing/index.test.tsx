@@ -8,6 +8,7 @@ import { IndependentTestUploadResponse } from '../../api/schemas/independentTest
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
+import { TestQueryClientProvider } from '../../test-utils.tsx';
 
 vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
 
@@ -58,7 +59,9 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
 const renderView = () =>
   render(
     <MemoryRouter>
-      <Testing />
+      <TestQueryClientProvider>
+        <Testing />
+      </TestQueryClientProvider>
     </MemoryRouter>
   );
 

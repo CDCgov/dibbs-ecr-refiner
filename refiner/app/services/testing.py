@@ -6,7 +6,7 @@ from uuid import UUID
 
 from packaging.version import parse
 
-from app.api.validation.file_validation import MAX_BYTES_FOR_DIFF_RENDERING
+from app.api.validation.file_validation import DIFF_RENDERING_MAX_BYTES
 from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
@@ -333,7 +333,7 @@ async def independent_testing(
         )
 
         render_dict[trace.matching_condition.display_name] = (
-            len(result.refined_eicr.encode()) < MAX_BYTES_FOR_DIFF_RENDERING
+            len(result.refined_eicr.encode()) < DIFF_RENDERING_MAX_BYTES
         )
 
         if first_original_eicr_doc_id is None:

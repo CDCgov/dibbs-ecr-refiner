@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
-    MAX_BYTES_FOR_DIFF_RENDERING,
+    DIFF_RENDERING_MAX_BYTES,
     format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
@@ -240,7 +240,7 @@ async def run_configuration_test(
         refined_document.refined_eicr
     )
     render_diff = (
-        len(formatted_unrefined_eicr.encode("utf-8")) < MAX_BYTES_FOR_DIFF_RENDERING
+        len(formatted_unrefined_eicr.encode("utf-8")) < DIFF_RENDERING_MAX_BYTES
     )
     original_eicr = formatted_unrefined_eicr if render_diff else ""
 

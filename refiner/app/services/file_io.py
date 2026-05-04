@@ -209,10 +209,10 @@ def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
         bool: True if the total uncompressed size is less than 50 MB; otherwise, False.
     """
 
-    from app.api.validation.file_validation import MAX_BYTES_FOR_UNCOMPRESSED
+    from app.api.validation.file_validation import UNCOMPRESSED_MAX_BYTES
 
     file_size_sum = sum(zinfo.file_size for zinfo in info)
-    return file_size_sum < MAX_BYTES_FOR_UNCOMPRESSED
+    return file_size_sum < UNCOMPRESSED_MAX_BYTES
 
 
 async def read_xml_zip(file: FileUpload) -> XMLFiles:
