@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    MAX_BYTES_FOR_DIFF_RENDERING,
     format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
@@ -20,7 +21,7 @@ from app.db.conditions.db import get_condition_by_id_db, get_included_conditions
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfiguration
-from app.db.demo.model import FILE_UPLOAD_THRESHOLD_IN_BYTES, Condition
+from app.db.demo.model import Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
@@ -238,8 +239,9 @@ async def run_configuration_test(
     formatted_refined_eicr = format_xml_document_for_display_or_raise(
         refined_document.refined_eicr
     )
-
-    render_diff = len(formatted_refined_eicr.encode()) < FILE_UPLOAD_THRESHOLD_IN_BYTES
+    render_diff = (
+        len(formatted_unrefined_eicr.encode("utf-8")) < MAX_BYTES_FOR_DIFF_RENDERING
+    )
     original_eicr = formatted_unrefined_eicr if render_diff else ""
 
     return ConfigurationTestResponse(

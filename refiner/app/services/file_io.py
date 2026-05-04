@@ -16,8 +16,6 @@ from ..core.exceptions import (
 )
 from ..core.models.types import FileUpload, XMLFiles
 
-MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
-
 
 @dataclass
 class ZipFileItem:
@@ -210,7 +208,11 @@ def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
     Returns:
         bool: True if the total uncompressed size is less than 50 MB; otherwise, False.
     """
-    return sum(zinfo.file_size for zinfo in info) < MAX_UNCOMPRESSED_SIZE
+
+    from app.api.validation.file_validation import MAX_BYTES_FOR_UNCOMPRESSED
+
+    file_size_sum = sum(zinfo.file_size for zinfo in info)
+    return file_size_sum < MAX_BYTES_FOR_UNCOMPRESSED
 
 
 async def read_xml_zip(file: FileUpload) -> XMLFiles:

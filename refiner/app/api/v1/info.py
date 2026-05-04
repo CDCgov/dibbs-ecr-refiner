@@ -1,8 +1,15 @@
+from dataclasses import dataclass
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from packaging.version import parse
 
 from app.api.auth.middleware import get_logged_in_user
+from app.api.validation.file_validation import (
+    MAX_MB_FOR_DIFF_RENDERING,
+    MAX_MB_FOR_UNCOMPRESSED,
+    MAX_MB_FOR_UPLOAD,
+)
 from app.core.config import ENVIRONMENT
 from app.db.conditions.db import get_loaded_tes_versions_db
 from app.db.configurations.db import get_configurations_db
@@ -64,4 +71,36 @@ async def get_info(
                 },
             },
         }
+    )
+
+
+@dataclass
+class FileInfoResponse:
+    """
+    Response for file upload thresholds.
+    """
+
+    max_mb_for_diff_rendering: int
+    max_mb_for_upload: int
+    max_mb_for_uncompressed: int
+
+
+@router.get(
+    "/file-thresholds",
+    tags=["info"],
+    response_model=FileInfoResponse,
+    operation_id="getFileUploadThresholds",
+    include_in_schema=True,
+)
+async def get_file_upload_limits() -> FileInfoResponse:
+    """
+    Fetch application file upload information for frontend display.
+
+    Returns:
+        FileInfoResponse: Application state information.
+    """
+    return FileInfoResponse(
+        max_mb_for_diff_rendering=MAX_MB_FOR_DIFF_RENDERING,
+        max_mb_for_upload=MAX_MB_FOR_UPLOAD,
+        max_mb_for_uncompressed=MAX_MB_FOR_UNCOMPRESSED,
     )

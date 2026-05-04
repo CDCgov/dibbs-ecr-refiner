@@ -6,7 +6,7 @@ from uuid import UUID
 
 from packaging.version import parse
 
-from app.db.demo.model import FILE_UPLOAD_THRESHOLD_IN_MB
+from app.api.validation.file_validation import MAX_BYTES_FOR_DIFF_RENDERING
 from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
@@ -188,7 +188,7 @@ async def independent_testing(
         db=db, rc_codes=rc_codes_for_jurisdiction
     )
 
-    render_dict: dict[str,bool] = defaultdict(bool)
+    render_dict: dict[str, bool] = defaultdict(bool)
 
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
@@ -332,8 +332,12 @@ async def independent_testing(
             trace=pipeline_trace,
         )
 
+        print("diff")
+        print(len(result.refined_eicr.encode()))
+        print(MAX_BYTES_FOR_DIFF_RENDERING)
+
         render_dict[trace.matching_condition.display_name] = (
-            len(result.refined_eicr.encode()) < FILE_UPLOAD_THRESHOLD_IN_MB
+            len(result.refined_eicr.encode()) < MAX_BYTES_FOR_DIFF_RENDERING
         )
 
         if first_original_eicr_doc_id is None:

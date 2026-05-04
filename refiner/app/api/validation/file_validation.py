@@ -15,8 +15,14 @@ from app.services.format import format_xml_document_for_display
 from app.services.sample_file import create_sample_zip_file
 
 # File uploads
-MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
+MEGABYTES = 1024 * 1024
+MAX_MB_FOR_DIFF_RENDERING = 2
+MAX_MB_FOR_UPLOAD = 25
+MAX_MB_FOR_UNCOMPRESSED = 50
+
+MAX_BYTES_FOR_DIFF_RENDERING = MAX_MB_FOR_DIFF_RENDERING * MEGABYTES
+MAX_BYTES_FOR_FILE_UPLOAD = MAX_MB_FOR_UPLOAD * MEGABYTES
+MAX_BYTES_FOR_UNCOMPRESSED = MAX_MB_FOR_UNCOMPRESSED * MEGABYTES
 
 
 def format_xml_document_for_display_or_raise(
@@ -169,10 +175,10 @@ async def _validate_ecr_zip_pair(file: UploadFile) -> UploadFile:
         )
 
     # Ensure compressed size is valid
-    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
+    if file.size > MAX_BYTES_FOR_FILE_UPLOAD:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=".zip file must be less than 10MB in size.",
+            detail=f".zip file must be less than ${MAX_MB_FOR_DIFF_RENDERING}MB in size.",
         )
 
     return file

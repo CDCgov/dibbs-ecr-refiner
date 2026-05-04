@@ -1,8 +1,5 @@
 from dataclasses import dataclass
 
-FILE_UPLOAD_THRESHOLD_IN_MB = 5
-FILE_UPLOAD_THRESHOLD_IN_BYTES = 10**6 * (FILE_UPLOAD_THRESHOLD_IN_MB)
-
 
 @dataclass(frozen=True)
 class Condition:

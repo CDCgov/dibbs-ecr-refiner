@@ -6,8 +6,7 @@ import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
 import { ExternalLink } from '@components/ExternalLink';
 import { Warning } from '@components/Diff/Warning';
-
-export const UPLOAD_FILE_THRESHOLD_MB = 5;
+import { useGetFileUploadThresholds } from '../../api/info/info';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -153,10 +152,21 @@ function UploadZipFile({
 }
 
 function UploadFileWarning() {
+  const {
+    data: fileUploadInformation,
+    isPending,
+    isError,
+  } = useGetFileUploadThresholds();
+
+  const fileSizeDisclaimer =
+    isPending || isError
+      ? ''
+      : `The maximum file size is ${fileUploadInformation.data.max_mb_for_upload}MB.`;
+
   return (
     <Warning
       heading="Do not upload files that contain PHI/PII"
-      message={`This environment is not approved to handle PHI/PII. The maximum file size is ${UPLOAD_FILE_THRESHOLD_MB} MB.`}
+      message={`This environment is not approved to handle PHI/PII. ${fileSizeDisclaimer}`}
     />
   );
 }
