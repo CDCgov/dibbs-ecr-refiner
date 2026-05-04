@@ -188,7 +188,7 @@ async def independent_testing(
         db=db, rc_codes=rc_codes_for_jurisdiction
     )
 
-    render_dict = defaultdict(bool)
+    render_dict: dict[str,bool] = defaultdict(bool)
 
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
