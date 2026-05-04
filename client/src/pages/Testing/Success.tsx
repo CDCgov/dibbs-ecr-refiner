@@ -37,7 +37,7 @@ export function Success({
 
   return (
     <div>
-      <div className="flex place-items-center justify-between gap-4">
+      <div className="flex place-items-center justify-between gap-4 pr-2">
         <Title>eCR refinement results</Title>
         <div className="w-80">
           <Label htmlFor="condition-select" className="text-bold">

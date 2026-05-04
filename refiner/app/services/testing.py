@@ -332,10 +332,6 @@ async def independent_testing(
             trace=pipeline_trace,
         )
 
-        print("diff")
-        print(len(result.refined_eicr.encode()))
-        print(MAX_BYTES_FOR_DIFF_RENDERING)
-
         render_dict[trace.matching_condition.display_name] = (
             len(result.refined_eicr.encode()) < MAX_BYTES_FOR_DIFF_RENDERING
         )
