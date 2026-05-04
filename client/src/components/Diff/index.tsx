@@ -6,6 +6,7 @@ import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Icon } from '@trussworks/react-uswds';
 import { Warning } from './Warning';
+import { UPLOAD_FILE_THRESHOLD_MB } from '../../pages/Testing/RunTest';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -134,7 +135,7 @@ export function Diff({
         />
       ) : (
         <Warning
-          heading={`Maximum file size is ${FILE_UPLOAD_LIMIT_MB}`}
+          heading={`Maximum file size is ${UPLOAD_FILE_THRESHOLD_MB}`}
           message="This file is too large to view in-browser. Please download the results to compare them."
         />
       )}
