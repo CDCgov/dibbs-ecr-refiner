@@ -1,5 +1,5 @@
 boto3==1.43.2
-Authlib==1.6.11
+Authlib==1.7.1
 fastapi==0.136.1
 chardet==7.4.3
 itsdangerous==2.2.0
