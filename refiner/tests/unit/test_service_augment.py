@@ -1,6 +1,9 @@
+import uuid
+
 from lxml import etree
 
 from app.services.ecr.augment import (
+    REFINER_DETERMINISTIC_NS,
     AugmentationContext,
     _create_augmentation_context,
     _derive_augmented_eicr_id,
@@ -720,10 +723,6 @@ def test_derive_augmented_eicr_setid_uses_prefix():
     derivation differs from a naked uuid5 of the source confirms the
     prefix is actually being used.
     """
-
-    import uuid
-
-    from app.services.ecr.augment import REFINER_DETERMINISTIC_NS
 
     naked = str(uuid.uuid5(REFINER_DETERMINISTIC_NS, "orig-set-2222"))
     prefixed = _derive_augmented_eicr_setid(
