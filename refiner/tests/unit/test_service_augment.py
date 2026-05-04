@@ -168,13 +168,20 @@ def test_augment_eicr_adds_related_document(eicr_root_v1_1: etree.Element):
     original_setid = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
     original_version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS).get("value")
 
+    # capture the relatedDocument count before augmentation so we can
+    # assert relative growth
+    original_related_docs = eicr_root_v1_1.findall(
+        "hl7:relatedDocument[@typeCode='XFRM']", HL7_NS
+    )
+    starting_related_doc_len = len(original_related_docs)
+
     context = _make_context()
     augment_eicr(eicr_root_v1_1, context)
 
     related_docs = eicr_root_v1_1.findall(
         "hl7:relatedDocument[@typeCode='XFRM']", HL7_NS
     )
-    assert len(related_docs) == 1
+    assert len(related_docs) == starting_related_doc_len + 1
 
     parent_doc = related_docs[0].find("hl7:parentDocument", HL7_NS)
     assert parent_doc is not None
