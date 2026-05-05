@@ -106,6 +106,7 @@ def mock_user():
         jurisdiction_id="JD-1",
         created_at=datetime.now(),
         updated_at=datetime.now(),
+        dismissed_notifications={},
     )
 
 
