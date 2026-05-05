@@ -10,6 +10,61 @@ test.describe('Configuration detail flow', () => {
     await deleteAllConfigurations();
   });
 
+  test('Check code set status and individual grouper statuses', async ({
+    page,
+    configurationsPage,
+    configurationPage,
+  }) => {
+    const condition = 'COVID-19';
+    await configurationsPage.createConfiguration(condition);
+    await configurationPage.goToBuildTab();
+
+    await expect(
+      page.getByLabel('Code set completion status:', {
+        exact: false,
+      })
+    ).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: 'Open code set completion status details modal',
+      })
+      .click();
+
+    await test.step('Modal checks', async () => {
+      const modal = page.getByRole('dialog');
+      await expect(
+        modal.getByRole('heading', { name: 'Code set details', level: 2 })
+      ).toBeVisible();
+      await expect(
+        modal.getByLabel('Code set completion status:', {
+          exact: false,
+        })
+      ).toBeVisible();
+
+      const rows = modal.locator('tbody').getByRole('row');
+      await expect(rows).toHaveCount(6);
+
+      await expect(
+        modal.getByRole('cell', { name: 'Symptom codes' })
+      ).toBeVisible();
+      await expect(
+        modal.getByRole('cell', { name: 'Medication codes' })
+      ).toBeVisible();
+      await expect(
+        modal.getByRole('cell', { name: 'Diagnosis codes' })
+      ).toBeVisible();
+      await expect(
+        modal.getByRole('cell', { name: 'Clinical lab result codes' })
+      ).toBeVisible();
+      await expect(
+        modal.getByRole('cell', { name: 'Immunization codes' })
+      ).toBeVisible();
+      await expect(
+        modal.getByRole('cell', { name: 'Specimen source codes' })
+      ).toBeVisible();
+    });
+  });
+
   test('Individual custom code workflow', async ({
     page,
     configurationsPage,
