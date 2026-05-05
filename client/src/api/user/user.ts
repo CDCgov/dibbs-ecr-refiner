@@ -6,16 +6,20 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -28,6 +32,8 @@ import type {
 } from 'axios';
 
 import type {
+  HTTPValidationError,
+  UpdateDismissedNotificationRequest,
   UserResponse
 } from '../schemas';
 
@@ -134,3 +140,63 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
 
 
 
+/**
+ * @summary Update Dismissed Notification
+ */
+export const updateDismissedNotification = (
+    updateDismissedNotificationRequest: UpdateDismissedNotificationRequest, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<UserResponse>> => {
+
+
+    return axios.default.patch(
+      `/api/user/dismissed-notifications`,
+      updateDismissedNotificationRequest,options
+    );
+  }
+
+
+
+export const getUpdateDismissedNotificationMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDismissedNotification>>, TError,{data: UpdateDismissedNotificationRequest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDismissedNotification>>, TError,{data: UpdateDismissedNotificationRequest}, TContext> => {
+
+const mutationKey = ['updateDismissedNotification'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDismissedNotification>>, {data: UpdateDismissedNotificationRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateDismissedNotification(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDismissedNotificationMutationResult = NonNullable<Awaited<ReturnType<typeof updateDismissedNotification>>>
+    export type UpdateDismissedNotificationMutationBody = UpdateDismissedNotificationRequest
+    export type UpdateDismissedNotificationMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Update Dismissed Notification
+ */
+export const useUpdateDismissedNotification = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDismissedNotification>>, TError,{data: UpdateDismissedNotificationRequest}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateDismissedNotification>>,
+        TError,
+        {data: UpdateDismissedNotificationRequest},
+        TContext
+      > => {
+      return useMutation(getUpdateDismissedNotificationMutationOptions(options), queryClient);
+    }
