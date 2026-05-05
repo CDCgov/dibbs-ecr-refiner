@@ -43,7 +43,6 @@ export * from './hTTPValidationError';
 export * from './includedCondition';
 export * from './independentTestUploadResponse';
 export * from './lockedByUser';
-export * from './lockedByUserDismissedNotifications';
 export * from './release';
 export * from './releaseNotes';
 export * from './releasesResponse';
