@@ -17,7 +17,7 @@ from app.services.sample_file import create_sample_zip_file
 
 # File uploads
 MEGABYTES = 1024 * 1024
-DIFF_RENDERING_MAX_MB = 1.75
+DIFF_RENDERING_MAX_MB = 2
 UNCOMPRESSED_MAX_MB = 15
 
 DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
