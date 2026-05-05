@@ -109,7 +109,7 @@ def _get_last_updated_at_code_set_status_date(date: datetime | None) -> str | No
     if date is None:
         return None
 
-    return date.strftime("%m/%d/%Y")
+    return date.strftime("%m/%d/%y")
 
 
 def _get_code_category_statuses(
