@@ -1,10 +1,39 @@
 import pytest
+from fastapi import HTTPException, status
 from lxml import etree
 
+from app.api.validation.file_validation import format_xml_document_for_display_or_raise
 from app.services import format
 
 
-class TestStripComments:
+class TestServiceFormat:
+    def test_format_xml_document_for_display_or_raise_valid_xml(self):
+        xml = "<root><child>text</child></root>"
+        result = format_xml_document_for_display_or_raise(xml)
+        assert "<root>" in result
+        assert "<child>text</child>" in result
+
+    def test_format_xml_document_for_display_or_raise_with_declaration(self):
+        xml = '<?xml version="1.0" encoding="UTF-8"?><root><child>text</child></root>'
+        result = format_xml_document_for_display_or_raise(xml)
+        assert "<root>" in result
+
+    def test_format_xml_document_for_display_or_raise_invalid_xml(self):
+        with pytest.raises(HTTPException) as exc_info:
+            format_xml_document_for_display_or_raise("<unclosed>")
+        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert "Invalid XML" in exc_info.value.detail
+
+    def test_format_xml_document_for_display_or_raise_preserves_comments(self):
+        xml = "<root><!-- comment --><child/></root>"
+        result = format_xml_document_for_display_or_raise(xml, preserve_comments=True)
+        assert "<!--comment-->" in result
+
+    def test_format_xml_document_for_display_or_raise_strips_comments_by_default(self):
+        xml = "<root><!-- comment --><child/></root>"
+        result = format_xml_document_for_display_or_raise(xml)
+        assert "<!--" not in result
+
     def test_removes_comments(self):
         raw = """<root>
         <!-- a comment -->
@@ -28,8 +57,6 @@ class TestStripComments:
         result = format._strip_comments(raw)
         assert "<!--" not in result
 
-
-class TestNormalizeXmlPositive:
     def test_preserves_element_order_and_content(self):
         raw = "<root><x>1</x><y>2</y></root>"
         result = format._normalize_xml(raw)
@@ -71,8 +98,6 @@ class TestNormalizeXmlPositive:
         with pytest.raises(ValueError):
             format._normalize_xml(123)  # not a string
 
-
-class TestNormalizeXmlNegative:
     @pytest.mark.parametrize(
         "bad_xml",
         [

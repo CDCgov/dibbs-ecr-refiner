@@ -541,7 +541,7 @@ def process_condition(
         )
         return
 
-    trace.condition_grouper_name = cg_metadata.name
+    trace.canonical_url = cg_metadata.canonical_url
 
     processed_configuration = load_active_configuration(
         s3_client=refiner_input.s3_client,
@@ -810,7 +810,7 @@ def log_refinement_summary(
             {
                 "jurisdiction": t.jurisdiction_code,
                 "rsg_code": t.rsg_code,
-                "condition_grouper": t.condition_grouper_name,
+                "canonical_url": t.canonical_url,
                 "outcome": t.refinement_outcome,
                 "skip_reason": t.skip_reason,
                 "config_version": t.configuration_version,

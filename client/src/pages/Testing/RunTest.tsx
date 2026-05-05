@@ -2,10 +2,12 @@ import { Button } from '@components/Button';
 import { Container, Content } from './Layout';
 import UploadSvg from '../../assets/upload.svg';
 import { ChangeEvent, useRef } from 'react';
-import { WarningIcon } from '@components/WarningIcon';
 import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
 import { ExternalLink } from '@components/ExternalLink';
+import { Warning } from '@components/Diff/Warning';
+
+export const UPLOAD_FILE_THRESHOLD_MB = 5;
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -152,16 +154,9 @@ function UploadZipFile({
 
 function UploadFileWarning() {
   return (
-    <div className="bg-state-error-lighter rounded p-4">
-      <p className="text-state-error-dark flex flex-col gap-3">
-        <span className="flex items-center gap-2">
-          <WarningIcon role="presentation" />
-          <span>This environment is not approved to handle PHI/PII.</span>
-        </span>
-        <span className="text-center font-bold">
-          Do not upload files that contain PHI/PII.
-        </span>
-      </p>
-    </div>
+    <Warning
+      heading="Do not upload files that contain PHI/PII"
+      message={`This environment is not approved to handle PHI/PII. The maximum file size is ${UPLOAD_FILE_THRESHOLD_MB} MB.`}
+    />
   );
 }

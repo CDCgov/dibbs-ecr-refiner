@@ -7,7 +7,7 @@ pytest-cov
 python-dotenv
 ruff==0.15.12
 saxonche
-testcontainers[compose]>=3.7.1
+testcontainers[compose]>=4.14.2
 tqdm
 mypy==1.20.2
 lxml-stubs

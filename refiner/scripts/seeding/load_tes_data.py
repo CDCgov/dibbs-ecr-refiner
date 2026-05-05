@@ -7,6 +7,9 @@ from config import ENV_PATH, logger
 from dotenv import load_dotenv
 from lib import (
     ConditionData,
+    VsCanonicalUrl,
+    VsDict,
+    VsVersion,
     get_db_connection,
     is_condition_grouper,
     load_valuesets_from_all_files,
@@ -62,8 +65,8 @@ class ProcessedCondition(TypedDict):
 
 
 def _build_processed_conditions(
-    condition_groupers: list[dict],
-    valuesets_map: dict[tuple[str, str], dict],
+    condition_groupers: list[VsDict],
+    valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
 ) -> list[ProcessedCondition]:
     results: list[ProcessedCondition] = []
 
@@ -228,7 +231,9 @@ def _upsert_conditions_and_groupers(
         raise
 
 
-def _build_condition_groupers(valuesets_map: dict[tuple[str, str], dict]) -> list[dict]:
+def _build_condition_groupers(
+    valuesets_map: dict[tuple[VsCanonicalUrl, VsVersion], VsDict],
+) -> list[VsDict]:
     groupers = [vs for vs in valuesets_map.values() if is_condition_grouper(vs)]
     logger.info(f"🔎 Identified {len(groupers)} condition groupers to process.")
     return groupers
