@@ -5,13 +5,12 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { CodeSetStatus } from './codeSetStatus';
 
 /**
  * Code category completeness status model.
  */
 export interface CodeCategoryCompletenessStatus {
-  id: string;
+  category: string;
   name: string;
-  status: CodeSetStatus;
+  included: boolean;
 }

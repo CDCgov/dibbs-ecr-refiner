@@ -5,10 +5,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.db.conditions.model import DbConditionsContextGrouper
+
 from ...db.conditions.db import (
     GetConditionCode,
     get_condition_by_id_db,
     get_condition_codes_by_condition_id_db,
+    get_context_groupers_by_condition_id_db,
     get_latest_conditions_db,
 )
 from ...db.pool import AsyncDatabaseConnection, get_db
@@ -64,9 +67,9 @@ class CodeCategoryCompletenessStatus:
     Code category completeness status model.
     """
 
-    id: UUID
+    category: UUID
     name: str
-    status: CodeSetStatus
+    included: bool
 
 
 @dataclass
@@ -109,6 +112,30 @@ def _get_last_updated_at_code_set_status_date(date: str | None) -> str | None:
     return datetime.strptime(str(date), "%Y-%m-%d").strftime("%m/%d/%Y")
 
 
+def _get_code_category_statuses(
+    groupers: list[DbConditionsContextGrouper],
+) -> list[CodeCategoryCompletenessStatus]:
+    category_names = {
+        "symptom": "Symptom codes",
+        "medication": "Medication codes",
+        "diagnosis": "Diagnosis codes",
+        "clinical_lab_result": "Clinical lab result codes",
+        "immunization": "Immunization codes",
+        "specimen_source": "Specimen source codes",
+    }
+
+    found_categories = {row.category for row in groupers}
+
+    return [
+        CodeCategoryCompletenessStatus(
+            category=category,
+            name=name,
+            included=category in found_categories,
+        )
+        for category, name in category_names.items()
+    ]
+
+
 @router.get(
     "/{condition_id}",
     response_model=GetConditionResponse,
@@ -147,13 +174,19 @@ async def get_condition(
         condition.coverage_level_date
     )
 
+    groupers = await get_context_groupers_by_condition_id_db(
+        condition_id=condition.id, db=db
+    )
+
+    code_category_statuses = _get_code_category_statuses(groupers=groupers)
+
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
         completeness_status=CompletenessStatus(
             overall_status=overall_status,
             last_updated_at=last_updated_up,
-            code_category_statuses=[],
+            code_category_statuses=code_category_statuses,
         ),
         codes=condition_codes,
     )
