@@ -105,7 +105,7 @@ def _get_last_updated_at_code_set_status_date(date: str | None) -> str | None:
     if date is None:
         return None
 
-    return datetime.strptime(date, "%Y-%m-%d").strftime("%m/%d/%Y")
+    return datetime.strptime(str(date), "%Y-%m-%d").strftime("%m/%d/%Y")
 
 
 @router.get(
