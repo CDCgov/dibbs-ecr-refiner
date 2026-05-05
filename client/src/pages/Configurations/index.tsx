@@ -7,7 +7,7 @@ import {
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-import { useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import { GetConditionsResponse, UserResponse } from '../../api/schemas';
 import { Link, useNavigate } from 'react-router';
@@ -56,9 +56,10 @@ interface ConfigurationsTable {
 
 interface ConfigurationsProps {
   user?: UserResponse;
+  setUser: Dispatch<SetStateAction<UserResponse | null>>;
 }
 
-export function Configurations({ user }: ConfigurationsProps) {
+export function Configurations({ user, setUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
@@ -88,7 +89,10 @@ export function Configurations({ user }: ConfigurationsProps) {
   return (
     <>
       {showAppUpdateBanner && latestRelease && (
-        <AppUpdateBanner latestReleaseCreatedAt={latestRelease.created_at} />
+        <AppUpdateBanner
+          latestReleaseCreatedAt={latestRelease.created_at}
+          setUser={setUser}
+        />
       )}
 
       <section className="mx-auto p-3">
@@ -132,35 +136,28 @@ export function Configurations({ user }: ConfigurationsProps) {
 
 function AppUpdateBanner({
   latestReleaseCreatedAt,
+  setUser,
 }: {
   latestReleaseCreatedAt: string;
+  setUser: Dispatch<SetStateAction<UserResponse | null>>;
 }) {
-  const [dismissed, setDismissed] = useState(false);
-
-  function handleViewUpdates() {
-    void updateDismissedNotification({
+  async function dismissAppUpdate() {
+    const response = await updateDismissedNotification({
       key: 'most_recent_app_update',
       value: latestReleaseCreatedAt,
-    }).catch((error) => {
-      console.error('Failed to update dismissed notification', error);
     });
+
+    setUser(response.data);
   }
 
   function handleDismiss(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
 
-    void updateDismissedNotification({
-      key: 'most_recent_app_update',
-      value: latestReleaseCreatedAt,
-    }).catch((error) => {
+    void dismissAppUpdate().catch((error) => {
       console.error('Failed to dismiss notification', error);
     });
-
-    setDismissed(true);
   }
-
-  if (dismissed) return null;
 
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
@@ -174,7 +171,11 @@ function AppUpdateBanner({
           </div>
           <Link
             to="/app-updates"
-            onClick={handleViewUpdates}
+            onClick={() => {
+              void dismissAppUpdate().catch((error) => {
+                console.error('Failed to update dismissed notification', error);
+              });
+            }}
             className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
           >
             View updates
