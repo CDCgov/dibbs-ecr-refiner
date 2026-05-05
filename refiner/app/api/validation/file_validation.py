@@ -7,6 +7,7 @@ from lxml import etree
 from app.core.exceptions import (
     FileProcessingError,
     XMLValidationError,
+    ZipSizeError,
     ZipValidationError,
 )
 from app.core.models.types import XMLFiles
@@ -57,6 +58,12 @@ async def get_validated_xml_files(file: UploadFile, logger: Logger) -> XMLFiles:
     """
     try:
         return await file_io.read_xml_zip(file)
+    except ZipSizeError as e:
+        logger.error("ZipSizeError in read_xml_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"ZIP archive is too large. Please upload a file that's less than {UNCOMPRESSED_MAX_MB}MB in size",
+        )
     except ZipValidationError as e:
         logger.error("ZipValidationError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
