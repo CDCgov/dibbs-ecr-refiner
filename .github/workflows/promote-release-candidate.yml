@@ -97,7 +97,7 @@ jobs:
           # Set all the variables we need
           echo "rc_version=$RC_VERSION" >> $GITHUB_OUTPUT
           echo "stable_version=$VERSION" >> $GITHUB_OUTPUT
-          echo "git_tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "git_tag=$VERSION" >> $GITHUB_OUTPUT
 
           echo "ghcr_base=$GHCR_BASE" >> $GITHUB_OUTPUT
           echo "ecr_base=$ECR_BASE" >> $GITHUB_OUTPUT
