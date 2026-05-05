@@ -13,6 +13,7 @@ class UserInfoBase:
     name: str
     email: str
 
+
 @dataclass(frozen=True)
 class DbUser:
     """
