@@ -26,7 +26,7 @@ export function CompletenessStatusBadge({
         <Button
           variant="tertiary"
           onClick={() => setIsOpen(true)}
-          aria-label="Open details modal"
+          aria-label="Open code set completion status details modal"
           className="p-0!"
         >
           Details
@@ -91,6 +91,7 @@ interface BadgeProps {
 function Badge({ status }: BadgeProps) {
   return (
     <span
+      aria-label={`Code set completion status: ${status}`}
       className={classNames('rounded-2xl px-2 py-1', {
         'bg-green-cool-10v': status === 'fully complete',
         'bg-red-warm-10v': status === 'not expanded',
