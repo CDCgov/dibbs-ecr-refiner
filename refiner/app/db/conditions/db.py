@@ -379,33 +379,3 @@ async def get_context_groupers_by_condition_id_db(
             await cur.execute(query, params)
             rows = await cur.fetchall()
             return rows
-
-
-# async def get_context_groupers_by_condition_id(
-#     condition_id: UUID, db: AsyncDatabaseConnection
-# ):
-#     query = """
-#     WITH all_categories(category, name) AS (
-#         VALUES
-#             ('symptom', 'Symptom codes'),
-#             ('medication', 'Medication codes'),
-#             ('diagnosis', 'Diagnosis codes'),
-#             ('clinical_lab_result', 'Clinical lab result codes'),
-#             ('immunization', 'Immunization codes'),
-#             ('specimen_source', 'Specimen source codes')
-#     )
-#     SELECT
-#         ac.name, ac.category,
-#         CASE WHEN t.category IS NOT NULL THEN TRUE ELSE FALSE END AS included
-#     FROM all_categories ac
-#     LEFT JOIN conditions_context_groupers t
-#         ON t.category = ac.category
-#         AND t.condition_id = %s
-#     GROUP BY ac.category, ac.name, t.category;
-#     """
-
-#     params = (condition_id,)
-# async with db.get_connection() as conn:
-#     async with conn.cursor(row_factory=dict_row) as cur:
-#         await cur.execute(query, params)
-#         rows = await cur.fetchall()
