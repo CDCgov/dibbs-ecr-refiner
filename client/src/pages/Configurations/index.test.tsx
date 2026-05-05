@@ -75,7 +75,7 @@ const renderPageView = () =>
         <Routes>
           <Route
             path="/configurations"
-            element={<Configurations user={undefined} setUser={undefined} />}
+            element={<Configurations user={undefined} />}
           />
           <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         </Routes>
@@ -92,9 +92,7 @@ describe('Configurations Page', () => {
             <Routes>
               <Route
                 path="/configurations"
-                element={
-                  <Configurations user={undefined} setUser={undefined} />
-                }
+                element={<Configurations user={undefined} />}
               />
             </Routes>
           </TestQueryClientProvider>
