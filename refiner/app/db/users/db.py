@@ -104,6 +104,25 @@ async def update_user_dismissed_notification_db(
     value: str,
     db: AsyncDatabaseConnection,
 ) -> DbUser:
+    """
+    Updates a user's dismissed notification value in the database.
+
+    This function inserts or updates a key-value pair inside the
+    `dismissed_notifications` JSONB column for a given user.
+
+    Args:
+        user_id (UUID): The ID of the user to update.
+        key (str): The notification key (e.g. `most_recent_app_update`).
+        value (str): The timestamp value to store (ISO string).
+        db (AsyncDatabaseConnection): The database connection.
+
+    Returns:
+        DbUser: The updated user record.
+
+    Raises:
+        Exception: If the user is not found or update fails.
+    """
+
     query = """
         UPDATE users
         SET

@@ -11,8 +11,8 @@ from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import (
     IdpUserResponse,
-    upsert_user_db,
     update_user_dismissed_notification_db,
+    upsert_user_db,
 )
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
@@ -330,7 +330,26 @@ async def update_dismissed_notification(
     request: UpdateDismissedNotificationRequest,
     http_request: Request,
     db: AsyncDatabaseConnection = Depends(get_db),
-):
+) -> UserResponse:
+    """
+    Updates a dismissed notification timestamp for the current user.
+
+    This endpoint stores a timestamp for a given notification key
+    (e.g. `most_recent_app_update`) in the user's
+    `dismissed_notifications` field.
+
+    Args:
+        request (UpdateDismissedNotificationRequest): The notification key and timestamp to store.
+        http_request (Request): The incoming HTTP request used to retrieve the session cookie.
+        db (AsyncDatabaseConnection): The database connection.
+
+    Returns:
+        UserResponse: The updated user object with modified dismissed notifications.
+
+    Raises:
+        HTTPException: 401 if the user is not authenticated.
+    """
+
     session_token = http_request.cookies.get("refiner-session")
 
     if not session_token:
