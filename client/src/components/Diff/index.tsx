@@ -16,7 +16,7 @@ type DiffProps = Pick<
   renderDiff: boolean;
 };
 const loadingFragment = () => (
-  <div style={{ padding: '20px', textAlign: 'center' }}>Computing diff...</div>
+  <div className="m-2 h-6 text-center">Computing diff...</div>
 );
 
 export function Diff({
