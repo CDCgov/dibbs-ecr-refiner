@@ -161,7 +161,7 @@ function UploadFileWarning() {
   const fileSizeDisclaimer =
     isPending || isError
       ? ''
-      : `The maximum file size is ${fileUploadInformation.data.max_mb_for_upload}MB.`;
+      : `The maximum uncompressed file size is ${fileUploadInformation.data.max_mb_for_uncompressed}MB.`;
 
   return (
     <Warning
