@@ -196,27 +196,6 @@ function AppUpdateBanner({
       </div>
     </div>
   );
-  // return (
-  //   <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
-  //     <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-4">
-  //       <div className="flex items-center gap-2">
-  //         <Icon.Info size={3} aria-hidden className="text-blue-40v" />
-  //
-  //         <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
-  //           There are new updates to eCR Refiner.
-  //         </span>
-  //       </div>
-  //
-  //       <Link
-  //         to="/app-updates"
-  //         onClick={handleClick}
-  //         className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
-  //       >
-  //         View updates
-  //       </Link>
-  //     </div>
-  //   </div>
-  // );
 }
 
 interface NewConfigModalProps {
