@@ -52,7 +52,9 @@ export function StatusBadge({
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
           <ModalHeader>
             <ModalTitle>Code set details</ModalTitle>
-            <p>Understand what is and is not included in this code set.</p>
+            <p className="italic">
+              Understand what is and is not included in this code set.
+            </p>
           </ModalHeader>
 
           <ModalBody>
@@ -60,11 +62,13 @@ export function StatusBadge({
           </ModalBody>
 
           <ModalFooter>
-            <p>
+            <p className="w-5/6">
               Use custom codes to add codes you want to retain that are not
               included in the code set.
             </p>
-            <p>{coverage.last_updated_at}</p>
+            <p className="text-sm font-bold">
+              Updated on {coverage.last_updated_at}
+            </p>
           </ModalFooter>
         </Modal>
       )}
