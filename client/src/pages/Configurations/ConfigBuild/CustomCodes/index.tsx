@@ -242,10 +242,13 @@ export function ConditionCodeTable({
 
   return (
     <div className="min-h-full min-w-full">
-      <CompletenessStatusBadge
-        completenessStatus={response.data.completeness_status}
-      />
-      <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
+      <div className="flex flex-col gap-1">
+        <CompletenessStatusBadge
+          completenessStatus={response.data.completeness_status}
+        />
+        <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
+      </div>
+
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
           onChange={(e) => debouncedSearchUpdate(e.target.value)}
