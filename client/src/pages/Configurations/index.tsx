@@ -56,7 +56,7 @@ interface ConfigurationsTable {
 
 interface ConfigurationsProps {
   user?: UserResponse;
-  setUser: Dispatch<SetStateAction<UserResponse | null>>;
+  setUser?: Dispatch<SetStateAction<UserResponse | null>>;
 }
 
 export function Configurations({ user, setUser }: ConfigurationsProps) {
