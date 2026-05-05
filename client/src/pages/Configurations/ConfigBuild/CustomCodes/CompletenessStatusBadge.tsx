@@ -92,9 +92,9 @@ function Badge({ status }: BadgeProps) {
   return (
     <span
       className={classNames('rounded-2xl px-2 py-1', {
-        'bg-green-200': status === 'fully complete',
-        'bg-orange-100': status === 'not expanded',
-        'bg-yellow-100': status === 'partially complete',
+        'bg-green-cool-10v': status === 'fully complete',
+        'bg-red-warm-10v': status === 'not expanded',
+        'bg-state-warning-lighter': status === 'partially complete',
       })}
     >
       {status}
