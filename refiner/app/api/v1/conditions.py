@@ -64,6 +64,7 @@ class CodeCategoryCompletenessStatus:
     Code category completeness status model.
     """
 
+    id: UUID
     name: str
     status: CodeSetStatus
 

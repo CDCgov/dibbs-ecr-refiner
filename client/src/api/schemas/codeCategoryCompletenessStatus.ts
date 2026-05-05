@@ -11,6 +11,7 @@ import type { CodeSetStatus } from './codeSetStatus';
  * Code category completeness status model.
  */
 export interface CodeCategoryCompletenessStatus {
+  id: string;
   name: string;
   status: CodeSetStatus;
 }
