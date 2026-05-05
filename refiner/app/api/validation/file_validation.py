@@ -17,11 +17,9 @@ from app.services.sample_file import create_sample_zip_file
 # File uploads
 MEGABYTES = 1024 * 1024
 DIFF_RENDERING_MAX_MB = 2
-UPLOAD_MAX_MB = 25
-UNCOMPRESSED_MAX_MB = 50
+UNCOMPRESSED_MAX_MB = 20
 
 DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
-FILE_UPLOAD_MAX_BYTES = UPLOAD_MAX_MB * MEGABYTES
 UNCOMPRESSED_MAX_BYTES = UNCOMPRESSED_MAX_MB * MEGABYTES
 
 
@@ -175,10 +173,10 @@ async def _validate_ecr_zip_pair(file: UploadFile) -> UploadFile:
         )
 
     # Ensure compressed size is valid
-    if file.size > FILE_UPLOAD_MAX_BYTES:
+    if file.size > UNCOMPRESSED_MAX_BYTES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f".zip file must be less than {FILE_UPLOAD_MAX_BYTES}MB in size.",
+            detail=f"Uncompressed file must be less than {UNCOMPRESSED_MAX_BYTES}MB in size.",
         )
 
     return file

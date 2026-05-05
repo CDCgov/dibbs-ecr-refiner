@@ -11,6 +11,5 @@
  */
 export interface FileInfoResponse {
   max_mb_for_diff_rendering: number;
-  max_mb_for_upload: number;
   max_mb_for_uncompressed: number;
 }
