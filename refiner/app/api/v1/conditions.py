@@ -67,7 +67,7 @@ class CodeCategoryCompletenessStatus:
     Code category completeness status model.
     """
 
-    category: UUID
+    category: str
     name: str
     included: bool
 
@@ -105,11 +105,11 @@ def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
     return "not expanded"
 
 
-def _get_last_updated_at_code_set_status_date(date: str | None) -> str | None:
+def _get_last_updated_at_code_set_status_date(date: datetime | None) -> str | None:
     if date is None:
         return None
 
-    return datetime.strptime(str(date), "%Y-%m-%d").strftime("%m/%d/%Y")
+    return date.strftime("%m/%d/%Y")
 
 
 def _get_code_category_statuses(
