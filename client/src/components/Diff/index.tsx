@@ -150,7 +150,7 @@ function DiffViewWarning() {
   if (isPending || isError) return null;
   return (
     <Warning
-      heading={`Maximum file size is ${fileUploadInformation.data.max_mb_for_diff_rendering}MB`}
+      heading={`Maximum uncompressed file size is ${fileUploadInformation.data.max_mb_for_diff_rendering}MB`}
       message="This file is too large to view in-browser. Please download the results to compare them."
     />
   );
