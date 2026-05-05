@@ -91,18 +91,11 @@ interface BadgeProps {
 function Badge({ status }: BadgeProps) {
   return (
     <span
-      className={classNames(
-        'rounded-2xl px-2 py-1',
-        {
-          'bg-green-200': status === 'fully complete',
-        },
-        {
-          'bg-orange-100': status === 'not expanded',
-        },
-        {
-          'bg-yellow-100': status === 'partially complete',
-        }
-      )}
+      className={classNames('rounded-2xl px-2 py-1', {
+        'bg-green-200': status === 'fully complete',
+        'bg-orange-100': status === 'not expanded',
+        'bg-yellow-100': status === 'partially complete',
+      })}
     >
       {status}
     </span>
@@ -116,15 +109,10 @@ interface IncludedStatusProps {
 function IncludedStatus({ included }: IncludedStatusProps) {
   return (
     <div
-      className={classNames(
-        'flex items-center gap-2',
-        {
-          'text-green-800': included,
-        },
-        {
-          'text-gray-600': !included,
-        }
-      )}
+      className={classNames('flex items-center gap-2', {
+        'text-green-800': included,
+        'text-gray-600': !included,
+      })}
     >
       {included ? <CheckIcon /> : <XIcon />}
       {included ? (
