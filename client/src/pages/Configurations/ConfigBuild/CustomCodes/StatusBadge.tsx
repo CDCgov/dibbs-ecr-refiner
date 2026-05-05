@@ -26,10 +26,10 @@ export function StatusBadge({
           className={classNames(
             'rounded-2xl px-2 py-1',
             {
-              'bg-green': coverage.overall_status === 'fully complete',
+              'bg-green-200': coverage.overall_status === 'fully complete',
             },
             {
-              'bg-red': coverage.overall_status === 'not expanded',
+              'bg-orange-100': coverage.overall_status === 'not expanded',
             },
             {
               'bg-yellow-100': coverage.overall_status === 'partially complete',
