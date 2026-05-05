@@ -88,7 +88,7 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
   return (
     <>
-      {showAppUpdateBanner && latestRelease && (
+      {showAppUpdateBanner && latestRelease && setUser && (
         <AppUpdateBanner
           latestReleaseCreatedAt={latestRelease.created_at}
           setUser={setUser}

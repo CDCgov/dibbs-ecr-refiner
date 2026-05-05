@@ -16,11 +16,15 @@ export function useLogin(): [
         const resp = await fetch('/api/user');
         if (!resp.ok) {
           setUser(null);
+          setIsLoading(false);
           return;
         }
 
         const data = (await resp.json()) as UserResponse | null;
-        setUser(data);
+        if (data) {
+          setUser(data);
+          setIsLoading(false);
+        }
       } catch {
         console.error('Network error. Please try again.');
         setUser(null);
