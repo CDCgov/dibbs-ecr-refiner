@@ -55,7 +55,7 @@ interface ConfigurationsTable {
 }
 
 interface ConfigurationsProps {
-  user: UserResponse;
+  user?: UserResponse;
 }
 
 export function Configurations({ user }: ConfigurationsProps) {
@@ -66,7 +66,7 @@ export function Configurations({ user }: ConfigurationsProps) {
   const latestRelease = releaseFetchResult?.data.releases?.[0];
 
   const dismissedMostRecentAppUpdate =
-    user.dismissed_notifications?.most_recent_app_update;
+    user?.dismissed_notifications?.most_recent_app_update;
 
   const showAppUpdateBanner =
     latestRelease &&

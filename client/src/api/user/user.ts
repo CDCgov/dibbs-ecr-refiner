@@ -141,6 +141,22 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
 
 
 /**
+ * Updates a dismissed notification timestamp for the current user.
+
+This endpoint stores a timestamp for a given notification key
+(e.g. `most_recent_app_update`) in the user's
+`dismissed_notifications` field.
+
+Args:
+    request (UpdateDismissedNotificationRequest): The notification key and timestamp to store.
+    http_request (Request): The incoming HTTP request used to retrieve the session cookie.
+    db (AsyncDatabaseConnection): The database connection.
+
+Returns:
+    UserResponse: The updated user object with modified dismissed notifications.
+
+Raises:
+    HTTPException: 401 if the user is not authenticated.
  * @summary Update Dismissed Notification
  */
 export const updateDismissedNotification = (
