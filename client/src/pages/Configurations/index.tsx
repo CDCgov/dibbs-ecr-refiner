@@ -9,8 +9,8 @@ import {
 import { useToast } from '../../hooks/useToast';
 import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
-import { GetConditionsResponse } from '../../api/schemas';
-import { useNavigate } from 'react-router';
+import { GetConditionsResponse, UserResponse } from '../../api/schemas';
+import { Link, useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { Spinner } from '@components/Spinner';
@@ -30,6 +30,9 @@ import {
 } from '@components/Combobox';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
+import { Icon } from '@trussworks/react-uswds';
+import { useGetReleases } from '../../api/releases/releases.ts';
+import { updateDismissedNotification } from '../../api/user/user.ts';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -51,9 +54,25 @@ interface ConfigurationsTable {
   data: ConfigurationsData[];
 }
 
-export function Configurations() {
+interface ConfigurationsProps {
+  user: UserResponse;
+}
+
+export function Configurations({ user }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
+
+  const { data: releaseFetchResult } = useGetReleases();
+  const latestRelease = releaseFetchResult?.data.releases?.[0];
+
+  const dismissedMostRecentAppUpdate =
+    user.dismissed_notifications?.most_recent_app_update;
+
+  const showAppUpdateBanner =
+    latestRelease &&
+    (!dismissedMostRecentAppUpdate ||
+      new Date(latestRelease.created_at) >
+        new Date(dismissedMostRecentAppUpdate));
 
   const { searchText, setSearchText, results } = useSearch(configs, {
     keys: [{ name: 'name', weight: 1 }],
@@ -67,42 +86,137 @@ export function Configurations() {
   const hasMultipleConfigs = configs.length > 0;
 
   return (
-    <section className="mx-auto p-3">
-      <div className="flex flex-col gap-4 py-10">
-        <Title>Configurations</Title>
-        <p>
-          Configurations define which patient data is included in refined eCR’s
-          for each reportable condition
-        </p>
-      </div>
-      <div
-        className={classNames(
-          'flex flex-col gap-10 sm:flex-row sm:items-start',
-          {
-            'justify-between': hasMultipleConfigs,
-            'justify-end': !hasMultipleConfigs,
-          }
-        )}
-      >
-        {hasMultipleConfigs ? (
-          <Search
-            placeholder="Search configurations"
-            id="search-configurations"
-            name="search"
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        ) : null}
+    <>
+      {showAppUpdateBanner && latestRelease && (
+        <AppUpdateBanner latestReleaseCreatedAt={latestRelease.created_at} />
+      )}
 
-        <Button className="m-0!" onClick={() => setIsOpen(true)}>
-          Set up new configuration
-        </Button>
-        <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
-      </div>
-      <ConfigurationsTable
-        data={searchText ? results.map((r) => r.item) : configs}
-      />
-    </section>
+      <section className="mx-auto p-3">
+        <div className="flex flex-col gap-4 py-10">
+          <Title>Configurations</Title>
+          <p>
+            Configurations define which patient data is included in refined
+            eCR’s for each reportable condition
+          </p>
+        </div>
+        <div
+          className={classNames(
+            'flex flex-col gap-10 sm:flex-row sm:items-start',
+            {
+              'justify-between': hasMultipleConfigs,
+              'justify-end': !hasMultipleConfigs,
+            }
+          )}
+        >
+          {hasMultipleConfigs ? (
+            <Search
+              placeholder="Search configurations"
+              id="search-configurations"
+              name="search"
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          ) : null}
+
+          <Button className="m-0!" onClick={() => setIsOpen(true)}>
+            Set up new configuration
+          </Button>
+          <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
+        </div>
+        <ConfigurationsTable
+          data={searchText ? results.map((r) => r.item) : configs}
+        />
+      </section>
+    </>
   );
+}
+
+function AppUpdateBanner({
+  latestReleaseCreatedAt,
+}: {
+  latestReleaseCreatedAt: string;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+
+  function handleViewUpdates() {
+    void updateDismissedNotification({
+      key: 'most_recent_app_update',
+      value: latestReleaseCreatedAt,
+    }).catch((error) => {
+      console.error('Failed to update dismissed notification', error);
+    });
+  }
+
+  function handleDismiss(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    void updateDismissedNotification({
+      key: 'most_recent_app_update',
+      value: latestReleaseCreatedAt,
+    }).catch((error) => {
+      console.error('Failed to dismiss notification', error);
+    });
+
+    setDismissed(true);
+  }
+
+  if (dismissed) return null;
+
+  return (
+    <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
+      <div className="mx-auto flex max-w-screen-xl items-center">
+        {/* Center content */}
+        <div className="flex flex-1 items-center justify-center gap-4">
+          <div className="flex items-center gap-2">
+            <Icon.Info size={3} aria-hidden className="text-blue-40v" />
+
+            <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
+              There are new updates to eCR Refiner.
+            </span>
+          </div>
+
+          <Link
+            to="/app-updates"
+            onClick={handleViewUpdates}
+            className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+          >
+            View updates
+          </Link>
+        </div>
+
+        {/* Dismiss (far right) */}
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Dismiss notification"
+          className="ml-4 flex h-[44px] w-[44px] items-center justify-center rounded hover:bg-blue-200 focus:outline-none"
+        >
+          <Icon.Close size={3} aria-hidden className="text-blue-500" />
+        </button>
+      </div>
+    </div>
+  );
+  // return (
+  //   <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
+  //     <div className="mx-auto flex max-w-screen-xl items-center justify-center gap-4">
+  //       <div className="flex items-center gap-2">
+  //         <Icon.Info size={3} aria-hidden className="text-blue-40v" />
+  //
+  //         <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
+  //           There are new updates to eCR Refiner.
+  //         </span>
+  //       </div>
+  //
+  //       <Link
+  //         to="/app-updates"
+  //         onClick={handleClick}
+  //         className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+  //       >
+  //         View updates
+  //       </Link>
+  //     </div>
+  //   </div>
+  // );
 }
 
 interface NewConfigModalProps {

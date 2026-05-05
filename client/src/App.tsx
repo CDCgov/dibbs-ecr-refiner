@@ -33,18 +33,16 @@ export function App() {
   }
 
   return (
-    // showAppUpdateBanner={!user.has_dismissed_app_update_notification}
-    <Layout
-      displayName={`${user.username} (${user.jurisdiction_id})`}
-      showAppUpdateBanner={true}
-    >
+    <Layout displayName={`${user.username} (${user.jurisdiction_id})`}>
       <ToastContainer className="bottom-5!" position="bottom-left" stacked />
       <Routes>
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
         <Route path="/activity" element={<ActivityLog />} />
-
-        <Route path="/configurations" element={<Configurations />} />
+        <Route
+          path="/configurations"
+          element={<Configurations user={user} />}
+        />
         <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
         <Route

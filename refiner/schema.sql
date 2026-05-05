@@ -303,7 +303,8 @@ CREATE TABLE public.users (
     email text NOT NULL,
     jurisdiction_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    dismissed_notifications jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -663,4 +664,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260309151338'),
     ('20260318125201'),
     ('20260402215326'),
-    ('20260420140437');
+    ('20260420140437'),
+    ('20260505141110');

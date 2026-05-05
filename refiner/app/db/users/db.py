@@ -96,3 +96,36 @@ async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
         raise Exception(f"User with ID {id} not found.")
 
     return row
+
+
+async def update_user_dismissed_notification_db(
+    user_id: UUID,
+    key: str,
+    value: str,
+    db: AsyncDatabaseConnection,
+) -> DbUser:
+    query = """
+        UPDATE users
+        SET
+            dismissed_notifications = jsonb_set(
+                dismissed_notifications,
+                %s,
+                to_jsonb(%s::text),
+                true
+            ),
+            updated_at = NOW()
+        WHERE id = %s
+        RETURNING *;
+    """
+
+    params = ([key], value, user_id)
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbUser)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+
+    if row is None:
+        raise Exception(f"User with ID {user_id} not found.")
+
+    return row

@@ -9,7 +9,11 @@ from pydantic import BaseModel
 from ...db.jurisdictions.db import upsert_jurisdiction_db
 from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.users.db import IdpUserResponse, upsert_user_db
+from ...db.users.db import (
+    IdpUserResponse,
+    upsert_user_db,
+    update_user_dismissed_notification_db,
+)
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
@@ -216,6 +220,7 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     jurisdiction_id: str
+    dismissed_notifications: dict[str, str] = {}
 
 
 @auth_router.get(
@@ -247,7 +252,10 @@ async def get_user(
         return None
 
     return UserResponse(
-        id=user.id, username=user.username, jurisdiction_id=user.jurisdiction_id
+        id=user.id,
+        username=user.username,
+        jurisdiction_id=user.jurisdiction_id,
+        dismissed_notifications=user.dismissed_notifications,
     )
 
 
@@ -301,3 +309,48 @@ async def logout(
         secure=env != "local",  # We'll be serving over https in live envs
     )
     return response
+
+
+class UpdateDismissedNotificationRequest(BaseModel):
+    """
+    Request to update a dismissed notification timestamp for the current user.
+    """
+
+    key: str
+    value: str
+
+
+@auth_router.patch(
+    "/user/dismissed-notifications",
+    response_model=UserResponse,
+    tags=["user"],
+    operation_id="updateDismissedNotification",
+)
+async def update_dismissed_notification(
+    request: UpdateDismissedNotificationRequest,
+    http_request: Request,
+    db: AsyncDatabaseConnection = Depends(get_db),
+):
+    session_token = http_request.cookies.get("refiner-session")
+
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = await get_user_from_session(token=session_token, db=db)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    updated_user = await update_user_dismissed_notification_db(
+        user_id=user.id,
+        key=request.key,
+        value=request.value,
+        db=db,
+    )
+
+    return UserResponse(
+        id=updated_user.id,
+        username=updated_user.username,
+        jurisdiction_id=updated_user.jurisdiction_id,
+        dismissed_notifications=updated_user.dismissed_notifications,
+    )

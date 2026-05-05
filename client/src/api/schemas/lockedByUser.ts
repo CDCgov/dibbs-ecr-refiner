@@ -5,6 +5,7 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { LockedByUserDismissedNotifications } from './lockedByUserDismissedNotifications';
 
 /**
  * LockedByUser response to provide user information.
@@ -13,4 +14,5 @@ export interface LockedByUser {
   id: string;
   name: string;
   email: string;
+  dismissed_notifications: LockedByUserDismissedNotifications;
 }

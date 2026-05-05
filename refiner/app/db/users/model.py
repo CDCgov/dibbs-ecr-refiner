@@ -12,6 +12,7 @@ class UserInfoBase:
     id: UUID
     name: str
     email: str
+    dismissed_notifications: dict[str, str]
 
 
 @dataclass(frozen=True)
@@ -26,3 +27,4 @@ class DbUser:
     jurisdiction_id: str
     created_at: datetime
     updated_at: datetime
+    dismissed_notifications: dict[str, str]
