@@ -80,7 +80,6 @@ class IndependentTestingResult:
         - 'no_active_configuration_for_conditions': A list of conditions that were found but had
            no active configuration for the jurisdiction.
         - 'shadow_rr': Optional RR containing only reportable conditions without active configs.
-        - 'render_condition_map': Boolean dict to determine whether the produced condition document is small enough to render the diff view.
     """
 
     original_eicr_doc_id: str

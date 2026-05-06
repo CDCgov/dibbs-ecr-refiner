@@ -7,9 +7,7 @@ import { Diff } from '@components/Diff';
 type SuccessProps = Pick<
   IndependentTestUploadResponse,
   'refined_conditions' | 'refined_download_key' | 'unrefined_eicr'
-> & {
-  renderDict: { [conditionName: string]: boolean };
-};
+>;
 
 type Condition = SuccessProps['refined_conditions'][0];
 
@@ -17,7 +15,6 @@ export function Success({
   refined_conditions,
   unrefined_eicr,
   refined_download_key,
-  renderDict,
 }: SuccessProps) {
   // defaults to first condition found
   const [selectedCondition, setSelectedCondition] = useState<Condition>(
@@ -61,7 +58,7 @@ export function Success({
         condition={selectedCondition}
         unrefined_eicr={unrefined_eicr}
         refined_download_key={refined_download_key}
-        renderDiff={renderDict[selectedCondition.display_name]}
+        renderDiff={selectedCondition.render_diff}
       />
     </div>
   );

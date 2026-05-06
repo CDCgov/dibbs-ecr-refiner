@@ -27,6 +27,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
       refined_eicr: '<data>less data</data>',
       refined_rr: '<data>less data</data>',
       stats: ['eICR reduced by 59%'],
+      render_diff: true,
     },
   ],
   conditions_without_matching_configs: [],
@@ -35,7 +36,6 @@ const mockUploadResponse: IndependentTestUploadResponse = {
   message: 'test message',
   unrefined_eicr: '<data>tons of data here</data>',
   refined_download_key: '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
-  render_condition_map: { 'mock condition name': true },
   file_info_response: FileInfoResponseValue,
 };
 
@@ -47,6 +47,7 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
       refined_eicr: '<data>refined custom data</data>',
       refined_rr: '<data>refined custom data</data>',
       stats: ['eICR reduced by 77%'],
+      render_diff: true,
     },
   ],
   conditions_without_matching_configs: [],
@@ -55,7 +56,6 @@ const mockCustomUploadResponse: IndependentTestUploadResponse = {
   message: 'test message',
   unrefined_eicr: '<data>unrefined custom data</data>',
   refined_download_key: 'de3858c7-28a7-487c-ad7a-3853a8356811_refined_ecr.zip',
-  render_condition_map: { 'custom condition': true },
   file_info_response: FileInfoResponseValue,
 };
 

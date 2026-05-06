@@ -96,7 +96,6 @@ export function Testing() {
             refined_conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
             refined_download_key={response.data.refined_download_key}
-            renderDict={response.data.render_condition_map}
           />
         )}
         {status === 'error' && (
