@@ -38,9 +38,11 @@ export function CompletenessStatusBadge({
           <ModalHeader>
             <div className="flex flex-col items-start gap-1">
               <Badge status={completenessStatus.code_set_status} />
-              <ModalTitle>Code set details</ModalTitle>
-              <p className="italic">
-                Understand what is and is not included in this code set.
+              <ModalTitle className="sm:whitespace-nowrap">
+                Code set completion details
+              </ModalTitle>
+              <p className="sm:text-sm sm:whitespace-nowrap">
+                Understand which types of codes are expanded in this code set.
               </p>
             </div>
           </ModalHeader>
@@ -52,8 +54,10 @@ export function CompletenessStatusBadge({
                 <col className="w-1/3" />
               </colgroup>
               <thead>
-                <tr className="sr-only">
-                  <th scope="col">Category</th>
+                <tr className="border-gray-cool-20 text-gray-cool-90 border-b">
+                  <th className="p-2" scope="col">
+                    Expanded codes
+                  </th>
                   <th scope="col">Status</th>
                 </tr>
               </thead>
@@ -70,11 +74,13 @@ export function CompletenessStatusBadge({
             </table>
           </ModalBody>
 
-          <ModalFooter>
-            <p className="italic">
-              Use custom codes to add codes you want to retain that are not
-              included in the code set.
-            </p>
+          <ModalFooter align="center">
+            <div className="mx-10 flex w-full justify-center">
+              <p className="w-full text-center italic">
+                Use custom codes to add codes you want to retain that are not
+                included in the code set.
+              </p>
+            </div>
           </ModalFooter>
         </Modal>
       )}
@@ -125,6 +131,7 @@ function IncludedStatus({ included }: IncludedStatusProps) {
 function CheckIcon() {
   return (
     <svg
+      className="shrink-0"
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -144,6 +151,7 @@ function CheckIcon() {
 function XIcon() {
   return (
     <svg
+      className="shrink-0"
       width="20"
       height="20"
       viewBox="0 0 20 20"
