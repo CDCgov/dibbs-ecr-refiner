@@ -243,7 +243,7 @@ async def run_configuration_test(
         refined_document.refined_eicr
     )
     render_diff = (
-        len(formatted_unrefined_eicr.encode("utf-8")) < DIFF_RENDERING_MAX_BYTES
+        get_file_size_in_bytes(formatted_unrefined_eicr) < DIFF_RENDERING_MAX_BYTES
     )
     original_eicr = formatted_unrefined_eicr if render_diff else ""
 
