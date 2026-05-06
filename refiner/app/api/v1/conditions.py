@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -79,7 +78,6 @@ class CompletenessStatus:
     """
 
     overall_status: CodeSetStatus
-    last_updated_at: str | None
     code_category_statuses: list[CodeCategoryCompletenessStatus]
 
 
@@ -103,13 +101,6 @@ def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
         return "partially complete"
 
     return "not expanded"
-
-
-def _get_last_updated_at_code_set_status_date(date: datetime | None) -> str | None:
-    if date is None:
-        return None
-
-    return date.strftime("%m/%d/%y")
 
 
 def _get_code_category_statuses(
@@ -170,9 +161,6 @@ async def get_condition(
     )
 
     overall_status = _get_code_set_status(condition.coverage_level)
-    last_updated_up = _get_last_updated_at_code_set_status_date(
-        condition.coverage_level_date
-    )
 
     groupers = await get_context_groupers_by_condition_id_db(
         condition_id=condition.id, db=db
@@ -185,7 +173,6 @@ async def get_condition(
         display_name=condition.display_name,
         completeness_status=CompletenessStatus(
             overall_status=overall_status,
-            last_updated_at=last_updated_up,
             code_category_statuses=code_category_statuses,
         ),
         codes=condition_codes,
