@@ -79,8 +79,8 @@ class FileInfoResponse:
     Response for file upload thresholds.
     """
 
-    max_mb_for_diff_rendering: int
-    max_mb_for_uncompressed: int
+    diff_rendering_max_size_mb: int
+    uncompressed_zip_max_size_mb: int
 
 
 @router.get(
