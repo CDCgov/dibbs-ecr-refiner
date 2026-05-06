@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Label, Select } from '@trussworks/react-uswds';
 import { Title } from '@components/Title';
 import { IndependentTestUploadResponse } from '../../api/schemas';
 import { Diff } from '@components/Diff';
+import { Select, SelectContainer } from '@components/Select';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 
 type SuccessProps = Pick<
   IndependentTestUploadResponse,
@@ -36,21 +38,18 @@ export function Success({
     <div>
       <div className="flex items-center gap-4">
         <Title>eCR refinement results</Title>
-        <Label htmlFor="condition-select" className="text-bold">
-          CONDITION:
-        </Label>
-        <Select
-          id="condition-select"
-          name="condition-select"
-          defaultValue={selectedCondition.code}
-          onChange={onChange}
-        >
-          {refined_conditions.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.display_name}
-            </option>
-          ))}
-        </Select>
+        <SelectContainer>
+          <Field>
+            <Label className="text-bold">CONDITION:</Label>
+            <Select defaultValue={selectedCondition.code} onChange={onChange}>
+              {refined_conditions.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.display_name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </SelectContainer>
       </div>
       <Diff
         condition={selectedCondition}
