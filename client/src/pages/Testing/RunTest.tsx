@@ -53,6 +53,13 @@ export function RunTest({
                   Want to refine your own eCR file?
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
+                <span>
+                  The maximum uncompressed file size is
+                  <span className="font-bold">
+                    {FileInfoResponseValue.max_for_uncompressed_mb}MB
+                  </span>
+                  .
+                </span>
               </p>
               <UploadFileWarning />
               <div>
@@ -155,7 +162,7 @@ function UploadFileWarning() {
   return (
     <Warning
       heading="Do not upload files that contain PHI/PII"
-      message={`This environment is not approved to handle PHI/PII. The maximum uncompressed file size is ${FileInfoResponseValue.max_for_uncompressed_mb}MB. `}
+      message="This environment is not approved to handle PHI/PII."
     />
   );
 }

@@ -1,7 +1,7 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
 import { useEffect, useRef, useState } from 'react';
-import { sleep } from '../../utils';
+import { showSpinnerWithMinimalRenderDuration } from '../../utils';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -14,8 +14,6 @@ type ConfigurationTitleContent = {
   title: string;
   subtitle: React.ReactNode;
 };
-
-const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
 export function ConfigurationTitleBar({
   step,
@@ -52,26 +50,11 @@ export function ConfigurationTitleBar({
   const numSavingActions = useIsMutating();
 
   useEffect(() => {
-    async function resolveSpinnerDisplay() {
-      if (numSavingActions > 0) {
-        spinnerStart.current = performance.now();
-        setShouldShowSpinner(true);
-      }
-      if (numSavingActions === 0 && spinnerStart.current) {
-        const spinnerEnd = performance.now();
-        const spinnerDuration = spinnerEnd - spinnerStart.current;
-
-        if (spinnerDuration < TWO_SECONDS_IN_MILLISECONDS) {
-          // show the saving confirmation for at least two seconds so the
-          // UI change registers to the user
-          await sleep(TWO_SECONDS_IN_MILLISECONDS - spinnerDuration);
-        }
-        setShouldShowSpinner(false);
-        spinnerStart.current = 0;
-      }
-    }
-
-    void resolveSpinnerDisplay();
+    void showSpinnerWithMinimalRenderDuration(
+      spinnerStart,
+      setShouldShowSpinner,
+      numSavingActions > 0
+    );
   }, [numSavingActions]);
 
   return (

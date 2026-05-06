@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import {
   FileInfoResponseValue,
@@ -9,6 +9,8 @@ import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Icon } from '@trussworks/react-uswds';
 import { Warning } from './Warning';
+import { Spinner } from '@components/Spinner';
+import { showSpinnerWithMinimalRenderDuration } from '../../utils';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -17,9 +19,6 @@ type DiffProps = Pick<
   condition: IndependentTestUploadResponse['refined_conditions'][0];
   renderDiff: boolean;
 };
-const loadingFragment = () => (
-  <div className="m-2 h-6 text-center">Computing diff...</div>
-);
 
 export function Diff({
   refined_download_key,
@@ -33,15 +32,15 @@ export function Diff({
   const [isDownloading, setIsDownloading] = useState(false);
 
   async function downloadFile(filename: string) {
+    setIsDownloading(true);
+
     try {
       const url = getDownloadRefinedEcrQueryKey(filename)[0];
-      setIsDownloading(true);
       const response = await fetch(url);
 
       if (!response.ok) {
         const { detail } = await response.json();
         setDownloadError(detail ?? 'An unknown error occurred.');
-        setIsDownloading(false);
         return;
       }
 
@@ -53,13 +52,24 @@ export function Diff({
       link.click();
       URL.revokeObjectURL(blobUrl);
       setDownloadError(null);
-      setIsDownloading(false);
     } catch (error) {
       console.error(error);
       setDownloadError('An unknown error occurred.');
+    } finally {
       setIsDownloading(false);
     }
   }
+
+  const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
+  const spinnerStart = useRef<number>(0);
+
+  useEffect(() => {
+    void showSpinnerWithMinimalRenderDuration(
+      spinnerStart,
+      setShouldShowSpinner,
+      isDownloading
+    );
+  }, [isDownloading]);
 
   return (
     <div>
@@ -74,12 +84,12 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-1 py-1">
-              {isDownloading ? (
+              {shouldShowSpinner ? (
                 <div className="ml-4 flex h-10 items-center">
                   <Icon.Autorenew
                     role="presentation"
                     className="text-blue-cool-50 h-6! w-6! animate-spin"
-                    aria-label="Spinner icon to indicate download is in progress"
+                    aria-hidden
                   />
                   <div>Downloading...</div>
                 </div>
@@ -121,7 +131,13 @@ export function Diff({
           compareMethod={DiffMethod.WORDS_WITH_SPACE}
           leftTitle="Original eICR"
           rightTitle="Refined eICR"
-          loadingElement={loadingFragment}
+          loadingElement={() => {
+            return (
+              <div className="m-auto flex w-50 items-center justify-center">
+                <Spinner className="m-2" /> Computing diff...
+              </div>
+            );
+          }}
           styles={{
             titleBlock: {
               fontFamily: 'Public Sans, sans-serif',
