@@ -376,10 +376,7 @@ describe('Config builder page', () => {
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
-    const parentContainer = await screen.findByTestId(
-      'code-system-select-container'
-    ); // name of the `data-testid` added to the parent div
-    const select = within(parentContainer).getByLabelText(/code system/i);
+    const select = screen.getByLabelText(/code system/i);
 
     // expect the list of code system options to match the list of expected values
     const optionList = within(select)
