@@ -1,5 +1,6 @@
 from logging import Logger
 from pathlib import Path
+from typing import Literal, get_args
 
 from fastapi import HTTPException, UploadFile, status
 from lxml import etree
@@ -17,8 +18,13 @@ from app.services.sample_file import create_sample_zip_file
 
 # File uploads
 MEGABYTES = 1024 * 1024
-DIFF_RENDERING_MAX_MB = 2
-UNCOMPRESSED_MAX_MB = 15
+
+# defining these type literals to get Orval to pick them up and codegen them to the frontend
+DiffMax = Literal[2]
+UncompressedMax = Literal[15]
+
+DIFF_RENDERING_MAX_MB = get_args(DiffMax)[0]
+UNCOMPRESSED_MAX_MB = get_args(UncompressedMax)[0]
 
 DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
 UNCOMPRESSED_MAX_BYTES = UNCOMPRESSED_MAX_MB * MEGABYTES

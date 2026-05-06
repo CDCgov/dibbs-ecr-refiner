@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
-import { IndependentTestUploadResponse } from '../../api/schemas';
+import {
+  FileInfoResponseValue,
+  IndependentTestUploadResponse,
+} from '../../api/schemas';
 import { Button } from '../Button';
 import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Icon } from '@trussworks/react-uswds';
 import { Warning } from './Warning';
-import { useGetFileUploadThresholds } from '../../api/info/info';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -39,6 +41,7 @@ export function Diff({
       if (!response.ok) {
         const { detail } = await response.json();
         setDownloadError(detail ?? 'An unknown error occurred.');
+        setIsDownloading(false);
         return;
       }
 
@@ -54,6 +57,7 @@ export function Diff({
     } catch (error) {
       console.error(error);
       setDownloadError('An unknown error occurred.');
+      setIsDownloading(false);
     }
   }
 
@@ -141,16 +145,9 @@ export function Diff({
 }
 
 function DiffViewWarning() {
-  const {
-    data: fileUploadInformation,
-    isPending,
-    isError,
-  } = useGetFileUploadThresholds();
-
-  if (isPending || isError) return null;
   return (
     <Warning
-      heading={`Maximum uncompressed file size is ${fileUploadInformation.data.max_mb_for_diff_rendering}MB`}
+      heading={`Maximum uncompressed file size is ${FileInfoResponseValue.max_for_uncompressed_mb}MB`}
       message="This file is too large to view in-browser. Please download the results to compare them."
     />
   );

@@ -7,9 +7,10 @@
  */
 
 /**
- * Response for file upload thresholds.
+ * Utility class to help Orval ship these values to the frontend.
  */
-export interface FileInfoResponse {
-  max_mb_for_diff_rendering: number;
-  max_mb_for_uncompressed: number;
-}
+export const FileInfoResponseValue = {
+  max_for_diff_rendering_mb: 2,
+  max_for_uncompressed_mb: 15,
+} as const;
+export type FileInfoResponse = typeof FileInfoResponseValue;

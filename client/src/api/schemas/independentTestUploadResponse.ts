@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { Condition } from './condition';
+import type { FileInfoResponse } from './fileInfoResponse';
 import type { IndependentTestUploadResponseRenderConditionMap } from './independentTestUploadResponseRenderConditionMap';
 
 /**
@@ -20,4 +21,5 @@ export interface IndependentTestUploadResponse {
   unrefined_eicr: string;
   refined_download_key: string;
   render_condition_map: IndependentTestUploadResponseRenderConditionMap;
+  file_info_response: FileInfoResponse;
 }

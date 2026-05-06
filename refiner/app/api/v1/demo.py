@@ -16,7 +16,7 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
-from app.db.demo.model import Condition, IndependentTestUploadResponse
+from app.db.demo.model import Condition, FileInfoResponse, IndependentTestUploadResponse
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import (
@@ -251,6 +251,7 @@ async def demo_upload(
         else "",
         refined_download_key=output_file_name if s3_key else "",
         render_condition_map=test_results.render_condition_map,
+        file_info_response=FileInfoResponse(),
     )
 
 
