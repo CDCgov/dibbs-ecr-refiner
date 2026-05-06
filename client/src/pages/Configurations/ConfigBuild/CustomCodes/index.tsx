@@ -251,7 +251,7 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <SelectContainer>
+        <SelectContainer className="max-w-3xs!">
           <Field>
             <Label>Code system</Label>
             <Select
