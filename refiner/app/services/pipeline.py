@@ -21,6 +21,7 @@ from .ecr.refine import (
     refine_rr,
 )
 from .ecr.reportability import get_reportable_conditions_by_jurisdiction
+from .format import format_xml_document_for_display
 from .terminology import ProcessedConfiguration
 
 # NOTE:
@@ -258,10 +259,25 @@ def refine_for_condition(
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
         trace.refinement_outcome = "refined"
+        # * size metrics are computed against the raw serialization
+        # so the comparison is apples-to-apples with the unformatted
+        # input eICR
+        # * formatting after this keeps the percentage meaningful and
+        # avoids inflating eicr_size_mib with cosmetic whitespace
         trace.eicr_size_reduction_percentage = get_file_size_reduction_percentage(
             unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr
         )
         trace.eicr_size_mib = get_file_size_in_mib(file_content=refined_eicr)
+
+        # * pretty-print at the pipeline boundary so every consumer of
+        # RefinementResult receives display-ready output
+        # * lxml's pretty_print=True alone does NOT indent subtrees
+        # added via SubElement after a parse without remove_blank_text
+        # (the section provenance footnotes are the visible symptom);
+        # the formatter does a remove_blank_text reparse + pretty_print
+        # to produce uniformly indented output
+        refined_eicr = format_xml_document_for_display(refined_eicr)
+        refined_rr = format_xml_document_for_display(refined_rr)
 
         return RefinementResult(
             augmented_eicr_result=augmented_eicr_result,

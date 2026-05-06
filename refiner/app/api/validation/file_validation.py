@@ -19,15 +19,12 @@ MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
 
 
-def format_xml_document_for_display_or_raise(
-    text: str,
-    preserve_comments: bool = False,
-) -> str:
+def format_xml_document_for_display_or_raise(text: str) -> str:
     """
     Formats XML for display purposes. Raises a 422 if the input is not valid XML.
     """
     try:
-        return format_xml_document_for_display(text, preserve_comments)
+        return format_xml_document_for_display(text)
     except etree.XMLSyntaxError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

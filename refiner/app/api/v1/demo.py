@@ -109,7 +109,6 @@ async def _build_refined_conditions(
 
         formatted_refined_eicr = format_xml_document_for_display_or_raise(
             refined_document.refined_eicr,
-            preserve_comments=True,
         )
 
         conditions.append(
@@ -243,7 +242,7 @@ async def demo_upload(
         conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
         unrefined_eicr=format_xml_document_for_display_or_raise(
-            original_xml_files.eicr, preserve_comments=True
+            original_xml_files.eicr
         ),
         refined_download_key=output_file_name if s3_key else "",
     )
