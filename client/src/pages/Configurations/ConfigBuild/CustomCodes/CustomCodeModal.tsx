@@ -1,4 +1,3 @@
-import { Select, Label as USWDSLabel } from '@trussworks/react-uswds';
 import { Button } from '@components/Button';
 import {
   getGetConfigurationQueryKey,
@@ -14,6 +13,7 @@ import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
+import { Select, SelectContainer } from '@components/Select';
 
 interface CustomCodeModalProps {
   configurationId: string;
@@ -209,22 +209,21 @@ function CustomCodeForm({
         />
       </Field>
       {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
-      <div>
-        <USWDSLabel htmlFor="system">Code system</USWDSLabel>
-        <Select
-          id="system"
-          name="system"
-          value={normalizeSystem(system)}
-          onChange={(e) => setSystem(normalizeSystem(e.target.value))}
-        >
-          {systemValues.map((sv) => (
-            <option key={sv.value} value={sv.value}>
-              {sv.name}
-            </option>
-          ))}
-        </Select>
-      </div>
-
+      <SelectContainer>
+        <Field>
+          <Label>Code system</Label>
+          <Select
+            value={normalizeSystem(system)}
+            onChange={(e) => setSystem(normalizeSystem(e.target.value))}
+          >
+            {systemValues.map((sv) => (
+              <option key={sv.value} value={sv.value}>
+                {sv.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </SelectContainer>
       <Field>
         <Label>Code name</Label>
         <TextInput
