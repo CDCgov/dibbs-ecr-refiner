@@ -293,7 +293,7 @@ export function ConditionCodeTable({
               </tr>
             </thead>
             <tbody>
-              {visibleCodes.map((code) => {
+              {visibleCodes.map((code, i) => {
                 const matchingResult = results.find(
                   (r) =>
                     r.item.code === code.code &&
@@ -302,7 +302,7 @@ export function ConditionCodeTable({
 
                 return (
                   <ConditionCodeRow
-                    key={`${code.system}-${code.code}`}
+                    key={`${code.system}-${code.code}-${i}`} // TODO: swap this to an ID when possible
                     codeSystem={code.system}
                     code={code.code}
                     text={code.description}
