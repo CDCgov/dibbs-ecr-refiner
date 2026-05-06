@@ -70,13 +70,10 @@ export function CompletenessStatusBadge({
             </table>
           </ModalBody>
 
-          <ModalFooter align="between">
+          <ModalFooter>
             <p className="italic">
               Use custom codes to add codes you want to retain that are not
               included in the code set.
-            </p>
-            <p className="text-xs font-bold whitespace-nowrap">
-              Updated on {completenessStatus.last_updated_at}
             </p>
           </ModalFooter>
         </Modal>
