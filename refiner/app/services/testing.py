@@ -89,7 +89,6 @@ class IndependentTestingResult:
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
     shadow_rr: str | None
-    render_condition_map: dict[str, bool]
 
     def get_condition_names_with_no_matching_config(self) -> list[str]:
         """
@@ -188,8 +187,6 @@ async def independent_testing(
         db=db, rc_codes=rc_codes_for_jurisdiction
     )
 
-    render_dict: dict[str, bool] = defaultdict(bool)
-
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
         return IndependentTestingResult(
@@ -198,7 +195,6 @@ async def independent_testing(
             no_matching_configuration_for_conditions=[],
             no_active_configuration_for_conditions=[],
             shadow_rr=None,
-            render_condition_map=render_dict,
         )
 
     # STEP 2:
@@ -332,10 +328,6 @@ async def independent_testing(
             trace=pipeline_trace,
         )
 
-        render_dict[trace.matching_condition.display_name] = (
-            len(result.refined_eicr.encode()) < DIFF_RENDERING_MAX_BYTES
-        )
-
         if first_original_eicr_doc_id is None:
             first_original_eicr_doc_id = result.augmented_eicr_result.original_doc_id
 
@@ -363,7 +355,6 @@ async def independent_testing(
                 "total_conditions_used": trace.number_of_included_conditions,
                 "configuration_settings": asdict(configuration),
                 "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
-                "render_condition_map": render_dict,
                 "outcome": "Refinement successful",
             },
         )
@@ -389,7 +380,6 @@ async def independent_testing(
             no_active_configuration_for_conditions=no_active_configurations,
             xml_files=xml_files,
         ),
-        render_condition_map=render_dict,
     )
 
 

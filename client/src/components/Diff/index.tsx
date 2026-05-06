@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import {
   FileInfoResponseValue,
@@ -7,10 +7,9 @@ import {
 import { Button } from '../Button';
 import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
-import { Icon } from '@trussworks/react-uswds';
 import { Warning } from './Warning';
 import { Spinner } from '@components/Spinner';
-import { showSpinnerWithMinimalRenderDuration } from '../../utils';
+import { useSpinnerWithMinimalRenderDuration } from '../../hooks/useMinimalSpinner';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -60,17 +59,8 @@ export function Diff({
     }
   }
 
-  const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
-  const spinnerStart = useRef<number>(0);
-
-  useEffect(() => {
-    void showSpinnerWithMinimalRenderDuration(
-      spinnerStart,
-      setShouldShowSpinner,
-      isDownloading
-    );
-  }, [isDownloading]);
-
+  const { shouldShowSpinner, minimalRenderSpinner } =
+    useSpinnerWithMinimalRenderDuration(isDownloading, 'Downloading');
   return (
     <div>
       {/* Main header container */}
@@ -85,14 +75,7 @@ export function Diff({
           <div>
             <div className="flex flex-col items-start gap-1 py-1">
               {shouldShowSpinner ? (
-                <div className="ml-4 flex h-10 items-center">
-                  <Icon.Autorenew
-                    role="presentation"
-                    className="text-blue-cool-50 h-6! w-6! animate-spin"
-                    aria-hidden
-                  />
-                  <div>Downloading...</div>
-                </div>
+                minimalRenderSpinner
               ) : (
                 <Button
                   variant="tertiary"

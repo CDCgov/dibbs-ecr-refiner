@@ -54,7 +54,7 @@ export function RunTest({
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
                 <span>
-                  The maximum uncompressed file size is
+                  The maximum uncompressed file size is{' '}
                   <span className="font-bold">
                     {FileInfoResponseValue.max_for_uncompressed_mb}MB
                   </span>

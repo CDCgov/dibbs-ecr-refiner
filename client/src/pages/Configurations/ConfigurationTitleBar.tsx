@@ -1,7 +1,6 @@
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
-import { useEffect, useRef, useState } from 'react';
-import { showSpinnerWithMinimalRenderDuration } from '../../utils';
+import { useSpinnerWithMinimalRenderDuration } from '../../hooks/useMinimalSpinner';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -45,17 +44,10 @@ export function ConfigurationTitleBar({
       ),
     },
   };
-  const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
-  const spinnerStart = useRef<number>(0);
-  const numSavingActions = useIsMutating();
 
-  useEffect(() => {
-    void showSpinnerWithMinimalRenderDuration(
-      spinnerStart,
-      setShouldShowSpinner,
-      numSavingActions > 0
-    );
-  }, [numSavingActions]);
+  const numSavingActions = useIsMutating();
+  const { minimalRenderSpinner, shouldShowSpinner } =
+    useSpinnerWithMinimalRenderDuration(numSavingActions > 0, 'Saving...');
 
   return (
     <div className="mt-8 mb-6 flex justify-start">
@@ -68,13 +60,7 @@ export function ConfigurationTitleBar({
             <div className="text-gray-cool-60 h-4 items-center italic">
               <div className="flex items-center">
                 {shouldShowSpinner ? (
-                  <>
-                    <Icon.Autorenew
-                      role="presentation"
-                      className="text-blue-cool-50 h-6! w-6! animate-spin"
-                    />
-                    Saving
-                  </>
+                  minimalRenderSpinner
                 ) : (
                   <>
                     <Icon.Check

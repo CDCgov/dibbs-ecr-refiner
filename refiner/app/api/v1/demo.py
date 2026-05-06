@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
+    DIFF_RENDERING_MAX_BYTES,
     format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
@@ -25,7 +26,10 @@ from app.services.aws.s3 import (
     upload_refined_file_package,
 )
 from app.services.ecr.model import RefinedDocument
-from app.services.ecr.refine import get_file_size_reduction_percentage
+from app.services.ecr.refine import (
+    get_file_size_in_bytes,
+    get_file_size_reduction_percentage,
+)
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
@@ -119,6 +123,8 @@ async def _build_refined_conditions(
                 refined_rr=format_xml_document_for_display_or_raise(
                     original_xml_files.rr
                 ),
+                render_diff=get_file_size_in_bytes(formatted_refined_eicr)
+                < DIFF_RENDERING_MAX_BYTES,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
@@ -235,9 +241,6 @@ async def demo_upload(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
-    # if there aren't any rendering needs, don't send the eICR over the wire
-    send_eicr_to_frontend = any(list(test_results.render_condition_map.values()))
-
     return IndependentTestUploadResponse(
         message="Successfully processed eICR with condition-specific refinement",
         refined_conditions_found=len(conditions),
@@ -247,10 +250,9 @@ async def demo_upload(
         unrefined_eicr=format_xml_document_for_display_or_raise(
             original_xml_files.eicr, preserve_comments=True
         )
-        if send_eicr_to_frontend
+        if any(c.render_diff for c in conditions)
         else "",
         refined_download_key=output_file_name if s3_key else "",
-        render_condition_map=test_results.render_condition_map,
         file_info_response=FileInfoResponse(),
     )
 

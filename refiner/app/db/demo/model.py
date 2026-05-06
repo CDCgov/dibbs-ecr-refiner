@@ -19,6 +19,7 @@ class Condition:
     refined_eicr: str
     refined_rr: str
     stats: list[str]
+    render_diff: bool
 
 
 @dataclass
@@ -44,5 +45,4 @@ class IndependentTestUploadResponse:
     refined_conditions: list[Condition]
     unrefined_eicr: str
     refined_download_key: str
-    render_condition_map: dict[str, bool]
     file_info_response: FileInfoResponse

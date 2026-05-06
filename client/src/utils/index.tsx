@@ -33,28 +33,3 @@ export function highlightMatches(
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-const TWO_SECONDS_IN_MILLISECONDS = 2000;
-
-export async function showSpinnerWithMinimalRenderDuration(
-  spinnerStartRef: React.RefObject<number>,
-  shouldShowSetter: React.Dispatch<boolean>,
-  stopShowingSpinnerConditional: boolean,
-  minimalRenderDuration = TWO_SECONDS_IN_MILLISECONDS
-) {
-  if (stopShowingSpinnerConditional) {
-    spinnerStartRef.current = performance.now();
-    shouldShowSetter(true);
-  }
-  if (!stopShowingSpinnerConditional && spinnerStartRef.current) {
-    const spinnerEnd = performance.now();
-    const spinnerDuration = spinnerEnd - spinnerStartRef.current;
-
-    if (spinnerDuration < minimalRenderDuration) {
-      // show the saving confirmation for at least desired duration so the
-      // UI change registers to the user
-      await sleep(minimalRenderDuration - spinnerDuration);
-    }
-    shouldShowSetter(false);
-    spinnerStartRef.current = 0;
-  }
-}

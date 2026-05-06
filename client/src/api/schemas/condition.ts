@@ -15,4 +15,5 @@ export interface Condition {
   refined_eicr: string;
   refined_rr: string;
   stats: string[];
+  render_diff: boolean;
 }

@@ -7,7 +7,6 @@
  */
 import type { Condition } from './condition';
 import type { FileInfoResponse } from './fileInfoResponse';
-import type { IndependentTestUploadResponseRenderConditionMap } from './independentTestUploadResponseRenderConditionMap';
 
 /**
  * Model for the response when uploading a document in the testing suite.
@@ -20,6 +19,5 @@ export interface IndependentTestUploadResponse {
   refined_conditions: Condition[];
   unrefined_eicr: string;
   refined_download_key: string;
-  render_condition_map: IndependentTestUploadResponseRenderConditionMap;
   file_info_response: FileInfoResponse;
 }
