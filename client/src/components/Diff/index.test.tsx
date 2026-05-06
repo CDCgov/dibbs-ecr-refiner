@@ -8,6 +8,7 @@ const mockMatchedCondition: Condition = {
   refined_eicr: '<xml>refined covid</xml>',
   refined_rr: '<xml>refined covid</xml>',
   stats: ['eICR file reduced by 71%'],
+  render_diff: true,
 };
 
 describe('ExternalLink', () => {
