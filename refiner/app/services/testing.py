@@ -6,7 +6,6 @@ from uuid import UUID
 
 from packaging.version import parse
 
-from app.api.validation.file_validation import DIFF_RENDERING_MAX_BYTES
 from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
