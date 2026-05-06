@@ -19,6 +19,7 @@ import { Button } from '@components/Button';
 import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
+import { Field } from '@components/Field';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -251,17 +252,22 @@ export function ConditionCodeTable({
           placeholder="Search code set"
         />
         <SelectContainer>
-          <Label>Code system</Label>
-          <Select value={selectedCodeSystem} onChange={handleCodeSystemSelect}>
-            <option key="all-code-systems" value="all">
-              All code systems
-            </option>
-            {Object.keys(CodeSystem).map((system) => (
-              <option key={system} value={system}>
-                {system}
+          <Field>
+            <Label>Code system</Label>
+            <Select
+              value={selectedCodeSystem}
+              onChange={handleCodeSystemSelect}
+            >
+              <option key="all-code-systems" value="all">
+                All code systems
               </option>
-            ))}
-          </Select>
+              {Object.keys(CodeSystem).map((system) => (
+                <option key={system} value={system}>
+                  {system}
+                </option>
+              ))}
+            </Select>
+          </Field>
         </SelectContainer>
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
