@@ -120,7 +120,6 @@ vi.mock('../../../api/conditions/conditions', async () => {
           available_systems: ['LOINC', 'SNOMED'],
           completeness_status: {
             overall_status: 'fully complete',
-            last_updated_at: Date.now(),
             code_category_statuses: [],
           },
           codes: [
