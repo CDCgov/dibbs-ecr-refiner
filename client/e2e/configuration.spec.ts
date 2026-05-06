@@ -33,7 +33,10 @@ test.describe('Configuration detail flow', () => {
     await test.step('Modal checks', async () => {
       const modal = page.getByRole('dialog');
       await expect(
-        modal.getByRole('heading', { name: 'Code set details', level: 2 })
+        modal.getByRole('heading', {
+          name: 'Code set completion details',
+          level: 2,
+        })
       ).toBeVisible();
       await expect(
         modal.getByLabel('Code set completion status:', {
