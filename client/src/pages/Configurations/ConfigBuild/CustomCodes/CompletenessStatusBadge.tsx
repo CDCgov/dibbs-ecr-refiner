@@ -22,7 +22,7 @@ export function CompletenessStatusBadge({
   return (
     <div>
       <div className="flex flex-row items-center gap-2">
-        <Badge status={completenessStatus.overall_status} />
+        <Badge status={completenessStatus.code_set_status} />
         <Button
           variant="tertiary"
           onClick={() => setIsOpen(true)}
@@ -37,7 +37,7 @@ export function CompletenessStatusBadge({
         <Modal open={isOpen} onClose={() => setIsOpen(false)}>
           <ModalHeader>
             <div className="flex flex-col items-start gap-1">
-              <Badge status={completenessStatus.overall_status} />
+              <Badge status={completenessStatus.code_set_status} />
               <ModalTitle>Code set details</ModalTitle>
               <p className="italic">
                 Understand what is and is not included in this code set.

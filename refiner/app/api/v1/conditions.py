@@ -77,7 +77,7 @@ class CompletenessStatus:
     Condition completeness status model.
     """
 
-    overall_status: CodeSetStatus
+    code_set_status: CodeSetStatus
     code_category_statuses: list[CodeCategoryCompletenessStatus]
 
 
@@ -160,7 +160,7 @@ async def get_condition(
         id=condition.id, db=db
     )
 
-    overall_status = _get_code_set_status(condition.coverage_level)
+    code_set_status = _get_code_set_status(condition.coverage_level)
 
     groupers = await get_context_groupers_by_condition_id_db(
         condition_id=condition.id, db=db
@@ -172,7 +172,7 @@ async def get_condition(
         id=condition.id,
         display_name=condition.display_name,
         completeness_status=CompletenessStatus(
-            overall_status=overall_status,
+            code_set_status=code_set_status,
             code_category_statuses=code_category_statuses,
         ),
         codes=condition_codes,
