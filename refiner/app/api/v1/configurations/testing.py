@@ -239,13 +239,22 @@ async def run_configuration_test(
     formatted_unrefined_eicr = format_xml_document_for_display_or_raise(
         original_xml_files.eicr
     )
-    formatted_refined_eicr = format_xml_document_for_display_or_raise(
-        refined_document.refined_eicr
-    )
     render_diff = (
         get_file_size_in_bytes(formatted_unrefined_eicr) < DIFF_RENDERING_MAX_BYTES
     )
+    formatted_refined_eicr = (
+        format_xml_document_for_display_or_raise(refined_document.refined_eicr)
+        if render_diff
+        else ""
+    )
+
     original_eicr = formatted_unrefined_eicr if render_diff else ""
+    refined_eicr = formatted_refined_eicr if render_diff else ""
+    refined_rr = (
+        format_xml_document_for_display_or_raise(refined_document.refined_rr)
+        if render_diff
+        else ""
+    )
 
     return ConfigurationTestResponse(
         original_eicr=original_eicr,
@@ -253,12 +262,9 @@ async def run_configuration_test(
         condition=Condition(
             code=condition.code,
             display_name=condition.display_name,
-            refined_eicr=formatted_refined_eicr,
-            refined_rr=format_xml_document_for_display_or_raise(
-                refined_document.refined_rr
-            ),
-            render_diff=get_file_size_in_bytes(formatted_refined_eicr)
-            < DIFF_RENDERING_MAX_BYTES,
+            refined_eicr=refined_eicr,
+            refined_rr=refined_rr,
+            render_diff=render_diff,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(
@@ -268,5 +274,4 @@ async def run_configuration_test(
                 }%",
             ],
         ),
-        render_diff=render_diff,
     )

@@ -117,7 +117,7 @@ function Tester({ config }: TesterProps) {
           condition={uploadResponseData.data.condition}
           refined_download_key={uploadResponseData.data.refined_download_key}
           unrefined_eicr={uploadResponseData.data.original_eicr}
-          renderDiff={uploadResponseData.data.render_diff}
+          renderDiff={uploadResponseData.data.condition.render_diff}
         />
       )}
     </div>
