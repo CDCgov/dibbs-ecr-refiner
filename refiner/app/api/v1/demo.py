@@ -24,6 +24,7 @@ from app.services.aws.s3 import (
     get_refined_user_zip_key,
     upload_refined_file_package,
 )
+from app.services.conditions import filter_refined_files_by_diff_rendering
 from app.services.ecr.model import RefinedDocument
 from app.services.ecr.refine import (
     get_file_size_reduction_percentage,
@@ -38,7 +39,6 @@ from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
 from app.services.xslt import create_refined_eicr_html_file
-from app.services.conditions import filter_refined_files_by_diff_rendering
 
 # Only allow:
 # - letters
