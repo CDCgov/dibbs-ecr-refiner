@@ -75,14 +75,14 @@ export function Diff({
               <SpinnerWithMinimalRender
                 stopShowingSpinnerConditional={isDownloading}
                 loadingMessage="Downloading..."
-                renderWhenDone={() => (
+                renderWhenDone={
                   <Button
                     variant="tertiary"
                     onClick={() => downloadFile(refined_download_key)}
                   >
                     Download results
                   </Button>
-                )}
+                }
               />
 
               {downloadError ? (

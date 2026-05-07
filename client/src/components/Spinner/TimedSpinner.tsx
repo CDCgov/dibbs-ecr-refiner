@@ -4,7 +4,7 @@ import { Icon } from '@trussworks/react-uswds';
 
 type SpinnerWithMinimalRenderProps = {
   stopShowingSpinnerConditional: boolean;
-  renderWhenDone: () => React.ReactNode;
+  renderWhenDone: React.ReactNode;
   loadingMessage?: string;
   minimalRenderDuration?: number;
 };
@@ -23,6 +23,17 @@ export function SpinnerWithMinimalRender({
   );
 
   return shouldShowSpinner ? (
+    <SpinnerWithMessage loadingMessage={loadingMessage}></SpinnerWithMessage>
+  ) : (
+    renderWhenDone
+  );
+}
+
+type SpinnerWithMessageProps = {
+  loadingMessage: string;
+};
+function SpinnerWithMessage({ loadingMessage }: SpinnerWithMessageProps) {
+  return (
     <div className="flex items-center">
       <Icon.Autorenew
         role="presentation"
@@ -31,8 +42,6 @@ export function SpinnerWithMinimalRender({
       />
       <div>{loadingMessage}</div>
     </div>
-  ) : (
-    renderWhenDone()
   );
 }
 

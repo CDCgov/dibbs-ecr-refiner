@@ -59,7 +59,7 @@ export function ConfigurationTitleBar({
               <div className="flex items-center">
                 <SpinnerWithMinimalRender
                   stopShowingSpinnerConditional={numSavingActions > 0}
-                  renderWhenDone={() => (
+                  renderWhenDone={
                     <div className="flex items-center">
                       <Icon.Check
                         role="presentation"
@@ -67,7 +67,7 @@ export function ConfigurationTitleBar({
                       />
                       Saved
                     </div>
-                  )}
+                  }
                 />
               </div>
             </div>
