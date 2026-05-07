@@ -1,15 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
-import { sleep } from '../utils';
+import { sleep } from '../../utils';
 import { Icon } from '@trussworks/react-uswds';
+
+type SpinnerWithMinimalRenderProps = {
+  stopShowingSpinnerConditional: boolean;
+  renderWhenDone: () => React.ReactNode;
+  loadingMessage?: string;
+  minimalRenderDuration?: number;
+};
 
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
-// Spinner that renders for at least the value of minimalRenderDuration
-// to make sure the UI doesn't blink to the user
-export function useSpinnerWithMinimalRenderDuration(
+export function SpinnerWithMinimalRender({
+  stopShowingSpinnerConditional,
+  renderWhenDone,
+  loadingMessage = 'Saving',
+  minimalRenderDuration = TWO_SECONDS_IN_MILLISECONDS,
+}: SpinnerWithMinimalRenderProps) {
+  const shouldShowSpinner = useDisplaySpinnerWithMinimalRender(
+    stopShowingSpinnerConditional,
+    minimalRenderDuration
+  );
+
+  return shouldShowSpinner ? (
+    <div className="flex items-center">
+      <Icon.Autorenew
+        role="presentation"
+        className="text-blue-cool-50 h-6! w-6! animate-spin"
+        aria-hidden
+      />
+      <div>{loadingMessage}</div>
+    </div>
+  ) : (
+    renderWhenDone()
+  );
+}
+
+function useDisplaySpinnerWithMinimalRender(
   stopShowingSpinnerConditional: boolean,
-  loadingMessage = 'Loading...',
-  minimalRenderDuration = TWO_SECONDS_IN_MILLISECONDS
+  minimalRenderDuration: number
 ) {
   const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
   const spinnerStart = useRef<number>(0);
@@ -37,17 +66,5 @@ export function useSpinnerWithMinimalRenderDuration(
     void showSpinnerWithMinimalRenderDuration();
   }, [minimalRenderDuration, stopShowingSpinnerConditional]);
 
-  return {
-    shouldShowSpinner: shouldShowSpinner,
-    minimalRenderSpinner: (
-      <div className="flex items-center">
-        <Icon.Autorenew
-          role="presentation"
-          className="text-blue-cool-50 h-6! w-6! animate-spin"
-          aria-hidden
-        />
-        <div>{loadingMessage}</div>
-      </div>
-    ),
-  };
+  return shouldShowSpinner;
 }

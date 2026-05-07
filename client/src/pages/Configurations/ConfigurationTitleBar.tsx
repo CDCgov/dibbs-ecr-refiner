@@ -1,6 +1,6 @@
+import { SpinnerWithMinimalRender } from '@components/Spinner/TimedSpinner';
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
-import { useSpinnerWithMinimalRenderDuration } from '../../hooks/useMinimalSpinner';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -46,8 +46,6 @@ export function ConfigurationTitleBar({
   };
 
   const numSavingActions = useIsMutating();
-  const { minimalRenderSpinner, shouldShowSpinner } =
-    useSpinnerWithMinimalRenderDuration(numSavingActions > 0, 'Saving...');
 
   return (
     <div className="mt-8 mb-6 flex justify-start">
@@ -59,17 +57,18 @@ export function ConfigurationTitleBar({
           {step === 'build' && (
             <div className="text-gray-cool-60 h-4 items-center italic">
               <div className="flex items-center">
-                {shouldShowSpinner ? (
-                  minimalRenderSpinner
-                ) : (
-                  <>
-                    <Icon.Check
-                      role="presentation"
-                      className="text-state-success h-6! w-6!"
-                    />{' '}
-                    Saved
-                  </>
-                )}
+                <SpinnerWithMinimalRender
+                  stopShowingSpinnerConditional={numSavingActions > 0}
+                  renderWhenDone={() => (
+                    <div className="flex items-center">
+                      <Icon.Check
+                        role="presentation"
+                        className="text-state-success h-6! w-6!"
+                      />
+                      Saved
+                    </div>
+                  )}
+                />
               </div>
             </div>
           )}

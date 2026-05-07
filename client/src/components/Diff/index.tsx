@@ -9,7 +9,7 @@ import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Warning } from './Warning';
 import { Spinner } from '@components/Spinner';
-import { useSpinnerWithMinimalRenderDuration } from '../../hooks/useMinimalSpinner';
+import { SpinnerWithMinimalRender } from '@components/Spinner/TimedSpinner';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
@@ -59,8 +59,6 @@ export function Diff({
     }
   }
 
-  const { shouldShowSpinner, minimalRenderSpinner } =
-    useSpinnerWithMinimalRenderDuration(isDownloading, 'Downloading');
   return (
     <div>
       {/* Main header container */}
@@ -74,16 +72,18 @@ export function Diff({
           </div>
           <div>
             <div className="flex flex-col items-start gap-1 py-1">
-              {shouldShowSpinner ? (
-                minimalRenderSpinner
-              ) : (
-                <Button
-                  variant="tertiary"
-                  onClick={() => downloadFile(refined_download_key)}
-                >
-                  Download results
-                </Button>
-              )}
+              <SpinnerWithMinimalRender
+                stopShowingSpinnerConditional={isDownloading}
+                loadingMessage="Downloading..."
+                renderWhenDone={() => (
+                  <Button
+                    variant="tertiary"
+                    onClick={() => downloadFile(refined_download_key)}
+                  >
+                    Download results
+                  </Button>
+                )}
+              />
 
               {downloadError ? (
                 <span className="text-state-error-dark">
