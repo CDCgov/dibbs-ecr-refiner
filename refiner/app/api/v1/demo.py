@@ -27,7 +27,6 @@ from app.services.aws.s3 import (
 )
 from app.services.ecr.model import RefinedDocument
 from app.services.ecr.refine import (
-    get_file_size_in_bytes,
     get_file_size_reduction_percentage,
 )
 from app.services.file_io import (
@@ -37,6 +36,7 @@ from app.services.file_io import (
     create_refined_file_names,
 )
 from app.services.logger import get_logger
+from app.services.pipeline import filter_refined_files_by_diff_rendering
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
 from app.services.xslt import create_refined_eicr_html_file
@@ -110,21 +110,19 @@ async def _build_refined_conditions(
 
         packaged_files.append(html_file)
 
-        formatted_refined_eicr = format_xml_document_for_display_or_raise(
-            refined_document.refined_eicr,
-            preserve_comments=True,
+        content_for_frontend = filter_refined_files_by_diff_rendering(
+            original_xml_files=original_xml_files, refined_document=refined_document
         )
 
         conditions.append(
             Condition(
                 code=condition.code,
                 display_name=condition.display_name,
-                refined_eicr=formatted_refined_eicr,
+                refined_eicr=content_for_frontend.refined_eicr,
                 refined_rr=format_xml_document_for_display_or_raise(
                     original_xml_files.rr
                 ),
-                render_diff=get_file_size_in_bytes(formatted_refined_eicr)
-                < DIFF_RENDERING_MAX_BYTES,
+                render_diff=content_for_frontend.render_diff,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(

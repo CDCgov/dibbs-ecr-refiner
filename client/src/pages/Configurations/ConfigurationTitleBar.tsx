@@ -1,4 +1,4 @@
-import { SpinnerWithMinimalRender } from '@components/Spinner/TimedSpinner';
+import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
 

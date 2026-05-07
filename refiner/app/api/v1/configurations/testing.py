@@ -26,7 +26,6 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
 from app.services.ecr.refine import (
-    get_file_size_in_bytes,
     get_file_size_reduction_percentage,
 )
 from app.services.file_io import (
@@ -36,6 +35,7 @@ from app.services.file_io import (
     create_refined_file_names,
 )
 from app.services.logger import get_logger
+from app.services.pipeline import filter_refined_files_by_diff_rendering
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import inline_testing
 from app.services.xslt import create_refined_eicr_html_file
@@ -236,34 +236,18 @@ async def run_configuration_test(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
-    render_diff = (
-        get_file_size_in_bytes(original_xml_files.eicr) < DIFF_RENDERING_MAX_BYTES
+    content_for_frontend = filter_refined_files_by_diff_rendering(
+        original_xml_files=original_xml_files, refined_document=refined_document
     )
-
-    original_eicr = ""
-    refined_eicr = ""
-    refined_rr = ""
-
-    if render_diff:
-        original_eicr = format_xml_document_for_display_or_raise(
-            original_xml_files.eicr
-        )
-        refined_eicr = format_xml_document_for_display_or_raise(
-            refined_document.refined_eicr
-        )
-        refined_rr = format_xml_document_for_display_or_raise(
-            refined_document.refined_rr
-        )
-
     return ConfigurationTestResponse(
-        original_eicr=original_eicr,
+        original_eicr=content_for_frontend.original_eicr,
         refined_download_key=output_file_name if s3_key else "",
         condition=Condition(
             code=condition.code,
             display_name=condition.display_name,
-            refined_eicr=refined_eicr,
-            refined_rr=refined_rr,
-            render_diff=render_diff,
+            refined_eicr=content_for_frontend.refined_eicr,
+            refined_rr=content_for_frontend.refined_rr,
+            render_diff=content_for_frontend.render_diff,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

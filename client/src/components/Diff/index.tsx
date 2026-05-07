@@ -9,7 +9,7 @@ import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Warning } from './Warning';
 import { Spinner } from '@components/Spinner';
-import { SpinnerWithMinimalRender } from '@components/Spinner/TimedSpinner';
+import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 
 type DiffProps = Pick<
   IndependentTestUploadResponse,
