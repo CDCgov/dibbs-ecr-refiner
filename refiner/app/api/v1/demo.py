@@ -10,7 +10,6 @@ from fastapi.responses import StreamingResponse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
-    DIFF_RENDERING_MAX_BYTES,
     format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
