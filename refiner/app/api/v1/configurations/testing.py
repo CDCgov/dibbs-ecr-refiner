@@ -246,9 +246,6 @@ async def run_configuration_test(
             code=condition.code,
             display_name=condition.display_name,
             refined_eicr=formatted_refined_eicr,
-            refined_rr=format_xml_document_for_display_or_raise(
-                refined_document.refined_rr
-            ),
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

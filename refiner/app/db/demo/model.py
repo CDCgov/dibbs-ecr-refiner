@@ -10,7 +10,6 @@ class Condition:
     code: str
     display_name: str
     refined_eicr: str
-    refined_rr: str
     stats: list[str]
 
 

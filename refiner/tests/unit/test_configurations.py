@@ -488,9 +488,5 @@ async def test_inline_allow_custom_zip(
         response.json()["condition"]["refined_eicr"].strip()
         == "<xml>COVID-19 refined eICR doc</xml>"
     )
-    assert (
-        response.json()["condition"]["refined_rr"].strip()
-        == "<xml>COVID-19 refined RR doc</xml>"
-    )
 
     test_app.dependency_overrides.clear()
