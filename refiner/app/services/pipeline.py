@@ -286,13 +286,12 @@ def refine_for_condition(
 @dataclass
 class DiffRenderingReturnType:
     """
-    Packaged strings for the frontend based on the decision to render the diff.
+    Packaged strings for the frontend, conditionally packaged based on the decision to render the diff.
     """
 
     render_diff: bool
     refined_eicr: str
     original_eicr: str
-    refined_rr: str
 
 
 def filter_refined_files_by_diff_rendering(
@@ -315,7 +314,6 @@ def filter_refined_files_by_diff_rendering(
 
     original_eicr = ""
     refined_eicr = ""
-    refined_rr = ""
 
     if render_diff:
         original_eicr = format_xml_document_for_display_or_raise(
@@ -324,13 +322,9 @@ def filter_refined_files_by_diff_rendering(
         refined_eicr = format_xml_document_for_display_or_raise(
             refined_document.refined_eicr
         )
-        refined_rr = format_xml_document_for_display_or_raise(
-            refined_document.refined_rr
-        )
 
     return DiffRenderingReturnType(
         render_diff=render_diff,
         refined_eicr=refined_eicr,
         original_eicr=original_eicr,
-        refined_rr=refined_rr,
     )
