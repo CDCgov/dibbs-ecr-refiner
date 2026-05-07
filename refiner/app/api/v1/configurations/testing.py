@@ -23,6 +23,7 @@ from app.db.demo.model import Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
+from app.services.conditions import filter_refined_files_by_diff_rendering
 from app.services.ecr.refine import (
     get_file_size_reduction_percentage,
 )
@@ -33,7 +34,6 @@ from app.services.file_io import (
     create_refined_file_names,
 )
 from app.services.logger import get_logger
-from app.services.pipeline import filter_refined_files_by_diff_rendering
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import inline_testing
 from app.services.xslt import create_refined_eicr_html_file

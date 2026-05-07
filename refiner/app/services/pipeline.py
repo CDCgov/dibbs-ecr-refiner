@@ -3,11 +3,6 @@ from typing import Literal
 
 from lxml import etree
 
-from app.api.validation.file_validation import (
-    DIFF_RENDERING_MAX_BYTES,
-    format_xml_document_for_display_or_raise,
-)
-
 from ..core.exceptions import XMLValidationError
 from ..core.models.types import XMLFiles
 from .ecr.augment import (
@@ -16,11 +11,10 @@ from .ecr.augment import (
     augment_rr,
     create_augmentation_context_for_pair,
 )
-from .ecr.model import JurisdictionReportableConditions, RefinedDocument
+from .ecr.model import JurisdictionReportableConditions
 from .ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
-    get_file_size_in_bytes,
     get_file_size_in_mib,
     get_file_size_reduction_percentage,
     refine_eicr,
@@ -281,50 +275,3 @@ def refine_for_condition(
         trace.refinement_outcome = "error"
         trace.error_detail = str(e)
         raise
-
-
-@dataclass
-class DiffRenderingReturnType:
-    """
-    Packaged strings for the frontend, conditionally packaged based on the decision to render the diff.
-    """
-
-    render_diff: bool
-    refined_eicr: str
-    original_eicr: str
-
-
-def filter_refined_files_by_diff_rendering(
-    original_xml_files: XMLFiles, refined_document: RefinedDocument
-) -> DiffRenderingReturnType:
-    """
-    Function to decide whether to filter files being sent to the frontend based on rendering size.
-
-    Args:
-        original_xml_files: Inputted files.
-        refined_document: Refined documents to potentially ship to potentially render in the diff
-
-    Returns:
-        DiffRenderingReturnType - with values being the strings to send to the frontend.
-
-    """
-    render_diff = (
-        get_file_size_in_bytes(original_xml_files.eicr) < DIFF_RENDERING_MAX_BYTES
-    )
-
-    original_eicr = ""
-    refined_eicr = ""
-
-    if render_diff:
-        original_eicr = format_xml_document_for_display_or_raise(
-            original_xml_files.eicr
-        )
-        refined_eicr = format_xml_document_for_display_or_raise(
-            refined_document.refined_eicr
-        )
-
-    return DiffRenderingReturnType(
-        render_diff=render_diff,
-        refined_eicr=refined_eicr,
-        original_eicr=original_eicr,
-    )

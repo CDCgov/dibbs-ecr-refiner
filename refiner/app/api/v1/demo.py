@@ -35,10 +35,10 @@ from app.services.file_io import (
     create_refined_file_names,
 )
 from app.services.logger import get_logger
-from app.services.pipeline import filter_refined_files_by_diff_rendering
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import independent_testing
 from app.services.xslt import create_refined_eicr_html_file
+from app.services.conditions import filter_refined_files_by_diff_rendering
 
 # Only allow:
 # - letters
