@@ -63,18 +63,6 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
-  const { data: releaseFetchResult } = useGetReleases();
-  const latestRelease = releaseFetchResult?.data.releases?.[0];
-
-  const dismissedMostRecentAppUpdate =
-    user?.dismissed_notifications?.most_recent_app_update;
-
-  const showAppUpdateBanner =
-    latestRelease &&
-    (!dismissedMostRecentAppUpdate ||
-      new Date(latestRelease.created_at) >
-        new Date(dismissedMostRecentAppUpdate));
-
   const { searchText, setSearchText, results } = useSearch(configs, {
     keys: [{ name: 'name', weight: 1 }],
   });
@@ -88,13 +76,7 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
   return (
     <>
-      {showAppUpdateBanner && latestRelease && setUser && (
-        <AppUpdateBanner
-          latestReleaseCreatedAt={latestRelease.created_at}
-          setUser={setUser}
-        />
-      )}
-
+      {user && setUser && <AppUpdateBanner user={user} setUser={setUser} />}
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
@@ -135,28 +117,43 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 }
 
 function AppUpdateBanner({
-  latestReleaseCreatedAt,
+  user,
   setUser,
 }: {
-  latestReleaseCreatedAt: string;
+  user: UserResponse;
   setUser: Dispatch<SetStateAction<UserResponse | null>>;
 }) {
-  async function dismissAppUpdate() {
-    const response = await updateDismissedNotification({
+  const { data: releaseFetchResult } = useGetReleases();
+
+  const latestRelease = releaseFetchResult?.data.releases?.[0];
+  const latestReleaseCreatedAt = latestRelease?.created_at;
+
+  const dismissedMostRecentAppUpdate =
+    user.dismissed_notifications?.most_recent_app_update;
+
+  const showAppUpdateBanner =
+    !!latestReleaseCreatedAt &&
+    (!dismissedMostRecentAppUpdate ||
+      new Date(latestReleaseCreatedAt) >
+        new Date(dismissedMostRecentAppUpdate));
+
+  function dismissNotification() {
+    if (!latestReleaseCreatedAt) return;
+
+    void updateDismissedNotification({
       key: 'most_recent_app_update',
       value: latestReleaseCreatedAt,
-    });
-
-    setUser(response.data);
+    })
+      .then((resp) => {
+        setUser(resp.data);
+      })
+      .catch((error) => {
+        console.error('Failed to dismiss notification', error);
+      });
   }
 
-  function handleDismiss(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    void dismissAppUpdate().catch((error) => {
-      console.error('Failed to dismiss notification', error);
-    });
+  if (!showAppUpdateBanner || !latestReleaseCreatedAt) {
+    return null;
   }
 
   return (
@@ -171,11 +168,7 @@ function AppUpdateBanner({
           </div>
           <Link
             to="/app-updates"
-            onClick={() => {
-              void dismissAppUpdate().catch((error) => {
-                console.error('Failed to update dismissed notification', error);
-              });
-            }}
+            onClick={dismissNotification}
             className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
           >
             View updates
@@ -183,7 +176,7 @@ function AppUpdateBanner({
         </div>
         <button
           type="button"
-          onClick={handleDismiss}
+          onClick={dismissNotification}
           aria-label="Dismiss notification"
           className="ml-4 flex h-[44px] w-[44px] items-center justify-center rounded hover:bg-blue-200 focus:outline-none"
         >
