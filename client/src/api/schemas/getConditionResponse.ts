@@ -5,6 +5,7 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
+import type { CompletenessStatus } from './completenessStatus';
 import type { GetConditionCode } from './getConditionCode';
 
 /**
@@ -13,5 +14,6 @@ import type { GetConditionCode } from './getConditionCode';
 export interface GetConditionResponse {
   id: string;
   display_name: string;
+  completeness_status: CompletenessStatus;
   codes: GetConditionCode[];
 }
