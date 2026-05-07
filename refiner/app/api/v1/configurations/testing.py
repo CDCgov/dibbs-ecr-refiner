@@ -236,25 +236,24 @@ async def run_configuration_test(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
-    formatted_unrefined_eicr = format_xml_document_for_display_or_raise(
-        original_xml_files.eicr
-    )
     render_diff = (
-        get_file_size_in_bytes(formatted_unrefined_eicr) < DIFF_RENDERING_MAX_BYTES
-    )
-    formatted_refined_eicr = (
-        format_xml_document_for_display_or_raise(refined_document.refined_eicr)
-        if render_diff
-        else ""
+        get_file_size_in_bytes(original_xml_files.eicr) < DIFF_RENDERING_MAX_BYTES
     )
 
-    original_eicr = formatted_unrefined_eicr if render_diff else ""
-    refined_eicr = formatted_refined_eicr if render_diff else ""
-    refined_rr = (
-        format_xml_document_for_display_or_raise(refined_document.refined_rr)
-        if render_diff
-        else ""
-    )
+    original_eicr = ""
+    refined_eicr = ""
+    refined_rr = ""
+
+    if render_diff:
+        original_eicr = format_xml_document_for_display_or_raise(
+            original_xml_files.eicr
+        )
+        refined_eicr = format_xml_document_for_display_or_raise(
+            refined_document.refined_eicr
+        )
+        refined_rr = format_xml_document_for_display_or_raise(
+            refined_document.refined_rr
+        )
 
     return ConfigurationTestResponse(
         original_eicr=original_eicr,
