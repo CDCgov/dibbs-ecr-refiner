@@ -107,15 +107,11 @@ async def _build_refined_conditions(
 
         packaged_files.append(html_file)
 
-        formatted_refined_eicr = format_xml_document_for_display_or_raise(
-            refined_document.refined_eicr,
-        )
-
         conditions.append(
             Condition(
                 code=condition.code,
                 display_name=condition.display_name,
-                refined_eicr=formatted_refined_eicr,
+                refined_eicr=refined_document.refined_eicr,
                 refined_rr=format_xml_document_for_display_or_raise(
                     original_xml_files.rr
                 ),

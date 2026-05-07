@@ -34,12 +34,8 @@ def format_xml_document_for_display(text: str) -> str:
         The pretty-printed XML as a string.
 
     Raises:
-        ValueError: If text is not a string.
         etree.XMLSyntaxError: If the input is not well-formed XML.
     """
-
-    if not isinstance(text, str):
-        raise ValueError(f"Expected XML as str, got {type(text).__name__!r}")
 
     # heal '<tableborder="1">' -> '<table border="1">' (and similar)
     healed = SPACE_BEFORE_FIRST_ATTR.sub(r"<\1 ", text)

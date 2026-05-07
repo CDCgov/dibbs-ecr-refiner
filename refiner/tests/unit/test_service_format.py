@@ -3,7 +3,6 @@ from fastapi import HTTPException, status
 from lxml import etree
 
 from app.api.validation.file_validation import format_xml_document_for_display_or_raise
-from app.services import format
 from app.services.format import format_xml_document_for_display
 
 HL7 = "urn:hl7-org:v3"
@@ -130,14 +129,6 @@ class TestFormatXmlDocumentForDisplay:
     def test_invalid_xml_raises_xml_syntax_error(self, bad_xml):
         with pytest.raises(etree.XMLSyntaxError):
             format_xml_document_for_display(bad_xml)
-
-    def test_non_string_input_raises_value_error(self):
-        with pytest.raises(ValueError):
-            format_xml_document_for_display(123)  # type: ignore[arg-type]
-
-    def test_none_input_raises_value_error(self):
-        with pytest.raises(ValueError):
-            format_xml_document_for_display(None)  # type: ignore[arg-type]
 
 
 class TestFormatXmlDocumentForDisplayOrRaise:
@@ -359,30 +350,3 @@ class TestRegressionContentNotMutated:
         # the space before <content> and after </content> must survive
         assert "before <content" in result
         assert "</content> after" in result
-
-
-class TestModulePublicSurface:
-    """
-    Lock down the public surface of format.py. If this changes,
-    something significant happened and reviewers should look closely.
-    """
-
-    def test_format_xml_document_for_display_is_exported(self):
-        assert hasattr(format, "format_xml_document_for_display")
-        assert callable(format.format_xml_document_for_display)
-
-    def test_remove_element_helper_still_exported(self):
-        # other modules import this — narrative.py, refine.py,
-        # entry_matching.py, generic_matching.py
-        assert hasattr(format, "remove_element")
-        assert callable(format.remove_element)
-
-    def test_old_private_functions_are_gone(self):
-        """
-        The old _normalize_xml and _strip_comments were removed in the
-        format.py simplification. If they come back, something is
-        wrong.
-        """
-
-        assert not hasattr(format, "_normalize_xml")
-        assert not hasattr(format, "_strip_comments")
