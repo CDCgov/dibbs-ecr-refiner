@@ -58,7 +58,7 @@ export function ConfigurationTitleBar({
             <div className="text-gray-cool-60 h-4 items-center italic">
               <div className="flex items-center">
                 <SpinnerWithMinimalRender
-                  stopShowingSpinnerConditional={numSavingActions > 0}
+                  isLoading={numSavingActions > 0}
                   renderWhenDone={
                     <div className="flex items-center">
                       <Icon.Check

@@ -73,7 +73,7 @@ export function Diff({
           <div>
             <div className="flex flex-col items-start gap-1 py-1">
               <SpinnerWithMinimalRender
-                stopShowingSpinnerConditional={isDownloading}
+                isLoading={isDownloading}
                 loadingMessage="Downloading..."
                 renderWhenDone={
                   <Button

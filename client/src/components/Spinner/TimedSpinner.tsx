@@ -3,7 +3,7 @@ import { sleep } from '../../utils';
 import { Icon } from '@trussworks/react-uswds';
 
 type SpinnerWithMinimalRenderProps = {
-  stopShowingSpinnerConditional: boolean;
+  isLoading: boolean;
   renderWhenDone: React.ReactNode;
   loadingMessage?: string;
   minimalRenderDuration?: number;
@@ -12,13 +12,13 @@ type SpinnerWithMinimalRenderProps = {
 const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
 export function SpinnerWithMinimalRender({
-  stopShowingSpinnerConditional,
+  isLoading,
   renderWhenDone,
   loadingMessage = 'Saving',
   minimalRenderDuration = TWO_SECONDS_IN_MILLISECONDS,
 }: SpinnerWithMinimalRenderProps) {
   const shouldShowSpinner = useDisplaySpinnerWithMinimalRender(
-    stopShowingSpinnerConditional,
+    isLoading,
     minimalRenderDuration
   );
 
@@ -46,7 +46,7 @@ function SpinnerWithMessage({ loadingMessage }: SpinnerWithMessageProps) {
 }
 
 function useDisplaySpinnerWithMinimalRender(
-  stopShowingSpinnerConditional: boolean,
+  isLoading: boolean,
   minimalRenderDuration: number
 ) {
   const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
@@ -54,11 +54,11 @@ function useDisplaySpinnerWithMinimalRender(
 
   useEffect(() => {
     async function showSpinnerWithMinimalRenderDuration() {
-      if (stopShowingSpinnerConditional) {
+      if (isLoading) {
         spinnerStart.current = performance.now();
         setShouldShowSpinner(true);
       }
-      if (!stopShowingSpinnerConditional && spinnerStart.current) {
+      if (!isLoading && spinnerStart.current) {
         const spinnerEnd = performance.now();
         const spinnerDuration = spinnerEnd - spinnerStart.current;
 
@@ -73,7 +73,7 @@ function useDisplaySpinnerWithMinimalRender(
     }
 
     void showSpinnerWithMinimalRenderDuration();
-  }, [minimalRenderDuration, stopShowingSpinnerConditional]);
+  }, [minimalRenderDuration, isLoading]);
 
   return shouldShowSpinner;
 }
