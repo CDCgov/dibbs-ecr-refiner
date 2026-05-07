@@ -122,7 +122,7 @@ class TestRefineForCondition:
         trace = RefinementTrace(
             jurisdiction_code="SDDH",
             rsg_code="840539006",
-            condition_grouper_name="COVID19",
+            canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
         )
 
@@ -150,7 +150,7 @@ class TestRefineForCondition:
         trace = RefinementTrace(
             jurisdiction_code="SDDH",
             rsg_code="840539006",
-            condition_grouper_name="COVID19",
+            canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
         )
 
@@ -173,6 +173,7 @@ class TestRefineForCondition:
         trace = RefinementTrace(
             jurisdiction_code="SDDH",
             rsg_code="840539006",
+            canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
         )
 
         # Create an invalid ProcessedConfiguration that will cause an error
@@ -191,6 +192,28 @@ class TestRefineForCondition:
         assert trace.refinement_outcome == "error"
         assert trace.error_detail == "plan creation failed"
         assert trace.configuration_resolved is True
+
+    def test_raises_when_trace_has_no_canonical_url(self, sample_xml_files: XMLFiles):
+        """
+        canonical_url participates in the deterministic identifier
+        derivation (via its trailing UUID). Refinement must not run
+        without it resolved on the trace; the pipeline raises a clear
+        ValueError rather than silently producing identifiers seeded
+        with "None".
+        """
+
+        trace = RefinementTrace(
+            jurisdiction_code="SDDH",
+            rsg_code="840539006",
+            # canonical_url intentionally omitted
+        )
+
+        with pytest.raises(ValueError, match="canonical_url"):
+            refine_for_condition(
+                xml_files=sample_xml_files,
+                processed_configuration=MagicMock(),
+                trace=trace,
+            )
 
 
 # =============================================================================
@@ -214,7 +237,7 @@ class TestRefinementTrace:
 
         assert trace.jurisdiction_code == "SDDH"
         assert trace.rsg_code == "840539006"
-        assert trace.condition_grouper_name is None
+        assert trace.canonical_url is None
         assert trace.configuration_version is None
         assert trace.configuration_resolved is False
         assert trace.refinement_outcome == "skipped"

@@ -316,7 +316,7 @@ async def independent_testing(
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
             rsg_code=rr_code_used,
-            condition_grouper_name=trace.matching_condition.display_name,
+            canonical_url=trace.matching_condition.canonical_url,
             configuration_version=configuration.version,
         )
 
@@ -544,7 +544,7 @@ async def inline_testing(
     pipeline_trace = RefinementTrace(
         jurisdiction_code=jurisdiction_id,
         rsg_code=trace.matched_code,
-        condition_grouper_name=trace.primary_condition.display_name,
+        canonical_url=trace.primary_condition.canonical_url,
         configuration_version=trace.configuration.version,
     )
 
