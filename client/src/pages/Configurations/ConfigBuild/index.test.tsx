@@ -118,6 +118,10 @@ vi.mock('../../../api/conditions/conditions', async () => {
           id: 'covid-1',
           display_name: 'COVID-19',
           available_systems: ['LOINC', 'SNOMED'],
+          completeness_status: {
+            code_set_status: 'fully complete',
+            code_category_statuses: [],
+          },
           codes: [
             { code: '1', system: 'LOINC', description: 'idk' },
             { code: '2', system: 'SNOMED', description: 'example' },
