@@ -236,6 +236,7 @@ async def run_configuration_test(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
+    # Figure out what content to send to the frontend based on rendering thresholds
     content_for_frontend = filter_refined_files_by_diff_rendering(
         original_xml_files=original_xml_files, refined_document=refined_document
     )
