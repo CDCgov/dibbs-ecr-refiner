@@ -31,6 +31,49 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
     return [row["version"] for row in rows]
 
 
+async def _get_conditions_by_canonical_urls_and_version(
+    canonical_urls: list[str], version: str, db: AsyncDatabaseConnection
+) -> list[DbCondition]:
+    query = """
+            SELECT
+                id,
+                canonical_url,
+                display_name,
+                version,
+                child_rsg_snomed_codes,
+                snomed_codes,
+                loinc_codes,
+                icd10_codes,
+                rxnorm_codes,
+                cvx_codes,
+                coverage_level,
+                coverage_level_reason,
+                coverage_level_date
+            FROM conditions
+            WHERE canonical_url = ANY(%s)
+            AND version = %s
+            """
+
+    params = (
+        canonical_urls,
+        version,
+    )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+            await cur.execute(query, params)
+            rows = await cur.fetchall()
+
+    found_urls = {row.canonical_url for row in rows}
+    missing = set(canonical_urls) - found_urls
+    if missing:
+        raise ValueError(
+            f"Conditions not found for canonical_urls: {missing} and version: {version}"
+        )
+
+    return rows
+
+
 async def _get_condition_by_canonical_url_and_version(
     canonical_url: str, version: str, db: AsyncDatabaseConnection
 ) -> DbCondition:
@@ -90,6 +133,38 @@ async def get_latest_tes_condition_db(
         canonical_url=condition.canonical_url, version=latest_version, db=db
     )
     return condition
+
+
+async def get_latest_tes_condition_ids_db(
+    ids: list[UUID], db: AsyncDatabaseConnection
+) -> list[UUID]:
+    """
+    Given a list of condition IDs, finds the latest TES versions of those conditions and returns the latest IDs.
+
+    Args:
+        ids (list[UUID]): IDs of conditions
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        list[id]: IDs of conditions for the latest TES version
+    """
+
+    # get the latest TES version
+    tes_versions = await get_loaded_tes_versions_db(db=db)
+    latest_version = get_latest_tes_version(available_versions=tes_versions)
+
+    # get the condition objects for IDs passed in
+    given_conditions = await get_conditions_by_ids(ids=ids, db=db)
+
+    # get the associated canonical URLs for each ID
+    canonical_urls = [gc.canonical_url for gc in given_conditions]
+
+    # get the latest conditions by the canonical URL and most recent TES version
+    latest_conditions = await _get_conditions_by_canonical_urls_and_version(
+        canonical_urls=canonical_urls, version=latest_version, db=db
+    )
+
+    return [lc.id for lc in latest_conditions]
 
 
 async def get_conditions_by_version_db(

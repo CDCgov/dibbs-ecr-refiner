@@ -7,6 +7,7 @@ from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
+from app.db.conditions.db import get_latest_tes_condition_ids_db
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -259,6 +260,10 @@ async def insert_configuration_db(
     """
 
     if config_to_clone:
+        included_condition_ids = await get_latest_tes_condition_ids_db(
+            ids=[c.id for c in config_to_clone.included_conditions], db=db
+        )
+
         params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
@@ -268,9 +273,7 @@ async def insert_configuration_db(
             # cloned by this user
             user_id,
             # included_conditions: always start with primary
-            Jsonb(
-                [str(c.id) for c in config_to_clone.included_conditions]
-            ),  # <- changed to flat list of strings (UUIDs)
+            Jsonb([str(id) for id in included_condition_ids]),
             # custom_codes
             Jsonb(
                 [
