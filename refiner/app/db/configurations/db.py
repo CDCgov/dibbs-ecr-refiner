@@ -262,7 +262,7 @@ async def insert_configuration_db(
         id
     """
 
-    # always  use the latest version of the given condition when creating a new config
+    # always use the latest version of the given condition when creating a new config
     # this applies to both a "fresh" config and cloning from an old config
     latest_condition = await get_latest_tes_condition_db(condition=condition, db=db)
 
