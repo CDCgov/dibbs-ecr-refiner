@@ -90,7 +90,14 @@ async def _get_condition_by_canonical_url_and_version_db(
                     f"Condition with canonical_url: {canonical_url} and version: {version} not found"
                 )
 
-    return await get_condition_by_id_db(id=row["id"], db=db)
+    condition_id = row["id"]
+    condition = await get_condition_by_id_db(id=condition_id, db=db)
+    if not condition:
+        raise ValueError(
+            f"Unable to fetch condition with ID: {condition_id} from the database."
+        )
+
+    return condition
 
 
 async def get_latest_tes_condition_db(
