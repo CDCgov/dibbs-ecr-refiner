@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
-    format_xml_document_for_display_or_raise,
     get_validated_file,
     get_validated_xml_files,
     validate_path_or_raise,
@@ -24,7 +23,10 @@ from app.db.demo.model import Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
-from app.services.ecr.refine import get_file_size_reduction_percentage
+from app.services.conditions import filter_refined_files_by_diff_rendering
+from app.services.ecr.refine import (
+    get_file_size_reduction_percentage,
+)
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
@@ -232,20 +234,18 @@ async def run_configuration_test(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
-    formatted_unrefined_eicr = format_xml_document_for_display_or_raise(
-        original_xml_files.eicr
+    # Figure out what content to send to the frontend based on rendering thresholds
+    content_for_frontend = filter_refined_files_by_diff_rendering(
+        original_xml_files=original_xml_files, refined_document=refined_document
     )
-    formatted_refined_eicr = format_xml_document_for_display_or_raise(
-        refined_document.refined_eicr
-    )
-
     return ConfigurationTestResponse(
-        original_eicr=formatted_unrefined_eicr,
+        original_eicr=content_for_frontend.original_eicr,
         refined_download_key=output_file_name if s3_key else "",
         condition=Condition(
             code=condition.code,
             display_name=condition.display_name,
-            refined_eicr=formatted_refined_eicr,
+            refined_eicr=content_for_frontend.refined_eicr,
+            render_diff=content_for_frontend.render_diff,
             stats=[
                 f"eICR file size reduced by {
                     get_file_size_reduction_percentage(

@@ -12,11 +12,10 @@ from app.services.conditions import get_computed_condition_name
 from ..core.exceptions import (
     FileProcessingError,
     XMLValidationError,
+    ZipSizeError,
     ZipValidationError,
 )
 from ..core.models.types import FileUpload, XMLFiles
-
-MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @dataclass
@@ -210,13 +209,19 @@ def _is_valid_uncompressed_size(info: list[ZipInfo]) -> bool:
     Returns:
         bool: True if the total uncompressed size is less than 50 MB; otherwise, False.
     """
-    return sum(zinfo.file_size for zinfo in info) < MAX_UNCOMPRESSED_SIZE
+
+    from app.api.validation.file_validation import UNCOMPRESSED_MAX_BYTES
+
+    file_size_sum = sum(zinfo.file_size for zinfo in info)
+    return file_size_sum < UNCOMPRESSED_MAX_BYTES
 
 
 async def read_xml_zip(file: FileUpload) -> XMLFiles:
     """
     Read XML files from a ZIP archive.
     """
+    from app.api.validation.file_validation import UNCOMPRESSED_MAX_MB
+
     try:
         file_content = await file.read()
         with ZipFile(BytesIO(file_content), "r") as zf:
@@ -224,8 +229,8 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
             rr_xml = None
 
             if not _is_valid_uncompressed_size(zf.infolist()):
-                raise ZipValidationError(
-                    message="Uncompressed .zip file must not exceed 50MB in size."
+                raise ZipSizeError(
+                    message=f"Uncompressed .zip file must not exceed {UNCOMPRESSED_MAX_MB}MB in size."
                 )
 
             namelist = zf.namelist()
@@ -281,6 +286,9 @@ async def read_xml_zip(file: FileUpload) -> XMLFiles:
         )
     except ZipValidationError:
         # re-raise ZipValidationError without wrapping it
+        raise
+    except ZipSizeError:
+        # re-raise ZipSizeError without wrapping it
         raise
     except Exception as e:
         raise FileProcessingError(
