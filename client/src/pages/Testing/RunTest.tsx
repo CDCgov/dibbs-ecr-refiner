@@ -6,8 +6,7 @@ import { useGetEnv } from '../../hooks/useGetEnv';
 import classNames from 'classnames';
 import { ExternalLink } from '@components/ExternalLink';
 import { Warning } from '@components/Diff/Warning';
-
-export const UPLOAD_FILE_THRESHOLD_MB = 5;
+import { FileInfoResponseValue } from '../../api/schemas/fileInfoResponse';
 
 interface RunTestProps {
   onClickCustomFile: () => Promise<void>;
@@ -54,6 +53,13 @@ export function RunTest({
                   Want to refine your own eCR file?
                 </span>
                 <span>Please upload a single eICR/RR pair as a .zip file.</span>
+                <span>
+                  The maximum uncompressed file size is{' '}
+                  <span className="font-bold">
+                    {FileInfoResponseValue.max_for_uncompressed_mb}MB
+                  </span>
+                  .
+                </span>
               </p>
               <UploadFileWarning />
               <div>
@@ -156,7 +162,7 @@ function UploadFileWarning() {
   return (
     <Warning
       heading="Do not upload files that contain PHI/PII"
-      message={`This environment is not approved to handle PHI/PII. The maximum file size is ${UPLOAD_FILE_THRESHOLD_MB} MB.`}
+      message="This environment is not approved to handle PHI/PII."
     />
   );
 }

@@ -1,7 +1,6 @@
+import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 import { useIsMutating } from '@tanstack/react-query';
 import { Icon } from '@trussworks/react-uswds';
-import { useEffect, useRef, useState } from 'react';
-import { sleep } from '../../utils';
 
 type ConfigurationSteps = 'build' | 'test' | 'activate';
 
@@ -14,8 +13,6 @@ type ConfigurationTitleContent = {
   title: string;
   subtitle: React.ReactNode;
 };
-
-const TWO_SECONDS_IN_MILLISECONDS = 2000;
 
 export function ConfigurationTitleBar({
   step,
@@ -47,32 +44,8 @@ export function ConfigurationTitleBar({
       ),
     },
   };
-  const [shouldShowSpinner, setShouldShowSpinner] = useState(false);
-  const spinnerStart = useRef<number>(0);
+
   const numSavingActions = useIsMutating();
-
-  useEffect(() => {
-    async function resolveSpinnerDisplay() {
-      if (numSavingActions > 0) {
-        spinnerStart.current = performance.now();
-        setShouldShowSpinner(true);
-      }
-      if (numSavingActions === 0 && spinnerStart.current) {
-        const spinnerEnd = performance.now();
-        const spinnerDuration = spinnerEnd - spinnerStart.current;
-
-        if (spinnerDuration < TWO_SECONDS_IN_MILLISECONDS) {
-          // show the saving confirmation for at least two seconds so the
-          // UI change registers to the user
-          await sleep(TWO_SECONDS_IN_MILLISECONDS - spinnerDuration);
-        }
-        setShouldShowSpinner(false);
-        spinnerStart.current = 0;
-      }
-    }
-
-    void resolveSpinnerDisplay();
-  }, [numSavingActions]);
 
   return (
     <div className="mt-8 mb-6 flex justify-start">
@@ -84,23 +57,18 @@ export function ConfigurationTitleBar({
           {step === 'build' && (
             <div className="text-gray-cool-60 h-4 items-center italic">
               <div className="flex items-center">
-                {shouldShowSpinner ? (
-                  <>
-                    <Icon.Autorenew
-                      role="presentation"
-                      className="text-blue-cool-50 h-6! w-6! animate-spin"
-                    />
-                    Saving
-                  </>
-                ) : (
-                  <>
-                    <Icon.Check
-                      role="presentation"
-                      className="text-state-success h-6! w-6!"
-                    />{' '}
-                    Saved
-                  </>
-                )}
+                <SpinnerWithMinimalRender
+                  isLoading={numSavingActions > 0}
+                  renderWhenDone={
+                    <div className="flex items-center">
+                      <Icon.Check
+                        role="presentation"
+                        className="text-state-success h-6! w-6!"
+                      />
+                      Saved
+                    </div>
+                  }
+                />
               </div>
             </div>
           )}
