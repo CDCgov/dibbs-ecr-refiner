@@ -343,7 +343,24 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # Heterogeneous entry types — multiple rules with structural precedence.
 # Each rule's xpath is scoped to a specific C-CDA templateId so that
 # structural precedence correctly separates entry types (observation,
-# medication, immunization, procedure) that otherwise share element names.
+# medication, immunization, act, procedure) that otherwise share element names.
+#
+# Plan of Treatment is unusual in eICR: STU 3.1.1 defines three eICR-specific
+# trigger code variants for this section that sit alongside their C-CDA base
+# templates:
+#   Initial Case Report Trigger Code Planned Observation
+#     templateId: 2.16.840.1.113883.10.20.15.2.3.43 (extends 4.44; CONF:4527-1099)
+#   Initial Case Report Trigger Code Planned Act
+#     templateId: 2.16.840.1.113883.10.20.15.2.3.41 (extends 4.39; CONF:4527-1093)
+#   Initial Case Report Trigger Code Planned Procedure
+#     templateId: 2.16.840.1.113883.10.20.15.2.3.42 (extends 4.41; CONF:4527-1097)
+#
+# Each carries the trigger code on the primary <code> element with sdtc:valueSet
+# pointing at the RCTC OID (CONF:4482-658, 4482-659 SHOULD on Planned Act;
+# parallel constraints exist on Planned Observation and Planned Procedure).
+# STU 1.1 has only the C-CDA base templates (4.39, 4.41, 4.44). Each rule below
+# matches the eICR trigger variant when present and falls back to the base
+# template, the same pattern the standalone Procedures section uses.
 #
 # rule 1 — TIER 1: Planned Observation / Lab Test Order
 #   IG template: Planned Observation (V2) (2.16.840.1.113883.10.20.22.4.44)
@@ -366,15 +383,33 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
 #   primary code: manufacturedMaterial/code SHALL be CVX (CONF:1098-9007)
 #   translation:  MAY be RxNorm (CONF:1098-31543)
 #
-# rule 4 — TIER 1: Planned Procedure Activity
-#   IG template: Procedure Activity Procedure (V2) (2.16.840.1.113883.10.20.22.4.14)
-#   Planned Procedure Activity (4.39) conforms to 4.14.
+# rule 4 — TIER 1: Planned Act (Initial Case Report Trigger Code Planned Act)
+#   IG template: Initial Case Report Trigger Code Planned Act
+#     (2.16.840.1.113883.10.20.15.2.3.41, CONF:4527-1093)
+#   falls back to C-CDA base Planned Act (V2) (2.16.840.1.113883.10.20.22.4.39,
+#     CONF:1098-30473) when the eICR trigger variant templateId is absent
+#   primary code: act/code SHALL be present (CONF:4482-642), SHOULD be from
+#     RCTC (CONF:4482-658) with sdtc:valueSet="2.16.840.1.114222.4.11.7508"
+#     (CONF:4482-659). RCTC procedure value set was undefined at IG publication
+#     time so senders use plain SNOMED with or without sdtc:valueSet markers.
+#   OID: None — the trigger code value set spans code systems and vendor
+#     practice varies; the configured code set is the semantic constraint.
+#   preserve_whole_entry=True — Planned Act is a leaf clinical statement, not
+#     a wrapper template, so any entryRelationship children (Instructions,
+#     Indications, etc. per Planned Act V2 Vol 2 §3.32) are clinical context
+#     that should travel with the matched act.
+#
+# rule 5 — TIER 1: Planned Procedure
+#   IG template: Initial Case Report Trigger Code Planned Procedure
+#     (2.16.840.1.113883.10.20.15.2.3.42, CONF:4527-1097)
+#   falls back to C-CDA base Planned Procedure (V2) (2.16.840.1.113883.10.20.22.4.41,
+#     CONF:1098-30474) when the eICR trigger variant templateId is absent
 #   primary code: procedure/code — SNOMED or CPT-4 in practice
 #   OID: None — procedure code systems vary widely (SNOMED, CPT-4, local)
 #   Note: structural precedence means this only fires on entries that have
-#   a procedure/code element but were not claimed by rules 1–3.
+#   a procedure/code element but were not claimed by rules 1–4.
 #
-# rule 5 — TIER 2: Indication (fallback for unclaimed entries)
+# rule 6 — TIER 2: Indication (fallback for unclaimed entries)
 #   IG template: Indication (V2) (2.16.840.1.113883.10.20.22.4.19)
 #   primary code: observation/value — condition name driving the planned item
 #   OID: None — indication values appear in SNOMED, ICD-9, and ICD-10 in
@@ -425,21 +460,41 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
         ),
         tier=1,
     ),
-    # rule 4 — TIER 1: planned procedure activity procedure
-    # targets the Procedure Activity Procedure base template (4.14)
-    # which Planned Procedure Activity (4.39) conforms to
+    # rule 4 — TIER 1: planned act (Initial Case Report Trigger Code Planned Act)
+    # eICR trigger template (CONF:4527-1093, CONF:4482-642 SHALL on act/code)
+    # falls back to C-CDA base Planned Act (V2) when eICR variant absent
+    # OID: None — RCTC value set spans code systems; see note above
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:act"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.41']"
+            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.39']]"
+            "/hl7:code"
+        ),
+        code_system_oid=None,  # intentional — see note above
+        tier=1,
+        preserve_whole_entry=True,
+    ),
+    # rule 5 — TIER 1: planned procedure (Initial Case Report Trigger Code Planned Procedure)
+    # eICR trigger template (CONF:4527-1097)
+    # falls back to C-CDA base Planned Procedure (V2) (CONF:1098-30474) when
+    # eICR variant absent. Note: previously this rule incorrectly targeted
+    # 2.16.840.1.113883.10.20.22.4.14 (Procedure Activity Procedure, which
+    # belongs to the Procedures section) and 4.39 (Planned Act, which is an
+    # <act>, not a <procedure>). The corrected templateIds below match the
+    # actual Planned Procedure templates per IG STU 3.1.1 Vol 2 §3.36.
     # OID: None — procedure codes use SNOMED or CPT-4 depending on sender
     EntryMatchRule(
         code_xpath=(
             ".//hl7:procedure"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.14']"
-            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.39']]"
+            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.42']"
+            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.41']]"
             "/hl7:code"
         ),
         code_system_oid=None,  # intentional — SNOMED and CPT-4 both observed
         tier=1,
     ),
-    # rule 5 — TIER 2: indication value (condition name on Indication observation)
+    # rule 6 — TIER 2: indication value (condition name on Indication observation)
     # catches entries indicated for a matching condition (e.g. a planned
     # procedure or medication ordered because of COVID-19).
     # OID: None — indication values appear in SNOMED, ICD-9, and ICD-10
