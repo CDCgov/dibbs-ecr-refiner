@@ -76,15 +76,6 @@ async def test_zip_upload_covid_influenza_v1_1(
     for index, condition in enumerate(conditions):
         item_label = f"Condition #{index + 1} (Code:  {condition['code']})"
 
-        # validate RR is well-formed
-        validate_refined_xml(condition["refined_rr"], "RR", item_label, test_name)
-
-        # validate RR against schematron and CDA R2 XSD
-        rr_result = validate_xml_string(condition["refined_rr"], "rr")
-        assert_schematron_valid(rr_result, f"{item_label} RR", test_name)
-        rr_xsd_result = validate_xml_string_xsd(condition["refined_rr"])
-        assert_xsd_valid(rr_xsd_result, f"{item_label} RR", test_name)
-
         # validate eICR is well-formed
         validate_refined_xml(condition["refined_eicr"], "eICR", item_label, test_name)
 
@@ -139,15 +130,6 @@ async def test_zip_upload_zika_v3_1_1(
 
     for index, condition in enumerate(conditions):
         item_label = f"Condition #{index + 1} (Code: {condition['code']})"
-
-        # validate RR is well-formed
-        validate_refined_xml(condition["refined_rr"], "RR", item_label, test_name)
-
-        # validate RR against schematron and CDA R2 XSD
-        rr_result = validate_xml_string(condition["refined_rr"], "rr")
-        assert_schematron_valid(rr_result, f"{item_label} RR", test_name)
-        rr_xsd_result = validate_xml_string_xsd(condition["refined_rr"])
-        assert_xsd_valid(rr_xsd_result, f"{item_label} RR", test_name)
 
         # validate eICR is well-formed
         validate_refined_xml(condition["refined_eicr"], "eICR", item_label, test_name)

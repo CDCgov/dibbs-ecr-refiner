@@ -28,6 +28,7 @@ export * from './dbTotalConditionCodeCount';
 export * from './deleteSectionInput';
 export * from './eventFilterOption';
 export * from './eventsResponse';
+export * from './fileInfoResponse';
 export * from './getConditionCode';
 export * from './getConditionResponse';
 export * from './getConditionsResponse';

@@ -5,15 +5,16 @@ from zipfile import ZipFile
 import pytest
 from lxml import etree
 
+from app.api.validation.file_validation import UNCOMPRESSED_MAX_BYTES
 from app.core.exceptions import (
     FileProcessingError,
     XMLValidationError,
+    ZipSizeError,
     ZipValidationError,
 )
 from app.core.models.types import XMLFiles
 from app.services.assets import get_asset_path
 from app.services.file_io import (
-    MAX_UNCOMPRESSED_SIZE,
     ZipFileItem,
     ZipFilePackage,
     create_refined_ecr_zip_in_memory,
@@ -94,7 +95,7 @@ async def test_read_invalid_zip():
 @pytest.mark.asyncio
 async def test_uncompressed_zip_size_too_large(create_test_zip, fixtures_path: Path):
     # Create a valid ZIP that contains a document that is too large to process
-    big_content = b"x" * (MAX_UNCOMPRESSED_SIZE + 1)
+    big_content = b"x" * (UNCOMPRESSED_MAX_BYTES + 1)
 
     # Use the create_test_zip fixture to handle temp paths
     zip_path = create_test_zip(
@@ -113,7 +114,7 @@ async def test_uncompressed_zip_size_too_large(create_test_zip, fixtures_path: P
         zip_bytes = f.read()
 
     mock_file = MockFileUpload(zip_bytes)
-    with pytest.raises(ZipValidationError) as exc:
+    with pytest.raises(ZipSizeError) as exc:
         await read_xml_zip(mock_file)
     assert "Uncompressed .zip file must not exceed" in exc.value.message
 
