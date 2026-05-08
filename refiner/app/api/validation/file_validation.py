@@ -1,5 +1,6 @@
 from logging import Logger
 from pathlib import Path
+from typing import Literal, get_args
 
 from fastapi import HTTPException, UploadFile, status
 from lxml import etree
@@ -7,6 +8,7 @@ from lxml import etree
 from app.core.exceptions import (
     FileProcessingError,
     XMLValidationError,
+    ZipSizeError,
     ZipValidationError,
 )
 from app.core.models.types import XMLFiles
@@ -15,8 +17,17 @@ from app.services.format import format_xml_document_for_display
 from app.services.sample_file import create_sample_zip_file
 
 # File uploads
-MAX_ALLOWED_UPLOAD_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_ALLOWED_UNCOMPRESSED_FILE_SIZE = MAX_ALLOWED_UPLOAD_FILE_SIZE * 5  # 50 MB
+MEGABYTES = 1024 * 1024
+
+# defining these type literals to get Orval to pick them up and codegen them to the frontend
+DiffMax = Literal[2]
+UncompressedMax = Literal[15]
+
+DIFF_RENDERING_MAX_MB = get_args(DiffMax)[0]
+UNCOMPRESSED_MAX_MB = get_args(UncompressedMax)[0]
+
+DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
+UNCOMPRESSED_MAX_BYTES = UNCOMPRESSED_MAX_MB * MEGABYTES
 
 
 def format_xml_document_for_display_or_raise(text: str) -> str:
@@ -50,6 +61,12 @@ async def get_validated_xml_files(file: UploadFile, logger: Logger) -> XMLFiles:
     """
     try:
         return await file_io.read_xml_zip(file)
+    except ZipSizeError as e:
+        logger.error("ZipSizeError in read_xml_zip", extra={"error": str(e)})
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"ZIP archive is too large. Please upload a file that's less than {UNCOMPRESSED_MAX_MB}MB in size",
+        )
     except ZipValidationError as e:
         logger.error("ZipValidationError in read_xml_zip", extra={"error": str(e)})
         raise HTTPException(
@@ -166,10 +183,10 @@ async def _validate_ecr_zip_pair(file: UploadFile) -> UploadFile:
         )
 
     # Ensure compressed size is valid
-    if file.size > MAX_ALLOWED_UPLOAD_FILE_SIZE:
+    if file.size > UNCOMPRESSED_MAX_BYTES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=".zip file must be less than 10MB in size.",
+            detail=f"Uncompressed file must be less than {UNCOMPRESSED_MAX_BYTES}MB in size.",
         )
 
     return file

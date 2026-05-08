@@ -334,6 +334,7 @@ async def independent_testing(
         # `rc_snomed_code` that was **in** the RR that matches the condition and
         # has a configuration. picking the first entry in an index isn't correct but
         # we should wait to see how the testing service evolves with the routes
+
         trace.refined_document = RefinedDocument(
             reportable_condition=ReportableCondition(
                 code=rr_code_used,
@@ -358,6 +359,7 @@ async def independent_testing(
 
     # STEP 6:
     # build the final result object from the processed traces
+
     refined_documents = [
         trace.refined_document
         for trace in all_traces
