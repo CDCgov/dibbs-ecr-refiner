@@ -6,6 +6,7 @@ from packaging.version import parse
 from psycopg.rows import class_row, dict_row
 
 from app.db.configurations.model import DbConfigurationCondition
+from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
 from .model import DbCondition, DbConditionBase, DbConditionsContextGrouper
@@ -28,6 +29,67 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
             rows = await cur.fetchall()
 
     return [row["version"] for row in rows]
+
+
+async def _get_condition_by_canonical_url_and_version(
+    canonical_url: str, version: str, db: AsyncDatabaseConnection
+) -> DbCondition:
+    query = """
+            SELECT
+                id,
+                canonical_url,
+                display_name,
+                version,
+                child_rsg_snomed_codes,
+                snomed_codes,
+                loinc_codes,
+                icd10_codes,
+                rxnorm_codes,
+                cvx_codes,
+                coverage_level,
+                coverage_level_reason,
+                coverage_level_date
+            FROM conditions
+            WHERE canonical_url = %s
+            AND version = %s
+            """
+
+    params = (
+        canonical_url,
+        version,
+    )
+
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+            await cur.execute(query, params)
+            row = await cur.fetchone()
+            if not row:
+                raise ValueError(
+                    f"Condition with canonical_url: {canonical_url} and version: {version} not found"
+                )
+
+    return row
+
+
+async def get_latest_tes_condition_db(
+    condition: DbCondition, db: AsyncDatabaseConnection
+) -> DbCondition:
+    """
+    Given a condition, finds the latest TES version of that condition and returns it.
+
+    Args:
+        condition (DbCondition): ID of condition to find the latest version of
+        db: The database connection
+
+    Returns:
+        DbCondition: The latest version of the condition
+    """
+    tes_versions = await get_loaded_tes_versions_db(db=db)
+    latest_version = get_latest_tes_version(available_versions=tes_versions)
+    condition = await _get_condition_by_canonical_url_and_version(
+        canonical_url=condition.canonical_url, version=latest_version, db=db
+    )
+    return condition
 
 
 async def get_conditions_by_version_db(

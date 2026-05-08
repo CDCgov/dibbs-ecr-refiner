@@ -9,6 +9,7 @@ from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
     get_included_conditions_db,
+    get_latest_tes_condition_db,
 )
 from app.db.configurations.db import (
     get_configuration_by_id_db,
@@ -137,12 +138,22 @@ async def create_configuration(
     Create a new configuration for a jurisdiction.
     """
 
-    # get condition by ID
-    condition = await get_condition_by_id_db(id=body.condition_id, db=db)
+    # get the condition by the ID we are provided with by the client
+    base_condition = await get_condition_by_id_db(id=body.condition_id, db=db)
+
+    if not base_condition:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Condition with ID {body.condition_id} could not be found or does not exist.",
+        )
+
+    # always guarantee we use the latest version of the given condition when creating a new config
+    condition = await get_latest_tes_condition_db(condition=base_condition, db=db)
 
     if not condition:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Latest condition version could not be found.",
         )
 
     # get user jurisdiction

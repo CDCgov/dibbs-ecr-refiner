@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from packaging.version import parse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import ENVIRONMENT
@@ -9,6 +8,7 @@ from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.schema_migrations.db import get_latest_migration_db
 from app.db.users.model import DbUser
+from app.services.tes import get_latest_tes_version
 
 router = APIRouter(prefix="/info")
 
@@ -41,7 +41,7 @@ async def get_info(
     ]
 
     tes_versions = await get_loaded_tes_versions_db(db=db)
-    latest_tes_version = max(tes_versions, key=lambda v: parse(v))
+    latest_tes_version = get_latest_tes_version(tes_versions)
 
     return JSONResponse(
         content={
