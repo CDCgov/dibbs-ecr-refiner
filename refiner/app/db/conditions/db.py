@@ -37,18 +37,7 @@ async def _get_conditions_by_canonical_urls_and_version_db(
     query = """
             SELECT
                 id,
-                canonical_url,
-                display_name,
-                version,
-                child_rsg_snomed_codes,
-                snomed_codes,
-                loinc_codes,
-                icd10_codes,
-                rxnorm_codes,
-                cvx_codes,
-                coverage_level,
-                coverage_level_reason,
-                coverage_level_date
+                canonical_url
             FROM conditions
             WHERE canonical_url = ANY(%s)
             AND version = %s
@@ -60,18 +49,20 @@ async def _get_conditions_by_canonical_urls_and_version_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
 
-    found_urls = {row.canonical_url for row in rows}
+    found_urls = {row["canonical_url"] for row in rows}
     missing = set(canonical_urls) - found_urls
     if missing:
         raise ValueError(
             f"Conditions not found for canonical_urls: {missing} and version: {version}"
         )
 
-    return rows
+    condition_ids = [row["id"] for row in rows]
+
+    return await get_conditions_by_ids(ids=condition_ids, db=db)
 
 
 async def _get_condition_by_canonical_url_and_version_db(
@@ -79,19 +70,7 @@ async def _get_condition_by_canonical_url_and_version_db(
 ) -> DbCondition:
     query = """
             SELECT
-                id,
-                canonical_url,
-                display_name,
-                version,
-                child_rsg_snomed_codes,
-                snomed_codes,
-                loinc_codes,
-                icd10_codes,
-                rxnorm_codes,
-                cvx_codes,
-                coverage_level,
-                coverage_level_reason,
-                coverage_level_date
+                id
             FROM conditions
             WHERE canonical_url = %s
             AND version = %s
@@ -103,7 +82,7 @@ async def _get_condition_by_canonical_url_and_version_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbCondition)) as cur:
+        async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
@@ -111,7 +90,7 @@ async def _get_condition_by_canonical_url_and_version_db(
                     f"Condition with canonical_url: {canonical_url} and version: {version} not found"
                 )
 
-    return row
+    return await get_condition_by_id_db(id=row["id"], db=db)
 
 
 async def get_latest_tes_condition_db(
