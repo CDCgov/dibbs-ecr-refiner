@@ -1,6 +1,5 @@
 import { CodeSystem } from '../../../../api/schemas/codeSystem';
 import { Search } from '@components/Search';
-import { Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
@@ -19,6 +18,9 @@ import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
 import { CustomCodeModal } from './CustomCodeModal';
+import { Select, SelectContainer } from '@components/Select';
+import { Label } from '@components/Label';
+import { Field } from '@components/Field';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -256,24 +258,24 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <div data-testid="code-system-select-container">
-          <Label htmlFor="code-system-select">Code system</Label>
-          <Select
-            id="code-system-select"
-            name="code-system-select"
-            value={selectedCodeSystem}
-            onChange={handleCodeSystemSelect}
-          >
-            <option key="all-code-systems" value="all">
-              All code systems
-            </option>
-            {Object.keys(CodeSystem).map((system) => (
-              <option key={system} value={system}>
-                {system}
+        <SelectContainer className="max-w-3xs!">
+          <Field>
+            <Label>Code system</Label>
+            <Select
+              value={selectedCodeSystem}
+              onChange={handleCodeSystemSelect}
+            >
+              <option key="all-code-systems" value="all">
+                All code systems
               </option>
-            ))}
-          </Select>
-        </div>
+              {Object.keys(CodeSystem).map((system) => (
+                <option key={system} value={system}>
+                  {system}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </SelectContainer>
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
