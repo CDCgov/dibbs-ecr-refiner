@@ -7,7 +7,10 @@ from psycopg.rows import DictRow, class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
-from app.db.conditions.db import get_latest_tes_condition_ids_db
+from app.db.conditions.db import (
+    get_latest_tes_condition_db,
+    get_latest_tes_condition_ids_db,
+)
 from app.db.events.db import insert_custom_code_upload_events_db, insert_event_db
 from app.db.events.model import EventInput
 from app.services.configurations import (
@@ -259,7 +262,12 @@ async def insert_configuration_db(
         id
     """
 
+    # always  use the latest version of the given condition when creating a new config
+    # this applies to both a "fresh" config and cloning from an old config
+    latest_condition = await get_latest_tes_condition_db(condition=condition, db=db)
+
     if config_to_clone:
+        # always use the latest version of associated condition IDs
         included_condition_ids = await get_latest_tes_condition_ids_db(
             ids=[c.id for c in config_to_clone.included_conditions], db=db
         )
@@ -267,7 +275,7 @@ async def insert_configuration_db(
         params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
-            condition.id,
+            latest_condition.id,
             # always set name to condition display name
             config_to_clone.name,
             # cloned by this user
@@ -286,13 +294,13 @@ async def insert_configuration_db(
         params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
-            condition.id,
+            latest_condition.id,
             # always set name to condition display name
-            condition.display_name,
+            latest_condition.display_name,
             # created by this user
             user_id,
             # included_conditions: always start with primary
-            Jsonb([str(condition.id)]),  # <- changed to flat list of strings (UUIDs)
+            Jsonb([str(latest_condition.id)]),
             # custom_codes
             EMPTY_JSONB,
         )
