@@ -31,7 +31,7 @@ async def get_loaded_tes_versions_db(db: AsyncDatabaseConnection) -> list[str]:
     return [row["version"] for row in rows]
 
 
-async def _get_conditions_by_canonical_urls_and_version(
+async def _get_conditions_by_canonical_urls_and_version_db(
     canonical_urls: list[str], version: str, db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     query = """
@@ -74,7 +74,7 @@ async def _get_conditions_by_canonical_urls_and_version(
     return rows
 
 
-async def _get_condition_by_canonical_url_and_version(
+async def _get_condition_by_canonical_url_and_version_db(
     canonical_url: str, version: str, db: AsyncDatabaseConnection
 ) -> DbCondition:
     query = """
@@ -129,7 +129,7 @@ async def get_latest_tes_condition_db(
     """
     tes_versions = await get_loaded_tes_versions_db(db=db)
     latest_version = get_latest_tes_version(available_versions=tes_versions)
-    condition = await _get_condition_by_canonical_url_and_version(
+    condition = await _get_condition_by_canonical_url_and_version_db(
         canonical_url=condition.canonical_url, version=latest_version, db=db
     )
     return condition
@@ -160,7 +160,7 @@ async def get_latest_tes_condition_ids_db(
     canonical_urls = [gc.canonical_url for gc in given_conditions]
 
     # get the latest conditions by the canonical URL and most recent TES version
-    latest_conditions = await _get_conditions_by_canonical_urls_and_version(
+    latest_conditions = await _get_conditions_by_canonical_urls_and_version_db(
         canonical_urls=canonical_urls, version=latest_version, db=db
     )
 
