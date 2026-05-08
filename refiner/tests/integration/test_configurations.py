@@ -52,6 +52,50 @@ class TestConfigurations:
         failure_audit_events = response.json()["audit_events"]
         assert len(failure_audit_events) == 1
 
+    async def test_newly_created_configurations_always_use_latest_tes_version(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        associate_codeset,
+        get_config_by_id,
+    ):
+        # Try creating a config with an outdated TES version
+        condition_id = await get_condition_id("Glanders", "4.0.0")
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+
+        # Get the full config and ensure the app used the expected TES version
+        config_id = response.json()["id"]
+        config = await get_config_by_id(config_id)
+        assert config["condition_id"] == str(
+            await get_condition_id("Glanders", "5.0.0")
+        )
+
+    async def test_code_set_association_fails_when_tes_version_mismatch(
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+    ):
+        # Create config using 5.0.0
+        condition_id = await get_condition_id("Glanders", "5.0.0")
+        payload = {"condition_id": str(condition_id)}
+        response = await authed_client.post("/api/v1/configurations/", json=payload)
+        assert response.status_code == status.HTTP_200_OK
+        config_id = response.json()["id"]
+
+        # Ensure associating a 4.0.0 code set is not allowed
+        old_code_set_id = await get_condition_id("COVID-19", "4.0.0")
+        payload = {"condition_id": str(old_code_set_id)}
+        response = await authed_client.put(
+            f"api/v1/configurations/{config_id}/code-sets", json=payload
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "TES version of condition" in response.json()["detail"]
+
     async def test_custom_sections(self, setup, authed_client, get_condition_id):
         condition_id = await get_condition_id("Glanders")
         # Create config
