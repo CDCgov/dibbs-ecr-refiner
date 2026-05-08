@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import ENVIRONMENT
-from app.db.conditions.db import get_loaded_tes_versions_db
+from app.db.conditions.db import get_condition_by_id_db, get_loaded_tes_versions_db
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.schema_migrations.db import get_latest_migration_db
@@ -36,7 +36,16 @@ async def get_info(
 
     # minimal response to send to the client
     config_details = [
-        {"name": config.name, "status": config.status, "version": config.version}
+        {
+            "name": config.name,
+            "status": config.status,
+            "version": config.version,
+            "condition_tes_version": condition.version
+            if (
+                condition := await get_condition_by_id_db(id=config.condition_id, db=db)
+            )
+            else "",
+        }
         for config in configs
     ]
 
