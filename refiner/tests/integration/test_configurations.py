@@ -75,6 +75,7 @@ class TestConfigurations:
             await get_condition_id("Glanders", "5.0.0")
         )
 
+    @pytest.mark.parametrize("OLD_TES_VERSION", ["4.0.0", "3.0.0", "2.0.0"])
     async def test_cloned_configurations_always_use_latest_tes_version(
         self,
         setup,
@@ -87,8 +88,8 @@ class TestConfigurations:
         db_pool,
         associate_codeset,
         activate_config,
+        OLD_TES_VERSION,
     ):
-        OLD_TES_VERSION = "4.0.0"
         NEW_TES_VERSION = "5.0.0"
         # Try creating a config with an outdated TES version
         old_condition_id = await get_condition_id("COVID-19", OLD_TES_VERSION)
