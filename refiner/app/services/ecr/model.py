@@ -72,7 +72,7 @@ class RefinedDocument:
     reportable_condition: ReportableCondition
     refined_eicr: str
     refined_rr: str
-    eicr_size_reduction_percentage: int
+    eicr_size_reduction_percentage: int | None
 
 
 # NOTE:
