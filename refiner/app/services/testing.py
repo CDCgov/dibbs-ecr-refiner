@@ -342,6 +342,7 @@ async def independent_testing(
             ),
             refined_eicr=result.refined_eicr,
             refined_rr=result.refined_rr,
+            eicr_size_reduction_percentage=pipeline_trace.eicr_size_reduction_percentage,
         )
 
         logger.info(
@@ -565,6 +566,7 @@ async def inline_testing(
         ),
         refined_eicr=result.refined_eicr,
         refined_rr=result.refined_rr,
+        eicr_size_reduction_percentage=pipeline_trace.eicr_size_reduction_percentage,
     )
 
     # log high level details of the refinement flow for this

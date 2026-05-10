@@ -392,6 +392,7 @@ async def test_inline_example_file_success(
             ),
             refined_eicr="<xml>refined eicr for Condition A</xml>",
             refined_rr="<xml>refined rr for Condition A</xml>",
+            eicr_size_reduction_percentage=40,
         ),
         configuration_does_not_match_conditions=None,
     )
@@ -457,6 +458,7 @@ async def test_inline_allow_custom_zip(
             ),
             refined_eicr="<xml>COVID-19 refined eICR doc</xml>",
             refined_rr="<xml>COVID-19 refined RR doc</xml>",
+            eicr_size_reduction_percentage=40,
         ),
         configuration_does_not_match_conditions=None,
     )
