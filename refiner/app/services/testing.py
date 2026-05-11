@@ -335,13 +335,6 @@ async def independent_testing(
         # has a configuration. picking the first entry in an index isn't correct but
         # we should wait to see how the testing service evolves with the routes
 
-        # we don't want to open up the RefinedDocument to a potential None so we need to check that
-        # the default value doesn't persist before packaging it up
-        if (eicr_percentage := pipeline_trace.eicr_size_reduction_percentage) is None:
-            raise ValueError(
-                "eicr_size_reduction_percentage cannot be None - this should always be set"
-            )
-
         trace.refined_document = RefinedDocument(
             reportable_condition=ReportableCondition(
                 code=rr_code_used,
@@ -349,7 +342,9 @@ async def independent_testing(
             ),
             refined_eicr=result.refined_eicr,
             refined_rr=result.refined_rr,
-            eicr_size_reduction_percentage=eicr_percentage,
+            eicr_size_reduction_percentage=_require_eicr_size_reduction_or_raise(
+                result.trace.eicr_size_reduction_percentage
+            ),
         )
 
         logger.info(
@@ -564,13 +559,6 @@ async def inline_testing(
         trace=pipeline_trace,
     )
 
-    # we don't want to open up the RefinedDocument to a potential None so we need to check that
-    # the default value doesn't persist before packaging it up
-    if (eicr_percentage := pipeline_trace.eicr_size_reduction_percentage) is None:
-        raise ValueError(
-            "eicr_size_reduction_percentage cannot be None - this should always be set"
-        )
-
     # STEP 5:
     # finalize and return the successful result
     trace.refined_document = RefinedDocument(
@@ -580,7 +568,9 @@ async def inline_testing(
         ),
         refined_eicr=result.refined_eicr,
         refined_rr=result.refined_rr,
-        eicr_size_reduction_percentage=eicr_percentage,
+        eicr_size_reduction_percentage=_require_eicr_size_reduction_or_raise(
+            result.trace.eicr_size_reduction_percentage
+        ),
     )
 
     # log high level details of the refinement flow for this
@@ -673,3 +663,25 @@ async def _map_rc_codes_to_conditions(
     # STEP 4:
     # build the final map from the file's code to its corresponding condition objects (all versions)
     return {code: rc_code_to_conditions_map[code] for code in matched_codes}
+
+
+def _require_eicr_size_reduction_or_raise(percent: int | None) -> int:
+    """
+    If the post refinement pipeline value here is None raise the error.
+
+    TODO: This check only exists because testing.py packages the percentage
+    into RefinedDocument while lambda_function.py only uses it as a log field
+    (where None is acceptable). The longer-term path is to align the two
+    consumers — either by making both treat the percentage uniformly (e.g.,
+    both as a strict field on a shared result type), or by lifting the
+    invariant into the pipeline itself. Until that alignment happens, this
+    helper keeps the narrowing local to the consumer that actually needs it.
+    """
+
+    if percent is None:
+        raise ValueError(
+            "eicr_size_reduction_percentage is None on a returned "
+            "RefinementResult. refine_for_condition must set this "
+            "before returning; this indicates a pipeline bug."
+        )
+    return percent
