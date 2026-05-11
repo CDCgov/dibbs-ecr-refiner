@@ -118,6 +118,10 @@ vi.mock('../../../api/conditions/conditions', async () => {
           id: 'covid-1',
           display_name: 'COVID-19',
           available_systems: ['LOINC', 'SNOMED'],
+          completeness_status: {
+            code_set_status: 'fully complete',
+            code_category_statuses: [],
+          },
           codes: [
             { code: '1', system: 'LOINC', description: 'idk' },
             { code: '2', system: 'SNOMED', description: 'example' },
@@ -376,10 +380,7 @@ describe('Config builder page', () => {
 
     await user.click(await screen.findByText('COVID-19', { selector: 'span' }));
 
-    const parentContainer = await screen.findByTestId(
-      'code-system-select-container'
-    ); // name of the `data-testid` added to the parent div
-    const select = within(parentContainer).getByLabelText(/code system/i);
+    const select = screen.getByLabelText(/code system/i);
 
     // expect the list of code system options to match the list of expected values
     const optionList = within(select)

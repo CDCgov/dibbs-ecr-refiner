@@ -99,6 +99,14 @@ class ZipValidationError(BaseApplicationException):
     pass
 
 
+class ZipSizeError(BaseApplicationException):
+    """
+    Raised when the uploaded ZIP is too big for processing.
+    """
+
+    pass
+
+
 class XMLProcessingError(ProcessingError):
     """
     Raised when XML processing fails.

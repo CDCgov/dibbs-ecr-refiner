@@ -16,7 +16,7 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
-from app.db.demo.model import Condition, IndependentTestUploadResponse
+from app.db.demo.model import Condition, FileInfoResponse, IndependentTestUploadResponse
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import (
@@ -24,8 +24,11 @@ from app.services.aws.s3 import (
     get_refined_user_zip_key,
     upload_refined_file_package,
 )
+from app.services.conditions import filter_refined_files_by_diff_rendering
 from app.services.ecr.model import RefinedDocument
-from app.services.ecr.refine import get_file_size_reduction_percentage
+from app.services.ecr.refine import (
+    get_file_size_reduction_percentage,
+)
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
@@ -45,7 +48,6 @@ from app.services.xslt import create_refined_eicr_html_file
 # - periods
 # - spaces
 SAFE_FILENAME_RE = re.compile(r"^[\w\-. ]+\.zip$")
-
 # create a router instance for this file
 router = APIRouter(prefix="/demo")
 
@@ -107,19 +109,16 @@ async def _build_refined_conditions(
 
         packaged_files.append(html_file)
 
-        formatted_refined_eicr = format_xml_document_for_display_or_raise(
-            refined_document.refined_eicr,
-            preserve_comments=True,
+        content_for_frontend = filter_refined_files_by_diff_rendering(
+            original_xml_files=original_xml_files, refined_document=refined_document
         )
 
         conditions.append(
             Condition(
                 code=condition.code,
                 display_name=condition.display_name,
-                refined_eicr=formatted_refined_eicr,
-                refined_rr=format_xml_document_for_display_or_raise(
-                    original_xml_files.rr
-                ),
+                refined_eicr=content_for_frontend.refined_eicr,
+                render_diff=content_for_frontend.render_diff,
                 stats=[
                     f"eICR file size reduced by {
                         get_file_size_reduction_percentage(
@@ -244,8 +243,11 @@ async def demo_upload(
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
         unrefined_eicr=format_xml_document_for_display_or_raise(
             original_xml_files.eicr, preserve_comments=True
-        ),
+        )
+        if any(c.render_diff for c in conditions)
+        else "",
         refined_download_key=output_file_name if s3_key else "",
+        file_info_response=FileInfoResponse(),
     )
 
 

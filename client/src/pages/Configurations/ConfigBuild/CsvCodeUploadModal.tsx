@@ -1,11 +1,11 @@
 import React from 'react';
-import { Label as USWDSLabel, Select } from '@trussworks/react-uswds';
 import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
+import { Select, SelectContainer } from '@components/Select';
 import {
   Modal,
   ModalBody,
@@ -149,21 +149,21 @@ export function PreviewEditModal({
           </Field>
           {error && <p className="mb-1 text-sm text-red-600">{error}</p>}
         </div>
-        <div>
-          <USWDSLabel htmlFor="preview-edit-system">Code system</USWDSLabel>
-          <Select
-            id="preview-edit-system"
-            name="preview-edit-system"
-            value={previewEditForm.system}
-            onChange={handlePreviewEditChange('system')}
-          >
-            {PREVIEW_CODE_SYSTEMS.map((system: string) => (
-              <option key={system} value={system}>
-                {system}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <SelectContainer>
+          <Field>
+            <Label>Code system</Label>
+            <Select
+              value={previewEditForm.system}
+              onChange={handlePreviewEditChange('system')}
+            >
+              {PREVIEW_CODE_SYSTEMS.map((system: string) => (
+                <option key={system} value={system}>
+                  {system}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </SelectContainer>
         <Field>
           <Label>Code name</Label>
           <TextInput

@@ -66,6 +66,9 @@
   --color-primary-container: #3a7d950d;
   --drop-shadow-base: drop-shadow(0px 4px 8px rgb(0, 0, 0, 0.15));
 
+  /* Color reference */
+  /* https://designsystem.digital.gov/design-tokens/color/system-tokens/ */
+
   --color-blue-100: #e8f5ff;
   --color-blue-200: #a1d3ff;
   --color-blue-300: #0076d6;
@@ -155,6 +158,10 @@
   --color-blue-40v: #2491ff;
   --color-blue-50v: #0076d6;
   --color-blue-60v: #005ea2;
+
+  --color-green-cool-10v: #b7f5bd;
+
+  --color-red-warm-10v: #fce1d4;
 }
 
 /**

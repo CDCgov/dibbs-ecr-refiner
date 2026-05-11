@@ -1,10 +1,12 @@
-import { Label, Select } from '@trussworks/react-uswds';
 import { Spinner } from '@components/Spinner';
 import { Title } from '@components/Title';
 import { useState } from 'react';
 import { ActivityLogEntries } from './ActivityLogEntries';
 import { useGetEvents } from '../../api/events/events';
 import { Pagination } from '@components/Pagination';
+import { Select, SelectContainer } from '@components/Select';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
 
 export function ActivityLog() {
   const ALL_CONDITIONS_LITERAL = 'All conditions';
@@ -35,29 +37,29 @@ export function ActivityLog() {
         <p className="mt-2">
           Review activity in eCR Refiner from yourself and others on the team.
         </p>
-        <div className="mt-6">
-          <Label htmlFor="condition-filter">Condition</Label>
-          <Select
-            id="condition-filter"
-            name="condition-filter"
-            value={conditionFilter}
-            onChange={(e) => {
-              setSelectedPage(1);
-              setConditionFilter(e.target.value);
-            }}
-          >
-            <option value={ALL_CONDITIONS_LITERAL}>
-              {ALL_CONDITIONS_LITERAL}
-            </option>
-            {configuration_options.map(({ canonical_url, name }) => {
-              return (
-                <option value={canonical_url} key={canonical_url}>
-                  {name}
-                </option>
-              );
-            })}
-          </Select>
-        </div>
+        <SelectContainer className="mt-6">
+          <Field>
+            <Label>Condition</Label>
+            <Select
+              value={conditionFilter}
+              onChange={(e) => {
+                setSelectedPage(1);
+                setConditionFilter(e.target.value);
+              }}
+            >
+              <option value={ALL_CONDITIONS_LITERAL}>
+                {ALL_CONDITIONS_LITERAL}
+              </option>
+              {configuration_options.map(({ canonical_url, name }) => {
+                return (
+                  <option value={canonical_url} key={canonical_url}>
+                    {name}
+                  </option>
+                );
+              })}
+            </Select>
+          </Field>
+        </SelectContainer>
       </div>
       <div className="mt-6 flex flex-col">
         <ActivityLogEntries
