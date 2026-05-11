@@ -12,6 +12,7 @@ output file's header so it's visible where readers actually look.
 
 import argparse
 import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -304,37 +305,36 @@ def group_templates(templates: list[Template]) -> dict[str, list[Template]]:
       3. If no path leads to a section, group as "Cross-cutting".
 
     First section reached wins (Contained By order is the IG drafters'
-    primary-container hint).
+    primary-container hint). Group order in the output follows IG order.
     """
 
     by_name = {t.display_name: t for t in templates}
-    groups: dict[str, list[Template]] = {}
+    groups: defaultdict[str, list[Template]] = defaultdict(list)
 
-    # seed with section groups in IG order
     for t in templates:
         if t.section_number.startswith("2."):
-            groups.setdefault(_section_group_key(t.display_name), []).append(t)
-
-    groups[_CROSS_CUTTING] = []
-
-    for t in templates:
-        if not t.section_number.startswith("3."):
-            continue
-        section_name = _walk_to_section(t, by_name)
-        if section_name is None:
-            groups[_CROSS_CUTTING].append(t)
+            key = _section_group_key(t.display_name)
+        elif t.section_number.startswith("3."):
+            section_name = _walk_to_section(t, by_name)
+            key = (
+                _CROSS_CUTTING
+                if section_name is None
+                else _section_group_key(section_name)
+            )
         else:
-            groups.setdefault(_section_group_key(section_name), []).append(t)
+            continue
+        groups[key].append(t)
 
     # append C-CDA supplement entries to their declared groups
     for group, display_name, root, extension in _CCDA_SUPPLEMENT:
-        supplement = Template(
-            section_number="ccda",
-            display_name=display_name,
-            root=root,
-            extension=extension,
+        groups[group].append(
+            Template(
+                section_number="ccda",
+                display_name=display_name,
+                root=root,
+                extension=extension,
+            )
         )
-        groups.setdefault(group, []).append(supplement)
 
     return groups
 
