@@ -581,7 +581,7 @@ async def associate_condition_codeset_with_configuration_db(
         UPDATE configurations
         SET included_conditions = array_append(included_conditions, %s)
         WHERE id = %s
-          AND NOT %s::UUID = ANY(included_conditions)
+          AND NOT %s = ANY(included_conditions)
         RETURNING id;
     """
 
