@@ -9,4 +9,7 @@ python generate_template_oids.py \
   --ig-md CDAR2_IG_PHCASERPT_R2_STU3.1.1_Vol2_2022JUL_2024OCT.md \
   --out ../../app/services/ecr/specification/template_oids.py
 
-echo "Template OIDs generated successfully"
+# format the generated file with ruff
+ruff format ../../app/services/ecr/specification/template_oids.py
+
+echo "Template OIDs generated and formatted successfully"
