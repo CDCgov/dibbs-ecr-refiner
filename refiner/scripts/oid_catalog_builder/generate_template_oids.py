@@ -368,11 +368,12 @@ def _walk_to_section(template: Template, by_name: dict[str, Template]) -> str | 
 
 
 _OUTPUT_HEADER = '''"""\
-Template OIDs for the eCR Refiner entry matching engine.
+DO NOT EDIT BY HAND--change the source IG or the generator and regenerate.
 
 Generated from the eICR STU 3.1.1 IG Volume 2 markdown by
-`scripts/generate_template_oids.py`. DO NOT EDIT BY HAND - change the
-source IG or the generator and regenerate.
+`refiner/scripts/oid_catalog_builder/generate_template_oids.py`.
+
+Template OIDs for the eCR Refiner entry matching engine.
 
 use the shell script to run the python script and place the output in the
 `specification` module.

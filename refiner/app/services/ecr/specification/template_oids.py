@@ -1,8 +1,9 @@
-"""Template OIDs for the eCR Refiner entry matching engine.
+"""DO NOT EDIT BY HAND--change the source IG or the generator and regenerate.
 
 Generated from the eICR STU 3.1.1 IG Volume 2 markdown by
-`scripts/generate_template_oids.py`. DO NOT EDIT BY HAND - change the
-source IG or the generator and regenerate.
+`refiner/scripts/oid_catalog_builder/generate_template_oids.py`.
+
+Template OIDs for the eCR Refiner entry matching engine.
 
 use the shell script to run the python script and place the output in the
 `specification` module.
@@ -14,19 +15,16 @@ strict extension matching produces false negatives in real documents.
 
 from typing import Final
 
+
 # ===========================================================================
 # Admission Diagnosis Section (V3)
 # ===========================================================================
 
 # Admission Diagnosis Section (V3)
-ADMISSION_DIAGNOSIS_SECTION_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.43"  # ext 2015-08-01
-)
+ADMISSION_DIAGNOSIS_SECTION_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.43"  # ext 2015-08-01
 
 # Hospital Admission Diagnosis (V3)
-HOSPITAL_ADMISSION_DIAGNOSIS_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.34"  # ext 2015-08-01
-)
+HOSPITAL_ADMISSION_DIAGNOSIS_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.34"  # ext 2015-08-01
 
 
 # ===========================================================================
@@ -34,9 +32,7 @@ HOSPITAL_ADMISSION_DIAGNOSIS_V3: Final[str] = (
 # ===========================================================================
 
 # Admission Medications Section (entries optional) (V3)
-ADMISSION_MEDICATIONS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.44"  # ext 2015-08-01
-)
+ADMISSION_MEDICATIONS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.44"  # ext 2015-08-01
 
 
 # ===========================================================================
@@ -52,14 +48,10 @@ CHIEF_COMPLAINT_SECTION: Final[str] = "1.3.6.1.4.1.19376.1.5.3.1.1.13.2.1"
 # ===========================================================================
 
 # Discharge Diagnosis Section (V3)
-DISCHARGE_DIAGNOSIS_SECTION_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.24"  # ext 2015-08-01
-)
+DISCHARGE_DIAGNOSIS_SECTION_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.24"  # ext 2015-08-01
 
 # Hospital Discharge Diagnosis (V3)
-HOSPITAL_DISCHARGE_DIAGNOSIS_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.33"  # ext 2015-08-01
-)
+HOSPITAL_DISCHARGE_DIAGNOSIS_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.33"  # ext 2015-08-01
 
 
 # ===========================================================================
@@ -67,9 +59,7 @@ HOSPITAL_DISCHARGE_DIAGNOSIS_V3: Final[str] = (
 # ===========================================================================
 
 # Emergency Outbreak Information Section
-EMERGENCY_OUTBREAK_INFORMATION_SECTION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.2.4"  # ext 2021-01-01
-)
+EMERGENCY_OUTBREAK_INFORMATION_SECTION: Final[str] = "2.16.840.1.113883.10.20.15.2.2.4"  # ext 2021-01-01
 
 
 # ===========================================================================
@@ -77,14 +67,10 @@ EMERGENCY_OUTBREAK_INFORMATION_SECTION: Final[str] = (
 # ===========================================================================
 
 # Encounters Section (entries optional) (V3)
-ENCOUNTERS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.22"  # ext 2015-08-01
-)
+ENCOUNTERS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.22"  # ext 2015-08-01
 
 # Encounters Section (entries required) (V3)
-ENCOUNTERS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.22.1"  # ext 2015-08-01
-)
+ENCOUNTERS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.22.1"  # ext 2015-08-01
 
 # Encounter Activity (V3)
 ENCOUNTER_ACTIVITY_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.49"  # ext 2015-08-01
@@ -93,9 +79,7 @@ ENCOUNTER_ACTIVITY_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.49"  # ext 201
 ENCOUNTER_DIAGNOSIS_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.80"  # ext 2015-08-01
 
 # Initial Case Report Initiation Reason Observation (V2)
-INITIATION_REASON_OBSERVATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.5"  # ext 2019-04-01
-)
+INITIATION_REASON_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.15.2.3.5"  # ext 2019-04-01
 
 
 # ===========================================================================
@@ -111,19 +95,13 @@ HISTORY_OF_PRESENT_ILLNESS_SECTION: Final[str] = "1.3.6.1.4.1.19376.1.5.3.1.3.4"
 # ===========================================================================
 
 # Immunizations Section (entries optional) (V3)
-IMMUNIZATIONS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.2"  # ext 2015-08-01
-)
+IMMUNIZATIONS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.2"  # ext 2015-08-01
 
 # Immunizations Section (entries required) (V3)
-IMMUNIZATIONS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.2.1"  # ext 2015-08-01
-)
+IMMUNIZATIONS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.2.1"  # ext 2015-08-01
 
 # Immunization Activity (V3)
-IMMUNIZATION_ACTIVITY_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.52"  # ext 2015-08-01
-)
+IMMUNIZATION_ACTIVITY_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.52"  # ext 2015-08-01
 
 
 # ===========================================================================
@@ -131,9 +109,7 @@ IMMUNIZATION_ACTIVITY_V3: Final[str] = (
 # ===========================================================================
 
 # Medications Administered Section (V2)
-MEDICATIONS_ADMINISTERED_SECTION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.38"  # ext 2014-06-09
-)
+MEDICATIONS_ADMINISTERED_SECTION_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.38"  # ext 2014-06-09
 
 
 # ===========================================================================
@@ -141,14 +117,10 @@ MEDICATIONS_ADMINISTERED_SECTION_V2: Final[str] = (
 # ===========================================================================
 
 # Medications Section (entries optional) (V2)
-MEDICATIONS_SECTION_ENTRIES_OPTIONAL_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.1"  # ext 2014-06-09
-)
+MEDICATIONS_SECTION_ENTRIES_OPTIONAL_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.1"  # ext 2014-06-09
 
 # Medications Section (entries required) (V2)
-MEDICATIONS_SECTION_ENTRIES_REQUIRED_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.1.1"  # ext 2014-06-09
-)
+MEDICATIONS_SECTION_ENTRIES_REQUIRED_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.1.1"  # ext 2014-06-09
 
 # Medication Activity (V2)
 MEDICATION_ACTIVITY_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.16"  # ext 2014-06-09
@@ -157,22 +129,16 @@ MEDICATION_ACTIVITY_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.16"  # ext 20
 MEDICATION_DISPENSE_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.18"  # ext 2014-06-09
 
 # Medication Information (V2)
-MEDICATION_INFORMATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.23"  # ext 2014-06-09
-)
+MEDICATION_INFORMATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.23"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Medication Information
-TRIGGER_CODE_MEDICATION_INFORMATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.36"  # ext 2019-04-01
-)
+TRIGGER_CODE_MEDICATION_INFORMATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.36"  # ext 2019-04-01
 
 # Reaction Observation (V2)
 REACTION_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.9"  # ext 2014-06-09
 
 # Therapeutic Medication Response Observation
-THERAPEUTIC_MEDICATION_RESPONSE_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.37"  # ext 2019-04-01
-)
+THERAPEUTIC_MEDICATION_RESPONSE_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.37"  # ext 2019-04-01
 
 
 # ===========================================================================
@@ -180,9 +146,7 @@ THERAPEUTIC_MEDICATION_RESPONSE_OBSERVATION: Final[str] = (
 # ===========================================================================
 
 # Past Medical History (V3)
-PAST_MEDICAL_HISTORY_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.20"  # ext 2015-08-01
-)
+PAST_MEDICAL_HISTORY_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.20"  # ext 2015-08-01
 
 # Problem Observation (V3)
 PROBLEM_OBSERVATION_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.4"  # ext 2015-08-01
@@ -196,43 +160,31 @@ PROBLEM_STATUS: Final[str] = "2.16.840.1.113883.10.20.22.4.6"  # ext 2019-06-20
 # ===========================================================================
 
 # Plan of Treatment Section (V2)
-PLAN_OF_TREATMENT_SECTION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.10"  # ext 2014-06-09
-)
+PLAN_OF_TREATMENT_SECTION_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.10"  # ext 2014-06-09
 
 # Immunization Medication Information (V2)
-IMMUNIZATION_MEDICATION_INFORMATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.54"  # ext 2014-06-09
-)
+IMMUNIZATION_MEDICATION_INFORMATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.54"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Immunization Medication Information
-TRIGGER_CODE_IMMUNIZATION_MEDICATION_INFORMATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.38"  # ext 2019-04-01
-)
+TRIGGER_CODE_IMMUNIZATION_MEDICATION_INFORMATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.38"  # ext 2019-04-01
 
 # Planned Act (V2)
 PLANNED_ACT_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.39"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Planned Act
-TRIGGER_CODE_PLANNED_ACT: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.41"  # ext 2021-01-01
-)
+TRIGGER_CODE_PLANNED_ACT: Final[str] = "2.16.840.1.113883.10.20.15.2.3.41"  # ext 2021-01-01
 
 # Planned Immunization Activity
 PLANNED_IMMUNIZATION_ACTIVITY: Final[str] = "2.16.840.1.113883.10.20.22.4.120"
 
 # Planned Medication Activity (V2)
-PLANNED_MEDICATION_ACTIVITY_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.42"  # ext 2014-06-09
-)
+PLANNED_MEDICATION_ACTIVITY_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.42"  # ext 2014-06-09
 
 # Planned Observation (V2)
 PLANNED_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.44"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Lab Test Order (V2)
-TRIGGER_CODE_LAB_TEST_ORDER_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.4"  # ext 2019-04-01
-)
+TRIGGER_CODE_LAB_TEST_ORDER_V2: Final[str] = "2.16.840.1.113883.10.20.15.2.3.4"  # ext 2019-04-01
 
 # Initial Case Report Trigger Code Planned Observation
 TRIGGER_CODE_PLANNED_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.43"
@@ -241,9 +193,7 @@ TRIGGER_CODE_PLANNED_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.4
 PLANNED_PROCEDURE_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.41"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Planned Procedure
-TRIGGER_CODE_PLANNED_PROCEDURE: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.42"  # ext 2021-01-01
-)
+TRIGGER_CODE_PLANNED_PROCEDURE: Final[str] = "2.16.840.1.113883.10.20.15.2.3.42"  # ext 2021-01-01
 
 
 # ===========================================================================
@@ -254,17 +204,13 @@ TRIGGER_CODE_PLANNED_PROCEDURE: Final[str] = (
 PREGNANCY_SECTION: Final[str] = "2.16.840.1.113883.10.20.22.2.80"  # ext 2018-04-01
 
 # Last Menstrual Period (V2)
-LAST_MENSTRUAL_PERIOD_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.30.3.34"  # ext 2014-06-09
-)
+LAST_MENSTRUAL_PERIOD_V2: Final[str] = "2.16.840.1.113883.10.20.30.3.34"  # ext 2014-06-09
 
 # Postpartum Status
 POSTPARTUM_STATUS: Final[str] = "2.16.840.1.113883.10.20.22.4.285"  # ext 2018-04-01
 
 # Pregnancy Observation (SUPPLEMENTAL PREGNANCY)
-PREGNANCY_OBSERVATION_SUPPLEMENTAL_PREGNANCY: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.293"  # ext 2018-04-01
-)
+PREGNANCY_OBSERVATION_SUPPLEMENTAL_PREGNANCY: Final[str] = "2.16.840.1.113883.10.20.22.4.293"  # ext 2018-04-01
 
 
 # ===========================================================================
@@ -272,22 +218,16 @@ PREGNANCY_OBSERVATION_SUPPLEMENTAL_PREGNANCY: Final[str] = (
 # ===========================================================================
 
 # Problem Section (entries optional) (V3)
-PROBLEM_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.5"  # ext 2015-08-01
-)
+PROBLEM_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.5"  # ext 2015-08-01
 
 # Problem Section (entries required) (V3)
-PROBLEM_SECTION_ENTRIES_REQUIRED_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.5.1"  # ext 2015-08-01
-)
+PROBLEM_SECTION_ENTRIES_REQUIRED_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.5.1"  # ext 2015-08-01
 
 # Problem Concern Act (V3)
 PROBLEM_CONCERN_ACT_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.3"  # ext 2015-08-01
 
 # Initial Case Report Trigger Code Problem Observation (V3)
-TRIGGER_CODE_PROBLEM_OBSERVATION_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.3"  # ext 2021-01-01
-)
+TRIGGER_CODE_PROBLEM_OBSERVATION_V3: Final[str] = "2.16.840.1.113883.10.20.15.2.3.3"  # ext 2021-01-01
 
 
 # ===========================================================================
@@ -295,44 +235,28 @@ TRIGGER_CODE_PROBLEM_OBSERVATION_V3: Final[str] = (
 # ===========================================================================
 
 # Procedures Section (entries optional) (V2)
-PROCEDURES_SECTION_ENTRIES_OPTIONAL_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.7"  # ext 2014-06-09
-)
+PROCEDURES_SECTION_ENTRIES_OPTIONAL_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.7"  # ext 2014-06-09
 
 # Procedures Section (entries required) (V2)
-PROCEDURES_SECTION_ENTRIES_REQUIRED_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.7.1"  # ext 2014-06-09
-)
+PROCEDURES_SECTION_ENTRIES_REQUIRED_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.7.1"  # ext 2014-06-09
 
 # Procedure Activity Act (V2)
-PROCEDURE_ACTIVITY_ACT_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.12"  # ext 2014-06-09
-)
+PROCEDURE_ACTIVITY_ACT_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.12"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Procedure Activity Act
-TRIGGER_CODE_PROCEDURE_ACTIVITY_ACT: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.45"  # ext 2021-01-01
-)
+TRIGGER_CODE_PROCEDURE_ACTIVITY_ACT: Final[str] = "2.16.840.1.113883.10.20.15.2.3.45"  # ext 2021-01-01
 
 # Procedure Activity Observation (V2)
-PROCEDURE_ACTIVITY_OBSERVATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.13"  # ext 2014-06-09
-)
+PROCEDURE_ACTIVITY_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.13"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Procedure Activity Observation
-TRIGGER_CODE_PROCEDURE_ACTIVITY_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.46"  # ext 2021-01-01
-)
+TRIGGER_CODE_PROCEDURE_ACTIVITY_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.46"  # ext 2021-01-01
 
 # Procedure Activity Procedure (V2)
-PROCEDURE_ACTIVITY_PROCEDURE_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.14"  # ext 2014-06-09
-)
+PROCEDURE_ACTIVITY_PROCEDURE_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.14"  # ext 2014-06-09
 
 # Initial Case Report Trigger Code Procedure Activity Procedure
-TRIGGER_CODE_PROCEDURE_ACTIVITY_PROCEDURE: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.44"  # ext 2021-01-01
-)
+TRIGGER_CODE_PROCEDURE_ACTIVITY_PROCEDURE: Final[str] = "2.16.840.1.113883.10.20.15.2.3.44"  # ext 2021-01-01
 
 # Product Instance
 PRODUCT_INSTANCE: Final[str] = "2.16.840.1.113883.10.20.22.4.37"
@@ -354,14 +278,10 @@ REASON_FOR_VISIT_SECTION: Final[str] = "2.16.840.1.113883.10.20.22.2.12"
 # ===========================================================================
 
 # Reportability Response Information Section
-REPORTABILITY_RESPONSE_INFORMATION_SECTION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.2.5"  # ext 2021-01-01
-)
+REPORTABILITY_RESPONSE_INFORMATION_SECTION: Final[str] = "2.16.840.1.113883.10.20.15.2.2.5"  # ext 2021-01-01
 
 # Reportability Response Coded Information Organizer
-REPORTABILITY_RESPONSE_CODED_INFORMATION_ORGANIZER: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.34"  # ext 2017-04-01
-)
+REPORTABILITY_RESPONSE_CODED_INFORMATION_ORGANIZER: Final[str] = "2.16.840.1.113883.10.20.15.2.3.34"  # ext 2017-04-01
 
 
 # ===========================================================================
@@ -369,14 +289,10 @@ REPORTABILITY_RESPONSE_CODED_INFORMATION_ORGANIZER: Final[str] = (
 # ===========================================================================
 
 # Results Section (entries optional) (V3)
-RESULTS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.3"  # ext 2015-08-01
-)
+RESULTS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.3"  # ext 2015-08-01
 
 # Results Section (entries required) (V3)
-RESULTS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.3.1"  # ext 2015-08-01
-)
+RESULTS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.3.1"  # ext 2015-08-01
 
 # Result Observation (V3)
 RESULT_OBSERVATION_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.2"  # ext 2015-08-01
@@ -388,9 +304,7 @@ TRIGGER_CODE_RESULT_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.15.2.3
 RESULT_ORGANIZER_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.1"  # ext 2015-08-01
 
 # Initial Case Report Trigger Code Result Organizer (V2)
-TRIGGER_CODE_RESULT_ORGANIZER_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.35"  # ext 2022-05-01
-)
+TRIGGER_CODE_RESULT_ORGANIZER_V2: Final[str] = "2.16.840.1.113883.10.20.15.2.3.35"  # ext 2022-05-01
 
 
 # ===========================================================================
@@ -406,9 +320,7 @@ REVIEW_OF_SYSTEMS_SECTION: Final[str] = "1.3.6.1.4.1.19376.1.5.3.1.3.18"
 # ===========================================================================
 
 # Social History Section (V3)
-SOCIAL_HISTORY_SECTION_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.17"  # ext 2015-08-01
-)
+SOCIAL_HISTORY_SECTION_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.17"  # ext 2015-08-01
 
 # Birth Sex Observation
 BIRTH_SEX_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.22.4.200"  # ext 2016-06-01
@@ -417,27 +329,19 @@ BIRTH_SEX_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.22.4.200"  # ext 20
 CHARACTERISTICS_OF_HOME_ENVIRONMENT: Final[str] = "2.16.840.1.113883.10.20.22.4.109"
 
 # Country of Nationality Observation
-COUNTRY_OF_NATIONALITY_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.54"  # ext 2021-01-01
-)
+COUNTRY_OF_NATIONALITY_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.54"  # ext 2021-01-01
 
 # Country of Residence Observation
-COUNTRY_OF_RESIDENCE_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.53"  # ext 2021-01-01
-)
+COUNTRY_OF_RESIDENCE_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.53"  # ext 2021-01-01
 
 # Disability Status Observation
-DISABILITY_STATUS_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.47"  # ext 2021-01-01
-)
+DISABILITY_STATUS_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.47"  # ext 2021-01-01
 
 # Estimated Date of Delivery
 ESTIMATED_DATE_OF_DELIVERY: Final[str] = "2.16.840.1.113883.10.20.15.3.1"
 
 # Exposure/Contact Information Observation
-EXPOSURE_CONTACT_INFORMATION_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.52"
-)
+EXPOSURE_CONTACT_INFORMATION_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.52"
 
 # Pregnancy Observation
 PREGNANCY_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.3.8"
@@ -446,30 +350,22 @@ PREGNANCY_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.3.8"
 PURPOSE_OF_TRAVEL_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.15.2.3.51"
 
 # Social History Observation (V3)
-SOCIAL_HISTORY_OBSERVATION_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.38"  # ext 2015-08-01
-)
+SOCIAL_HISTORY_OBSERVATION_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.38"  # ext 2015-08-01
 
 # Gender Identity Observation (V3)
-GENDER_IDENTITY_OBSERVATION_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.34.3.45"  # ext 2022-06-01
-)
+GENDER_IDENTITY_OBSERVATION_V3: Final[str] = "2.16.840.1.113883.10.20.34.3.45"  # ext 2022-06-01
 
 # Transportation Details Observation
 TRANSPORTATION_DETAILS_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.49"
 
 # Transportation Details Organizer
-TRANSPORTATION_DETAILS_ORGANIZER: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.50"  # ext 2021-01-01
-)
+TRANSPORTATION_DETAILS_ORGANIZER: Final[str] = "2.16.840.1.113883.10.20.15.2.3.50"  # ext 2021-01-01
 
 # Travel History (V3)
 TRAVEL_HISTORY_V3: Final[str] = "2.16.840.1.113883.10.20.15.2.3.1"  # ext 2022-05-01
 
 # Tribal Affiliation Observation
-TRIBAL_AFFILIATION_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.48"  # ext 2021-01-01
-)
+TRIBAL_AFFILIATION_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.48"  # ext 2021-01-01
 
 
 # ===========================================================================
@@ -477,9 +373,7 @@ TRIBAL_AFFILIATION_OBSERVATION: Final[str] = (
 # ===========================================================================
 
 # Occupational Data for Health Template Requirements Section (V2)
-OCCUPATIONAL_DATA_FOR_HEALTH_TEMPLATE_REQUIREMENTS_SECTION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.17"  # ext 2020-09-01
-)
+OCCUPATIONAL_DATA_FOR_HEALTH_TEMPLATE_REQUIREMENTS_SECTION_V2: Final[str] = "2.16.840.1.113883.10.20.22.2.17"  # ext 2020-09-01
 
 
 # ===========================================================================
@@ -487,24 +381,16 @@ OCCUPATIONAL_DATA_FOR_HEALTH_TEMPLATE_REQUIREMENTS_SECTION_V2: Final[str] = (
 # ===========================================================================
 
 # Vital Signs Section (entries optional) (V3)
-VITAL_SIGNS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.4"  # ext 2015-08-01
-)
+VITAL_SIGNS_SECTION_ENTRIES_OPTIONAL_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.4"  # ext 2015-08-01
 
 # Vital Signs Section (entries required) (V3)
-VITAL_SIGNS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.2.4.1"  # ext 2015-08-01
-)
+VITAL_SIGNS_SECTION_ENTRIES_REQUIRED_V3: Final[str] = "2.16.840.1.113883.10.20.22.2.4.1"  # ext 2015-08-01
 
 # Vital Sign Observation (V2)
-VITAL_SIGN_OBSERVATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.27"  # ext 2014-06-09
-)
+VITAL_SIGN_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.27"  # ext 2014-06-09
 
 # Vital Signs Organizer (V3)
-VITAL_SIGNS_ORGANIZER_V3: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.26"  # ext 2015-08-01
-)
+VITAL_SIGNS_ORGANIZER_V3: Final[str] = "2.16.840.1.113883.10.20.22.4.26"  # ext 2015-08-01
 
 
 # ===========================================================================
@@ -512,91 +398,61 @@ VITAL_SIGNS_ORGANIZER_V3: Final[str] = (
 # ===========================================================================
 
 # Determination of Reportability
-DETERMINATION_OF_REPORTABILITY: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.19"  # ext 2017-04-01
-)
+DETERMINATION_OF_REPORTABILITY: Final[str] = "2.16.840.1.113883.10.20.15.2.3.19"  # ext 2017-04-01
 
 # Determination of Reportability Reason
-DETERMINATION_OF_REPORTABILITY_REASON: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.26"  # ext 2017-04-01
-)
+DETERMINATION_OF_REPORTABILITY_REASON: Final[str] = "2.16.840.1.113883.10.20.15.2.3.26"  # ext 2017-04-01
 
 # Determination of Reportability Rule
-DETERMINATION_OF_REPORTABILITY_RULE: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.27"  # ext 2017-04-01
-)
+DETERMINATION_OF_REPORTABILITY_RULE: Final[str] = "2.16.840.1.113883.10.20.15.2.3.27"  # ext 2017-04-01
 
 # Emergency Outbreak Information Observation
-EMERGENCY_OUTBREAK_INFORMATION_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.40"  # ext 2021-01-01
-)
+EMERGENCY_OUTBREAK_INFORMATION_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.40"  # ext 2021-01-01
 
 # Entry Reference
 ENTRY_REFERENCE: Final[str] = "2.16.840.1.113883.10.20.22.4.122"
 
 # Estimated Date of Delivery (SUPPLEMENTAL PREGNANCY)
-ESTIMATED_DATE_OF_DELIVERY_SUPPLEMENTAL_PREGNANCY: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.297"  # ext 2018-04-01
-)
+ESTIMATED_DATE_OF_DELIVERY_SUPPLEMENTAL_PREGNANCY: Final[str] = "2.16.840.1.113883.10.20.22.4.297"  # ext 2018-04-01
 
 # Estimated Gestational Age of Pregnancy
-ESTIMATED_GESTATIONAL_AGE_OF_PREGNANCY: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.280"  # ext 2018-04-01
-)
+ESTIMATED_GESTATIONAL_AGE_OF_PREGNANCY: Final[str] = "2.16.840.1.113883.10.20.22.4.280"  # ext 2018-04-01
 
 # History of Employment Status Observation
-HISTORY_OF_EMPLOYMENT_STATUS_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.212"
-)
+HISTORY_OF_EMPLOYMENT_STATUS_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.22.4.212"
 
 # Laboratory Observation Result Status (ID)
 LABORATORY_OBSERVATION_RESULT_STATUS_ID: Final[str] = "2.16.840.1.113883.10.20.22.4.419"
 
 # Laboratory Result Status (ID)
-LABORATORY_RESULT_STATUS_ID: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.418"  # ext 2018-06-11
-)
+LABORATORY_RESULT_STATUS_ID: Final[str] = "2.16.840.1.113883.10.20.22.4.418"  # ext 2018-06-11
 
 # Occupational Hazard Observation
-OCCUPATIONAL_HAZARD_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.215"  # ext 2017-11-30
-)
+OCCUPATIONAL_HAZARD_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.22.4.215"  # ext 2017-11-30
 
 # Past or Present Industry Observation (V2)
-PAST_OR_PRESENT_INDUSTRY_OBSERVATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.216"  # ext 2020-09-01
-)
+PAST_OR_PRESENT_INDUSTRY_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.216"  # ext 2020-09-01
 
 # Past or Present Occupation Observation (V2)
-PAST_OR_PRESENT_OCCUPATION_OBSERVATION_V2: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.217"  # ext 2020-09-01
-)
+PAST_OR_PRESENT_OCCUPATION_OBSERVATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.217"  # ext 2020-09-01
 
 # Pregnancy Outcome
 PREGNANCY_OUTCOME: Final[str] = "2.16.840.1.113883.10.20.22.4.284"  # ext 2018-04-01
 
 # Relevant Reportable Condition Observation
-RELEVANT_REPORTABLE_CONDITION_OBSERVATION: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.12"  # ext 2017-04-01
-)
+RELEVANT_REPORTABLE_CONDITION_OBSERVATION: Final[str] = "2.16.840.1.113883.10.20.15.2.3.12"  # ext 2017-04-01
 
 # Reportability Information Organizer
-REPORTABILITY_INFORMATION_ORGANIZER: Final[str] = (
-    "2.16.840.1.113883.10.20.15.2.3.13"  # ext 2017-04-01
-)
+REPORTABILITY_INFORMATION_ORGANIZER: Final[str] = "2.16.840.1.113883.10.20.15.2.3.13"  # ext 2017-04-01
 
 # Specimen Collection Procedure (ID)
-SPECIMEN_COLLECTION_PROCEDURE_ID: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.415"  # ext 2018-09-01
-)
+SPECIMEN_COLLECTION_PROCEDURE_ID: Final[str] = "2.16.840.1.113883.10.20.22.4.415"  # ext 2018-09-01
 
 # Specimen Observation (ID)
 SPECIMEN_OBSERVATION_ID: Final[str] = "2.16.840.1.113883.10.20.22.4.417"
 
 # Specimen Condition Observation (ID)
-SPECIMEN_CONDITION_OBSERVATION_ID: Final[str] = (
-    "2.16.840.1.113883.10.20.22.4.421"  # ext 2018-06-12
-)
+SPECIMEN_CONDITION_OBSERVATION_ID: Final[str] = "2.16.840.1.113883.10.20.22.4.421"  # ext 2018-06-12
 
 # Specimen Reject Reason Observation (ID)
 SPECIMEN_REJECT_REASON_OBSERVATION_ID: Final[str] = "2.16.840.1.113883.10.20.22.4.420"
@@ -612,3 +468,4 @@ VACCINE_CREDENTIAL_PATIENT_ASSERTION: Final[str] = "2.16.840.1.113883.10.20.15.2
 
 # Indication (V2)
 INDICATION_V2: Final[str] = "2.16.840.1.113883.10.20.22.4.19"  # ext 2014-06-09
+
