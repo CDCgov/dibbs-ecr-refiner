@@ -68,36 +68,19 @@ async def _get_conditions_by_canonical_urls_and_version_db(
 async def _get_condition_by_canonical_url_and_version_db(
     canonical_url: str, version: str, db: AsyncDatabaseConnection
 ) -> DbCondition:
-    query = """
-            SELECT
-                id
-            FROM conditions
-            WHERE canonical_url = %s
-            AND version = %s
-            """
-
-    params = (
-        canonical_url,
-        version,
+    conditions = await _get_conditions_by_canonical_urls_and_version_db(
+        canonical_urls=[canonical_url], version=version, db=db
     )
 
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(query, params)
-            row = await cur.fetchone()
-            if not row:
-                raise ValueError(
-                    f"Condition with canonical_url: {canonical_url} and version: {version} not found"
-                )
+    conditions_length = len(conditions)
 
-    condition_id = row["id"]
-    condition = await get_condition_by_id_db(id=condition_id, db=db)
-    if not condition:
-        raise ValueError(
-            f"Unable to fetch condition with ID: {condition_id} from the database."
-        )
+    if conditions_length == 0:
+        raise ValueError("Expected 1 condition but received 0.")
 
-    return condition
+    if conditions_length > 1:
+        raise ValueError(f"Expected 1 condition but received {conditions_length}.")
+
+    return conditions[0]
 
 
 async def get_latest_tes_condition_db(
