@@ -12,7 +12,6 @@ from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCondition,
     DbConfigurationCustomCode,
     GetConfigurationResponseVersion,
 )
@@ -117,9 +116,8 @@ def mock_db_functions(
     )
 
     # mock associate_condition_codeset_with_configuration_db
-    assoc_condition = DbConfigurationCondition(
-        mock_condition.id,
-    )
+    assoc_condition = mock_condition.id
+
     updated_config_mock = DbConfiguration(
         id=new_config_id,
         name="New Config",
