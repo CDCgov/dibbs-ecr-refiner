@@ -71,7 +71,6 @@ async def _get_conditions_for_configuration(
     return primary_condition, all_conditions
 
 
-# whitespace change
 @router.post(
     "",
     response_model=ConfigurationTestResponse,

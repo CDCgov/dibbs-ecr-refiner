@@ -1,9 +1,12 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
-from enum import StrEnum
+from typing import Self
 
 from pydantic import BaseModel, Field
+
+from app.db.code_systems.db import get_all_code_systems_db
+from app.db.pool import AsyncDatabaseConnection
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -18,22 +21,33 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 
 # CODE SYSTEM MODELS
 # =============================================================================
-class CodeSystem(StrEnum):
+class CodeSystem:
     """
-    An Enum for code systems.
+    An registry for code systems that pulls values from the db.
     """
 
-    # !IMPORTANT!
-    # If you add something here, be sure to also update the value in the corresponding
-    # values in the CodeSystemSets class and in the database references in DBCondition
-    # and related classes. It's probably worth it at some point for us to centralize
-    # code system information into a source of truth in the db.
-    LOINC = "LOINC"
-    SNOMED = "SNOMED"
-    ICD10 = "ICD-10"
-    RXNORM = "RxNorm"
-    CVX = "CVX"
-    OTHER = "Other"
+    _registry: dict[str, Self] = {}
+
+    def __init__(self, name: str, display_name: str, oid: str):
+        """Constructor that takes in class info and sets the registry information."""
+        self.name = name
+        self.display_name = display_name
+        self.oid = oid
+
+        self._registry[name] = self
+
+    @classmethod
+    async def load_from_db(cls, db: AsyncDatabaseConnection):
+        """Initialize registry from a database call."""
+
+        systems = await get_all_code_systems_db(db)
+        for name, system_data in systems.items():
+            instance = cls(
+                name=system_data.name,
+                display_name=system_data.display_name,
+                oid=system_data.oid,
+            )
+            setattr(cls, name.upper(), instance)
 
     @classmethod
     def sanitize(cls, value: str) -> "CodeSystem":
@@ -43,47 +57,48 @@ class CodeSystem(StrEnum):
         if not isinstance(value, str):
             raise ValueError(f"System name provided: {value} is invalid.")
 
-        mapping = {item.value.lower(): item for item in cls}
-        sanitized = mapping.get(value.strip().lower())
+        sanitized = cls.get(value.strip().lower())
         if not sanitized:
             raise ValueError(f"System name provided: {value} is invalid.")
 
         return sanitized
 
-    @property
-    def oid(self) -> str:
+    @classmethod
+    def get(cls, name: str):
         """
-        Get the corresponding code system OID.
-        """
-
-        return SYSTEM_LABEL_TO_OID[self]
-
-    def format_system_string(self) -> str:
-        """
-        Utility property to format system name into a value that can index dictionaries, with special formatting for ICD-10 to remove the hyphen.
+        Get a specific code system based on its name.
         """
 
-        if self.value == "ICD-10":
-            return "icd10"
-
-        return self.value.lower()
+        return cls._registry.get(name)
 
     @classmethod
-    def _missing_(cls, value: object):
-        if not isinstance(value, str):
+    def get_by_oid(cls, oid: str):
+        """
+        Get a specific code system based on its name.
+        """
+        value = [system for system in cls._registry.values() if system.oid == oid]
+        if len(value) > 1:
+            raise ValueError("OID didn't uniquely identify system information")
+        if len(value) == 0:
             return None
-        normalized_value = value.lower()
-        mapping = {
-            "loinc": cls.LOINC,
-            "snomed": cls.SNOMED,
-            "icd10": cls.ICD10,
-            "icd-10": cls.ICD10,
-            "cvx": cls.CVX,
-            "rxnorm": cls.RXNORM,
-            "other": cls.OTHER,
-        }
 
-        return mapping.get(normalized_value)
+        return value[0]
+
+    @classmethod
+    def all(cls):
+        """
+        Get all code system values.
+        """
+
+        return list(cls._registry.values())
+
+    @classmethod
+    def allowed(cls):
+        """
+        Get all allowed names for supported systems.
+        """
+
+        return list(cls._registry.keys())
 
 
 def index_condition_code_list_by_system(
@@ -94,31 +109,16 @@ def index_condition_code_list_by_system(
     """
 
     result: dict[CodeSystem, list[DbConditionCoding]] = defaultdict(list)
-    for s in CodeSystem:
-        condition_column_index = f"{s.format_system_string()}_codes"
+    for s in CodeSystem.all():
+        condition_column_index = f"{s.display_name}_codes"
         result[s] = getattr(condition, condition_column_index, [])
 
     return result
 
 
-ALLOWED_CUSTOM_CODE_SYSTEMS: set[CodeSystem] = set(CodeSystem)
 ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
-    item.value for item in ALLOWED_CUSTOM_CODE_SYSTEMS
+    item.display_name for item in CodeSystem.all()
 )
-
-SYSTEM_LABEL_TO_OID: dict[CodeSystem, str] = {
-    CodeSystem.SNOMED: "2.16.840.1.113883.6.96",
-    CodeSystem.LOINC: "2.16.840.1.113883.6.1",
-    CodeSystem.ICD10: "2.16.840.1.113883.6.90",
-    CodeSystem.RXNORM: "2.16.840.1.113883.6.88",
-    CodeSystem.CVX: "2.16.840.1.113883.12.292",
-    CodeSystem.OTHER: "Other",  # fall back to generic string in the event of custom code system,
-}
-
-OID_TO_SYSTEM_LABEL = {
-    oid: code_system.format_system_string()
-    for code_system, oid in SYSTEM_LABEL_TO_OID.items()
-}
 
 
 @dataclass(frozen=True)
@@ -189,10 +189,10 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
 
-        attr_name = OID_TO_SYSTEM_LABEL.get(code_system_oid)
+        attr_name = CodeSystem.get_by_oid(code_system_oid)
         if attr_name is None:
             return None
-        return getattr(self, attr_name)
+        return getattr(self, attr_name.name)
 
     def find_match(
         self, code: str, code_system_oid: str | None = None
