@@ -255,7 +255,7 @@ async def insert_configuration_db(
         %s,
         %s,
         %s,
-        %s::jsonb,
+        %s,
         %s::jsonb
     )
     RETURNING
@@ -269,7 +269,7 @@ async def insert_configuration_db(
     if config_to_clone:
         # always use the latest version of associated condition IDs
         included_condition_ids = await get_latest_tes_condition_ids_db(
-            ids=[c.id for c in config_to_clone.included_conditions], db=db
+            ids=config_to_clone.included_conditions, db=db
         )
 
         params = (
@@ -281,7 +281,7 @@ async def insert_configuration_db(
             # cloned by this user
             user_id,
             # included_conditions: always start with primary
-            Jsonb([str(id) for id in included_condition_ids]),
+            included_condition_ids,
             # custom_codes
             Jsonb(
                 [
@@ -300,7 +300,7 @@ async def insert_configuration_db(
             # created by this user
             user_id,
             # included_conditions: always start with primary
-            Jsonb([str(latest_condition.id)]),
+            [latest_condition.id],
             # custom_codes
             EMPTY_JSONB,
         )

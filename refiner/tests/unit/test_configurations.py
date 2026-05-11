@@ -194,7 +194,7 @@ async def test_associate_codeset_with_configuration(
     assert response.status_code == 200
     data = response.json()
     assert len(data["included_conditions"]) == 1
-    assert data["included_conditions"][0]["id"] == str(mock_condition.id)
+    assert UUID(data["included_conditions"][0]) == mock_condition.id
 
 
 @pytest.mark.asyncio
