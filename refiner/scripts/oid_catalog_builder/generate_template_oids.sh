@@ -11,5 +11,6 @@ python generate_template_oids.py \
 
 # format the generated file with ruff
 ruff format ../../app/services/ecr/specification/template_oids.py
+ruff check --fix ../../app/services/ecr/specification/template_oids.py
 
 echo "Template OIDs generated and formatted successfully"

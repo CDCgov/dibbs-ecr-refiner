@@ -13,7 +13,6 @@ strict extension matching produces false negatives in real documents.
 
 from typing import Final
 
-
 # ===========================================================================
 # Admission Diagnosis Section (V3)
 # ===========================================================================
