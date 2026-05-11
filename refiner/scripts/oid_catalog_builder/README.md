@@ -12,3 +12,11 @@ To update the `template_oids.py` script run this in the `scripts/oid_catalog_bui
 ```
 
 There may be a `ruff` issue that you can quickly fix if present but otherwise don't edit this doc by hand.
+
+### To generate the markdown from pdf
+
+This was the command use to generate the markdown file used by the script:
+
+```bash
+marker_single CDAR2_IG_PHCASERPT_R2_STU3.1.1_Vol2_2022JUL_2024OCT.pdf --output_dir=.
+```
