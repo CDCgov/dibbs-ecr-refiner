@@ -73,7 +73,7 @@
     "orval": "^8.9.1",
     "pg": "^8.20.0",
     "prettier": "^3.8.1",
-    "prettier-plugin-tailwindcss": "^0.7.2",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "rimraf": "^6.1.2",
     "sass-embedded": "1.99.0",
     "typescript": "~5.9.3",
