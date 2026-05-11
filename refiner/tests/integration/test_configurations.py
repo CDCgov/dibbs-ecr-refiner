@@ -59,9 +59,12 @@ class TestConfigurations:
         setup,
         authed_client,
         get_condition_id,
-        associate_codeset,
         get_config_by_id,
     ):
+        """
+        Tests that a brand new, non-cloned configuration always uses the latest
+        TES condition information available.
+        """
         # Try creating a config with an outdated TES version
         condition_id = await get_condition_id("Glanders", "4.0.0")
         payload = {"condition_id": str(condition_id)}
@@ -81,7 +84,6 @@ class TestConfigurations:
         setup,
         authed_client,
         get_condition_id,
-        get_condition_by_id,
         get_config_by_id,
         test_user_jurisdiction_id,
         test_user_id,
@@ -90,10 +92,17 @@ class TestConfigurations:
         activate_config,
         OLD_TES_VERSION,
     ):
+        """
+        Tests that configurations using previous TES versions are automatically updated to use
+        the latest condition information when cloned.
+        """
         NEW_TES_VERSION = "5.0.0"
-        # Try creating a config with an outdated TES version
-        old_condition_id = await get_condition_id("COVID-19", OLD_TES_VERSION)
+        PRIMARY_CONDITION = "COVID-19"
 
+        # Try creating a config with an outdated TES version
+        old_condition_id = await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
+
+        # Can't be done through the API so it needs to be done via query
         old_config_id = None
         query = """
             INSERT INTO configurations (
@@ -116,7 +125,7 @@ class TestConfigurations:
         params = (
             test_user_jurisdiction_id,
             old_condition_id,
-            "COVID-19",
+            PRIMARY_CONDITION,
             test_user_id,
             Jsonb([str(old_condition_id)]),
             Jsonb([]),
@@ -133,7 +142,7 @@ class TestConfigurations:
         # Ensure the config is using the older version
         config = await get_config_by_id(old_config_id)
         assert config["condition_id"] == str(
-            await get_condition_id("COVID-19", OLD_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
         )
 
         # Associate a couple of older code sets with the config
@@ -159,7 +168,7 @@ class TestConfigurations:
 
         # Check that all of the new IDs are where they should be
         assert updated_config["condition_id"] == str(
-            await get_condition_id("COVID-19", NEW_TES_VERSION)
+            await get_condition_id(PRIMARY_CONDITION, NEW_TES_VERSION)
         )
         assert str(new_code_set_1_id) in [
             uc["condition_id"] for uc in updated_config["code_sets"]
@@ -182,6 +191,10 @@ class TestConfigurations:
         authed_client,
         get_condition_id,
     ):
+        """
+        Tests that a TES version 4.0.0 code set cannot be associated with a configuration
+        that uses a TES version 5.0.0 primary condition.
+        """
         # Create config using 5.0.0
         condition_id = await get_condition_id("Glanders", "5.0.0")
         payload = {"condition_id": str(condition_id)}
