@@ -1,4 +1,5 @@
 import io
+import time
 import zipfile
 from pathlib import Path
 
@@ -140,9 +141,13 @@ def create_mock_upload_file(
 
 def create_zip_file(file_dict: dict[str, bytes]) -> bytes:
     buf = io.BytesIO()
+    now = time.gmtime()
+    dt = (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for name, content in file_dict.items():
-            z.writestr(name, content)
+            zinfo = zipfile.ZipInfo(filename=name, date_time=dt)
+            zinfo.compress_type = z.compression
+            z.writestr(zinfo, content)
     return buf.getvalue()
 
 
