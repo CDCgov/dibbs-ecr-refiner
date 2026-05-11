@@ -210,7 +210,8 @@ class TestConfigurations:
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "TES version of condition" in response.json()["detail"]
+        expected_error = f"Invalid association for condition with ID: {old_code_set_id}. TES version of condition (4.0.0) does not match version used by configuration (5.0.0)."
+        assert expected_error in response.json()["detail"]
 
     async def test_custom_sections(self, setup, authed_client, get_condition_id):
         condition_id = await get_condition_id("Glanders")
