@@ -65,6 +65,7 @@ async def associate_condition_codeset_with_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,
@@ -84,6 +85,21 @@ async def associate_condition_codeset_with_configuration(
     if not condition:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+        )
+
+    primary_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+
+    if not primary_condition:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not get configuration's primary condition.",
+        )
+
+    # Associated condition's TES version must match the config's primary condition TES version
+    if primary_condition.version != condition.version:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid association for condition with ID: {condition.id}. TES version of condition ({condition.version}) does not match version used by configuration ({primary_condition.version}).",
         )
 
     updated_config = await associate_condition_codeset_with_configuration_db(

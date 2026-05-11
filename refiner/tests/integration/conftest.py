@@ -62,6 +62,8 @@ TEST_JD_ID = "SDDH"
 TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
+DEFAULT_TES_VERSION = "5.0.0"
+
 
 @pytest_asyncio.fixture
 async def activate_config(authed_client):
@@ -198,7 +200,7 @@ async def get_condition_id(db_pool):
     condition_id = await get_condition_id("Condition Name")
     """
 
-    async def _get(name: str, version: str = "4.0.0") -> UUID:
+    async def _get(name: str, version: str = DEFAULT_TES_VERSION) -> UUID:
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
                 await cur.execute(
