@@ -1,4 +1,4 @@
-import { Checkbox as HeadlessCheckbox, CheckboxProps } from '@headlessui/react';
+import { CheckboxProps, Checkbox as HeadlessCheckbox } from '@headlessui/react';
 
 export function Checkbox({ ...props }: CheckboxProps) {
   return (
