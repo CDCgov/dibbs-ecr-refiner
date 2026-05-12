@@ -18,7 +18,7 @@ type Status =
 export function Testing() {
   const [status, setStatus] = useState<Status>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { mutateAsync } = useDiscoverConfigurations();
+  const { data, mutateAsync } = useDiscoverConfigurations();
 
   const {
     uploadZip,
@@ -86,10 +86,11 @@ export function Testing() {
           </>
         )}
 
-        {status === 'reportable-conditions' && response?.data && (
+        {status === 'reportable-conditions' && response?.data && data?.data && (
           <>
             <TestRefinerDescription />
             <ReportableConditionsResults
+            configurationGroups={data?.data.groups}
               matchedConditions={response.data.refined_conditions.map(
                 (c) => c.display_name
               )}

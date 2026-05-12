@@ -1,8 +1,13 @@
 import classNames from 'classnames';
 import { Button } from '@components/Button';
 import { WarningIcon } from '@components/WarningIcon';
+import { DiscoveredConfigurationGroup } from '../../api/schemas';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
+import { Select, SelectContainer } from '@components/Select';
 
 interface ReportableConditionsResultsProps {
+  configurationGroups: DiscoveredConfigurationGroup[];
   matchedConditions: string[];
   inactiveConditions: string[];
   unmatchedConditions: string[];
@@ -11,6 +16,7 @@ interface ReportableConditionsResultsProps {
 }
 
 export function ReportableConditionsResults({
+  configurationGroups,
   matchedConditions,
   unmatchedConditions,
   inactiveConditions,
@@ -51,6 +57,22 @@ export function ReportableConditionsResults({
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
+          <div>
+            {configurationGroups.map((cg) => (
+              <SelectContainer>
+                <Field>
+                  <Label>{cg.name}</Label>
+                  <Select>
+                    {cg.versions.map((v) => (
+                      <option value={v.id}>
+                        Version {v.version} ({v.status})
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </SelectContainer>
+            ))}
+          </div>
 
           {(hasInactiveConditions || hasMissingConditions) && (
             <>
