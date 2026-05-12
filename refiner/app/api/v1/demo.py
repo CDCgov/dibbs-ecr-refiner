@@ -26,9 +26,6 @@ from app.services.aws.s3 import (
 )
 from app.services.conditions import filter_refined_files_by_diff_rendering
 from app.services.ecr.model import RefinedDocument
-from app.services.ecr.refine import (
-    get_file_size_reduction_percentage,
-)
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
@@ -120,12 +117,7 @@ async def _build_refined_conditions(
                 refined_eicr=content_for_frontend.refined_eicr,
                 render_diff=content_for_frontend.render_diff,
                 stats=[
-                    f"eICR file size reduced by {
-                        get_file_size_reduction_percentage(
-                            unrefined_eicr=original_xml_files.eicr,
-                            refined_eicr=refined_document.refined_eicr,
-                        )
-                    }%",
+                    f"eICR file size reduced by {refined_document.eicr_size_reduction_percentage}%",
                 ],
             )
         )
@@ -241,9 +233,7 @@ async def demo_upload(
         refined_conditions=conditions,
         conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
         conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
-        unrefined_eicr=format_xml_document_for_display_or_raise(
-            original_xml_files.eicr, preserve_comments=True
-        )
+        unrefined_eicr=format_xml_document_for_display_or_raise(original_xml_files.eicr)
         if any(c.render_diff for c in conditions)
         else "",
         refined_download_key=output_file_name if s3_key else "",

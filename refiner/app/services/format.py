@@ -1,84 +1,47 @@
 import re
-from typing import cast
 
 from lxml import etree
 from lxml.etree import _Element
 
+# heal '<tableborder="1">' -> '<table border="1">' (and similar)
+# * this is a defensive band-aid for malformed input; if it triggers in practice, the
+# real fix belongs upstream at the source of the malformed xml
 SPACE_BEFORE_FIRST_ATTR = re.compile(r"<([A-Za-z_:][\w:.-]*)(?=\S+=)")
 
 
-def format_xml_document_for_display(
-    text: str,
-    preserve_comments: bool = False,
-) -> str:
+def format_xml_document_for_display(text: str) -> str:
     """
-    Normalize and optionally strip XML comments from a document string for display.
+    Pretty-print an XML document for display.
 
-    Comments are stripped by default for general display purposes. Pass
-    preserve_comments=True to retain eCR Refiner match provenance comments
-    and any other XML comments in the output.
+    Does not modify content. Only normalizes inter-element whitespace so
+    that the same function can be applied to both sides of a diff (the
+    original and the refined document) and have them line up visually
+    without introducing semantic drift.
+
+    Specifically:
+        - Comments are preserved (eCR Refiner provenance comments are
+          part of the audit trail and intentionally part of the output).
+        - Element text and tail content is left untouched.
+        - Inter-element whitespace is normalized via
+          remove_blank_text=True + pretty_print=True so indentation is
+          consistent regardless of how the input was originally
+          serialized.
+
+    Args:
+        text: An XML document as a string.
+
+    Returns:
+        The pretty-printed XML as a string.
+
+    Raises:
+        etree.XMLSyntaxError: If the input is not well-formed XML.
     """
 
-    normalized = _normalize_xml(text)
-
-    if preserve_comments:
-        return normalized
-
-    return _strip_comments(normalized)
-
-
-def _strip_comments(xml: str) -> str:
-    """
-    Remove all XML comments in-place from the tree and return the root.
-    """
-    parser = etree.XMLParser(remove_blank_text=True)
-    root: _Element = etree.fromstring(xml, parser=parser)
-
-    # Remove comments
-    for comment in cast(list[_Element], root.xpath("//comment()")):
-        remove_element(comment)
-
-    return etree.tostring(
-        root,
-        pretty_print=True,
-        encoding="unicode",
-        xml_declaration=False,
-        with_tail=False,
-        method="xml",
-    )
-
-
-def _normalize_xml(xml: str) -> str:
-    """
-    Normalize XML for comparison/reading.
-
-    - heal a common '<tagattr=' -> '<tag attr=' mistake
-    - strip comments
-    - collapse whitespace in text/tails
-    - pretty-print with consistent indentation (good for tables)
-    """
-    if not isinstance(xml, str):
-        raise ValueError(f"Expected XML as str, got {type(xml).__name__!r}")
-
-    # Heal '<tableborder="1">' -> '<table border="1">' (and similar)
-    xml = SPACE_BEFORE_FIRST_ATTR.sub(r"<\1 ", xml)
+    # heal '<tableborder="1">' -> '<table border="1">' (and similar)
+    healed = SPACE_BEFORE_FIRST_ATTR.sub(r"<\1 ", text)
 
     parser = etree.XMLParser(remove_blank_text=True)
-    xml_bytes = xml.encode("utf-8")
-    root: _Element = etree.fromstring(xml_bytes, parser=parser)
-
-    # Normalize whitespace inside text/tails so pretty_print can indent cleanly
-    for el in root.iter():
-        if el.text is not None:
-            t = el.text.strip()
-            el.text = " ".join(t.split()) if t else None
-        if el.tail is not None:
-            t = el.tail.strip()
-            # For structural nodes (tr/td/th/etc.), drop tails entirely
-            if el.tag in {"table", "thead", "tbody", "tfoot", "tr", "td", "th"}:
-                el.tail = None if not t else " ".join(t.split())
-            else:
-                el.tail = " ".join(t.split()) if t else None
+    root: _Element = etree.fromstring(healed.encode("utf-8"), parser=parser)
 
     return etree.tostring(
         root,
@@ -91,7 +54,9 @@ def _normalize_xml(xml: str) -> str:
 
 
 def remove_element(elem: _Element) -> None:
-    """Helper function for removal of elements from the XML tree."""
+    """
+    Helper function for removal of elements from the XML tree.
+    """
 
     parent = elem.getparent()
     if parent is not None:

@@ -24,9 +24,6 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
 from app.services.conditions import filter_refined_files_by_diff_rendering
-from app.services.ecr.refine import (
-    get_file_size_reduction_percentage,
-)
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
@@ -247,12 +244,7 @@ async def run_configuration_test(
             refined_eicr=content_for_frontend.refined_eicr,
             render_diff=content_for_frontend.render_diff,
             stats=[
-                f"eICR file size reduced by {
-                    get_file_size_reduction_percentage(
-                        unrefined_eicr=original_xml_files.eicr,
-                        refined_eicr=refined_document.refined_eicr,
-                    )
-                }%",
+                f"eICR file size reduced by {refined_document.eicr_size_reduction_percentage}%",
             ],
         ),
     )
