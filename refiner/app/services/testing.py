@@ -177,7 +177,6 @@ class DiscoveredConfigurationsResponse:
 async def get_matching_configurations(
     xml_files: XMLFiles,
     jurisdiction_id: str,
-    logger: Logger,
     db: AsyncDatabaseConnection,
 ) -> DiscoveredConfigurationsResponse:
     """
@@ -189,7 +188,6 @@ async def get_matching_configurations(
     Args:
         xml_files (XMLFiles): The eCR files package
         jurisdiction_id (str): The jursidiction ID to search within
-        logger (Logger): The app logger
         db (AsyncDatabaseConnection): The database connection
 
     Returns:
@@ -267,10 +265,10 @@ def _group_conditions_by_url(
 
 
 async def independent_testing(
-    db: AsyncDatabaseConnection,
     xml_files: XMLFiles,
     jurisdiction_id: str,
     logger: Logger,
+    db: AsyncDatabaseConnection,
 ) -> IndependentTestingResult:
     """
     Orchestrates the full independent testing workflow for eICR refinement.

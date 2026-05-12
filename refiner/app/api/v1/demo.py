@@ -179,7 +179,6 @@ async def discover_configurations(
     resp = await get_matching_configurations(
         xml_files=original_xml_files,
         jurisdiction_id=user.jurisdiction_id,
-        logger=logger,
         db=db,
     )
     return resp
