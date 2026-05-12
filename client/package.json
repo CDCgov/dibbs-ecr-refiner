@@ -24,7 +24,7 @@
     "@fontsource-variable/merriweather": "5.2.6",
     "@fontsource-variable/public-sans": "5.2.7",
     "@headlessui/react": "2.2.10",
-    "@tailwindcss/vite": "4.2.4",
+    "@tailwindcss/vite": "4.3.0",
     "@tanstack/react-query": "5.100.10",
     "@trussworks/react-uswds": "11.0.1",
     "axios": "1.16.0",
@@ -37,7 +37,7 @@
     "react-router": "7.15.0",
     "react-spinners": "0.17.0",
     "react-toastify": "11.1.0",
-    "tailwindcss": "4.2.4",
+    "tailwindcss": "4.3.0",
     "use-debounce": "10.1.1"
   },
   "devDependencies": {
