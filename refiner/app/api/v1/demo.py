@@ -37,7 +37,11 @@ from app.services.file_io import (
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
-from app.services.testing import independent_testing
+from app.services.testing import (
+    DiscoveredConfigurationsResponse,
+    get_matching_configurations,
+    independent_testing,
+)
 from app.services.xslt import create_refined_eicr_html_file
 
 # Only allow:
@@ -130,6 +134,55 @@ async def _build_refined_conditions(
             )
         )
     return (conditions, packaged_files)
+
+
+@router.post(
+    "/discover-configurations",
+    response_model=DiscoveredConfigurationsResponse,
+    tags=["demo"],
+    operation_id="discoverConfigurations",
+)
+async def discover_configurations(
+    uploaded_file: UploadFile | None = File(None),
+    demo_zip_path: Path = Depends(get_sample_zip_path),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
+) -> DiscoveredConfigurationsResponse:
+    """
+    Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
+
+    Configurations are returned to the client.
+
+    Args:
+        uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
+        demo_zip_path (Path, optional): The path to the demo zip file.
+        user (DbUser, optional): The logged in user.
+        db (AsyncDatabaseConnection, optional): The database connection.
+        logger (Logger, optional): The app logger.
+
+    Returns:
+        DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
+    """
+    # Check that demo file path is valid
+    validate_path_or_raise(path=demo_zip_path)
+
+    # Validate and load the file
+    file = await get_validated_file(
+        uploaded_file=uploaded_file, demo_file_path=demo_zip_path, logger=logger
+    )
+
+    logger.info("Processing independent test file", extra={"file": file.filename})
+
+    original_xml_files = await get_validated_xml_files(file=file, logger=logger)
+
+    resp = await get_matching_configurations(
+        xml_files=original_xml_files,
+        jurisdiction_id=user.jurisdiction_id,
+        logger=logger,
+        db=db,
+    )
+    return resp
 
 
 @router.post(

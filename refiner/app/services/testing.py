@@ -17,7 +17,7 @@ from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
     get_configurations_db,
 )
-from ..db.configurations.model import DbConfiguration
+from ..db.configurations.model import DbConfiguration, DbConfigurationStatus
 from ..db.pool import AsyncDatabaseConnection
 from ..services.terminology import ProcessedConfiguration
 from .ecr.model import (
@@ -139,9 +139,127 @@ class InlineTestingResult:
     configuration_does_not_match_conditions: str | None
 
 
+@dataclass
+class DiscoveredConfigurationVersion:
+    """
+    Model to represent individual discovered configurations.
+    """
+
+    id: UUID
+    version: str
+    status: DbConfigurationStatus
+
+
+@dataclass
+class DiscoveredConfigurationGroup:
+    """
+    Model to represent a group of discovered configurations.
+    """
+
+    name: str
+    versions: list[DiscoveredConfigurationVersion]
+
+
+@dataclass
+class DiscoveredConfigurationsResponse:
+    """
+    Model to represent the groups of discovered configurations to return to the client.
+    """
+
+    groups: list[DiscoveredConfigurationGroup]
+
+
 # NOTE:
 # PUBLIC FUNCTIONS
 # =============================================================================
+
+
+async def get_matching_configurations(
+    xml_files: XMLFiles,
+    jurisdiction_id: str,
+    logger: Logger,
+    db: AsyncDatabaseConnection,
+) -> DiscoveredConfigurationsResponse:
+    """
+
+    Finds all reportable conditions in an eCR file package and attempts to find their matching configurations.
+
+    Matching configurations are grouped by condition.
+
+    Args:
+        xml_files (XMLFiles): The eCR files package
+        jurisdiction_id (str): The jursidiction ID to search within
+        logger (Logger): The app logger
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        DiscoveredConfigurationsResponse: The response to return to the client
+    """
+    rc_codes_for_jurisdiction = _get_reportable_codes_for_jurisdiction(
+        xml_files, jurisdiction_id
+    )
+
+    rc_to_conditions_map = await _map_rc_codes_to_conditions(
+        db=db, rc_codes=rc_codes_for_jurisdiction
+    )
+
+    if not rc_codes_for_jurisdiction:
+        return DiscoveredConfigurationsResponse(groups=[])
+
+    all_jurisdiction_configs = await get_configurations_db(
+        db=db, jurisdiction_id=jurisdiction_id
+    )
+    configured_primary_condition_ids = {
+        config.condition_id for config in all_jurisdiction_configs
+    }
+
+    conditions_grouped_by_url: dict[str, list[DbCondition]] = defaultdict(list)
+    seen_ids_by_url: dict[str, set[UUID]] = defaultdict(set)
+
+    for conditions_list in rc_to_conditions_map.values():
+        for condition in conditions_list:
+            url = condition.canonical_url
+            if condition.id not in seen_ids_by_url[url]:
+                seen_ids_by_url[url].add(condition.id)
+                conditions_grouped_by_url[url].append(condition)
+
+    groups: list[DiscoveredConfigurationGroup] = []
+    for _, all_versions in conditions_grouped_by_url.items():
+        configured_version = next(
+            (
+                cond
+                for cond in all_versions
+                if cond.id in configured_primary_condition_ids
+            ),
+            None,
+        )
+
+        representative_condition = configured_version or max(
+            all_versions, key=lambda c: parse(c.version)
+        )
+
+        condition_configs = sorted(
+            [
+                c
+                for c in all_jurisdiction_configs
+                if c.condition_id == representative_condition.id
+            ],
+            key=lambda c: c.version,
+        )
+
+        groups.append(
+            DiscoveredConfigurationGroup(
+                name=representative_condition.display_name,
+                versions=[
+                    DiscoveredConfigurationVersion(
+                        id=c.id, version=c.version, status=c.status
+                    )
+                    for c in condition_configs
+                ],
+            )
+        )
+
+    return DiscoveredConfigurationsResponse(groups=groups)
 
 
 async def independent_testing(

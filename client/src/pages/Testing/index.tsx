@@ -2,7 +2,7 @@ import { Success } from './Success';
 import { RunTest } from './RunTest';
 import { TestRefinerDescription } from './TestRefinerDescription';
 import { useState } from 'react';
-import { useUploadEcr } from '../../api/demo/demo';
+import { useDiscoverConfigurations, useUploadEcr } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
 import { FileUploadWarning } from '@components/FileUploadWarning';
@@ -18,6 +18,7 @@ type Status =
 export function Testing() {
   const [status, setStatus] = useState<Status>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { mutateAsync } = useDiscoverConfigurations();
 
   const {
     uploadZip,
@@ -30,6 +31,12 @@ export function Testing() {
     try {
       setStatus('pending');
       await uploadZip(selectedFile);
+      // TODO: move this later
+      await mutateAsync({
+        data: {
+          uploaded_file: selectedFile,
+        },
+      });
       setStatus('reportable-conditions');
     } catch {
       setStatus('error');
@@ -40,6 +47,12 @@ export function Testing() {
     try {
       setStatus('pending');
       await uploadZip(null);
+      // TODO: move this later
+      await mutateAsync({
+        data: {
+          uploaded_file: null,
+        },
+      });
       setStatus('reportable-conditions');
     } catch {
       setStatus('error');
