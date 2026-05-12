@@ -5,6 +5,7 @@ import { DiscoveredConfigurationGroup } from '../../api/schemas';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Select, SelectContainer } from '@components/Select';
+import { Checkbox } from '@components/Checkbox';
 
 interface ReportableConditionsResultsProps {
   configurationGroups: DiscoveredConfigurationGroup[];
@@ -57,8 +58,9 @@ export function ReportableConditionsResults({
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
-          <div>
-            {configurationGroups.map((cg) => (
+          {configurationGroups.map((cg) => (
+            <div className="flex gap-2">
+              <Checkbox checked/>
               <SelectContainer>
                 <Field>
                   <Label>{cg.name}</Label>
@@ -71,8 +73,8 @@ export function ReportableConditionsResults({
                   </Select>
                 </Field>
               </SelectContainer>
-            ))}
-          </div>
+            </div>
+          ))}
 
           {(hasInactiveConditions || hasMissingConditions) && (
             <>
