@@ -29,18 +29,42 @@ export function ReportableConditionsResults({
   const hasMissingConditions = unmatchedConditions.length > 0;
   const hasInactiveConditions = inactiveConditions.length > 0;
 
-  const [checkedGroups, setCheckedGroups] = useState(
-    () => new Set(configurationGroups.map((cg) => cg.name))
+  const [groupSelections, setGroupSelections] = useState<
+    Map<string, { checked: boolean; selectedId: string }>
+  >(
+    () =>
+      new Map(
+        configurationGroups.map((cg) => [
+          cg.name,
+          {
+            checked: true,
+            // try to set "active" as the default, otherwise fall back to whatever is first
+            selectedId:
+              cg.versions.find((v) => v.status === 'active')?.id ??
+              cg.versions[0]?.id,
+          },
+        ])
+      )
+  );
+
+  const checkedSelections = [...groupSelections.values()].filter(
+    (s) => s.checked
   );
 
   function toggleGroup(name: string) {
-    setCheckedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
+    setGroupSelections((prev) => {
+      const next = new Map(prev);
+      const current = next.get(name)!;
+      next.set(name, { ...current, checked: !current.checked });
+      return next;
+    });
+  }
+
+  function setSelectedId(name: string, id: string) {
+    setGroupSelections((prev) => {
+      const next = new Map(prev);
+      const current = next.get(name)!;
+      next.set(name, { ...current, selectedId: id });
       return next;
     });
   }
@@ -75,31 +99,32 @@ export function ReportableConditionsResults({
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
-          {configurationGroups.map((cg) => (
-            <div key={cg.name} className="flex gap-2">
-              <Checkbox
-                checked={checkedGroups.has(cg.name)}
-                onChange={() => toggleGroup(cg.name)}
-              />
-              <SelectContainer>
-                <Field>
-                  <Label>{cg.name}</Label>
-                  <Select
-                    defaultValue={
-                      // set the default as the "active" config
-                      cg.versions.find((v) => v.status === 'active')?.id
-                    }
-                  >
-                    {cg.versions.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        Version {v.version} ({v.status})
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-              </SelectContainer>
-            </div>
-          ))}
+          {configurationGroups.map((cg) => {
+            const selection = groupSelections.get(cg.name)!;
+            return (
+              <div key={cg.name} className="flex gap-2">
+                <Checkbox
+                  checked={selection.checked}
+                  onChange={() => toggleGroup(cg.name)}
+                />
+                <SelectContainer>
+                  <Field>
+                    <Label>{cg.name}</Label>
+                    <Select
+                      value={selection.selectedId}
+                      onChange={(e) => setSelectedId(cg.name, e.target.value)}
+                    >
+                      {cg.versions.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          Version {v.version} ({v.status})
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </SelectContainer>
+              </div>
+            );
+          })}
 
           {(hasInactiveConditions || hasMissingConditions) && (
             <>
@@ -121,7 +146,12 @@ export function ReportableConditionsResults({
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
-          <Button onClick={goToSuccessScreen}>Refine eCR</Button>
+          <Button
+            disabled={checkedSelections.length === 0}
+            onClick={goToSuccessScreen}
+          >
+            Refine eCR
+          </Button>
           <Button variant="secondary" onClick={startOver}>
             Start over
           </Button>
