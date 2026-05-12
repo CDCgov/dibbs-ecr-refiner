@@ -196,47 +196,31 @@ async def get_matching_configurations(
         DiscoveredConfigurationsResponse: The response to return to the client
     """
     rc_codes_for_jurisdiction = _get_reportable_codes_for_jurisdiction(
-        xml_files, jurisdiction_id
-    )
-
-    rc_to_conditions_map = await _map_rc_codes_to_conditions(
-        db=db, rc_codes=rc_codes_for_jurisdiction
+        xml_files=xml_files, jurisdiction_id=jurisdiction_id
     )
 
     if not rc_codes_for_jurisdiction:
         return DiscoveredConfigurationsResponse(groups=[])
 
+    rc_to_conditions_map = await _map_rc_codes_to_conditions(
+        rc_codes=rc_codes_for_jurisdiction, db=db
+    )
+
     all_jurisdiction_configs = await get_configurations_db(
-        db=db, jurisdiction_id=jurisdiction_id
+        jurisdiction_id=jurisdiction_id, db=db
     )
     configured_primary_condition_ids = {
         config.condition_id for config in all_jurisdiction_configs
     }
 
-    conditions_grouped_by_url: dict[str, list[DbCondition]] = defaultdict(list)
-    seen_ids_by_url: dict[str, set[UUID]] = defaultdict(set)
-
-    for conditions_list in rc_to_conditions_map.values():
-        for condition in conditions_list:
-            url = condition.canonical_url
-            if condition.id not in seen_ids_by_url[url]:
-                seen_ids_by_url[url].add(condition.id)
-                conditions_grouped_by_url[url].append(condition)
+    conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
 
     groups: list[DiscoveredConfigurationGroup] = []
-    for _, all_versions in conditions_grouped_by_url.items():
-        configured_version = next(
-            (
-                cond
-                for cond in all_versions
-                if cond.id in configured_primary_condition_ids
-            ),
+    for all_versions in conditions_grouped_by_url.values():
+        representative_condition = next(
+            (c for c in all_versions if c.id in configured_primary_condition_ids),
             None,
-        )
-
-        representative_condition = configured_version or max(
-            all_versions, key=lambda c: parse(c.version)
-        )
+        ) or max(all_versions, key=lambda c: parse(c.version))
 
         condition_configs = sorted(
             [
@@ -245,6 +229,7 @@ async def get_matching_configurations(
                 if c.condition_id == representative_condition.id
             ],
             key=lambda c: c.version,
+            reverse=True,
         )
 
         groups.append(
@@ -259,7 +244,26 @@ async def get_matching_configurations(
             )
         )
 
-    return DiscoveredConfigurationsResponse(groups=groups)
+    return DiscoveredConfigurationsResponse(groups=sorted(groups, key=lambda g: g.name))
+
+
+def _group_conditions_by_url(
+    rc_to_conditions_map: dict,
+) -> dict[str, list[DbCondition]]:
+    """
+    Deduplicates and groups DbConditions by their canonical url.
+    """
+    grouped: dict[str, list[DbCondition]] = defaultdict(list)
+    seen_ids: dict[str, set[UUID]] = defaultdict(set)
+
+    for conditions_list in rc_to_conditions_map.values():
+        for condition in conditions_list:
+            url = condition.canonical_url
+            if condition.id not in seen_ids[url]:
+                seen_ids[url].add(condition.id)
+                grouped[url].append(condition)
+
+    return grouped
 
 
 async def independent_testing(
