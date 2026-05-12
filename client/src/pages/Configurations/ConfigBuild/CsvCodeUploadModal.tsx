@@ -1,5 +1,5 @@
 import React from 'react';
-import { CodeSystem, UploadCustomCodesPreviewItem } from '../../../api/schemas';
+import { UploadCustomCodesPreviewItem } from '../../../api/schemas';
 
 import { Button } from '@components/Button';
 import { TextInput } from '@components/TextInput';
@@ -13,6 +13,7 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
+import { SupportedCodeSystems } from './CustomCodes/util';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -88,7 +89,7 @@ interface PreviewEditModalProps {
   >;
   isEditSaveDisabled: boolean;
   handlePreviewEditSubmit: () => void;
-  PREVIEW_CODE_SYSTEMS: CodeSystem[];
+  PREVIEW_CODE_SYSTEMS: SupportedCodeSystems[];
   previewItems: UploadCustomCodesPreviewItem[] | null;
   previewEditIndex: number | null;
   setError: (err: string | null) => void;

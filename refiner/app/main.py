@@ -19,7 +19,7 @@ from psycopg.rows import dict_row
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import Lifespan, Scope
 
-from app.services.terminology import CodeSystem
+from app.services.terminology import SupportedCodeSystems
 
 from .api.auth.config import get_session_secret_key
 from .api.auth.handlers import auth_router
@@ -78,7 +78,6 @@ def create_lifespan(
         app.state.db = db
         await db.connect()
         logger.info("Database pool opened", extra={"db_pool_stats": db.get_stats()})
-        await CodeSystem.load_from_db(db=db)
 
         # Start the cleanup tasks in the background
         asyncio.create_task(run_expired_session_cleanup_task(logger, db=db))

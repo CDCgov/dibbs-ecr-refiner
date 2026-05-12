@@ -8,7 +8,6 @@ export * from './bodyRunInlineConfigurationTest';
 export * from './bodyUploadEcr';
 export * from './codeCategoryCompletenessStatus';
 export * from './codeSetStatus';
-export * from './codeSystem';
 export * from './completenessStatus';
 export * from './condition';
 export * from './conditionEntry';

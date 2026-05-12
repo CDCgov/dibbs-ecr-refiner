@@ -32,29 +32,9 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
-from app.services.terminology import CodeSystem
+from app.services.terminology import SupportedCodeSystems
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
-
-
-def _sanitize_system_or_raise(value: str) -> CodeSystem:
-    try:
-        system = CodeSystem.sanitize(value)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        )
-    allowed = CodeSystem.allowed()
-
-    if allowed and system not in allowed:
-        allowed_values = ", ".join(allowed)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"System must be one of [{allowed_values}]. Got: {system.name}",
-        )
-
-    return system
 
 
 def _validate_add_custom_code_input(input: AddCustomCodeInput):
@@ -108,7 +88,7 @@ async def add_custom_code(
     # validate input
     _validate_add_custom_code_input(body)
 
-    selected_code_system = _sanitize_system_or_raise(value=body.system)
+    selected_code_system = SupportedCodeSystems.get_or_raise(body.system)
 
     # get user jurisdiction
     jd = user.jurisdiction_id
@@ -140,11 +120,11 @@ async def add_custom_code(
     if not selected_code_system:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"System must be one of [{CodeSystem.allowed()}]. Got: {selected_code_system.name}",
+            detail=f"System must be one of [{SupportedCodeSystems.allowed()}]. Got: {selected_code_system.name}",
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=selected_code_system,
+        system=selected_code_system.name,
         name=body.name,
     )
 
@@ -245,9 +225,9 @@ async def upload_custom_codes_csv(
 
     preview_items: list[UploadCustomCodesPreviewItem] = []
     errors: list[dict] = []
-    code_keys = [(cc.code.lower(), cc.system.name) for cc in config.custom_codes]
+    code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
     batch_keys = set()
-    allowed_systems_str = ", ".join(CodeSystem.allowed())
+    allowed_systems_str = ", ".join(SupportedCodeSystems.allowed())
     for row_number, row in enumerate(csv_reader, start=2):
         code = (row.get("code_number") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
@@ -261,7 +241,7 @@ async def upload_custom_codes_csv(
             row_errors.append("Missing display_name")
         sanitized_system = None
         try:
-            sanitized_system = CodeSystem.sanitize(code_system_raw)
+            sanitized_system = SupportedCodeSystems.get_or_raise(code_system_raw)
         except ValueError:
             row_errors.append(
                 f"Invalid system: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
@@ -281,7 +261,7 @@ async def upload_custom_codes_csv(
             preview_items.append(
                 UploadCustomCodesPreviewItem(
                     code=code,
-                    system=sanitized_system,
+                    system=sanitized_system.name,
                     name=name,
                     row=row_number,
                 )
@@ -502,7 +482,7 @@ def _get_modified_custom_codes(
     custom_codes = config.custom_codes
 
     # find the code to modify
-    sanitized_system = _sanitize_system_or_raise(updateInput.system)
+    sanitized_system = SupportedCodeSystems.get_or_raise(updateInput.system)
     code_to_edit = [
         cc
         for cc in custom_codes
@@ -532,7 +512,7 @@ def _get_modified_custom_codes(
     # create a new code using the changes provided by the user.
     # use the old values as fallbacks.
     new_system_value = (
-        _sanitize_system_or_raise(updateInput.new_system)
+        SupportedCodeSystems.get_or_raise(updateInput.new_system).name
         if updateInput.new_system
         else existing_code.system
     )
@@ -540,7 +520,7 @@ def _get_modified_custom_codes(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
         system=new_system_value
-        if isinstance(new_system_value, CodeSystem)
+        if isinstance(new_system_value, SupportedCodeSystems)
         else new_system_value,
     )
 

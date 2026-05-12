@@ -1,4 +1,3 @@
-import { CodeSystem } from '../../../../api/schemas/codeSystem';
 import { Search } from '@components/Search';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
@@ -21,6 +20,7 @@ import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
+import { CodeSystem } from './util';
 
 interface CustomCodesDetailProps {
   configurationId: string;

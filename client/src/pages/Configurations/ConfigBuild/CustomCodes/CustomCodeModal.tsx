@@ -7,13 +7,14 @@ import {
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { DbConfigurationCustomCode, CodeSystem } from '../../../../api/schemas';
+import { DbConfigurationCustomCode } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 import { Select, SelectContainer } from '@components/Select';
+import { CodeSystem, normalizeSystem } from './util';
 
 interface CustomCodeModalProps {
   configurationId: string;
@@ -21,10 +22,6 @@ interface CustomCodeModalProps {
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedCustomCode: DbConfigurationCustomCode | null;
   onClose: () => void;
-}
-
-function normalizeSystem(system: CodeSystem | string): CodeSystem {
-  return system.toLowerCase() as CodeSystem;
 }
 
 export function CustomCodeModal({

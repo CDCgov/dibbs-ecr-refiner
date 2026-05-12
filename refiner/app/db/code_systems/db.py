@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import lru_cache
 from uuid import UUID
 
 from psycopg.rows import class_row
@@ -19,9 +20,13 @@ class DbCodeSystem:
     oid: str
 
 
+type CodeSystemName = str
+
+
+@lru_cache(maxsize=1)
 async def get_all_code_systems_db(
     db: AsyncDatabaseConnection,
-) -> dict[str, DbCodeSystem]:
+) -> dict[CodeSystemName, DbCodeSystem]:
     """
     Function that grabs all information from the code systems table to be used for enum construction.
 

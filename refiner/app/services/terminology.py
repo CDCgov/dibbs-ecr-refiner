@@ -1,11 +1,11 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
-from typing import Self
+from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import get_all_code_systems_db
+from app.db.code_systems.db import CodeSystemName, DbCodeSystem, get_all_code_systems_db
 from app.db.pool import AsyncDatabaseConnection
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
@@ -21,50 +21,41 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 
 # CODE SYSTEM MODELS
 # =============================================================================
-class CodeSystem:
+class SupportedCodeSystems(BaseModel):
     """
-    An registry for code systems that pulls values from the db.
+    An registry for code system data that pulls values from the db.
     """
 
-    _registry: dict[str, Self] = {}
-
-    def __init__(self, name: str, display_name: str, oid: str):
-        """Constructor that takes in class info and sets the registry information."""
-        self.name = name
-        self.display_name = display_name
-        self.oid = oid
-
-        self._registry[name] = self
+    _registry: ClassVar[dict[CodeSystemName, DbCodeSystem]] = {}
 
     @classmethod
     async def load_from_db(cls, db: AsyncDatabaseConnection):
-        """Initialize registry from a database call."""
+        """Initialize registry from the database table call."""
 
         systems = await get_all_code_systems_db(db)
-        for name, system_data in systems.items():
-            instance = cls(
-                name=system_data.name,
-                display_name=system_data.display_name,
-                oid=system_data.oid,
-            )
-            setattr(cls, name.upper(), instance)
+        cls._registry = systems
 
     @classmethod
-    def sanitize(cls, value: str) -> "CodeSystem":
+    def get_or_raise(cls, name: str) -> DbCodeSystem:
         """
-        Convert value to a santized name from the CodeSystem.
+        Get a specific code system based on its name.
         """
-        if not isinstance(value, str):
-            raise ValueError(f"System name provided: {value} is invalid.")
 
-        sanitized = cls.get(value.strip().lower())
+        string_to_search = name.strip().lower()
+        sanitized = cls.get(string_to_search)
         if not sanitized:
-            raise ValueError(f"System name provided: {value} is invalid.")
+            # try falling back to display name
+            sanitized = cls.get_by_display_name(string_to_search)
+
+            if not sanitized:
+                raise ValueError(
+                    f"Requested code system {name} not found. Allowed code system must be one of: {cls.allowed()}"
+                )
 
         return sanitized
 
     @classmethod
-    def get(cls, name: str):
+    def get(cls, name: str) -> DbCodeSystem | None:
         """
         Get a specific code system based on its name.
         """
@@ -72,7 +63,7 @@ class CodeSystem:
         return cls._registry.get(name)
 
     @classmethod
-    def get_by_oid(cls, oid: str):
+    def get_by_oid(cls, oid: str) -> DbCodeSystem | None:
         """
         Get a specific code system based on its name.
         """
@@ -85,7 +76,24 @@ class CodeSystem:
         return value[0]
 
     @classmethod
-    def all(cls):
+    def get_by_display_name(cls, display_name: str) -> DbCodeSystem | None:
+        """
+        Get a specific code system based on its display name.
+        """
+        value = [
+            system_data
+            for system_data in cls._registry.values()
+            if system_data.display_name == display_name
+        ]
+        if len(value) > 1:
+            raise ValueError("Display name matched multiple code systems")
+        if len(value) == 0:
+            return None
+
+        return value[0]
+
+    @classmethod
+    def all(cls) -> list[DbCodeSystem]:
         """
         Get all code system values.
         """
@@ -103,21 +111,21 @@ class CodeSystem:
 
 def index_condition_code_list_by_system(
     condition: DbCondition,
-) -> dict[CodeSystem, list[DbConditionCoding]]:
+) -> dict[CodeSystemName, list[DbConditionCoding]]:
     """
     Utility method to index condition code lists as stored into the DB by the system enum values. Useful for various processing jobs processing.
     """
 
-    result: dict[CodeSystem, list[DbConditionCoding]] = defaultdict(list)
-    for s in CodeSystem.all():
+    result: dict[CodeSystemName, list[DbConditionCoding]] = defaultdict(list)
+    for s in SupportedCodeSystems.all():
         condition_column_index = f"{s.display_name}_codes"
-        result[s] = getattr(condition, condition_column_index, [])
+        result[s.name] = getattr(condition, condition_column_index, [])
 
     return result
 
 
 ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
-    item.display_name for item in CodeSystem.all()
+    item.display_name for item in SupportedCodeSystems.all()
 )
 
 
@@ -189,7 +197,7 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
 
-        attr_name = CodeSystem.get_by_oid(code_system_oid)
+        attr_name = SupportedCodeSystems.get_by_oid(code_system_oid)
         if attr_name is None:
             return None
         return getattr(self, attr_name.name)

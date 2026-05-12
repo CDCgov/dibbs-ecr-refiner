@@ -6,7 +6,6 @@ import {
   useConfirmUploadCustomCodesCsv,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { CodeSystem } from '../../../../api/schemas';
 import { UploadCustomCodesPreviewItem } from '../../../../api/schemas/uploadCustomCodesPreviewItem';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useSearch } from '../../../../hooks/useSearch';
@@ -21,13 +20,14 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
 import { Search } from '@components/Search';
+import { CodeSystem, SupportedCodeSystems } from './util';
 
 type PreviewRow = {
   item: SearchPreviewItem;
   matches?: readonly FuseResultMatch[];
 };
 
-const PREVIEW_CODE_SYSTEMS: CodeSystem[] = Object.values(CodeSystem);
+const PREVIEW_CODE_SYSTEMS: SupportedCodeSystems[] = Object.values(CodeSystem);
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',

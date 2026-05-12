@@ -8,7 +8,7 @@ from app.db.configurations.model import (
     DbConfigurationCustomCode,
 )
 from app.services.terminology import (
-    CodeSystem,
+    SupportedCodeSystems,
 )
 from tests.unit.helpers.configuration import create_processed_config
 
@@ -64,7 +64,7 @@ class TestTerminologyService:
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbConfigurationCustomCode(
-                    code="B", system=CodeSystem.LOINC, name="Custom LOINC"
+                    code="B", system=SupportedCodeSystems.LOINC, name="Custom LOINC"
                 )
             ]
         )
@@ -81,7 +81,7 @@ class TestTerminologyService:
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbConfigurationCustomCode(
-                    code="DUP", system=CodeSystem.LOINC, name="Custom"
+                    code="DUP", system=SupportedCodeSystems.LOINC, name="Custom"
                 )
             ]
         )
