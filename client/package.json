@@ -30,7 +30,7 @@
     "axios": "1.16.0",
     "classnames": "2.5.1",
     "fuse.js": "7.3.0",
-    "react": "19.2.5",
+    "react": "19.2.6",
     "react-diff-viewer-continued": "4.0.6",
     "react-dom": "19.2.5",
     "react-markdown": "10.1.0",
@@ -76,10 +76,10 @@
     "prettier-plugin-tailwindcss": "0.8.0",
     "rimraf": "6.1.2",
     "sass-embedded": "1.99.0",
-    "typescript": "~5.9.3",
+    "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
     "vite": "8.0.5",
-    "vitest": "4.1.5"
+    "vitest": "4.1.6"
   },
   "engines": {
     "node": ">=24"
