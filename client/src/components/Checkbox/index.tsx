@@ -3,7 +3,7 @@ import { CheckboxProps, Checkbox as HeadlessCheckbox } from '@headlessui/react';
 export function Checkbox({ ...props }: CheckboxProps) {
   return (
     <HeadlessCheckbox
-      className="group block size-5 cursor-pointer rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
+      className="group block size-5 shrink-0 cursor-pointer rounded border bg-white data-checked:bg-blue-500 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-checked:data-disabled:bg-gray-500"
       {...props}
     >
       <svg
