@@ -6,6 +6,7 @@ import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Select, SelectContainer } from '@components/Select';
 import { Checkbox } from '@components/Checkbox';
+import { useState } from 'react';
 
 interface ReportableConditionsResultsProps {
   configurationGroups: DiscoveredConfigurationGroup[];
@@ -27,6 +28,22 @@ export function ReportableConditionsResults({
   const hasFoundConditions = matchedConditions.length > 0;
   const hasMissingConditions = unmatchedConditions.length > 0;
   const hasInactiveConditions = inactiveConditions.length > 0;
+
+  const [checkedGroups, setCheckedGroups] = useState(
+    () => new Set(configurationGroups.map((cg) => cg.name))
+  );
+
+  function toggleGroup(name: string) {
+    setCheckedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  }
 
   // TODO: This is placeholder design and copy.
   // No conditions to display.
@@ -59,8 +76,11 @@ export function ReportableConditionsResults({
         <ConditionsContainer>
           <FoundConditions foundConditions={matchedConditions} />
           {configurationGroups.map((cg) => (
-            <div className="flex gap-2">
-              <Checkbox checked />
+            <div key={cg.name} className="flex gap-2">
+              <Checkbox
+                checked={checkedGroups.has(cg.name)}
+                onChange={() => toggleGroup(cg.name)}
+              />
               <SelectContainer>
                 <Field>
                   <Label>{cg.name}</Label>
@@ -71,7 +91,7 @@ export function ReportableConditionsResults({
                     }
                   >
                     {cg.versions.map((v) => (
-                      <option value={v.id}>
+                      <option key={v.id} value={v.id}>
                         Version {v.version} ({v.status})
                       </option>
                     ))}
