@@ -4,18 +4,28 @@ updates:
     directory: "/client"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
 
   - package-ecosystem: "pip"
-    directory: "/refiner"
+    directories:
+      - "/refiner"
+      - "/refiner/app/lambda"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
 
   - package-ecosystem: "docker-compose"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
