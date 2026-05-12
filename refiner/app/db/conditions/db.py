@@ -5,7 +5,6 @@ from uuid import UUID
 from packaging.version import parse
 from psycopg.rows import class_row, dict_row
 
-from app.db.configurations.model import DbConfigurationCondition
 from app.services.tes import get_latest_tes_version
 
 from ..pool import AsyncDatabaseConnection
@@ -427,28 +426,20 @@ async def get_conditions_by_ids(
 
 
 async def get_included_conditions_db(
-    included_conditions: list[DbConfigurationCondition], db: AsyncDatabaseConnection
+    included_conditions: list[UUID], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:
     """
     Fetches all conditions given an id.
     """
 
-    # Extract UUIDs (as strings) from the included_conditions list
-    condition_ids = [
-        str(cond.id) for cond in included_conditions if getattr(cond, "id", None)
-    ]
-
-    if not condition_ids:
-        return []  # nothing to fetch
-
     query = """
         SELECT *
         FROM conditions
-        WHERE id = ANY(%s::uuid[])
+        WHERE id = ANY(%s)
         ORDER BY id;
     """
 
-    params = (condition_ids,)
+    params = (included_conditions,)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:

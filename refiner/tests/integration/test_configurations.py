@@ -117,7 +117,7 @@ class TestConfigurations:
                 %s,
                 %s,
                 %s,
-                %s::jsonb,
+                %s,
                 %s::jsonb
             )
             RETURNING id
@@ -127,7 +127,7 @@ class TestConfigurations:
             old_condition_id,
             PRIMARY_CONDITION,
             test_user_id,
-            Jsonb([str(old_condition_id)]),
+            [old_condition_id],
             Jsonb([]),
         )
 

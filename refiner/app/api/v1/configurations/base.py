@@ -273,7 +273,7 @@ async def get_configuration(
     )
 
     # precomputed set of included_conditions ids
-    included_ids = {c.id for c in config.included_conditions}
+    included_ids = set(config.included_conditions)
 
     # fetch all conditions from the db based on the primary condition's version
     condition_version_to_use = conditions[0].version
