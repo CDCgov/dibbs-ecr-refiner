@@ -6,7 +6,6 @@ from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
     AssociateCodesetInput,
     AssociateCodesetResponse,
-    ConditionEntry,
 )
 from app.db.conditions.db import get_condition_by_id_db
 from app.db.configurations.db import (
@@ -114,9 +113,7 @@ async def associate_condition_codeset_with_configuration(
 
     return AssociateCodesetResponse(
         id=updated_config.id,
-        included_conditions=[
-            ConditionEntry(c.id) for c in updated_config.included_conditions
-        ],
+        included_conditions=updated_config.included_conditions,
         condition_name=condition.display_name,
     )
 
@@ -203,8 +200,6 @@ async def remove_condition_codeset_from_configuration(
 
     return AssociateCodesetResponse(
         id=updated_config.id,
-        included_conditions=[
-            ConditionEntry(c.id) for c in updated_config.included_conditions
-        ],
+        included_conditions=updated_config.included_conditions,
         condition_name=condition.display_name,
     )

@@ -255,7 +255,7 @@ async def insert_configuration_db(
         %s,
         %s,
         %s,
-        %s::jsonb,
+        %s,
         %s::jsonb
     )
     RETURNING
@@ -269,7 +269,7 @@ async def insert_configuration_db(
     if config_to_clone:
         # always use the latest version of associated condition IDs
         included_condition_ids = await get_latest_tes_condition_ids_db(
-            ids=[c.id for c in config_to_clone.included_conditions], db=db
+            ids=config_to_clone.included_conditions, db=db
         )
 
         params = (
@@ -281,7 +281,7 @@ async def insert_configuration_db(
             # cloned by this user
             user_id,
             # included_conditions: always start with primary
-            Jsonb([str(id) for id in included_condition_ids]),
+            included_condition_ids,
             # custom_codes
             Jsonb(
                 [
@@ -300,7 +300,7 @@ async def insert_configuration_db(
             # created by this user
             user_id,
             # included_conditions: always start with primary
-            Jsonb([str(latest_condition.id)]),
+            [latest_condition.id],
             # custom_codes
             EMPTY_JSONB,
         )
@@ -578,33 +578,14 @@ async def associate_condition_codeset_with_configuration_db(
     """
 
     query = """
-            WITH new_condition AS (
-                SELECT %s::jsonb AS val
-            )
-            UPDATE configurations
-            SET included_conditions = (
-            SELECT jsonb_agg(elem)
-            FROM (
-                SELECT elem
-                FROM jsonb_array_elements(included_conditions) elem
-                UNION ALL
-                SELECT elem
-                FROM new_condition,
-                     jsonb_array_elements(new_condition.val) elem
-                WHERE NOT EXISTS (
-                SELECT 1
-                FROM jsonb_array_elements(included_conditions) existing
-                WHERE existing::text = elem::text
-                )
-            ) s
-            )
-            WHERE id = %s
-            RETURNING
-                id;
-            """
+        UPDATE configurations
+        SET included_conditions = array_append(included_conditions, %s)
+        WHERE id = %s
+          AND NOT %s = ANY(included_conditions)
+        RETURNING id;
+    """
 
-    new_condition = Jsonb([str(condition.id)])
-    params = (new_condition, config.id)
+    params = (condition.id, config.id, condition.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -653,22 +634,12 @@ async def disassociate_condition_codeset_with_configuration_db(
 
     query = """
         UPDATE configurations
-        SET included_conditions = (
-            SELECT COALESCE(jsonb_agg(elem_text), '[]'::jsonb)
-            FROM (
-                SELECT elem_text
-                FROM (
-                    SELECT jsonb_array_elements_text(COALESCE(included_conditions, '[]'::jsonb)) AS elem_text
-                ) t
-                WHERE elem_text <> %s
-            ) filtered
-        )
+        SET included_conditions = array_remove(included_conditions, %s)
         WHERE id = %s
-        RETURNING
-            id;
+        RETURNING id;
     """
 
-    params = (str(condition.id), config.id)
+    params = (condition.id, config.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -703,7 +674,7 @@ async def get_total_condition_code_counts_by_configuration_db(
 
     query = """
         WITH conds AS (
-            SELECT jsonb_array_elements_text(included_conditions) AS cond_id
+            SELECT unnest(included_conditions) AS cond_id
             FROM configurations
             WHERE id = %s
         ),
@@ -713,7 +684,7 @@ async def get_total_condition_code_counts_by_configuration_db(
                 code_elem->>'code' AS code
             FROM conds
             JOIN conditions c
-                ON c.id::text = cond_id
+                ON c.id = cond_id
             CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.loinc_codes, '[]'::jsonb)) AS code_elem
 
             UNION
@@ -723,7 +694,7 @@ async def get_total_condition_code_counts_by_configuration_db(
                 code_elem->>'code' AS code
             FROM conds
             JOIN conditions c
-                ON c.id::text = cond_id
+                ON c.id = cond_id
             CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.snomed_codes, '[]'::jsonb)) AS code_elem
 
             UNION
@@ -733,7 +704,7 @@ async def get_total_condition_code_counts_by_configuration_db(
                 code_elem->>'code' AS code
             FROM conds
             JOIN conditions c
-                ON c.id::text = cond_id
+                ON c.id = cond_id
             CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.icd10_codes, '[]'::jsonb)) AS code_elem
 
             UNION
@@ -743,7 +714,7 @@ async def get_total_condition_code_counts_by_configuration_db(
                 code_elem->>'code' AS code
             FROM conds
             JOIN conditions c
-                ON c.id::text = cond_id
+                ON c.id = cond_id
             CROSS JOIN LATERAL jsonb_array_elements(COALESCE(c.rxnorm_codes, '[]'::jsonb)) AS code_elem
         )
         SELECT
