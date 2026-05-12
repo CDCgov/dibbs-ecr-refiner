@@ -60,11 +60,16 @@ export function ReportableConditionsResults({
           <FoundConditions foundConditions={matchedConditions} />
           {configurationGroups.map((cg) => (
             <div className="flex gap-2">
-              <Checkbox checked/>
+              <Checkbox checked />
               <SelectContainer>
                 <Field>
                   <Label>{cg.name}</Label>
-                  <Select>
+                  <Select
+                    defaultValue={
+                      // set the default as the "active" config
+                      cg.versions.find((v) => v.status === 'active')?.id
+                    }
+                  >
                     {cg.versions.map((v) => (
                       <option value={v.id}>
                         Version {v.version} ({v.status})
