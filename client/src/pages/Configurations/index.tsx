@@ -134,21 +134,16 @@ function AppUpdateBanner({
         name: 'most_recent_app_update',
         date_acknowledged: new Date().toISOString(),
       });
-
       setUser(resp.data);
     } catch (error) {
       console.error('Failed to update user notifications', error);
     }
   }
-
   async function handleViewUpdates(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
-
     await dismissNotification();
-
     void navigate('/app-updates');
   }
-
   async function handleDismiss() {
     await dismissNotification();
   }
