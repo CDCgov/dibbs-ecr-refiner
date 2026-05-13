@@ -211,7 +211,7 @@ def _format_api_body_to_dict(content: str) -> list[ReleaseNotes]:
 
 def get_latest_release_created_at() -> datetime:
     """
-    Returns the created_at timestamp for the latest app release, returning the max datetime if it doesn't exist.
+    Returns the created_at timestamp for the latest app release, returning the min datetime if it doesn't exist.
     """
     releases = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
 
