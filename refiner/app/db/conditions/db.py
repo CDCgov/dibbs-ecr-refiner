@@ -5,6 +5,7 @@ from uuid import UUID
 from packaging.version import parse
 from psycopg.rows import class_row, dict_row
 
+from app.db.code_systems.db import DbCodeSystem
 from app.db.configurations.model import DbConfigurationCondition
 
 from ..pool import AsyncDatabaseConnection

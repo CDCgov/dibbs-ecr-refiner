@@ -79,6 +79,9 @@ def create_lifespan(
         await db.connect()
         logger.info("Database pool opened", extra={"db_pool_stats": db.get_stats()})
 
+        # load app-wide registry info from the DB
+        await SupportedCodeSystems.load_from_db(db)
+
         # Start the cleanup tasks in the background
         asyncio.create_task(run_expired_session_cleanup_task(logger, db=db))
         yield

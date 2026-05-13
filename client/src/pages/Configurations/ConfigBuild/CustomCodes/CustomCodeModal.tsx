@@ -14,7 +14,8 @@ import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Modal, ModalTitle, ModalHeader, ModalBody } from '@components/Modal';
 import { Select, SelectContainer } from '@components/Select';
-import { CodeSystem, normalizeSystem } from './util';
+import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
+import { Spinner } from '@components/Spinner';
 
 interface CustomCodeModalProps {
   configurationId: string;
@@ -79,15 +80,11 @@ function CustomCodeForm({
   const queryClient = useQueryClient();
   const showToast = useToast();
 
-  // TODO: this should come from the server.
-  // Maybe get this info as part of the seed script?
-  const systemValues = [
-    { name: 'Select system', value: '' },
-    ...Object.values(CodeSystem).map((s) => ({
-      name: s,
-      value: s.toLowerCase(),
-    })),
-  ];
+  const {
+    data: supportedCodeSystems,
+    isPending,
+    isError,
+  } = useGetCodeSystems();
 
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
@@ -142,10 +139,10 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: selectedCustomCode.code,
-            system: normalizeSystem(selectedCustomCode.system),
+            system: selectedCustomCode.system,
             name: selectedCustomCode.name,
             new_code: code.trim(),
-            new_system: normalizeSystem(system),
+            new_system: system,
             new_name: name.trim(),
           },
         },
@@ -173,7 +170,7 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: code.trim(),
-            system: normalizeSystem(system),
+            system: system,
             name: name.trim(),
           },
         },
@@ -190,6 +187,24 @@ function CustomCodeForm({
     }
   };
 
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+
+  if (isError || !supportedCodeSystems) return 'Error!';
+
+  const systemValues = [
+    {
+      display_name: 'Select system',
+      name: '',
+      oid: '',
+      id: 'c107a769-4de6-4b3f-bdf0-261284259cfd',
+    },
+    ...supportedCodeSystems.data,
+  ];
   return (
     <>
       <Field>
@@ -209,13 +224,10 @@ function CustomCodeForm({
       <SelectContainer>
         <Field>
           <Label>Code system</Label>
-          <Select
-            value={normalizeSystem(system)}
-            onChange={(e) => setSystem(normalizeSystem(e.target.value))}
-          >
-            {systemValues.map((sv) => (
-              <option key={sv.value} value={sv.value}>
-                {sv.name}
+          <Select value={system} onChange={(e) => setSystem(e.target.value)}>
+            {systemValues.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.display_name}
               </option>
             ))}
           </Select>

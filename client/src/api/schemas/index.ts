@@ -35,6 +35,7 @@ export * from './getConfigurationResponse';
 export * from './getConfigurationResponseVersion';
 export * from './getConfigurationsResponse';
 export * from './getEventsParams';
+export * from './getSupportedCodeSystemsReponse';
 export * from './hTTPValidationError';
 export * from './includedCondition';
 export * from './independentTestUploadResponse';

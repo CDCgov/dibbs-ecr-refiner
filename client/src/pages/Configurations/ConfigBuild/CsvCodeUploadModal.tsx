@@ -13,7 +13,8 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
-import { SupportedCodeSystems } from './CustomCodes/util';
+import { useGetCodeSystems } from '../../../api/code-systems/code-systems';
+import { Spinner } from '@components/Spinner';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -89,7 +90,6 @@ interface PreviewEditModalProps {
   >;
   isEditSaveDisabled: boolean;
   handlePreviewEditSubmit: () => void;
-  PREVIEW_CODE_SYSTEMS: SupportedCodeSystems[];
   previewItems: UploadCustomCodesPreviewItem[] | null;
   previewEditIndex: number | null;
   setError: (err: string | null) => void;
@@ -106,13 +106,27 @@ export function PreviewEditModal({
   setPreviewEditForm,
   isEditSaveDisabled,
   handlePreviewEditSubmit,
-  PREVIEW_CODE_SYSTEMS,
   previewItems,
   previewEditIndex,
   setError,
   error,
   handlePreviewEditChange,
 }: PreviewEditModalProps) {
+  const {
+    data: supportedCodeSystems,
+    isPending,
+    isError,
+  } = useGetCodeSystems();
+
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+
+  if (isError || !supportedCodeSystems) return 'Error!';
+
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
       <ModalHeader>
@@ -157,9 +171,9 @@ export function PreviewEditModal({
               value={previewEditForm.system}
               onChange={handlePreviewEditChange('system')}
             >
-              {PREVIEW_CODE_SYSTEMS.map((system: string) => (
-                <option key={system} value={system}>
-                  {system}
+              {supportedCodeSystems.data.map((s) => (
+                <option key={s.id} value={s.name}>
+                  {s.display_name}
                 </option>
               ))}
             </Select>

@@ -35,7 +35,7 @@ async def get_all_code_systems_db(
     """
 
     query = """
-    SELECT * FROM systems RETURNING * ;
+    SELECT * FROM systems;
     """
 
     async with db.get_connection() as conn:

@@ -42,6 +42,9 @@ class SupportedCodeSystems(BaseModel):
         """
 
         string_to_search = name.strip().lower()
+
+        if string_to_search == "icd-10":
+            string_to_search = "icd10"
         sanitized = cls.get(string_to_search)
         if not sanitized:
             # try falling back to display name

@@ -20,7 +20,7 @@ import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
-import { CodeSystem } from './util';
+import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -258,24 +258,11 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <SelectContainer className="max-w-3xs!">
-          <Field>
-            <Label>Code system</Label>
-            <Select
-              value={selectedCodeSystem}
-              onChange={handleCodeSystemSelect}
-            >
-              <option key="all-code-systems" value="all">
-                All code systems
-              </option>
-              {Object.keys(CodeSystem).map((system) => (
-                <option key={system} value={system}>
-                  {system}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </SelectContainer>
+
+        <CodeSystemSelection
+          selectedCodeSystem={selectedCodeSystem}
+          handleCodeSystemSelect={handleCodeSystemSelect}
+        />
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
@@ -348,5 +335,50 @@ function ConditionCodeRow({
         {highlightMatches(text, matches, 'description')}
       </td>
     </tr>
+  );
+}
+
+type CodeSystemSelectionProps = {
+  selectedCodeSystem: string;
+  handleCodeSystemSelect: (
+    event: React.ChangeEvent<HTMLSelectElement, Element>
+  ) => void;
+};
+
+function CodeSystemSelection({
+  selectedCodeSystem,
+  handleCodeSystemSelect,
+}: CodeSystemSelectionProps) {
+  const {
+    data: supportedCodeSystems,
+    isPending,
+    isError,
+  } = useGetCodeSystems();
+
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+
+  if (isError || !supportedCodeSystems) return 'Error!';
+
+  return (
+    <SelectContainer className="max-w-3xs!">
+      <Field>
+        <Label>Code system</Label>
+        <Select value={selectedCodeSystem} onChange={handleCodeSystemSelect}>
+          <option key="all-code-systems" value="all">
+            All code systems
+          </option>
+          {supportedCodeSystems.data.map((s) => (
+            <option key={s.id} value={s.name}>
+              {s.display_name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </SelectContainer>
   );
 }

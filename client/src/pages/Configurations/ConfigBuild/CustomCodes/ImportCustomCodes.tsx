@@ -20,19 +20,16 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
 import { Search } from '@components/Search';
-import { CodeSystem, SupportedCodeSystems } from './util';
+
+const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
+  code: '',
+  system: 'other',
+  name: '',
+};
 
 type PreviewRow = {
   item: SearchPreviewItem;
   matches?: readonly FuseResultMatch[];
-};
-
-const PREVIEW_CODE_SYSTEMS: SupportedCodeSystems[] = Object.values(CodeSystem);
-
-const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
-  code: '',
-  system: CodeSystem['Other'],
-  name: '',
 };
 
 interface ImportCustomCodesProps {
@@ -440,7 +437,7 @@ export function ImportCustomCodes({
               <img
                 src={UploadSvg}
                 alt=""
-                className="h-[68px] w-[54px]"
+                className="h-17 w-13.5"
                 aria-hidden="true"
               />
             </div>
@@ -610,7 +607,6 @@ export function ImportCustomCodes({
         setPreviewEditForm={setPreviewEditForm}
         isEditSaveDisabled={isEditSaveDisabled}
         handlePreviewEditSubmit={handlePreviewEditSubmit}
-        PREVIEW_CODE_SYSTEMS={PREVIEW_CODE_SYSTEMS}
         previewItems={previewItems}
         previewEditIndex={previewEditIndex}
         setError={setError}
