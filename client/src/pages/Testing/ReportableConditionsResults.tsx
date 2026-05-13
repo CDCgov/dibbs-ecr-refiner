@@ -236,3 +236,39 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
     </div>
   );
 }
+
+// function useZipUpload() {
+//   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+//   const formatError = useApiErrorFormatter();
+//   const {
+//     mutateAsync,
+//     data,
+//     isError,
+//     isPending,
+//     reset: resetState,
+//   } = useUploadEcr({
+//     mutation: {
+//       onError: (error) => {
+//         setErrorMessage(formatError(error));
+//       },
+//     },
+//   });
+
+//   async function uploadZip(selectedFile: File | null) {
+//     setErrorMessage(null);
+
+//     const resp = await mutateAsync({ data: { uploaded_file: selectedFile } });
+
+//     return resp;
+//   }
+
+//   return {
+//     uploadZip,
+//     data,
+//     errorMessage,
+//     isError,
+//     isPending,
+//     resetState,
+//   };
+// }

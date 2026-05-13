@@ -1,12 +1,9 @@
-import { Success } from './Success';
 import { RunTest } from './RunTest';
 import { TestRefinerDescription } from './TestRefinerDescription';
 import { useState } from 'react';
-import { useDiscoverConfigurations, useUploadEcr } from '../../api/demo/demo';
+import { useDiscoverConfigurations } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
-import { FileUploadWarning } from '@components/FileUploadWarning';
-import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 type Status =
   | 'run-test'
@@ -18,20 +15,15 @@ type Status =
 export function Testing() {
   const [status, setStatus] = useState<Status>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { data, mutateAsync } = useDiscoverConfigurations();
-
   const {
-    uploadZip,
     data: response,
-    errorMessage,
-    resetState,
-  } = useZipUpload();
+    mutateAsync,
+    reset: resetState,
+  } = useDiscoverConfigurations();
 
   async function runTestWithCustomFile() {
     try {
       setStatus('pending');
-      await uploadZip(selectedFile);
-      // TODO: move this later
       await mutateAsync({
         data: {
           uploaded_file: selectedFile,
@@ -46,8 +38,6 @@ export function Testing() {
   async function runTestWithSampleFile() {
     try {
       setStatus('pending');
-      await uploadZip(null);
-      // TODO: move this later
       await mutateAsync({
         data: {
           uploaded_file: null,
@@ -86,17 +76,17 @@ export function Testing() {
           </>
         )}
 
-        {status === 'reportable-conditions' && response?.data && data?.data && (
+        {status === 'reportable-conditions' && response?.data && (
           <>
             <TestRefinerDescription />
             <ReportableConditionsResults
-              configurationGroups={data?.data.groups}
+              configurationGroups={response?.data.groups}
               startOver={reset}
               goToSuccessScreen={() => setStatus('success')}
             />
           </>
         )}
-        {status === 'success' && response?.data && (
+        {/* {status === 'success' && response?.data && (
           <Success
             refined_conditions={response.data.refined_conditions}
             unrefined_eicr={response.data.unrefined_eicr}
@@ -105,44 +95,8 @@ export function Testing() {
         )}
         {status === 'error' && (
           <FileUploadWarning errorMessage={errorMessage ?? ''} reset={reset} />
-        )}
+        )} */}
       </div>
     </div>
   );
-}
-
-function useZipUpload() {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const formatError = useApiErrorFormatter();
-  const {
-    mutateAsync,
-    data,
-    isError,
-    isPending,
-    reset: resetState,
-  } = useUploadEcr({
-    mutation: {
-      onError: (error) => {
-        setErrorMessage(formatError(error));
-      },
-    },
-  });
-
-  async function uploadZip(selectedFile: File | null) {
-    setErrorMessage(null);
-
-    const resp = await mutateAsync({ data: { uploaded_file: selectedFile } });
-
-    return resp;
-  }
-
-  return {
-    uploadZip,
-    data,
-    errorMessage,
-    isError,
-    isPending,
-    resetState,
-  };
 }
