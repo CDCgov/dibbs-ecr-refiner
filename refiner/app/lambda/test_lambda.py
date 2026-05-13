@@ -160,18 +160,24 @@ def test_lambda_inactive(
     full_covid_path = (
         f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/COVID19/refined_eICR.xml"
     )
-    full_shadow_rr_path_sddh = (
+    full_remainder_rr_path_sddh = (
         f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
     )
-    full_shadow_rr_path_jddh = (
+    full_remainder_rr_path_jddh = (
         f"{REFINER_OUTPUT_PREFIX}/persistence/id/JDDH/unrefined_rr/refined_RR.xml"
     )
 
     # Skipped due to no current.json files found
     assert full_flu_path not in created_files
     assert full_covid_path not in created_files
-    assert full_shadow_rr_path_sddh in created_files
-    assert full_shadow_rr_path_jddh in created_files
+    # No remainder RR for either jurisdiction: the if-and-only-if rule
+    # in produce_remainder_rr_for_jurisdiction requires at least one
+    # condition to have been refined AND at least one to have been
+    # skipped. Here, NO conditions were refined for either
+    # jurisdiction, so the original RR moves forward untouched and no
+    # remainder is produced.
+    assert full_remainder_rr_path_sddh not in created_files
+    assert full_remainder_rr_path_jddh not in created_files
 
     # Expected completion file for pipeline
     assert f"{REFINER_COMPLETE_PREFIX}/persistence/id" in created_files
@@ -271,10 +277,10 @@ def test_lambda_one_active(
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
 
-    full_shadow_rr_path_sddh = (
+    full_remainder_rr_path_sddh = (
         "RefinerOutput/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
     )
-    full_shadow_rr_path_jddh = (
+    full_remainder_rr_path_jddh = (
         "RefinerOutput/persistence/id/JDDH/unrefined_rr/refined_RR.xml"
     )
 
@@ -283,11 +289,15 @@ def test_lambda_one_active(
         f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in created_files
     )
-    assert f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
-    # since one reportable condition didn't have an active config, a shadow RR
-    # should have gotten written
-    assert full_shadow_rr_path_sddh in created_files
-    assert full_shadow_rr_path_jddh in created_files
+    # SDDH: COVID refined, Flu skipped (no mapping) → remainder RR produced
+    # carrying Flu's reportability information
+    assert full_remainder_rr_path_sddh in created_files
+    # JDDH: Flu skipped (no active configuration), nothing refined → no
+    # remainder RR. The if-and-only-if rule in
+    # produce_remainder_rr_for_jurisdiction requires at least one
+    # condition to have been refined for the jurisdiction; with nothing
+    # refined, the original RR moves forward untouched.
+    assert full_remainder_rr_path_jddh not in created_files
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
@@ -438,7 +448,7 @@ def test_lambda_all_active(
 
     # Check that expected output files were written
     created_files = collect_lambda_output_keys(s3_client=s3_client, bucket=data_bucket)
-    full_shadow_rr_path = (
+    full_remainder_rr_path = (
         f"{REFINER_OUTPUT_PREFIX}/persistence/id/SDDH/unrefined_rr/refined_RR.xml"
     )
     assert f"RefinerComplete/{s3_input_objects}" in created_files
@@ -462,9 +472,10 @@ def test_lambda_all_active(
         in created_files
     )
 
-    # Shouldn't have shadow RR since all reportable conditions have corresponding
-    # active configs
-    assert full_shadow_rr_path not in created_files
+    # No remainder RR: every reportable condition had an active
+    # config and refined successfully, so there is nothing for a
+    # remainder to carry.
+    assert full_remainder_rr_path not in created_files
 
     # Check that content of RefinerComplete looks correct
     complete_json = get_refiner_complete_content(
