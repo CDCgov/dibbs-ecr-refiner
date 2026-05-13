@@ -236,7 +236,6 @@ class AppUpdateNotification(BaseModel):
     """
 
     should_show: bool
-    latest_release_created_at: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -282,6 +281,12 @@ async def get_user(
     return build_user_response(user)
 
 
+def _normalize_timezone(s: str | datetime):
+    if isinstance(s, str):
+        return datetime.fromisoformat(s).replace(tzinfo=None)
+    return s.replace(tzinfo=None)
+
+
 def build_user_response(user: DbUser) -> UserResponse:
     """
     Builds a UserResponse with computed notification display state.
@@ -290,17 +295,16 @@ def build_user_response(user: DbUser) -> UserResponse:
 
     latest_release_created_at = get_latest_release_created_at()
 
-    acknowledged_app_update_at = (
-        notifications.most_recent_app_update.date_acknowledged
-        if notifications.most_recent_app_update
-        else None
-    )
+    update_acknowledged = datetime.min.replace(tzinfo=None)
+    if (
+        notifications.most_recent_app_update
+        and notifications.most_recent_app_update.date_acknowledged
+    ):
+        update_acknowledged = notifications.most_recent_app_update.date_acknowledged
 
-    should_show_app_update = latest_release_created_at is not None and (
-        acknowledged_app_update_at is None
-        or latest_release_created_at
-        > datetime.fromisoformat(acknowledged_app_update_at.replace("Z", "+00:00"))
-    )
+    should_show_app_update = _normalize_timezone(
+        latest_release_created_at
+    ) > _normalize_timezone(update_acknowledged)
 
     return UserResponse(
         id=user.id,
@@ -309,11 +313,6 @@ def build_user_response(user: DbUser) -> UserResponse:
         notifications=notifications,
         app_update_notification=AppUpdateNotification(
             should_show=should_show_app_update,
-            latest_release_created_at=(
-                latest_release_created_at.isoformat()
-                if latest_release_created_at
-                else None
-            ),
         ),
     )
 
