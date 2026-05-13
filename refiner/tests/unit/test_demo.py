@@ -103,7 +103,7 @@ async def test_file_too_large():
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
         await _validate_ecr_zip_pair(file)
-    assert f"must be less than {UNCOMPRESSED_MAX_BYTES}" in exc.value.detail
+    assert "must be less than 15MB" in exc.value.detail
 
 
 @pytest.mark.parametrize(
