@@ -271,7 +271,7 @@ async def get_user(
         id=user.id,
         username=user.username,
         jurisdiction_id=user.jurisdiction_id,
-        notifications=user.notifications,
+        notifications=UserNotifications(**user.notifications),
     )
 
 

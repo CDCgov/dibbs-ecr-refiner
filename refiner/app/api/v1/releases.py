@@ -154,13 +154,13 @@ def _get_releases_data_from_github(
     application_release_data: list[Release] = []
 
     for release in releases:
-        #         if release.prerelease:
-        #             continue
+        if release.prerelease:
+            continue
 
         release_content = release.body
 
-        #         if not release_content:
-        #             continue
+        if not release_content:
+            continue
 
         release_notes = _format_api_body_to_dict(release_content)
         release_object = Release(
