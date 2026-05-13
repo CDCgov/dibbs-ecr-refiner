@@ -6,7 +6,7 @@ from lib import (
 CODE_SYSTEM_DATA = {
     "2.16.840.1.113883.6.96": {"name": "snomed", "display_name": "SNOMED"},
     "2.16.840.1.113883.6.1": {"name": "loinc", "display_name": "LOINC"},
-    "2.16.840.1.113883.6.90": {"name": "icd10", "display_name": "ICD-10"},
+    "2.16.840.1.113883.6.90": {"name": "icd-10", "display_name": "ICD-10"},
     "2.16.840.1.113883.6.88": {"name": "rxnorm", "display_name": "RxNorm"},
     "2.16.840.1.113883.12.292": {"name": "cvx", "display_name": "CVX"},
     "2.16.840.1.113883.5.1008": {"name": "other", "display_name": "Other"},

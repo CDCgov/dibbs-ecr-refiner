@@ -1,12 +1,15 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
+from logging import Logger
 from typing import ClassVar
 
+from fastapi import Depends
 from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import CodeSystemName, DbCodeSystem, get_all_code_systems_db
 from app.db.pool import AsyncDatabaseConnection
+from app.services.logger import get_logger
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -36,34 +39,25 @@ class SupportedCodeSystems(BaseModel):
         cls._registry = systems
 
     @classmethod
-    def get_or_raise(cls, name: str) -> DbCodeSystem:
-        """
-        Get a specific code system based on its name.
-        """
-
-        string_to_search = name.strip().lower()
-
-        if string_to_search == "icd-10":
-            string_to_search = "icd10"
-        sanitized = cls.get(string_to_search)
-        if not sanitized:
-            # try falling back to display name
-            sanitized = cls.get_by_display_name(string_to_search)
-
-            if not sanitized:
-                raise ValueError(
-                    f"Requested code system {name} not found. Allowed code system must be one of: {cls.allowed()}"
-                )
-
-        return sanitized
-
-    @classmethod
     def get(cls, name: str) -> DbCodeSystem | None:
         """
         Get a specific code system based on its name.
         """
 
         return cls._registry.get(name)
+
+    @classmethod
+    def get_or_raise(cls, name: str) -> DbCodeSystem:
+        """
+        Get a specific code system based on its name, or raise otherwise.
+        """
+        sanitized_string = cls.sanitize_or_raise(name)
+        system = cls._registry.get(sanitized_string)
+        if not system:
+            raise ValueError(
+                f"Requested code system {name} not found. Allowed code system must be one of: {cls.allowed()}"
+            )
+        return system
 
     @classmethod
     def get_by_oid(cls, oid: str) -> DbCodeSystem | None:
@@ -79,7 +73,27 @@ class SupportedCodeSystems(BaseModel):
         return value[0]
 
     @classmethod
-    def get_by_display_name(cls, display_name: str) -> DbCodeSystem | None:
+    def sanitize_or_raise(cls, raw_string: str) -> str:
+        """Function that sanitizes whether a raw string is within the list of acceptable system names. Raises otherwise."""
+        string_to_search = raw_string.strip().lower()
+        if string_to_search == "icd10":
+            # add the hyphen just in case they submit the non-hyphenated versions
+            string_to_search = "icd-10"
+
+        if cls.get(string_to_search) is None:
+            # try falling back to display name
+            if cls.get_by_display_name(string_to_search) is None:
+                raise ValueError(
+                    f"Requested code system {raw_string} not found. Allowed code system must be one of: {cls.allowed()}"
+                )
+        return string_to_search
+
+    @classmethod
+    def get_by_display_name(
+        cls,
+        display_name: str,
+        logger: Logger = Depends(get_logger),
+    ) -> DbCodeSystem | None:
         """
         Get a specific code system based on its display name.
         """
@@ -87,11 +101,14 @@ class SupportedCodeSystems(BaseModel):
             system_data
             for system_data in cls._registry.values()
             if system_data.display_name == display_name
+            or system_data.display_name.strip().lower() == display_name
         ]
-        if len(value) > 1:
-            raise ValueError("Display name matched multiple code systems")
         if len(value) == 0:
             return None
+        if len(value) > 1:
+            logger.warning(
+                "Display name matched multiple code systems. Returning first matched value"
+            )
 
         return value[0]
 

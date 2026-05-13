@@ -69,6 +69,7 @@ type CustomCodeFormProps = Pick<
   'selectedCustomCode' | 'configurationId' | 'onClose'
 >;
 
+const SELECT_DEFAULT_LITERAL = 'select-default';
 function CustomCodeForm({
   selectedCustomCode,
   configurationId,
@@ -88,12 +89,19 @@ function CustomCodeForm({
 
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
-  const [system, setSystem] = useState(selectedCustomCode?.system ?? '');
+  const [selectedSystem, setSelectedsystem] = useState(
+    selectedCustomCode?.system ?? ''
+  );
 
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isButtonEnabled = code && system && name && !error;
+  const isButtonEnabled =
+    code &&
+    selectedSystem &&
+    selectedSystem !== SELECT_DEFAULT_LITERAL &&
+    name &&
+    !error;
 
   const handleCodeUpdate = (code: string) => {
     setCode(code);
@@ -142,7 +150,7 @@ function CustomCodeForm({
             system: selectedCustomCode.system,
             name: selectedCustomCode.name,
             new_code: code.trim(),
-            new_system: system,
+            new_system: selectedSystem,
             new_name: name.trim(),
           },
         },
@@ -170,7 +178,7 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: code.trim(),
-            system: system,
+            system: selectedSystem,
             name: name.trim(),
           },
         },
@@ -199,7 +207,7 @@ function CustomCodeForm({
   const systemValues = [
     {
       display_name: 'Select system',
-      name: '',
+      name: SELECT_DEFAULT_LITERAL,
       oid: '',
       id: 'c107a769-4de6-4b3f-bdf0-261284259cfd',
     },
@@ -224,7 +232,10 @@ function CustomCodeForm({
       <SelectContainer>
         <Field>
           <Label>Code system</Label>
-          <Select value={system} onChange={(e) => setSystem(e.target.value)}>
+          <Select
+            value={selectedSystem}
+            onChange={(e) => setSelectedsystem(e.target.value)}
+          >
             {systemValues.map((s) => (
               <option key={s.id} value={s.name}>
                 {s.display_name}
