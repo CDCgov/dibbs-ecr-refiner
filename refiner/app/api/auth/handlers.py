@@ -214,7 +214,7 @@ async def auth_callback(
         raise
 
 
-class UserNotification(BaseModel):
+class NotificationInfo(BaseModel):
     """
     Information for a single notification.
     """
@@ -228,7 +228,7 @@ class UserNotifications(BaseModel):
     User notification state.
     """
 
-    most_recent_app_update: UserNotification
+    most_recent_app_update: NotificationInfo
 
 
 class UserResponse(BaseModel):
@@ -301,7 +301,7 @@ def build_user_response(user: DbUser) -> UserResponse:
         username=user.username,
         jurisdiction_id=user.jurisdiction_id,
         notifications=UserNotifications(
-            most_recent_app_update=UserNotification(
+            most_recent_app_update=NotificationInfo(
                 date_acknowledged=update_acknowledged.isoformat(),
                 should_show=should_show_app_update,
             )
