@@ -10,7 +10,6 @@ import { useState } from 'react';
 
 interface ReportableConditionsResultsProps {
   configurationGroups: DiscoveredConfigurationGroup[];
-  matchedConditions: string[];
   inactiveConditions: string[];
   unmatchedConditions: string[];
   startOver: () => void;
@@ -19,22 +18,23 @@ interface ReportableConditionsResultsProps {
 
 export function ReportableConditionsResults({
   configurationGroups,
-  matchedConditions,
   unmatchedConditions,
-  inactiveConditions,
   startOver,
   goToSuccessScreen,
 }: ReportableConditionsResultsProps) {
-  const hasFoundConditions = matchedConditions.length > 0;
-  const hasMissingConditions = unmatchedConditions.length > 0;
-  const hasInactiveConditions = inactiveConditions.length > 0;
+  const matchedGroupsWithConfig = configurationGroups.filter(
+    (cg) => cg.versions.length > 0
+  );
+  const matchedGroupsWithoutConfig = configurationGroups.filter(
+    (cg) => cg.versions.length === 0
+  );
 
   const [groupSelections, setGroupSelections] = useState<
     Map<string, { checked: boolean; selectedId: string }>
   >(
     () =>
       new Map(
-        configurationGroups.map((cg) => [
+        matchedGroupsWithConfig.map((cg) => [
           cg.name,
           {
             checked: true,
@@ -72,7 +72,7 @@ export function ReportableConditionsResults({
   // TODO: This is placeholder design and copy.
   // No conditions to display.
   // This is when a valid eICR/RR zip is uploaded but doesn't contain the uploader's jurisdiction ID for any reportable conditions.
-  if (!hasFoundConditions && !hasMissingConditions && !hasInactiveConditions) {
+  if (configurationGroups.length === 0) {
     return (
       <Container>
         <ConditionsContainer>
@@ -94,12 +94,14 @@ export function ReportableConditionsResults({
   }
 
   // Display matched conditions and potentially also missing conditions
-  if (hasFoundConditions) {
+  if (matchedGroupsWithConfig.length > 0) {
     return (
       <Container className="lg:w-4/7">
         <ConditionsContainer>
-          <FoundConditions foundConditions={matchedConditions} />
-          {configurationGroups.map((cg) => {
+          <p className="font-bold">
+            We found the following reportable condition(s) in the RR:
+          </p>
+          {matchedGroupsWithConfig.map((cg) => {
             const selection = groupSelections.get(cg.name)!;
             return (
               <div key={cg.name} className="flex gap-2">
@@ -126,13 +128,14 @@ export function ReportableConditionsResults({
             );
           })}
 
-          {(hasInactiveConditions || hasMissingConditions) && (
+          {matchedGroupsWithoutConfig.length > 0 && (
             <>
               <hr className="border-gray-cool-20" />
 
               <ConditionWarnings
-                missingConditions={unmatchedConditions}
-                inactiveConditions={inactiveConditions}
+                missingConditions={matchedGroupsWithoutConfig.map(
+                  (wc) => wc.name
+                )}
               />
             </>
           )}
@@ -164,10 +167,7 @@ export function ReportableConditionsResults({
   return (
     <Container className="max-w-188">
       <ConditionsContainer>
-        <ConditionWarnings
-          missingConditions={unmatchedConditions}
-          inactiveConditions={inactiveConditions}
-        />
+        <ConditionWarnings missingConditions={unmatchedConditions} />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
         <p>
@@ -197,51 +197,21 @@ function Container({ children, className }: ContainerProps) {
 
 function ConditionsContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="!border-blue-cool-20 flex flex-col gap-5 rounded-lg border border-dashed bg-white px-6 py-8">
+    <div className="border-blue-cool-20! flex flex-col gap-5 rounded-lg border border-dashed bg-white px-6 py-8">
       {children}
-    </div>
-  );
-}
-
-interface FoundConditionsProps {
-  foundConditions: string[];
-}
-
-function FoundConditions({ foundConditions }: FoundConditionsProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="font-bold">
-        We found the following reportable condition(s) in the RR:
-      </p>
-      <ul className="ml-2 list-inside list-disc">
-        {foundConditions.map((foundCondition) => (
-          <li key={foundCondition}>{foundCondition}</li>
-        ))}
-      </ul>
     </div>
   );
 }
 
 interface ConditionWarningsProps {
   missingConditions: string[];
-  inactiveConditions: string[];
 }
-function ConditionWarnings({
-  missingConditions,
-  inactiveConditions,
-}: ConditionWarningsProps) {
+function ConditionWarnings({ missingConditions }: ConditionWarningsProps) {
   const hasMissingConditions = missingConditions.length > 0;
-  const hasInactiveConditions = inactiveConditions.length > 0;
   return (
     <>
       {hasMissingConditions ? (
         <MissingConditions missingConditions={missingConditions} />
-      ) : null}
-      {hasMissingConditions && hasInactiveConditions ? (
-        <hr className="border-gray-cool-20" />
-      ) : null}
-      {hasInactiveConditions ? (
-        <InactiveConditions inactiveConditions={inactiveConditions} />
       ) : null}
     </>
   );
@@ -262,31 +232,6 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
       <ul className="ml-2 list-inside list-disc">
         {missingConditions.map((missingCondition) => (
           <li key={missingCondition}>{missingCondition}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-interface InactiveConditionsProps {
-  inactiveConditions: string[];
-}
-function InactiveConditions({ inactiveConditions }: InactiveConditionsProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-4">
-        <WarningIcon aria-label="Warning" size={3} />
-        <p className="text-state-error-dark">
-          No active configuration was detected for the following conditions.
-          Please ensure there is an active configuration for each condition in
-          order to receive a refined output for it.
-        </p>
-      </div>
-      <ul className="ml-2 list-inside list-disc">
-        {inactiveConditions.map((inactiveConditions) => (
-          <li className="text-blue-cool-50 font-bold" key={inactiveConditions}>
-            {inactiveConditions}
-          </li>
         ))}
       </ul>
     </div>

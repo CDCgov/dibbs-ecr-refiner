@@ -90,10 +90,7 @@ export function Testing() {
           <>
             <TestRefinerDescription />
             <ReportableConditionsResults
-            configurationGroups={data?.data.groups}
-              matchedConditions={response.data.refined_conditions.map(
-                (c) => c.display_name
-              )}
+              configurationGroups={data?.data.groups}
               unmatchedConditions={
                 response.data.conditions_without_matching_configs
               }
