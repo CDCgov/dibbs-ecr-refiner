@@ -10,15 +10,12 @@ import { useState } from 'react';
 
 interface ReportableConditionsResultsProps {
   configurationGroups: DiscoveredConfigurationGroup[];
-  inactiveConditions: string[];
-  unmatchedConditions: string[];
   startOver: () => void;
   goToSuccessScreen: () => void;
 }
 
 export function ReportableConditionsResults({
   configurationGroups,
-  unmatchedConditions,
   startOver,
   goToSuccessScreen,
 }: ReportableConditionsResultsProps) {
@@ -167,7 +164,9 @@ export function ReportableConditionsResults({
   return (
     <Container className="max-w-188">
       <ConditionsContainer>
-        <ConditionWarnings missingConditions={unmatchedConditions} />
+        <ConditionWarnings
+          missingConditions={matchedGroupsWithoutConfig.map((wc) => wc.name)}
+        />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
         <p>

@@ -91,12 +91,6 @@ export function Testing() {
             <TestRefinerDescription />
             <ReportableConditionsResults
               configurationGroups={data?.data.groups}
-              unmatchedConditions={
-                response.data.conditions_without_matching_configs
-              }
-              inactiveConditions={
-                response.data.conditions_without_active_configs
-              }
               startOver={reset}
               goToSuccessScreen={() => setStatus('success')}
             />
