@@ -170,12 +170,13 @@ def test_lambda_inactive(
     # Skipped due to no current.json files found
     assert full_flu_path not in created_files
     assert full_covid_path not in created_files
-    # No remainder RR for either jurisdiction: the if-and-only-if rule
+
+    # * no remainder RR for either jurisdiction: the if-and-only-if rule
     # in produce_remainder_rr_for_jurisdiction requires at least one
     # condition to have been refined AND at least one to have been
-    # skipped. Here, NO conditions were refined for either
-    # jurisdiction, so the original RR moves forward untouched and no
-    # remainder is produced.
+    # skipped (no active configuration)
+    # * no conditions were refined for either jurisdiction, so the
+    # original RR moves forward untouched and no remainder is produced
     assert full_remainder_rr_path_sddh not in created_files
     assert full_remainder_rr_path_jddh not in created_files
 
@@ -289,14 +290,15 @@ def test_lambda_one_active(
         f"{REFINER_OUTPUT_PREFIX}/{s3_input_objects}/SDDH/COVID19/refined_eICR.xml"
         in created_files
     )
-    # SDDH: COVID refined, Flu skipped (no mapping) → remainder RR produced
+    # SDDH: COVID refined, Flu skipped (no configuration) -> remainder RR produced
     # carrying Flu's reportability information
     assert full_remainder_rr_path_sddh in created_files
-    # JDDH: Flu skipped (no active configuration), nothing refined → no
-    # remainder RR. The if-and-only-if rule in
-    # produce_remainder_rr_for_jurisdiction requires at least one
-    # condition to have been refined for the jurisdiction; with nothing
-    # refined, the original RR moves forward untouched.
+
+    # JDDH: Flu skipped (no active configuration), nothing refined -> no
+    # remainder RR
+    # * the if-and-only-if rule in produce_remainder_rr_for_jurisdiction
+    # requires at least one condition to have been refined for the jurisdiction;
+    # with nothing refined, the original RR moves forward untouched
     assert full_remainder_rr_path_jddh not in created_files
 
     # Check that content of RefinerComplete looks correct
@@ -472,9 +474,9 @@ def test_lambda_all_active(
         in created_files
     )
 
-    # No remainder RR: every reportable condition had an active
+    # no remainder RR: every reportable condition had an active
     # config and refined successfully, so there is nothing for a
-    # remainder to carry.
+    # remainder to carry
     assert full_remainder_rr_path not in created_files
 
     # Check that content of RefinerComplete looks correct
