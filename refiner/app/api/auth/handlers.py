@@ -1,7 +1,7 @@
 import secrets
+from datetime import datetime
 from logging import Logger
 from uuid import UUID
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
@@ -15,6 +15,7 @@ from ...db.users.db import (
     IdpUserResponse,
     upsert_user_db,
 )
+from ...db.users.model import DbUser
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
@@ -228,6 +229,7 @@ class UserNotifications(BaseModel):
 
     most_recent_app_update: UserNotification | None = None
 
+
 class AppUpdateNotification(BaseModel):
     """
     Computed app update notification display state.
@@ -279,6 +281,7 @@ async def get_user(
 
     return build_user_response(user)
 
+
 def build_user_response(user: DbUser) -> UserResponse:
     """
     Builds a UserResponse with computed notification display state.
@@ -293,15 +296,10 @@ def build_user_response(user: DbUser) -> UserResponse:
         else None
     )
 
-    should_show_app_update = (
-        latest_release_created_at is not None
-        and (
-            acknowledged_app_update_at is None
-            or latest_release_created_at
-            > datetime.fromisoformat(
-                acknowledged_app_update_at.replace("Z", "+00:00")
-            )
-        )
+    should_show_app_update = latest_release_created_at is not None and (
+        acknowledged_app_update_at is None
+        or latest_release_created_at
+        > datetime.fromisoformat(acknowledged_app_update_at.replace("Z", "+00:00"))
     )
 
     return UserResponse(
