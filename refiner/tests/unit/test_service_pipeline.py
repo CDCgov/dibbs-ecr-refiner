@@ -9,6 +9,7 @@ from app.services.ecr.model import JurisdictionReportableConditions
 from app.services.pipeline import (
     RefinementResult,
     RefinementTrace,
+    create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     refine_for_condition,
 )
@@ -125,11 +126,13 @@ class TestRefineForCondition:
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
         )
+        run = create_augmentation_run_from_xml_files(sample_xml_files)
 
         result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
             trace=trace,
+            run=run,
         )
 
         assert isinstance(result, RefinementResult)
@@ -153,11 +156,13 @@ class TestRefineForCondition:
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
             configuration_version=1,
         )
+        run = create_augmentation_run_from_xml_files(sample_xml_files)
 
         result = refine_for_condition(
             xml_files=sample_xml_files,
             processed_configuration=minimal_processed_configuration,
             trace=trace,
+            run=run,
         )
 
         assert result.trace.configuration_resolved is True
@@ -175,6 +180,7 @@ class TestRefineForCondition:
             rsg_code="840539006",
             canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64",
         )
+        run = create_augmentation_run_from_xml_files(sample_xml_files)
 
         # Create an invalid ProcessedConfiguration that will cause an error
         # by patching the plan creation to raise
@@ -187,6 +193,7 @@ class TestRefineForCondition:
                     xml_files=sample_xml_files,
                     processed_configuration=MagicMock(),
                     trace=trace,
+                    run=run,
                 )
 
         assert trace.refinement_outcome == "error"
@@ -213,6 +220,7 @@ class TestRefineForCondition:
                 xml_files=sample_xml_files,
                 processed_configuration=MagicMock(),
                 trace=trace,
+                run=MagicMock(),
             )
 
 

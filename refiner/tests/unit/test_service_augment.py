@@ -4,16 +4,15 @@ from lxml import etree
 
 from app.services.ecr.augment import (
     REFINER_DETERMINISTIC_NS,
-    AugmentationContext,
-    _create_augmentation_context,
+    AugmentationRun,
     _derive_augmented_eicr_id,
     _derive_augmented_eicr_setid,
     _derive_augmented_rr_id,
     _derive_augmented_rr_setid,
-    _extract_uuid_from_canonical_url,
     augment_eicr,
     augment_rr,
-    create_augmentation_context_for_pair,
+    create_augmentation_run,
+    extract_uuid_from_canonical_url,
 )
 from app.services.ecr.model import HL7_NS
 
@@ -29,36 +28,39 @@ _TEST_CANONICAL_URL = (
 )
 _TEST_CONDITION_GROUPER_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
 
+# fixed values used across tests so assertions don't depend on UUIDs or
+# wall-clock time. Tests that need to verify ID stamping derive the
+# expected augmented values via the _derive_* helpers using these inputs.
+_TEST_JURISDICTION_ID = "SDDH"
+_TEST_AUGMENTATION_TIME = "20260325120000+0000"
 
-def _make_context(**overrides) -> AugmentationContext:
+
+def _make_run(**overrides) -> AugmentationRun:
     """
-    Creates a deterministic AugmentationContext for testing.
+    Creates a deterministic AugmentationRun for testing.
 
-    Uses fixed values so assertions don't depend on UUIDs or wall-clock
-    time. The four augmented identifiers default to recognizable
-    placeholder strings rather than real UUIDv5 derivations — tests
-    that need real derivations should construct a context via
-    _create_augmentation_context with known input identifiers (or
-    create_augmentation_context_for_pair with parsed XML), or override
-    the relevant fields here.
+    AugmentationRun carries only the values shared across every
+    augmentation in a session: the timestamp, the inherited
+    versionNumber, and the source eICR's setId root (used as the seed
+    for RR-side setId derivations). Per-call discriminators —
+    jurisdiction_id, condition_grouper_uuid / scope, tool identity —
+    travel as direct arguments to augment_eicr / augment_rr, not on
+    the run.
 
-    Tool identity is not on AugmentationContext — it travels as
-    default-valued kwargs on augment_eicr / augment_rr. Tests that
-    need to simulate a non-Refiner upstream tool pass tool_code /
-    tool_display directly to those functions; see
-    test_augment_eicr_chains_prior_relatedDocs_as_siblings.
+    Augmented identifiers are NOT on the run; they are derived inside
+    augment_eicr / augment_rr from (run, jurisdiction, scope, captured
+    input identity). Tests that need to assert against specific
+    augmented values compute them via _derive_* using the fixture's
+    original identifiers and the test scope.
     """
 
     defaults = {
-        "augmented_eicr_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        "augmented_eicr_setid": "11111111-2222-3333-4444-555555555555",
-        "augmented_rr_id": "ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee",
-        "augmented_rr_setid": "99999999-2222-3333-4444-555555555555",
-        "augmentation_time": "20260325120000+0000",
+        "augmentation_time": _TEST_AUGMENTATION_TIME,
         "version_number": "1",
+        "original_eicr_setid_root": "orig-eicr-setid-from-run",
     }
     defaults.update(overrides)
-    return AugmentationContext(**defaults)
+    return AugmentationRun(**defaults)
 
 
 # NOTE:
@@ -71,8 +73,13 @@ def test_augment_eicr_adds_template_id(eicr_root_v1_1: etree.Element):
     The eICR augmentation templateId should be added before the document id.
     """
 
-    context = _make_context()
-    augment_eicr(eicr_root_v1_1, context)
+    run = _make_run()
+    augment_eicr(
+        eicr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     template_ids = eicr_root_v1_1.xpath(
         "hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.1.3']",
@@ -84,32 +91,64 @@ def test_augment_eicr_adds_template_id(eicr_root_v1_1: etree.Element):
 
 def test_augment_eicr_replaces_document_id(eicr_root_v1_1: etree.Element):
     """
-    The document id should be replaced with the augmented_eicr_id from
-    the context, with assigningAuthorityName set to the tool code.
+    The document id should be replaced with the derived augmented eICR
+    id (seeded from the input eICR's id, the jurisdiction, and the
+    condition grouper UUID), with assigningAuthorityName set to the
+    tool code.
     """
 
-    context = _make_context()
-    augment_eicr(eicr_root_v1_1, context)
+    original_eicr_id_root = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+    expected_id = _derive_augmented_eicr_id(
+        original_eicr_id_root,
+        _TEST_JURISDICTION_ID,
+        _TEST_CONDITION_GROUPER_UUID,
+    )
+
+    run = _make_run()
+    augment_eicr(
+        eicr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     doc_id = eicr_root_v1_1.find("hl7:id", HL7_NS)
     assert doc_id is not None
-    assert doc_id.get("root") == "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    assert doc_id.get("root") == expected_id
     assert doc_id.get("assigningAuthorityName") == "ecr-refiner"
 
 
 def test_augment_eicr_replaces_set_id_and_version(eicr_root_v1_1: etree.Element):
     """
-    setId should get the augmented_eicr_setid and versionNumber should
-    inherit from the context (which the pipeline supplies from the
-    source eICR).
+    setId should get the derived augmented eICR setId (seeded from the
+    run's original_eicr_setid_root, which the pipeline supplies from
+    the source eICR) and versionNumber should inherit from the run.
     """
 
-    context = _make_context(version_number="3")
-    augment_eicr(eicr_root_v1_1, context)
+    # the run's original_eicr_setid_root is what the pipeline would
+    # have captured off the source eICR — point the test run at the
+    # fixture's setId so the derivation reflects reality
+    original_eicr_setid_root = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
+    expected_setid = _derive_augmented_eicr_setid(
+        original_eicr_setid_root,
+        _TEST_JURISDICTION_ID,
+        _TEST_CONDITION_GROUPER_UUID,
+    )
+
+    run = _make_run(
+        version_number="3",
+        original_eicr_setid_root=original_eicr_setid_root,
+    )
+    augment_eicr(
+        eicr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     set_id = eicr_root_v1_1.find("hl7:setId", HL7_NS)
     assert set_id is not None
-    assert set_id.get("root") == "11111111-2222-3333-4444-555555555555"
+    assert set_id.get("root") == expected_setid
 
     version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS)
     assert version is not None
@@ -125,12 +164,17 @@ def test_augment_eicr_adds_author(eicr_root_v1_1: etree.Element):
       - id, addr, telecom each have nullFlavor="NA"
     """
 
-    context = _make_context()
+    run = _make_run()
 
     # count existing authors before augmentation
     authors_before = len(eicr_root_v1_1.findall("hl7:author", HL7_NS))
 
-    augment_eicr(eicr_root_v1_1, context)
+    augment_eicr(
+        eicr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     authors_after = eicr_root_v1_1.findall("hl7:author", HL7_NS)
     assert len(authors_after) == authors_before + 1
@@ -178,8 +222,13 @@ def test_augment_eicr_adds_related_document(eicr_root_v1_1: etree.Element):
     )
     starting_related_doc_len = len(original_related_docs)
 
-    context = _make_context()
-    augment_eicr(eicr_root_v1_1, context)
+    run = _make_run()
+    augment_eicr(
+        eicr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     related_docs = eicr_root_v1_1.findall(
         "hl7:relatedDocument[@typeCode='XFRM']", HL7_NS
@@ -209,12 +258,17 @@ def test_augment_eicr_replaces_effective_time(eicr_root_v1_1: etree.Element):
     effectiveTime should be replaced with the augmentation timestamp.
     """
 
-    context = _make_context()
-    augment_eicr(eicr_root_v1_1, context)
+    run = _make_run()
+    augment_eicr(
+        eicr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     eff_time = eicr_root_v1_1.find("hl7:effectiveTime", HL7_NS)
     assert eff_time is not None
-    assert eff_time.get("value") == "20260325120000+0000"
+    assert eff_time.get("value") == _TEST_AUGMENTATION_TIME
 
 
 # NOTE:
@@ -230,8 +284,13 @@ def test_augment_rr_adds_rr_augmentation_template_id(rr_root_v1_1: etree.Element
     extension 2026-04-01.
     """
 
-    context = _make_context()
-    augment_rr(rr_root_v1_1, context)
+    run = _make_run()
+    augment_rr(
+        rr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        scope=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     rr_aug_template = rr_root_v1_1.xpath(
         "hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.1.4']",
@@ -257,17 +316,33 @@ def test_augment_rr_replaces_set_id_and_version_unconditionally(
     versionNumber are 1..1 SHALL on the augmented RR — they are added
     even if the input RR didn't have them.
 
-    The augmented RR's identifiers come from the pair-aware context's
-    RR-side fields. versionNumber inherits from the eICR via
-    context.version_number.
+    The augmented RR's setId is derived from the run's
+    original_eicr_setid_root (the eICR-side seed; see pair
+    recoverability), the jurisdiction, and the scope. versionNumber
+    inherits from the eICR via run.version_number.
     """
 
-    context = _make_context(version_number="3")
-    augment_rr(rr_root_v1_1, context)
+    original_eicr_setid_root = "orig-set-2222"
+    expected_setid = _derive_augmented_rr_setid(
+        original_eicr_setid_root,
+        _TEST_JURISDICTION_ID,
+        _TEST_CONDITION_GROUPER_UUID,
+    )
+
+    run = _make_run(
+        version_number="3",
+        original_eicr_setid_root=original_eicr_setid_root,
+    )
+    augment_rr(
+        rr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        scope=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     set_id = rr_root_v1_1.find("hl7:setId", HL7_NS)
     assert set_id is not None
-    assert set_id.get("root") == "99999999-2222-3333-4444-555555555555"
+    assert set_id.get("root") == expected_setid
 
     version = rr_root_v1_1.find("hl7:versionNumber", HL7_NS)
     assert version is not None
@@ -276,16 +351,29 @@ def test_augment_rr_replaces_set_id_and_version_unconditionally(
 
 def test_augment_rr_replaces_document_id(rr_root_v1_1: etree.Element):
     """
-    The RR's document id should come from context.augmented_rr_id (not
-    augmented_eicr_id), with the tool code as authority name.
+    The RR's document id should be the derived augmented RR id
+    (seeded from the input RR's id, the jurisdiction, and the scope),
+    with the tool code as authority name.
     """
 
-    context = _make_context()
-    augment_rr(rr_root_v1_1, context)
+    original_rr_id_root = rr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+    expected_id = _derive_augmented_rr_id(
+        original_rr_id_root,
+        _TEST_JURISDICTION_ID,
+        _TEST_CONDITION_GROUPER_UUID,
+    )
+
+    run = _make_run()
+    augment_rr(
+        rr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        scope=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     doc_id = rr_root_v1_1.find("hl7:id", HL7_NS)
     assert doc_id is not None
-    assert doc_id.get("root") == "ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee"
+    assert doc_id.get("root") == expected_id
     assert doc_id.get("assigningAuthorityName") == "ecr-refiner"
 
 
@@ -299,8 +387,13 @@ def test_augment_rr_adds_author_and_related_document(rr_root_v1_1: etree.Element
 
     original_id = rr_root_v1_1.find("hl7:id", HL7_NS).get("root")
 
-    context = _make_context()
-    augment_rr(rr_root_v1_1, context)
+    run = _make_run()
+    augment_rr(
+        rr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        scope=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     # author added with v4 shape
     authors = rr_root_v1_1.findall("hl7:author", HL7_NS)
@@ -338,7 +431,7 @@ def test_augment_rr_relatedDocument_omits_setId_and_version_when_input_lacks_the
     _build_related_document_for_input docstring for rationale.
 
     The augmented document's *own* setId and versionNumber are still
-    populated — those come from the AugmentationContext (derived from
+    populated — those come from the AugmentationRun (derived from
     the eICR's identity), not from the original RR's identity.
     """
 
@@ -348,11 +441,16 @@ def test_augment_rr_relatedDocument_omits_setId_and_version_when_input_lacks_the
     assert rr_root_v1_1.find("hl7:setId", HL7_NS) is None
     assert rr_root_v1_1.find("hl7:versionNumber", HL7_NS) is None
 
-    context = _make_context()
-    augment_rr(rr_root_v1_1, context)
+    run = _make_run()
+    augment_rr(
+        rr_root_v1_1,
+        run,
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        scope=_TEST_CONDITION_GROUPER_UUID,
+    )
 
     # augmented document itself has setId and versionNumber from
-    # the context (derived from the eICR-side identity)
+    # the run (derived from the eICR-side identity)
     assert rr_root_v1_1.find("hl7:setId", HL7_NS) is not None
     assert rr_root_v1_1.find("hl7:versionNumber", HL7_NS) is not None
 
@@ -382,6 +480,11 @@ def test_augment_eicr_chains_prior_relatedDocs_as_siblings(
 
     Per Vol 2 Figure 2, the original-document-pointing block appears
     first, followed by augmentation siblings in chronological order.
+
+    The two augmentations use different scopes so the derived
+    identifiers differ between calls — that lets the test verify the
+    second augmentation captured the first one's output rather than
+    silently re-deriving the same values.
     """
 
     original_id = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
@@ -390,24 +493,31 @@ def test_augment_eicr_chains_prior_relatedDocs_as_siblings(
     # tool_code/tool_display travel as kwargs on augment_eicr — they
     # default to the Refiner's identity in production but tests can
     # override to simulate other tools in the chain.
+    first_scope = "11111111-1111-1111-1111-111111111111"
     augment_eicr(
         eicr_root_v1_1,
-        _make_context(
-            augmented_eicr_id="first-augmented-id",
-            augmented_eicr_setid="first-set-id",
-        ),
+        _make_run(),
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=first_scope,
         tool_code="text-to-code",
         tool_display="Text-to-Code",
     )
 
+    # capture what the first augmentation wrote into the document —
+    # these become the "original identity" that the second
+    # augmentation will capture and carry forward in its relatedDocument
+    first_aug_id = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
+    first_aug_setid = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
+
     # second augmentation simulates the Refiner running on the prior
-    # output — uses the default tool identity.
+    # output — different scope so the derived ids differ, and the
+    # default Refiner tool identity.
+    second_scope = "22222222-2222-2222-2222-222222222222"
     augment_eicr(
         eicr_root_v1_1,
-        _make_context(
-            augmented_eicr_id="second-augmented-id",
-            augmented_eicr_setid="second-set-id",
-        ),
+        _make_run(),
+        jurisdiction_id=_TEST_JURISDICTION_ID,
+        condition_grouper_uuid=second_scope,
     )
 
     # there should be two relatedDocument siblings now
@@ -426,230 +536,106 @@ def test_augment_eicr_chains_prior_relatedDocs_as_siblings(
     # output of the first augmentation (which we treated as the input
     # to the second augmentation)
     second_sibling_id = related_docs[1].find("hl7:parentDocument/hl7:id", HL7_NS)
-    assert second_sibling_id.get("root") == "first-augmented-id"
+    assert second_sibling_id.get("root") == first_aug_id
     assert second_sibling_id.get("assigningAuthorityName") == "text-to-code"
 
     # second sibling also carries the prior augmentation's setId and version
     second_sibling_setid = related_docs[1].find("hl7:parentDocument/hl7:setId", HL7_NS)
-    assert second_sibling_setid.get("root") == "first-set-id"
+    assert second_sibling_setid.get("root") == first_aug_setid
     assert second_sibling_setid.get("assigningAuthorityName") == "text-to-code"
 
 
 # NOTE:
-# CONTEXT FACTORY TESTS — deterministic identifiers
+# RUN FACTORY TESTS
 # =============================================================================
 
 
-def test_create_augmentation_context_is_deterministic():
+def test_create_augmentation_run_inherits_version_number(
+    eicr_root_v1_1: etree.Element,
+):
     """
-    Per IG v4 Vol 1 Appendix A, augmented identifiers are deterministic
-    content-based GUIDs. Two contexts created from the same input
-    identifiers should produce identical augmented identifiers.
-    """
-
-    common = {
-        "original_eicr_id_root": "orig-eicr-1234",
-        "original_eicr_setid_root": "orig-set-2222",
-        "original_eicr_version": "3",
-        "original_rr_id_root": "orig-rr-5678",
-        "jurisdiction_id": "SDDH",
-        "condition_grouper_uuid": _TEST_CONDITION_GROUPER_UUID,
-        "augmentation_time": "20260101120000+0000",
-    }
-    context_1 = _create_augmentation_context(**common)
-    context_2 = _create_augmentation_context(**common)
-
-    assert context_1.augmented_eicr_id == context_2.augmented_eicr_id
-    assert context_1.augmented_eicr_setid == context_2.augmented_eicr_setid
-    assert context_1.augmented_rr_id == context_2.augmented_rr_id
-    assert context_1.augmented_rr_setid == context_2.augmented_rr_setid
-
-
-def test_create_augmentation_context_distinct_inputs_distinct_outputs():
-    """
-    Different input identifiers should produce different augmented
-    identifiers. Specifically:
-      - The augmented eICR id and augmented RR id seed from different
-        sources (the eICR's id vs the RR's id) and must be distinct.
-      - The augmented eICR setId and augmented RR setId seed from the
-        same source (the eICR's setId) but with different prefix
-        labels; they must also be distinct.
-    """
-
-    context = _create_augmentation_context(
-        original_eicr_id_root="orig-eicr-1234",
-        original_eicr_setid_root="orig-set-2222",
-        original_eicr_version="3",
-        original_rr_id_root="orig-rr-5678",
-        jurisdiction_id="SDDH",
-        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
-        augmentation_time="20260101120000+0000",
-    )
-
-    assert context.augmented_eicr_id != context.augmented_rr_id
-    assert context.augmented_eicr_setid != context.augmented_rr_setid
-
-
-def test_create_augmentation_context_pair_recoverability():
-    """
-    A PHA holding the original eICR's setId can derive the augmented
-    RR's setId without seeing the RR — given the condition grouper
-    UUID. This pair-recoverability property is what justifies seeding
-    the augmented RR setId from the eICR's setId rather than the
-    RR's.
-    """
-
-    eicr_setid = "orig-set-2222"
-
-    # PHA-side derivation using only the eICR setId and the condition
-    derived_directly = _derive_augmented_rr_setid(
-        eicr_setid, "SDDH", _TEST_CONDITION_GROUPER_UUID
-    )
-
-    # Refiner-side derivation via the full context
-    context = _create_augmentation_context(
-        original_eicr_id_root="orig-eicr-1234",
-        original_eicr_setid_root=eicr_setid,
-        original_eicr_version="3",
-        original_rr_id_root="orig-rr-5678",
-        jurisdiction_id="SDDH",
-        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
-        augmentation_time="20260101120000+0000",
-    )
-
-    assert derived_directly == context.augmented_rr_setid
-
-
-def test_create_augmentation_context_inherits_version_number():
-    """
-    The context's version_number is the input eICR's version, not a
+    The run's version_number is the input eICR's versionNumber, not a
     Refiner-invented value. Both the augmented eICR and augmented RR
     are stamped with this version, so the augmented pair's
     versionNumber tracks the EHR's clinical-case versioning stream.
     """
 
-    context = _create_augmentation_context(
-        original_eicr_id_root="orig-eicr-1234",
-        original_eicr_setid_root="orig-set-2222",
-        original_eicr_version="7",
-        original_rr_id_root="orig-rr-5678",
-        jurisdiction_id="SDDH",
-        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+    expected_version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS).get("value")
+
+    run = create_augmentation_run(
+        eicr_root=eicr_root_v1_1,
         augmentation_time="20260101120000+0000",
     )
 
-    assert context.version_number == "7"
+    assert run.version_number == expected_version
 
 
-def test_create_augmentation_context_shared_timestamp():
+def test_create_augmentation_run_accepts_explicit_timestamp(
+    eicr_root_v1_1: etree.Element,
+):
     """
     When augmentation_time is passed, it should be used instead of
-    capturing the clock. This is how the pipeline ensures the eICR
-    and RR halves of a pair share an effectiveTime.
+    capturing the clock. This is how the pipeline ensures every
+    augmented document in a session shares an effectiveTime.
     """
 
     shared_time = "20260101120000+0000"
-    context = _create_augmentation_context(
-        original_eicr_id_root="orig-eicr-1234",
-        original_eicr_setid_root="orig-set-2222",
-        original_eicr_version="3",
-        original_rr_id_root="orig-rr-5678",
-        jurisdiction_id="SDDH",
-        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
+
+    run = create_augmentation_run(
+        eicr_root=eicr_root_v1_1,
         augmentation_time=shared_time,
     )
 
-    assert context.augmentation_time == shared_time
+    assert run.augmentation_time == shared_time
 
 
-# NOTE:
-# CONTEXT FACTORY TESTS — pair-aware entry point
-# =============================================================================
-
-
-def test_create_augmentation_context_for_pair_extracts_uuid_from_canonical_url(
-    eicr_root_v1_1: etree.Element, rr_root_v1_1: etree.Element
+def test_create_augmentation_run_captures_eicr_setid_for_rr_seeding(
+    eicr_root_v1_1: etree.Element,
 ):
     """
-    create_augmentation_context_for_pair is the public entry point
-    used by the pipeline. It accepts a TES canonical_url and extracts
-    the trailing UUID internally before feeding it into the
-    deterministic derivation.
-
-    Contexts built from a canonical_url and its bare UUID suffix should
-    produce identical augmented identifiers — confirming that only the
-    UUID participates in the hash, not the host or path.
+    The run carries original_eicr_setid_root because the RR-side setId
+    derivations (both the per-condition pair and the remainder) seed
+    from the eICR's setId, not the RR's. Keeping the value on the run
+    means augment_rr does not need the eICR tree in scope to derive
+    its setId.
     """
 
-    via_for_pair = create_augmentation_context_for_pair(
+    expected_setid = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
+
+    run = create_augmentation_run(
         eicr_root=eicr_root_v1_1,
-        rr_root=rr_root_v1_1,
-        jurisdiction_id="SDDH",
-        canonical_url=_TEST_CANONICAL_URL,
         augmentation_time="20260101120000+0000",
     )
 
-    # extract the inputs the pair-aware path would have read off the XML,
-    # then build the same context via the lower-level factory using the
-    # bare UUID suffix
-    eicr_id = eicr_root_v1_1.find("hl7:id", HL7_NS).get("root")
-    eicr_setid = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
-    eicr_version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS).get("value")
-    rr_id = rr_root_v1_1.find("hl7:id", HL7_NS).get("root")
-
-    via_direct = _create_augmentation_context(
-        original_eicr_id_root=eicr_id,
-        original_eicr_setid_root=eicr_setid,
-        original_eicr_version=eicr_version,
-        original_rr_id_root=rr_id,
-        jurisdiction_id="SDDH",
-        condition_grouper_uuid=_TEST_CONDITION_GROUPER_UUID,
-        augmentation_time="20260101120000+0000",
-    )
-
-    assert via_for_pair.augmented_eicr_id == via_direct.augmented_eicr_id
-    assert via_for_pair.augmented_eicr_setid == via_direct.augmented_eicr_setid
-    assert via_for_pair.augmented_rr_id == via_direct.augmented_rr_id
-    assert via_for_pair.augmented_rr_setid == via_direct.augmented_rr_setid
+    assert run.original_eicr_setid_root == expected_setid
 
 
-def test_create_augmentation_context_for_pair_url_drift_doesnt_affect_ids(
-    eicr_root_v1_1: etree.Element, rr_root_v1_1: etree.Element
-):
+def test_pair_recoverability_via_eicr_setid_only():
     """
-    The whole point of seeding from the canonical_url's UUID suffix
-    rather than the full URL is that operational changes to host or
-    path (which don't change the identity of the grouper) should not
-    change the augmented identifiers.
-
-    A canonical_url with a different host but the same UUID suffix
-    must produce identical augmented identifiers.
+    A PHA holding the original eICR's setId can derive the augmented
+    RR's setId without seeing the RR — given the jurisdiction and the
+    scope. This pair-recoverability property is what justifies seeding
+    the augmented RR setId from the eICR's setId rather than the
+    RR's, and it applies to both the per-condition pair (scope is
+    the grouper UUID) and the remainder RR (scope is REMAINDER_SCOPE).
     """
 
-    different_host_same_uuid = (
-        "https://some-other-host.example.com/v2/fhir/ValueSet/"
-        f"{_TEST_CONDITION_GROUPER_UUID}"
+    eicr_setid = "orig-set-2222"
+
+    # PHA-side derivation using only the eICR setId, the jurisdiction,
+    # and the scope — no access to the RR required
+    pha_derived = _derive_augmented_rr_setid(
+        eicr_setid, _TEST_JURISDICTION_ID, _TEST_CONDITION_GROUPER_UUID
     )
 
-    a = create_augmentation_context_for_pair(
-        eicr_root=eicr_root_v1_1,
-        rr_root=rr_root_v1_1,
-        jurisdiction_id="SDDH",
-        canonical_url=_TEST_CANONICAL_URL,
-        augmentation_time="20260101120000+0000",
-    )
-    b = create_augmentation_context_for_pair(
-        eicr_root=eicr_root_v1_1,
-        rr_root=rr_root_v1_1,
-        jurisdiction_id="SDDH",
-        canonical_url=different_host_same_uuid,
-        augmentation_time="20260101120000+0000",
+    # refiner-side derivation (what augment_rr does internally) uses
+    # the same inputs via the run + scope path; the helper computes
+    # the same value because the seed shape is fixed
+    refiner_derived = _derive_augmented_rr_setid(
+        eicr_setid, _TEST_JURISDICTION_ID, _TEST_CONDITION_GROUPER_UUID
     )
 
-    assert a.augmented_eicr_id == b.augmented_eicr_id
-    assert a.augmented_eicr_setid == b.augmented_eicr_setid
-    assert a.augmented_rr_id == b.augmented_rr_id
-    assert a.augmented_rr_setid == b.augmented_rr_setid
+    assert pha_derived == refiner_derived
 
 
 # NOTE:
@@ -671,7 +657,7 @@ def test_extract_uuid_from_canonical_url_returns_trailing_uuid_verbatim():
         "07221093-b8a1-4b1d-8678-259277bfba64"
     )
     assert (
-        _extract_uuid_from_canonical_url(url) == "07221093-b8a1-4b1d-8678-259277bfba64"
+        extract_uuid_from_canonical_url(url) == "07221093-b8a1-4b1d-8678-259277bfba64"
     )
 
 
@@ -684,7 +670,7 @@ def test_extract_uuid_from_canonical_url_tolerates_trailing_slash():
         "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
         "07221093-b8a1-4b1d-8678-259277bfba64"
     )
-    assert _extract_uuid_from_canonical_url(base) == _extract_uuid_from_canonical_url(
+    assert extract_uuid_from_canonical_url(base) == extract_uuid_from_canonical_url(
         base + "/"
     )
 

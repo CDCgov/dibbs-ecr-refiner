@@ -211,11 +211,13 @@ async def demo_upload(
         ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
     )
 
-    # Add shadow RR (for inactive conditions) to zip
-    if test_results.shadow_rr:
+    # add remainder RR: carries reportability for conditions that did not have an active
+    # configuration for the jurisdiction; see pipeline.produce_remainder_rr_for_jurisdiction
+    if test_results.remainder_rr is not None:
         zip_package.add(
             ZipFileItem(
-                file_name="CDA_RR_unrefined_rr.xml", file_content=test_results.shadow_rr
+                file_name="CDA_RR_remainder.xml",
+                file_content=test_results.remainder_rr.remainder_rr,
             )
         )
 

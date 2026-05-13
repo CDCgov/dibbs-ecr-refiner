@@ -24,10 +24,13 @@ from .ecr.model import (
     RefinedDocument,
     ReportableCondition,
 )
-from .ecr.refine import refine_rr_for_unconfigured_conditions
 from .pipeline import (
+    AugmentationRun,
     RefinementTrace,
+    RemainderRRResult,
+    create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
+    produce_remainder_rr_for_jurisdiction,
     refine_for_condition,
 )
 
@@ -79,14 +82,19 @@ class IndependentTestingResult:
            no matching configuration for the jurisdiction.
         - 'no_active_configuration_for_conditions': A list of conditions that were found but had
            no active configuration for the jurisdiction.
-        - 'shadow_rr': Optional RR containing only reportable conditions without active configs.
+        - 'remainder_rr': Optional augmented remainder RR for the
+           jurisdiction. Present (non-None) only when at least one
+           condition refined AND at least one was skipped (the
+           if-and-only-if rule). Carries reportability for the
+           skipped conditions so each condition's reportability
+           appears exactly once across the full output package.
     """
 
     original_eicr_doc_id: str
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
-    shadow_rr: str | None
+    remainder_rr: RemainderRRResult | None
 
     def get_condition_names_with_no_matching_config(self) -> list[str]:
         """
@@ -192,8 +200,15 @@ async def independent_testing(
             refined_documents=[],
             no_matching_configuration_for_conditions=[],
             no_active_configuration_for_conditions=[],
-            shadow_rr=None,
+            remainder_rr=None,
         )
+
+    # TODO:
+    # * planning-object: the planning object should own this
+    # one AugmentationRun for this testing session, shared across every
+    # refine_for_condition call and the remainder RR so all augmented
+    # outputs share an effectiveTime
+    run = create_augmentation_run_from_xml_files(xml_files)
 
     # STEP 2:
     # get all configurations for the jurisdiction to create a lookup set of exactly
@@ -324,6 +339,7 @@ async def independent_testing(
             xml_files=xml_files,
             processed_configuration=processed_configuration,
             trace=pipeline_trace,
+            run=run,
         )
 
         if first_original_eicr_doc_id is None:
@@ -362,7 +378,6 @@ async def independent_testing(
 
     # STEP 6:
     # build the final result object from the processed traces
-
     refined_documents = [
         trace.refined_document
         for trace in all_traces
@@ -376,10 +391,13 @@ async def independent_testing(
         refined_documents=refined_documents,
         no_matching_configuration_for_conditions=no_matching_configurations,
         no_active_configuration_for_conditions=no_active_configurations,
-        shadow_rr=_generate_shadow_rr(
+        remainder_rr=_generate_remainder_rr(
+            refined_traces=all_traces,
             no_matching_configuration_for_conditions=no_matching_configurations,
             no_active_configuration_for_conditions=no_active_configurations,
             xml_files=xml_files,
+            jurisdiction_id=jurisdiction_id,
+            run=run,
         ),
     )
 
@@ -401,7 +419,8 @@ async def _convert_to_processed_config(
     Returns:
         ProcessedConfiguration: A ProcessedConfiguration created from a storage payload object
     """
-    # Convert the config to a storage payload
+
+    # convert the config to a storage payload
     serialized_configuration = await convert_config_to_storage_payload(
         configuration=configuration, db=db
     )
@@ -415,39 +434,75 @@ async def _convert_to_processed_config(
             f"Configuration could not be converted to a storage payload: {configuration.id}"
         )
 
-    # Convert to a ProcessedConfiguration from the serialized configuration
+    # convert to a ProcessedConfiguration from the serialized configuration
     return ProcessedConfiguration.from_dict(serialized_configuration.to_dict())
 
 
-def _generate_shadow_rr(
+def _generate_remainder_rr(
+    refined_traces: list[IndependentTestingTrace],
     no_matching_configuration_for_conditions: list[NoMatchEntry],
     no_active_configuration_for_conditions: list[NoMatchEntry],
     xml_files: XMLFiles,
-) -> str | None:
+    jurisdiction_id: str,
+    run: AugmentationRun,
+) -> RemainderRRResult | None:
     """
-    Generates a shadow RR based on conditions with no active configuration.
+    Produce the augmented remainder RR for the jurisdiction.
+
+    Aggregates the RC SNOMED codes that were handled by refinement
+    (from traces that produced a RefinedDocument) and the codes that
+    were skipped (from the no-match lists), then delegates to the
+    pipeline. The pipeline enforces the if-and-only-if rule (returns
+    None if either set is empty) and handles the augmentation.
+
+    TODO(convergence): the refined-codes set and the skipped-codes
+    set are computed by walking webapp-specific data structures
+    (IndependentTestingTrace, NoMatchEntry) that duplicate
+    information already on the per-condition RefinementTrace
+    objects. When the planning object lands, these sets should be
+    derived from trace.refinement_outcome directly, eliminating
+    the parallel bookkeeping. See pipeline.py top-of-file TODO.
 
     Args:
-        no_matching_configuration_for_conditions (list[NoMatchEntry]): list of conditions without a configuration
-        no_active_configuration_for_conditions (list[NoMatchEntry]): list of conditions without an active configuration
-        xml_files (XMLFiles): the original XML eCR files
+        refined_traces: All IndependentTestingTrace objects, whether
+            they refined or not. The helper picks out the ones with a
+            non-None refined_document.
+        no_matching_configuration_for_conditions: Conditions found in
+            the RR but without a configuration row in the database.
+        no_active_configuration_for_conditions: Conditions found in
+            the RR with a configuration row but no active version.
+        xml_files: The original input pair.
+        jurisdiction_id: The jurisdiction code this remainder is
+            scoped to.
+        run: The session-scoped AugmentationRun, shared with the
+            per-condition refine_for_condition calls.
 
     Returns:
-        str | None: RR content, or None if a shadow RR isn't generated
+        RemainderRRResult or None. None when the if-and-only-if rule
+        is not satisfied (nothing refined, or nothing skipped).
     """
-    no_match_found_conditions = (
+
+    refined_codes: set[str] = {
+        code
+        for trace in refined_traces
+        if trace.refined_document is not None
+        for code in trace.rc_snomed_codes
+    }
+
+    skipped_entries = (
         no_matching_configuration_for_conditions
         + no_active_configuration_for_conditions
     )
-    if not no_match_found_conditions:
-        return None
-
-    no_match_codes = {
-        code for entry in no_match_found_conditions for code in entry["rc_snomed_codes"]
+    skipped_codes: set[str] = {
+        code for entry in skipped_entries for code in entry["rc_snomed_codes"]
     }
 
-    return refine_rr_for_unconfigured_conditions(
-        xml_files=xml_files, condition_codes=no_match_codes
+    return produce_remainder_rr_for_jurisdiction(
+        xml_files=xml_files,
+        jurisdiction_id=jurisdiction_id,
+        refined_condition_codes=refined_codes,
+        skipped_condition_codes=skipped_codes,
+        run=run,
     )
 
 
@@ -553,10 +608,16 @@ async def inline_testing(
         configuration_version=trace.configuration.version,
     )
 
+    # TODO:
+    # planning-object: the planning object should own this
+    # one AugmentationRun for this single inline refinement
+    run = create_augmentation_run_from_xml_files(xml_files)
+
     result = refine_for_condition(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
         trace=pipeline_trace,
+        run=run,
     )
 
     # STEP 5:
