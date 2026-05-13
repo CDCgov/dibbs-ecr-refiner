@@ -3,10 +3,12 @@ import re
 from collections.abc import Awaitable, Callable
 from logging import Logger
 from pathlib import Path
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
@@ -16,6 +18,7 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
+from app.db.configurations.db import get_configurations_by_ids_db
 from app.db.demo.model import Condition, FileInfoResponse, IndependentTestUploadResponse
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -184,6 +187,14 @@ async def discover_configurations(
     return resp
 
 
+class IndependentTestInput(BaseModel):
+    """
+    Independent testing request model.
+    """
+
+    configuration_ids: list[UUID]
+
+
 @router.post(
     "/upload",
     response_model=IndependentTestUploadResponse,
@@ -191,6 +202,7 @@ async def discover_configurations(
     operation_id="uploadEcr",
 )
 async def demo_upload(
+    body: IndependentTestInput,
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
@@ -222,6 +234,12 @@ async def demo_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
+    if len(body.configuration_ids) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configuration IDs must be provided.",
+        )
+
     # Check that demo file path is valid
     validate_path_or_raise(path=demo_zip_path)
 
@@ -234,13 +252,24 @@ async def demo_upload(
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
+    configurations = await get_configurations_by_ids_db(
+        ids=body.configuration_ids, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if len(configurations) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configurations with provided IDs could not be found.",
+        )
+
     # Run the test
     try:
         test_results = await independent_testing(
-            db=db,
             xml_files=original_xml_files,
             jurisdiction_id=user.jurisdiction_id,
+            configurations=configurations,
             logger=logger,
+            db=db,
         )
     except Exception as e:
         logger.error("Error in the independent testing flow", extra={"error": str(e)})

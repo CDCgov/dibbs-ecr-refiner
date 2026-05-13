@@ -41,6 +41,7 @@ export * from './getConfigurationsResponse';
 export * from './getEventsParams';
 export * from './hTTPValidationError';
 export * from './includedCondition';
+export * from './independentTestInput';
 export * from './independentTestUploadResponse';
 export * from './lockedByUser';
 export * from './release';
