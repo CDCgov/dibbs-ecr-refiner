@@ -293,18 +293,18 @@ def build_user_response(user: DbUser) -> UserResponse:
     """
     notifications = UserNotifications(**user.notifications)
 
-    latest_release_created_at = get_latest_release_created_at()
+    latest_release_created_at = _normalize_timezone(get_latest_release_created_at())
 
     update_acknowledged = datetime.min.replace(tzinfo=None)
     if (
         notifications.most_recent_app_update
         and notifications.most_recent_app_update.date_acknowledged
     ):
-        update_acknowledged = notifications.most_recent_app_update.date_acknowledged
+        update_acknowledged = _normalize_timezone(
+            notifications.most_recent_app_update.date_acknowledged
+        )
 
-    should_show_app_update = _normalize_timezone(
-        latest_release_created_at
-    ) > _normalize_timezone(update_acknowledged)
+    should_show_app_update = latest_release_created_at > update_acknowledged
 
     return UserResponse(
         id=user.id,
