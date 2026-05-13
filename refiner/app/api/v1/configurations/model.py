@@ -114,22 +114,13 @@ class AssociateCodesetInput(BaseModel):
 
 
 @dataclass(frozen=True)
-class ConditionEntry:
-    """
-    Condition model.
-    """
-
-    id: UUID
-
-
-@dataclass(frozen=True)
 class AssociateCodesetResponse:
     """
     Response from adding a code set to a config.
     """
 
     id: UUID
-    included_conditions: list[ConditionEntry]
+    included_conditions: list[UUID]
     condition_name: str
 
 

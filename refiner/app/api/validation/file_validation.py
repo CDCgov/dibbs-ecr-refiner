@@ -30,15 +30,12 @@ DIFF_RENDERING_MAX_BYTES = DIFF_RENDERING_MAX_MB * MEGABYTES
 UNCOMPRESSED_MAX_BYTES = UNCOMPRESSED_MAX_MB * MEGABYTES
 
 
-def format_xml_document_for_display_or_raise(
-    text: str,
-    preserve_comments: bool = False,
-) -> str:
+def format_xml_document_for_display_or_raise(text: str) -> str:
     """
     Formats XML for display purposes. Raises a 422 if the input is not valid XML.
     """
     try:
-        return format_xml_document_for_display(text, preserve_comments)
+        return format_xml_document_for_display(text)
     except etree.XMLSyntaxError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -189,7 +186,7 @@ async def _validate_ecr_zip_pair(file: UploadFile) -> UploadFile:
     if file.size > UNCOMPRESSED_MAX_BYTES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Uncompressed file must be less than {UNCOMPRESSED_MAX_BYTES}MB in size.",
+            detail=f"Uncompressed file must be less than {UNCOMPRESSED_MAX_MB}MB in size.",
         )
 
     return file

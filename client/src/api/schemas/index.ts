@@ -10,7 +10,6 @@ export * from './codeCategoryCompletenessStatus';
 export * from './codeSetStatus';
 export * from './completenessStatus';
 export * from './condition';
-export * from './conditionEntry';
 export * from './configurationCustomCodeResponse';
 export * from './configurationStatusUpdateResponse';
 export * from './configurationTestResponse';

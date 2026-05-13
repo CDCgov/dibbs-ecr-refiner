@@ -216,7 +216,7 @@ CREATE TABLE public.configurations (
     version integer NOT NULL,
     jurisdiction_id text NOT NULL,
     name text NOT NULL,
-    included_conditions jsonb DEFAULT '[]'::jsonb NOT NULL,
+    included_conditions uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     custom_codes jsonb DEFAULT '[]'::jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
@@ -737,3 +737,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260420140437'),
     ('20260427151426'),
     ('20260428155732');
+    ('20260511160133');

@@ -137,12 +137,13 @@ async def create_configuration(
     Create a new configuration for a jurisdiction.
     """
 
-    # get condition by ID
+    # get the condition by the ID we are provided with by the client
     condition = await get_condition_by_id_db(id=body.condition_id, db=db)
 
     if not condition:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Condition with ID {body.condition_id} could not be found or does not exist.",
         )
 
     # get user jurisdiction
@@ -272,7 +273,7 @@ async def get_configuration(
     )
 
     # precomputed set of included_conditions ids
-    included_ids = {c.id for c in config.included_conditions}
+    included_ids = set(config.included_conditions)
 
     # fetch all conditions from the db based on the primary condition's version
     condition_version_to_use = conditions[0].version
