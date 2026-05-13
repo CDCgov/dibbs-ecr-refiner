@@ -106,6 +106,7 @@ export function ReportableConditionsResults({
             return (
               <div key={cg.name} className="flex gap-2">
                 <Checkbox
+                  aria-label={`Use ${cg.name} configuration in refinement process`}
                   checked={selection.checked}
                   onChange={() => toggleGroup(cg.name)}
                 />
