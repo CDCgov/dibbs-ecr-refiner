@@ -186,7 +186,7 @@ async def _validate_ecr_zip_pair(file: UploadFile) -> UploadFile:
     if file.size > UNCOMPRESSED_MAX_BYTES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Uncompressed file must be less than {UNCOMPRESSED_MAX_BYTES}MB in size.",
+            detail=f"Uncompressed file must be less than {UNCOMPRESSED_MAX_MB}MB in size.",
         )
 
     return file

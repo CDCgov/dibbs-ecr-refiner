@@ -1,6 +1,7 @@
+import time
 import zipfile
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import pytest
 from lxml import etree
@@ -107,8 +108,12 @@ async def test_uncompressed_zip_size_too_large(create_test_zip, fixtures_path: P
     )
 
     # Add the large file to the existing zip
+    now = time.gmtime()
+    dt = (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
     with ZipFile(zip_path, "a") as zf:
-        zf.writestr("large.xml", big_content)
+        zinfo = ZipInfo(filename="large.xml", date_time=dt)
+        zinfo.compress_type = zf.compression
+        zf.writestr(zinfo, big_content)
 
     with open(zip_path, "rb") as f:
         zip_bytes = f.read()
