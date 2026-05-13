@@ -104,6 +104,7 @@ test.describe('App update notifications', () => {
       'Invalid Date'
     );
 
+    // Ensure banner is gone
     await expect(
       page.getByText('There are new updates to eCR Refiner.')
     ).not.toBeVisible();
@@ -126,6 +127,11 @@ test.describe('App update notifications', () => {
     expect(new Date(requestBody.date_acknowledged).toString()).not.toBe(
       'Invalid Date'
     );
+
+    // Ensure banner is gone
+    await expect(
+      page.getByText('There are new updates to eCR Refiner.')
+    ).not.toBeVisible();
 
     await expect(
       page.getByRole('heading', { name: 'App updates', exact: true, level: 1 })
