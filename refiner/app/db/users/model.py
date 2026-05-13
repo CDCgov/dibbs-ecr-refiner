@@ -26,4 +26,4 @@ class DbUser:
     jurisdiction_id: str
     created_at: datetime
     updated_at: datetime
-    dismissed_notifications: dict[str, str]
+    notifications: dict

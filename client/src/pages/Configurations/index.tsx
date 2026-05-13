@@ -32,7 +32,7 @@ import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
 import { useGetReleases } from '../../api/releases/releases.ts';
-import { updateDismissedNotification } from '../../api/user/user.ts';
+import { updateUserNotifications } from '../../api/user/user.ts';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -129,7 +129,7 @@ function AppUpdateBanner({
   const latestReleaseCreatedAt = latestRelease?.created_at;
 
   const dismissedMostRecentAppUpdate =
-    user.dismissed_notifications?.most_recent_app_update;
+    user.notifications?.most_recent_app_update?.date_acknowledged;
 
   const showAppUpdateBanner =
     !!latestReleaseCreatedAt &&
@@ -140,18 +140,17 @@ function AppUpdateBanner({
   function dismissNotification() {
     if (!latestReleaseCreatedAt) return;
 
-    void updateDismissedNotification({
-      key: 'most_recent_app_update',
-      value: latestReleaseCreatedAt,
+    void updateUserNotifications({
+      name: 'most_recent_app_update',
+      date_acknowledged: latestReleaseCreatedAt,
     })
-      .then((resp) => {
+      .then((resp: Awaited<ReturnType<typeof updateUserNotifications>>) => {
         setUser(resp.data);
       })
-      .catch((error) => {
-        console.error('Failed to dismiss notification', error);
+      .catch((error: unknown) => {
+        console.error('Failed to update user notifications', error);
       });
   }
-
   if (!showAppUpdateBanner || !latestReleaseCreatedAt) {
     return null;
   }

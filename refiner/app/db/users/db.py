@@ -98,38 +98,22 @@ async def get_user_by_id_db(id: UUID, db: AsyncDatabaseConnection) -> DbUser:
     return row
 
 
-async def update_user_dismissed_notification_db(
+async def update_user_notifications_db(
     user_id: UUID,
-    key: str,
-    value: str,
+    name: str,
+    date_acknowledged: str,
     db: AsyncDatabaseConnection,
 ) -> DbUser:
     """
-    Updates a user's dismissed notification value in the database.
-
-    This function inserts or updates a key-value pair inside the
-    `dismissed_notifications` JSONB column for a given user.
-
-    Args:
-        user_id (UUID): The ID of the user to update.
-        key (str): The notification key (e.g. `most_recent_app_update`).
-        value (str): The timestamp value to store (ISO string).
-        db (AsyncDatabaseConnection): The database connection.
-
-    Returns:
-        DbUser: The updated user record.
-
-    Raises:
-        Exception: If the user is not found or update fails.
+    Updates notification acknowledgement state for a user.
     """
-
     query = """
         UPDATE users
         SET
-            dismissed_notifications = jsonb_set(
-                dismissed_notifications,
+            notifications = jsonb_set(
+                notifications,
                 %s,
-                to_jsonb(%s::text),
+                jsonb_build_object('date_acknowledged', %s::text),
                 true
             ),
             updated_at = NOW()
@@ -137,7 +121,7 @@ async def update_user_dismissed_notification_db(
         RETURNING *;
     """
 
-    params = ([key], value, user_id)
+    params = ([name], date_acknowledged, user_id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbUser)) as cur:

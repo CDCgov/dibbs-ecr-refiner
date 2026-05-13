@@ -33,7 +33,7 @@ import type {
 
 import type {
   HTTPValidationError,
-  UpdateDismissedNotificationRequest,
+  UpdateUserNotificationsRequest,
   UserResponse
 } from '../schemas';
 
@@ -141,42 +141,27 @@ export function useGetUser<TData = Awaited<ReturnType<typeof getUser>>, TError =
 
 
 /**
- * Updates a dismissed notification timestamp for the current user.
-
-This endpoint stores a timestamp for a given notification key
-(e.g. `most_recent_app_update`) in the user's
-`dismissed_notifications` field.
-
-Args:
-    request (UpdateDismissedNotificationRequest): The notification key and timestamp to store.
-    http_request (Request): The incoming HTTP request used to retrieve the session cookie.
-    db (AsyncDatabaseConnection): The database connection.
-
-Returns:
-    UserResponse: The updated user object with modified dismissed notifications.
-
-Raises:
-    HTTPException: 401 if the user is not authenticated.
- * @summary Update Dismissed Notification
+ * Updates notification acknowledgement state for the current user.
+ * @summary Update User Notifications
  */
-export const updateDismissedNotification = (
-    updateDismissedNotificationRequest: UpdateDismissedNotificationRequest, options?: AxiosRequestConfig
+export const updateUserNotifications = (
+    updateUserNotificationsRequest: UpdateUserNotificationsRequest, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<UserResponse>> => {
 
 
     return axios.default.patch(
-      `/api/user/dismissed-notifications`,
-      updateDismissedNotificationRequest,options
+      `/api/user/notifications`,
+      updateUserNotificationsRequest,options
     );
   }
 
 
 
-export const getUpdateDismissedNotificationMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDismissedNotification>>, TError,{data: UpdateDismissedNotificationRequest}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof updateDismissedNotification>>, TError,{data: UpdateDismissedNotificationRequest}, TContext> => {
+export const getUpdateUserNotificationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext> => {
 
-const mutationKey = ['updateDismissedNotification'];
+const mutationKey = ['updateUserNotifications'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -186,10 +171,10 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDismissedNotification>>, {data: UpdateDismissedNotificationRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUserNotifications>>, {data: UpdateUserNotificationsRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  updateDismissedNotification(data,axiosOptions)
+          return  updateUserNotifications(data,axiosOptions)
         }
 
 
@@ -199,20 +184,20 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type UpdateDismissedNotificationMutationResult = NonNullable<Awaited<ReturnType<typeof updateDismissedNotification>>>
-    export type UpdateDismissedNotificationMutationBody = UpdateDismissedNotificationRequest
-    export type UpdateDismissedNotificationMutationError = AxiosError<HTTPValidationError>
+    export type UpdateUserNotificationsMutationResult = NonNullable<Awaited<ReturnType<typeof updateUserNotifications>>>
+    export type UpdateUserNotificationsMutationBody = UpdateUserNotificationsRequest
+    export type UpdateUserNotificationsMutationError = AxiosError<HTTPValidationError>
 
     /**
- * @summary Update Dismissed Notification
+ * @summary Update User Notifications
  */
-export const useUpdateDismissedNotification = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDismissedNotification>>, TError,{data: UpdateDismissedNotificationRequest}, TContext>, axios?: AxiosRequestConfig}
+export const useUpdateUserNotifications = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserNotifications>>, TError,{data: UpdateUserNotificationsRequest}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof updateDismissedNotification>>,
+        Awaited<ReturnType<typeof updateUserNotifications>>,
         TError,
-        {data: UpdateDismissedNotificationRequest},
+        {data: UpdateUserNotificationsRequest},
         TContext
       > => {
-      return useMutation(getUpdateDismissedNotificationMutationOptions(options), queryClient);
+      return useMutation(getUpdateUserNotificationsMutationOptions(options), queryClient);
     }

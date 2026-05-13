@@ -5,7 +5,7 @@
  * Please visit the repo for more info: https://github.com/CDCgov/dibbs-ecr-refiner
  * OpenAPI spec version: 1.0.0
  */
-import type { UserResponseDismissedNotifications } from './userResponseDismissedNotifications';
+import type { UserNotifications } from './userNotifications';
 
 /**
  * User information to send to the client.
@@ -14,5 +14,5 @@ export interface UserResponse {
   id: string;
   username: string;
   jurisdiction_id: string;
-  dismissed_notifications?: UserResponseDismissedNotifications;
+  notifications?: UserNotifications;
 }

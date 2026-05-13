@@ -317,7 +317,7 @@ CREATE TABLE public.users (
     jurisdiction_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    dismissed_notifications jsonb DEFAULT '{}'::jsonb NOT NULL
+    notifications jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 

@@ -11,7 +11,7 @@ from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import (
     IdpUserResponse,
-    update_user_dismissed_notification_db,
+    update_user_notifications_db,
     upsert_user_db,
 )
 from ...services.logger import get_logger
@@ -212,6 +212,22 @@ async def auth_callback(
         raise
 
 
+class UserNotification(BaseModel):
+    """
+    A user's state for a single notification.
+    """
+
+    date_acknowledged: str | None = None
+
+
+class UserNotifications(BaseModel):
+    """
+    User notification state.
+    """
+
+    most_recent_app_update: UserNotification | None = None
+
+
 class UserResponse(BaseModel):
     """
     User information to send to the client.
@@ -220,7 +236,7 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     jurisdiction_id: str
-    dismissed_notifications: dict[str, str] = {}
+    notifications: UserNotifications = UserNotifications()
 
 
 @auth_router.get(
@@ -255,7 +271,7 @@ async def get_user(
         id=user.id,
         username=user.username,
         jurisdiction_id=user.jurisdiction_id,
-        dismissed_notifications=user.dismissed_notifications,
+        notifications=user.notifications,
     )
 
 
@@ -311,45 +327,29 @@ async def logout(
     return response
 
 
-class UpdateDismissedNotificationRequest(BaseModel):
+class UpdateUserNotificationsRequest(BaseModel):
     """
-    Request to update a dismissed notification timestamp for the current user.
+    Request to update notification acknowledgement state for the current user.
     """
 
-    key: str
-    value: str
+    name: str
+    date_acknowledged: str
 
 
 @auth_router.patch(
-    "/user/dismissed-notifications",
+    "/user/notifications",
     response_model=UserResponse,
     tags=["user"],
-    operation_id="updateDismissedNotification",
+    operation_id="updateUserNotifications",
 )
-async def update_dismissed_notification(
-    request: UpdateDismissedNotificationRequest,
+async def update_user_notifications(
+    request: UpdateUserNotificationsRequest,
     http_request: Request,
     db: AsyncDatabaseConnection = Depends(get_db),
 ) -> UserResponse:
     """
-    Updates a dismissed notification timestamp for the current user.
-
-    This endpoint stores a timestamp for a given notification key
-    (e.g. `most_recent_app_update`) in the user's
-    `dismissed_notifications` field.
-
-    Args:
-        request (UpdateDismissedNotificationRequest): The notification key and timestamp to store.
-        http_request (Request): The incoming HTTP request used to retrieve the session cookie.
-        db (AsyncDatabaseConnection): The database connection.
-
-    Returns:
-        UserResponse: The updated user object with modified dismissed notifications.
-
-    Raises:
-        HTTPException: 401 if the user is not authenticated.
+    Updates notification acknowledgement state for the current user.
     """
-
     session_token = http_request.cookies.get("refiner-session")
 
     if not session_token:
@@ -360,10 +360,10 @@ async def update_dismissed_notification(
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    updated_user = await update_user_dismissed_notification_db(
+    updated_user = await update_user_notifications_db(
         user_id=user.id,
-        key=request.key,
-        value=request.value,
+        name=request.name,
+        date_acknowledged=request.date_acknowledged,
         db=db,
     )
 
@@ -371,5 +371,5 @@ async def update_dismissed_notification(
         id=updated_user.id,
         username=updated_user.username,
         jurisdiction_id=updated_user.jurisdiction_id,
-        dismissed_notifications=updated_user.dismissed_notifications,
+        notifications=UserNotifications(**updated_user.notifications),
     )
