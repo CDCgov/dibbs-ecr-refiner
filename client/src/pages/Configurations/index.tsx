@@ -31,7 +31,6 @@ import {
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
-import { useGetReleases } from '../../api/releases/releases.ts';
 import { updateUserNotifications } from '../../api/app-notifications/app-notifications';
 
 enum ConfigurationStatus {
@@ -123,35 +122,40 @@ function AppUpdateBanner({
   user: UserResponse;
   setUser: Dispatch<SetStateAction<UserResponse | null>>;
 }) {
-  const { data: releaseFetchResult } = useGetReleases();
+  const navigate = useNavigate();
 
-  const latestRelease = releaseFetchResult?.data.releases?.[0];
-  const latestReleaseCreatedAt = latestRelease?.created_at;
+  const appUpdateNotification = user.app_update_notification;
+  const latestReleaseCreatedAt =
+    appUpdateNotification?.latest_release_created_at;
 
-  const dismissedMostRecentAppUpdate =
-    user.notifications?.most_recent_app_update?.date_acknowledged;
-
-  const showAppUpdateBanner =
-    !!latestReleaseCreatedAt &&
-    (!dismissedMostRecentAppUpdate ||
-      new Date(latestReleaseCreatedAt) >
-        new Date(dismissedMostRecentAppUpdate));
-
-  function dismissNotification() {
+  async function dismissNotification() {
     if (!latestReleaseCreatedAt) return;
 
-    void updateUserNotifications({
-      name: 'most_recent_app_update',
-      date_acknowledged: latestReleaseCreatedAt,
-    })
-      .then((resp: Awaited<ReturnType<typeof updateUserNotifications>>) => {
-        setUser(resp.data);
-      })
-      .catch((error: unknown) => {
-        console.error('Failed to update user notifications', error);
+    try {
+      const resp = await updateUserNotifications({
+        name: 'most_recent_app_update',
+        date_acknowledged: latestReleaseCreatedAt,
       });
+
+      setUser(resp.data);
+    } catch (error) {
+      console.error('Failed to update user notifications', error);
+    }
   }
-  if (!showAppUpdateBanner || !latestReleaseCreatedAt) {
+
+  async function handleViewUpdates(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+
+    await dismissNotification();
+
+    void navigate('/app-updates');
+  }
+
+  async function handleDismiss() {
+    await dismissNotification();
+  }
+
+  if (!appUpdateNotification?.should_show || !latestReleaseCreatedAt) {
     return null;
   }
 
@@ -165,17 +169,19 @@ function AppUpdateBanner({
               There are new updates to eCR Refiner.
             </span>
           </div>
+
           <Link
             to="/app-updates"
-            onClick={dismissNotification}
+            onClick={handleViewUpdates}
             className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
           >
             View updates
           </Link>
         </div>
+
         <Button
           type="button"
-          onClick={dismissNotification}
+          onClick={handleDismiss}
           aria-label="Dismiss notification"
           variant="unstyled"
           className="ml-4 flex h-[44px] w-[44px] items-center justify-center rounded hover:bg-blue-200 focus:outline-none"

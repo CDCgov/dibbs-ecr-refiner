@@ -1,11 +1,13 @@
 import secrets
 from logging import Logger
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from ...api.v1.releases import get_latest_release_created_at
 from ...db.jurisdictions.db import upsert_jurisdiction_db
 from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
@@ -226,6 +228,14 @@ class UserNotifications(BaseModel):
 
     most_recent_app_update: UserNotification | None = None
 
+class AppUpdateNotification(BaseModel):
+    """
+    Computed app update notification display state.
+    """
+
+    should_show: bool
+    latest_release_created_at: str | None = None
+
 
 class UserResponse(BaseModel):
     """
@@ -236,6 +246,7 @@ class UserResponse(BaseModel):
     username: str
     jurisdiction_id: str
     notifications: UserNotifications = UserNotifications()
+    app_update_notification: AppUpdateNotification
 
 
 @auth_router.get(
@@ -266,11 +277,46 @@ async def get_user(
     if not user:
         return None
 
+    return build_user_response(user)
+
+def build_user_response(user: DbUser) -> UserResponse:
+    """
+    Builds a UserResponse with computed notification display state.
+    """
+    notifications = UserNotifications(**user.notifications)
+
+    latest_release_created_at = get_latest_release_created_at()
+
+    acknowledged_app_update_at = (
+        notifications.most_recent_app_update.date_acknowledged
+        if notifications.most_recent_app_update
+        else None
+    )
+
+    should_show_app_update = (
+        latest_release_created_at is not None
+        and (
+            acknowledged_app_update_at is None
+            or latest_release_created_at
+            > datetime.fromisoformat(
+                acknowledged_app_update_at.replace("Z", "+00:00")
+            )
+        )
+    )
+
     return UserResponse(
         id=user.id,
         username=user.username,
         jurisdiction_id=user.jurisdiction_id,
-        notifications=UserNotifications(**user.notifications),
+        notifications=notifications,
+        app_update_notification=AppUpdateNotification(
+            should_show=should_show_app_update,
+            latest_release_created_at=(
+                latest_release_created_at.isoformat()
+                if latest_release_created_at
+                else None
+            ),
+        ),
     )
 
 

@@ -207,3 +207,14 @@ def _format_api_body_to_dict(content: str) -> list[ReleaseNotes]:
         result.append(notes_content)
 
     return result
+
+def get_latest_release_created_at() -> datetime | None:
+    """
+    Returns the created_at timestamp for the latest app release.
+    """
+    releases = _get_releases_data_from_github(ttl_hash=_get_ttl_hash())
+
+    if not releases:
+        return None
+
+    return releases[0].created_at

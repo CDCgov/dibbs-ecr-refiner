@@ -1,6 +1,7 @@
 
 export * from './addCustomCodeInput';
 export * from './addSectionInput';
+export * from './appUpdateNotification';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';

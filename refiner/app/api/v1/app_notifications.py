@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import update_user_notifications_db
 from ...db.users.model import DbUser
-from ..auth.handlers import UserNotifications, UserResponse
+from ..auth.handlers import UserNotifications, UserResponse, build_user_response
 from ..auth.middleware import get_logged_in_user
 
 router = APIRouter(prefix="/notifications")
@@ -40,9 +40,4 @@ async def update_user_notifications(
         db=db,
     )
 
-    return UserResponse(
-        id=updated_user.id,
-        username=updated_user.username,
-        jurisdiction_id=updated_user.jurisdiction_id,
-        notifications=UserNotifications(**updated_user.notifications),
-    )
+    return build_user_response(updated_user)
