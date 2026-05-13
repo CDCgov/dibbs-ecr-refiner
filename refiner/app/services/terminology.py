@@ -51,13 +51,22 @@ class SupportedCodeSystems(BaseModel):
         """
         Get a specific code system based on its name, or raise otherwise.
         """
-        sanitized_string = cls.sanitize_or_raise(name)
-        system = cls._registry.get(sanitized_string)
-        if not system:
-            raise ValueError(
-                f"Requested code system {name} not found. Allowed code system must be one of: {cls.allowed()}"
-            )
-        return system
+        string_to_search = name.strip().lower()
+        if string_to_search == "icd10":
+            # add the hyphen just in case they submit the non-hyphenated versions
+            string_to_search = "icd-10"
+
+        retrieved_system = cls.get(string_to_search)
+        if retrieved_system is None:
+            # try falling back to display name
+            retrieved_system = cls.get_by_display_name(string_to_search)
+
+            if retrieved_system is None:
+                raise ValueError(
+                    f"Requested code system {name} not found. Allowed code system must be one of: {cls.allowed()}"
+                )
+
+        return retrieved_system
 
     @classmethod
     def get_by_oid(cls, oid: str) -> DbCodeSystem | None:
@@ -71,22 +80,6 @@ class SupportedCodeSystems(BaseModel):
             return None
 
         return value[0]
-
-    @classmethod
-    def sanitize_or_raise(cls, raw_string: str) -> str:
-        """Function that sanitizes whether a raw string is within the list of acceptable system names. Raises otherwise."""
-        string_to_search = raw_string.strip().lower()
-        if string_to_search == "icd10":
-            # add the hyphen just in case they submit the non-hyphenated versions
-            string_to_search = "icd-10"
-
-        if cls.get(string_to_search) is None:
-            # try falling back to display name
-            if cls.get_by_display_name(string_to_search) is None:
-                raise ValueError(
-                    f"Requested code system {raw_string} not found. Allowed code system must be one of: {cls.allowed()}"
-                )
-        return string_to_search
 
     @classmethod
     def get_by_display_name(
