@@ -124,39 +124,28 @@ function AppUpdateBanner({
 }) {
   const navigate = useNavigate();
 
-  const appUpdateNotification = user.app_update_notification;
-  const latestReleaseCreatedAt =
-    appUpdateNotification?.latest_release_created_at;
+  if (!user.app_update_notification.should_show) {
+    return null;
+  }
 
   async function dismissNotification() {
-    if (!latestReleaseCreatedAt) return;
-
     try {
       const resp = await updateUserNotifications({
         name: 'most_recent_app_update',
-        date_acknowledged: latestReleaseCreatedAt,
+        date_acknowledged: new Date().toISOString(),
       });
-
       setUser(resp.data);
     } catch (error) {
       console.error('Failed to update user notifications', error);
     }
   }
-
   async function handleViewUpdates(e: React.MouseEvent<HTMLAnchorElement>) {
     e.preventDefault();
-
     await dismissNotification();
-
     void navigate('/app-updates');
   }
-
   async function handleDismiss() {
     await dismissNotification();
-  }
-
-  if (!appUpdateNotification?.should_show || !latestReleaseCreatedAt) {
-    return null;
   }
 
   return (
