@@ -5,5 +5,6 @@ import type { DiscoveredConfigurationVersion } from './discoveredConfigurationVe
  */
 export interface DiscoveredConfigurationGroup {
   name: string;
+  condition_id: string;
   versions: DiscoveredConfigurationVersion[];
 }

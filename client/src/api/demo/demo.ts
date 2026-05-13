@@ -137,7 +137,7 @@ export const uploadEcr = (
  ): Promise<AxiosResponse<IndependentTestUploadResponse>> => {
 
     const formData = new FormData();
-formData.append(`body`, JSON.stringify(bodyUploadEcr.body));
+formData.append(`body`, bodyUploadEcr.body);
 if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== null) {
  formData.append(`uploaded_file`, bodyUploadEcr.uploaded_file);
  }

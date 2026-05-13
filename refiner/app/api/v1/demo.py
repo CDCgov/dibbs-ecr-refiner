@@ -5,7 +5,7 @@ from logging import Logger
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
+from app.db.conditions.db import get_conditions_by_ids, get_latest_tes_condition_ids_db
 from app.db.configurations.db import get_configurations_by_ids_db
 from app.db.demo.model import Condition, FileInfoResponse, IndependentTestUploadResponse
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -193,6 +194,7 @@ class IndependentTestInput(BaseModel):
     """
 
     configuration_ids: list[UUID]
+    unconfigured_condition_ids: list[UUID]
 
 
 @router.post(
@@ -202,7 +204,7 @@ class IndependentTestInput(BaseModel):
     operation_id="uploadEcr",
 )
 async def demo_upload(
-    body: IndependentTestInput,
+    body: str = Form(...),
     uploaded_file: UploadFile | None = File(None),
     demo_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
@@ -234,7 +236,9 @@ async def demo_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
-    if len(body.configuration_ids) == 0:
+    parsed_body = IndependentTestInput.model_validate_json(body)
+
+    if len(parsed_body.configuration_ids) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Configuration IDs must be provided.",
@@ -253,7 +257,7 @@ async def demo_upload(
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
     configurations = await get_configurations_by_ids_db(
-        ids=body.configuration_ids, jurisdiction_id=user.jurisdiction_id, db=db
+        ids=parsed_body.configuration_ids, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if len(configurations) == 0:
@@ -262,12 +266,21 @@ async def demo_upload(
             detail="Configurations with provided IDs could not be found.",
         )
 
+    # Fetch conditions for IDs without a config
+    latest_condition_ids = await get_latest_tes_condition_ids_db(
+        ids=parsed_body.unconfigured_condition_ids, db=db
+    )
+    conditions_without_config = await get_conditions_by_ids(
+        ids=latest_condition_ids, db=db
+    )
+
     # Run the test
     try:
         test_results = await independent_testing(
             xml_files=original_xml_files,
             jurisdiction_id=user.jurisdiction_id,
             configurations=configurations,
+            conditions_without_config=conditions_without_config,
             logger=logger,
             db=db,
         )
@@ -320,8 +333,6 @@ async def demo_upload(
         message="Successfully processed eICR with condition-specific refinement",
         refined_conditions_found=len(conditions),
         refined_conditions=conditions,
-        conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
-        conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
         unrefined_eicr=format_xml_document_for_display_or_raise(
             original_xml_files.eicr, preserve_comments=True
         )

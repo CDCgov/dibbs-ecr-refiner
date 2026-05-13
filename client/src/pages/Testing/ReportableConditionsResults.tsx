@@ -11,13 +11,16 @@ import { useState } from 'react';
 interface ReportableConditionsResultsProps {
   configurationGroups: DiscoveredConfigurationGroup[];
   startOver: () => void;
-  goToSuccessScreen: () => void;
+  runRefinement: (
+    configIds: string[],
+    conditionsWithoutConfigIds: string[]
+  ) => () => Promise<void>;
 }
 
 export function ReportableConditionsResults({
   configurationGroups,
   startOver,
-  goToSuccessScreen,
+  runRefinement,
 }: ReportableConditionsResultsProps) {
   const matchedGroupsWithConfig = configurationGroups.filter(
     (cg) => cg.versions.length > 0
@@ -148,7 +151,15 @@ export function ReportableConditionsResults({
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
           <Button
             disabled={checkedSelections.length === 0}
-            onClick={goToSuccessScreen}
+            onClick={async () => {
+              const configIds = checkedSelections.map(
+                (config) => config.selectedId
+              );
+              const conditionsWithoutConfigIds = matchedGroupsWithoutConfig.map(
+                (c) => c.condition_id
+              );
+              await runRefinement(configIds, conditionsWithoutConfigIds)();
+            }}
           >
             Refine eCR
           </Button>
@@ -236,39 +247,3 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
     </div>
   );
 }
-
-// function useZipUpload() {
-//   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-//   const formatError = useApiErrorFormatter();
-//   const {
-//     mutateAsync,
-//     data,
-//     isError,
-//     isPending,
-//     reset: resetState,
-//   } = useUploadEcr({
-//     mutation: {
-//       onError: (error) => {
-//         setErrorMessage(formatError(error));
-//       },
-//     },
-//   });
-
-//   async function uploadZip(selectedFile: File | null) {
-//     setErrorMessage(null);
-
-//     const resp = await mutateAsync({ data: { uploaded_file: selectedFile } });
-
-//     return resp;
-//   }
-
-//   return {
-//     uploadZip,
-//     data,
-//     errorMessage,
-//     isError,
-//     isPending,
-//     resetState,
-//   };
-// }

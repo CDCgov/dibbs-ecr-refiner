@@ -10,8 +10,8 @@ from app.services.configurations import convert_config_to_storage_payload
 
 from ..core.models.types import XMLFiles
 from ..db.conditions.db import (
+    get_condition_by_id_db,
     get_conditions_by_child_rsg_snomed_codes_db,
-    get_included_conditions_db,
 )
 from ..db.conditions.model import DbCondition
 from ..db.configurations.db import (
@@ -84,27 +84,7 @@ class IndependentTestingResult:
 
     original_eicr_doc_id: str
     refined_documents: list[RefinedDocument]
-    no_matching_configuration_for_conditions: list[NoMatchEntry]
-    no_active_configuration_for_conditions: list[NoMatchEntry]
     shadow_rr: str | None
-
-    def get_condition_names_with_no_matching_config(self) -> list[str]:
-        """
-        Returns a list of condition names that have no matching configuration.
-        """
-        return [
-            missing_condition["display_name"]
-            for missing_condition in self.no_matching_configuration_for_conditions
-        ]
-
-    def get_condition_names_with_no_active_config(self) -> list[str]:
-        """
-        Returns a list of condition names that have no active configuration.
-        """
-        return [
-            missing_condition["display_name"]
-            for missing_condition in self.no_active_configuration_for_conditions
-        ]
 
 
 @dataclass
@@ -157,6 +137,7 @@ class DiscoveredConfigurationGroup:
     """
 
     name: str
+    condition_id: UUID
     versions: list[DiscoveredConfigurationVersion]
 
 
@@ -233,6 +214,7 @@ async def get_matching_configurations(
         groups.append(
             DiscoveredConfigurationGroup(
                 name=representative_condition.display_name,
+                condition_id=representative_condition.id,
                 versions=[
                     DiscoveredConfigurationVersion(
                         id=c.id, version=c.version, status=c.status
@@ -267,176 +249,45 @@ def _group_conditions_by_url(
 async def independent_testing(
     xml_files: XMLFiles,
     jurisdiction_id: str,
+    configurations: list[DbConfiguration],
+    conditions_without_config: list[DbCondition],
     logger: Logger,
     db: AsyncDatabaseConnection,
 ) -> IndependentTestingResult:
     """
     Orchestrates the full independent testing workflow for eICR refinement.
 
-    This function performs a version-aware, stepwise pipeline:
-    1. Extracts all reportable condition (RC) SNOMED codes from the RR file for the specified jurisdiction.
-    2. For each RC code, finds all matching condition versions from the database.
-    3. Fetches all configurations for the jurisdiction to identify which specific condition versions are configured.
-    4. Reconciles the found conditions with the active configurations. For each conceptual condition (e.g., "COVID-19"),
-       it checks if any of its detected versions match a configured version.
-    5. For each valid match, it builds a processing plan (ProcessedConfiguration) and refines the eICR.
-    6. Returns a result containing the refined documents for matching conditions and a list of conditions that were
-       found in the file but had no corresponding configuration.
-
     Args:
-        db: AsyncDatabaseConnection
         xml_files: XMLFiles object containing eICR and RR XML strings
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
+        configurations: The configurations to use for testing
+        conditions_without_config: The conditions that do not have a matching config
         logger: A logger for recording operational details.
+        db: AsyncDatabaseConnection
 
     Returns:
         An IndependentTestingResult dictionary containing refined documents and a list of non-matches.
     """
-
-    # STEP 1:
-    # * use the shared pipeline to discover all reportable conditions, then
-    # filter to the logged-in user's jurisdiction.
-    # * for each code, get a list of all possible condition versions (because
-    # we can't know which version is configured a priori)
-    rc_codes_for_jurisdiction = _get_reportable_codes_for_jurisdiction(
-        xml_files, jurisdiction_id
-    )
-    rc_to_conditions_map = await _map_rc_codes_to_conditions(
-        db=db, rc_codes=rc_codes_for_jurisdiction
-    )
-
-    # if no reportable conditions are found for this jurisdiction, exit early.
-    if not rc_codes_for_jurisdiction:
-        return IndependentTestingResult(
-            original_eicr_doc_id="",
-            refined_documents=[],
-            no_matching_configuration_for_conditions=[],
-            no_active_configuration_for_conditions=[],
-            shadow_rr=None,
-        )
-
-    # STEP 2:
-    # get all configurations for the jurisdiction to create a lookup set of exactly
-    # which condition versions are configured
-    all_jurisdiction_configs = await get_configurations_db(
-        db=db, jurisdiction_id=jurisdiction_id
-    )
-    # this set contains the specific uuids of condition rows linked as primary conditions
-    configured_primary_condition_ids = {
-        config.condition_id for config in all_jurisdiction_configs
-    }
-
-    # STEP 3:
-    # group all found condition versions by their conceptual group (canonical_url)
-    # to treat all versions of a condition (e.g., all "Influenza" versions) as a single entity
-    conditions_grouped_by_url: dict[str, list[DbCondition]] = defaultdict(list)
-    seen_ids_by_url: dict[str, set[UUID]] = defaultdict(set)
-
-    for conditions_list in rc_to_conditions_map.values():
-        for condition in conditions_list:
-            url = condition.canonical_url
-            if condition.id not in seen_ids_by_url[url]:
-                seen_ids_by_url[url].add(condition.id)
-                conditions_grouped_by_url[url].append(condition)
-
-    # STEP 4:
-    # build a trace for each conceptual condition, determining if it is configured
-    all_traces: list[IndependentTestingTrace] = []
-    for canonical_url, all_versions in conditions_grouped_by_url.items():
-        # check if any of the detected versions for this condition are configured
-        configured_version = next(
-            (
-                cond
-                for cond in all_versions
-                if cond.id in configured_primary_condition_ids
-            ),
-            None,
-        )
-
-        # use the configured version if one was found; otherwise, pick the latest version for display
-        representative_condition = configured_version or max(
-            all_versions, key=lambda c: parse(c.version)
-        )
-
-        # find the all the relevant configs and check to see if any one is active
-        condition_configs = sorted(
-            [
-                c
-                for c in all_jurisdiction_configs
-                if c.condition_id == representative_condition.id
-            ],
-            key=lambda c: c.version,
-        )
-
-        matching_config = next(
-            (c for c in condition_configs if c.status == "active"),
-            condition_configs[-1] if condition_configs else None,
-        )
-
-        # collect all snomed codes that led to detecting this conceptual condition
-        snomed_codes_for_this_group = [
-            code
-            for code, cond_list in rc_to_conditions_map.items()
-            if any(c.canonical_url == canonical_url for c in cond_list)
-        ]
-        trace = IndependentTestingTrace(
-            matching_condition=representative_condition,
-            matching_configuration=matching_config,
-            rc_snomed_codes=list(set(snomed_codes_for_this_group)),
-        )
-        all_traces.append(trace)
-
-    no_matching_configurations: list[NoMatchEntry] = []
-    no_active_configurations: list[NoMatchEntry] = []
 
     # STEP 5:
     # process each trace; if a configuration exists, refine the eICR
     # if it exists but isn't active, add it to the list of non-active configurations
     # otherwise, add it to the list of non-matches
     first_original_eicr_doc_id = None
-    for trace in all_traces:
-        if not trace.matching_configuration:
-            no_matching_configurations.append(
-                {
-                    "display_name": trace.matching_condition.display_name,
-                    "rc_snomed_codes": trace.rc_snomed_codes,
-                }
-            )
-            continue
-
-        if trace.matching_configuration.status != "active":
-            no_active_configurations.append(
-                {
-                    "display_name": trace.matching_condition.display_name,
-                    "rc_snomed_codes": trace.rc_snomed_codes,
-                }
-            )
-            continue
-
-        configuration = trace.matching_configuration
-        trace.number_of_included_conditions = len(configuration.included_conditions)
-
-        if trace.number_of_included_conditions > 1:
-            all_conditions_for_configuration = await get_included_conditions_db(
-                included_conditions=configuration.included_conditions, db=db
-            )
-        else:
-            all_conditions_for_configuration = [trace.matching_condition]
-
-        trace.all_conditions_for_configuration = all_conditions_for_configuration
-
+    refined_docs: list[RefinedDocument] = []
+    for configuration in configurations:
         processed_configuration = await _convert_to_processed_config(
             configuration=configuration, logger=logger, db=db
         )
 
-        trace.refine_object = processed_configuration
-
+        condition = await get_condition_by_id_db(id=configuration.condition_id, db=db)
         # Use the shared pipeline to execute refinement
-        rr_code_used = trace.rc_snomed_codes[0]
+        # rr_code_used = trace.rc_snomed_codes[0]
+        rr_code_used = condition.child_rsg_snomed_codes[0]
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
             rsg_code=rr_code_used,
-            canonical_url=trace.matching_condition.canonical_url,
+            canonical_url=configuration.condition_canonical_url,  # TODO: This should be the computed name of the condition
             configuration_version=configuration.version,
         )
 
@@ -455,48 +306,41 @@ async def independent_testing(
         # has a configuration. picking the first entry in an index isn't correct but
         # we should wait to see how the testing service evolves with the routes
 
-        trace.refined_document = RefinedDocument(
-            reportable_condition=ReportableCondition(
-                code=rr_code_used,
-                display_name=trace.matching_condition.display_name,
-            ),
-            refined_eicr=result.refined_eicr,
-            refined_rr=result.refined_rr,
+        refined_docs.append(
+            RefinedDocument(
+                reportable_condition=ReportableCondition(
+                    code=rr_code_used, display_name=configuration.name
+                ),
+                refined_eicr=result.refined_eicr,
+                refined_rr=result.refined_rr,
+            )
         )
 
-        logger.info(
-            "Independent testing: Processed one condition",
-            extra={
-                "triggered_by_condition": trace.matching_condition.display_name,
-                "triggering_codes": trace.rc_snomed_codes,
-                "configuration_found": trace.matching_configuration.name,
-                "total_conditions_used": trace.number_of_included_conditions,
-                "configuration_settings": asdict(configuration),
-                "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
-                "outcome": "Refinement successful",
-            },
-        )
+        # logger.info(
+        #     "Independent testing: Processed one condition",
+        #     extra={
+        #         "triggered_by_condition": trace.matching_condition.display_name,
+        #         "triggering_codes": trace.rc_snomed_codes,
+        #         "configuration_found": trace.matching_configuration.name,
+        #         "total_conditions_used": trace.number_of_included_conditions,
+        #         "configuration_settings": asdict(configuration),
+        #         "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
+        #         "outcome": "Refinement successful",
+        #     },
+        # )
 
-    # STEP 6:
-    # build the final result object from the processed traces
-
-    refined_documents = [
-        trace.refined_document
-        for trace in all_traces
-        if trace.refined_document is not None
-    ]
+        if not first_original_eicr_doc_id:
+            first_original_eicr_doc_id = str(UUID())
+            logger.warning(
+                "No eICR document was detected. Using a randomly generated UUID as a fallback value.",
+                extra={"augmented_eicr_result": result.augmented_eicr_result},
+            )
 
     return IndependentTestingResult(
-        original_eicr_doc_id=first_original_eicr_doc_id
-        if first_original_eicr_doc_id
-        else "",
-        refined_documents=refined_documents,
-        no_matching_configuration_for_conditions=no_matching_configurations,
-        no_active_configuration_for_conditions=no_active_configurations,
+        original_eicr_doc_id=first_original_eicr_doc_id,
+        refined_documents=refined_docs,
         shadow_rr=_generate_shadow_rr(
-            no_matching_configuration_for_conditions=no_matching_configurations,
-            no_active_configuration_for_conditions=no_active_configurations,
-            xml_files=xml_files,
+            xml_files=xml_files, conditions_without_config=conditions_without_config
         ),
     )
 
@@ -537,30 +381,21 @@ async def _convert_to_processed_config(
 
 
 def _generate_shadow_rr(
-    no_matching_configuration_for_conditions: list[NoMatchEntry],
-    no_active_configuration_for_conditions: list[NoMatchEntry],
-    xml_files: XMLFiles,
+    xml_files: XMLFiles, conditions_without_config: list[DbCondition]
 ) -> str | None:
     """
     Generates a shadow RR based on conditions with no active configuration.
 
     Args:
-        no_matching_configuration_for_conditions (list[NoMatchEntry]): list of conditions without a configuration
-        no_active_configuration_for_conditions (list[NoMatchEntry]): list of conditions without an active configuration
         xml_files (XMLFiles): the original XML eCR files
+        conditions_without_config (list[DbCondition]): List of condition objects that don't have an associated config
 
     Returns:
         str | None: RR content, or None if a shadow RR isn't generated
     """
-    no_match_found_conditions = (
-        no_matching_configuration_for_conditions
-        + no_active_configuration_for_conditions
-    )
-    if not no_match_found_conditions:
-        return None
 
     no_match_codes = {
-        code for entry in no_match_found_conditions for code in entry["rc_snomed_codes"]
+        code for c in conditions_without_config for code in c.child_rsg_snomed_codes
     }
 
     return refine_rr_for_unconfigured_conditions(

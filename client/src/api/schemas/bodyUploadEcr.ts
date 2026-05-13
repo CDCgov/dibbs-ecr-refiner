@@ -1,6 +1,5 @@
-import type { IndependentTestInput } from './independentTestInput';
 
 export interface BodyUploadEcr {
-  body: IndependentTestInput;
+  body: string;
   uploaded_file?: Blob | null;
 }
