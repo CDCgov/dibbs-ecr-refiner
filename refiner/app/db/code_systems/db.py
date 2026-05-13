@@ -43,7 +43,7 @@ async def get_all_code_systems_db(
             await cur.execute(query)
             rows = await cur.fetchall()
 
-            systems_data = defaultdict()
+            systems_data: dict[str, DbCodeSystem] = defaultdict()
 
             for system in rows:
                 systems_data[system.name] = system
