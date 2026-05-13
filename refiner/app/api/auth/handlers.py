@@ -11,7 +11,6 @@ from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
 from ...db.users.db import (
     IdpUserResponse,
-    update_user_notifications_db,
     upsert_user_db,
 )
 from ...services.logger import get_logger
