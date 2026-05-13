@@ -1,4 +1,5 @@
 import io
+import time
 from dataclasses import dataclass
 from io import BytesIO
 from zipfile import BadZipFile, ZipFile, ZipInfo
@@ -164,6 +165,25 @@ def create_refined_ecr_zip_in_memory(
         - If content is str, it is encoded as UTF-8 before writing.
         - Skips any empty files; robust against partial failures (e.g., missing HTML).
     """
+    # Compute entry mtimes ourselves from current UTC time. We deliberately
+    # bypass CPython's default ZipInfo construction path
+    # (ZipInfo._for_archive), because it honors `SOURCE_DATE_EPOCH` via
+    # time.localtime() – which produces invalid pre-1980 DOS dates in any
+    # timezone west of UTC. That path crashes with: `struct.error: 'H' format
+    # requires 0 <= number <= 65535`.
+    #
+    # Using gmtime() makes the timestamp timezone-agnostic and ensures DOS-date
+    # math (year - 1980) is always non-negative for any sane "now".
+    now_utc = time.gmtime()
+    entry_date_time = (
+        now_utc.tm_year,
+        now_utc.tm_mon,
+        now_utc.tm_mday,
+        now_utc.tm_hour,
+        now_utc.tm_min,
+        now_utc.tm_sec,
+    )
+
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, "w") as zf:
@@ -174,7 +194,9 @@ def create_refined_ecr_zip_in_memory(
             if not content:
                 continue
             data = content if isinstance(content, bytes) else content.encode("utf-8")
-            zf.writestr(filename, data)
+            zinfo = ZipInfo(filename=filename, date_time=entry_date_time)
+            zinfo.compress_type = zf.compression
+            zf.writestr(zinfo, data)
 
     zip_buffer.seek(0)
     return zip_package.get_name(), zip_buffer
