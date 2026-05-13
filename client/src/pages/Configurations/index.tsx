@@ -182,7 +182,7 @@ function AppUpdateBanner({
           onClick={handleDismiss}
           aria-label="Dismiss notification"
           variant="unstyled"
-          className="ml-4 flex h-[44px] w-[44px] items-center justify-center rounded hover:bg-blue-200 focus:outline-none"
+          className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
         >
           <Icon.Close size={3} aria-hidden className="text-blue-500" />
         </Button>
