@@ -176,7 +176,7 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: !!(conditionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCondition>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: conditionId !== null && conditionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCondition>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetConditionQueryResult = NonNullable<Awaited<ReturnType<typeof getCondition>>>

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from .codes.code_systems import router as code_systems_router
 from .conditions import router as conditions_router
 from .configurations.router import router as configurations_router
 from .demo import router as demo_router
@@ -14,3 +15,4 @@ router.include_router(demo_router)
 router.include_router(events_router)
 router.include_router(info_router)
 router.include_router(releases_router)
+router.include_router(code_systems_router)

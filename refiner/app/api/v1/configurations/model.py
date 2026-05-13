@@ -13,7 +13,7 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.terminology import CodeSystem
+from app.services.terminology import SupportedCodeSystems
 
 
 @dataclass(frozen=True)
@@ -130,7 +130,7 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: CodeSystem
+    system: str
     name: str
 
     @field_validator("system", mode="before")
@@ -143,7 +143,7 @@ class AddCustomCodeInput(BaseModel):
         if not isinstance(v, str):
             raise TypeError('"system" must be a string')
 
-        lookup = {item.value.lower(): item for item in CodeSystem}
+        lookup = {item.lower(): item for item in SupportedCodeSystems.allowed()}
         norm_input = v.lower()
         if norm_input in lookup:
             return lookup[norm_input]
@@ -222,7 +222,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: CodeSystem
+    system: str
     name: str
     row: int | None = None
 

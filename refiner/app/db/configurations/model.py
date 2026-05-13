@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.services.terminology import CodeSystem
-
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
@@ -51,7 +49,7 @@ class DbConfigurationCustomCode:
     """
 
     code: str
-    system: CodeSystem
+    system: str
     name: str
 
 
