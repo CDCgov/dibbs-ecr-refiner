@@ -6,7 +6,7 @@ async function waitForAcknowledgementRequest(page: Page) {
   return page.waitForRequest(
     (request) =>
       request.method() === 'PATCH' &&
-      request.url().includes('/api/user/notifications')
+      request.url().includes('/api/v1/notifications')
   );
 }
 
@@ -48,7 +48,7 @@ test.describe('App update notifications', () => {
       }
     );
 
-    await page.route(/\/api\/user\/notifications\/?$/, async (route) => {
+    await page.route(/\/api\/v1\/notifications\/?$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

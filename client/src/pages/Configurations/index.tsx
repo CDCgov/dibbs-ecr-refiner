@@ -32,7 +32,7 @@ import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
 import { useGetReleases } from '../../api/releases/releases.ts';
-import { updateUserNotifications } from '../../api/user/user.ts';
+import { updateUserNotifications } from '../../api/app-notifications/app-notifications';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -173,14 +173,15 @@ function AppUpdateBanner({
             View updates
           </Link>
         </div>
-        <button
+        <Button
           type="button"
           onClick={dismissNotification}
           aria-label="Dismiss notification"
+          variant="unstyled"
           className="ml-4 flex h-[44px] w-[44px] items-center justify-center rounded hover:bg-blue-200 focus:outline-none"
         >
           <Icon.Close size={3} aria-hidden className="text-blue-500" />
-        </button>
+        </Button>
       </div>
     </div>
   );
