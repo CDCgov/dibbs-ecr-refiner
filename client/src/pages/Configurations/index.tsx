@@ -124,7 +124,7 @@ function AppUpdateBanner({
 }) {
   const navigate = useNavigate();
 
-  if (!user.app_update_notification.should_show) {
+  if (!user.notifications?.most_recent_app_update?.should_show) {
     return null;
   }
 

@@ -216,9 +216,11 @@ async def auth_callback(
 
 class UserNotification(BaseModel):
     """
-    A user's state for a single notification.
+    Information for a single notification.
     """
 
+    # TODO: go back and align these with the database store
+    should_show: bool = False
     date_acknowledged: str | None = None
 
 
@@ -230,14 +232,6 @@ class UserNotifications(BaseModel):
     most_recent_app_update: UserNotification | None = None
 
 
-class AppUpdateNotification(BaseModel):
-    """
-    Computed app update notification display state.
-    """
-
-    should_show: bool
-
-
 class UserResponse(BaseModel):
     """
     User information to send to the client.
@@ -247,7 +241,6 @@ class UserResponse(BaseModel):
     username: str
     jurisdiction_id: str
     notifications: UserNotifications = UserNotifications()
-    app_update_notification: AppUpdateNotification
 
 
 @auth_router.get(
@@ -310,9 +303,11 @@ def build_user_response(user: DbUser) -> UserResponse:
         id=user.id,
         username=user.username,
         jurisdiction_id=user.jurisdiction_id,
-        notifications=notifications,
-        app_update_notification=AppUpdateNotification(
-            should_show=should_show_app_update,
+        notifications=UserNotifications(
+            most_recent_app_update=UserNotification(
+                date_acknowledged=update_acknowledged.isoformat(),
+                should_show=should_show_app_update,
+            )
         ),
     )
 
