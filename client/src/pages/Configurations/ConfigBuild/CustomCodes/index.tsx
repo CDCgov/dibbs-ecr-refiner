@@ -1,6 +1,5 @@
 import { CodeSystem } from '../../../../api/schemas/codeSystem';
 import { Search } from '@components/Search';
-import { Label, Select } from '@trussworks/react-uswds';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
@@ -9,6 +8,7 @@ import { highlightMatches } from '../../../../utils';
 import { TesLink } from '../../TesLink';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
+import { CompletenessStatusBadge } from './CompletenessStatusBadge';
 import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
@@ -18,6 +18,9 @@ import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
 import { CustomCodeModal } from './CustomCodeModal';
+import { Select, SelectContainer } from '@components/Select';
+import { Label } from '@components/Label';
+import { Field } from '@components/Field';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -241,7 +244,13 @@ export function ConditionCodeTable({
 
   return (
     <div className="min-h-full min-w-full">
-      <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
+      <div className="flex flex-col gap-1">
+        <CompletenessStatusBadge
+          completenessStatus={response.data.completeness_status}
+        />
+        <h3 className="text-xl font-bold">{defaultCondition} code set</h3>
+      </div>
+
       <div className="border-bottom-[1px] mb-4 flex min-w-full flex-col items-start gap-6 sm:flex-row sm:items-end">
         <Search
           onChange={(e) => debouncedSearchUpdate(e.target.value)}
@@ -249,24 +258,24 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <div data-testid="code-system-select-container">
-          <Label htmlFor="code-system-select">Code system</Label>
-          <Select
-            id="code-system-select"
-            name="code-system-select"
-            value={selectedCodeSystem}
-            onChange={handleCodeSystemSelect}
-          >
-            <option key="all-code-systems" value="all">
-              All code systems
-            </option>
-            {Object.keys(CodeSystem).map((system) => (
-              <option key={system} value={system}>
-                {system}
+        <SelectContainer className="max-w-3xs!">
+          <Field>
+            <Label>Code system</Label>
+            <Select
+              value={selectedCodeSystem}
+              onChange={handleCodeSystemSelect}
+            >
+              <option key="all-code-systems" value="all">
+                All code systems
               </option>
-            ))}
-          </Select>
-        </div>
+              {Object.keys(CodeSystem).map((system) => (
+                <option key={system} value={system}>
+                  {system}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </SelectContainer>
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
@@ -293,7 +302,7 @@ export function ConditionCodeTable({
               </tr>
             </thead>
             <tbody>
-              {visibleCodes.map((code) => {
+              {visibleCodes.map((code, i) => {
                 const matchingResult = results.find(
                   (r) =>
                     r.item.code === code.code &&
@@ -302,7 +311,7 @@ export function ConditionCodeTable({
 
                 return (
                   <ConditionCodeRow
-                    key={`${code.system}-${code.code}`}
+                    key={`${code.system}-${code.code}-${i}`} // TODO: swap this to an ID when possible
                     codeSystem={code.system}
                     code={code.code}
                     text={code.description}

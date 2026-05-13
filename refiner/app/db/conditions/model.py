@@ -5,6 +5,22 @@ from uuid import UUID
 
 
 @dataclass
+class DbConditionsContextGrouper:
+    """
+    Model for a condition context grouper row in the database.
+    """
+
+    id: UUID
+    condition_id: UUID
+    name: str
+    category: str
+    canonical_url: str
+    code_count: int
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass
 class DbConditionCoding:
     """
     Model for code/display pairs from conditions table JSONB columns.

@@ -1,5 +1,5 @@
 # Build client
-FROM node:24-alpine3.23 AS client-builder
+FROM node:26-alpine3.23 AS client-builder
 
 WORKDIR /src
 

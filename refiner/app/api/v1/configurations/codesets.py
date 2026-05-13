@@ -6,7 +6,6 @@ from app.api.auth.middleware import get_logged_in_user
 from app.api.v1.configurations.model import (
     AssociateCodesetInput,
     AssociateCodesetResponse,
-    ConditionEntry,
 )
 from app.db.conditions.db import get_condition_by_id_db
 from app.db.configurations.db import (
@@ -65,6 +64,7 @@ async def associate_condition_codeset_with_configuration(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Configuration not found."
         )
+
     await ConfigurationLock.raise_if_locked_by_other(
         configuration_id,
         user.id,
@@ -86,6 +86,21 @@ async def associate_condition_codeset_with_configuration(
             status_code=status.HTTP_404_NOT_FOUND, detail="Condition not found."
         )
 
+    primary_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+
+    if not primary_condition:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not get configuration's primary condition.",
+        )
+
+    # Associated condition's TES version must match the config's primary condition TES version
+    if primary_condition.version != condition.version:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid association for condition with ID: {condition.id}. TES version of condition ({condition.version}) does not match version used by configuration ({primary_condition.version}).",
+        )
+
     updated_config = await associate_condition_codeset_with_configuration_db(
         config=config, condition=condition, user_id=user.id, db=db
     )
@@ -98,9 +113,7 @@ async def associate_condition_codeset_with_configuration(
 
     return AssociateCodesetResponse(
         id=updated_config.id,
-        included_conditions=[
-            ConditionEntry(c.id) for c in updated_config.included_conditions
-        ],
+        included_conditions=updated_config.included_conditions,
         condition_name=condition.display_name,
     )
 
@@ -187,8 +200,6 @@ async def remove_condition_codeset_from_configuration(
 
     return AssociateCodesetResponse(
         id=updated_config.id,
-        included_conditions=[
-            ConditionEntry(c.id) for c in updated_config.included_conditions
-        ],
+        included_conditions=updated_config.included_conditions,
         condition_name=condition.display_name,
     )

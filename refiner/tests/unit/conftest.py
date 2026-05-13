@@ -33,7 +33,7 @@ from lxml.etree import _Element
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
 from app.db.conditions.model import DbCondition, DbConditionCoding
-from app.db.configurations.model import DbConfiguration, DbConfigurationCondition
+from app.db.configurations.model import DbConfiguration
 from app.db.pool import get_db
 from app.db.users.model import DbUser
 from app.main import create_fastapi_app
@@ -133,7 +133,7 @@ def mock_configuration(mock_user):
         name="test config",
         jurisdiction_id="SDDH",
         condition_id=MOCK_CONDITION_ID,
-        included_conditions=[DbConfigurationCondition(id=MOCK_CONDITION_ID)],
+        included_conditions=[MOCK_CONDITION_ID],
         custom_codes=[],
         section_processing=[],
         version=1,

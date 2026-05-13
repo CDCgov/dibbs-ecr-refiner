@@ -2,6 +2,30 @@ from typing import Final
 
 from ..model import EntryMatchRule
 from .constants import ICD10_OID, LOINC_OID, SNOMED_OID
+from .template_oids import (
+    ENCOUNTER_DIAGNOSIS_V3,
+    IMMUNIZATION_ACTIVITY_V3,
+    INDICATION_V2,
+    MEDICATION_ACTIVITY_V2,
+    PLANNED_ACT_V2,
+    PLANNED_IMMUNIZATION_ACTIVITY,
+    PLANNED_MEDICATION_ACTIVITY_V2,
+    PLANNED_OBSERVATION_V2,
+    PLANNED_PROCEDURE_V2,
+    PREGNANCY_OBSERVATION,
+    PREGNANCY_OBSERVATION_SUPPLEMENTAL_PREGNANCY,
+    PROBLEM_OBSERVATION_V3,
+    PROCEDURE_ACTIVITY_ACT_V2,
+    PROCEDURE_ACTIVITY_OBSERVATION_V2,
+    PROCEDURE_ACTIVITY_PROCEDURE_V2,
+    RESULT_OBSERVATION_V3,
+    TRIGGER_CODE_PLANNED_ACT,
+    TRIGGER_CODE_PLANNED_PROCEDURE,
+    TRIGGER_CODE_PROCEDURE_ACTIVITY_ACT,
+    TRIGGER_CODE_PROCEDURE_ACTIVITY_OBSERVATION,
+    TRIGGER_CODE_PROCEDURE_ACTIVITY_PROCEDURE,
+    VITAL_SIGN_OBSERVATION_V2,
+)
 
 # NOTE:
 # RULE TIER CONVENTION
@@ -53,13 +77,13 @@ _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
@@ -75,13 +99,13 @@ _ADMISSION_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=ICD10_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=SNOMED_OID,
@@ -127,13 +151,13 @@ _DISCHARGE_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
@@ -145,13 +169,13 @@ _DISCHARGE_DIAGNOSIS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=ICD10_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=SNOMED_OID,
@@ -177,19 +201,19 @@ _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
         prune_container_xpath=(
             "hl7:encounter/hl7:entryRelationship"
-            "[hl7:act/hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.80']]"
+            f"[hl7:act/hl7:templateId[@root='{ENCOUNTER_DIAGNOSIS_V3}']]"
         ),
         tier=1,
     ),
@@ -197,19 +221,19 @@ _ENCOUNTERS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=ICD10_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=SNOMED_OID,
         prune_container_xpath=(
             "hl7:encounter/hl7:entryRelationship"
-            "[hl7:act/hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.80']]"
+            f"[hl7:act/hl7:templateId[@root='{ENCOUNTER_DIAGNOSIS_V3}']]"
         ),
         tier=3,
     ),
@@ -304,13 +328,13 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
@@ -321,13 +345,13 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=ICD10_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=SNOMED_OID,
@@ -341,41 +365,87 @@ _PAST_MEDICAL_HISTORY_MATCH_RULES: Final[list[EntryMatchRule]] = [
 # PLAN OF TREATMENT (18776-5)
 # =============================================================================
 # Heterogeneous entry types — multiple rules with structural precedence.
-# Each rule's xpath is scoped to a specific C-CDA templateId so that
-# structural precedence correctly separates entry types (observation,
-# medication, immunization, procedure) that otherwise share element names.
+# Each rule's xpath is scoped to the templateIds appropriate for the
+# Plan of Treatment section so that structural precedence correctly
+# separates entry types (observation, medication, immunization, act,
+# procedure) that otherwise share element names.
+#
+# Critical: Plan of Treatment carries the PLANNED variants of medication
+# and immunization templates, not the EVN-mood Medication Activity (V2)
+# or Immunization Activity (V3). Per C-CDA R2.1, Planned Medication
+# Activity (V2) (22.4.42) and Planned Immunization Activity (22.4.120)
+# are SEPARATE templates from their event-mood counterparts (22.4.16 and
+# 22.4.52) — they do NOT inherit from one another. The IG explicitly
+# recommends the Planned variants for non-EVN moods in Plan of Treatment.
+# The matching rules below honour this distinction by tier:
+#   - Planned-variant rules are TIER 1 (IG-recommended).
+#   - Event-mood-variant rules are TIER 2 (IG-allowed but discouraged).
+# Two separate rules per entry type keeps tier semantics honest: the
+# matcher treats the discouraged form as a SHOULD-level fallback rather
+# than as a co-equal SHALL-level match.
+#
+# Rules 4 and 5 are different: in those, both templateIds being matched
+# (the eICR trigger-code template and its C-CDA base) are equally
+# IG-conformant — the trigger-code template is a specialisation of the
+# base, both are SHALL-level. Those stay as single TIER 1 rules with
+# `or`-clauses.
 #
 # rule 1 — TIER 1: Planned Observation / Lab Test Order
-#   IG template: Planned Observation (V2) (2.16.840.1.113883.10.20.22.4.44)
+#   IG template: Planned Observation (V2) (22.4.44)
 #   primary code: observation/code SHOULD be LOINC (CONF:1098-31030)
 #   eICR trigger: SHALL be from RCTC lab test orders (CONF:3284-336)
 #   OID: None — the IG says SHOULD not SHALL, and senders frequently
 #   use local/proprietary codes as the primary with no LOINC translation.
-#   Accepting any code system here lets the configured code set drive
-#   matching rather than enforcing a code system the sender may not use.
 #
-# rule 2 — TIER 1: Medication Activity
-#   IG template: Medication Activity (V2) (2.16.840.1.113883.10.20.22.4.16)
-#   Planned Medication Activity (4.42) conforms to 4.16, so this catches both.
+# rule 2 — TIER 1: Planned Medication Activity (V2)
+#   IG template: Planned Medication Activity (V2) (22.4.42)
+#   moodCode SHALL be from Planned moodCode value set (INT/PRMS/PRP/RQO)
 #   primary code: manufacturedMaterial/code SHALL be RxNorm (CONF:1098-7412)
-#   OID: None — vendor OID variance on this location is high in real documents
+#   OID: None — vendor OID variance is high on this location
 #
-# rule 3 — TIER 1: Immunization Activity
-#   IG template: Immunization Activity (V3) (2.16.840.1.113883.10.20.22.4.52)
-#   Planned Immunization Activity (4.120) conforms to 4.52, so this catches both.
+# rule 3 — TIER 2: Medication Activity (V2) in Plan of Treatment
+#   IG template: Medication Activity (V2) (22.4.16)
+#   The IG allows moodCode="INT" on this template but explicitly recommends
+#   Planned Medication Activity instead. This rule catches senders that
+#   ignore the recommendation.
+#   OID: None — vendor OID variance
+#
+# rule 4 — TIER 1: Planned Immunization Activity
+#   IG template: Planned Immunization Activity (22.4.120)
 #   primary code: manufacturedMaterial/code SHALL be CVX (CONF:1098-9007)
-#   translation:  MAY be RxNorm (CONF:1098-31543)
+#   OID: None — same rationale as standalone Immunizations section
 #
-# rule 4 — TIER 1: Planned Procedure Activity
-#   IG template: Procedure Activity Procedure (V2) (2.16.840.1.113883.10.20.22.4.14)
-#   Planned Procedure Activity (4.39) conforms to 4.14.
+# rule 5 — TIER 2: Immunization Activity (V3) in Plan of Treatment
+#   IG template: Immunization Activity (V3) (22.4.52)
+#   As with rule 3, this catches senders that use the event-mood template
+#   with a non-EVN moodCode against the IG's recommendation.
+#   OID: None — same rationale as rule 4
+#
+# rule 6 — TIER 1: Planned Act (Initial Case Report Trigger Code Planned Act)
+#   eICR template: Initial Case Report Trigger Code Planned Act
+#     (15.2.3.41, CONF:4527-1093) — an <act>, NOT a <procedure>
+#   fallback: C-CDA base Planned Act (V2) (22.4.39, CONF:1098-30473) —
+#     also IG-conformant; the trigger-code template specialises this base
+#   primary code: act/code SHOULD be from RCTC procedure value set
+#     (CONF:4482-658) with sdtc:valueSet="2.16.840.1.114222.4.11.7508"
+#     (CONF:4482-659). RCTC procedure value set was undefined at IG
+#     publication so senders use plain SNOMED with or without the marker.
+#   OID: None — trigger code value set spans code systems
+#   preserve_whole_entry=True — Planned Act is a leaf clinical statement
+#     (per Planned Act V2 Vol 2 §3.32), so entryRelationship children
+#     (Instructions, Indications, etc.) are clinical context.
+#
+# rule 7 — TIER 1: Planned Procedure
+#   eICR template: Initial Case Report Trigger Code Planned Procedure
+#     (15.2.3.42, CONF:4527-1097) — a <procedure>
+#   fallback: C-CDA base Planned Procedure (V2) (22.4.41, CONF:1098-30474)
 #   primary code: procedure/code — SNOMED or CPT-4 in practice
-#   OID: None — procedure code systems vary widely (SNOMED, CPT-4, local)
+#   OID: None — procedure code systems vary widely
 #   Note: structural precedence means this only fires on entries that have
-#   a procedure/code element but were not claimed by rules 1–3.
+#   a procedure/code element but were not claimed by earlier rules.
 #
-# rule 5 — TIER 2: Indication (fallback for unclaimed entries)
-#   IG template: Indication (V2) (2.16.840.1.113883.10.20.22.4.19)
+# rule 8 — TIER 2: Indication (fallback for unclaimed entries)
+#   IG template: Indication (V2) (22.4.19)
 #   primary code: observation/value — condition name driving the planned item
 #   OID: None — indication values appear in SNOMED, ICD-9, and ICD-10 in
 #   real documents; restricting to SNOMED_OID caused false negatives
@@ -385,69 +455,121 @@ _PLAN_OF_TREATMENT_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.44']]"
+            f"[hl7:templateId[@root='{PLANNED_OBSERVATION_V2}']]"
             "/hl7:code"
         ),
         code_system_oid=None,  # intentional — see note above
         tier=1,
     ),
-    # rule 2 — TIER 1: medication activity
+    # rule 2 — TIER 1: planned medication activity
+    # IG-recommended template for medications in Plan of Treatment
     # OID: None — vendor OID variance; see note above
     EntryMatchRule(
         code_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.16']]"
+            f"[hl7:templateId[@root='{PLANNED_MEDICATION_ACTIVITY_V2}']]"
             "//hl7:manufacturedMaterial/hl7:code"
         ),
         code_system_oid=None,  # intentional — vendor OID variance
         translation_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.16']]"
+            f"[hl7:templateId[@root='{PLANNED_MEDICATION_ACTIVITY_V2}']]"
             "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
         ),
         tier=1,
     ),
-    # rule 3 — TIER 1: immunization activity
+    # rule 3 — TIER 2: event-mood Medication Activity used in Plan of Treatment
+    # IG-allowed but explicitly discouraged in favour of Planned Medication
+    # Activity. Catches non-conforming-but-permitted senders.
+    # OID: None — vendor OID variance
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:substanceAdministration"
+            f"[hl7:templateId[@root='{MEDICATION_ACTIVITY_V2}']]"
+            "//hl7:manufacturedMaterial/hl7:code"
+        ),
+        code_system_oid=None,  # intentional — vendor OID variance
+        translation_xpath=(
+            ".//hl7:substanceAdministration"
+            f"[hl7:templateId[@root='{MEDICATION_ACTIVITY_V2}']]"
+            "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
+        ),
+        tier=2,
+    ),
+    # rule 4 — TIER 1: planned immunization activity
+    # IG-recommended template for immunizations in Plan of Treatment
     # OID: None — same rationale as standalone immunizations section;
     # code_system_oid=CVX_OID would cause structural precedence to claim
     # the entry and block matching when the sender uses RxNorm as primary
     EntryMatchRule(
         code_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
+            f"[hl7:templateId[@root='{PLANNED_IMMUNIZATION_ACTIVITY}']]"
             "//hl7:manufacturedMaterial/hl7:code"
         ),
         code_system_oid=None,  # intentional — see note above
         translation_xpath=(
             ".//hl7:substanceAdministration"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.52']]"
+            f"[hl7:templateId[@root='{PLANNED_IMMUNIZATION_ACTIVITY}']]"
             "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
         ),
         tier=1,
     ),
-    # rule 4 — TIER 1: planned procedure activity procedure
-    # targets the Procedure Activity Procedure base template (4.14)
-    # which Planned Procedure Activity (4.39) conforms to
+    # rule 5 — TIER 2: event-mood Immunization Activity used in Plan of Treatment
+    # IG-allowed but discouraged, parallel to rule 3 for medications.
+    # OID: None — same rationale as rule 4
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:substanceAdministration"
+            f"[hl7:templateId[@root='{IMMUNIZATION_ACTIVITY_V3}']]"
+            "//hl7:manufacturedMaterial/hl7:code"
+        ),
+        code_system_oid=None,  # intentional — see note above
+        translation_xpath=(
+            ".//hl7:substanceAdministration"
+            f"[hl7:templateId[@root='{IMMUNIZATION_ACTIVITY_V3}']]"
+            "//hl7:manufacturedMaterial/hl7:code/hl7:translation"
+        ),
+        tier=2,
+    ),
+    # rule 6 — TIER 1: planned act (Initial Case Report Trigger Code Planned Act)
+    # eICR trigger template (CONF:4527-1093, CONF:4482-642 SHALL on act/code)
+    # falls back to C-CDA base Planned Act (V2) when eICR variant absent;
+    # both are IG-conformant so this is a single TIER 1 rule, not a split.
+    # OID: None — RCTC value set spans code systems; see note above
+    EntryMatchRule(
+        code_xpath=(
+            ".//hl7:act"
+            f"[hl7:templateId[@root='{TRIGGER_CODE_PLANNED_ACT}']"
+            f" or hl7:templateId[@root='{PLANNED_ACT_V2}']]"
+            "/hl7:code"
+        ),
+        code_system_oid=None,  # intentional — see note above
+        tier=1,
+        preserve_whole_entry=True,
+    ),
+    # rule 7 — TIER 1: planned procedure (Initial Case Report Trigger Code Planned Procedure)
+    # eICR trigger template (CONF:4527-1097)
+    # falls back to C-CDA base Planned Procedure (V2) (CONF:1098-30474) when
+    # eICR variant absent; same shape as rule 6 — both templates IG-conformant.
     # OID: None — procedure codes use SNOMED or CPT-4 depending on sender
     EntryMatchRule(
         code_xpath=(
             ".//hl7:procedure"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.14']"
-            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.39']]"
+            f"[hl7:templateId[@root='{TRIGGER_CODE_PLANNED_PROCEDURE}']"
+            f" or hl7:templateId[@root='{PLANNED_PROCEDURE_V2}']]"
             "/hl7:code"
         ),
         code_system_oid=None,  # intentional — SNOMED and CPT-4 both observed
         tier=1,
     ),
-    # rule 5 — TIER 2: indication value (condition name on Indication observation)
+    # rule 8 — TIER 2: indication value (condition name on Indication observation)
     # catches entries indicated for a matching condition (e.g. a planned
     # procedure or medication ordered because of COVID-19).
     # OID: None — indication values appear in SNOMED, ICD-9, and ICD-10
     EntryMatchRule(
         code_xpath=(
-            ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.19']]"
-            "/hl7:value"
+            f".//hl7:observation[hl7:templateId[@root='{INDICATION_V2}']]/hl7:value"
         ),
         code_system_oid=None,  # intentional — multiple code systems observed
         tier=2,
@@ -468,13 +590,13 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=SNOMED_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=ICD10_OID,
@@ -485,13 +607,13 @@ _PROBLEM_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value"
         ),
         code_system_oid=ICD10_OID,
         translation_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.4']]"
+            f"[hl7:templateId[@root='{PROBLEM_OBSERVATION_V3}']]"
             "/hl7:value/hl7:translation"
         ),
         translation_code_system_oid=SNOMED_OID,
@@ -548,7 +670,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.2']]"
+            f"[hl7:templateId[@root='{RESULT_OBSERVATION_V3}']]"
             "/hl7:code"
         ),
         code_system_oid=LOINC_OID,
@@ -560,7 +682,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.2']]"
+            f"[hl7:templateId[@root='{RESULT_OBSERVATION_V3}']]"
             "/hl7:code/hl7:translation"
         ),
         code_system_oid=LOINC_OID,
@@ -572,7 +694,7 @@ _RESULTS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.2']]"
+            f"[hl7:templateId[@root='{RESULT_OBSERVATION_V3}']]"
             "/hl7:value[@xsi:type='CD']"
         ),
         code_system_oid=SNOMED_OID,
@@ -596,7 +718,7 @@ _VITAL_SIGNS_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.27']]"
+            f"[hl7:templateId[@root='{VITAL_SIGN_OBSERVATION_V2}']]"
             "/hl7:code"
         ),
         code_system_oid=LOINC_OID,
@@ -652,8 +774,8 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:procedure"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.44']"
-            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.14']]"
+            f"[hl7:templateId[@root='{TRIGGER_CODE_PROCEDURE_ACTIVITY_PROCEDURE}']"
+            f" or hl7:templateId[@root='{PROCEDURE_ACTIVITY_PROCEDURE_V2}']]"
             "/hl7:code"
         ),
         code_system_oid=None,  # intentional — SNOMED expected but not OID-enforced
@@ -664,8 +786,8 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:act"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.45']"
-            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.12']]"
+            f"[hl7:templateId[@root='{TRIGGER_CODE_PROCEDURE_ACTIVITY_ACT}']"
+            f" or hl7:templateId[@root='{PROCEDURE_ACTIVITY_ACT_V2}']]"
             "/hl7:code"
         ),
         code_system_oid=None,  # intentional — SNOMED/LOINC both observed
@@ -676,8 +798,8 @@ _PROCEDURES_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.15.2.3.46']"
-            " or hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.13']]"
+            f"[hl7:templateId[@root='{TRIGGER_CODE_PROCEDURE_ACTIVITY_OBSERVATION}']"
+            f" or hl7:templateId[@root='{PROCEDURE_ACTIVITY_OBSERVATION_V2}']]"
             "/hl7:code"
         ),
         code_system_oid=None,  # intentional — LOINC expected but not OID-enforced
@@ -803,8 +925,8 @@ _PREGNANCY_MATCH_RULES: Final[list[EntryMatchRule]] = [
     EntryMatchRule(
         code_xpath=(
             ".//hl7:observation"
-            "[hl7:templateId[@root='2.16.840.1.113883.10.20.22.4.293']"
-            " or hl7:templateId[@root='2.16.840.1.113883.10.20.15.3.8']]"
+            f"[hl7:templateId[@root='{PREGNANCY_OBSERVATION_SUPPLEMENTAL_PREGNANCY}']"
+            f" or hl7:templateId[@root='{PREGNANCY_OBSERVATION}']]"
             "/hl7:value"
         ),
         code_system_oid=None,  # intentional — SNOMED pregnancy status codes

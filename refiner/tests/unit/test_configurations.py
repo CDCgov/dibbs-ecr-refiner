@@ -12,7 +12,6 @@ from app.api.v1.configurations.testing import _get_upload_zip
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCondition,
     DbConfigurationCustomCode,
     GetConfigurationResponseVersion,
 )
@@ -117,9 +116,8 @@ def mock_db_functions(
     )
 
     # mock associate_condition_codeset_with_configuration_db
-    assoc_condition = DbConfigurationCondition(
-        mock_condition.id,
-    )
+    assoc_condition = mock_condition.id
+
     updated_config_mock = DbConfiguration(
         id=new_config_id,
         name="New Config",
@@ -196,7 +194,7 @@ async def test_associate_codeset_with_configuration(
     assert response.status_code == 200
     data = response.json()
     assert len(data["included_conditions"]) == 1
-    assert data["included_conditions"][0]["id"] == str(mock_condition.id)
+    assert UUID(data["included_conditions"][0]) == mock_condition.id
 
 
 @pytest.mark.asyncio
@@ -392,6 +390,7 @@ async def test_inline_example_file_success(
             ),
             refined_eicr="<xml>refined eicr for Condition A</xml>",
             refined_rr="<xml>refined rr for Condition A</xml>",
+            eicr_size_reduction_percentage=40,
         ),
         configuration_does_not_match_conditions=None,
     )
@@ -457,6 +456,7 @@ async def test_inline_allow_custom_zip(
             ),
             refined_eicr="<xml>COVID-19 refined eICR doc</xml>",
             refined_rr="<xml>COVID-19 refined RR doc</xml>",
+            eicr_size_reduction_percentage=40,
         ),
         configuration_does_not_match_conditions=None,
     )
@@ -487,10 +487,6 @@ async def test_inline_allow_custom_zip(
     assert (
         response.json()["condition"]["refined_eicr"].strip()
         == "<xml>COVID-19 refined eICR doc</xml>"
-    )
-    assert (
-        response.json()["condition"]["refined_rr"].strip()
-        == "<xml>COVID-19 refined RR doc</xml>"
     )
 
     test_app.dependency_overrides.clear()

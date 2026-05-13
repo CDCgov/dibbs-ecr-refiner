@@ -7,15 +7,15 @@ from fastapi import HTTPException, UploadFile
 from fastapi.datastructures import Headers
 
 from app.api.validation.file_validation import (
-    MAX_ALLOWED_UPLOAD_FILE_SIZE,
+    UNCOMPRESSED_MAX_BYTES,
     _validate_ecr_zip_pair,
 )
-from app.services.ecr.refine import get_file_size_reduction_percentage
 from app.services.file_io import (
     ZipFileItem,
     ZipFilePackage,
     create_refined_ecr_zip_in_memory,
 )
+from app.services.pipeline import _get_size_reduction_percentage
 
 api_route_base = "/api/v1/demo"
 
@@ -99,11 +99,11 @@ async def test_empty_file():
 
 @pytest.mark.asyncio
 async def test_file_too_large():
-    content = b"x" * (MAX_ALLOWED_UPLOAD_FILE_SIZE + 1)
+    content = b"x" * (UNCOMPRESSED_MAX_BYTES + 1)
     file = create_mock_upload_file("big.zip", content)
     with pytest.raises(HTTPException) as exc:
         await _validate_ecr_zip_pair(file)
-    assert "must be less than 10MB" in exc.value.detail
+    assert "must be less than 15MB" in exc.value.detail
 
 
 @pytest.mark.parametrize(
@@ -119,7 +119,7 @@ async def test_file_too_large():
 def test_file_size_difference_percentage(
     unrefined: str, refined: str, expected: int
 ) -> None:
-    result = get_file_size_reduction_percentage(unrefined, refined)
+    result = _get_size_reduction_percentage(unrefined, refined)
     assert result == expected
 
 

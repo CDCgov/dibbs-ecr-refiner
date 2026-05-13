@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from packaging.version import parse
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.config import ENVIRONMENT
-from app.db.conditions.db import get_loaded_tes_versions_db
+from app.db.conditions.db import get_condition_by_id_db, get_loaded_tes_versions_db
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.schema_migrations.db import get_latest_migration_db
 from app.db.users.model import DbUser
+from app.services.tes import get_latest_tes_version
 
 router = APIRouter(prefix="/info")
 
@@ -36,12 +36,21 @@ async def get_info(
 
     # minimal response to send to the client
     config_details = [
-        {"name": config.name, "status": config.status, "version": config.version}
+        {
+            "name": config.name,
+            "status": config.status,
+            "version": config.version,
+            "condition_tes_version": condition.version
+            if (
+                condition := await get_condition_by_id_db(id=config.condition_id, db=db)
+            )
+            else "",
+        }
         for config in configs
     ]
 
     tes_versions = await get_loaded_tes_versions_db(db=db)
-    latest_tes_version = max(tes_versions, key=lambda v: parse(v))
+    latest_tes_version = get_latest_tes_version(tes_versions)
 
     return JSONResponse(
         content={

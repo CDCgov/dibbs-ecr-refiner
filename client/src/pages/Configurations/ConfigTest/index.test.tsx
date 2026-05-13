@@ -28,8 +28,8 @@ const mockMatchedCondition: Condition = {
   code: '840539006',
   display_name: 'COVID-19',
   refined_eicr: '<xml>refined covid</xml>',
-  refined_rr: '<xml>refined covid</xml>',
   stats: ['eICR file reduced by 71%'],
+  render_diff: true,
 };
 
 const mockSuccessfulInlineTestResponse = {
@@ -38,6 +38,7 @@ const mockSuccessfulInlineTestResponse = {
     original_eicr: '<xml>unrefined covid</xml>',
     refined_download_key:
       '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
+    render_diff: true,
   },
 };
 
@@ -76,6 +77,7 @@ vi.mock('../../../api/configurations/configurations', async () => {
           original_eicr: '<xml>unrefined covid</xml>',
           refined_download_key:
             '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
+          render_diff: true,
         },
       },
     })),
@@ -110,8 +112,6 @@ describe('Config testing page', () => {
       'aria-current',
       'page'
     );
-    // TODO: Uncomment this when we want to show the Activate screen again
-    // expect(screen.getByText('Activate', { selector: 'a' })).toBeInTheDocument();
   });
 
   it('should warn the user that the expected condition was not found during inline testing', async () => {

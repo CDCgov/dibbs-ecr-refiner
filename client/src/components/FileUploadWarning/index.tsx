@@ -12,7 +12,7 @@ export function FileUploadWarning({
   reset,
 }: FileUploadWarningProps) {
   return (
-    <div className="bg-state-error-lighter flex !h-[20rem] !w-[35rem] flex-col items-center rounded px-20 py-8">
+    <div className="bg-state-error-lighter flex h-80! w-140! flex-col items-center rounded px-20 py-8">
       <Icon.Error
         size={8}
         aria-label="Exclamation point indicating error"

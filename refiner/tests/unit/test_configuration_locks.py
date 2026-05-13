@@ -8,7 +8,6 @@ from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
-    DbConfigurationCondition,
     GetConfigurationResponseVersion,
 )
 from app.services.configuration_locks import ConfigurationLock
@@ -111,9 +110,8 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
     )
 
     # mock associate_condition_codeset_with_configuration_db
-    assoc_condition = DbConfigurationCondition(
-        UUID("22222222-2222-2222-2222-222222222222"),
-    )
+    assoc_condition = "22222222-2222-2222-2222-222222222222"
+
     updated_config_mock = DbConfiguration(
         id=UUID("33333333-3333-3333-3333-333333333333"),
         name="New Config",
