@@ -219,8 +219,7 @@ class UserNotification(BaseModel):
     Information for a single notification.
     """
 
-    # TODO: go back and align these with the database store
-    should_show: bool = False
+    should_show: bool
     date_acknowledged: str | None = None
 
 
@@ -229,7 +228,7 @@ class UserNotifications(BaseModel):
     User notification state.
     """
 
-    most_recent_app_update: UserNotification | None = None
+    most_recent_app_update: UserNotification
 
 
 class UserResponse(BaseModel):
@@ -240,7 +239,7 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     jurisdiction_id: str
-    notifications: UserNotifications = UserNotifications()
+    notifications: UserNotifications
 
 
 @auth_router.get(
@@ -284,17 +283,15 @@ def build_user_response(user: DbUser) -> UserResponse:
     """
     Builds a UserResponse with computed notification display state.
     """
-    notifications = UserNotifications(**user.notifications)
 
     latest_release_created_at = _normalize_timezone(get_latest_release_created_at())
 
     update_acknowledged = datetime.min.replace(tzinfo=None)
-    if (
-        notifications.most_recent_app_update
-        and notifications.most_recent_app_update.date_acknowledged
-    ):
+
+    # TODO: go back and make these into proper objects
+    if user.notifications and user.notifications["most_recent_app_update"]:
         update_acknowledged = _normalize_timezone(
-            notifications.most_recent_app_update.date_acknowledged
+            user.notifications["most_recent_app_update"]
         )
 
     should_show_app_update = latest_release_created_at > update_acknowledged

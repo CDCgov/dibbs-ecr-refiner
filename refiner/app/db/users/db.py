@@ -110,18 +110,13 @@ async def update_user_notifications_db(
     query = """
         UPDATE users
         SET
-            notifications = jsonb_set(
-                notifications,
-                %s,
-                jsonb_build_object('date_acknowledged', %s::text),
-                true
-            ),
+            notifications = notifications || jsonb_build_object(%s::text, %s::text),
             updated_at = NOW()
         WHERE id = %s
         RETURNING *;
     """
 
-    params = ([name], date_acknowledged, user_id)
+    params = (name, date_acknowledged, user_id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbUser)) as cur:
