@@ -204,7 +204,7 @@ async def independent_testing(
         )
 
     # TODO:
-    # * planning-object: the planning object should own this
+    # planning-object: the planning object should own this
     # one AugmentationRun for this testing session, shared across every
     # refine_for_condition call and the remainder RR so all augmented
     # outputs share an effectiveTime

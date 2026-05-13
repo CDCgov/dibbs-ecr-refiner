@@ -835,7 +835,8 @@ def write_remainder_rrs(
             )
             continue
 
-        # TODO: rename "unrefined_rr" -> "remainder"
+        # TODO:
+        # rename "unrefined_rr" -> "remainder"
         # requires coordination with AIMS to ensure
         # mirth related logic isn't broken
         output_key = (
