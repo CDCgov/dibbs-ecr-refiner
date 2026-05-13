@@ -69,15 +69,21 @@ class SupportedCodeSystems(BaseModel):
         return retrieved_system
 
     @classmethod
-    def get_by_oid(cls, oid: str) -> DbCodeSystem | None:
+    def get_by_oid(
+        cls,
+        oid: str,
+        logger: Logger = Depends(get_logger),
+    ) -> DbCodeSystem | None:
         """
         Get a specific code system based on its name.
         """
         value = [system for system in cls._registry.values() if system.oid == oid]
-        if len(value) > 1:
-            raise ValueError("OID didn't uniquely identify system information")
         if len(value) == 0:
             return None
+        if len(value) > 1:
+            logger.warning(
+                "OID matched multiple code systems. Returning first matched value"
+            )
 
         return value[0]
 
