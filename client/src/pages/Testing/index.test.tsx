@@ -7,12 +7,10 @@ import {
   useUploadEcr,
 } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
-import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
 import { TestQueryClientProvider } from '../../test-utils.tsx';
-import { FileInfoResponseValue } from '../../api/schemas/fileInfoResponse.ts';
 import { DiscoveredConfigurationsResponse } from '../../api/schemas/discoveredConfigurationsResponse.ts';
 
 vi.mock('../../api/demo/demo', () => ({
@@ -23,8 +21,6 @@ vi.mock('../../api/demo/demo', () => ({
 vi.mock('../../hooks/useGetEnv', () => ({
   useGetEnv: vi.fn(() => 'local'),
 }));
-
-const mockTestFile = new File(['test'], 'test.zip', { type: 'text/plain' });
 
 const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
   groups: [
@@ -53,40 +49,6 @@ const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
   ],
 };
 
-const mockUploadResponse: IndependentTestUploadResponse = {
-  refined_conditions: [
-    {
-      code: 'mock-code',
-      display_name: 'mock condition name',
-      refined_eicr: '<data>less data</data>',
-      stats: ['eICR reduced by 59%'],
-      render_diff: true,
-    },
-  ],
-  refined_conditions_found: 1,
-  message: 'test message',
-  unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_key: '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
-  file_info_response: FileInfoResponseValue,
-};
-
-const mockCustomUploadResponse: IndependentTestUploadResponse = {
-  refined_conditions: [
-    {
-      code: 'mock-custom-file',
-      display_name: 'custom condition',
-      refined_eicr: '<data>refined custom data</data>',
-      stats: ['eICR reduced by 77%'],
-      render_diff: true,
-    },
-  ],
-  refined_conditions_found: 1,
-  message: 'test message',
-  unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_key: 'de3858c7-28a7-487c-ad7a-3853a8356811_refined_ecr.zip',
-  file_info_response: FileInfoResponseValue,
-};
-
 const renderView = () =>
   render(
     <MemoryRouter>
@@ -95,6 +57,10 @@ const renderView = () =>
       </TestQueryClientProvider>
     </MemoryRouter>
   );
+
+type MutationParam = {
+  onError?: (error: Error) => void;
+};
 
 describe('Independent testing', () => {
   describe('Independent testing - errors during config discovery', () => {
@@ -120,10 +86,6 @@ describe('Independent testing', () => {
     });
 
     it('should navigate to the error view when the upload request fails', async () => {
-      type MutationParam = {
-        onError?: (error: Error) => void;
-      };
-
       const user = userEvent.setup();
 
       (useDiscoverConfigurations as unknown as Mock).mockImplementation(
@@ -183,89 +145,57 @@ describe('Independent testing', () => {
     });
   });
 
-  // describe('Independent testing - errors during refinement', () => {
-  //   beforeEach(() => {
-  //     (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
-  //       mutateAsync: vi.fn().mockResolvedValue({
-  //         status: 200,
-  //         data: mockConfigDiscoveryResponse,
-  //       }),
-  //       data: { data: mockConfigDiscoveryResponse },
-  //       reset: vi.fn(),
-  //     });
+  describe('Independent testing - errors during refinement', () => {
+    beforeEach(() => {
+      (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
+        mutateAsync: vi.fn().mockResolvedValue({
+          status: 200,
+          data: mockConfigDiscoveryResponse,
+        }),
+        data: { data: mockConfigDiscoveryResponse },
+        reset: vi.fn(),
+      });
 
-  //     (useUploadEcr as unknown as Mock).mockReturnValue({
-  //       mutateAsync: vi.fn(),
-  //       data: undefined,
-  //       reset: vi.fn(),
-  //     });
-  //   });
+      (useUploadEcr as unknown as Mock).mockImplementation(
+        ({ mutation }: { mutation?: MutationParam }) => ({
+          mutateAsync: vi.fn().mockImplementation(() => {
+            const error = new AxiosError('API call failed') as Error & {
+              response: { data: { detail: string } };
+            };
+            error.response = { data: { detail: 'Server is down' } };
+            if (mutation?.onError) {
+              mutation.onError(error);
+            }
+            throw error;
+          }),
+          data: undefined,
+          reset: vi.fn(),
+        })
+      );
+    });
 
-  //   afterEach(() => {
-  //     vi.resetAllMocks();
-  //   });
+    afterEach(() => {
+      vi.resetAllMocks();
+    });
 
-  //   it('should navigate to the error view when the upload request fails', async () => {
-  //     type MutationParam = {
-  //       onError?: (error: Error) => void;
-  //     };
+    it('should navigate to the error view when the upload request fails', async () => {
+      const user = userEvent.setup();
 
-  //     const user = userEvent.setup();
+      renderView();
+      await uploadTestFile(user);
 
-  //     (useUploadEcr as unknown as Mock).mockImplementation(
-  //       ({ mutation }: { mutation?: MutationParam }) => {
-  //         return {
-  //           mutateAsync: vi.fn().mockImplementation(() => {
-  //             const error = new AxiosError('API call failed') as Error & {
-  //               response: { data: { detail: string } };
-  //             };
-  //             error.response = { data: { detail: 'Server is down' } };
-  //             if (mutation?.onError) {
-  //               mutation.onError(error);
-  //             }
-  //             throw error;
-  //           }),
-  //           reset: vi.fn(),
-  //         };
-  //       }
-  //     );
+      // configs load successfully, now trigger the refinement which will fail
+      await user.click(
+        await screen.findByText('Refine eCR', { selector: 'button' })
+      );
 
-  //     renderView();
-  //     await uploadTestFile(user);
+      expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
+      expect(await screen.findByText('Server is down')).toBeInTheDocument();
 
-  //     expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
-  //     expect(await screen.findByText('Server is down')).toBeInTheDocument();
-
-  //     await user.click(await screen.findByText('Try again'));
-
-  //     expect(
-  //       await screen.findByText('Refine .zip file', { selector: 'button' })
-  //     ).toBeInTheDocument();
-  //   });
-
-  //   it('should let the user know that no conditions reportable to their JD ID were found in the RR', async () => {
-  //     const user = userEvent.setup();
-
-  //     (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
-  //       mutateAsync: vi.fn(),
-  //       data: {
-  //         data: {
-  //           refined_conditions: [],
-  //         },
-  //       },
-  //       reset: vi.fn(),
-  //     });
-
-  //     renderView();
-  //     await uploadTestFile(user);
-
-  //     expect(await screen.findByText('Start over')).toBeInTheDocument();
-  //     expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
-  //     expect(
-  //       screen.getByText(
-  //         'No conditions reportable to your jurisdiction were found in the RR.'
-  //       )
-  //     ).toBeInTheDocument();
-  //   });
-  // });
+      await user.click(await screen.findByText('Try again'));
+      expect(
+        await screen.findByText('Refine .zip file', { selector: 'button' })
+      ).toBeInTheDocument();
+    });
+  });
 });
