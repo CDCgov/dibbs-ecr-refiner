@@ -287,7 +287,7 @@ def build_user_response(user: DbUser) -> UserResponse:
     latest_release_created_at = _normalize_timezone(get_latest_release_created_at())
 
     update_acknowledged = datetime.min.replace(tzinfo=None)
-    # TODO: go back and make these into proper objects
+    # TODO: go back and parse these into proper objects at the database level
     if user.notifications and user.notifications["most_recent_app_update"]:
         update_acknowledged = _normalize_timezone(
             user.notifications["most_recent_app_update"]
