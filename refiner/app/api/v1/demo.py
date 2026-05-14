@@ -180,12 +180,11 @@ async def discover_configurations(
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
-    resp = await get_matching_configurations(
+    return await get_matching_configurations(
         xml_files=original_xml_files,
         jurisdiction_id=user.jurisdiction_id,
         db=db,
     )
-    return resp
 
 
 class IndependentTestInput(BaseModel):
