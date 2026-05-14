@@ -283,7 +283,7 @@ async def independent_testing(
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
             rsg_code=rr_code_used,
-            canonical_url=configuration.condition_canonical_url,  # TODO: This should be the computed name of the condition
+            canonical_url=configuration.condition_canonical_url,
             configuration_version=configuration.version,
         )
 
