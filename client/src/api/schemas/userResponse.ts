@@ -1,4 +1,3 @@
-import type { AppUpdateNotification } from './appUpdateNotification';
 import type { UserNotifications } from './userNotifications';
 
 /**
@@ -8,6 +7,5 @@ export interface UserResponse {
   id: string;
   username: string;
   jurisdiction_id: string;
-  notifications?: UserNotifications;
-  app_update_notification: AppUpdateNotification;
+  notifications: UserNotifications;
 }

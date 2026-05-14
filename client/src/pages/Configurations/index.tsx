@@ -9,7 +9,11 @@ import {
 import { useToast } from '../../hooks/useToast';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
-import { GetConditionsResponse, UserResponse } from '../../api/schemas';
+import {
+  GetConditionsResponse,
+  NotificationInfo,
+  UserResponse,
+} from '../../api/schemas';
 import { Link, useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
@@ -75,7 +79,12 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
   return (
     <>
-      {user && setUser && <AppUpdateBanner user={user} setUser={setUser} />}
+      {user && setUser && (
+        <AppUpdateBanner
+          appUpdateInfo={user.notifications.most_recent_app_update}
+          setUser={setUser}
+        />
+      )}
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
@@ -116,15 +125,15 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 }
 
 function AppUpdateBanner({
-  user,
+  appUpdateInfo,
   setUser,
 }: {
-  user: UserResponse;
+  appUpdateInfo: NotificationInfo;
   setUser: Dispatch<SetStateAction<UserResponse | null>>;
 }) {
   const navigate = useNavigate();
 
-  if (!user.app_update_notification.should_show) {
+  if (!appUpdateInfo?.should_show) {
     return null;
   }
 
@@ -173,7 +182,7 @@ function AppUpdateBanner({
           onClick={handleDismiss}
           aria-label="Dismiss notification"
           variant="unstyled"
-          className="ml-4 flex h-[44px] w-[44px] items-center justify-center rounded hover:bg-blue-200 focus:outline-none"
+          className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
         >
           <Icon.Close size={3} aria-hidden className="text-blue-500" />
         </Button>

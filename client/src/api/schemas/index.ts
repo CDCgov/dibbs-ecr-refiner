@@ -1,7 +1,6 @@
 
 export * from './addCustomCodeInput';
 export * from './addSectionInput';
-export * from './appUpdateNotification';
 export * from './associateCodesetInput';
 export * from './associateCodesetResponse';
 export * from './auditEvent';
@@ -40,6 +39,7 @@ export * from './hTTPValidationError';
 export * from './includedCondition';
 export * from './independentTestUploadResponse';
 export * from './lockedByUser';
+export * from './notificationInfo';
 export * from './release';
 export * from './releaseNotes';
 export * from './releasesResponse';
@@ -51,7 +51,6 @@ export * from './uploadCustomCodesPreviewItem';
 export * from './uploadCustomCodesPreviewResponse';
 export * from './uploadCustomCodesResponse';
 export * from './uploadCustomCodesResponseErrors';
-export * from './userNotification';
 export * from './userNotifications';
 export * from './userResponse';
 export * from './validateCustomCodeInput';
