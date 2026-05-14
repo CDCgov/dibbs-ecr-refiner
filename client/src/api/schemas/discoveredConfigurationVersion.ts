@@ -5,6 +5,6 @@ import type { DbConfigurationStatus } from './dbConfigurationStatus';
  */
 export interface DiscoveredConfigurationVersion {
   id: string;
-  version: string;
+  version: number;
   status: DbConfigurationStatus;
 }
