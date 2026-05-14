@@ -1,3 +1,4 @@
+import { Locator } from '@playwright/test';
 import { deleteAllConfigurations } from './db';
 import { test, expect } from './fixtures';
 
@@ -41,7 +42,7 @@ test.describe('Independent testing', () => {
     await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
   });
 
-  test('Only COVID-19 configurations are available to select', async ({
+  test('Only COVID-19 has been configured', async ({
     page,
     testingPage,
     api,
@@ -109,22 +110,21 @@ test.describe('Independent testing', () => {
     ).toBeVisible();
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
       'COVID-19',
-      'Influenza',
     ]);
   });
 
-  test('Both COVID-19 and Influenza configurations are active', async ({
+  test('Both COVID-19 and Influenza configurations are selected for refinement', async ({
     page,
     testingPage,
     api,
   }) => {
-    const covid = await api.createConfiguration('COVID-19');
-    await api.updateConfigurationStatus(covid.id, 'active');
+    const covidActive = await api.createConfiguration('COVID-19');
+    await api.updateConfigurationStatus(covidActive.id, 'active');
 
-    const flu = await api.createConfiguration('Influenza');
-    await api.updateConfigurationStatus(flu.id, 'active');
+    // create covid draft
+    const covidDraft = await api.createConfiguration('COVID-19');
 
-    await page.reload();
+    const fluDraft = await api.createConfiguration('Influenza');
 
     await testingPage.goto();
 
@@ -134,31 +134,64 @@ test.describe('Independent testing', () => {
         'We found the following reportable condition(s) in the RR:'
       )
     ).toBeVisible();
-    await expect(page.getByText('Influenza')).toBeVisible();
-    await expect(page.getByText('COVID-19')).toBeVisible();
 
     await expect(
       page.getByText(
         'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
       )
     ).not.toBeVisible();
-    await expect(
-      page.getByText(
-        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
-      )
-    ).not.toBeVisible();
 
-    await expect(
-      page.getByRole('button', { name: 'Refine eCR' })
-    ).toBeEnabled();
+    // list indicates there were unmatched conditions
+    await expect(page.getByRole('listitem')).not.toBeVisible();
+
+    const covidCheckbox = page.getByRole('checkbox', {
+      name: 'Use COVID-19 configuration in refinement process',
+    });
+    const covidSelect = page.getByLabel('COVID-19', { exact: true });
+
+    const fluCheckbox = page.getByRole('checkbox', {
+      name: 'Use Influenza configuration in refinement process',
+    });
+    const fluSelect = page.getByLabel('Influenza', { exact: true });
+
+    const getOptionValues = (select: Locator) =>
+      select.evaluate((el: HTMLSelectElement) =>
+        Array.from(el.options).map((o) => o.value)
+      );
+
+    await expect(covidCheckbox).toBeChecked();
+    await expect(covidSelect).toBeVisible();
+    await expect(covidSelect.getByRole('option')).toHaveText([
+      'Version 2 (draft)',
+      'Version 1 (active)',
+    ]);
+
+    const covidOptionValues = await getOptionValues(covidSelect);
+    expect(covidOptionValues).toEqual([covidDraft.id, covidActive.id]);
+
+    await expect(fluCheckbox).toBeChecked();
+    await expect(fluSelect).toBeVisible();
+    await expect(fluSelect.getByRole('option')).toHaveText([
+      'Version 1 (draft)',
+    ]);
+    const fluOptionValues = await getOptionValues(fluSelect);
+    expect(fluOptionValues).toEqual([fluDraft.id]);
+
+    const refineButton = page.getByRole('button', { name: 'Refine eCR' });
+
+    await expect(refineButton).toBeEnabled();
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeEnabled();
 
-    await page.getByRole('button', { name: 'Refine eCR' }).click();
+    await refineButton.click();
     await expect(
       page.getByRole('heading', { name: 'eCR refinement results' })
     ).toBeVisible();
-    await expect(page.getByRole('option')).toHaveCount(2);
+
+    await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
+      'COVID-19',
+      'Influenza',
+    ]);
   });
 });
