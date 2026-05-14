@@ -136,7 +136,39 @@ test.describe('Independent testing', () => {
     ]);
   });
 
-  test.skip('Refine eCR button is disabled when no selections are made', () => {});
+  test('Refine eCR button is disabled when no selections are made', async ({
+    page,
+    testingPage,
+    api,
+  }) => {
+    await api.createConfiguration('COVID-19');
+    await api.createConfiguration('Influenza');
+
+    await testingPage.goto();
+
+    await testingPage.uploadTestFile();
+
+    await expect(
+      page.getByText(
+        'We found the following reportable condition(s) in the RR:'
+      )
+    ).toBeVisible();
+
+    const checkboxes = page.getByRole('checkbox');
+    const count = await checkboxes.count();
+    expect(count).toBe(2);
+
+    for (let i = 0; i < count; i++) {
+      const checkbox = checkboxes.nth(i);
+      await checkbox.uncheck();
+    }
+
+    const refineButton = page.getByRole('button', { name: 'Refine eCR' });
+    await expect(refineButton).toBeDisabled();
+
+    await checkboxes.nth(0).check();
+    await expect(refineButton).toBeEnabled();
+  });
 
   test('Both COVID-19 and Influenza configurations are selected for refinement', async ({
     page,
