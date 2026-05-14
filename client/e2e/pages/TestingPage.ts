@@ -15,6 +15,10 @@ export class TestingPage {
     await uploadMonmothmaTestFile(this.page);
   }
 
+  async runRefinement() {
+    await this.page.getByRole('button', { name: 'Refine eCR' }).click();
+  }
+
   async startOver() {
     await this.page.getByRole('button', { name: 'Start over' }).click();
   }

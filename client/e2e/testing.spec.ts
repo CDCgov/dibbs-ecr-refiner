@@ -113,6 +113,37 @@ test.describe('Independent testing', () => {
     ]);
   });
 
+  test('Only Influenza is selected for refinement', async ({
+    page,
+    testingPage,
+    api,
+  }) => {
+    await api.createConfiguration('COVID-19');
+    await api.createConfiguration('Influenza');
+
+    await testingPage.goto();
+
+    await testingPage.uploadTestFile();
+    await expect(
+      page.getByText(
+        'We found the following reportable condition(s) in the RR:'
+      )
+    ).toBeVisible();
+
+    await page
+      .getByRole('checkbox', {
+        name: 'Use Influenza configuration in refinement process',
+      })
+      .click();
+
+    await testingPage.runRefinement();
+    await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
+      'COVID-19',
+    ]);
+  });
+
+  test.skip('Refine eCR button is disabled when no selections are made', () => {});
+
   test('Both COVID-19 and Influenza configurations are selected for refinement', async ({
     page,
     testingPage,
