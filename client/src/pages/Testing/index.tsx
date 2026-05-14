@@ -18,29 +18,20 @@ type Status =
 export function Testing() {
   const [status, setStatus] = useState<Status>('run-test');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const formatError = useApiErrorFormatter();
-  const [configurationsErrorMessage, setConfigurationsErrorMessage] = useState<
-    string | null
-  >(null);
 
   const {
-    data: configurationsResponse,
-    mutateAsync: fetchConfigurations,
-    reset: resetConfigurations,
-  } = useDiscoverConfigurations({
-    mutation: {
-      onError: (error) => {
-        setConfigurationsErrorMessage(formatError(error));
-      },
-    },
-  });
+    fetchConfigurations,
+    resetConfigurations,
+    configurationsResponse,
+    errorMessage: configurationsErrorMessage,
+  } = useDiscoveredConfigurations();
 
   const {
     data: ecrUploadResponse,
     errorMessage: ecrUploadErrorMessage,
     resetState: resetEcrUploadState,
-    uploadZip,
-  } = useZipUpload();
+    runRefinement,
+  } = useRunRefinement();
 
   async function runTestWithCustomFile() {
     try {
@@ -82,7 +73,11 @@ export function Testing() {
   ) {
     return async () => {
       try {
-        await uploadZip(selectedFile, configIds, conditionsWithoutConfigIds);
+        await runRefinement(
+          selectedFile,
+          configIds,
+          conditionsWithoutConfigIds
+        );
         setStatus('success');
       } catch {
         setStatus('error');
@@ -144,15 +139,38 @@ export function Testing() {
   );
 }
 
-function useZipUpload() {
+function useDiscoveredConfigurations() {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const formatError = useApiErrorFormatter();
+
+  const {
+    data: configurationsResponse,
+    mutateAsync: fetchConfigurations,
+    reset: resetConfigurations,
+  } = useDiscoverConfigurations({
+    mutation: {
+      onError: (error) => {
+        setErrorMessage(formatError(error));
+      },
+    },
+  });
+
+  return {
+    configurationsResponse,
+    fetchConfigurations,
+    resetConfigurations,
+    errorMessage,
+    setErrorMessage,
+  };
+}
+
+function useRunRefinement() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const formatError = useApiErrorFormatter();
   const {
     mutateAsync,
     data,
-    isError,
-    isPending,
     reset: resetState,
   } = useUploadEcr({
     mutation: {
@@ -162,7 +180,7 @@ function useZipUpload() {
     },
   });
 
-  async function uploadZip(
+  async function runRefinement(
     selectedFile: File | null,
     configIds: string[],
     unconfiguredConditionIds: string[]
@@ -183,11 +201,9 @@ function useZipUpload() {
   }
 
   return {
-    uploadZip,
+    runRefinement,
     data,
     errorMessage,
-    isError,
-    isPending,
     resetState,
   };
 }
