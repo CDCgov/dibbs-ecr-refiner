@@ -1,4 +1,5 @@
 import secrets
+from datetime import datetime
 from logging import Logger
 from uuid import UUID
 
@@ -6,10 +7,15 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
+from ...api.v1.releases import get_latest_release_created_at
 from ...db.jurisdictions.db import upsert_jurisdiction_db
 from ...db.jurisdictions.model import DbJurisdiction
 from ...db.pool import AsyncDatabaseConnection, get_db
-from ...db.users.db import IdpUserResponse, upsert_user_db
+from ...db.users.db import (
+    IdpUserResponse,
+    upsert_user_db,
+)
+from ...db.users.model import DbUser
 from ...services.logger import get_logger
 from .config import ENVIRONMENT, get_oauth_provider
 from .session import (
@@ -208,6 +214,23 @@ async def auth_callback(
         raise
 
 
+class NotificationInfo(BaseModel):
+    """
+    Information for a single notification.
+    """
+
+    should_show: bool
+    date_acknowledged: str | None = None
+
+
+class UserNotifications(BaseModel):
+    """
+    User notification state.
+    """
+
+    most_recent_app_update: NotificationInfo
+
+
 class UserResponse(BaseModel):
     """
     User information to send to the client.
@@ -216,6 +239,7 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     jurisdiction_id: str
+    notifications: UserNotifications
 
 
 @auth_router.get(
@@ -246,8 +270,41 @@ async def get_user(
     if not user:
         return None
 
+    return build_user_response(user)
+
+
+def _normalize_timezone(s: str | datetime):
+    if isinstance(s, str):
+        return datetime.fromisoformat(s).replace(tzinfo=None)
+    return s.replace(tzinfo=None)
+
+
+def build_user_response(user: DbUser) -> UserResponse:
+    """
+    Builds a UserResponse with computed notification display state.
+    """
+
+    latest_release_created_at = _normalize_timezone(get_latest_release_created_at())
+
+    update_acknowledged = datetime.min.replace(tzinfo=None)
+    # TODO: go back and parse these into proper objects at the database level
+    if user.notifications and user.notifications["most_recent_app_update"]:
+        update_acknowledged = _normalize_timezone(
+            user.notifications["most_recent_app_update"]
+        )
+
+    should_show_app_update = latest_release_created_at > update_acknowledged
+
     return UserResponse(
-        id=user.id, username=user.username, jurisdiction_id=user.jurisdiction_id
+        id=user.id,
+        username=user.username,
+        jurisdiction_id=user.jurisdiction_id,
+        notifications=UserNotifications(
+            most_recent_app_update=NotificationInfo(
+                date_acknowledged=update_acknowledged.isoformat(),
+                should_show=should_show_app_update,
+            )
+        ),
     )
 
 

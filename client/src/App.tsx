@@ -16,7 +16,7 @@ import { ActivityLog } from './pages/ActivityLog';
 import { AppUpdates } from './pages/AppUpdates';
 
 export function App() {
-  const [user, isLoading] = useLogin();
+  const [user, isLoading, setUser] = useLogin();
 
   if (isLoading) {
     return <Spinner variant="centered" />;
@@ -39,8 +39,10 @@ export function App() {
         {/* this is the home page for authenticated users */}
         <Route path="/" element={<Navigate to="/configurations" replace />} />
         <Route path="/activity" element={<ActivityLog />} />
-
-        <Route path="/configurations" element={<Configurations />} />
+        <Route
+          path="/configurations"
+          element={<Configurations user={user} setUser={setUser} />}
+        />
         <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
         <Route

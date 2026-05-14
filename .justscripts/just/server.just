@@ -19,7 +19,7 @@ _venv:
 [doc('Run pytest suite')]
 [group('test')]
 test: _venv
-    .venv/bin/pytest tests
+    {{ if env("CI", "") != "" { ".venv/bin/pytest tests" } else { ".venv/bin/pytest -vvv tests" } }}
 
 [doc('Run Ruff checker, fix things, and formatter')]
 fix: _venv

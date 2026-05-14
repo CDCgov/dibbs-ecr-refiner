@@ -81,27 +81,6 @@ def get_file_size_in_mib(file_content: str) -> float:
     return round(size_mb, 3)
 
 
-def get_file_size_reduction_percentage(unrefined_eicr: str, refined_eicr: str) -> int:
-    """
-    Given an unrefined document eICR document and a refined eICR document, calculate the percentage in which the file size was reduced post-refinement.
-
-    Args:
-        unrefined_eicr (str): An unrefined eICR XML document
-        refined_eicr (str): A refined eICR XML document
-    Returns:
-        int: Integer representing the percentage in which the file size was reduced.
-    """
-
-    unrefined_bytes = get_file_size_in_bytes(unrefined_eicr)
-    refined_bytes = get_file_size_in_bytes(refined_eicr)
-
-    if unrefined_bytes == 0:
-        return 0
-
-    percent_diff = (unrefined_bytes - refined_bytes) / unrefined_bytes * 100
-    return round(percent_diff)
-
-
 # NOTE:
 # EICR REFINEMENT PLAN CREATION
 # =============================================================================

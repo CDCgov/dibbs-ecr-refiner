@@ -15,13 +15,44 @@ from .ecr.model import JurisdictionReportableConditions
 from .ecr.refine import (
     create_eicr_refinement_plan,
     create_rr_refinement_plan,
+    get_file_size_in_bytes,
     get_file_size_in_mib,
-    get_file_size_reduction_percentage,
     refine_eicr,
     refine_rr,
 )
 from .ecr.reportability import get_reportable_conditions_by_jurisdiction
+from .format import format_xml_document_for_display
 from .terminology import ProcessedConfiguration
+
+# NOTE:
+# METRICS
+# =============================================================================
+
+
+def _get_size_reduction_percentage(unrefined: str, refined: str) -> int:
+    """
+    Compute the byte-size reduction percentage between two XML strings.
+
+    Both inputs should represent the documents in the form they will be
+    persisted/observed by consumers — that is, the formatted output the
+    pipeline emits, compared against the original upload as received.
+    The percentage is what a user will see if they compare the size of
+    their uploaded eICR against the refined eICR written by Lambda or
+    packaged by the webapp.
+
+    Lives here, not in `refine`, because it is a measurement *of* what
+    the pipeline produces rather than part of the refinement engine.
+    Computing it once at the pipeline boundary and propagating the
+    result keeps every consumer aligned on the same number.
+    """
+
+    unrefined_bytes = get_file_size_in_bytes(unrefined)
+    if unrefined_bytes == 0:
+        return 0
+
+    refined_bytes = get_file_size_in_bytes(refined)
+    return round((unrefined_bytes - refined_bytes) / unrefined_bytes * 100)
+
 
 # NOTE:
 # TRACE
@@ -258,8 +289,26 @@ def refine_for_condition(
         refined_rr = etree.tostring(rr_root, encoding="unicode")
 
         trace.refinement_outcome = "refined"
-        trace.eicr_size_reduction_percentage = get_file_size_reduction_percentage(
-            unrefined_eicr=xml_files.eicr, refined_eicr=refined_eicr
+
+        # * pretty-print at the pipeline boundary so every consumer of
+        # RefinementResult receives display-ready output
+        # * lxml's pretty_print=True alone does NOT indent subtrees
+        # added via SubElement after a parse without remove_blank_text
+        # (the section provenance footnotes are the visible symptom);
+        # the formatter does a remove_blank_text reparse + pretty_print
+        # to produce uniformly indented output
+        refined_eicr = format_xml_document_for_display(refined_eicr)
+        refined_rr = format_xml_document_for_display(refined_rr)
+
+        # * size metrics are computed against the formatted refined
+        # output so the percentage matches what the user actually
+        # observes when comparing their upload to what gets written
+        # to S3 (lambda) or packaged in the demo zip (webapp)
+        # * one calculation, computed here, propagated through the
+        # result so testing.py and lambda_function.py do not maintain
+        # parallel computations that could drift
+        trace.eicr_size_reduction_percentage = _get_size_reduction_percentage(
+            unrefined=xml_files.eicr, refined=refined_eicr
         )
         trace.eicr_size_mib = get_file_size_in_mib(file_content=refined_eicr)
 
