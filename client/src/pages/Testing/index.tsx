@@ -81,8 +81,12 @@ export function Testing() {
     conditionsWithoutConfigIds: string[]
   ) {
     return async () => {
-      await uploadZip(selectedFile, configIds, conditionsWithoutConfigIds);
-      setStatus('success');
+      try {
+        await uploadZip(selectedFile, configIds, conditionsWithoutConfigIds);
+        setStatus('success');
+      } catch {
+        setStatus('error');
+      }
     };
   }
 
