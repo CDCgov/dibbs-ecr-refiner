@@ -233,6 +233,11 @@ async def independent_testing(
 
         condition = await get_condition_by_id_db(id=configuration.condition_id, db=db)
 
+        if not condition:
+            raise ValueError(
+                f"Unable to determine primary condition of configuration ({configuration.name}) with ID: {configuration.id}"
+            )
+
         rr_code_used = condition.child_rsg_snomed_codes[0]
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
