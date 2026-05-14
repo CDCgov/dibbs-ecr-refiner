@@ -51,6 +51,7 @@ export function ReportableConditionsResults({
     (s) => s.checked
   );
 
+  // helper for toggling a checkbox
   function toggleGroup(name: string) {
     setGroupSelections((prev) => {
       const next = new Map(prev);
@@ -60,6 +61,7 @@ export function ReportableConditionsResults({
     });
   }
 
+  // helper for setting the selected ID
   function setSelectedId(name: string, id: string) {
     setGroupSelections((prev) => {
       const next = new Map(prev);
@@ -132,7 +134,6 @@ export function ReportableConditionsResults({
           {matchedGroupsWithoutConfig.length > 0 && (
             <>
               <hr className="border-gray-cool-20" />
-
               <ConditionWarnings
                 missingConditions={matchedGroupsWithoutConfig.map(
                   (wc) => wc.name
