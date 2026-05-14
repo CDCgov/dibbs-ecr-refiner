@@ -108,7 +108,7 @@ class DiscoveredConfigurationsResponse:
 # =============================================================================
 
 
-async def get_matching_configurations(
+async def discover_configurations_for_conditions(
     xml_files: XMLFiles,
     jurisdiction_id: str,
     db: AsyncDatabaseConnection,

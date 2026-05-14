@@ -43,7 +43,7 @@ from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
 from app.services.testing import (
     DiscoveredConfigurationsResponse,
-    get_matching_configurations,
+    discover_configurations_for_conditions,
     independent_testing,
 )
 from app.services.xslt import create_refined_eicr_html_file
@@ -180,7 +180,7 @@ async def discover_configurations(
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
-    return await get_matching_configurations(
+    return await discover_configurations_for_conditions(
         xml_files=original_xml_files,
         jurisdiction_id=user.jurisdiction_id,
         db=db,
