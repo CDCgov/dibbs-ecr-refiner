@@ -58,30 +58,28 @@ test.describe('Independent testing', () => {
     await testingPage.uploadTestFile();
 
     // checkbox should be available for COVID-19 only
+    await expect(testingPage.getConditionCheckbox('COVID-19')).toBeVisible();
     await expect(
-      page.getByLabel('Use COVID-19 configuration in refinement process')
-    ).toBeVisible();
-    await expect(
-      page.getByLabel('Use Influenza configuration in refinement process')
+      testingPage.getConditionCheckbox('Influenza')
     ).not.toBeVisible();
 
     // select box should be available for COVID-19 configs
     await expect(
-      page.getByRole('combobox', { name: 'COVID-19' }).getByRole('option')
+      testingPage.getConditionSelect('COVID-19').getByRole('option')
     ).toHaveCount(2);
 
     // no influenza select should be available
-    await expect(
-      page.getByRole('combobox', { name: 'Influenza' })
-    ).not.toBeVisible();
+    await expect(testingPage.getConditionSelect('Influenza')).not.toBeVisible();
 
     // default option should be the active covid config
     await expect(
-      page.getByRole('combobox', { name: 'COVID-19' }).locator('option:checked')
+      testingPage.getConditionSelect('COVID-19').locator('option:checked')
     ).toHaveText('Version 1 (active)');
 
     // select the draft covid config
-    await page.getByRole('combobox').selectOption('Version 2 (draft)');
+    await testingPage
+      .getConditionSelect('COVID-19')
+      .selectOption('Version 2 (draft)');
 
     // check that warning displays for influenza
     await expect(
@@ -130,11 +128,7 @@ test.describe('Independent testing', () => {
       )
     ).toBeVisible();
 
-    await page
-      .getByRole('checkbox', {
-        name: 'Use Influenza configuration in refinement process',
-      })
-      .click();
+    await testingPage.getConditionCheckbox('Influenza').click();
 
     await testingPage.runRefinement();
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
@@ -175,14 +169,10 @@ test.describe('Independent testing', () => {
     // list indicates there were unmatched conditions
     await expect(page.getByRole('listitem')).not.toBeVisible();
 
-    const covidCheckbox = page.getByRole('checkbox', {
-      name: 'Use COVID-19 configuration in refinement process',
-    });
+    const covidCheckbox = testingPage.getConditionCheckbox('COVID-19');
     const covidSelect = page.getByLabel('COVID-19', { exact: true });
 
-    const fluCheckbox = page.getByRole('checkbox', {
-      name: 'Use Influenza configuration in refinement process',
-    });
+    const fluCheckbox = testingPage.getConditionCheckbox('Influenza');
     const fluSelect = page.getByLabel('Influenza', { exact: true });
 
     const getOptionValues = (select: Locator) =>
