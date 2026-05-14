@@ -126,7 +126,7 @@ class DiscoveredConfigurationVersion:
     """
 
     id: UUID
-    version: str
+    version: int
     status: DbConfigurationStatus
 
 
@@ -261,7 +261,8 @@ async def independent_testing(
         xml_files: XMLFiles object containing eICR and RR XML strings
         jurisdiction_id: The jurisdiction code to filter reportable conditions.
         configurations: The configurations to use for testing
-        conditions_without_config: The conditions that do not have a matching config
+        conditions_without_config: The conditions that do not have a matching config.
+            This is used for shadow RR generation.
         logger: A logger for recording operational details.
         db: AsyncDatabaseConnection
 
@@ -269,10 +270,6 @@ async def independent_testing(
         An IndependentTestingResult dictionary containing refined documents and a list of non-matches.
     """
 
-    # STEP 5:
-    # process each trace; if a configuration exists, refine the eICR
-    # if it exists but isn't active, add it to the list of non-active configurations
-    # otherwise, add it to the list of non-matches
     first_original_eicr_doc_id = None
     refined_docs: list[RefinedDocument] = []
     for configuration in configurations:
@@ -281,8 +278,7 @@ async def independent_testing(
         )
 
         condition = await get_condition_by_id_db(id=configuration.condition_id, db=db)
-        # Use the shared pipeline to execute refinement
-        # rr_code_used = trace.rc_snomed_codes[0]
+
         rr_code_used = condition.child_rsg_snomed_codes[0]
         pipeline_trace = RefinementTrace(
             jurisdiction_code=jurisdiction_id,
@@ -300,12 +296,6 @@ async def independent_testing(
         if first_original_eicr_doc_id is None:
             first_original_eicr_doc_id = result.augmented_eicr_result.original_doc_id
 
-        # TODO: in the future we might want the ReportableCondition model to use
-        # a list instead of a string since technically there could be more than one
-        # `rc_snomed_code` that was **in** the RR that matches the condition and
-        # has a configuration. picking the first entry in an index isn't correct but
-        # we should wait to see how the testing service evolves with the routes
-
         refined_docs.append(
             RefinedDocument(
                 reportable_condition=ReportableCondition(
@@ -316,18 +306,18 @@ async def independent_testing(
             )
         )
 
-        # logger.info(
-        #     "Independent testing: Processed one condition",
-        #     extra={
-        #         "triggered_by_condition": trace.matching_condition.display_name,
-        #         "triggering_codes": trace.rc_snomed_codes,
-        #         "configuration_found": trace.matching_configuration.name,
-        #         "total_conditions_used": trace.number_of_included_conditions,
-        #         "configuration_settings": asdict(configuration),
-        #         "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
-        #         "outcome": "Refinement successful",
-        #     },
-        # )
+        logger.info(
+            "Independent testing: Processed one condition",
+            extra={
+                "triggered_by_condition": condition.display_name,
+                "triggering_codes": condition.child_rsg_snomed_codes,
+                "configuration_found": configuration.name,
+                "total_conditions_used": len(configurations),
+                "configuration_settings": asdict(configuration),
+                "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
+                "outcome": "Refinement successful",
+            },
+        )
 
         if not first_original_eicr_doc_id:
             first_original_eicr_doc_id = str(UUID())
