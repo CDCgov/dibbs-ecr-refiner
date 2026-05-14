@@ -36,21 +36,6 @@ from .pipeline import (
 
 
 @dataclass
-class IndependentTestingTrace:
-    """
-    Holds all the tracing data for a single condition through the independent testing pipeline.
-    """
-
-    matching_condition: DbCondition
-    rc_snomed_codes: list[str] = field(default_factory=list)
-    matching_configuration: DbConfiguration | None = None
-    number_of_included_conditions: int = 0
-    all_conditions_for_configuration: list[DbCondition] = field(default_factory=list)
-    refine_object: ProcessedConfiguration | None = None
-    refined_document: RefinedDocument | None = None
-
-
-@dataclass
 class IndependentTestingResult:
     """
     The structured result of the independent_testing function.
