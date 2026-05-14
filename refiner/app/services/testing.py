@@ -281,12 +281,10 @@ async def independent_testing(
             },
         )
 
-        if not first_original_eicr_doc_id:
-            first_original_eicr_doc_id = str(UUID())
-            logger.warning(
-                "No eICR document was detected. Using a randomly generated UUID as a fallback value.",
-                extra={"augmented_eicr_result": result.augmented_eicr_result},
-            )
+    if not first_original_eicr_doc_id:
+        raise ValueError(
+            "No eICR document ID was detected. Cannot proceed without a valid document ID."
+        )
 
     return IndependentTestingResult(
         original_eicr_doc_id=first_original_eicr_doc_id,
