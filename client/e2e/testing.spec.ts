@@ -32,7 +32,9 @@ test.describe('Independent testing', () => {
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeEnabled();
+
     await testingPage.startOver();
+
     await expect(
       page.getByText('Want to refine your own eCR file?')
     ).toBeVisible();
@@ -93,12 +95,22 @@ test.describe('Independent testing', () => {
       page.getByRole('listitem').getByText('COVID-19')
     ).not.toBeVisible();
 
-    await expect(
-      page.getByRole('button', { name: 'Refine eCR' })
-    ).toBeEnabled();
+    const refineButton = page.getByRole('button', { name: 'Refine eCR' });
+
+    await expect(refineButton).toBeEnabled();
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeEnabled();
+
+    await refineButton.click();
+
+    await expect(
+      page.getByRole('heading', { name: 'eCR refinement results' })
+    ).toBeVisible();
+    await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
+      'COVID-19',
+      'Influenza',
+    ]);
   });
 
   test('Both COVID-19 and Influenza configurations are active', async ({
