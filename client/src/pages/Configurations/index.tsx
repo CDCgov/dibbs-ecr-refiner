@@ -7,10 +7,14 @@ import {
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-import { useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
-import { GetConditionsResponse } from '../../api/schemas';
-import { useNavigate } from 'react-router';
+import {
+  GetConditionsResponse,
+  NotificationInfo,
+  UserResponse,
+} from '../../api/schemas';
+import { Link, useNavigate } from 'react-router';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { useSearch } from '../../hooks/useSearch';
 import { Spinner } from '@components/Spinner';
@@ -30,6 +34,8 @@ import {
 } from '@components/Combobox';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
+import { Icon } from '@trussworks/react-uswds';
+import { updateUserNotifications } from '../../api/app-notifications/app-notifications';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -51,7 +57,12 @@ interface ConfigurationsTable {
   data: ConfigurationsData[];
 }
 
-export function Configurations() {
+interface ConfigurationsProps {
+  user?: UserResponse;
+  setUser?: Dispatch<SetStateAction<UserResponse | null>>;
+}
+
+export function Configurations({ user, setUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
@@ -67,41 +78,116 @@ export function Configurations() {
   const hasMultipleConfigs = configs.length > 0;
 
   return (
-    <section className="mx-auto p-3">
-      <div className="flex flex-col gap-4 py-10">
-        <Title>Configurations</Title>
-        <p>
-          Configurations define which patient data is included in refined eCR’s
-          for each reportable condition
-        </p>
-      </div>
-      <div
-        className={classNames(
-          'flex flex-col gap-10 sm:flex-row sm:items-start',
-          {
-            'justify-between': hasMultipleConfigs,
-            'justify-end': !hasMultipleConfigs,
-          }
-        )}
-      >
-        {hasMultipleConfigs ? (
-          <Search
-            placeholder="Search configurations"
-            id="search-configurations"
-            name="search"
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        ) : null}
+    <>
+      {user && setUser && (
+        <AppUpdateBanner
+          appUpdateInfo={user.notifications.most_recent_app_update}
+          setUser={setUser}
+        />
+      )}
+      <section className="mx-auto p-3">
+        <div className="flex flex-col gap-4 py-10">
+          <Title>Configurations</Title>
+          <p>
+            Configurations define which patient data is included in refined
+            eCR’s for each reportable condition
+          </p>
+        </div>
+        <div
+          className={classNames(
+            'flex flex-col gap-10 sm:flex-row sm:items-start',
+            {
+              'justify-between': hasMultipleConfigs,
+              'justify-end': !hasMultipleConfigs,
+            }
+          )}
+        >
+          {hasMultipleConfigs ? (
+            <Search
+              placeholder="Search configurations"
+              id="search-configurations"
+              name="search"
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          ) : null}
 
-        <Button className="m-0!" onClick={() => setIsOpen(true)}>
-          Set up new configuration
+          <Button className="m-0!" onClick={() => setIsOpen(true)}>
+            Set up new configuration
+          </Button>
+          <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
+        </div>
+        <ConfigurationsTable
+          data={searchText ? results.map((r) => r.item) : configs}
+        />
+      </section>
+    </>
+  );
+}
+
+function AppUpdateBanner({
+  appUpdateInfo,
+  setUser,
+}: {
+  appUpdateInfo: NotificationInfo;
+  setUser: Dispatch<SetStateAction<UserResponse | null>>;
+}) {
+  const navigate = useNavigate();
+
+  if (!appUpdateInfo?.should_show) {
+    return null;
+  }
+
+  async function dismissNotification() {
+    try {
+      const resp = await updateUserNotifications({
+        name: 'most_recent_app_update',
+        date_acknowledged: new Date().toISOString(),
+      });
+      setUser(resp.data);
+    } catch (error) {
+      console.error('Failed to update user notifications', error);
+    }
+  }
+  async function handleViewUpdates(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    await dismissNotification();
+    void navigate('/app-updates');
+  }
+  async function handleDismiss() {
+    await dismissNotification();
+  }
+
+  return (
+    <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
+      <div className="mx-auto flex max-w-screen-xl items-center">
+        <div className="flex flex-1 items-center justify-center gap-4">
+          <div className="flex items-center gap-2">
+            <Icon.Info size={3} aria-hidden className="text-blue-40v" />
+            <span className="font-public-sans text-[1rem] leading-[1.4rem] font-bold text-blue-500 lining-nums proportional-nums">
+              There are new updates to eCR Refiner.
+            </span>
+          </div>
+
+          <Link
+            to="/app-updates"
+            onClick={handleViewUpdates}
+            className="font-public-sans text-violet-warm-60 border-violet-warm-60 flex h-[44px] items-center justify-center rounded-[4px] border-[2px] bg-white px-[20px] text-center text-[1rem] leading-[1.4rem] font-bold lining-nums proportional-nums no-underline"
+          >
+            View updates
+          </Link>
+        </div>
+
+        <Button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Dismiss notification"
+          variant="unstyled"
+          className="ml-4 flex h-11 w-11 items-center justify-center rounded hover:cursor-pointer hover:opacity-75 focus:outline-none"
+        >
+          <Icon.Close size={3} aria-hidden className="text-blue-500" />
         </Button>
-        <NewConfigModal open={isOpen} onClose={() => setIsOpen(false)} />
       </div>
-      <ConfigurationsTable
-        data={searchText ? results.map((r) => r.item) : configs}
-      />
-    </section>
+    </div>
   );
 }
 
