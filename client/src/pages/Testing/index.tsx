@@ -20,17 +20,17 @@ export function Testing() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
+    configurationsResponse,
     fetchConfigurations,
     resetConfigurations,
-    configurationsResponse,
     errorMessage: configurationsErrorMessage,
   } = useDiscoveredConfigurations();
 
   const {
-    data: ecrUploadResponse,
-    errorMessage: ecrUploadErrorMessage,
-    resetState: resetEcrUploadState,
+    refinementResponse,
     runRefinement,
+    resetRefinement,
+    errorMessage: refinementErrorMessage,
   } = useRunRefinement();
 
   async function runTestWithCustomFile() {
@@ -64,7 +64,7 @@ export function Testing() {
   function reset() {
     setStatus('run-test');
     resetConfigurations();
-    resetEcrUploadState();
+    resetRefinement();
   }
 
   function executeTest(
@@ -119,17 +119,19 @@ export function Testing() {
         )}
         {status === 'success' &&
           configurationsResponse?.data &&
-          ecrUploadResponse?.data && (
+          refinementResponse?.data && (
             <Success
-              refined_conditions={ecrUploadResponse.data.refined_conditions}
-              unrefined_eicr={ecrUploadResponse.data.unrefined_eicr}
-              refined_download_key={ecrUploadResponse.data.refined_download_key}
+              refined_conditions={refinementResponse.data.refined_conditions}
+              unrefined_eicr={refinementResponse.data.unrefined_eicr}
+              refined_download_key={
+                refinementResponse.data.refined_download_key
+              }
             />
           )}
         {status === 'error' && (
           <FileUploadWarning
             errorMessage={
-              (ecrUploadErrorMessage || configurationsErrorMessage) ?? ''
+              (refinementErrorMessage || configurationsErrorMessage) ?? ''
             }
             reset={reset}
           />
@@ -170,8 +172,8 @@ function useRunRefinement() {
   const formatError = useApiErrorFormatter();
   const {
     mutateAsync,
-    data,
-    reset: resetState,
+    data: refinementResponse,
+    reset: resetRefinement,
   } = useUploadEcr({
     mutation: {
       onError: (error) => {
@@ -201,9 +203,9 @@ function useRunRefinement() {
   }
 
   return {
+    refinementResponse,
+    resetRefinement,
     runRefinement,
-    data,
     errorMessage,
-    resetState,
   };
 }
