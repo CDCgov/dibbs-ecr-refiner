@@ -73,7 +73,10 @@ const renderPageView = () =>
       <TestQueryClientProvider>
         <ToastContainer />
         <Routes>
-          <Route path="/configurations" element={<Configurations />} />
+          <Route
+            path="/configurations"
+            element={<Configurations user={undefined} />}
+          />
           <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         </Routes>
       </TestQueryClientProvider>
@@ -87,7 +90,10 @@ describe('Configurations Page', () => {
         <MemoryRouter initialEntries={['/configurations']}>
           <TestQueryClientProvider>
             <Routes>
-              <Route path="/configurations" element={<Configurations />} />
+              <Route
+                path="/configurations"
+                element={<Configurations user={undefined} />}
+              />
             </Routes>
           </TestQueryClientProvider>
         </MemoryRouter>

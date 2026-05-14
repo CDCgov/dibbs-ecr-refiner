@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { UserResponse } from '../api/schemas';
 
-export function useLogin(): [UserResponse | null, boolean] {
+export function useLogin(): [
+  UserResponse | null,
+  boolean,
+  Dispatch<SetStateAction<UserResponse | null>>,
+] {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -24,13 +28,13 @@ export function useLogin(): [UserResponse | null, boolean] {
       } catch {
         console.error('Network error. Please try again.');
         setUser(null);
-        setIsLoading(false);
       } finally {
         setIsLoading(false);
       }
     }
+
     void fetchUserInfo();
   }, []);
 
-  return [user, isLoading];
+  return [user, isLoading, setUser];
 }
