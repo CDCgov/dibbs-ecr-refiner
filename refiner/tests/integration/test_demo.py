@@ -1,3 +1,4 @@
+import json
 from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
@@ -22,18 +23,19 @@ async def test_demo_upload_smoke(
     Verifies that the endpoint processes a demo ZIP file and returns a 200 with expected top-level fields.
     """
 
-    covid_id = await get_condition_id("COVID-19")
-    covid_config = await create_config(covid_id)
+    # activated config
+    covid_condition_id = await get_condition_id("COVID-19")
+    covid_config = await create_config(covid_condition_id)
     await activate_config(covid_config["id"])
 
-    flu_id = await get_condition_id("Influenza")
-    flu_config = await create_config(flu_id)
-    await activate_config(flu_config["id"])
+    # draft config
+    flu_condition_id = await get_condition_id("Influenza")
+    flu_config = await create_config(flu_condition_id)
 
     uploaded_file = covid_influenza_v1_1_zip_path
     with open(uploaded_file, "rb") as file_data:
         response = await authed_client.post(
-            f"{api_route_base}/upload",
+            f"{api_route_base}/discover-configurations",
             files={
                 "uploaded_file": (
                     "mon_mothma_covid_influenza_1.1.zip",
@@ -44,10 +46,47 @@ async def test_demo_upload_smoke(
         )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert "refined_conditions" in data
-    assert "conditions_without_matching_configs" in data
-    assert "unrefined_eicr" in data
-    assert "refined_download_key" in data
+
+    # Both config IDs should be present
+    groups_by_name = {group["name"]: group for group in data["groups"]}
+
+    assert groups_by_name["COVID-19"]["condition_id"] == str(covid_condition_id)
+    assert groups_by_name["COVID-19"]["versions"][0]["status"] == "active"
+    assert groups_by_name["COVID-19"]["versions"][0]["id"] == str(covid_config["id"])
+
+    assert groups_by_name["Influenza"]["condition_id"] == str(flu_condition_id)
+    assert groups_by_name["Influenza"]["versions"][0]["status"] == "draft"
+    assert groups_by_name["Influenza"]["versions"][0]["id"] == str(flu_config["id"])
+
+    payload = {
+        "configuration_ids": [covid_config["id"], flu_config["id"]],
+        "unconfigured_condition_ids": [],
+    }
+    with open(uploaded_file, "rb") as file_data:
+        response = await authed_client.post(
+            f"{api_route_base}/upload",
+            data={"body": json.dumps(payload)},
+            files={
+                "uploaded_file": (
+                    "mon_mothma_covid_influenza_1.1.zip",
+                    file_data,
+                    "application/zip",
+                )
+            },
+        )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    expected_keys = {
+        "message",
+        "refined_conditions_found",
+        "refined_conditions",
+        "unrefined_eicr",
+        "refined_download_key",
+        "file_info_response",
+    }
+
+    assert set(data.keys()) == expected_keys
 
     # Check zip download and contents
     file_key = data["refined_download_key"]
