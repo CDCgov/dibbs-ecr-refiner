@@ -19,7 +19,7 @@ async def test_demo_upload_smoke(
     activate_config,
 ) -> None:
     """
-    Smoke test for the /api/v1/demo/upload endpoint.
+    Smoke test for the independent test flow.
     Verifies that the endpoint processes a demo ZIP file and returns a 200 with expected top-level fields.
     """
 
