@@ -38,15 +38,7 @@ from .pipeline import (
 @dataclass
 class IndependentTestingResult:
     """
-    The structured result of the independent_testing function.
-
-    A TypedDict that contains:
-        - 'refined_documents': list of RefinedDocument objects for successfully refined conditions.
-        - 'no_matching_configuration_for_conditions': A list of conditions that were found but had
-           no matching configuration for the jurisdiction.
-        - 'no_active_configuration_for_conditions': A list of conditions that were found but had
-           no active configuration for the jurisdiction.
-        - 'shadow_rr': Optional RR containing only reportable conditions without active configs.
+    Model to represent the result of running independent testing.
     """
 
     original_eicr_doc_id: str
@@ -72,13 +64,7 @@ class InlineTestingTrace:
 @dataclass
 class InlineTestingResult:
     """
-    The structured result for the inline_testing "validation" workflow.
-
-    A TypedDict that contains:
-        - 'refined_documents': list of RefinedDocument objects for successfully refined conditions.
-        - 'configuration_does_not_match_conditions': A list of conditions that were found but had
-           no matching configuration for the jurisdiction.
-
+    Model to represent the result of running inline testing.
     """
 
     original_eicr_doc_id: str
