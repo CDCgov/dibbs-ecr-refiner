@@ -348,6 +348,9 @@ def _generate_shadow_rr(
         code for c in conditions_without_config for code in c.child_rsg_snomed_codes
     }
 
+    if len(no_match_codes) == 0:
+        return None
+
     return refine_rr_for_unconfigured_conditions(
         xml_files=xml_files, condition_codes=no_match_codes
     )
