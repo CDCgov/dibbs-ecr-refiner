@@ -1,7 +1,6 @@
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from logging import Logger
-from typing import TypedDict
 from uuid import UUID
 
 from packaging.version import parse
@@ -49,23 +48,6 @@ class IndependentTestingTrace:
     all_conditions_for_configuration: list[DbCondition] = field(default_factory=list)
     refine_object: ProcessedConfiguration | None = None
     refined_document: RefinedDocument | None = None
-
-
-class NoMatchEntry(TypedDict):
-    """
-    The structured result of failure to match conditions and configurations bi-directionally.
-
-    This structure is used in both:
-    - IndependentTestingResult: no_matching_configuration_for_conditions
-    - InlineTestingResult: configuration_does_not_match_conditions
-
-    A TypedDict that contains:
-        - `display_name`: The name of the condition that doesn't have an associated configuration for the jurisdiction.
-        - `rc_snomed_codes`: The list of reportable condition SNOMED codes associated with this condition.
-    """
-
-    display_name: str
-    rc_snomed_codes: list[str]
 
 
 @dataclass
@@ -188,6 +170,7 @@ async def get_matching_configurations(
     all_jurisdiction_configs = await get_configurations_db(
         jurisdiction_id=jurisdiction_id, db=db
     )
+
     configured_primary_condition_ids = {
         config.condition_id for config in all_jurisdiction_configs
     }
