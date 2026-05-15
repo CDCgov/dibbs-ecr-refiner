@@ -105,6 +105,7 @@ async def test_full_independent_test_flow_smoke(
     zip_bytes = download_response.content
     assert zip_bytes
 
+    # no shadow RR should exist
     expected_file_names = [
         "CDA_eICR_Influenza.xml",
         "CDA_RR_Influenza.xml",
@@ -190,6 +191,7 @@ async def test_shadow_rr_is_produced(
     zip_bytes = download_response.content
     assert zip_bytes
 
+    # no influenza files should exist, only shadow RR
     expected_file_names = [
         "CDA_eICR_COVID19.xml",
         "CDA_RR_COVID19.xml",
