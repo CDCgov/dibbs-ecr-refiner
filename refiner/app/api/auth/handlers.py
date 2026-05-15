@@ -237,7 +237,7 @@ class NotificationResponse:
 def _map_to_aware_dt(val: str | datetime) -> datetime:
     """Ensures value is a datetime, mapping to UTC timezone."""
     dt = datetime.fromisoformat(val) if isinstance(val, str) else val
-    return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def _get_app_update_notif_info(db_user: DbUser) -> NotificationInfo:
