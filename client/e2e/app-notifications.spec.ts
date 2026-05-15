@@ -1,18 +1,14 @@
 import { test, expect } from './fixtures';
-import { deleteAllConfigurations } from './db';
+import { resetUserNotificationState } from './db';
 
 test.describe('App update notifications', () => {
   const latestReleaseCreatedAt = '2099-05-05T15:00:00.000Z';
 
   test.beforeEach(async ({ page, configurationsPage }) => {
-    await deleteAllConfigurations();
+    await resetUserNotificationState();
 
     await page.route(
-      (url) =>
-        url.pathname === '/api/releases/getReleases' ||
-        url.pathname === '/api/releases/getReleases/' ||
-        url.pathname === '/api/releases' ||
-        url.pathname === '/api/releases/',
+      (url) => url.pathname === '/api/releases/getReleases/',
       async (route) => {
         await route.fulfill({
           status: 200,
@@ -38,11 +34,8 @@ test.describe('App update notifications', () => {
         });
       }
     );
-    await configurationsPage.goto();
-  });
 
-  test.afterEach(async () => {
-    await deleteAllConfigurations();
+    await configurationsPage.goto();
   });
 
   test('shows app update banner when latest release has not been acknowledged', async ({
@@ -61,7 +54,7 @@ test.describe('App update notifications', () => {
     ).toBeVisible();
   });
 
-  test('dismiss X removes banner', async ({ page }) => {
+  test('dismiss X removes banner', async ({ page, configurationsPage }) => {
     await page.getByRole('button', { name: 'Dismiss notification' }).click();
 
     // Ensure banner is gone
@@ -70,9 +63,10 @@ test.describe('App update notifications', () => {
     ).not.toBeVisible();
 
     await expect(page).toHaveURL(/\/configurations/);
+    await configurationsPage.checkBannerIsDismissed();
   });
 
-  test('view update removes banner', async ({ page }) => {
+  test('view update removes banner', async ({ page, configurationsPage }) => {
     await page.getByRole('link', { name: 'View updates' }).click();
 
     // Ensure banner is gone
@@ -83,5 +77,6 @@ test.describe('App update notifications', () => {
     await expect(
       page.getByRole('heading', { name: 'App updates', exact: true, level: 1 })
     ).toBeVisible();
+    await configurationsPage.checkBannerIsDismissed();
   });
 });
