@@ -7,8 +7,20 @@ import { TestQueryClientProvider } from '../../test-utils';
 import userEvent from '@testing-library/user-event';
 import { ToastContainer } from 'react-toastify';
 import { useCreateConfiguration } from '../../api/configurations/configurations';
-import { CreateConfigurationResponse } from '../../api/schemas';
+import { CreateConfigurationResponse, UserResponse } from '../../api/schemas';
 import { ConfigBuild } from './ConfigBuild';
+
+const mockUser: UserResponse = {
+  id: '1',
+  username: 'test',
+  jurisdiction_id: 'jd',
+  notifications: {
+    most_recent_app_update: {
+      date_acknowledged: '',
+      should_show: false,
+    },
+  },
+};
 
 // Mock all API requests.
 vi.mock('../../api/configurations/configurations', async () => {
@@ -75,7 +87,7 @@ const renderPageView = () =>
         <Routes>
           <Route
             path="/configurations"
-            element={<Configurations user={undefined} />}
+            element={<Configurations user={mockUser} refreshUser={vi.fn()} />}
           />
           <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         </Routes>
@@ -92,7 +104,9 @@ describe('Configurations Page', () => {
             <Routes>
               <Route
                 path="/configurations"
-                element={<Configurations user={undefined} />}
+                element={
+                  <Configurations user={mockUser} refreshUser={vi.fn()} />
+                }
               />
             </Routes>
           </TestQueryClientProvider>

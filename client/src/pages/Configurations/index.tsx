@@ -7,7 +7,7 @@ import {
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-import { Dispatch, SetStateAction, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
   GetConditionsResponse,
@@ -58,11 +58,11 @@ interface ConfigurationsTable {
 }
 
 interface ConfigurationsProps {
-  user?: UserResponse;
-  setUser?: Dispatch<SetStateAction<UserResponse | null>>;
+  user: UserResponse;
+  refreshUser: () => void;
 }
 
-export function Configurations({ user, setUser }: ConfigurationsProps) {
+export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
@@ -79,12 +79,10 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
   return (
     <>
-      {user && setUser && (
-        <AppUpdateBanner
-          appUpdateInfo={user.notifications.most_recent_app_update}
-          setUser={setUser}
-        />
-      )}
+      <AppUpdateBanner
+        appUpdateInfo={user.notifications.most_recent_app_update}
+        refreshUser={refreshUser}
+      />
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
@@ -126,10 +124,10 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
 function AppUpdateBanner({
   appUpdateInfo,
-  setUser,
+  refreshUser,
 }: {
   appUpdateInfo: NotificationInfo;
-  setUser: Dispatch<SetStateAction<UserResponse | null>>;
+  refreshUser: () => void;
 }) {
   const navigate = useNavigate();
 
@@ -139,11 +137,11 @@ function AppUpdateBanner({
 
   async function dismissNotification() {
     try {
-      const resp = await updateUserNotifications({
+      await updateUserNotifications({
         name: 'most_recent_app_update',
         date_acknowledged: new Date().toISOString(),
       });
-      setUser(resp.data);
+      refreshUser();
     } catch (error) {
       console.error('Failed to update user notifications', error);
     }
