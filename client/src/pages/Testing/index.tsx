@@ -69,14 +69,16 @@ export function Testing() {
 
   function executeTest(
     configIds: string[],
-    conditionsWithoutConfigIds: string[]
+    conditionsWithoutConfigIds: string[],
+    uncheckedConditionIds: string[]
   ) {
     return async () => {
       try {
         await runRefinement(
           selectedFile,
           configIds,
-          conditionsWithoutConfigIds
+          conditionsWithoutConfigIds,
+          uncheckedConditionIds
         );
         setStatus('success');
       } catch {
@@ -185,7 +187,8 @@ function useRunRefinement() {
   async function runRefinement(
     selectedFile: File | null,
     configIds: string[],
-    unconfiguredConditionIds: string[]
+    unconfiguredConditionIds: string[],
+    uncheckedConditionIds: string[]
   ) {
     setErrorMessage(null);
 
@@ -195,6 +198,7 @@ function useRunRefinement() {
         body: JSON.stringify({
           configuration_ids: configIds,
           unconfigured_condition_ids: unconfiguredConditionIds,
+          unused_condition_ids: uncheckedConditionIds,
         }),
       },
     });

@@ -13,7 +13,8 @@ interface ReportableConditionsResultsProps {
   startOver: () => void;
   runRefinement: (
     configIds: string[],
-    conditionsWithoutConfigIds: string[]
+    conditionsWithoutConfigIds: string[],
+    uncheckedConditionIds: string[]
   ) => () => Promise<void>;
 }
 
@@ -167,10 +168,11 @@ export function ReportableConditionsResults({
                 (c) => c.condition_id
               );
 
-              await runRefinement(configIds, [
-                ...conditionsWithoutConfigIds,
-                ...uncheckedConditionIds,
-              ])();
+              await runRefinement(
+                configIds,
+                conditionsWithoutConfigIds,
+                uncheckedConditionIds
+              )();
             }}
           >
             Refine eCR

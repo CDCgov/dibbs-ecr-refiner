@@ -186,6 +186,7 @@ class IndependentTestInput(BaseModel):
 
     configuration_ids: list[UUID]
     unconfigured_condition_ids: list[UUID]
+    unused_condition_ids: list[UUID]
 
 
 @router.post(
@@ -259,11 +260,15 @@ async def demo_upload(
             detail="Configurations with provided IDs could not be found.",
         )
 
-    unconfigured_condition_ids = list(set(parsed_body.unconfigured_condition_ids))
-
-    # Fetch conditions for IDs without a config
+    # Fetch conditions for IDs without a config + unused conditions
     latest_condition_ids = await get_latest_tes_condition_ids_db(
-        ids=unconfigured_condition_ids, db=db
+        ids=list(
+            set(
+                parsed_body.unconfigured_condition_ids
+                + parsed_body.unused_condition_ids
+            )
+        ),
+        db=db,
     )
     conditions_without_config = await get_conditions_by_ids(
         ids=latest_condition_ids, db=db
