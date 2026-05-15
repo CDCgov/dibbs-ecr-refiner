@@ -5,4 +5,5 @@
 export interface UpdateUserNotificationsRequest {
   name: string;
   date_acknowledged: string;
+  should_show?: boolean;
 }

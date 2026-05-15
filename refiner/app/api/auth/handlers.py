@@ -1,4 +1,5 @@
 import secrets
+from dataclasses import dataclass
 from datetime import datetime
 from logging import Logger
 from uuid import UUID
@@ -214,7 +215,8 @@ async def auth_callback(
         raise
 
 
-class NotificationInfo(BaseModel):
+@dataclass(frozen=True)
+class NotificationInfo:
     """
     Information for a single notification.
     """
@@ -223,9 +225,10 @@ class NotificationInfo(BaseModel):
     date_acknowledged: str | None = None
 
 
-class UserNotifications(BaseModel):
+@dataclass(frozen=True)
+class NotificationResponse:
     """
-    User notification state.
+    List of notification information to return to frontend.
     """
 
     most_recent_app_update: NotificationInfo
@@ -239,7 +242,7 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     jurisdiction_id: str
-    notifications: UserNotifications
+    notifications: NotificationResponse
 
 
 @auth_router.get(
@@ -273,10 +276,10 @@ async def get_user(
     return build_user_response(user)
 
 
-def _normalize_timezone(s: str | datetime):
-    if isinstance(s, str):
-        return datetime.fromisoformat(s).replace(tzinfo=None)
-    return s.replace(tzinfo=None)
+def _map_to_normalized_dt(val: str | datetime) -> datetime:
+    """Ensures value is a datetime, stripping tz for naive comparison."""
+    dt = datetime.fromisoformat(val) if isinstance(val, str) else val
+    return dt.replace(tzinfo=None)
 
 
 def build_user_response(user: DbUser) -> UserResponse:
@@ -284,24 +287,22 @@ def build_user_response(user: DbUser) -> UserResponse:
     Builds a UserResponse with computed notification display state.
     """
 
-    latest_release_created_at = _normalize_timezone(get_latest_release_created_at())
+    latest_release_created_at = _map_to_normalized_dt(get_latest_release_created_at())
 
-    update_acknowledged = datetime.min.replace(tzinfo=None)
-    # TODO: go back and parse these into proper objects at the database level
-    if user.notifications and user.notifications["most_recent_app_update"]:
-        update_acknowledged = _normalize_timezone(
-            user.notifications["most_recent_app_update"]
-        )
+    app_update_str = user.notifications.get("most_recent_app_update")
+    app_update_ack = (
+        _map_to_normalized_dt(app_update_str) if app_update_str else datetime.min
+    )
 
-    should_show_app_update = latest_release_created_at > update_acknowledged
+    should_show_app_update = latest_release_created_at > app_update_ack
 
     return UserResponse(
         id=user.id,
         username=user.username,
         jurisdiction_id=user.jurisdiction_id,
-        notifications=UserNotifications(
+        notifications=NotificationResponse(
             most_recent_app_update=NotificationInfo(
-                date_acknowledged=update_acknowledged.isoformat(),
+                date_acknowledged=app_update_ack.isoformat(),
                 should_show=should_show_app_update,
             )
         ),
