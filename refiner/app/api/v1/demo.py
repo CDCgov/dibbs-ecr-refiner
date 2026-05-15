@@ -247,8 +247,10 @@ async def demo_upload(
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
+    config_ids = list(set(parsed_body.configuration_ids))
+
     configurations = await get_configurations_by_ids_db(
-        ids=parsed_body.configuration_ids, jurisdiction_id=user.jurisdiction_id, db=db
+        ids=config_ids, jurisdiction_id=user.jurisdiction_id, db=db
     )
 
     if len(configurations) == 0:
@@ -257,9 +259,11 @@ async def demo_upload(
             detail="Configurations with provided IDs could not be found.",
         )
 
+    unconfigured_condition_ids = list(set(parsed_body.unconfigured_condition_ids))
+
     # Fetch conditions for IDs without a config
     latest_condition_ids = await get_latest_tes_condition_ids_db(
-        ids=parsed_body.unconfigured_condition_ids, db=db
+        ids=unconfigured_condition_ids, db=db
     )
     conditions_without_config = await get_conditions_by_ids(
         ids=latest_condition_ids, db=db

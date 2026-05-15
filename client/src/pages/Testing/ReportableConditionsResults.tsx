@@ -51,6 +51,10 @@ export function ReportableConditionsResults({
     (s) => s.checked
   );
 
+  const uncheckedConditionIds = matchedGroupsWithConfig
+    .filter((cg) => !groupSelections.get(cg.name)?.checked)
+    .map((cg) => cg.condition_id);
+
   // helper for toggling a checkbox
   function toggleGroup(name: string) {
     setGroupSelections((prev) => {
@@ -157,10 +161,16 @@ export function ReportableConditionsResults({
               const configIds = checkedSelections.map(
                 (config) => config.selectedId
               );
+
+              // conditions without a matching config + conditions the user doesn't want to use
               const conditionsWithoutConfigIds = matchedGroupsWithoutConfig.map(
                 (c) => c.condition_id
               );
-              await runRefinement(configIds, conditionsWithoutConfigIds)();
+
+              await runRefinement(configIds, [
+                ...conditionsWithoutConfigIds,
+                ...uncheckedConditionIds,
+              ])();
             }}
           >
             Refine eCR
