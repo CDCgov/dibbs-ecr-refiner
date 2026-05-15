@@ -245,7 +245,9 @@ def _get_app_update_notif_info(db_user: DbUser) -> NotificationInfo:
 
     app_update_ack_str = db_user.notifications.get("most_recent_app_update")
     app_update_ack_dt = (
-        _map_to_aware_dt(app_update_ack_str) if app_update_ack_str else datetime.min
+        _map_to_aware_dt(app_update_ack_str)
+        if app_update_ack_str
+        else datetime.min.replace(tzinfo=UTC)
     )
 
     should_show_app_update = latest_release_created_at > app_update_ack_dt
