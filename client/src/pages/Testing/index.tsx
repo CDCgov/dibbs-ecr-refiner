@@ -111,7 +111,7 @@ export function Testing() {
           <>
             <TestRefinerDescription />
             <ReportableConditionsResults
-              configurationGroups={configurationsResponse?.data.groups}
+              configurationGroups={configurationsResponse.data.groups}
               startOver={reset}
               runRefinement={executeTest}
             />
