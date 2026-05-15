@@ -1,5 +1,4 @@
 import { RunTest } from './RunTest';
-import { TestRefinerDescription } from './TestRefinerDescription';
 import { useState } from 'react';
 import { useDiscoverConfigurations, useUploadEcr } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
@@ -7,6 +6,7 @@ import { Uploading } from './Uploading';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 import { FileUploadWarning } from '@components/FileUploadWarning';
 import { Success } from './Success';
+import { Title } from '@components/Title';
 
 type Status =
   | 'run-test'
@@ -208,4 +208,19 @@ function useRunRefinement() {
     runRefinement,
     errorMessage,
   };
+}
+
+function TestRefinerDescription() {
+  return (
+    <div className="mb-6">
+      <div className="flex flex-col gap-2">
+        <Title>Test Refiner</Title>
+        <p>
+          This module allows you to simulate how the Refiner would work in
+          production for a zipped eICR/RR pair input based on the reportable
+          conditions your jurisdiction has configured.
+        </p>
+      </div>
+    </div>
+  );
 }
