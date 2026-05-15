@@ -11,7 +11,7 @@ api_route_base = "/api/v1/demo"
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_demo_upload_smoke(
+async def test_full_independent_test_flow_smoke(
     covid_influenza_v1_1_zip_path: Path,
     authed_client,
     get_condition_id,
@@ -114,6 +114,89 @@ async def test_demo_upload_smoke(
         "CDA_eICR_COVID19.html",
         "CDA_eICR.xml",
         "CDA_RR.xml",
+    ]
+
+    with ZipFile(BytesIO(zip_bytes), "r") as zf:
+        names = zf.namelist()
+        assert set(names) == set(expected_file_names)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "unconfigured_condition_ids_fixture, unused_condition_ids_fixture",
+    [
+        ("flu", []),  # only unconfigured
+        ([], "flu"),  # only unused
+        ("flu", "flu"),  # both
+    ],
+)
+async def test_shadow_rr_is_produced(
+    covid_influenza_v1_1_zip_path: Path,
+    authed_client,
+    get_condition_id,
+    create_config,
+    unconfigured_condition_ids_fixture,
+    unused_condition_ids_fixture,
+) -> None:
+    """
+    Tests that the shadow RR is produced during the test run in the following situations:
+    1. `unconfigured_condition_ids` has associated condition IDs
+    2. `unused_condition_ids` has associated condition IDs
+    3. Both fields have associated condition IDs
+    """
+
+    # draft config
+    covid_condition_id = await get_condition_id("COVID-19")
+    covid_config = await create_config(covid_condition_id)
+
+    # draft config
+    flu_condition_id = await get_condition_id("Influenza")
+
+    uploaded_file = covid_influenza_v1_1_zip_path
+
+    # helper function to get the actual ID
+    def resolve(fixture):
+        return [str(flu_condition_id)] if fixture == "flu" else fixture
+
+    payload = {
+        "configuration_ids": [covid_config["id"]],
+        "unconfigured_condition_ids": resolve(unconfigured_condition_ids_fixture),
+        "unused_condition_ids": resolve(unused_condition_ids_fixture),
+    }
+
+    with open(uploaded_file, "rb") as file_data:
+        response = await authed_client.post(
+            f"{api_route_base}/upload",
+            data={"body": json.dumps(payload)},
+            files={
+                "uploaded_file": (
+                    "mon_mothma_covid_influenza_1.1.zip",
+                    file_data,
+                    "application/zip",
+                )
+            },
+        )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Check zip download and contents
+    file_key = data["refined_download_key"]
+    download_response = await authed_client.get(
+        f"{api_route_base}/download/{file_key}",
+    )
+
+    assert download_response.status_code == status.HTTP_200_OK
+    zip_bytes = download_response.content
+    assert zip_bytes
+
+    expected_file_names = [
+        "CDA_eICR_COVID19.xml",
+        "CDA_RR_COVID19.xml",
+        "CDA_eICR_COVID19.html",
+        "CDA_eICR.xml",
+        "CDA_RR.xml",
+        "CDA_RR_unrefined_rr.xml",
     ]
 
     with ZipFile(BytesIO(zip_bytes), "r") as zf:
