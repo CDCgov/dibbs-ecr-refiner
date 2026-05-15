@@ -58,6 +58,7 @@ async def test_zip_upload_covid_influenza_v1_1(
     payload = {
         "configuration_ids": [covid_config["id"], flu_config["id"]],
         "unconfigured_condition_ids": [],
+        "unused_condition_ids": [],
     }
 
     with open(covid_influenza_v1_1_zip_path, "rb") as f:
@@ -130,6 +131,7 @@ async def test_zip_upload_zika_v3_1_1(
     payload = {
         "configuration_ids": [zika_config["id"]],
         "unconfigured_condition_ids": [],
+        "unused_condition_ids": [],
     }
     with open(zika_v3_1_1_zip_path, "rb") as f:
         files = {"uploaded_file": (zika_v3_1_1_zip_path.name, f, "application/zip")}

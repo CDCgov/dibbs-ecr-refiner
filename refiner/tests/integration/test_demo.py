@@ -61,6 +61,7 @@ async def test_demo_upload_smoke(
     payload = {
         "configuration_ids": [covid_config["id"], flu_config["id"]],
         "unconfigured_condition_ids": [],
+        "unused_condition_ids": [],
     }
     with open(uploaded_file, "rb") as file_data:
         response = await authed_client.post(
