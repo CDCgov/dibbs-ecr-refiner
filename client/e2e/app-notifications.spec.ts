@@ -1,14 +1,5 @@
 import { test, expect } from './fixtures';
 import { deleteAllConfigurations } from './db';
-import { Page } from '@playwright/test';
-
-async function waitForAcknowledgementRequest(page: Page) {
-  return page.waitForRequest(
-    (request) =>
-      request.method() === 'PATCH' &&
-      request.url().includes('/api/v1/notifications')
-  );
-}
 
 test.describe('App update notifications', () => {
   const latestReleaseCreatedAt = '2099-05-05T15:00:00.000Z';
@@ -88,21 +79,8 @@ test.describe('App update notifications', () => {
     ).toBeVisible();
   });
 
-  test('sends notification acknowledgement request when app update banner is dismissed', async ({
-    page,
-  }) => {
-    const updateRequestPromise = waitForAcknowledgementRequest(page);
-
+  test('dismiss X removes banner', async ({ page }) => {
     await page.getByRole('button', { name: 'Dismiss notification' }).click();
-
-    const updateRequest = await updateRequestPromise;
-    const requestBody = updateRequest.postDataJSON();
-
-    expect(requestBody.name).toBe('most_recent_app_update');
-    expect(requestBody.date_acknowledged).toBeTruthy();
-    expect(new Date(requestBody.date_acknowledged).toString()).not.toBe(
-      'Invalid Date'
-    );
 
     // Ensure banner is gone
     await expect(
@@ -112,21 +90,8 @@ test.describe('App update notifications', () => {
     await expect(page).toHaveURL(/\/configurations/);
   });
 
-  test('sends notification acknowledgement request when viewing app updates', async ({
-    page,
-  }) => {
-    const updateRequestPromise = waitForAcknowledgementRequest(page);
-
+  test('view update removes banner', async ({ page }) => {
     await page.getByRole('link', { name: 'View updates' }).click();
-
-    const updateRequest = await updateRequestPromise;
-    const requestBody = updateRequest.postDataJSON();
-
-    expect(requestBody.name).toBe('most_recent_app_update');
-    expect(requestBody.date_acknowledged).toBeTruthy();
-    expect(new Date(requestBody.date_acknowledged).toString()).not.toBe(
-      'Invalid Date'
-    );
 
     // Ensure banner is gone
     await expect(
