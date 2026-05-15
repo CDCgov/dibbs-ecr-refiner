@@ -1,12 +1,12 @@
-import { Success } from './Success';
 import { RunTest } from './RunTest';
-import { TestRefinerDescription } from './TestRefinerDescription';
 import { useState } from 'react';
-import { useUploadEcr } from '../../api/demo/demo';
+import { useDiscoverConfigurations, useUploadEcr } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
-import { FileUploadWarning } from '@components/FileUploadWarning';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
+import { FileUploadWarning } from '@components/FileUploadWarning';
+import { Success } from './Success';
+import { Title } from '@components/Title';
 
 type Status =
   | 'run-test'
@@ -20,16 +20,27 @@ export function Testing() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
-    uploadZip,
-    data: response,
-    errorMessage,
-    resetState,
-  } = useZipUpload();
+    configurationsResponse,
+    fetchConfigurations,
+    resetConfigurations,
+    errorMessage: configurationsErrorMessage,
+  } = useDiscoveredConfigurations();
+
+  const {
+    refinementResponse,
+    runRefinement,
+    resetRefinement,
+    errorMessage: refinementErrorMessage,
+  } = useRunRefinement();
 
   async function runTestWithCustomFile() {
     try {
       setStatus('pending');
-      await uploadZip(selectedFile);
+      await fetchConfigurations({
+        data: {
+          uploaded_file: selectedFile,
+        },
+      });
       setStatus('reportable-conditions');
     } catch {
       setStatus('error');
@@ -39,7 +50,11 @@ export function Testing() {
   async function runTestWithSampleFile() {
     try {
       setStatus('pending');
-      await uploadZip(null);
+      await fetchConfigurations({
+        data: {
+          uploaded_file: null,
+        },
+      });
       setStatus('reportable-conditions');
     } catch {
       setStatus('error');
@@ -48,7 +63,28 @@ export function Testing() {
 
   function reset() {
     setStatus('run-test');
-    resetState();
+    resetConfigurations();
+    resetRefinement();
+  }
+
+  function executeTest(
+    configIds: string[],
+    conditionsWithoutConfigIds: string[],
+    uncheckedConditionIds: string[]
+  ) {
+    return async () => {
+      try {
+        await runRefinement(
+          selectedFile,
+          configIds,
+          conditionsWithoutConfigIds,
+          uncheckedConditionIds
+        );
+        setStatus('success');
+      } catch {
+        setStatus('error');
+      }
+    };
   }
 
   return (
@@ -73,49 +109,73 @@ export function Testing() {
           </>
         )}
 
-        {status === 'reportable-conditions' && response?.data && (
+        {status === 'reportable-conditions' && configurationsResponse?.data && (
           <>
             <TestRefinerDescription />
             <ReportableConditionsResults
-              matchedConditions={response.data.refined_conditions.map(
-                (c) => c.display_name
-              )}
-              unmatchedConditions={
-                response.data.conditions_without_matching_configs
-              }
-              inactiveConditions={
-                response.data.conditions_without_active_configs
-              }
+              configurationGroups={configurationsResponse.data.groups}
               startOver={reset}
-              goToSuccessScreen={() => setStatus('success')}
+              runRefinement={executeTest}
             />
           </>
         )}
-        {status === 'success' && response?.data && (
-          <Success
-            refined_conditions={response.data.refined_conditions}
-            unrefined_eicr={response.data.unrefined_eicr}
-            refined_download_key={response.data.refined_download_key}
-          />
-        )}
+        {status === 'success' &&
+          configurationsResponse?.data &&
+          refinementResponse?.data && (
+            <Success
+              refined_conditions={refinementResponse.data.refined_conditions}
+              unrefined_eicr={refinementResponse.data.unrefined_eicr}
+              refined_download_key={
+                refinementResponse.data.refined_download_key
+              }
+            />
+          )}
         {status === 'error' && (
-          <FileUploadWarning errorMessage={errorMessage ?? ''} reset={reset} />
+          <FileUploadWarning
+            errorMessage={
+              (refinementErrorMessage || configurationsErrorMessage) ?? ''
+            }
+            reset={reset}
+          />
         )}
       </div>
     </div>
   );
 }
 
-function useZipUpload() {
+function useDiscoveredConfigurations() {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const formatError = useApiErrorFormatter();
+
+  const {
+    data: configurationsResponse,
+    mutateAsync: fetchConfigurations,
+    reset: resetConfigurations,
+  } = useDiscoverConfigurations({
+    mutation: {
+      onError: (error) => {
+        setErrorMessage(formatError(error));
+      },
+    },
+  });
+
+  return {
+    configurationsResponse,
+    fetchConfigurations,
+    resetConfigurations,
+    errorMessage,
+    setErrorMessage,
+  };
+}
+
+function useRunRefinement() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const formatError = useApiErrorFormatter();
   const {
     mutateAsync,
-    data,
-    isError,
-    isPending,
-    reset: resetState,
+    data: refinementResponse,
+    reset: resetRefinement,
   } = useUploadEcr({
     mutation: {
       onError: (error) => {
@@ -124,20 +184,47 @@ function useZipUpload() {
     },
   });
 
-  async function uploadZip(selectedFile: File | null) {
+  async function runRefinement(
+    selectedFile: File | null,
+    configIds: string[],
+    unconfiguredConditionIds: string[],
+    uncheckedConditionIds: string[]
+  ) {
     setErrorMessage(null);
 
-    const resp = await mutateAsync({ data: { uploaded_file: selectedFile } });
+    const resp = await mutateAsync({
+      data: {
+        uploaded_file: selectedFile,
+        body: JSON.stringify({
+          configuration_ids: configIds,
+          unconfigured_condition_ids: unconfiguredConditionIds,
+          unused_condition_ids: uncheckedConditionIds,
+        }),
+      },
+    });
 
     return resp;
   }
 
   return {
-    uploadZip,
-    data,
+    refinementResponse,
+    resetRefinement,
+    runRefinement,
     errorMessage,
-    isError,
-    isPending,
-    resetState,
   };
+}
+
+function TestRefinerDescription() {
+  return (
+    <div className="mb-6">
+      <div className="flex flex-col gap-2">
+        <Title>Test Refiner</Title>
+        <p>
+          This module allows you to simulate how the Refiner would work in
+          production for a zipped eICR/RR pair input based on the reportable
+          conditions your jurisdiction has configured.
+        </p>
+      </div>
+    </div>
+  );
 }

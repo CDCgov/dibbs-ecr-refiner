@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { Button } from '@components/Button';
 import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
-import { Checkbox } from './Checkbox';
+import { Checkbox } from '@components/Checkbox';
 import { Switch } from './Switch';
 import classNames from 'classnames';
 import { Field } from '@components/Field';
