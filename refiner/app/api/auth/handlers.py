@@ -219,6 +219,8 @@ async def auth_callback(
 def _map_to_aware_dt(val: str | datetime) -> datetime:
     """Ensures value is a datetime, mapping to UTC timezone."""
     dt = datetime.fromisoformat(val) if isinstance(val, str) else val
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
     return dt.astimezone(UTC)
 
 
