@@ -42,6 +42,33 @@ test.describe('Independent testing', () => {
     await expect(page.getByText('mon-mothma-two-conditions.zip')).toBeVisible();
   });
 
+  test('Should be able to handle a reasonable amount of configuration options', async ({
+    testingPage,
+    api,
+  }) => {
+    for (let i = 0; i < 20; i++) {
+      /*
+      Note that activating a config automatically de-activates the previous one.
+      */
+      const covid = await api.createConfiguration('COVID-19');
+      await api.updateConfigurationStatus(covid.id, 'active');
+    }
+
+    await api.createConfiguration('COVID-19');
+
+    await testingPage.goto();
+    await testingPage.uploadTestFile();
+
+    // 19 inactive, 1 active, and 1 draft
+    await expect(
+      testingPage.getConditionSelect('COVID-19').getByRole('option')
+    ).toHaveCount(21);
+
+    await expect(
+      testingPage.getConditionSelect('COVID-19').locator('option:checked')
+    ).toHaveText('Version 20 (active)');
+  });
+
   test('Only COVID-19 has been configured', async ({
     page,
     testingPage,
