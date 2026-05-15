@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from psycopg.rows import class_row, dict_row
