@@ -1,27 +1,14 @@
 import { test, expect } from './fixtures';
-import { deleteAllConfigurations } from './db';
-import { Page } from '@playwright/test';
-
-async function waitForAcknowledgementRequest(page: Page) {
-  return page.waitForRequest(
-    (request) =>
-      request.method() === 'PATCH' &&
-      request.url().includes('/api/v1/notifications')
-  );
-}
+import { resetUserNotificationState } from './db';
 
 test.describe('App update notifications', () => {
   const latestReleaseCreatedAt = '2099-05-05T15:00:00.000Z';
 
   test.beforeEach(async ({ page, configurationsPage }) => {
-    await deleteAllConfigurations();
+    await resetUserNotificationState();
 
     await page.route(
-      (url) =>
-        url.pathname === '/api/releases/getReleases' ||
-        url.pathname === '/api/releases/getReleases/' ||
-        url.pathname === '/api/releases' ||
-        url.pathname === '/api/releases/',
+      (url) => url.pathname === '/api/releases/getReleases/',
       async (route) => {
         await route.fulfill({
           status: 200,
@@ -48,28 +35,7 @@ test.describe('App update notifications', () => {
       }
     );
 
-    await page.route(/\/api\/v1\/notifications\/?$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: '5deb43c2-6a82-4052-9918-616e01d255c7',
-          username: 'tester',
-          jurisdiction_id: 'JD-1',
-          notifications: {
-            most_recent_app_update: {
-              date_acknowledged: latestReleaseCreatedAt,
-            },
-          },
-        }),
-      });
-    });
-
     await configurationsPage.goto();
-  });
-
-  test.afterEach(async () => {
-    await deleteAllConfigurations();
   });
 
   test('shows app update banner when latest release has not been acknowledged', async ({
@@ -88,21 +54,8 @@ test.describe('App update notifications', () => {
     ).toBeVisible();
   });
 
-  test('sends notification acknowledgement request when app update banner is dismissed', async ({
-    page,
-  }) => {
-    const updateRequestPromise = waitForAcknowledgementRequest(page);
-
+  test('dismiss X removes banner', async ({ page, configurationsPage }) => {
     await page.getByRole('button', { name: 'Dismiss notification' }).click();
-
-    const updateRequest = await updateRequestPromise;
-    const requestBody = updateRequest.postDataJSON();
-
-    expect(requestBody.name).toBe('most_recent_app_update');
-    expect(requestBody.date_acknowledged).toBeTruthy();
-    expect(new Date(requestBody.date_acknowledged).toString()).not.toBe(
-      'Invalid Date'
-    );
 
     // Ensure banner is gone
     await expect(
@@ -110,23 +63,11 @@ test.describe('App update notifications', () => {
     ).not.toBeVisible();
 
     await expect(page).toHaveURL(/\/configurations/);
+    await configurationsPage.checkBannerIsDismissed();
   });
 
-  test('sends notification acknowledgement request when viewing app updates', async ({
-    page,
-  }) => {
-    const updateRequestPromise = waitForAcknowledgementRequest(page);
-
+  test('view update removes banner', async ({ page, configurationsPage }) => {
     await page.getByRole('link', { name: 'View updates' }).click();
-
-    const updateRequest = await updateRequestPromise;
-    const requestBody = updateRequest.postDataJSON();
-
-    expect(requestBody.name).toBe('most_recent_app_update');
-    expect(requestBody.date_acknowledged).toBeTruthy();
-    expect(new Date(requestBody.date_acknowledged).toString()).not.toBe(
-      'Invalid Date'
-    );
 
     // Ensure banner is gone
     await expect(
@@ -136,5 +77,6 @@ test.describe('App update notifications', () => {
     await expect(
       page.getByRole('heading', { name: 'App updates', exact: true, level: 1 })
     ).toBeVisible();
+    await configurationsPage.checkBannerIsDismissed();
   });
 });
