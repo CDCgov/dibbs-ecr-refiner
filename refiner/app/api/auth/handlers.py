@@ -228,10 +228,30 @@ class NotificationInfo:
 @dataclass(frozen=True)
 class NotificationResponse:
     """
-    List of notification information to return to frontend.
+    Notification information needed to render frontend banners.
     """
 
     most_recent_app_update: NotificationInfo
+
+
+def _map_to_normalized_dt(val: str | datetime) -> datetime:
+    """Ensures value is a datetime, stripping tz for naive comparison."""
+    dt = datetime.fromisoformat(val) if isinstance(val, str) else val
+    return dt.replace(tzinfo=None)
+
+
+def _get_app_update_notif_info(db_user: DbUser) -> NotificationInfo:
+    latest_release_created_at = _map_to_normalized_dt(get_latest_release_created_at())
+
+    app_update_str = db_user.notifications.get("most_recent_app_update")
+    app_update_ack = (
+        _map_to_normalized_dt(app_update_str) if app_update_str else datetime.min
+    )
+
+    should_show_app_update = latest_release_created_at > app_update_ack
+    return NotificationInfo(
+        should_show=should_show_app_update, date_acknowledged=app_update_ack.isoformat()
+    )
 
 
 class UserResponse(BaseModel):
@@ -243,6 +263,21 @@ class UserResponse(BaseModel):
     username: str
     jurisdiction_id: str
     notifications: NotificationResponse
+
+    @classmethod
+    def from_db_user(cls, db_user: DbUser) -> "UserResponse":
+        """
+        Mapping method to layer notification information into base db info.
+        """
+
+        return cls(
+            id=db_user.id,
+            username=db_user.username,
+            jurisdiction_id=db_user.jurisdiction_id,
+            notifications=NotificationResponse(
+                most_recent_app_update=_get_app_update_notif_info(db_user=db_user)
+            ),
+        )
 
 
 @auth_router.get(
@@ -273,40 +308,7 @@ async def get_user(
     if not user:
         return None
 
-    return build_user_response(user)
-
-
-def _map_to_normalized_dt(val: str | datetime) -> datetime:
-    """Ensures value is a datetime, stripping tz for naive comparison."""
-    dt = datetime.fromisoformat(val) if isinstance(val, str) else val
-    return dt.replace(tzinfo=None)
-
-
-def build_user_response(user: DbUser) -> UserResponse:
-    """
-    Builds a UserResponse with computed notification display state.
-    """
-
-    latest_release_created_at = _map_to_normalized_dt(get_latest_release_created_at())
-
-    app_update_str = user.notifications.get("most_recent_app_update")
-    app_update_ack = (
-        _map_to_normalized_dt(app_update_str) if app_update_str else datetime.min
-    )
-
-    should_show_app_update = latest_release_created_at > app_update_ack
-
-    return UserResponse(
-        id=user.id,
-        username=user.username,
-        jurisdiction_id=user.jurisdiction_id,
-        notifications=NotificationResponse(
-            most_recent_app_update=NotificationInfo(
-                date_acknowledged=app_update_ack.isoformat(),
-                should_show=should_show_app_update,
-            )
-        ),
-    )
+    return UserResponse.from_db_user(user)
 
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
