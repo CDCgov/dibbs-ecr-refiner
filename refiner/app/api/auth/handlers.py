@@ -258,10 +258,8 @@ class UserResponse(BaseModel):
         latest_release_created_at = _map_to_aware_dt(get_latest_release_created_at())
 
         app_update_ack_str = db_user.notifications.get("most_recent_app_update")
-        app_update_ack_dt = (
-            _map_to_aware_dt(app_update_ack_str)
-            if app_update_ack_str
-            else _map_to_aware_dt(datetime.min)
+        app_update_ack_dt = _map_to_aware_dt(
+            app_update_ack_str if app_update_ack_str else datetime.min
         )
 
         should_show_app_update = latest_release_created_at > app_update_ack_dt
