@@ -104,3 +104,14 @@ check-code CONDITION VERSION SYSTEM CODE:
 [group('db')]
 delete-configuration CONFIGURATION_NAME:
     just db query "DELETE FROM configurations WHERE name = '{{ CONFIGURATION_NAME }}';"
+
+[doc('Set the jurisdiction for the "refiner" user. Creates the jurisdiction record if it does not exist')]
+[group('db')]
+set-jd JURISDICTION_ID:
+    just db query "\
+        INSERT INTO jurisdictions (id, name, state_code) \
+        VALUES ('{{ JURISDICTION_ID }}', '{{ JURISDICTION_ID }}', '{{ JURISDICTION_ID }}') \
+        ON CONFLICT (id) DO NOTHING; \
+        UPDATE users \
+        SET jurisdiction_id = '{{ JURISDICTION_ID }}' \
+        WHERE username = 'refiner';"
