@@ -257,7 +257,7 @@ class UserResponse(BaseModel):
         Mapping method to layer notification information into base db info.
         """
 
-        latest_release_created_at = _map_to_aware_dt(get_latest_release_created_at())
+        latest_release_dt = _map_to_aware_dt(get_latest_release_created_at())
 
         app_update_ack_str = db_user.notifications.get(
             NotificationKeys.MOST_RECENT_APP_UPDATE
@@ -266,7 +266,7 @@ class UserResponse(BaseModel):
             app_update_ack_str if app_update_ack_str else datetime.min
         )
 
-        should_show_app_update = latest_release_created_at > app_update_ack_dt
+        should_show_app_update = latest_release_dt > app_update_ack_dt
 
         return cls(
             id=db_user.id,
