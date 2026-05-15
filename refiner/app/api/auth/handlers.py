@@ -1,6 +1,6 @@
 import secrets
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from logging import Logger
 from uuid import UUID
 
@@ -234,23 +234,24 @@ class NotificationResponse:
     most_recent_app_update: NotificationInfo
 
 
-def _map_to_normalized_dt(val: str | datetime) -> datetime:
-    """Ensures value is a datetime, stripping tz for naive comparison."""
+def _map_to_aware_dt(val: str | datetime) -> datetime:
+    """Ensures value is a datetime, mapping to UTC timezone."""
     dt = datetime.fromisoformat(val) if isinstance(val, str) else val
-    return dt.replace(tzinfo=None)
+    return dt.replace(tzinfo=UTC)
 
 
 def _get_app_update_notif_info(db_user: DbUser) -> NotificationInfo:
-    latest_release_created_at = _map_to_normalized_dt(get_latest_release_created_at())
+    latest_release_created_at = _map_to_aware_dt(get_latest_release_created_at())
 
-    app_update_str = db_user.notifications.get("most_recent_app_update")
-    app_update_ack = (
-        _map_to_normalized_dt(app_update_str) if app_update_str else datetime.min
+    app_update_ack_str = db_user.notifications.get("most_recent_app_update")
+    app_update_ack_dt = (
+        _map_to_aware_dt(app_update_ack_str) if app_update_ack_str else datetime.min
     )
 
-    should_show_app_update = latest_release_created_at > app_update_ack
+    should_show_app_update = latest_release_created_at > app_update_ack_dt
     return NotificationInfo(
-        should_show=should_show_app_update, date_acknowledged=app_update_ack.isoformat()
+        should_show=should_show_app_update,
+        date_acknowledged=app_update_ack_dt.isoformat(),
     )
 
 
