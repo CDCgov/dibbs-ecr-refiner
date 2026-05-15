@@ -409,7 +409,7 @@ class TestConfigurations:
             },
         )
         # FastAPI shouldn't allow this to work
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     async def test_custom_code_validation_fails_on_conflicting_code_set_code(
         self,
