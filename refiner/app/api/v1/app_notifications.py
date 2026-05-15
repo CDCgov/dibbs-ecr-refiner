@@ -17,7 +17,6 @@ class UpdateUserNotificationsRequest(BaseModel):
 
     name: str
     date_acknowledged: str
-    should_show: bool = False
 
 
 @router.patch(
