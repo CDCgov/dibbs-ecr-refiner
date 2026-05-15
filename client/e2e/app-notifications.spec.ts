@@ -38,24 +38,6 @@ test.describe('App update notifications', () => {
         });
       }
     );
-
-    await page.route(/\/api\/v1\/notifications\/?$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: '5deb43c2-6a82-4052-9918-616e01d255c7',
-          username: 'tester',
-          jurisdiction_id: 'JD-1',
-          notifications: {
-            most_recent_app_update: {
-              date_acknowledged: latestReleaseCreatedAt,
-            },
-          },
-        }),
-      });
-    });
-
     await configurationsPage.goto();
   });
 
