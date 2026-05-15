@@ -3,7 +3,7 @@ import { Configurations } from './pages/Configurations';
 import { Testing } from './pages/Testing';
 import { NotFound } from './pages/NotFound';
 import { Layout } from '@components/Layout';
-import { useLogin } from './hooks/Login';
+import { useLogin } from './hooks/useLogin';
 import { Home } from './pages/Home';
 import { ToastContainer } from 'react-toastify';
 import { ConfigBuild } from './pages/Configurations/ConfigBuild';
@@ -16,7 +16,7 @@ import { ActivityLog } from './pages/ActivityLog';
 import { AppUpdates } from './pages/AppUpdates';
 
 export function App() {
-  const [user, isLoading, setUser] = useLogin();
+  const { user, refreshUser, isLoading } = useLogin();
 
   if (isLoading) {
     return <Spinner variant="centered" />;
@@ -41,7 +41,7 @@ export function App() {
         <Route path="/activity" element={<ActivityLog />} />
         <Route
           path="/configurations"
-          element={<Configurations user={user} setUser={setUser} />}
+          element={<Configurations user={user} refreshUser={refreshUser} />}
         />
         <Route path="/configurations/:id/build" element={<ConfigBuild />} />
         <Route path="/configurations/:id/test" element={<ConfigTest />} />
