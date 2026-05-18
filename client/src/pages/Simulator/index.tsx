@@ -1,6 +1,6 @@
 import { Success } from './Success';
-import { RunTest } from './RunTest';
-import { TestRefinerDescription } from './TestRefinerDescription';
+import { RunSimulation } from './RunSimulation.tsx';
+import { SimulateRefinerDescription } from './SimulateRefinerDescription.tsx';
 import { useState } from 'react';
 import { useUploadEcr } from '../../api/demo/demo';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
@@ -9,14 +9,14 @@ import { FileUploadWarning } from '@components/FileUploadWarning';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
 
 type Status =
-  | 'run-test'
+  | 'run-simulation'
   | 'reportable-conditions'
   | 'success'
   | 'error'
   | 'pending';
 
-export function Testing() {
-  const [status, setStatus] = useState<Status>('run-test');
+export function Simulator() {
+  const [status, setStatus] = useState<Status>('run-simulation');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
@@ -47,17 +47,17 @@ export function Testing() {
   }
 
   function reset() {
-    setStatus('run-test');
+    setStatus('run-simulation');
     resetState();
   }
 
   return (
     <div className="flex px-10 md:px-20">
       <div className="flex flex-1 flex-col py-10">
-        {status === 'run-test' && (
+        {status === 'run-simulation' && (
           <>
-            <TestRefinerDescription />
-            <RunTest
+            <SimulateRefinerDescription />
+            <RunSimulation
               onClickSampleFile={runTestWithSampleFile}
               onClickCustomFile={runTestWithCustomFile}
               selectedFile={selectedFile}
@@ -68,14 +68,14 @@ export function Testing() {
 
         {status === 'pending' && (
           <>
-            <TestRefinerDescription />
+            <SimulateRefinerDescription />
             <Uploading />
           </>
         )}
 
         {status === 'reportable-conditions' && response?.data && (
           <>
-            <TestRefinerDescription />
+            <SimulateRefinerDescription />
             <ReportableConditionsResults
               matchedConditions={response.data.refined_conditions.map(
                 (c) => c.display_name

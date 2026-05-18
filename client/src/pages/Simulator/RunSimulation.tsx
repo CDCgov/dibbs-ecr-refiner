@@ -14,7 +14,7 @@ interface RunTestProps {
   selectedFile: File | null;
   setSelectedFile: React.Dispatch<React.SetStateAction<File | null>>;
 }
-export function RunTest({
+export function RunSimulation({
   onClickSampleFile,
   onClickCustomFile,
   selectedFile,
@@ -77,7 +77,7 @@ export function RunTest({
 
       <div className="mt-6 text-center">
         <span>
-          To download test files for some conditions you can{' '}
+          To download simulation files for some conditions you can{' '}
           <ExternalLink href={repoUrl}>
             visit eCR Refiner's repository
           </ExternalLink>
@@ -133,7 +133,7 @@ function UploadZipFile({
           ) : null}
           <label
             htmlFor="zip-upload"
-            aria-label="Open system file browser for testing"
+            aria-label="Open system file browser for simlating"
             role="button"
             className={labelStyling}
             tabIndex={0}

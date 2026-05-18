@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router';
 import { Configurations } from './pages/Configurations';
-import { Testing } from './pages/Testing';
+import { Simulator } from './pages/Simulator';
 import { NotFound } from './pages/NotFound';
 import { Layout } from '@components/Layout';
 import { useLogin } from './hooks/useLogin';
@@ -50,8 +50,7 @@ export function App() {
           element={<ConfigActivate />}
         />
         <Route path="/app-updates" element={<AppUpdates />} />
-
-        <Route path="/testing" element={<Testing />} />
+        <Route path="/simulator" element={<Simulator />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

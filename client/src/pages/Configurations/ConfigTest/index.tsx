@@ -6,7 +6,7 @@ import {
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
 import { Title } from '@components/Title';
-import { RunTest } from '../../Testing/RunTest';
+import { RunSimulation } from '../../Simulator/RunSimulation.tsx';
 import { useState } from 'react';
 import {
   useGetConfiguration,
@@ -17,7 +17,7 @@ import { GetConfigurationResponse } from '../../../api/schemas';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { ConfigurationTitleBar } from '../ConfigurationTitleBar';
 import { Spinner } from '@components/Spinner';
-import { Uploading } from '../../Testing/Uploading';
+import { Uploading } from '../../Simulator/Uploading';
 import { Status } from '../ConfigBuild/Status';
 import { VersionMenu } from '../ConfigBuild/VersionMenu';
 import { FileUploadWarning } from '@components/FileUploadWarning';
@@ -98,7 +98,7 @@ function Tester({ config }: TesterProps) {
   return (
     <div className="mb-51">
       {status === 'idle' && (
-        <RunTest
+        <RunSimulation
           onClickSampleFile={() => runTest(null)}
           onClickCustomFile={() => runTest(selectedFile)}
           selectedFile={selectedFile}

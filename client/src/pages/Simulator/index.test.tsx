@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Testing } from '.';
+import { Simulator } from '.';
 import { MemoryRouter } from 'react-router';
 import { useUploadEcr } from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
@@ -61,17 +61,17 @@ const renderView = () =>
   render(
     <MemoryRouter>
       <TestQueryClientProvider>
-        <Testing />
+        <Simulator />
       </TestQueryClientProvider>
     </MemoryRouter>
   );
 
-describe('Testing', () => {
+describe('Simulator', () => {
   afterEach(() => {
     vi.resetAllMocks();
   });
 
-  it('should navigate the testing flow using the sample file', async () => {
+  it('should navigate the simulator flow using the sample file', async () => {
     const user = userEvent.setup();
 
     const mockMutateAsync = vi.fn().mockResolvedValue({
@@ -88,7 +88,7 @@ describe('Testing', () => {
 
     renderView();
 
-    // check that we start on the "run test" page
+    // check that we start on the "simulate test" page
     expect(
       screen.getByText('Want to refine your own eCR file?')
     ).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('Testing', () => {
     expect(screen.getByText('eICR reduced by 59%')).toBeInTheDocument();
   });
 
-  it('should navigate the testing flow using an uploaded zip file', async () => {
+  it('should navigate the simulator flow using an uploaded zip file', async () => {
     const user = userEvent.setup();
 
     const mockMutateAsync = vi.fn().mockResolvedValue({
@@ -134,7 +134,7 @@ describe('Testing', () => {
 
     renderView();
 
-    // check that we start on the "run test" page
+    // check that we start on the "simulate test" page
     expect(screen.getByText('Upload .zip file')).toBeInTheDocument();
 
     const file = new File(['test'], 'test.zip', { type: 'application/zip' });

@@ -8,9 +8,9 @@ test.describe('Independent testing', () => {
   });
   test.afterEach(async () => await deleteAllConfigurations());
 
-  test('No active configurations', async ({ page, testingPage }) => {
-    await testingPage.goto();
-    await testingPage.uploadTestFile();
+  test('No active configurations', async ({ page, simulatorPage }) => {
+    await simulatorPage.goto();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
@@ -21,7 +21,7 @@ test.describe('Independent testing', () => {
     await expect(
       page.getByRole('button', { name: 'Start over' })
     ).toBeEnabled();
-    await testingPage.startOver();
+    await simulatorPage.startOver();
     await expect(
       page.getByText('Want to refine your own eCR file?')
     ).toBeVisible();
@@ -30,12 +30,12 @@ test.describe('Independent testing', () => {
 
   test('Only COVID-19 configuration in draft', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     await api.createConfiguration('COVID-19');
-    await testingPage.goto();
-    await testingPage.uploadTestFile();
+    await simulatorPage.goto();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
@@ -57,7 +57,7 @@ test.describe('Independent testing', () => {
 
   test('Only COVID-19 configuration is active', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     const config = await api.createConfiguration('COVID-19');
@@ -65,9 +65,9 @@ test.describe('Independent testing', () => {
 
     await page.reload();
 
-    await testingPage.goto();
+    await simulatorPage.goto();
 
-    await testingPage.uploadTestFile();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'We found the following reportable condition(s) in the RR:'
@@ -98,7 +98,7 @@ test.describe('Independent testing', () => {
 
   test('Both COVID-19 and Influenza configurations are active', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     const covid = await api.createConfiguration('COVID-19');
@@ -109,9 +109,9 @@ test.describe('Independent testing', () => {
 
     await page.reload();
 
-    await testingPage.goto();
+    await simulatorPage.goto();
 
-    await testingPage.uploadTestFile();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'We found the following reportable condition(s) in the RR:'
