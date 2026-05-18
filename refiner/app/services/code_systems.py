@@ -1,5 +1,4 @@
 from logging import Logger
-from uuid import UUID
 
 from fastapi import Depends
 from pydantic import BaseModel
