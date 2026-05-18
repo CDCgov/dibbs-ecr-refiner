@@ -3,7 +3,7 @@ from refiner.app.services.code_systems import CodeSystems
 
 from app.api.v1.codes.model import GetCodeSystemsReponse
 
-router = APIRouter()
+router = APIRouter(prefix="/code-systems")
 
 
 @router.get(
