@@ -35,7 +35,7 @@ import {
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
-import { updateUserNotifications } from '../../api/app-notifications/app-notifications';
+import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -81,7 +81,7 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
     <>
       {user && setUser && (
         <AppUpdateBanner
-          should_show={
+          isVisible={
             user.notifications.to_render[
               NotificationKeys.most_recent_app_update
             ]
@@ -129,22 +129,25 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 }
 
 function AppUpdateBanner({
-  should_show,
+  isVisible,
   setUser,
 }: {
-  should_show: boolean;
+  isVisible: boolean;
   setUser: Dispatch<SetStateAction<UserResponse | null>>;
 }) {
   const navigate = useNavigate();
+  const { mutateAsync } = useUpdateUserNotifications();
 
-  if (!should_show) {
+  if (!isVisible) {
     return null;
   }
 
   async function dismissNotification() {
     try {
-      const resp = await updateUserNotifications({
-        key: NotificationKeys.most_recent_app_update,
+      const resp = await mutateAsync({
+        data: {
+          key: NotificationKeys.most_recent_app_update,
+        },
       });
       setUser(resp.data);
     } catch (error) {
