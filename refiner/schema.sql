@@ -16,20 +16,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON SCHEMA public IS '';
-
-
---
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -342,7 +328,8 @@ CREATE TABLE public.users (
     email text NOT NULL,
     jurisdiction_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    notifications jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -737,4 +724,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260420140437'),
     ('20260427151426'),
     ('20260428155732'),
+    ('20260505141110'),
     ('20260511160133');
