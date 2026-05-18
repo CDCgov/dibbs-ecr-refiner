@@ -13,7 +13,7 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.terminology import SupportedCodeSystems
+from app.services.terminology import CodeSystems
 
 
 @dataclass(frozen=True)
@@ -130,25 +130,8 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: str
+    system_key: str
     name: str
-
-    @field_validator("system", mode="before")
-    @classmethod
-    def normalize_system(cls, v: str) -> str:
-        """
-        Make the system lowercase before Pydantic checks it.
-        """
-
-        if not isinstance(v, str):
-            raise TypeError('"system" must be a string')
-
-        lookup = {item.lower(): item for item in SupportedCodeSystems.allowed()}
-        norm_input = v.lower()
-        if norm_input in lookup:
-            return lookup[norm_input]
-
-        return v
 
 
 @dataclass(frozen=True)
@@ -222,7 +205,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: str
+    system_key: str
     name: str
     row: int | None = None
 

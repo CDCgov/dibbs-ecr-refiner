@@ -4,7 +4,7 @@ from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
-from app.db.code_systems.db import CodeSystemName
+from app.db.code_systems.db import CodeSystemKey
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.model import (
@@ -20,9 +20,9 @@ from app.services.ecr.specification import (
     load_spec,
 )
 from app.services.terminology import (
+    CodeSystems,
     CodeSystemSets,
     Coding,
-    SupportedCodeSystems,
     index_condition_code_list_by_system,
 )
 
@@ -166,8 +166,8 @@ async def convert_config_to_storage_payload(
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = SupportedCodeSystems.get_or_raise(cc.system)
-        system_to_extend = cur_code_system.name
+        cur_code_system = await CodeSystems.get_by_key_or_raise(cc.system)
+        system_to_extend = cur_code_system.key
 
         # route custom codes to the correct system dict
         coding_by_code_system[system_to_extend].append(
@@ -187,14 +187,14 @@ async def convert_config_to_storage_payload(
     # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
         # map each db code list to its target dict + OID
-        code_system_map: dict[CodeSystemName, list[DbConditionCoding]] = (
-            index_condition_code_list_by_system(condition)
-        )
+        code_system_map: dict[
+            CodeSystemKey, list[DbConditionCoding]
+        ] = await index_condition_code_list_by_system(condition)
 
-        for code_system_name, code_list in code_system_map.items():
+        for key, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
-            system_metadata = SupportedCodeSystems.get_or_raise(code_system_name)
-            coding_by_code_system[system_metadata.name].extend(
+            system_metadata = await CodeSystems.get_by_key_or_raise(key)
+            coding_by_code_system[system_metadata.key].extend(
                 [
                     asdict(
                         Coding(

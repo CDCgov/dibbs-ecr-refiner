@@ -32,7 +32,7 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
-from app.services.terminology import SupportedCodeSystems
+from app.services.terminology import CodeSystems
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
@@ -43,10 +43,10 @@ def _validate_add_custom_code_input(input: AddCustomCodeInput):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail='Required field "code" is missing.',
         )
-    if not input.system:
+    if not input.system_key:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Required field "system" is missing.',
+            detail='Required field "system_key" is missing.',
         )
     if not input.name:
         raise HTTPException(
@@ -88,7 +88,7 @@ async def add_custom_code(
     # validate input
     _validate_add_custom_code_input(body)
 
-    selected_code_system = SupportedCodeSystems.get_or_raise(body.system)
+    selected_code_system = await CodeSystems.get_by_key(body.system_key)
 
     # get user jurisdiction
     jd = user.jurisdiction_id
@@ -118,13 +118,14 @@ async def add_custom_code(
 
     # Create a custom code object
     if not selected_code_system:
+        allowed_keys = await CodeSystems.allowed_keys()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"System must be one of [{SupportedCodeSystems.allowed()}]. Got: {selected_code_system.name}",
+            detail=f"System must be one of [{allowed_keys}]",
         )
     custom_code = DbConfigurationCustomCode(
         code=body.code.strip(),
-        system=selected_code_system.name,
+        system=selected_code_system.key,
         name=body.name,
     )
 
@@ -227,7 +228,7 @@ async def upload_custom_codes_csv(
     errors: list[dict] = []
     code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
     batch_keys = set()
-    allowed_systems_str = ", ".join(SupportedCodeSystems.allowed())
+    allowed_systems_str = ", ".join(await CodeSystems.allowed_display_names())
     for row_number, row in enumerate(csv_reader, start=2):
         code = (row.get("code_number") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
@@ -241,14 +242,14 @@ async def upload_custom_codes_csv(
             row_errors.append("Missing display_name")
         sanitized_system = None
         try:
-            sanitized_system = SupportedCodeSystems.get_or_raise(code_system_raw)
+            sanitized_system = await CodeSystems.get_by_key_or_raise(code_system_raw)
         except ValueError:
             row_errors.append(
                 f"Invalid system: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
             )
         code_key = None
         if sanitized_system:
-            code_key = (code.lower(), sanitized_system.name)
+            code_key = (code.lower(), sanitized_system.key)
         if code_key in code_keys:
             row_errors.append("Duplicate: matches existing custom code")
         if code_key in batch_keys:
@@ -261,7 +262,7 @@ async def upload_custom_codes_csv(
             preview_items.append(
                 UploadCustomCodesPreviewItem(
                     code=code,
-                    system=sanitized_system.name,
+                    system_key=sanitized_system.key,
                     name=name,
                     row=row_number,
                 )
@@ -339,7 +340,7 @@ async def confirm_upload_custom_codes_csv(
             custom_codes=[
                 DbConfigurationCustomCode(
                     code=item.code,
-                    system=item.system,
+                    system=item.system_key,
                     name=item.name,
                 )
                 for item in body.custom_codes
@@ -474,7 +475,7 @@ class UpdateCustomCodeInput(BaseModel):
     new_name: str | None
 
 
-def _get_modified_custom_codes(
+async def _get_modified_custom_codes(
     config: DbConfiguration,
     updateInput: UpdateCustomCodeInput,
 ) -> list[DbConfigurationCustomCode]:
@@ -482,11 +483,11 @@ def _get_modified_custom_codes(
     custom_codes = config.custom_codes
 
     # find the code to modify
-    sanitized_system = SupportedCodeSystems.get_or_raise(updateInput.system)
+    sanitized_system = await CodeSystems.get_by_key_or_raise(updateInput.system)
     code_to_edit = [
         cc
         for cc in custom_codes
-        if cc.system == sanitized_system.name
+        if cc.system == sanitized_system.key
         and cc.code == updateInput.code
         and cc.name == updateInput.name
     ]
@@ -512,7 +513,7 @@ def _get_modified_custom_codes(
     # create a new code using the changes provided by the user.
     # use the old values as fallbacks.
     new_system_value = (
-        SupportedCodeSystems.get_or_raise(updateInput.new_system).name
+        (await CodeSystems.get_by_key_or_raise(updateInput.new_system)).key
         if updateInput.new_system
         else existing_code.system
     )
@@ -520,7 +521,7 @@ def _get_modified_custom_codes(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
         system=new_system_value
-        if isinstance(new_system_value, SupportedCodeSystems)
+        if isinstance(new_system_value, CodeSystems)
         else new_system_value,
     )
 
@@ -704,7 +705,7 @@ async def edit_custom_code(
             detail="Trying to update a non-draft configuration",
         )
 
-    custom_codes = _get_modified_custom_codes(
+    custom_codes = await _get_modified_custom_codes(
         config=config,
         updateInput=body,
     )

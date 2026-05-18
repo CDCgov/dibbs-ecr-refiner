@@ -1,15 +1,11 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
-from logging import Logger
-from typing import ClassVar
 
-from fastapi import Depends
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import CodeSystemName, DbCodeSystem, get_all_code_systems_db
-from app.db.pool import AsyncDatabaseConnection
-from app.services.logger import get_logger
+from app.db.code_systems.db import CodeSystemKey
+from app.services.code_systems import CodeSystems
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -22,130 +18,19 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 # =============================================================================
 
 
-# CODE SYSTEM MODELS
-# =============================================================================
-class SupportedCodeSystems(BaseModel):
-    """
-    An registry for code system data that pulls values from the db.
-    """
-
-    _registry: ClassVar[dict[CodeSystemName, DbCodeSystem]] = {}
-
-    @classmethod
-    async def load_from_db(cls, db: AsyncDatabaseConnection):
-        """Initialize registry from the database table call."""
-
-        systems = await get_all_code_systems_db(db)
-        cls._registry = systems
-
-    @classmethod
-    def get(cls, name: str) -> DbCodeSystem | None:
-        """
-        Get a specific code system based on its name.
-        """
-
-        return cls._registry.get(name)
-
-    @classmethod
-    def get_or_raise(cls, name: str) -> DbCodeSystem:
-        """
-        Get a specific code system based on its name, or raise otherwise.
-        """
-        string_to_search = name.strip().lower()
-        if string_to_search == "icd10":
-            # add the hyphen just in case they submit the non-hyphenated versions
-            string_to_search = "icd-10"
-
-        retrieved_system = cls.get(string_to_search)
-        if retrieved_system is None:
-            # try falling back to display name
-            retrieved_system = cls.get_by_display_name(string_to_search)
-
-            if retrieved_system is None:
-                raise ValueError(
-                    f"Requested code system {name} not found. Allowed code system must be one of: {cls.allowed()}"
-                )
-
-        return retrieved_system
-
-    @classmethod
-    def get_by_oid(
-        cls,
-        oid: str,
-        logger: Logger = Depends(get_logger),
-    ) -> DbCodeSystem | None:
-        """
-        Get a specific code system based on its name.
-        """
-        value = [system for system in cls._registry.values() if system.oid == oid]
-        if len(value) == 0:
-            return None
-        if len(value) > 1:
-            logger.warning(
-                "OID matched multiple code systems. Returning first matched value"
-            )
-
-        return value[0]
-
-    @classmethod
-    def get_by_display_name(
-        cls,
-        display_name: str,
-        logger: Logger = Depends(get_logger),
-    ) -> DbCodeSystem | None:
-        """
-        Get a specific code system based on its display name.
-        """
-        value = [
-            system_data
-            for system_data in cls._registry.values()
-            if system_data.display_name == display_name
-            or system_data.display_name.strip().lower() == display_name
-        ]
-        if len(value) == 0:
-            return None
-        if len(value) > 1:
-            logger.warning(
-                "Display name matched multiple code systems. Returning first matched value"
-            )
-
-        return value[0]
-
-    @classmethod
-    def all(cls) -> list[DbCodeSystem]:
-        """
-        Get all code system values.
-        """
-
-        return list(cls._registry.values())
-
-    @classmethod
-    def allowed(cls):
-        """
-        Get all allowed names for supported systems.
-        """
-
-        return list(cls._registry.keys())
-
-
-def index_condition_code_list_by_system(
+async def index_condition_code_list_by_system(
     condition: DbCondition,
-) -> dict[CodeSystemName, list[DbConditionCoding]]:
+) -> dict[CodeSystemKey, list[DbConditionCoding]]:
     """
-    Utility method to index condition code lists as stored into the DB by the system enum values. Useful for various processing jobs processing.
+    Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
     """
-
-    result: dict[CodeSystemName, list[DbConditionCoding]] = defaultdict(list)
-    for s in SupportedCodeSystems.all():
+    all_code_systems = await CodeSystems.all()
+    result: dict[CodeSystemKey, list[DbConditionCoding]] = defaultdict(list)
+    for s in all_code_systems:
         condition_column_index = f"{s.display_name}_codes"
-        result[s.name] = getattr(condition, condition_column_index, [])
+        result[s.key] = getattr(condition, condition_column_index, [])
 
     return result
-
-
-ALLOWED_CUSTOM_CODE_SYSTEM_NAMES = ", ".join(
-    item.display_name for item in SupportedCodeSystems.all()
-)
 
 
 @dataclass(frozen=True)
@@ -205,7 +90,7 @@ class CodeSystemSets:
             if isinstance(val, dict):
                 yield val
 
-    def _get_system_dict(self, code_system_oid: str) -> dict[str, Coding] | None:
+    async def _get_system_dict(self, code_system_oid: str) -> dict[str, Coding] | None:
         """
         Resolve an OID to the corresponding code system dict.
 
@@ -216,12 +101,12 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
 
-        attr_name = SupportedCodeSystems.get_by_oid(code_system_oid)
-        if attr_name is None:
+        system = await CodeSystems.get_by_oid(code_system_oid)
+        if system is None:
             return None
-        return getattr(self, attr_name.name)
+        return getattr(self, system.key)
 
-    def find_match(
+    async def find_match(
         self, code: str, code_system_oid: str | None = None
     ) -> Coding | None:
         """
@@ -240,7 +125,7 @@ class CodeSystemSets:
         """
 
         if code_system_oid is not None:
-            target = self._get_system_dict(code_system_oid)
+            target = await self._get_system_dict(code_system_oid)
             # unknown OID — fall through to check all systems
             # this handles local/proprietary code systems gracefully
             if target is not None:

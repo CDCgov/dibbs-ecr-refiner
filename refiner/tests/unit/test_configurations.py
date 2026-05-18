@@ -16,7 +16,7 @@ from app.db.configurations.model import (
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
-from app.services.terminology import SupportedCodeSystems
+from app.services.terminology import CodeSystems
 from app.services.testing import InlineTestingResult
 
 
@@ -227,7 +227,7 @@ async def test_disassociate_codeset_with_configuration(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "code_system",
-    SupportedCodeSystems.all(),
+    CodeSystems.all(),
 )
 async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch, code_system
@@ -303,7 +303,7 @@ async def test_edit_custom_code_from_configuration(
             DbConfigurationCustomCode(
                 code="edited-code",
                 name="updated-name",
-                system=SupportedCodeSystems.get_or_raise("loinc").name,
+                system=CodeSystems.get_by_key_or_raise("loinc").name,
             )
         ],
     )
@@ -324,7 +324,7 @@ async def test_edit_custom_code_from_configuration(
             DbConfigurationCustomCode(
                 code="test-code",
                 name="test-name",
-                system=SupportedCodeSystems.get_or_raise("loinc").name,
+                system=CodeSystems.get_by_key_or_raise("loinc").name,
             )
         ],
         section_processing=[],
