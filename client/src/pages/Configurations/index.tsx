@@ -7,7 +7,7 @@ import {
   useGetConfigurations,
 } from '../../api/configurations/configurations';
 import { useToast } from '../../hooks/useToast';
-import { Dispatch, SetStateAction, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
   GetConditionsResponse,
@@ -58,11 +58,11 @@ interface ConfigurationsTable {
 }
 
 interface ConfigurationsProps {
-  user?: UserResponse;
-  setUser?: Dispatch<SetStateAction<UserResponse | null>>;
+  user: UserResponse;
+  refreshUser: () => void;
 }
 
-export function Configurations({ user, setUser }: ConfigurationsProps) {
+export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   const { data: response, isPending, isError } = useGetConfigurations();
   const configs = useMemo(() => response?.data ?? [], [response?.data]);
 
@@ -79,16 +79,12 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
   return (
     <>
-      {user && setUser && (
-        <AppUpdateBanner
-          isVisible={
-            user.notifications.to_render[
-              NotificationKeys.most_recent_app_update
-            ]
-          }
-          setUser={setUser}
-        />
-      )}
+      <AppUpdateBanner
+        isVisible={
+          user.notifications.to_render[NotificationKeys.most_recent_app_update]
+        }
+        refreshUser={refreshUser}
+      />
       <section className="mx-auto p-3">
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
@@ -130,10 +126,10 @@ export function Configurations({ user, setUser }: ConfigurationsProps) {
 
 function AppUpdateBanner({
   isVisible,
-  setUser,
+  refreshUser,
 }: {
   isVisible: boolean;
-  setUser: Dispatch<SetStateAction<UserResponse | null>>;
+  refreshUser: () => void;
 }) {
   const navigate = useNavigate();
   const { mutateAsync } = useUpdateUserNotifications();
@@ -144,12 +140,12 @@ function AppUpdateBanner({
 
   async function dismissNotification() {
     try {
-      const resp = await mutateAsync({
+      await mutateAsync({
         data: {
           key: NotificationKeys.most_recent_app_update,
         },
       });
-      setUser(resp.data);
+      refreshUser();
     } catch (error) {
       console.error('Failed to update user notifications', error);
     }

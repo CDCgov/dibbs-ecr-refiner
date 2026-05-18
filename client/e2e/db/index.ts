@@ -17,6 +17,8 @@ export async function deleteAllConfigurations(): Promise<void> {
   await db.query('DELETE FROM configurations');
 }
 
-export async function resetUserNotificationState(): Promise<void> {
-  await db.query("UPDATE users SET notifications = '{}'");
+export async function clearUserNotifications(): Promise<void> {
+  await db.query(
+    "UPDATE users SET notifications = '{}'::jsonb WHERE username = 'refiner'"
+  );
 }
