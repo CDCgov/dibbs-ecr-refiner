@@ -15,9 +15,8 @@ const mockUser: UserResponse = {
   username: 'test',
   jurisdiction_id: 'jd',
   notifications: {
-    most_recent_app_update: {
-      date_acknowledged: '',
-      should_show: false,
+    to_render: {
+      most_recent_app_update: false,
     },
   },
 };
