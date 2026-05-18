@@ -4,6 +4,7 @@ from lxml import etree
 
 from app.services.ecr.augment import (
     REFINER_DETERMINISTIC_NS,
+    REMAINDER_SCOPE,
     AugmentationRun,
     _derive_augmented_eicr_id,
     _derive_augmented_eicr_setid,
@@ -12,7 +13,6 @@ from app.services.ecr.augment import (
     augment_eicr,
     augment_rr,
     create_augmentation_run,
-    extract_uuid_from_canonical_url,
 )
 from app.services.ecr.model import HL7_NS
 
@@ -26,7 +26,11 @@ _TEST_CANONICAL_URL = (
     "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
     "07221093-b8a1-4b1d-8678-259277bfba64"
 )
-_TEST_CONDITION_GROUPER_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
+# the scope discriminator is a UUID object now (the type is the
+# validator). tests pass UUIDs directly rather than strings; the
+# canonical_url → UUID conversion is exercised by aws/s3_keys tests,
+# not here
+_TEST_CONDITION_GROUPER_UUID = uuid.UUID("07221093-b8a1-4b1d-8678-259277bfba64")
 
 # fixed values used across tests so assertions don't depend on UUIDs or
 # wall-clock time. Tests that need to verify ID stamping derive the
@@ -463,6 +467,74 @@ def test_augment_rr_relatedDocument_omits_setId_and_version_when_input_lacks_the
     assert parent_doc.find("hl7:versionNumber", HL7_NS) is None
 
 
+def test_augment_rr_relatedDocument_carries_setId_and_version_when_input_has_them(
+    rr_root_v1_1: etree.Element,
+):
+    """
+    When the input RR *does* carry <setId> and <versionNumber>, the
+    augmented RR's relatedDocument/parentDocument carries both into
+    the lineage — faithfully, not synthesized.
+
+    This is the refine-of-an-already-augmented-document case: augment_rr
+    writes setId/versionNumber unconditionally under v4, so feeding an
+    augmented RR back through refinement produces an input that has
+    them. The omission in the sibling test is input-conditional, not a
+    blanket RR behavior; this test pins the other half of that
+    contract so a regression in _build_related_document_for_input
+    can't silently drop prior identity from the chain.
+
+    Verified against both scope kinds (a condition grouper UUID and
+    the remainder literal) so the remainder RR's lineage gets the same
+    guarantee as the per-condition output's.
+    """
+
+    ns = "urn:hl7-org:v3"
+
+    # the stock fixture lacks setId/versionNumber (that's what the
+    # omission test pins). Add them so this represents an RR that was
+    # itself already augmented and is now being refined again.
+    original_setid_root = "1b2bb157-7f36-547d-9ce8-6eae3fa77cce"
+    original_version_value = "2"
+
+    setid_el = etree.SubElement(rr_root_v1_1, f"{{{ns}}}setId")
+    setid_el.set("root", original_setid_root)
+    version_el = etree.SubElement(rr_root_v1_1, f"{{{ns}}}versionNumber")
+    version_el.set("value", original_version_value)
+
+    # confirm the precondition before augmenting
+    assert rr_root_v1_1.find("hl7:setId", HL7_NS) is not None
+    assert rr_root_v1_1.find("hl7:versionNumber", HL7_NS) is not None
+
+    for scope in (_TEST_CONDITION_GROUPER_UUID, REMAINDER_SCOPE):
+        # fresh tree per scope so the two augmentations don't interfere
+        rr_copy = etree.fromstring(etree.tostring(rr_root_v1_1))
+
+        run = _make_run()
+        augment_rr(
+            rr_copy,
+            run,
+            jurisdiction_id=_TEST_JURISDICTION_ID,
+            scope=scope,
+        )
+
+        related_doc = rr_copy.find("hl7:relatedDocument[@typeCode='XFRM']", HL7_NS)
+        parent_doc = related_doc.find("hl7:parentDocument", HL7_NS)
+
+        # the prior identity is carried into the lineage verbatim
+        parent_setid = parent_doc.find("hl7:setId", HL7_NS)
+        parent_version = parent_doc.find("hl7:versionNumber", HL7_NS)
+
+        assert parent_doc.find("hl7:id", HL7_NS) is not None
+        assert parent_setid is not None, (
+            f"parentDocument should carry setId for scope={scope!r}"
+        )
+        assert parent_setid.get("root") == original_setid_root
+        assert parent_version is not None, (
+            f"parentDocument should carry versionNumber for scope={scope!r}"
+        )
+        assert parent_version.get("value") == original_version_value
+
+
 # NOTE:
 # CHAINING TESTS — v4 N-sibling shape
 # =============================================================================
@@ -493,7 +565,7 @@ def test_augment_eicr_chains_prior_relatedDocs_as_siblings(
     # tool_code/tool_display travel as kwargs on augment_eicr — they
     # default to the Refiner's identity in production but tests can
     # override to simulate other tools in the chain.
-    first_scope = "11111111-1111-1111-1111-111111111111"
+    first_scope = uuid.UUID("11111111-1111-1111-1111-111111111111")
     augment_eicr(
         eicr_root_v1_1,
         _make_run(),
@@ -512,7 +584,7 @@ def test_augment_eicr_chains_prior_relatedDocs_as_siblings(
     # second augmentation simulates the Refiner running on the prior
     # output — different scope so the derived ids differ, and the
     # default Refiner tool identity.
-    second_scope = "22222222-2222-2222-2222-222222222222"
+    second_scope = uuid.UUID("22222222-2222-2222-2222-222222222222")
     augment_eicr(
         eicr_root_v1_1,
         _make_run(),
@@ -639,51 +711,15 @@ def test_pair_recoverability_via_eicr_setid_only():
 
 
 # NOTE:
-# CANONICAL URL UUID EXTRACTION
-# =============================================================================
-
-
-def test_extract_uuid_from_canonical_url_returns_trailing_uuid_verbatim():
-    """
-    The extractor returns the trailing UUID exactly as it appears in
-    the canonical_url — no normalization. Whatever casing TES delivers
-    is what we seed with. URL shape validation lives at the data-ingest
-    seam (the conditions table is populated from reviewed PRs), not
-    here.
-    """
-
-    url = (
-        "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-        "07221093-b8a1-4b1d-8678-259277bfba64"
-    )
-    assert (
-        extract_uuid_from_canonical_url(url) == "07221093-b8a1-4b1d-8678-259277bfba64"
-    )
-
-
-def test_extract_uuid_from_canonical_url_tolerates_trailing_slash():
-    """
-    urlparse + rstrip("/") handles both "/<uuid>" and "/<uuid>/" forms.
-    """
-
-    base = (
-        "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-        "07221093-b8a1-4b1d-8678-259277bfba64"
-    )
-    assert extract_uuid_from_canonical_url(base) == extract_uuid_from_canonical_url(
-        base + "/"
-    )
-
-
-# NOTE:
 # DERIVATION HELPER TESTS
 # =============================================================================
 
 # two distinct condition grouper UUIDs for tests that need to verify
 # discrimination on condition. these are realistic-shape UUIDs but are
-# not actual TES UUIDs.
-_COVID_GROUPER_UUID = "07221093-b8a1-4b1d-8678-259277bfba64"
-_FLU_GROUPER_UUID = "1c5ed2a0-5a4f-4d3e-a1b2-7f8e9d0c3b4a"
+# not actual TES UUIDs. UUID objects, since the derive helpers take
+# UUID (the type is the validator).
+_COVID_GROUPER_UUID = uuid.UUID("07221093-b8a1-4b1d-8678-259277bfba64")
+_FLU_GROUPER_UUID = uuid.UUID("1c5ed2a0-5a4f-4d3e-a1b2-7f8e9d0c3b4a")
 
 
 def test_derive_augmented_eicr_id_is_pure_function_of_inputs():

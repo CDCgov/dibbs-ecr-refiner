@@ -213,10 +213,18 @@ async def demo_upload(
 
     # add remainder RR: carries reportability for conditions that did not have an active
     # configuration for the jurisdiction; see pipeline.produce_remainder_rr_for_jurisdiction
+    #
+    # TODO:
+    # **s3-path** this filename intentionally mirrors what the lambda
+    # writes to S3 (the `unrefined_rr/` path segment) so the demo zip
+    # previews the real artifact. the internal vocabulary is "remainder"
+    # everywhere in python; this user-/wire-facing name stays
+    # "unrefined_rr" until the S3 path rename is coordinated with AIMS;
+    # when that lands, this becomes "CDA_RR_remainder.xml"
     if test_results.remainder_rr is not None:
         zip_package.add(
             ZipFileItem(
-                file_name="CDA_RR_remainder.xml",
+                file_name="CDA_RR_unrefined_rr.xml",
                 file_content=test_results.remainder_rr.remainder_rr,
             )
         )

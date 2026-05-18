@@ -2,8 +2,8 @@ import uuid
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Final
-from urllib.parse import urlparse
+from typing import Final, Literal
+from uuid import UUID
 
 from lxml import etree
 from lxml.etree import _Element
@@ -84,32 +84,35 @@ _SEED_FIELD_SEPARATOR: Final[str] = "|"
 # families of output within a jurisdiction. cannot collide with any
 # real grouper UUID because UUIDs have a fixed 36-character hyphenated
 # shape that the literal does not satisfy
-REMAINDER_SCOPE: Final[str] = "remainder"
+REMAINDER_SCOPE: Final[Literal["remainder"]] = "remainder"
+
+# The within-jurisdiction scope discriminator for RR-side derivations:
+# either a condition grouper UUID (per-condition pair output) or the
+# remainder literal. The UUID *type* is the validator; callers
+# construct a UUID from the canonical_url's trailing segment (via
+# aws/s3_keys._extract_uuid_from_canonical_url), and a malformed URL
+# fails at UUID() construction rather than producing a silently-wrong
+# seed
+Scope = UUID | Literal["remainder"]
 
 
-def extract_uuid_from_canonical_url(canonical_url: str) -> str:
+def _scope_seed_value(scope: Scope) -> str:
     """
-    Extract the trailing UUID from a TES condition grouper canonical_url.
+    Normalize a Scope to its seed-string form.
 
-    TES canonical URLs end with the UUID that uniquely identifies the
-    condition grouper across versions. That UUID is the part we seed
-    deterministic augmented identifiers from--and is what callers
-    pass as the `condition_grouper_uuid` argument to augment_eicr or
-    as the `scope` argument to augment_rr in the per-condition case.
-
-    Returns the UUID as it appears in the URL — no normalization. The
-    Refiner treats the canonical_url as authoritative; whatever casing
-    TES uses is what we seed with. URL shape validation lives at the
-    data-ingest seam, not here.
+    The single place the UUID→str normalization happens for the seed.
+    str(UUID) yields canonical lowercase hyphenated form; the remainder
+    literal passes through unchanged. Centralized so the
+    wire-protocol-sensitive conversion is auditable in one spot.
     """
 
-    return urlparse(canonical_url).path.rstrip("/").rsplit("/", 1)[-1]
+    return str(scope)
 
 
 def _derive_augmented_eicr_id(
     original_eicr_id_root: str,
     jurisdiction_id: str,
-    condition_grouper_uuid: str,
+    condition_grouper_uuid: UUID,
 ) -> str:
     """
     Deterministic id for the augmented eICR (per-condition pair output).
@@ -117,13 +120,17 @@ def _derive_augmented_eicr_id(
     Same input pair + same (jurisdiction, condition) scope yields
     the same output (idempotent). See the augmentation guide for the
     seed derivation rationale and worked examples.
+
+    condition_grouper_uuid is a UUID--the type is the validator.
+    Callers convert the canonical_url to a UUID before calling; a
+    malformed URL fails at construction, not here.
     """
 
     return str(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{condition_grouper_uuid}{_SEED_FIELD_SEPARATOR}"
+            f"{_scope_seed_value(condition_grouper_uuid)}{_SEED_FIELD_SEPARATOR}"
             f"{original_eicr_id_root}",
         )
     )
@@ -132,7 +139,7 @@ def _derive_augmented_eicr_id(
 def _derive_augmented_rr_id(
     original_rr_id_root: str,
     jurisdiction_id: str,
-    scope: str,
+    scope: Scope,
 ) -> str:
     """
     Deterministic id for the augmented RR.
@@ -148,7 +155,7 @@ def _derive_augmented_rr_id(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{scope}{_SEED_FIELD_SEPARATOR}"
+            f"{_scope_seed_value(scope)}{_SEED_FIELD_SEPARATOR}"
             f"{original_rr_id_root}",
         )
     )
@@ -157,7 +164,7 @@ def _derive_augmented_rr_id(
 def _derive_augmented_eicr_setid(
     original_eicr_setid_root: str,
     jurisdiction_id: str,
-    condition_grouper_uuid: str,
+    condition_grouper_uuid: UUID,
 ) -> str:
     """
     Deterministic setId for the augmented eICR (per-condition pair output).
@@ -172,7 +179,7 @@ def _derive_augmented_eicr_setid(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{condition_grouper_uuid}{_SEED_FIELD_SEPARATOR}"
+            f"{_scope_seed_value(condition_grouper_uuid)}{_SEED_FIELD_SEPARATOR}"
             f"{_SEED_PREFIX_EICR_SETID}:{original_eicr_setid_root}",
         )
     )
@@ -181,7 +188,7 @@ def _derive_augmented_eicr_setid(
 def _derive_augmented_rr_setid(
     original_eicr_setid_root: str,
     jurisdiction_id: str,
-    scope: str,
+    scope: Scope,
 ) -> str:
     """
     Deterministic setId for the augmented RR.
@@ -202,7 +209,7 @@ def _derive_augmented_rr_setid(
         uuid.uuid5(
             REFINER_DETERMINISTIC_NS,
             f"{jurisdiction_id}{_SEED_FIELD_SEPARATOR}"
-            f"{scope}{_SEED_FIELD_SEPARATOR}"
+            f"{_scope_seed_value(scope)}{_SEED_FIELD_SEPARATOR}"
             f"{_SEED_PREFIX_RR_SETID}:{original_eicr_setid_root}",
         )
     )
@@ -354,7 +361,7 @@ def augment_eicr(
     eicr_root: _Element,
     run: AugmentationRun,
     jurisdiction_id: str,
-    condition_grouper_uuid: str,
+    condition_grouper_uuid: UUID,
     tool_code: str = REFINER_TOOL_CODE,
     tool_display: str = REFINER_TOOL_DISPLAY,
 ) -> AugmentedResult:
@@ -374,8 +381,10 @@ def augment_eicr(
 
     The eICR is always augmented as part of a per-condition pair;
     there is no remainder eICR. So this function takes
-    condition_grouper_uuid directly rather than the more general
-    `scope` parameter that augment_rr accepts.
+    condition_grouper_uuid directly (a UUID) rather than the more
+    general `scope` parameter that augment_rr accepts. The UUID type
+    is the validator; the caller converts the canonical_url to a
+    UUID before calling.
 
     tool_code and tool_display default to the Refiner's identity from
     the Data Augmentation Tool value set (Vol 2 Table 2). Production
@@ -439,7 +448,7 @@ def augment_rr(
     rr_root: _Element,
     run: AugmentationRun,
     jurisdiction_id: str,
-    scope: str,
+    scope: Scope,
     tool_code: str = REFINER_TOOL_CODE,
     tool_display: str = REFINER_TOOL_DISPLAY,
 ) -> AugmentedResult:
@@ -812,13 +821,10 @@ def _build_related_document_for_input(original: _OriginalIdentity) -> _Element:
     """
     Build a v4-shape <relatedDocument> referencing the input we just augmented.
 
-    Honestly emits whatever identity the input had — id is always
+    Honestly emits whatever identity the input had: id is always
     present (every CDA document has one), setId and versionNumber
-    are emitted only when the input had them.
-
-    When the input lacks setId or versionNumber (common for RRs),
-    the parentDocument block omits those children. This is
-    a deliberate violation of v4 CONF:5573-77 / CONF:5573-78.
+    are emitted whenever the input has them and omitted only when
+    the input lacks them.
 
     assigningAuthorityName values:
         - Original input (no prior relatedDocs): id and setId carry
