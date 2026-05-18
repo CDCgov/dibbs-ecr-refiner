@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.codes.model import GetSupportedCodeSystemsReponse
 from app.services.terminology import SupportedCodeSystems
 
-router = APIRouter()
+router = APIRouter(prefix="/code-systems")
 
 
 @router.get(
