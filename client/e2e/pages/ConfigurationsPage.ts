@@ -39,4 +39,13 @@ export class ConfigurationsPage {
       .getByRole('searchbox', { name: 'Search configurations' })
       .clear();
   }
+
+  async checkBannerIsDismissed() {
+    await this.goto();
+    await expect(
+      this.page.getByText('There are new updates to eCR Refiner.', {
+        exact: false,
+      })
+    ).not.toBeVisible();
+  }
 }

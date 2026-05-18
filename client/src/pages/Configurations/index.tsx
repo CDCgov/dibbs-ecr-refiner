@@ -11,7 +11,7 @@ import { useMemo, useState } from 'react';
 import { useGetConditions } from '../../api/conditions/conditions';
 import {
   GetConditionsResponse,
-  NotificationInfo,
+  NotificationKeys,
   UserResponse,
 } from '../../api/schemas';
 import { Link, useNavigate } from 'react-router';
@@ -35,7 +35,7 @@ import {
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
 import { Icon } from '@trussworks/react-uswds';
-import { updateUserNotifications } from '../../api/app-notifications/app-notifications';
+import { useUpdateUserNotifications } from '../../api/app-notifications/app-notifications';
 
 enum ConfigurationStatus {
   on = 'on',
@@ -80,7 +80,9 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
   return (
     <>
       <AppUpdateBanner
-        appUpdateInfo={user.notifications.most_recent_app_update}
+        isVisible={
+          user.notifications.to_render[NotificationKeys.most_recent_app_update]
+        }
         refreshUser={refreshUser}
       />
       <section className="mx-auto p-3">
@@ -123,23 +125,25 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
 }
 
 function AppUpdateBanner({
-  appUpdateInfo,
+  isVisible,
   refreshUser,
 }: {
-  appUpdateInfo: NotificationInfo;
+  isVisible: boolean;
   refreshUser: () => void;
 }) {
   const navigate = useNavigate();
+  const { mutateAsync } = useUpdateUserNotifications();
 
-  if (!appUpdateInfo?.should_show) {
+  if (!isVisible) {
     return null;
   }
 
   async function dismissNotification() {
     try {
-      await updateUserNotifications({
-        name: 'most_recent_app_update',
-        date_acknowledged: new Date().toISOString(),
+      await mutateAsync({
+        data: {
+          key: NotificationKeys.most_recent_app_update,
+        },
       });
       refreshUser();
     } catch (error) {
@@ -157,7 +161,7 @@ function AppUpdateBanner({
 
   return (
     <div className="drop-shadow-nav bg-blue-100 px-4 py-3">
-      <div className="mx-auto flex max-w-screen-xl items-center">
+      <div className="mx-auto flex max-w-7xl items-center">
         <div className="flex flex-1 items-center justify-center gap-4">
           <div className="flex items-center gap-2">
             <Icon.Info size={3} aria-hidden className="text-blue-40v" />

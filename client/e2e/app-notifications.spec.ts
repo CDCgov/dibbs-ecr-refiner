@@ -43,7 +43,6 @@ test.describe('App update notifications', () => {
       page.getByRole('heading', { name: 'App updates' })
     ).toBeVisible();
     await configurationsPage.goto();
-
     await expect(bannerText).not.toBeVisible();
   });
 

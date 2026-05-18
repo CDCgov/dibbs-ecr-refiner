@@ -14,11 +14,6 @@ class UserInfoBase:
     email: str
 
 
-type NotificationName = str
-type DateTimeAcknowledged = str
-type Notifications = dict[NotificationName, DateTimeAcknowledged]
-
-
 @dataclass(frozen=True)
 class DbUser:
     """
@@ -31,4 +26,4 @@ class DbUser:
     jurisdiction_id: str
     created_at: datetime
     updated_at: datetime
-    notifications: Notifications
+    notifications: dict

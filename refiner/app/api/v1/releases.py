@@ -1,7 +1,7 @@
 import re
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import lru_cache
 from uuid import uuid4
 
@@ -217,6 +217,6 @@ def get_latest_release_created_at() -> datetime:
 
     if not releases:
         # release never existed
-        return datetime.min
+        return datetime.min.replace(tzinfo=UTC)
 
     return releases[0].created_at
