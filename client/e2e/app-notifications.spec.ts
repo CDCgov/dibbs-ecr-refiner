@@ -1,17 +1,14 @@
 import { test, expect } from './fixtures';
-import { clearUserNotifications, deleteAllConfigurations } from './db';
+import { clearUserNotifications } from './db';
 
 test.describe('App update notifications', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await clearUserNotifications();
-    await deleteAllConfigurations();
-
     await configurationsPage.goto();
   });
 
   test.afterEach(async () => {
     await clearUserNotifications();
-    await deleteAllConfigurations();
   });
 
   test('shows app update banner when latest release has not been acknowledged', async ({
