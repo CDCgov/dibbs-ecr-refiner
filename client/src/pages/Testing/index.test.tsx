@@ -2,59 +2,51 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Testing } from '.';
 import { MemoryRouter } from 'react-router';
-import { useUploadEcr } from '../../api/demo/demo.ts';
+import {
+  useDiscoverConfigurations,
+  useUploadEcr,
+} from '../../api/demo/demo.ts';
 import { Mock } from 'vitest';
-import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
 import { TestQueryClientProvider } from '../../test-utils.tsx';
-import { FileInfoResponseValue } from '../../api/schemas/fileInfoResponse.ts';
+import { DiscoveredConfigurationsResponse } from '../../api/schemas/discoveredConfigurationsResponse.ts';
 
-vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
+vi.mock('../../api/demo/demo', () => ({
+  useUploadEcr: vi.fn(),
+  useDiscoverConfigurations: vi.fn(),
+}));
 
 vi.mock('../../hooks/useGetEnv', () => ({
   useGetEnv: vi.fn(() => 'local'),
 }));
 
-const mockTestFile = new File(['test'], 'test.zip', { type: 'text/plain' });
-
-const mockUploadResponse: IndependentTestUploadResponse = {
-  refined_conditions: [
+const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
+  sets: [
     {
-      code: 'mock-code',
-      display_name: 'mock condition name',
-      refined_eicr: '<data>less data</data>',
-      stats: ['eICR reduced by 59%'],
-      render_diff: true,
+      name: 'COVID-19',
+      condition_id: '2da5c712-6dc6-4ddf-8d1a-e34c0e77913a',
+      versions: [
+        {
+          id: '4b7900b7-6f09-4ad5-bb94-49d5868d7a9a',
+          version: 1,
+          status: 'draft',
+        },
+      ],
+    },
+    {
+      name: 'Influenza',
+      condition_id: '9bf9da1a-10a8-487c-8bcf-85a55ad229dd',
+      versions: [
+        {
+          id: '5b7900b7-6f09-4ad5-bb94-49d5868d7a9a',
+          version: 1,
+          status: 'active',
+        },
+      ],
     },
   ],
-  conditions_without_matching_configs: [],
-  conditions_without_active_configs: [],
-  refined_conditions_found: 1,
-  message: 'test message',
-  unrefined_eicr: '<data>tons of data here</data>',
-  refined_download_key: '43ca0ec6-d280-434c-9bbc-c3b3dd51e94e_refined_ecr.zip',
-  file_info_response: FileInfoResponseValue,
-};
-
-const mockCustomUploadResponse: IndependentTestUploadResponse = {
-  refined_conditions: [
-    {
-      code: 'mock-custom-file',
-      display_name: 'custom condition',
-      refined_eicr: '<data>refined custom data</data>',
-      stats: ['eICR reduced by 77%'],
-      render_diff: true,
-    },
-  ],
-  conditions_without_matching_configs: [],
-  conditions_without_active_configs: [],
-  refined_conditions_found: 1,
-  message: 'test message',
-  unrefined_eicr: '<data>unrefined custom data</data>',
-  refined_download_key: 'de3858c7-28a7-487c-ad7a-3853a8356811_refined_ecr.zip',
-  file_info_response: FileInfoResponseValue,
 };
 
 const renderView = () =>
@@ -66,445 +58,144 @@ const renderView = () =>
     </MemoryRouter>
   );
 
-describe('Testing', () => {
-  afterEach(() => {
-    vi.resetAllMocks();
+type MutationParam = {
+  onError?: (error: Error) => void;
+};
+
+describe('Independent testing', () => {
+  describe('Independent testing - errors during config discovery', () => {
+    beforeEach(() => {
+      (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
+        mutateAsync: vi.fn().mockResolvedValue({
+          status: 200,
+          data: mockConfigDiscoveryResponse,
+        }),
+        data: { data: mockConfigDiscoveryResponse },
+        reset: vi.fn(),
+      });
+
+      (useUploadEcr as unknown as Mock).mockReturnValue({
+        mutateAsync: vi.fn(),
+        data: undefined,
+        reset: vi.fn(),
+      });
+    });
+
+    afterEach(() => {
+      vi.resetAllMocks();
+    });
+
+    it('should navigate to the error view when the upload request fails', async () => {
+      const user = userEvent.setup();
+
+      (useDiscoverConfigurations as unknown as Mock).mockImplementation(
+        ({ mutation }: { mutation?: MutationParam }) => {
+          return {
+            mutateAsync: vi.fn().mockImplementation(() => {
+              const error = new AxiosError('API call failed') as Error & {
+                response: { data: { detail: string } };
+              };
+              error.response = { data: { detail: 'Server is down' } };
+              if (mutation?.onError) {
+                mutation.onError(error);
+              }
+              throw error;
+            }),
+            reset: vi.fn(),
+          };
+        }
+      );
+
+      renderView();
+      await uploadTestFile(user);
+
+      expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
+      expect(await screen.findByText('Server is down')).toBeInTheDocument();
+
+      await user.click(await screen.findByText('Try again'));
+
+      expect(
+        await screen.findByText('Refine .zip file', { selector: 'button' })
+      ).toBeInTheDocument();
+    });
+
+    it('should let the user know that no conditions reportable to their JD ID were found in the RR', async () => {
+      const user = userEvent.setup();
+
+      (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
+        mutateAsync: vi.fn(),
+        data: {
+          data: {
+            sets: [],
+          },
+        },
+        reset: vi.fn(),
+      });
+
+      renderView();
+      await uploadTestFile(user);
+
+      expect(await screen.findByText('Start over')).toBeInTheDocument();
+      expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'No conditions reportable to your jurisdiction were found in the RR.'
+        )
+      ).toBeInTheDocument();
+    });
   });
 
-  it('should navigate the testing flow using the sample file', async () => {
-    const user = userEvent.setup();
+  describe('Independent testing - errors during refinement', () => {
+    beforeEach(() => {
+      (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
+        mutateAsync: vi.fn().mockResolvedValue({
+          status: 200,
+          data: mockConfigDiscoveryResponse,
+        }),
+        data: { data: mockConfigDiscoveryResponse },
+        reset: vi.fn(),
+      });
 
-    const mockMutateAsync = vi.fn().mockResolvedValue({
-      status: 200,
-      data: mockUploadResponse,
-    });
-
-    // navigate to reportable conditions
-    (useUploadEcr as unknown as Mock).mockReturnValue({
-      mutateAsync: mockMutateAsync,
-      data: { data: mockUploadResponse },
-      reset: vi.fn(),
-    });
-
-    renderView();
-
-    // check that we start on the "run test" page
-    expect(
-      screen.getByText('Want to refine your own eCR file?')
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText('This environment is not approved to handle PHI/PII.', {
-        exact: false,
-      })
-    ).toBeInTheDocument();
-    await uploadTestFile(user);
-
-    expect(useUploadEcr).toHaveBeenCalled();
-    expect(mockMutateAsync).toHaveBeenCalledOnce();
-
-    // check reportable conditions view
-    expect(
-      screen.getByText(
-        'We found the following reportable condition(s) in the RR:'
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('mock condition name')).toBeInTheDocument();
-    await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
-
-    // check success page
-    expect(screen.getByText('eCR refinement results')).toBeInTheDocument();
-    expect(screen.getByText('eICR reduced by 59%')).toBeInTheDocument();
-  });
-
-  it('should navigate the testing flow using an uploaded zip file', async () => {
-    const user = userEvent.setup();
-
-    const mockMutateAsync = vi.fn().mockResolvedValue({
-      status: 200,
-      data: mockCustomUploadResponse,
-    });
-
-    // navigate to reportable conditions
-    (useUploadEcr as unknown as Mock).mockReturnValue({
-      mutateAsync: mockMutateAsync,
-      data: { data: mockCustomUploadResponse },
-      reset: vi.fn(),
-    });
-
-    renderView();
-
-    // check that we start on the "run test" page
-    expect(screen.getByText('Upload .zip file')).toBeInTheDocument();
-
-    const file = new File(['test'], 'test.zip', { type: 'application/zip' });
-    const input: HTMLInputElement = screen.getByLabelText('Upload .zip file');
-
-    // upload the file
-    await user.upload(input, file);
-
-    // check that the input's file list looks correct
-    expect(input.files).toHaveLength(1);
-    expect(input.files?.item(0)).toBe(file);
-    expect(input.files?.[0]).toBe(file);
-
-    // check that the screen updated with new options
-    expect(screen.getByText('test.zip')).toBeInTheDocument();
-    expect(screen.getByText('Change file')).toBeInTheDocument();
-    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
-
-    // run the refine process on the custom file
-    await user.click(screen.getByText('Refine .zip file'));
-    expect(mockMutateAsync).toHaveBeenCalledOnce();
-
-    // check reportable conditions view
-    expect(
-      screen.getByText(
-        'We found the following reportable condition(s) in the RR:'
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('custom condition')).toBeInTheDocument();
-    await user.click(screen.getByText('Refine eCR', { selector: 'button' }));
-
-    // check success page
-    expect(screen.getByText('eCR refinement results')).toBeInTheDocument();
-    expect(screen.getByText('eICR reduced by 77%')).toBeInTheDocument();
-  });
-
-  it('should navigate to the error view when the upload request fails', async () => {
-    type MutationParam = {
-      onError?: (error: Error) => void;
-    };
-
-    const user = userEvent.setup();
-
-    // throw an error when called
-    (useUploadEcr as unknown as Mock).mockImplementation(
-      ({ mutation }: { mutation?: MutationParam }) => {
-        return {
+      (useUploadEcr as unknown as Mock).mockImplementation(
+        ({ mutation }: { mutation?: MutationParam }) => ({
           mutateAsync: vi.fn().mockImplementation(() => {
             const error = new AxiosError('API call failed') as Error & {
               response: { data: { detail: string } };
             };
-
             error.response = { data: { detail: 'Server is down' } };
-
             if (mutation?.onError) {
               mutation.onError(error);
             }
-
             throw error;
           }),
+          data: undefined,
           reset: vi.fn(),
-        };
-      }
-    );
-
-    renderView();
-
-    await uploadTestFile(user);
-
-    // check that we made it to the error view
-    expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
-
-    // Server error should be shown to the user
-    expect(await screen.findByText('Server is down')).toBeInTheDocument();
-
-    // return to the start to try again
-    await user.click(await screen.findByText('Try again'));
-    expect(
-      await screen.findByText('Refine .zip file', { selector: 'button' })
-    ).toBeInTheDocument();
-  });
-
-  it('should let the user know that no conditions reportable to their JD ID were found in the RR', async () => {
-    const user = userEvent.setup();
-
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [],
-            conditions_without_matching_configs: [],
-            conditions_without_active_configs: [],
-          },
-        },
-      };
+        })
+      );
     });
 
-    renderView();
-
-    await uploadTestFile(user);
-    // only start over button is available
-    expect(await screen.findByText('Start over')).toBeInTheDocument();
-    expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
-
-    expect(
-      screen.getByText(
-        'No conditions reportable to your jurisdiction were found in the RR.'
-      )
-    ).toBeInTheDocument();
-  });
-
-  it('should display only reportable conditions with missing configurations', async () => {
-    const user = userEvent.setup();
-
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [],
-            conditions_without_matching_configs: ['Influenza'],
-            conditions_without_active_configs: [],
-          },
-        },
-      };
+    afterEach(() => {
+      vi.resetAllMocks();
     });
 
-    renderView();
-    await uploadTestFile(user);
+    it('should navigate to the error view when the upload request fails', async () => {
+      const user = userEvent.setup();
 
-    // only start over button is available
-    expect(await screen.findByText('Start over')).toBeInTheDocument();
-    expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
+      renderView();
+      await uploadTestFile(user);
 
-    // only missing condition text is in the doc
-    expect(
-      screen.getByText(
-        'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('Influenza')).toBeInTheDocument();
-    expect(
-      screen.queryByText('Would you like to refine the eCR?')
-    ).not.toBeInTheDocument();
-  });
+      // configs load successfully, now trigger the refinement which will fail
+      await user.click(
+        await screen.findByText('Refine eCR', { selector: 'button' })
+      );
 
-  it('should display both reportable conditions with missing configurations and inactive configurations', async () => {
-    const user = userEvent.setup();
+      expect(await screen.findByText(ERROR_UPLOAD_MESSAGE)).toBeInTheDocument();
+      expect(await screen.findByText('Server is down')).toBeInTheDocument();
 
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [],
-            conditions_without_matching_configs: ['Influenza'],
-            conditions_without_active_configs: ['COVID-19'],
-          },
-        },
-      };
+      await user.click(await screen.findByText('Try again'));
+      expect(
+        await screen.findByText('Refine .zip file', { selector: 'button' })
+      ).toBeInTheDocument();
     });
-
-    renderView();
-    await uploadTestFile(user);
-
-    // only start over button is available
-    expect(await screen.findByText('Start over')).toBeInTheDocument();
-    expect(screen.queryByText('Refine eCR')).not.toBeInTheDocument();
-
-    // only missing condition text is in the doc
-    expect(
-      screen.getByText(
-        'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
-      )
-    ).toBeInTheDocument();
-    // Inactive config warning should be present
-    expect(
-      screen.queryByText(
-        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('Influenza')).toBeInTheDocument();
-    expect(
-      screen.queryByText('Would you like to refine the eCR?')
-    ).not.toBeInTheDocument();
-  });
-  it('should display only reportable conditions that have a matching configuration', async () => {
-    const user = userEvent.setup();
-
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [
-              {
-                code: '840539006',
-                display_name: 'COVID-19',
-                refined_eicr: '<xml>mock</xml>',
-                stats: ['eICR reduced by XY%'],
-              },
-            ],
-            conditions_without_matching_configs: [],
-            conditions_without_active_configs: [],
-          },
-        },
-      };
-    });
-
-    renderView();
-    await uploadTestFile(user);
-
-    // Both buttons should be available
-    expect(screen.getByText('Start over')).toBeInTheDocument();
-    expect(screen.getByText('Refine eCR')).toBeInTheDocument();
-
-    // Missing config text should not be present
-    expect(
-      screen.queryByText(
-        'Please either create configurations for these conditions or upload a file that includes conditions that have been configured.'
-      )
-    ).not.toBeInTheDocument();
-
-    expect(
-      screen.queryByText('Would you like to refine the eCR?')
-    ).toBeInTheDocument();
-  });
-  it('should display reportable conditions with both missing and matching configurations', async () => {
-    const user = userEvent.setup();
-
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [
-              {
-                code: '840539006',
-                display_name: 'COVID-19',
-                refined_eicr: '<xml>mock</xml>',
-                stats: ['eICR reduced by XY%'],
-              },
-            ],
-            conditions_without_matching_configs: ['Influenza'],
-            conditions_without_active_configs: [],
-          },
-        },
-      };
-    });
-
-    renderView();
-
-    const input = screen.getByTestId('zip-upload-input');
-    await user.upload(input, mockTestFile);
-
-    // Both buttons should be available
-    expect(screen.getByText('Change file')).toBeInTheDocument();
-    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
-
-    await user.click(screen.getByText('Refine .zip file'));
-
-    // Missing config warning should be present
-    expect(
-      screen.queryByText(
-        'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
-      )
-    ).toBeInTheDocument();
-
-    // Text asking to refine should be available
-    expect(
-      screen.queryByText('Would you like to refine the eCR?')
-    ).toBeInTheDocument();
-  });
-  it('should display reportable conditions with both inactive and matching configurations', async () => {
-    const user = userEvent.setup();
-
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [
-              {
-                code: '840539006',
-                display_name: 'COVID-19',
-                refined_eicr: '<xml>mock</xml>',
-                stats: ['eICR reduced by XY%'],
-              },
-            ],
-            conditions_without_matching_configs: [],
-            conditions_without_active_configs: ['Influenza'],
-          },
-        },
-      };
-    });
-
-    renderView();
-
-    const input = screen.getByTestId('zip-upload-input');
-    await user.upload(input, mockTestFile);
-
-    // Both buttons should be available
-    expect(screen.getByText('Change file')).toBeInTheDocument();
-    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
-
-    await user.click(screen.getByText('Refine .zip file'));
-
-    // Inactive config warning should be present
-    expect(
-      screen.queryByText(
-        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
-      )
-    ).toBeInTheDocument();
-    // Text asking to refine should be available
-    expect(
-      screen.queryByText('Would you like to refine the eCR?')
-    ).toBeInTheDocument();
-  });
-
-  it('should display reportable conditions with inactive, missing, and matching configurations', async () => {
-    const user = userEvent.setup();
-
-    (useUploadEcr as unknown as Mock).mockImplementation(() => {
-      return {
-        mutateAsync: vi.fn(),
-        data: {
-          data: {
-            refined_conditions: [
-              {
-                code: '840539006',
-                display_name: 'COVID-19',
-                refined_eicr: '<xml>mock</xml>',
-                stats: ['eICR reduced by XY%'],
-              },
-            ],
-            conditions_without_matching_configs: ['Influenza'],
-            conditions_without_active_configs: ['Syphilis'],
-          },
-        },
-      };
-    });
-
-    renderView();
-
-    const input = screen.getByTestId('zip-upload-input');
-    await user.upload(input, mockTestFile);
-
-    // Both buttons should be available
-    expect(screen.getByText('Change file')).toBeInTheDocument();
-    expect(screen.getByText('Refine .zip file')).toBeInTheDocument();
-
-    await user.click(screen.getByText('Refine .zip file'));
-
-    // Missing config warning should be present
-    expect(
-      screen.queryByText(
-        'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
-      )
-    ).toBeInTheDocument();
-    // Inactive config warning should be present
-    expect(
-      screen.queryByText(
-        'No active configuration was detected for the following conditions. Please ensure there is an active configuration for each condition in order to receive a refined output for it.'
-      )
-    ).toBeInTheDocument();
-
-    // Text asking to refine should be available
-    expect(
-      screen.queryByText('Would you like to refine the eCR?')
-    ).toBeInTheDocument();
   });
 });
