@@ -1,30 +1,85 @@
 import classNames from 'classnames';
 import { Button } from '@components/Button';
 import { WarningIcon } from '@components/WarningIcon';
+import { DiscoveredConfigurationSet } from '../../api/schemas';
+import { Field } from '@components/Field';
+import { Label } from '@components/Label';
+import { Select, SelectContainer } from '@components/Select';
+import { Checkbox } from '@components/Checkbox';
+import { useState } from 'react';
 
 interface ReportableConditionsResultsProps {
-  matchedConditions: string[];
-  inactiveConditions: string[];
-  unmatchedConditions: string[];
+  configurationSets: DiscoveredConfigurationSet[];
   startOver: () => void;
-  goToSuccessScreen: () => void;
+  runRefinement: (
+    configIds: string[],
+    conditionsWithoutConfigIds: string[],
+    uncheckedConditionIds: string[]
+  ) => () => Promise<void>;
 }
 
 export function ReportableConditionsResults({
-  matchedConditions,
-  unmatchedConditions,
-  inactiveConditions,
+  configurationSets,
   startOver,
-  goToSuccessScreen,
+  runRefinement,
 }: ReportableConditionsResultsProps) {
-  const hasFoundConditions = matchedConditions.length > 0;
-  const hasMissingConditions = unmatchedConditions.length > 0;
-  const hasInactiveConditions = inactiveConditions.length > 0;
+  const matchedSetsWithConfig = configurationSets.filter(
+    (cg) => cg.versions.length > 0
+  );
+  const matchedSetsWithoutConfig = configurationSets.filter(
+    (cg) => cg.versions.length === 0
+  );
+
+  const [conditionSetSelections, setConditionSetSelections] = useState<
+    Map<string, { checked: boolean; selectedId: string }>
+  >(
+    () =>
+      new Map(
+        matchedSetsWithConfig.map((cg) => [
+          cg.name,
+          {
+            checked: true,
+            // try to set "active" as the default, otherwise fall back to whatever is first since the backend reverse sorts the response based on version number
+            selectedId:
+              cg.versions.find((v) => v.status === 'active')?.id ??
+              cg.versions[0]?.id,
+          },
+        ])
+      )
+  );
+
+  const checkedSelections = [...conditionSetSelections.values()].filter(
+    (s) => s.checked
+  );
+
+  const uncheckedConditionIds = matchedSetsWithConfig
+    .filter((cg) => !conditionSetSelections.get(cg.name)?.checked)
+    .map((cg) => cg.condition_id);
+
+  // helper for toggling a checkbox
+  function toggleConditionSet(name: string) {
+    setConditionSetSelections((prev) => {
+      const next = new Map(prev);
+      const current = next.get(name)!;
+      next.set(name, { ...current, checked: !current.checked });
+      return next;
+    });
+  }
+
+  // helper for setting the selected ID
+  function setSelectedId(name: string, id: string) {
+    setConditionSetSelections((prev) => {
+      const next = new Map(prev);
+      const current = next.get(name)!;
+      next.set(name, { ...current, selectedId: id });
+      return next;
+    });
+  }
 
   // TODO: This is placeholder design and copy.
   // No conditions to display.
   // This is when a valid eICR/RR zip is uploaded but doesn't contain the uploader's jurisdiction ID for any reportable conditions.
-  if (!hasFoundConditions && !hasMissingConditions && !hasInactiveConditions) {
+  if (configurationSets.length === 0) {
     return (
       <Container>
         <ConditionsContainer>
@@ -46,19 +101,48 @@ export function ReportableConditionsResults({
   }
 
   // Display matched conditions and potentially also missing conditions
-  if (hasFoundConditions) {
+  if (matchedSetsWithConfig.length > 0) {
     return (
       <Container className="lg:w-4/7">
         <ConditionsContainer>
-          <FoundConditions foundConditions={matchedConditions} />
+          <p className="font-bold">
+            We found the following reportable condition(s) in the RR:
+          </p>
+          {matchedSetsWithConfig.map((cg) => {
+            const selection = conditionSetSelections.get(cg.name)!;
+            return (
+              <div key={cg.name} className="flex gap-2">
+                <Checkbox
+                  aria-label={`Use ${cg.name} configuration in refinement process`}
+                  checked={selection.checked}
+                  onChange={() => toggleConditionSet(cg.name)}
+                />
+                <SelectContainer>
+                  <Field>
+                    <Label>{cg.name}</Label>
+                    <Select
+                      value={selection.selectedId}
+                      onChange={(e) => setSelectedId(cg.name, e.target.value)}
+                    >
+                      {cg.versions.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          Version {v.version} ({v.status})
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </SelectContainer>
+              </div>
+            );
+          })}
 
-          {(hasInactiveConditions || hasMissingConditions) && (
+          {matchedSetsWithoutConfig.length > 0 && (
             <>
               <hr className="border-gray-cool-20" />
-
               <ConditionWarnings
-                missingConditions={unmatchedConditions}
-                inactiveConditions={inactiveConditions}
+                missingConditions={matchedSetsWithoutConfig.map(
+                  (wc) => wc.name
+                )}
               />
             </>
           )}
@@ -72,7 +156,27 @@ export function ReportableConditionsResults({
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
-          <Button onClick={goToSuccessScreen}>Refine eCR</Button>
+          <Button
+            disabled={checkedSelections.length === 0}
+            onClick={async () => {
+              const configIds = checkedSelections.map(
+                (config) => config.selectedId
+              );
+
+              // conditions without a matching config + conditions the user doesn't want to use
+              const conditionsWithoutConfigIds = matchedSetsWithoutConfig.map(
+                (c) => c.condition_id
+              );
+
+              await runRefinement(
+                configIds,
+                conditionsWithoutConfigIds,
+                uncheckedConditionIds
+              )();
+            }}
+          >
+            Refine eCR
+          </Button>
           <Button variant="secondary" onClick={startOver}>
             Start over
           </Button>
@@ -86,8 +190,7 @@ export function ReportableConditionsResults({
     <Container className="max-w-188">
       <ConditionsContainer>
         <ConditionWarnings
-          missingConditions={unmatchedConditions}
-          inactiveConditions={inactiveConditions}
+          missingConditions={matchedSetsWithoutConfig.map((wc) => wc.name)}
         />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">
@@ -118,51 +221,21 @@ function Container({ children, className }: ContainerProps) {
 
 function ConditionsContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="!border-blue-cool-20 flex flex-col gap-5 rounded-lg border border-dashed bg-white px-6 py-8">
+    <div className="border-blue-cool-20! flex flex-col gap-5 rounded-lg border border-dashed bg-white px-6 py-8">
       {children}
-    </div>
-  );
-}
-
-interface FoundConditionsProps {
-  foundConditions: string[];
-}
-
-function FoundConditions({ foundConditions }: FoundConditionsProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="font-bold">
-        We found the following reportable condition(s) in the RR:
-      </p>
-      <ul className="ml-2 list-inside list-disc">
-        {foundConditions.map((foundCondition) => (
-          <li key={foundCondition}>{foundCondition}</li>
-        ))}
-      </ul>
     </div>
   );
 }
 
 interface ConditionWarningsProps {
   missingConditions: string[];
-  inactiveConditions: string[];
 }
-function ConditionWarnings({
-  missingConditions,
-  inactiveConditions,
-}: ConditionWarningsProps) {
+function ConditionWarnings({ missingConditions }: ConditionWarningsProps) {
   const hasMissingConditions = missingConditions.length > 0;
-  const hasInactiveConditions = inactiveConditions.length > 0;
   return (
     <>
       {hasMissingConditions ? (
         <MissingConditions missingConditions={missingConditions} />
-      ) : null}
-      {hasMissingConditions && hasInactiveConditions ? (
-        <hr className="border-gray-cool-20" />
-      ) : null}
-      {hasInactiveConditions ? (
-        <InactiveConditions inactiveConditions={inactiveConditions} />
       ) : null}
     </>
   );
@@ -183,31 +256,6 @@ function MissingConditions({ missingConditions }: MissingConditionsProps) {
       <ul className="ml-2 list-inside list-disc">
         {missingConditions.map((missingCondition) => (
           <li key={missingCondition}>{missingCondition}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-interface InactiveConditionsProps {
-  inactiveConditions: string[];
-}
-function InactiveConditions({ inactiveConditions }: InactiveConditionsProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-4">
-        <WarningIcon aria-label="Warning" size={3} />
-        <p className="text-state-error-dark">
-          No active configuration was detected for the following conditions.
-          Please ensure there is an active configuration for each condition in
-          order to receive a refined output for it.
-        </p>
-      </div>
-      <ul className="ml-2 list-inside list-disc">
-        {inactiveConditions.map((inactiveConditions) => (
-          <li className="text-blue-cool-50 font-bold" key={inactiveConditions}>
-            {inactiveConditions}
-          </li>
         ))}
       </ul>
     </div>

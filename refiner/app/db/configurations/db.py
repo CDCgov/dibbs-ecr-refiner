@@ -464,14 +464,18 @@ async def get_configurations_db(
     return [DbConfiguration.from_db_row(row) for row in updated_config_rows]
 
 
-async def get_configuration_by_id_db(
-    id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
-) -> DbConfiguration | None:
+async def get_configurations_by_ids_db(
+    ids: list[UUID], jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbConfiguration]:
     """
-    Fetch a configuration by the given ID.
+    Fetch configurations by the given IDs.
     """
+    if not ids:
+        return []
+
     # TODO: Leaving `section_processing` as JSONB on read for compatability.
     # We may want to revisit this at some point.
+
     query = """
     SELECT
         c.id,
@@ -508,24 +512,32 @@ async def get_configuration_by_id_db(
         FROM configurations_sections s
         WHERE s.configuration_id = c.id
     ) secs ON TRUE
-    WHERE c.id = %s
+    WHERE c.id = ANY(%s)
     AND c.jurisdiction_id = %s;
     """
 
     params = (
-        id,
+        ids,
         jurisdiction_id,
     )
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(query, params)
-            row = await cur.fetchone()
+            rows = await cur.fetchall()
 
-    if not row:
-        return None
+    return [DbConfiguration.from_db_row(row) for row in rows]
 
-    return DbConfiguration.from_db_row(row)
+
+async def get_configuration_by_id_db(
+    id: UUID, jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> DbConfiguration | None:
+    """
+    Fetch a configuration by the given ID.
+    """
+
+    results = await get_configurations_by_ids_db([id], jurisdiction_id, db)
+    return results[0] if results else None
 
 
 async def is_config_valid_to_insert_db(

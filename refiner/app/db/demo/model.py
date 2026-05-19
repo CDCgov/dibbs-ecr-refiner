@@ -38,8 +38,6 @@ class IndependentTestUploadResponse:
     """
 
     message: str
-    conditions_without_matching_configs: list[str]
-    conditions_without_active_configs: list[str]
     refined_conditions_found: int
     refined_conditions: list[Condition]
     unrefined_eicr: str
