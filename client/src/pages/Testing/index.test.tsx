@@ -23,7 +23,7 @@ vi.mock('../../hooks/useGetEnv', () => ({
 }));
 
 const mockConfigDiscoveryResponse: DiscoveredConfigurationsResponse = {
-  groups: [
+  sets: [
     {
       name: 'COVID-19',
       condition_id: '2da5c712-6dc6-4ddf-8d1a-e34c0e77913a',
@@ -126,7 +126,7 @@ describe('Independent testing', () => {
         mutateAsync: vi.fn(),
         data: {
           data: {
-            groups: [],
+            sets: [],
           },
         },
         reset: vi.fn(),
