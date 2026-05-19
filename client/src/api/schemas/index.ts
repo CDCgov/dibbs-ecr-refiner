@@ -45,7 +45,6 @@ export * from './independentTestUploadResponse';
 export * from './lockedByUser';
 export * from './notificationKeys';
 export * from './notificationsToRender';
-export * from './notificationsToRenderToRender';
 export * from './release';
 export * from './releaseNotes';
 export * from './releasesResponse';
