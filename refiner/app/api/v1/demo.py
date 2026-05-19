@@ -313,11 +313,21 @@ async def demo_upload(
         ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
     )
 
-    # Add shadow RR (for inactive conditions) to zip
-    if test_results.shadow_rr:
+    # Add the remainder RR (reportability for conditions that were not
+    # refined) to the zip.
+    #
+    # TODO:
+    # **s3-path** this filename intentionally mirrors what the lambda
+    # writes to S3 (the `unrefined_rr/` path segment) so the demo zip
+    # previews the real artifact. the internal vocabulary is
+    # "remainder" everywhere in python; this user-/wire-facing name
+    # stays "unrefined_rr" until the S3 path rename is coordinated
+    # with AIMS; when that lands this becomes "CDA_RR_remainder.xml"
+    if test_results.remainder_rr:
         zip_package.add(
             ZipFileItem(
-                file_name="CDA_RR_unrefined_rr.xml", file_content=test_results.shadow_rr
+                file_name="CDA_RR_unrefined_rr.xml",
+                file_content=test_results.remainder_rr,
             )
         )
 
