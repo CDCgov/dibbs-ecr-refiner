@@ -39,7 +39,7 @@ export function ReportableConditionsResults({
           cg.name,
           {
             checked: true,
-            // try to set "active" as the default, otherwise fall back to whatever is first
+            // try to set "active" as the default, otherwise fall back to whatever is first since the backend reverse sorts the response based on version number
             selectedId:
               cg.versions.find((v) => v.status === 'active')?.id ??
               cg.versions[0]?.id,
