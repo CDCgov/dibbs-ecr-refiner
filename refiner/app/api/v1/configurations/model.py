@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from app.db.configurations.model import (
     DbConfigurationCustomCode,
@@ -13,7 +13,6 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.terminology import CodeSystems
 
 
 @dataclass(frozen=True)

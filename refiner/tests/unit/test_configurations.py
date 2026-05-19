@@ -16,7 +16,6 @@ from app.db.configurations.model import (
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
-from app.services.terminology import CodeSystems
 from app.services.testing import InlineTestingResult
 
 
@@ -296,6 +295,7 @@ async def test_delete_custom_code_from_configuration(
 async def test_edit_custom_code_from_configuration(
     authed_client, monkeypatch, mock_configuration, mock_condition, mock_user
 ):
+    
     # Mock editing a custom code from a config
     custom_code_edit_mock = replace(
         mock_configuration,
@@ -303,7 +303,7 @@ async def test_edit_custom_code_from_configuration(
             DbConfigurationCustomCode(
                 code="edited-code",
                 name="updated-name",
-                system=CodeSystems.get_by_key_or_raise("loinc").name,
+                system=,
             )
         ],
     )

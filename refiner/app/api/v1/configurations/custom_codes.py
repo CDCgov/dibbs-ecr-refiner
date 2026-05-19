@@ -15,6 +15,13 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesCsvInput,
     UploadCustomCodesPreviewItem,
 )
+from app.db.code_systems.db import (
+    get_code_system_by_display_name_db,
+    get_code_system_by_display_name_or_raise_db,
+    get_code_system_by_key_db,
+    get_code_system_by_key_or_display_name_or_raise_db,
+    get_code_system_by_key_or_raise_db,
+)
 from app.db.conditions.db import get_included_conditions_db
 from app.db.configurations.db import (
     add_bulk_custom_codes_to_configuration_db,
@@ -30,9 +37,12 @@ from app.db.configurations.model import (
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.code_systems import (
+    get_allowed_code_system_display_names,
+    get_allowed_code_system_keys,
+)
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
-from app.services.terminology import CodeSystems
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
@@ -88,8 +98,6 @@ async def add_custom_code(
     # validate input
     _validate_add_custom_code_input(body)
 
-    selected_code_system = await CodeSystems.get_by_key(body.system_key)
-
     # get user jurisdiction
     jd = user.jurisdiction_id
 
@@ -117,8 +125,9 @@ async def add_custom_code(
         )
 
     # Create a custom code object
+    selected_code_system = await get_code_system_by_key_db(key=body.system_key, db=db)
     if not selected_code_system:
-        allowed_keys = await CodeSystems.allowed_keys()
+        allowed_keys = await get_allowed_code_system_keys(db=db)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"System must be one of [{allowed_keys}]",
@@ -228,7 +237,6 @@ async def upload_custom_codes_csv(
     errors: list[dict] = []
     code_keys = [(cc.code.lower(), cc.system) for cc in config.custom_codes]
     batch_keys = set()
-    allowed_systems_str = ", ".join(await CodeSystems.allowed_display_names())
     for row_number, row in enumerate(csv_reader, start=2):
         code = (row.get("code_number") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
@@ -241,8 +249,13 @@ async def upload_custom_codes_csv(
         if not name:
             row_errors.append("Missing display_name")
         sanitized_system = None
+        allowed_systems_str = ", ".join(
+            await get_allowed_code_system_display_names(db=db)
+        )
         try:
-            sanitized_system = await CodeSystems.get_by_key_or_raise(code_system_raw)
+            sanitized_system = await get_code_system_by_key_or_display_name_or_raise_db(
+                name=code_system_raw, db=db, logger=logger
+            )
         except ValueError:
             row_errors.append(
                 f"Invalid system: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
@@ -478,12 +491,16 @@ class UpdateCustomCodeInput(BaseModel):
 async def _get_modified_custom_codes(
     config: DbConfiguration,
     updateInput: UpdateCustomCodeInput,
+    db: AsyncDatabaseConnection,
+    logger: Logger,
 ) -> list[DbConfigurationCustomCode]:
     # Get list of current codes
     custom_codes = config.custom_codes
 
     # find the code to modify
-    sanitized_system = await CodeSystems.get_by_key_or_raise(updateInput.system)
+    sanitized_system = await get_code_system_by_key_or_raise_db(
+        key=updateInput.system, db=db
+    )
     code_to_edit = [
         cc
         for cc in custom_codes
@@ -512,17 +529,21 @@ async def _get_modified_custom_codes(
 
     # create a new code using the changes provided by the user.
     # use the old values as fallbacks.
-    new_system_value = (
-        (await CodeSystems.get_by_key_or_raise(updateInput.new_system)).key
-        if updateInput.new_system
-        else existing_code.system
+    if not updateInput.new_system:
+        logger.warning(
+            f"No new system information found in updateInput, falling back to existing system {existing_code.system}"
+        )
+    system_key = (
+        updateInput.new_system if updateInput.new_system else existing_code.system
     )
+
+    new_system = await get_code_system_by_key_or_raise_db(key=system_key, db=db)
+    new_system_key = (new_system).key
+
     updated_code = DbConfigurationCustomCode(
         code=updateInput.new_code or existing_code.code,
         name=updateInput.new_name or existing_code.name,
-        system=new_system_value
-        if isinstance(new_system_value, CodeSystems)
-        else new_system_value,
+        system=new_system_key,
     )
 
     # check for duplicates
@@ -656,6 +677,7 @@ async def edit_custom_code(
     body: UpdateCustomCodeInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
 ) -> ConfigurationCustomCodeResponse:
     """
     Modify a configuration's custom code based on system/code pair.
@@ -665,6 +687,7 @@ async def edit_custom_code(
         body (UpdateCustomCodeInput): User-provided object containing custom code info.
         user (dict[str, Any]): The logged-in user.
         db (AsyncDatabaseConnection): The database connection.
+        logger (Logger): The system logger.
 
     Raises:
         HTTPException: 400 if a system is not provided
@@ -706,8 +729,7 @@ async def edit_custom_code(
         )
 
     custom_codes = await _get_modified_custom_codes(
-        config=config,
-        updateInput=body,
+        config=config, updateInput=body, db=db, logger=logger
     )
 
     updated_config = await edit_custom_code_from_configuration_db(

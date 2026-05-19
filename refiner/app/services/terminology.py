@@ -1,11 +1,18 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
+from logging import Logger
 
+from fastapi import Depends
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import CodeSystemKey
-from app.services.code_systems import CodeSystems
+from app.db.code_systems.db import (
+    CodeSystemKey,
+    get_all_code_systems_db,
+    get_code_system_by_oid_db,
+)
+from app.db.pool import AsyncDatabaseConnection, get_db
+from app.services.logger import get_logger
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -19,14 +26,14 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 
 
 async def index_condition_code_list_by_system(
-    condition: DbCondition,
+    condition: DbCondition, db: AsyncDatabaseConnection = Depends(get_db)
 ) -> dict[CodeSystemKey, list[DbConditionCoding]]:
     """
     Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
     """
-    all_code_systems = await CodeSystems.all()
+    all_code_systems = await get_all_code_systems_db(db=db)
     result: dict[CodeSystemKey, list[DbConditionCoding]] = defaultdict(list)
-    for s in all_code_systems:
+    for s in all_code_systems.values():
         condition_column_index = f"{s.display_name}_codes"
         result[s.key] = getattr(condition, condition_column_index, [])
 
@@ -90,7 +97,11 @@ class CodeSystemSets:
             if isinstance(val, dict):
                 yield val
 
-    async def _get_system_dict(self, code_system_oid: str) -> dict[str, Coding] | None:
+    async def _get_system_dict(
+        self,
+        code_system_oid: str,
+        db: AsyncDatabaseConnection = Depends(get_db),
+    ) -> dict[str, Coding] | None:
         """
         Resolve an OID to the corresponding code system dict.
 
@@ -101,7 +112,6 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
 
-        system = await CodeSystems.get_by_oid(code_system_oid)
         if system is None:
             return None
         return getattr(self, system.key)

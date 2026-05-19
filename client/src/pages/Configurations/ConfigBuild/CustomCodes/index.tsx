@@ -373,7 +373,7 @@ function CodeSystemSelection({
             All code systems
           </option>
           {supportedCodeSystems.data.map((s) => (
-            <option key={s.id} value={s.name}>
+            <option key={s.id} value={s.key}>
               {s.display_name}
             </option>
           ))}

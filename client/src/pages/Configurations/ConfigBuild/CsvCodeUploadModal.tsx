@@ -168,11 +168,11 @@ export function PreviewEditModal({
           <Field>
             <Label>Code system</Label>
             <Select
-              value={previewEditForm.system}
+              value={previewEditForm.system_key}
               onChange={handlePreviewEditChange('system')}
             >
               {supportedCodeSystems.data.map((s) => (
-                <option key={s.id} value={s.name}>
+                <option key={s.id} value={s.key}>
                   {s.display_name}
                 </option>
               ))}

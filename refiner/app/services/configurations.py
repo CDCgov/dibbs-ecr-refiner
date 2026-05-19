@@ -4,7 +4,7 @@ from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
-from app.db.code_systems.db import CodeSystemKey
+from app.db.code_systems.db import CodeSystemKey, get_code_system_by_key_or_raise_db
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.model import (
@@ -20,7 +20,6 @@ from app.services.ecr.specification import (
     load_spec,
 )
 from app.services.terminology import (
-    CodeSystems,
     CodeSystemSets,
     Coding,
     index_condition_code_list_by_system,
@@ -166,7 +165,7 @@ async def convert_config_to_storage_payload(
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = await CodeSystems.get_by_key_or_raise(cc.system)
+        cur_code_system = await get_code_system_by_key_or_raise_db(key=cc.system, db=db)
         system_to_extend = cur_code_system.key
 
         # route custom codes to the correct system dict
@@ -193,7 +192,7 @@ async def convert_config_to_storage_payload(
 
         for key, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
-            system_metadata = await CodeSystems.get_by_key_or_raise(key)
+            system_metadata = await get_code_system_by_key_or_raise_db(key=key, db=db)
             coding_by_code_system[system_metadata.key].extend(
                 [
                     asdict(

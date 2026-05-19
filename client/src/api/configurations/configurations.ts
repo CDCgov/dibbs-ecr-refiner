@@ -539,6 +539,7 @@ Args:
     body (UpdateCustomCodeInput): User-provided object containing custom code info.
     user (dict[str, Any]): The logged-in user.
     db (AsyncDatabaseConnection): The database connection.
+    logger (Logger): The system logger.
 
 Raises:
     HTTPException: 400 if a system is not provided
