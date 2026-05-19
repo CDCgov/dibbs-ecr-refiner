@@ -27,7 +27,6 @@ from .ecr.model import (
 from .pipeline import (
     AugmentationRun,
     RefinementTrace,
-    RemainderRRResult,
     create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
     produce_remainder_rr_for_jurisdiction,
@@ -94,7 +93,7 @@ class IndependentTestingResult:
     refined_documents: list[RefinedDocument]
     no_matching_configuration_for_conditions: list[NoMatchEntry]
     no_active_configuration_for_conditions: list[NoMatchEntry]
-    remainder_rr: RemainderRRResult | None
+    remainder_rr: str | None
 
     def get_condition_names_with_no_matching_config(self) -> list[str]:
         """
@@ -446,7 +445,7 @@ def _generate_remainder_rr(
     xml_files: XMLFiles,
     jurisdiction_id: str,
     run: AugmentationRun,
-) -> RemainderRRResult | None:
+) -> str | None:
     """
     Produce the augmented remainder RR for the jurisdiction.
 
@@ -478,7 +477,7 @@ def _generate_remainder_rr(
             per-condition refine_for_condition calls.
 
     Returns:
-        RemainderRRResult or None. None when the if-and-only-if rule
+        str or None. None when the if-and-only-if rule
         is not satisfied (nothing refined, or nothing skipped).
     """
 
@@ -497,13 +496,15 @@ def _generate_remainder_rr(
         code for entry in skipped_entries for code in entry["rc_snomed_codes"]
     }
 
-    return produce_remainder_rr_for_jurisdiction(
+    result = produce_remainder_rr_for_jurisdiction(
         xml_files=xml_files,
         jurisdiction_id=jurisdiction_id,
         refined_condition_codes=refined_codes,
         skipped_condition_codes=skipped_codes,
         run=run,
     )
+
+    return result.remainder_rr if result is not None else None
 
 
 async def inline_testing(

@@ -225,7 +225,7 @@ async def demo_upload(
         zip_package.add(
             ZipFileItem(
                 file_name="CDA_RR_unrefined_rr.xml",
-                file_content=test_results.remainder_rr.remainder_rr,
+                file_content=test_results.remainder_rr,
             )
         )
 
