@@ -24,7 +24,7 @@ from app.services.aws.s3 import (
     get_refined_user_zip_key,
     upload_refined_file_package,
 )
-from app.services.conditions import filter_refined_files_by_diff_rendering
+from app.services.conditions.refinement import filter_refined_files_by_diff_rendering
 from app.services.ecr.model import RefinedDocument
 from app.services.file_io import (
     ZipFileItem,
