@@ -184,7 +184,7 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: !!(eventId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: eventId !== null && eventId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetCustomCodeUploadEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomCodeUploadEvents>>>

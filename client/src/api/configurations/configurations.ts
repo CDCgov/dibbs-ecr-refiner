@@ -248,7 +248,7 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfiguration>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof getConfiguration>>>
@@ -932,7 +932,7 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: !!(configurationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: configurationId !== null && configurationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConfigurationExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetConfigurationExportQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigurationExport>>>
@@ -1171,8 +1171,7 @@ export const deleteCustomSection = (
 
 
     return axios.default.delete(
-      `/api/v1/configurations/${configurationId}/sections`,{data:
-      deleteSectionInput,
+      `/api/v1/configurations/${configurationId}/sections`,{data: deleteSectionInput,
     ...options,}
     );
   }
@@ -1324,7 +1323,8 @@ export const activateConfiguration = (
 
 
     return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/activate`,undefined,options
+      `/api/v1/configurations/${configurationId}/activate`,
+      undefined,options
     );
   }
 
@@ -1398,7 +1398,8 @@ export const deactivateConfiguration = (
 
 
     return axios.default.patch(
-      `/api/v1/configurations/${configurationId}/deactivate`,undefined,options
+      `/api/v1/configurations/${configurationId}/deactivate`,
+      undefined,options
     );
   }
 
@@ -1463,7 +1464,8 @@ export const releaseConfigurationLock = (
 
 
     return axios.default.post(
-      `/api/v1/configurations/${configurationId}/release-lock`,undefined,options
+      `/api/v1/configurations/${configurationId}/release-lock`,
+      undefined,options
     );
   }
 

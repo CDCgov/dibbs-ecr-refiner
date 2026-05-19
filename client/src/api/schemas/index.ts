@@ -43,7 +43,6 @@ export * from './lockedByUser';
 export * from './narrativeOnlySection';
 export * from './notificationKeys';
 export * from './notificationsToRender';
-export * from './notificationsToRenderToRender';
 export * from './release';
 export * from './releaseNotes';
 export * from './releasesResponse';
