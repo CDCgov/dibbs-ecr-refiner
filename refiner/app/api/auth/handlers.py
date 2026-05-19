@@ -1,5 +1,7 @@
 import secrets
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import StrEnum
 from logging import Logger
 from uuid import UUID
 
@@ -214,21 +216,29 @@ async def auth_callback(
         raise
 
 
-class NotificationInfo(BaseModel):
+def _map_to_aware_dt(val: str | datetime) -> datetime:
+    """Ensures value is a datetime, mapping to UTC timezone."""
+    dt = datetime.fromisoformat(val) if isinstance(val, str) else val
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
+
+
+class NotificationKeys(StrEnum):
     """
-    Information for a single notification.
+    Enum class to type the values of the notifications possible for actioning on the frontend.
     """
 
-    should_show: bool
-    date_acknowledged: str | None = None
+    MOST_RECENT_APP_UPDATE = "most_recent_app_update"
 
 
-class UserNotifications(BaseModel):
+@dataclass(frozen=True)
+class NotificationsToRender:
     """
-    User notification state.
+    Map of booleans for each of the notificaiton keys as to whether to render frontend banners.
     """
 
-    most_recent_app_update: NotificationInfo
+    to_render: dict[NotificationKeys, bool]
 
 
 class UserResponse(BaseModel):
@@ -239,7 +249,35 @@ class UserResponse(BaseModel):
     id: UUID
     username: str
     jurisdiction_id: str
-    notifications: UserNotifications
+    notifications: NotificationsToRender
+
+    @classmethod
+    def from_db_user(cls, db_user: DbUser) -> "UserResponse":
+        """
+        Mapping method to layer notification information into base db info.
+        """
+
+        latest_release_dt = _map_to_aware_dt(get_latest_release_created_at())
+
+        app_update_ack_str = db_user.notifications.get(
+            NotificationKeys.MOST_RECENT_APP_UPDATE
+        )
+        app_update_ack_dt = _map_to_aware_dt(
+            app_update_ack_str if app_update_ack_str else datetime.min
+        )
+
+        should_show_app_update = latest_release_dt > app_update_ack_dt
+
+        return cls(
+            id=db_user.id,
+            username=db_user.username,
+            jurisdiction_id=db_user.jurisdiction_id,
+            notifications=NotificationsToRender(
+                to_render={
+                    NotificationKeys.MOST_RECENT_APP_UPDATE: should_show_app_update
+                }
+            ),
+        )
 
 
 @auth_router.get(
@@ -270,42 +308,7 @@ async def get_user(
     if not user:
         return None
 
-    return build_user_response(user)
-
-
-def _normalize_timezone(s: str | datetime):
-    if isinstance(s, str):
-        return datetime.fromisoformat(s).replace(tzinfo=None)
-    return s.replace(tzinfo=None)
-
-
-def build_user_response(user: DbUser) -> UserResponse:
-    """
-    Builds a UserResponse with computed notification display state.
-    """
-
-    latest_release_created_at = _normalize_timezone(get_latest_release_created_at())
-
-    update_acknowledged = datetime.min.replace(tzinfo=None)
-    # TODO: go back and parse these into proper objects at the database level
-    if user.notifications and user.notifications["most_recent_app_update"]:
-        update_acknowledged = _normalize_timezone(
-            user.notifications["most_recent_app_update"]
-        )
-
-    should_show_app_update = latest_release_created_at > update_acknowledged
-
-    return UserResponse(
-        id=user.id,
-        username=user.username,
-        jurisdiction_id=user.jurisdiction_id,
-        notifications=UserNotifications(
-            most_recent_app_update=NotificationInfo(
-                date_acknowledged=update_acknowledged.isoformat(),
-                should_show=should_show_app_update,
-            )
-        ),
-    )
+    return UserResponse.from_db_user(user)
 
 
 @auth_router.get("/logout", tags=["auth", "internal"], include_in_schema=False)
