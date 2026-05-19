@@ -3,12 +3,29 @@ import { App } from './App';
 import { MemoryRouter } from 'react-router';
 import { TestQueryClientProvider } from './test-utils';
 
+vi.mock('./api/user/user', () => ({
+  useGetUser: vi.fn(() => ({
+    data: null,
+    isPending: false,
+  })),
+}));
+
 // Set up a mock user
-vi.mock('./hooks/Login', () => ({
-  useLogin: vi.fn(() => [
-    { id: '1', username: 'test', jurisdiction_id: 'jd' },
-    false,
-  ]),
+vi.mock('./hooks/useLogin', () => ({
+  useLogin: vi.fn(() => ({
+    user: {
+      id: '1',
+      username: 'test',
+      jurisdiction_id: 'jd',
+      notifications: {
+        to_render: {
+          most_recent_app_update: false,
+        },
+      },
+    },
+    isLoading: false,
+    refreshUser: vi.fn(),
+  })),
 }));
 
 // Mock configurations request

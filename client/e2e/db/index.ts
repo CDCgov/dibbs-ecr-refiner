@@ -16,3 +16,9 @@ export const db = new Pool({
 export async function deleteAllConfigurations(): Promise<void> {
   await db.query('DELETE FROM configurations');
 }
+
+export async function clearUserNotifications(): Promise<void> {
+  await db.query(
+    "UPDATE users SET notifications = '{}'::jsonb WHERE username = 'refiner'"
+  );
+}
