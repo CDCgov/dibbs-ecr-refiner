@@ -204,3 +204,61 @@ async def test_shadow_rr_is_produced(
     with ZipFile(BytesIO(zip_bytes), "r") as zf:
         names = zf.namelist()
         assert set(names) == set(expected_file_names)
+
+
+@pytest.mark.asyncio
+@pytest.mark.integration
+async def test_discovers_configs_across_all_tes_versions(
+    get_condition_id,
+    create_config,
+    activate_config,
+    covid_influenza_v1_1_zip_path,
+    authed_client,
+):
+    """
+    Test that the discovery feature will find all configurations for a reportable condition
+    regardless of their TES version. The app should be able to handle multiple versions at the
+    same time.
+
+    NOTE: The `condition_id` of the set will be the latest TES version's condition ID.
+    """
+    current_covid_id = await get_condition_id("COVID-19", "5.0.0")
+    current_flu_id = await get_condition_id("Influenza", "5.0.0")
+
+    old_covid_id = await get_condition_id("COVID-19", "3.0.0")
+    old_flu_id = await get_condition_id("Influenza", "4.0.0")
+
+    # create a bunch of 3.0.0 COVID configs
+    for _ in range(21):
+        config = await create_config(old_covid_id)
+        await activate_config(config["id"])
+
+    # create a 5.0.0 COVID draft
+    await create_config(current_covid_id)
+
+    # create a bunch of 4.0.0 influenza configs
+    for _ in range(27):
+        config = await create_config(old_flu_id)
+        await activate_config(config["id"])
+
+    uploaded_file = covid_influenza_v1_1_zip_path
+    with open(uploaded_file, "rb") as file_data:
+        response = await authed_client.post(
+            f"{api_route_base}/discover-configurations",
+            files={
+                "uploaded_file": (
+                    "mon_mothma_covid_influenza_1.1.zip",
+                    file_data,
+                    "application/zip",
+                )
+            },
+        )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    sets_by_name = {set["name"]: set for set in data["sets"]}
+    assert len(sets_by_name["COVID-19"]["versions"]) == 22
+    assert sets_by_name["COVID-19"]["condition_id"] == str(current_covid_id)
+
+    assert len(sets_by_name["Influenza"]["versions"]) == 27
+    assert sets_by_name["Influenza"]["condition_id"] == str(current_flu_id)
