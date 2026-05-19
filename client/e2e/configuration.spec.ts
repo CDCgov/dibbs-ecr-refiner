@@ -292,8 +292,10 @@ test.describe('Configuration detail flow', () => {
           })
         ).not.toBeChecked();
 
-        const chiefComplaintSwitchText = 'Not applicable for this section';
-        await expect(page.getByText(chiefComplaintSwitchText)).toBeVisible();
+        const chiefComplaintText = 'Not applicable for this section';
+        await expect(
+          page.locator('tr').filter({ hasText: 'Chief Complaint' }).getByText(chiefComplaintText)
+        ).toBeVisible();
 
         await expect(makeAxeBuilder).toHaveNoAxeViolations();
       });
