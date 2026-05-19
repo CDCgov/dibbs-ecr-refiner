@@ -148,7 +148,7 @@ async def discover_configurations_for_conditions(
 
     conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
 
-    groups: list[DiscoveredConfigurationSet] = []
+    condition_sets: list[DiscoveredConfigurationSet] = []
     for all_versions in conditions_grouped_by_url.values():
         representative_condition = next(
             (c for c in all_versions if c.id in configured_primary_condition_ids),
@@ -165,7 +165,7 @@ async def discover_configurations_for_conditions(
             reverse=True,
         )
 
-        groups.append(
+        condition_sets.append(
             DiscoveredConfigurationSet(
                 name=representative_condition.display_name,
                 condition_id=representative_condition.id,
@@ -178,7 +178,9 @@ async def discover_configurations_for_conditions(
             )
         )
 
-    return DiscoveredConfigurationsResponse(sets=sorted(groups, key=lambda g: g.name))
+    return DiscoveredConfigurationsResponse(
+        sets=sorted(condition_sets, key=lambda g: g.name)
+    )
 
 
 def _group_conditions_by_url(
