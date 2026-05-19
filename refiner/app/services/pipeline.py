@@ -38,16 +38,15 @@ from .format import format_xml_document_for_display
 from .terminology import ProcessedConfiguration
 
 # TODO:
-# planning-object:callers (testing.py, lambda_function.py)
-# duplicate a per-jurisdiction loop that discovers conditions,
-# resolves configurations, calls refine_for_condition, and decides
-# whether a remainder RR is needed. A session-level planning object
-# ("RefinementRun") should own that loop. Until it lands:
-#   - callers thread an AugmentationRun in per session so all
-#     outputs of one session share a timestamp (see the helper below)
-#   - the if-and-only-if rule for the remainder is enforced inside
-#     produce_remainder_rr_for_jurisdiction as a None return
-#   - RefinementTrace remains dual-purpose (input + output)
+# * testing.py and lambda_function.py each contain a per-jurisdiction
+#   loop that discovers conditions, resolves configurations, calls
+#   refine_for_condition, and decides whether a remainder RR is needed
+# * that loop is duplicated across the two callers
+# * the if-and-only-if rule for the remainder is currently enforced
+#   inside produce_remainder_rr_for_jurisdiction as a None return
+#   rather than being expressed structurally
+# * RefinementTrace is dual-purpose: it carries both pipeline input
+#   and execution output
 
 # NOTE:
 # METRICS
@@ -86,30 +85,22 @@ def _get_size_reduction_percentage(unrefined: str, refined: str) -> int:
 
 def create_augmentation_run_from_xml_files(
     xml_files: XMLFiles,
-    augmentation_time: str | None = None,
 ) -> AugmentationRun:
     """
     Build an AugmentationRun from an XMLFiles pair.
 
-    Thin wedge so callers can construct a session-scoped run without
-    touching lxml directly. The run is built once per refinement
-    session and threaded into every refine_for_condition and
-    produce_remainder_rr_for_jurisdiction call in that session, so
-    all augmented outputs share a timestamp. A "session" is one
-    input pair: lambda processes that pair across every jurisdiction
-    it's reportable to in a single invocation; the webapp processes
-    it for a single jurisdiction per call.
-
-    TODO(planning-object): this helper exists because the planning
-    object that should own session construction has been deferred.
-    When it lands, callers will receive a constructed plan instead of
-    building runs themselves, and this helper goes away.
+    The single XMLFiles→AugmentationRun entry point. Callers
+    (lambda_function.run_refinement, testing.independent_testing,
+    testing.inline_testing) build one run per input pair and thread
+    it through every refine_for_condition and
+    produce_remainder_rr_for_jurisdiction call, so all augmented
+    outputs from that pair share a timestamp. Centralizing the parse
+    and the XMLSyntaxError→XMLValidationError translation here keeps
+    callers off lxml and prevents three copies of the same
+    parse/translate boilerplate.
 
     Args:
         xml_files: The eICR/RR pair. Only the eICR is read.
-        augmentation_time: Optional pre-formatted HL7 timestamp.
-            Forwarded to create_augmentation_run; tests can pin a
-            value to make derivations reproducible.
 
     Raises:
         XMLValidationError: If the eICR XML is malformed.
@@ -125,10 +116,7 @@ def create_augmentation_run_from_xml_files(
             details={"error": str(e)},
         )
 
-    return create_augmentation_run(
-        eicr_root=eicr_root,
-        augmentation_time=augmentation_time,
-    )
+    return create_augmentation_run(eicr_root=eicr_root)
 
 
 # NOTE:
@@ -469,11 +457,11 @@ def produce_remainder_rr_for_jurisdiction(
         - skipped_condition_codes is empty: every condition was
           refined, so there is nothing for the remainder to carry.
 
-    TODO(planning-object): the if-and-only-if rule is enforced here
-    as a None return because the planning object that would express
-    it structurally has been deferred. When the planning object
-    lands, this function should become a pure transform; the plan
-    decides whether to call it.
+    Todo:
+    * the if-and-only-if rule is enforced here as a None return
+      rather than expressed structurally by the caller
+    * both callers compute refined/skipped code sets independently
+      to pass in
 
     Args:
         xml_files: The eICR/RR pair. Only the RR is mutated; the

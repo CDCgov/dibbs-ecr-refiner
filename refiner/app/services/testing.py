@@ -204,10 +204,11 @@ async def independent_testing(
         )
 
     # TODO:
-    # planning-object: the planning object should own this
-    # one AugmentationRun for this testing session, shared across every
-    # refine_for_condition call and the remainder RR so all augmented
-    # outputs share an effectiveTime
+    # * one AugmentationRun is built per testing session and threaded
+    #   through every refine_for_condition call and the remainder RR
+    #   so all augmented outputs share an effectiveTime
+    # * the construction lives here in the caller, not in a
+    #   session-level owner
     run = create_augmentation_run_from_xml_files(xml_files)
 
     # STEP 2:
@@ -455,13 +456,12 @@ def _generate_remainder_rr(
     pipeline. The pipeline enforces the if-and-only-if rule (returns
     None if either set is empty) and handles the augmentation.
 
-    TODO(convergence): the refined-codes set and the skipped-codes
-    set are computed by walking webapp-specific data structures
-    (IndependentTestingTrace, NoMatchEntry) that duplicate
-    information already on the per-condition RefinementTrace
-    objects. When the planning object lands, these sets should be
-    derived from trace.refinement_outcome directly, eliminating
-    the parallel bookkeeping. See pipeline.py top-of-file TODO.
+    Todo:
+    * the refined-codes set and the skipped-codes set are computed
+      by walking webapp-specific data structures
+      (IndependentTestingTrace, NoMatchEntry)
+    * that information is also present on the per-condition
+      RefinementTrace objects, so it is tracked in two places
 
     Args:
         refined_traces: All IndependentTestingTrace objects, whether
@@ -609,8 +609,9 @@ async def inline_testing(
     )
 
     # TODO:
-    # planning-object: the planning object should own this
-    # one AugmentationRun for this single inline refinement
+    # * one AugmentationRun is built for this single inline refinement
+    # * the construction lives here in the caller, not in a
+    #   session-level owner
     run = create_augmentation_run_from_xml_files(xml_files)
 
     result = refine_for_condition(

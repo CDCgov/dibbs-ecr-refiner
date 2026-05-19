@@ -634,31 +634,9 @@ def test_create_augmentation_run_inherits_version_number(
 
     expected_version = eicr_root_v1_1.find("hl7:versionNumber", HL7_NS).get("value")
 
-    run = create_augmentation_run(
-        eicr_root=eicr_root_v1_1,
-        augmentation_time="20260101120000+0000",
-    )
+    run = create_augmentation_run(eicr_root=eicr_root_v1_1)
 
     assert run.version_number == expected_version
-
-
-def test_create_augmentation_run_accepts_explicit_timestamp(
-    eicr_root_v1_1: etree.Element,
-):
-    """
-    When augmentation_time is passed, it should be used instead of
-    capturing the clock. This is how the pipeline ensures every
-    augmented document in a session shares an effectiveTime.
-    """
-
-    shared_time = "20260101120000+0000"
-
-    run = create_augmentation_run(
-        eicr_root=eicr_root_v1_1,
-        augmentation_time=shared_time,
-    )
-
-    assert run.augmentation_time == shared_time
 
 
 def test_create_augmentation_run_captures_eicr_setid_for_rr_seeding(
@@ -674,10 +652,7 @@ def test_create_augmentation_run_captures_eicr_setid_for_rr_seeding(
 
     expected_setid = eicr_root_v1_1.find("hl7:setId", HL7_NS).get("root")
 
-    run = create_augmentation_run(
-        eicr_root=eicr_root_v1_1,
-        augmentation_time="20260101120000+0000",
-    )
+    run = create_augmentation_run(eicr_root=eicr_root_v1_1)
 
     assert run.original_eicr_setid_root == expected_setid
 

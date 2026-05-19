@@ -73,12 +73,11 @@ class RefinementState:
     metadata dict, and the set of codes per jurisdiction that were
     NOT refined (used to drive remainder RR production).
 
-    TODO(convergence): skipped_condition_codes_by_jurisdiction
-    duplicates information already present on the per-condition
-    RefinementTrace objects (traces with refinement_outcome ==
-    "skipped"). When the planning object lands, this field should
-    be derived from the trace list instead of being maintained as
-    a parallel structure. See pipeline.py top-of-file TODO.
+    TODO:
+    * skipped_condition_codes_by_jurisdiction holds information that
+      is also present on the per-condition RefinementTrace objects
+      (traces with refinement_outcome == "skipped")
+    * that means skipped codes are tracked in two places
     """
 
     output_files: set[str] = field(default_factory=set)
@@ -458,11 +457,12 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
     )
 
     # TODO:
-    # * planning-object: the planning object should own this
-    # one AugmentationRun per input pair, shared across every
-    # refine_for_condition and produce_remainder_rr_for_jurisdiction
-    # call in this invocation so all augmented outputs of the session
-    # share an effectiveTime
+    # * one AugmentationRun is built per input pair and threaded
+    #   through every refine_for_condition and
+    #   produce_remainder_rr_for_jurisdiction call in this invocation
+    #   so all augmented outputs share an effectiveTime
+    # * the construction lives here in the caller, not in a
+    #   session-level owner
     run = create_augmentation_run_from_xml_files(input.xml_files)
 
     # mutable state that is updated during the refinement process

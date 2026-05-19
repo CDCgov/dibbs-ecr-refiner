@@ -173,6 +173,8 @@ def _derive_augmented_eicr_setid(
     EHR conceptual document, condition) tuple, with versionNumber
     distinguishing iterations within the case. See the augmentation
     guide for the seed derivation rationale.
+
+    condition_grouper_uuid is a UUID; the type is the validator.
     """
 
     return str(
@@ -264,24 +266,18 @@ class AugmentationRun:
     original_eicr_setid_root: str
 
 
-def create_augmentation_run(
-    eicr_root: _Element,
-    augmentation_time: str | None = None,
-) -> AugmentationRun:
+def create_augmentation_run(eicr_root: _Element) -> AugmentationRun:
     """
     Read the values needed for an AugmentationRun off the input eICR.
 
     The pipeline's entry point for building an AugmentationRun. Captures
-    versionNumber and setId from the source eICR and either captures or
-    accepts a timestamp. Reads only what's actually shared across all
-    augmentations in the run — per-call discriminators (jurisdiction,
-    scope) travel as direct arguments to the augmentation functions.
+    versionNumber and setId from the source eICR and the current time.
+    Reads only what's actually shared across all augmentations in the
+    run — per-call discriminators (jurisdiction, scope) travel as direct
+    arguments to the augmentation functions.
 
     Args:
         eicr_root: The parsed eICR root element.
-        augmentation_time: Optional pre-formatted HL7 timestamp. When
-            None, the current time is captured. Tests can supply a
-            fixed value to make derivations reproducible.
 
     Raises:
         ValueError: If the input eICR is missing setId or versionNumber
@@ -305,9 +301,8 @@ def create_augmentation_run(
             "augmentation IG v4 (CONF:5573-16)."
         )
 
-    if augmentation_time is None:
-        now = datetime.now(UTC).astimezone()
-        augmentation_time = now.strftime("%Y%m%d%H%M%S%z")
+    now = datetime.now(UTC).astimezone()
+    augmentation_time = now.strftime("%Y%m%d%H%M%S%z")
 
     return AugmentationRun(
         augmentation_time=augmentation_time,
@@ -821,7 +816,7 @@ def _build_related_document_for_input(original: _OriginalIdentity) -> _Element:
     """
     Build a v4-shape <relatedDocument> referencing the input we just augmented.
 
-    Honestly emits whatever identity the input had: id is always
+    Honestly emits whatever identity the input had; id is always
     present (every CDA document has one), setId and versionNumber
     are emitted whenever the input has them and omitted only when
     the input lacks them.
