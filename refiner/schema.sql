@@ -16,6 +16,20 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
 -- Name: configuration_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -312,9 +326,9 @@ CREATE TABLE public.sessions (
 
 CREATE TABLE public.systems (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name text NOT NULL,
+    key text NOT NULL,
     display_name text NOT NULL,
-    oid text NOT NULL
+    oid text
 );
 
 

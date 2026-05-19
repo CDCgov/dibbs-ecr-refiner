@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from refiner.app.services.code_systems import CodeSystems
 
 from app.api.v1.codes.model import GetCodeSystemsReponse
+from app.services.code_systems import CodeSystems
 
 router = APIRouter(prefix="/code-systems")
 

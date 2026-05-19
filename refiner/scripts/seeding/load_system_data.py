@@ -4,12 +4,12 @@ from lib import (
 )
 
 CODE_SYSTEM_DATA = {
-    "2.16.840.1.113883.6.96": {"name": "snomed", "display_name": "SNOMED"},
-    "2.16.840.1.113883.6.1": {"name": "loinc", "display_name": "LOINC"},
-    "2.16.840.1.113883.6.90": {"name": "icd-10", "display_name": "ICD-10"},
-    "2.16.840.1.113883.6.88": {"name": "rxnorm", "display_name": "RxNorm"},
-    "2.16.840.1.113883.12.292": {"name": "cvx", "display_name": "CVX"},
-    "2.16.840.1.113883.5.1008": {"name": "other", "display_name": "Other"},
+    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
+    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
+    "icd-10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
+    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
+    "other": {"oid": None, "display_name": "Other"},
 }
 
 
@@ -26,32 +26,32 @@ def load_system_data(
 
             system_upsert_query = """
             INSERT INTO systems (
-                name,
+                key,
                 display_name,
                 oid
             )
             VALUES (
-                %(name)s,
+                %(key)s,
                 %(display_name)s,
                 %(oid)s
             )
             ON CONFLICT (oid)
             DO UPDATE SET
-                name = EXCLUDED.name,
+                key = EXCLUDED.key,
                 display_name = EXCLUDED.display_name
             WHERE
                 systems.display_name IS DISTINCT FROM EXCLUDED.display_name
-                OR systems.name IS DISTINCT FROM EXCLUDED.name
+                OR systems.key IS DISTINCT FROM EXCLUDED.key
             RETURNING id
             """
 
             params = [
                 {
-                    "oid": oid,
+                    "key": key,
+                    "oid": item["oid"],
                     "display_name": item["display_name"],
-                    "name": item["name"],
                 }
-                for oid, item in CODE_SYSTEM_DATA.items()
+                for key, item in CODE_SYSTEM_DATA.items()
             ]
 
             cursor.executemany(system_upsert_query, params)
