@@ -142,11 +142,11 @@ async def discover_configurations_for_conditions(
         jurisdiction_id=jurisdiction_id, db=db
     )
 
-    conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
-
     configured_primary_condition_ids = {
         config.condition_id for config in all_jurisdiction_configs
     }
+
+    conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
 
     condition_sets: list[DiscoveredConfigurationSet] = []
     for all_versions in conditions_grouped_by_url.values():
