@@ -158,7 +158,7 @@ async def test_shadow_rr_is_produced(
 
     # helper function to get the actual ID
     def resolve(fixture):
-        return [str(flu_condition_id)] if fixture == "flu" else fixture
+        return [str(flu_condition_id)] if fixture == "flu" else []
 
     payload = {
         "configuration_ids": [covid_config["id"]],
