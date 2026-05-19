@@ -231,6 +231,16 @@ def _build_section_provenance(
         # resolve instructions from the merged map (same fallback as refine_eicr)
         instructions = rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
 
+        # NORMALIZATION: Narrative-only sections cannot be refined.
+        # Treat "refine" as "retain" to prevent accidental stubbing.
+        spec_entry = specification.sections.get(code)
+        if (
+            spec_entry
+            and not spec_entry.has_match_rules
+            and instructions.action == "refine"
+        ):
+            instructions = dataclasses.replace(instructions, action="retain")
+
         provenance[code] = SectionProvenanceRecord(
             loinc_code=code,
             display_name=display_name,
@@ -329,6 +339,7 @@ def create_eicr_refinement_plan(
 def _interpret_run_result(
     section_rules: DbConfigurationSectionInstructions,
     run_result: SectionRunResult,
+    has_match_rules: bool,
 ) -> SectionOutcome:
     """
     Map (configuration, run result) to a user-facing SectionOutcome.
@@ -362,6 +373,9 @@ def _interpret_run_result(
             the outcome — but reserved for future policy variations
             that need to consult the configuration.
         run_result: What the matching engine reported about the run.
+        has_match_rules: Whether it's not a narrative-only section or is.
+            Narrative-only sections do not have any match rules within them by
+            design.
 
     Returns:
         The SectionOutcome describing what happened to this section.
@@ -370,7 +384,7 @@ def _interpret_run_result(
     # policy override: no matches always produces a stub, regardless
     # of what the narrative configuration said. see the docstring
     # above for the rationale.
-    if not run_result.matches_found:
+    if has_match_rules and not run_result.matches_found:
         return SectionOutcome.REFINED_NO_MATCHES_STUBBED
 
     # matches were found; outcome reflects what happened to the narrative
@@ -490,7 +504,13 @@ def refine_eicr(
                 code_system_sets=plan.code_system_sets,
                 include_narrative=section_rules.narrative,
             )
-            outcome = _interpret_run_result(section_rules, run_result)
+            outcome = _interpret_run_result(
+                section_rules=section_rules,
+                run_result=run_result,
+                has_match_rules=section_specification.has_match_rules
+                if section_specification
+                else False,
+            )
 
         if provenance is not None:
             # finalize the provenance record with the runtime outcome

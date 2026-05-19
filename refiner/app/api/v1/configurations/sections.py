@@ -23,6 +23,7 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import format_section_naming
+from app.services.ecr.specification import load_spec
 
 router = APIRouter(prefix="/{configuration_id}/sections")
 
@@ -156,6 +157,7 @@ async def update_section(
         all_sections=config.section_processing,
         desired_name=section_input.name,
         desired_code=section_input.new_code,
+        desired_action=section_input.action,
     )
 
     section_update = _build_section_update(
@@ -244,6 +246,7 @@ def _raise_if_invalid_section_update(
     all_sections: list[DbConfigurationSectionProcessing],
     desired_name: str | None,
     desired_code: str | None,
+    desired_action: str | None,
 ) -> None:
     """
     Raises an exception if any properties of an update are not valid.
@@ -253,7 +256,18 @@ def _raise_if_invalid_section_update(
         all_sections (list[DbConfigurationSectionProcessing]): All sections associated with a config
         desired_name (str | None): The desired name to update to
         desired_code (str | None): the desired code to update to
+        desired_action (str | None): The desired action to update to
     """
+    # Validation for narrative-only sections
+    if desired_action == "refine":
+        spec = load_spec("3.1.1")
+        spec_entry = spec.sections.get(existing_section.code)
+        if spec_entry and not spec_entry.has_match_rules:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"The section {spec_entry.display_name} is narrative-only and cannot be refined.",
+            )
+
     other_sections = [s for s in all_sections if s.code != existing_section.code]
 
     _raise_if_invalid_section_fields(
