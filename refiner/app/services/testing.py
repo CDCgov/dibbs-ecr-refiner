@@ -84,9 +84,9 @@ class DiscoveredConfigurationVersion:
 
 
 @dataclass
-class DiscoveredConfigurationGroup:
+class DiscoveredConfigurationSet:
     """
-    Model to represent a group of discovered configurations.
+    Model to represent a set of discovered configurations.
     """
 
     name: str
@@ -97,10 +97,10 @@ class DiscoveredConfigurationGroup:
 @dataclass
 class DiscoveredConfigurationsResponse:
     """
-    Model to represent the groups of discovered configurations to return to the client.
+    Model to represent the sets of discovered configurations to return to the client.
     """
 
-    groups: list[DiscoveredConfigurationGroup]
+    sets: list[DiscoveredConfigurationSet]
 
 
 # NOTE:
@@ -132,7 +132,7 @@ async def discover_configurations_for_conditions(
     )
 
     if not rc_codes_for_jurisdiction:
-        return DiscoveredConfigurationsResponse(groups=[])
+        return DiscoveredConfigurationsResponse(sets=[])
 
     rc_to_conditions_map = await _map_rc_codes_to_conditions(
         rc_codes=rc_codes_for_jurisdiction, db=db
@@ -148,7 +148,7 @@ async def discover_configurations_for_conditions(
 
     conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
 
-    groups: list[DiscoveredConfigurationGroup] = []
+    groups: list[DiscoveredConfigurationSet] = []
     for all_versions in conditions_grouped_by_url.values():
         representative_condition = next(
             (c for c in all_versions if c.id in configured_primary_condition_ids),
@@ -166,7 +166,7 @@ async def discover_configurations_for_conditions(
         )
 
         groups.append(
-            DiscoveredConfigurationGroup(
+            DiscoveredConfigurationSet(
                 name=representative_condition.display_name,
                 condition_id=representative_condition.id,
                 versions=[
@@ -178,7 +178,7 @@ async def discover_configurations_for_conditions(
             )
         )
 
-    return DiscoveredConfigurationsResponse(groups=sorted(groups, key=lambda g: g.name))
+    return DiscoveredConfigurationsResponse(sets=sorted(groups, key=lambda g: g.name))
 
 
 def _group_conditions_by_url(

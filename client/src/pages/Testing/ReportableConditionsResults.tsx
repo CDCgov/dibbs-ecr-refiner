@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { Button } from '@components/Button';
 import { WarningIcon } from '@components/WarningIcon';
-import { DiscoveredConfigurationGroup } from '../../api/schemas';
+import { DiscoveredConfigurationSet } from '../../api/schemas';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Select, SelectContainer } from '@components/Select';
@@ -9,7 +9,7 @@ import { Checkbox } from '@components/Checkbox';
 import { useState } from 'react';
 
 interface ReportableConditionsResultsProps {
-  configurationGroups: DiscoveredConfigurationGroup[];
+  configurationSets: DiscoveredConfigurationSet[];
   startOver: () => void;
   runRefinement: (
     configIds: string[],
@@ -19,23 +19,23 @@ interface ReportableConditionsResultsProps {
 }
 
 export function ReportableConditionsResults({
-  configurationGroups,
+  configurationSets,
   startOver,
   runRefinement,
 }: ReportableConditionsResultsProps) {
-  const matchedGroupsWithConfig = configurationGroups.filter(
+  const matchedSetsWithConfig = configurationSets.filter(
     (cg) => cg.versions.length > 0
   );
-  const matchedGroupsWithoutConfig = configurationGroups.filter(
+  const matchedSetsWithoutConfig = configurationSets.filter(
     (cg) => cg.versions.length === 0
   );
 
-  const [groupSelections, setGroupSelections] = useState<
+  const [conditionSetSelections, setConditionSetSelections] = useState<
     Map<string, { checked: boolean; selectedId: string }>
   >(
     () =>
       new Map(
-        matchedGroupsWithConfig.map((cg) => [
+        matchedSetsWithConfig.map((cg) => [
           cg.name,
           {
             checked: true,
@@ -48,17 +48,17 @@ export function ReportableConditionsResults({
       )
   );
 
-  const checkedSelections = [...groupSelections.values()].filter(
+  const checkedSelections = [...conditionSetSelections.values()].filter(
     (s) => s.checked
   );
 
-  const uncheckedConditionIds = matchedGroupsWithConfig
-    .filter((cg) => !groupSelections.get(cg.name)?.checked)
+  const uncheckedConditionIds = matchedSetsWithConfig
+    .filter((cg) => !conditionSetSelections.get(cg.name)?.checked)
     .map((cg) => cg.condition_id);
 
   // helper for toggling a checkbox
-  function toggleGroup(name: string) {
-    setGroupSelections((prev) => {
+  function toggleConditionSet(name: string) {
+    setConditionSetSelections((prev) => {
       const next = new Map(prev);
       const current = next.get(name)!;
       next.set(name, { ...current, checked: !current.checked });
@@ -68,7 +68,7 @@ export function ReportableConditionsResults({
 
   // helper for setting the selected ID
   function setSelectedId(name: string, id: string) {
-    setGroupSelections((prev) => {
+    setConditionSetSelections((prev) => {
       const next = new Map(prev);
       const current = next.get(name)!;
       next.set(name, { ...current, selectedId: id });
@@ -79,7 +79,7 @@ export function ReportableConditionsResults({
   // TODO: This is placeholder design and copy.
   // No conditions to display.
   // This is when a valid eICR/RR zip is uploaded but doesn't contain the uploader's jurisdiction ID for any reportable conditions.
-  if (configurationGroups.length === 0) {
+  if (configurationSets.length === 0) {
     return (
       <Container>
         <ConditionsContainer>
@@ -101,21 +101,21 @@ export function ReportableConditionsResults({
   }
 
   // Display matched conditions and potentially also missing conditions
-  if (matchedGroupsWithConfig.length > 0) {
+  if (matchedSetsWithConfig.length > 0) {
     return (
       <Container className="lg:w-4/7">
         <ConditionsContainer>
           <p className="font-bold">
             We found the following reportable condition(s) in the RR:
           </p>
-          {matchedGroupsWithConfig.map((cg) => {
-            const selection = groupSelections.get(cg.name)!;
+          {matchedSetsWithConfig.map((cg) => {
+            const selection = conditionSetSelections.get(cg.name)!;
             return (
               <div key={cg.name} className="flex gap-2">
                 <Checkbox
                   aria-label={`Use ${cg.name} configuration in refinement process`}
                   checked={selection.checked}
-                  onChange={() => toggleGroup(cg.name)}
+                  onChange={() => toggleConditionSet(cg.name)}
                 />
                 <SelectContainer>
                   <Field>
@@ -136,11 +136,11 @@ export function ReportableConditionsResults({
             );
           })}
 
-          {matchedGroupsWithoutConfig.length > 0 && (
+          {matchedSetsWithoutConfig.length > 0 && (
             <>
               <hr className="border-gray-cool-20" />
               <ConditionWarnings
-                missingConditions={matchedGroupsWithoutConfig.map(
+                missingConditions={matchedSetsWithoutConfig.map(
                   (wc) => wc.name
                 )}
               />
@@ -164,7 +164,7 @@ export function ReportableConditionsResults({
               );
 
               // conditions without a matching config + conditions the user doesn't want to use
-              const conditionsWithoutConfigIds = matchedGroupsWithoutConfig.map(
+              const conditionsWithoutConfigIds = matchedSetsWithoutConfig.map(
                 (c) => c.condition_id
               );
 
@@ -190,7 +190,7 @@ export function ReportableConditionsResults({
     <Container className="max-w-188">
       <ConditionsContainer>
         <ConditionWarnings
-          missingConditions={matchedGroupsWithoutConfig.map((wc) => wc.name)}
+          missingConditions={matchedSetsWithoutConfig.map((wc) => wc.name)}
         />
       </ConditionsContainer>
       <div className="flex flex-col gap-4 md:w-lg">

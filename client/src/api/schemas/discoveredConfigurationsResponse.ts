@@ -1,8 +1,8 @@
-import type { DiscoveredConfigurationGroup } from './discoveredConfigurationGroup';
+import type { DiscoveredConfigurationSet } from './discoveredConfigurationSet';
 
 /**
- * Model to represent the groups of discovered configurations to return to the client.
+ * Model to represent the sets of discovered configurations to return to the client.
  */
 export interface DiscoveredConfigurationsResponse {
-  groups: DiscoveredConfigurationGroup[];
+  sets: DiscoveredConfigurationSet[];
 }

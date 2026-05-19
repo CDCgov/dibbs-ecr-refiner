@@ -26,7 +26,7 @@ export * from './dbSectionAction';
 export * from './dbSectionType';
 export * from './dbTotalConditionCodeCount';
 export * from './deleteSectionInput';
-export * from './discoveredConfigurationGroup';
+export * from './discoveredConfigurationSet';
 export * from './discoveredConfigurationsResponse';
 export * from './discoveredConfigurationVersion';
 export * from './eventFilterOption';
