@@ -10,7 +10,6 @@ from app.services.ecr.augment import (
     _derive_augmented_eicr_setid,
     _derive_augmented_rr_id,
     _derive_augmented_rr_setid,
-    _extract_uuid_from_canonical_url,
     augment_eicr,
     augment_rr,
     create_augmentation_context_for_pair,
@@ -650,43 +649,6 @@ def test_create_augmentation_context_for_pair_url_drift_doesnt_affect_ids(
     assert a.augmented_eicr_setid == b.augmented_eicr_setid
     assert a.augmented_rr_id == b.augmented_rr_id
     assert a.augmented_rr_setid == b.augmented_rr_setid
-
-
-# NOTE:
-# CANONICAL URL UUID EXTRACTION
-# =============================================================================
-
-
-def test_extract_uuid_from_canonical_url_returns_trailing_uuid_verbatim():
-    """
-    The extractor returns the trailing UUID exactly as it appears in
-    the canonical_url — no normalization. Whatever casing TES delivers
-    is what we seed with. URL shape validation lives at the data-ingest
-    seam (the conditions table is populated from reviewed PRs), not
-    here.
-    """
-
-    url = (
-        "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-        "07221093-b8a1-4b1d-8678-259277bfba64"
-    )
-    assert (
-        _extract_uuid_from_canonical_url(url) == "07221093-b8a1-4b1d-8678-259277bfba64"
-    )
-
-
-def test_extract_uuid_from_canonical_url_tolerates_trailing_slash():
-    """
-    urlparse + rstrip("/") handles both "/<uuid>" and "/<uuid>/" forms.
-    """
-
-    base = (
-        "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
-        "07221093-b8a1-4b1d-8678-259277bfba64"
-    )
-    assert _extract_uuid_from_canonical_url(base) == _extract_uuid_from_canonical_url(
-        base + "/"
-    )
 
 
 # NOTE:

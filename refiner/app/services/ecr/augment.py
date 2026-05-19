@@ -3,10 +3,11 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final
-from urllib.parse import urlparse
 
 from lxml import etree
 from lxml.etree import _Element
+
+from app.services.conditions.parsing import extract_uuid_from_canonical_url
 
 from .model import HL7_NAMESPACE, HL7_NS
 
@@ -70,23 +71,6 @@ REFINER_DETERMINISTIC_NS: Final[uuid.UUID] = uuid.UUID(
 _SEED_PREFIX_EICR_SETID: Final[str] = "eicr-setid"
 _SEED_PREFIX_RR_SETID: Final[str] = "rr-setid"
 _SEED_FIELD_SEPARATOR: Final[str] = "|"
-
-
-def _extract_uuid_from_canonical_url(canonical_url: str) -> str:
-    """
-    Extract the trailing UUID from a TES condition grouper canonical_url.
-
-    TES canonical URLs end with the UUID that uniquely identifies the
-    condition grouper across versions. That UUID is the part we seed
-    deterministic augmented identifiers from.
-
-    Returns the UUID as it appears in the URL — no normalization. The
-    Refiner treats the canonical_url as authoritative; whatever casing
-    TES uses is what we seed with. URL shape validation lives at the
-    data-ingest seam, not here.
-    """
-
-    return urlparse(canonical_url).path.rstrip("/").rsplit("/", 1)[-1]
 
 
 def _derive_augmented_eicr_id(
@@ -347,7 +331,7 @@ def create_augmentation_context_for_pair(
             "augmentation IG v4 (CONF:5573-16)."
         )
 
-    condition_grouper_uuid = _extract_uuid_from_canonical_url(canonical_url)
+    condition_grouper_uuid = extract_uuid_from_canonical_url(canonical_url)
 
     return _create_augmentation_context(
         original_eicr_id_root=_get_attribute_value(eicr_id_el, "root"),
@@ -355,7 +339,7 @@ def create_augmentation_context_for_pair(
         original_eicr_version=_get_attribute_value(eicr_version_el, "value"),
         original_rr_id_root=_get_attribute_value(rr_id_el, "root"),
         jurisdiction_id=jurisdiction_id,
-        condition_grouper_uuid=condition_grouper_uuid,
+        condition_grouper_uuid=str(condition_grouper_uuid),
         augmentation_time=augmentation_time,
     )
 
