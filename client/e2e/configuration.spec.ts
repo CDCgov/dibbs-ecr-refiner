@@ -294,7 +294,10 @@ test.describe('Configuration detail flow', () => {
 
         const chiefComplaintText = 'Not applicable for this section';
         await expect(
-          page.locator('tr').filter({ hasText: 'Chief Complaint' }).getByText(chiefComplaintText)
+          page
+            .locator('tr')
+            .filter({ hasText: 'Chief Complaint' })
+            .getByText(chiefComplaintText)
         ).toBeVisible();
 
         await expect(makeAxeBuilder).toHaveNoAxeViolations();
