@@ -48,15 +48,15 @@ async def test_full_independent_test_flow_smoke(
     data = response.json()
 
     # Both config IDs should be present
-    groups_by_name = {group["name"]: group for group in data["groups"]}
+    sets_by_name = {set["name"]: set for set in data["sets"]}
 
-    assert groups_by_name["COVID-19"]["condition_id"] == str(covid_condition_id)
-    assert groups_by_name["COVID-19"]["versions"][0]["status"] == "active"
-    assert groups_by_name["COVID-19"]["versions"][0]["id"] == str(covid_config["id"])
+    assert sets_by_name["COVID-19"]["condition_id"] == str(covid_condition_id)
+    assert sets_by_name["COVID-19"]["versions"][0]["status"] == "active"
+    assert sets_by_name["COVID-19"]["versions"][0]["id"] == str(covid_config["id"])
 
-    assert groups_by_name["Influenza"]["condition_id"] == str(flu_condition_id)
-    assert groups_by_name["Influenza"]["versions"][0]["status"] == "draft"
-    assert groups_by_name["Influenza"]["versions"][0]["id"] == str(flu_config["id"])
+    assert sets_by_name["Influenza"]["condition_id"] == str(flu_condition_id)
+    assert sets_by_name["Influenza"]["versions"][0]["status"] == "draft"
+    assert sets_by_name["Influenza"]["versions"][0]["id"] == str(flu_config["id"])
 
     payload = {
         "configuration_ids": [covid_config["id"], flu_config["id"]],
