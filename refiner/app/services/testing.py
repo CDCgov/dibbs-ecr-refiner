@@ -142,14 +142,15 @@ async def discover_configurations_for_conditions(
         jurisdiction_id=jurisdiction_id, db=db
     )
 
-    configured_primary_condition_ids = {
-        config.condition_id for config in all_jurisdiction_configs
-    }
-
     conditions_grouped_by_url = _group_conditions_by_url(rc_to_conditions_map)
 
     condition_sets: list[DiscoveredConfigurationSet] = []
     for all_versions in conditions_grouped_by_url.values():
+        all_condition_ids = {c.id for c in all_versions}
+        configured_primary_condition_ids = {
+            config.condition_id for config in all_jurisdiction_configs
+        }
+
         representative_condition = next(
             (c for c in all_versions if c.id in configured_primary_condition_ids),
             None,
@@ -159,7 +160,7 @@ async def discover_configurations_for_conditions(
             [
                 c
                 for c in all_jurisdiction_configs
-                if c.condition_id == representative_condition.id
+                if c.condition_id in all_condition_ids
             ],
             key=lambda c: c.version,
             reverse=True,
