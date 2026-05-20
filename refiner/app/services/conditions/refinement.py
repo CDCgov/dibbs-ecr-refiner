@@ -36,7 +36,7 @@ def filter_refined_files_by_diff_rendering(
     """
 
     render_diff = (
-        get_file_size_in_bytes(original_xml_files.eicr) < DIFF_RENDERING_MAX_BYTES  # noqa: F821
+        get_file_size_in_bytes(original_xml_files.eicr) < DIFF_RENDERING_MAX_BYTES
     )
 
     original_eicr = ""
