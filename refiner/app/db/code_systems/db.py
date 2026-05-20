@@ -106,7 +106,7 @@ async def get_code_system_by_key_or_raise_db(
 
 
 async def get_code_system_by_oid_db(
-    oid: str, db: AsyncDatabaseConnection, logger: Logger
+    oid: str, db: AsyncDatabaseConnection
 ) -> DbCodeSystem | None:
     """
     Get a code system information by its OID.
@@ -128,16 +128,9 @@ async def get_code_system_by_oid_db(
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=class_row(DbCodeSystem)) as cur:
             await cur.execute(query, params)
-            row = await cur.fetchall()
-            if len(row) == 0:
-                return None
+            row = await cur.fetchone()
 
-            if len(row) > 1:
-                logger.warning(
-                    f"Found multiple matches for code system when querying by oid {oid}. Returning first match"
-                )
-
-            return row[0]
+            return row
 
 
 async def get_code_system_by_display_name_db(
