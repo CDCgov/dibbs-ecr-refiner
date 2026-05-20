@@ -13,7 +13,7 @@ import { AxiosError } from 'axios';
 import { TestQueryClientProvider } from '../../test-utils.tsx';
 import { DiscoveredConfigurationsResponse } from '../../api/schemas';
 
-vi.mock('../../api/demo/demo', () => ({
+vi.mock('../../api/simulator/simulator', () => ({
   useUploadEcr: vi.fn(),
   useDiscoverConfigurations: vi.fn(),
 }));
