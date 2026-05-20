@@ -47,14 +47,13 @@ MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
 MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
 MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
 
-
 CODE_SYSTEM_DATA = {
-    "2.16.840.1.113883.6.96": {"name": "snomed", "display_name": "SNOMED"},
-    "2.16.840.1.113883.6.1": {"name": "loinc", "display_name": "LOINC"},
-    "2.16.840.1.113883.6.90": {"name": "icd-10", "display_name": "ICD-10"},
-    "2.16.840.1.113883.6.88": {"name": "rxnorm", "display_name": "RxNorm"},
-    "2.16.840.1.113883.12.292": {"name": "cvx", "display_name": "CVX"},
-    "2.16.840.1.113883.5.1008": {"name": "other", "display_name": "Other"},
+    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
+    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
+    "icd-10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
+    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
+    "other": {"oid": None, "display_name": "Other"},
 }
 
 
@@ -126,9 +125,9 @@ def mock_supported_systems():
     return [
         DbCodeSystem(
             id=uuid4(),
-            oid=system[0],
+            oid=system[1]["oid"],
             display_name=system[1]["display_name"],
-            name=system[1]["name"],
+            key=system[0],
         )
         for system in CODE_SYSTEM_DATA.items()
     ]

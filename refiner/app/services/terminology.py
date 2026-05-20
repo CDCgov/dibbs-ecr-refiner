@@ -10,7 +10,7 @@ from app.db.code_systems.db import (
     get_all_code_systems_db,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
-from app.services.ecr.section.utils import CODE_SYSTEM_LABELS
+from app.services.ecr.specification.constants import CODE_SYSTEM_LABELS
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -110,9 +110,11 @@ class CodeSystemSets:
         """
 
         attr_name = CODE_SYSTEM_LABELS.get(code_system_oid)
+        if attr_name == "ICD-10":
+            attr_name = "icd10"
         if attr_name is None:
             return None
-        return getattr(self, attr_name)
+        return getattr(self, attr_name.lower())
 
     def find_match(
         self, code: str, code_system_oid: str | None = None

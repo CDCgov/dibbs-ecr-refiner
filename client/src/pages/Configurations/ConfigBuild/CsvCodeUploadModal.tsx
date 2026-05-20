@@ -95,7 +95,7 @@ interface PreviewEditModalProps {
   setError: (err: string | null) => void;
   error: string | null;
   handlePreviewEditChange: (
-    field: 'code' | 'system' | 'name'
+    field: keyof UploadCustomCodesPreviewItem
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }
 
@@ -169,7 +169,7 @@ export function PreviewEditModal({
             <Label>Code system</Label>
             <Select
               value={previewEditForm.system_key}
-              onChange={handlePreviewEditChange('system')}
+              onChange={handlePreviewEditChange('system_key')}
             >
               {supportedCodeSystems.data.map((s) => (
                 <option key={s.id} value={s.key}>

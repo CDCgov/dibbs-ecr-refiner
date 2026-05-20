@@ -23,7 +23,7 @@ import { Search } from '@components/Search';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
-  system: 'other',
+  system_key: 'other',
   name: '',
 };
 
@@ -65,11 +65,7 @@ export function ImportCustomCodes({
   const [isUploading, setIsUploading] = useState(false);
   const [previewEditIndex, setPreviewEditIndex] = useState<number | null>(null);
   const [previewEditForm, setPreviewEditForm] =
-    useState<UploadCustomCodesPreviewItem>({
-      code: '',
-      system: 'ICD-10',
-      name: '',
-    });
+    useState<UploadCustomCodesPreviewItem>(EMPTY_PREVIEW_FORM);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isUndoModalOpen, setIsUndoModalOpen] = useState(false);
@@ -406,7 +402,9 @@ export function ImportCustomCodes({
   }, [previewData, previewSearchResults, searchText]);
 
   const isEditSaveDisabled =
-    !previewEditForm.code || !previewEditForm.name || !previewEditForm.system;
+    !previewEditForm.code ||
+    !previewEditForm.name ||
+    !previewEditForm.system_key;
 
   return (
     <>
@@ -535,13 +533,13 @@ export function ImportCustomCodes({
               <tbody>
                 {previewRows.map(({ item, matches }) => (
                   <tr
-                    key={`${item.code}-${item.system}-${item.previewIndex ?? item.row}`}
+                    key={`${item.code}-${item.system_key}-${item.previewIndex ?? item.row}`}
                     className="border-y border-blue-50"
                   >
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.system}</td>
+                    <td className="px-2 py-1">{item.system_key}</td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>

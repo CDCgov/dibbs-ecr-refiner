@@ -847,8 +847,6 @@ async def add_bulk_custom_codes_to_configuration_db(
         for cc in existing_codes
     ]
 
-    print(json_payload)
-
     params = (Jsonb(json_payload), config.id)
 
     async with db.get_connection() as conn:

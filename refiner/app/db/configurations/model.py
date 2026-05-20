@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.db.code_systems.db import DbCodeSystem
-
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]

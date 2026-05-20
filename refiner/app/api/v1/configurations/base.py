@@ -5,7 +5,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -27,13 +26,13 @@ from app.db.configurations.model import (
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
 from app.db.users.model import DbUser
+from app.services.code_systems import get_code_systems_indexed_by_key
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
     format_section_naming,
     get_canonical_url_to_highest_inactive_version_map,
 )
 from app.services.logger import get_logger
-from app.services.code_systems import get_code_systems_indexed_by_key
 
 from .model import (
     CreateConfigInput,
