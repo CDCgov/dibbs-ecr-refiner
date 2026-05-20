@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 from lib import (
     get_db_connection,
 )
-from load_system_data import load_system_data
-from load_tes_data import load_tes_data
+from load_static_data import load_static_data
 
 
 def seed_database(db_url: str, db_password: str) -> None:
@@ -41,8 +40,7 @@ def seed_database(db_url: str, db_password: str) -> None:
         logger.error("Make sure migrations have been run prior to seeding!")
         raise
 
-    load_tes_data(db_url=db_url, db_password=db_password)
-    load_system_data(db_url=db_url, db_password=db_password)
+    load_static_data(db_url=db_url, db_password=db_password)
 
 
 if __name__ == "__main__":
