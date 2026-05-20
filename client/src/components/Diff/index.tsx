@@ -5,7 +5,7 @@ import {
   IndependentTestUploadResponse,
 } from '../../api/schemas';
 import { Button } from '../Button';
-import { getDownloadRefinedEcrQueryKey } from '../../api/demo/demo';
+import { getDownloadRefinedEcrQueryKey } from '../../api/simulator/simulator';
 import { DiffToggleOptions } from './DiffToggleOptions';
 import { Warning } from './Warning';
 import { Spinner } from '@components/Spinner';

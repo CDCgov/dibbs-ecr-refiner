@@ -2,16 +2,16 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Simulator } from '.';
 import { MemoryRouter } from 'react-router';
-import { useUploadEcr } from '../../api/demo/demo.ts';
+import { useUploadEcr } from '../../api/simulator/simulator.ts';
 import { Mock } from 'vitest';
-import { IndependentTestUploadResponse } from '../../api/schemas/independentTestUploadResponse.ts';
+import { SimulatorUploadResponse } from '../../api/schemas/simulatorUploadResponse.ts';
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
 import { TestQueryClientProvider } from '../../test-utils.tsx';
 import { FileInfoResponseValue } from '../../api/schemas/fileInfoResponse.ts';
 
-vi.mock('../../api/demo/demo', () => ({ useUploadEcr: vi.fn() }));
+vi.mock('../../api/simulator/simulator', () => ({ useUploadEcr: vi.fn() }));
 
 vi.mock('../../hooks/useGetEnv', () => ({
   useGetEnv: vi.fn(() => 'local'),
@@ -19,7 +19,7 @@ vi.mock('../../hooks/useGetEnv', () => ({
 
 const mockTestFile = new File(['test'], 'test.zip', { type: 'text/plain' });
 
-const mockUploadResponse: IndependentTestUploadResponse = {
+const mockUploadResponse: SimulatorUploadResponse = {
   refined_conditions: [
     {
       code: 'mock-code',
@@ -38,7 +38,7 @@ const mockUploadResponse: IndependentTestUploadResponse = {
   file_info_response: FileInfoResponseValue,
 };
 
-const mockCustomUploadResponse: IndependentTestUploadResponse = {
+const mockCustomUploadResponse: SimulatorUploadResponse = {
   refined_conditions: [
     {
       code: 'mock-custom-file',

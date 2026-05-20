@@ -2,7 +2,7 @@ import { Success } from './Success';
 import { RunSimulation } from './RunSimulation.tsx';
 import { SimulateRefinerDescription } from './SimulateRefinerDescription.tsx';
 import { useState } from 'react';
-import { useUploadEcr } from '../../api/demo/demo';
+import { useUploadEcr } from '../../api/simulator/simulator';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
 import { FileUploadWarning } from '@components/FileUploadWarning';

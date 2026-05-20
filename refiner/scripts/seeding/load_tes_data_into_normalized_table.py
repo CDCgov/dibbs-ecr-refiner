@@ -62,7 +62,6 @@ def upsert_condition_to_codes_relationship(
 
 # build conditions to insert
 def _build_processed_conditions() -> dict[UrlVersionTuple, _IdentifiableCondition]:
-
     conditions_map: dict[UrlVersionTuple, _IdentifiableCondition] = defaultdict()
 
     # parse out the valuesets from the TES files like we were doing previously

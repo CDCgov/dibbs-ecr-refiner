@@ -16,8 +16,8 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
-from app.db.demo.model import Condition, FileInfoResponse, IndependentTestUploadResponse
 from app.db.pool import AsyncDatabaseConnection, get_db
+from app.db.simulator.model import Condition, FileInfoResponse, SimulatorUploadResponse
 from app.db.users.model import DbUser
 from app.services.aws.s3 import (
     fetch_zip_from_s3,
@@ -34,7 +34,7 @@ from app.services.file_io import (
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
-from app.services.testing import independent_testing
+from app.services.testing import simulate_testing
 from app.services.xslt import create_refined_eicr_html_file
 
 # Only allow:
@@ -46,7 +46,7 @@ from app.services.xslt import create_refined_eicr_html_file
 # - spaces
 SAFE_FILENAME_RE = re.compile(r"^[\w\-. ]+\.zip$")
 # create a router instance for this file
-router = APIRouter(prefix="/demo")
+router = APIRouter(prefix="/simulator")
 
 
 def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[str]]:
@@ -126,13 +126,13 @@ async def _build_refined_conditions(
 
 @router.post(
     "/upload",
-    response_model=IndependentTestUploadResponse,
-    tags=["demo"],
+    response_model=SimulatorUploadResponse,
+    tags=["simulator"],
     operation_id="uploadEcr",
 )
-async def demo_upload(
+async def simulator_upload(
     uploaded_file: UploadFile | None = File(None),
-    demo_zip_path: Path = Depends(get_sample_zip_path),
+    simulator_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
         lambda: create_refined_ecr_zip_in_memory
     ),
@@ -142,15 +142,15 @@ async def demo_upload(
     ),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
-) -> IndependentTestUploadResponse:
+) -> SimulatorUploadResponse:
     """
-    Handles the demo upload workflow for eICR refinement.
+    Handles the simulator upload workflow for eICR refinement.
 
     Steps:
-    1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
+    1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in
         refiner/assets/demo/mon-mothma-covid-influenza.zip).
     2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
-    3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
+    3. Call the service layer (`simulator`) to orchestrate the refinement workflow.
     4. For each unique reportable condition code found in the RR (and having a configuration),
         build a refined XML document and collect metadata. The code used is the actual code
         from the RR that triggered the match, not a canonical or database code.
@@ -162,28 +162,30 @@ async def demo_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
-    # Check that demo file path is valid
-    validate_path_or_raise(path=demo_zip_path)
+    # Check that simulator file path is valid
+    validate_path_or_raise(path=simulator_zip_path)
 
     # Validate and load the file
     file = await get_validated_file(
-        uploaded_file=uploaded_file, demo_file_path=demo_zip_path, logger=logger
+        uploaded_file=uploaded_file,
+        test_file_path=simulator_zip_path,
+        logger=logger,
     )
 
-    logger.info("Processing independent test file", extra={"file": file.filename})
+    logger.info("Processing simulator test file", extra={"file": file.filename})
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
-    # Run the test
+    # Run the simulation
     try:
-        test_results = await independent_testing(
+        test_results = await simulate_testing(
             db=db,
             xml_files=original_xml_files,
             jurisdiction_id=user.jurisdiction_id,
             logger=logger,
         )
     except Exception as e:
-        logger.error("Error in the independent testing flow", extra={"error": str(e)})
+        logger.error("Error in the simulator flow", extra={"error": str(e)})
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Server error occurred. Please check your file and try again.",
@@ -227,7 +229,7 @@ async def demo_upload(
     # Ship bundle to S3
     s3_key = await upload_zip(user, output_zip_buffer, output_file_name, logger)
 
-    return IndependentTestUploadResponse(
+    return SimulatorUploadResponse(
         message="Successfully processed eICR with condition-specific refinement",
         refined_conditions_found=len(conditions),
         refined_conditions=conditions,
@@ -243,7 +245,7 @@ async def demo_upload(
 
 @router.get(
     "/download/{filename}",
-    tags=["demo"],
+    tags=["simulator"],
     operation_id="downloadRefinedEcr",
 )
 async def download_refined_ecr(

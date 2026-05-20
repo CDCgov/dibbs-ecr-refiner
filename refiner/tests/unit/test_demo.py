@@ -18,7 +18,7 @@ from app.services.file_io import (
 )
 from app.services.pipeline import _get_size_reduction_percentage
 
-api_route_base = "/api/v1/demo"
+api_route_base = "/api/v1/simulator"
 
 
 @pytest.mark.asyncio

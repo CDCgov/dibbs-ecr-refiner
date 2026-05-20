@@ -37,9 +37,9 @@ from .pipeline import (
 
 
 @dataclass
-class IndependentTestingTrace:
+class SimulateTestingTrace:
     """
-    Holds all the tracing data for a single condition through the independent testing pipeline.
+    Holds all the tracing data for a single condition through the simulate testing pipeline.
     """
 
     matching_condition: DbCondition
@@ -56,7 +56,7 @@ class NoMatchEntry(TypedDict):
     The structured result of failure to match conditions and configurations bi-directionally.
 
     This structure is used in both:
-    - IndependentTestingResult: no_matching_configuration_for_conditions
+    - SimulateTestingResult: no_matching_configuration_for_conditions
     - InlineTestingResult: configuration_does_not_match_conditions
 
     A TypedDict that contains:
@@ -69,9 +69,9 @@ class NoMatchEntry(TypedDict):
 
 
 @dataclass
-class IndependentTestingResult:
+class SimulateTestingResult:
     """
-    The structured result of the independent_testing function.
+    The structured result of the simulate_testing function.
 
     A TypedDict that contains:
         - 'refined_documents': list of RefinedDocument objects for successfully refined conditions.
@@ -144,14 +144,14 @@ class InlineTestingResult:
 # =============================================================================
 
 
-async def independent_testing(
+async def simulate_testing(
     db: AsyncDatabaseConnection,
     xml_files: XMLFiles,
     jurisdiction_id: str,
     logger: Logger,
-) -> IndependentTestingResult:
+) -> SimulateTestingResult:
     """
-    Orchestrates the full independent testing workflow for eICR refinement.
+    Orchestrates the full simulate testing workflow for eICR refinement.
 
     This function performs a version-aware, stepwise pipeline:
     1. Extracts all reportable condition (RC) SNOMED codes from the RR file for the specified jurisdiction.
@@ -170,7 +170,7 @@ async def independent_testing(
         logger: A logger for recording operational details.
 
     Returns:
-        An IndependentTestingResult dictionary containing refined documents and a list of non-matches.
+        A SimulateTestingResult dictionary containing refined documents and a list of non-matches.
     """
 
     # STEP 1:
@@ -187,7 +187,7 @@ async def independent_testing(
 
     # if no reportable conditions are found for this jurisdiction, exit early.
     if not rc_codes_for_jurisdiction:
-        return IndependentTestingResult(
+        return SimulateTestingResult(
             original_eicr_doc_id="",
             refined_documents=[],
             no_matching_configuration_for_conditions=[],
@@ -221,7 +221,7 @@ async def independent_testing(
 
     # STEP 4:
     # build a trace for each conceptual condition, determining if it is configured
-    all_traces: list[IndependentTestingTrace] = []
+    all_traces: list[SimulateTestingTrace] = []
     for canonical_url, all_versions in conditions_grouped_by_url.items():
         # check if any of the detected versions for this condition are configured
         configured_version = next(
@@ -259,7 +259,7 @@ async def independent_testing(
             for code, cond_list in rc_to_conditions_map.items()
             if any(c.canonical_url == canonical_url for c in cond_list)
         ]
-        trace = IndependentTestingTrace(
+        trace = SimulateTestingTrace(
             matching_condition=representative_condition,
             matching_configuration=matching_config,
             rc_snomed_codes=list(set(snomed_codes_for_this_group)),
@@ -348,7 +348,7 @@ async def independent_testing(
         )
 
         logger.info(
-            "Independent testing: Processed one condition",
+            "Simulate testing: Processed one condition",
             extra={
                 "triggered_by_condition": trace.matching_condition.display_name,
                 "triggering_codes": trace.rc_snomed_codes,
@@ -369,7 +369,7 @@ async def independent_testing(
         if trace.refined_document is not None
     ]
 
-    return IndependentTestingResult(
+    return SimulateTestingResult(
         original_eicr_doc_id=first_original_eicr_doc_id
         if first_original_eicr_doc_id
         else "",

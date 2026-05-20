@@ -15,5 +15,5 @@ class TestAuth:
         while not logged in.
         """
         async with AsyncClient(base_url=base_url) as client:
-            response = await client.post("/api/v1/demo/upload")
+            response = await client.post("/api/v1/simulator/upload")
             assert response.status_code == 401
