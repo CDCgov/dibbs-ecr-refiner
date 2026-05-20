@@ -231,16 +231,6 @@ def _build_section_provenance(
         # resolve instructions from the merged map (same fallback as refine_eicr)
         instructions = rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
 
-        # NORMALIZATION: Narrative-only sections cannot be refined.
-        # Treat "refine" as "retain" to prevent accidental stubbing.
-        spec_entry = specification.sections.get(code)
-        if (
-            spec_entry
-            and not spec_entry.has_match_rules
-            and instructions.action == "refine"
-        ):
-            instructions = dataclasses.replace(instructions, action="retain")
-
         provenance[code] = SectionProvenanceRecord(
             loinc_code=code,
             display_name=display_name,
@@ -301,12 +291,23 @@ def create_eicr_refinement_plan(
     rules_map = _build_section_rules_map(processed_configuration)
     rules_map_with_skips = _apply_section_skip_rules(rules_map)
 
-    section_instructions = {
+    section_instructions = {}
+    for code in present_section_codes:
         # * for each discovered section, use the determined rules from the map
         # * if a code doesn't yet have rules, we'll skip it (include + retain)
-        code: rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
-        for code in present_section_codes
-    }
+        instructions = rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
+
+        # NORMALIZATION: Narrative-only sections cannot be refined.
+        # Treat "refine" as "retain" to prevent accidental stubbing.
+        spec_entry = specification.sections.get(code)
+        if (
+            spec_entry
+            and not spec_entry.has_match_rules
+            and instructions.action == "refine"
+        ):
+            instructions = dataclasses.replace(instructions, action="retain")
+
+        section_instructions[code] = instructions
 
     # build provenance before the maps are discarded — source classification
     # requires the pre-merge rules_map to distinguish configured from unconfigured
@@ -464,6 +465,7 @@ def refine_eicr(
             loinc_code=section_code,
             namespaces=HL7_NS,
         )
+        section_specification = plan.specification.sections.get(section_code)
 
         if section is None:
             continue
@@ -476,7 +478,9 @@ def refine_eicr(
             create_minimal_section(section=section, removal_reason="configured")
             outcome = SectionOutcome.REMOVED_BY_CONFIG
 
-        elif section_rules.action == "retain":
+        elif section_rules.action == "retain" or (
+            section_specification and not section_specification.has_match_rules
+        ):
             # BRANCH 2: retain entries; honor the narrative setting.
             # the narrative=False case used to be a silent no-op (the old
             # `retain` branch was a literal `pass`); it now correctly
