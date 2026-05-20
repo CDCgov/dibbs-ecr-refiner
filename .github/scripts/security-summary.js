@@ -56,6 +56,8 @@ function parseScanResults(images) {
         medium: imageMedium,
         low: imageLow,
         total: imageCritical + imageHigh + imageMedium + imageLow,
+        vulnerabilities:
+          results.Results?.flatMap((r) => r.Vulnerabilities ?? []) ?? [],
       });
     } catch (error) {
       console.error(`Error parsing ${image}:`, error);
