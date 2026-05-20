@@ -25,11 +25,9 @@ import type {
 } from 'axios';
 
 import type {
-  BodyDiscoverConfigurations,
   BodyUploadEcr,
-  DiscoveredConfigurationsResponse,
   HTTPValidationError,
-  IndependentTestUploadResponse
+  SimulatorUploadResponse
 } from '../schemas';
 
 
@@ -37,90 +35,13 @@ import type {
 
 
 /**
- * Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
-
-Configurations are returned to the client.
-
-Args:
-    uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
-    demo_zip_path (Path, optional): The path to the demo zip file.
-    user (DbUser, optional): The logged in user.
-    db (AsyncDatabaseConnection, optional): The database connection.
-    logger (Logger, optional): The app logger.
-
-Returns:
-    DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
- * @summary Discover Configurations
- */
-export const discoverConfigurations = (
-    bodyDiscoverConfigurations?: BodyDiscoverConfigurations, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<DiscoveredConfigurationsResponse>> => {
-
-    const formData = new FormData();
-if(bodyDiscoverConfigurations?.uploaded_file !== undefined && bodyDiscoverConfigurations.uploaded_file !== null) {
- formData.append(`uploaded_file`, bodyDiscoverConfigurations.uploaded_file);
- }
-
-    return axios.default.post(
-      `/api/v1/demo/discover-configurations`,
-      formData,options
-    );
-  }
-
-
-
-export const getDiscoverConfigurationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext> => {
-
-const mutationKey = ['discoverConfigurations'];
-const {mutation: mutationOptions, axios: axiosOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, axios: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discoverConfigurations>>, {data?: BodyDiscoverConfigurations}> = (props) => {
-          const {data} = props ?? {};
-
-          return  discoverConfigurations(data,axiosOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DiscoverConfigurationsMutationResult = NonNullable<Awaited<ReturnType<typeof discoverConfigurations>>>
-    export type DiscoverConfigurationsMutationBody = BodyDiscoverConfigurations | undefined
-    export type DiscoverConfigurationsMutationError = AxiosError<HTTPValidationError>
-
-    /**
- * @summary Discover Configurations
- */
-export const useDiscoverConfigurations = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof discoverConfigurations>>,
-        TError,
-        {data?: BodyDiscoverConfigurations},
-        TContext
-      > => {
-      return useMutation(getDiscoverConfigurationsMutationOptions(options), queryClient);
-    }
-    /**
- * Handles the demo upload workflow for eICR refinement.
+ * Handles the simulator upload workflow for eICR refinement.
 
 Steps:
-1. Obtain the demo eICR ZIP file (either uploaded by user or from local sample in
+1. Obtain the simulator eICR ZIP file (either uploaded by user or from local sample in
     refiner/assets/demo/mon-mothma-covid-influenza.zip).
 2. Read and validate the XML files (eICR and RR) from the ZIP (XMLFiles object).
-3. Call the service layer (`independent_testing`) to orchestrate the refinement workflow.
+3. Call the service layer (`simulator`) to orchestrate the refinement workflow.
 4. For each unique reportable condition code found in the RR (and having a configuration),
     build a refined XML document and collect metadata. The code used is the actual code
     from the RR that triggered the match, not a canonical or database code.
@@ -130,11 +51,11 @@ Steps:
     refinement results and a link to the ZIP of outputs.
 
 Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
- * @summary Demo Upload
+ * @summary Simulator Upload
  */
 export const uploadEcr = (
     bodyUploadEcr: BodyUploadEcr, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<IndependentTestUploadResponse>> => {
+ ): Promise<AxiosResponse<SimulatorUploadResponse>> => {
 
     const formData = new FormData();
 formData.append(`body`, bodyUploadEcr.body);
@@ -143,7 +64,7 @@ if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== 
  }
 
     return axios.default.post(
-      `/api/v1/demo/upload`,
+      `/api/v1/simulator/upload`,
       formData,options
     );
   }
@@ -182,7 +103,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
     export type UploadEcrMutationError = AxiosError<HTTPValidationError>
 
     /**
- * @summary Demo Upload
+ * @summary Simulator Upload
  */
 export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
@@ -207,7 +128,7 @@ export const downloadRefinedEcr = (
 
 
     return axios.default.get(
-      `/api/v1/demo/download/${filename}`,options
+      `/api/v1/simulator/download/${filename}`,options
     );
   }
 
@@ -216,7 +137,7 @@ export const downloadRefinedEcr = (
 
 export const getDownloadRefinedEcrQueryKey = (filename: string,) => {
     return [
-    `/api/v1/demo/download/${filename}`
+    `/api/v1/simulator/download/${filename}`
     ] as const;
     }
 

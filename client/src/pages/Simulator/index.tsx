@@ -1,6 +1,9 @@
 import { RunSimulation } from './RunSimulation';
 import { useState } from 'react';
-import { useDiscoverConfigurations, useUploadEcr } from '../../api/simulator/simulator';
+import {
+  useDiscoverConfigurations,
+  useUploadEcr,
+} from '../../api/simulator/simulator';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
