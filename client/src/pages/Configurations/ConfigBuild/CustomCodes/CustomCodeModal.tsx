@@ -84,11 +84,7 @@ function CustomCodeForm({
   const queryClient = useQueryClient();
   const showToast = useToast();
 
-  const {
-    data: supportedCodeSystems,
-    isPending,
-    isError,
-  } = useGetCodeSystems();
+  const { data: codeSystems, isPending, isError } = useGetCodeSystems();
 
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
@@ -205,7 +201,7 @@ function CustomCodeForm({
       </div>
     );
 
-  if (isError || !supportedCodeSystems) return 'Error!';
+  if (isError || !codeSystems) return 'Error!';
 
   const systemValues: CodeSystemsReponse[] = [
     {
@@ -214,7 +210,7 @@ function CustomCodeForm({
       oid: '',
       id: 'c107a769-4de6-4b3f-bdf0-261284259cfd',
     },
-    ...supportedCodeSystems.data,
+    ...codeSystems.data,
   ];
   return (
     <>

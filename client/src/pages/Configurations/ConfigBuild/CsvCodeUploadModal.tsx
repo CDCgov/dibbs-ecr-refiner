@@ -112,11 +112,7 @@ export function PreviewEditModal({
   error,
   handlePreviewEditChange,
 }: PreviewEditModalProps) {
-  const {
-    data: supportedCodeSystems,
-    isPending,
-    isError,
-  } = useGetCodeSystems();
+  const { data: codeSystems, isPending, isError } = useGetCodeSystems();
 
   if (isPending)
     return (
@@ -125,7 +121,7 @@ export function PreviewEditModal({
       </div>
     );
 
-  if (isError || !supportedCodeSystems) return 'Error!';
+  if (isError || !codeSystems) return 'Error!';
 
   return (
     <Modal open={isOpen} onClose={closePreviewEditModal}>
@@ -171,7 +167,7 @@ export function PreviewEditModal({
               value={previewEditForm.system_key}
               onChange={handlePreviewEditChange('system_key')}
             >
-              {supportedCodeSystems.data.map((s) => (
+              {codeSystems.data.map((s) => (
                 <option key={s.id} value={s.key}>
                   {s.display_name}
                 </option>
