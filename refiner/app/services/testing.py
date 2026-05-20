@@ -23,10 +23,12 @@ from .ecr.model import (
     RefinedDocument,
     ReportableCondition,
 )
-from .ecr.refine import refine_rr_for_unconfigured_conditions
 from .pipeline import (
+    AugmentationRun,
     RefinementTrace,
+    create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
+    produce_remainder_rr_for_jurisdiction,
     refine_for_condition,
 )
 
@@ -39,11 +41,17 @@ from .pipeline import (
 class IndependentTestingResult:
     """
     Model to represent the result of running independent testing.
+
+    remainder_rr is the augmented RR carrying reportability for
+    conditions reportable to the jurisdiction that were not refined.
+    It is present (non-None) only when at least one condition refined
+    AND at least one was skipped, so each condition's reportability
+    appears exactly once across the full output package.
     """
 
     original_eicr_doc_id: str
     refined_documents: list[RefinedDocument]
-    shadow_rr: str | None
+    remainder_rr: str | None
 
 
 @dataclass
@@ -228,6 +236,11 @@ async def independent_testing(
         An IndependentTestingResult dictionary containing refined documents and a list of non-matches.
     """
 
+    # one session-scoped AugmentationRun, built once and threaded into
+    # every refine_for_condition call and the remainder RR below, so
+    # all augmented outputs of this session share an effectiveTime
+    run = create_augmentation_run_from_xml_files(xml_files)
+
     first_original_eicr_doc_id = None
     refined_docs: list[RefinedDocument] = []
     for configuration in configurations:
@@ -254,6 +267,7 @@ async def independent_testing(
             xml_files=xml_files,
             processed_configuration=processed_configuration,
             trace=pipeline_trace,
+            run=run,
         )
 
         if first_original_eicr_doc_id is None:
@@ -290,11 +304,21 @@ async def independent_testing(
             "No eICR document ID was detected. Cannot proceed without a valid document ID."
         )
 
+    # the remainder RR is scoped to conditions that were actually
+    # refined; refine_for_condition is called with the first
+    # child_rsg_snomed_code per condition, so the refined set is the
+    # code carried on each produced RefinedDocument
+    refined_condition_codes = {doc.reportable_condition.code for doc in refined_docs}
+
     return IndependentTestingResult(
         original_eicr_doc_id=first_original_eicr_doc_id,
         refined_documents=refined_docs,
-        shadow_rr=_generate_shadow_rr(
-            xml_files=xml_files, conditions_without_config=conditions_without_config
+        remainder_rr=_generate_remainder_rr(
+            xml_files=xml_files,
+            conditions_without_config=conditions_without_config,
+            refined_condition_codes=refined_condition_codes,
+            jurisdiction_id=jurisdiction_id,
+            run=run,
         ),
     )
 
@@ -334,30 +358,49 @@ async def _convert_to_processed_config(
     return ProcessedConfiguration.from_dict(serialized_configuration.to_dict())
 
 
-def _generate_shadow_rr(
-    xml_files: XMLFiles, conditions_without_config: list[DbCondition]
+def _generate_remainder_rr(
+    xml_files: XMLFiles,
+    conditions_without_config: list[DbCondition],
+    refined_condition_codes: set[str],
+    jurisdiction_id: str,
+    run: AugmentationRun,
 ) -> str | None:
     """
-    Generates a shadow RR based on conditions with no active configuration.
+    Generate the augmented remainder RR for conditions that were not refined.
+
+    The skipped set is the child RSG SNOMED codes of every condition
+    without a usable configuration. The pipeline enforces the
+    if-and-only-if rule (returns None when nothing was refined or
+    nothing was skipped) and handles augmentation; this projects its
+    result down to the RR string, which is all the demo flow consumes.
 
     Args:
-        xml_files (XMLFiles): the original XML eCR files
-        conditions_without_config (list[DbCondition]): List of condition objects that don't have an associated config
+        xml_files: the original XML eCR files
+        conditions_without_config: conditions with no usable config;
+            their child RSG SNOMED codes are the skipped set
+        refined_condition_codes: RSG codes that were actually refined,
+            used by the pipeline to enforce the if-and-only-if rule
+        jurisdiction_id: the jurisdiction this remainder is scoped to
+        run: the AugmentationRun built for this remainder call
 
     Returns:
-        str | None: RR content, or None if a shadow RR isn't generated
+        str | None: the remainder RR XML, or None when the
+        if-and-only-if rule is not satisfied
     """
 
-    no_match_codes = {
+    skipped_condition_codes = {
         code for c in conditions_without_config for code in c.child_rsg_snomed_codes
     }
 
-    if len(no_match_codes) == 0:
-        return None
-
-    return refine_rr_for_unconfigured_conditions(
-        xml_files=xml_files, condition_codes=no_match_codes
+    result = produce_remainder_rr_for_jurisdiction(
+        xml_files=xml_files,
+        jurisdiction_id=jurisdiction_id,
+        refined_condition_codes=refined_condition_codes,
+        skipped_condition_codes=skipped_condition_codes,
+        run=run,
     )
+
+    return result.remainder_rr if result is not None else None
 
 
 async def inline_testing(
@@ -462,10 +505,15 @@ async def inline_testing(
         configuration_version=trace.configuration.version,
     )
 
+    # inline testing refines a single condition; refine_for_condition
+    # requires an AugmentationRun, so build one for this refinement
+    run = create_augmentation_run_from_xml_files(xml_files)
+
     result = refine_for_condition(
         xml_files=xml_files,
         processed_configuration=processed_configuration,
         trace=pipeline_trace,
+        run=run,
     )
 
     # STEP 5:
