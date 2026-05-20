@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
 import {
   FileInfoResponseValue,
-  IndependentTestUploadResponse,
+  SimulatorUploadResponse,
 } from '../../api/schemas';
 import { Button } from '../Button';
 import { getDownloadRefinedEcrQueryKey } from '../../api/simulator/simulator';
@@ -12,10 +12,10 @@ import { Spinner } from '@components/Spinner';
 import { SpinnerWithMinimalRender } from '@components/Spinner/SpinnerWithMinimalRender';
 
 type DiffProps = Pick<
-  IndependentTestUploadResponse,
+  SimulatorUploadResponse,
   'refined_download_key' | 'unrefined_eicr'
 > & {
-  condition: IndependentTestUploadResponse['refined_conditions'][0];
+  condition: SimulatorUploadResponse['refined_conditions'][0];
   renderDiff: boolean;
 };
 

@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router';
 import {
   useDiscoverConfigurations,
   useUploadEcr,
-} from '../../api/simulator/simulator.ts';
+} from '../../api/simulator/simulator';
 import { Mock } from 'vitest';
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';

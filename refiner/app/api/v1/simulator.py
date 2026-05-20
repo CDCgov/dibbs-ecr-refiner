@@ -135,7 +135,7 @@ async def _build_refined_conditions(
 @router.post(
     "/discover-configurations",
     response_model=DiscoveredConfigurationsResponse,
-    tags=["demo"],
+    tags=["simulator"],
     operation_id="discoverConfigurations",
 )
 async def discover_configurations(
