@@ -8,7 +8,7 @@ from chardet import detect
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.conditions import get_computed_condition_name
+from app.services.conditions.naming import get_computed_condition_name
 
 from ..core.exceptions import (
     FileProcessingError,

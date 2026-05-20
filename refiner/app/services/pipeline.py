@@ -3,19 +3,10 @@ from typing import Literal
 
 from lxml import etree
 
+from app.services.conditions.parsing import extract_uuid_from_canonical_url
+
 from ..core.exceptions import XMLValidationError
 from ..core.models.types import XMLFiles
-
-# TODO:
-# **core-util** _extract_uuid_from_canonical_url currently lives in
-# aws/s3_keys.py and is imported across package boundaries here
-# * the augment.py-side duplicate was removed in favor of this single
-# implementation, which validates by constructing a UUID (a malformed
-# canonical_url fails fast at construction)
-# * follow-up ticket: relocate this to a shared core util and give it
-# a public name so neither aws/s3_keys.py nor this module owns a cross-package
-# private
-from .aws.s3_keys import _extract_uuid_from_canonical_url
 from .ecr.augment import (
     REMAINDER_SCOPE,
     AugmentationRun,
@@ -328,7 +319,7 @@ def refine_for_condition(
         # (raises if the trailing segment isn't UUID-shaped), which is
         # exactly the type augment_eicr/augment_rr now require — the
         # type is the validator, no separate shape check needed
-        condition_grouper_uuid = _extract_uuid_from_canonical_url(trace.canonical_url)
+        condition_grouper_uuid = extract_uuid_from_canonical_url(trace.canonical_url)
 
         # plan -> refine -> augment -> output (eICR)
         eicr_plan = create_eicr_refinement_plan(
