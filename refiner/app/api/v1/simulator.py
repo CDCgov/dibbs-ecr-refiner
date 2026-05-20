@@ -3,10 +3,12 @@ import re
 from collections.abc import Awaitable, Callable
 from logging import Logger
 from pathlib import Path
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.api.auth.middleware import get_logged_in_user
 from app.api.validation.file_validation import (
@@ -16,6 +18,8 @@ from app.api.validation.file_validation import (
     validate_path_or_raise,
 )
 from app.core.models.types import XMLFiles
+from app.db.conditions.db import get_conditions_by_ids, get_latest_tes_condition_ids_db
+from app.db.configurations.db import get_configurations_by_ids_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.simulator.model import Condition, FileInfoResponse, SimulatorUploadResponse
 from app.db.users.model import DbUser
@@ -34,7 +38,11 @@ from app.services.file_io import (
 )
 from app.services.logger import get_logger
 from app.services.sample_file import get_sample_zip_path
-from app.services.testing import simulate_testing
+from app.services.testing import (
+    DiscoveredConfigurationsResponse,
+    discover_configurations_for_conditions,
+    simulate_testing,
+)
 from app.services.xslt import create_refined_eicr_html_file
 
 # Only allow:
@@ -125,12 +133,70 @@ async def _build_refined_conditions(
 
 
 @router.post(
+    "/discover-configurations",
+    response_model=DiscoveredConfigurationsResponse,
+    tags=["demo"],
+    operation_id="discoverConfigurations",
+)
+async def discover_configurations(
+    uploaded_file: UploadFile | None = File(None),
+    demo_zip_path: Path = Depends(get_sample_zip_path),
+    user: DbUser = Depends(get_logged_in_user),
+    db: AsyncDatabaseConnection = Depends(get_db),
+    logger: Logger = Depends(get_logger),
+) -> DiscoveredConfigurationsResponse:
+    """
+    Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
+
+    Configurations are returned to the client.
+
+    Args:
+        uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
+        demo_zip_path (Path, optional): The path to the demo zip file.
+        user (DbUser, optional): The logged in user.
+        db (AsyncDatabaseConnection, optional): The database connection.
+        logger (Logger, optional): The app logger.
+
+    Returns:
+        DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
+    """
+    # Check that demo file path is valid
+    validate_path_or_raise(path=demo_zip_path)
+
+    # Validate and load the file
+    file = await get_validated_file(
+        uploaded_file=uploaded_file, demo_file_path=demo_zip_path, logger=logger
+    )
+
+    logger.info("Processing independent test file", extra={"file": file.filename})
+
+    original_xml_files = await get_validated_xml_files(file=file, logger=logger)
+
+    return await discover_configurations_for_conditions(
+        xml_files=original_xml_files,
+        jurisdiction_id=user.jurisdiction_id,
+        db=db,
+    )
+
+
+class IndependentTestInput(BaseModel):
+    """
+    Independent testing request model.
+    """
+
+    configuration_ids: list[UUID]
+    unconfigured_condition_ids: list[UUID]
+    unused_condition_ids: list[UUID]
+
+
+@router.post(
     "/upload",
     response_model=SimulatorUploadResponse,
     tags=["simulator"],
     operation_id="uploadEcr",
 )
 async def simulator_upload(
+    body: str = Form(...),
     uploaded_file: UploadFile | None = File(None),
     simulator_zip_path: Path = Depends(get_sample_zip_path),
     create_output_zip: Callable[..., tuple[str, io.BytesIO]] = Depends(
@@ -162,6 +228,14 @@ async def simulator_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
+    parsed_body = IndependentTestInput.model_validate_json(body)
+
+    if len(parsed_body.configuration_ids) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Configuration IDs must be provided.",
+        )
+
     # Check that simulator file path is valid
     validate_path_or_raise(path=simulator_zip_path)
 
@@ -176,13 +250,41 @@ async def simulator_upload(
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
+        config_ids = list(set(parsed_body.configuration_ids))
+
+        configurations = await get_configurations_by_ids_db(
+            ids=config_ids, jurisdiction_id=user.jurisdiction_id, db=db
+        )
+
+        if len(configurations) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Configurations with provided IDs could not be found.",
+            )
+
+        # Fetch conditions for IDs without a config + unused conditions
+        latest_condition_ids = await get_latest_tes_condition_ids_db(
+            ids=list(
+                set(
+                    parsed_body.unconfigured_condition_ids
+                    + parsed_body.unused_condition_ids
+                )
+            ),
+            db=db,
+        )
+        conditions_without_config = await get_conditions_by_ids(
+            ids=latest_condition_ids, db=db
+        )
+
     # Run the simulation
     try:
         test_results = await simulate_testing(
-            db=db,
             xml_files=original_xml_files,
             jurisdiction_id=user.jurisdiction_id,
+            configurations=configurations,
+            conditions_without_config=conditions_without_config,
             logger=logger,
+            db=db,
         )
     except Exception as e:
         logger.error("Error in the simulator flow", extra={"error": str(e)})
@@ -213,11 +315,21 @@ async def simulator_upload(
         ZipFileItem(file_name="CDA_RR.xml", file_content=original_xml_files.rr)
     )
 
-    # Add shadow RR (for inactive conditions) to zip
-    if test_results.shadow_rr:
+    # Add the remainder RR (reportability for conditions that were not
+    # refined) to the zip.
+    #
+    # TODO:
+    # **s3-path** this filename intentionally mirrors what the lambda
+    # writes to S3 (the `unrefined_rr/` path segment) so the demo zip
+    # previews the real artifact. the internal vocabulary is
+    # "remainder" everywhere in python; this user-/wire-facing name
+    # stays "unrefined_rr" until the S3 path rename is coordinated
+    # with AIMS; when that lands this becomes "CDA_RR_remainder.xml"
+    if test_results.remainder_rr:
         zip_package.add(
             ZipFileItem(
-                file_name="CDA_RR_unrefined_rr.xml", file_content=test_results.shadow_rr
+                file_name="CDA_RR_unrefined_rr.xml",
+                file_content=test_results.remainder_rr,
             )
         )
 
@@ -233,8 +345,6 @@ async def simulator_upload(
         message="Successfully processed eICR with condition-specific refinement",
         refined_conditions_found=len(conditions),
         refined_conditions=conditions,
-        conditions_without_matching_configs=test_results.get_condition_names_with_no_matching_config(),
-        conditions_without_active_configs=test_results.get_condition_names_with_no_active_config(),
         unrefined_eicr=format_xml_document_for_display_or_raise(original_xml_files.eicr)
         if any(c.render_diff for c in conditions)
         else "",

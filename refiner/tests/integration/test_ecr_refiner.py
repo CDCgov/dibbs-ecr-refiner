@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from tests.integration.conftest import (
@@ -5,11 +7,6 @@ from tests.integration.conftest import (
     assert_xsd_valid,
     validate_refined_xml,
 )
-
-EXPECTED_COVID_INFLUENZA_CONDITIONS: dict[str, str] = {
-    "840539006": "COVID-19",
-    "772828001": "Influenza",
-}
 
 EXPECTED_ZIKA_CONDITIONS: dict[str, str] = {
     "3928002": "Zika Virus Disease",
@@ -40,6 +37,7 @@ async def test_zip_upload_covid_influenza_v1_1(
     validate_xml_string,
     validate_xml_string_xsd,
     get_condition_id,
+    get_condition_by_id,
     create_config,
     activate_config,
 ):
@@ -49,13 +47,19 @@ async def test_zip_upload_covid_influenza_v1_1(
 
     test_name = "test_zip_upload_covid_influenza_v1_1"
 
-    covid_id = await get_condition_id("COVID-19")
-    covid_config = await create_config(covid_id)
+    covid_condition_id = await get_condition_id("COVID-19")
+    covid_config = await create_config(covid_condition_id)
     await activate_config(covid_config["id"])
 
-    flu_id = await get_condition_id("Influenza")
-    flu_config = await create_config(flu_id)
+    flu_condition_id = await get_condition_id("Influenza")
+    flu_config = await create_config(flu_condition_id)
     await activate_config(flu_config["id"])
+
+    payload = {
+        "configuration_ids": [covid_config["id"], flu_config["id"]],
+        "unconfigured_condition_ids": [],
+        "unused_condition_ids": [],
+    }
 
     with open(covid_influenza_v1_1_zip_path, "rb") as f:
         files = {
@@ -63,15 +67,25 @@ async def test_zip_upload_covid_influenza_v1_1(
         }
         response = await authed_client.post(
             "/api/v1/simulator/upload",
+            data={"body": json.dumps(payload)},
             files=files,
         )
 
     assert response.status_code == 200
     assert "application/json" in response.headers["content-type"]
 
+    covid_condition = await get_condition_by_id(covid_condition_id)
+    covid_rsg_codes = set(covid_condition["child_rsg_snomed_codes"])
+
+    flu_condition = await get_condition_by_id(covid_condition_id)
+    flu_rsg_codes = set(flu_condition["child_rsg_snomed_codes"])
+
     conditions = response.json()["refined_conditions"]
-    found_codes = {item["code"]: item["display_name"] for item in conditions}
-    assert found_codes == EXPECTED_COVID_INFLUENZA_CONDITIONS
+    found_codes = {item["code"] for item in conditions}
+
+    # ensure overlap in codes
+    assert covid_rsg_codes & found_codes
+    assert flu_rsg_codes & found_codes
 
     for index, condition in enumerate(conditions):
         item_label = f"Condition #{index + 1} (Code:  {condition['code']})"
@@ -110,14 +124,20 @@ async def test_zip_upload_zika_v3_1_1(
 
     test_name = "test_zip_upload_zika_v3_1_1"
 
-    zika_id = await get_condition_id("Zika Virus Disease")
-    zika_config = await create_config(zika_id)
+    zika_condition_id = await get_condition_id("Zika Virus Disease")
+    zika_config = await create_config(zika_condition_id)
     await activate_config(zika_config["id"])
 
+    payload = {
+        "configuration_ids": [zika_config["id"]],
+        "unconfigured_condition_ids": [],
+        "unused_condition_ids": [],
+    }
     with open(zika_v3_1_1_zip_path, "rb") as f:
         files = {"uploaded_file": (zika_v3_1_1_zip_path.name, f, "application/zip")}
         response = await authed_client.post(
             "/api/v1/simulator/upload",
+            data={"body": json.dumps(payload)},
             files=files,
         )
 

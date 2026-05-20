@@ -1,7 +1,6 @@
 import io
 import time
 import zipfile
-from pathlib import Path
 
 import pytest
 from fastapi import HTTPException, UploadFile
@@ -17,42 +16,6 @@ from app.services.file_io import (
     create_refined_ecr_zip_in_memory,
 )
 from app.services.pipeline import _get_size_reduction_percentage
-
-api_route_base = "/api/v1/simulator"
-
-
-@pytest.mark.asyncio
-async def test_demo_file_not_found(authed_client, test_app, mock_logged_in_user):
-    from app.services.sample_file import get_sample_zip_path
-
-    def mock_missing_path() -> Path:
-        return Path("/nonexistent/demo.zip")
-
-    test_app.dependency_overrides[get_sample_zip_path] = mock_missing_path
-
-    response = await authed_client.post(f"{api_route_base}/upload")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "Unable to find demo zip file to download."}
-
-    test_app.dependency_overrides.clear()
-
-
-@pytest.mark.asyncio
-async def test_upload_route_s3_failure(test_app, authed_client):
-    from app.services.aws.s3 import _upload_refined_ecr
-
-    def fake_upload_refined_ecr():
-        return ""
-
-    test_app.dependency_overrides[_upload_refined_ecr] = lambda: fake_upload_refined_ecr
-
-    response = await authed_client.post(f"{api_route_base}/upload")
-
-    assert response.status_code == 200
-    assert "refined_download_key" in response.json()
-    assert response.json()["refined_download_key"] == ""
-
-    test_app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio

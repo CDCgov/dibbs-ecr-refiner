@@ -6,8 +6,6 @@ import type { FileInfoResponse } from './fileInfoResponse';
  */
 export interface SimulatorUploadResponse {
   message: string;
-  conditions_without_matching_configs: string[];
-  conditions_without_active_configs: string[];
   refined_conditions_found: number;
   refined_conditions: Condition[];
   unrefined_eicr: string;
