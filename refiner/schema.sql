@@ -321,6 +321,18 @@ CREATE TABLE public.sessions (
 
 
 --
+-- Name: systems; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.systems (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    key text NOT NULL,
+    display_name text NOT NULL,
+    oid text
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -453,6 +465,22 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (token_hash);
+
+
+--
+-- Name: systems systems_oid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_oid_key UNIQUE (oid);
+
+
+--
+-- Name: systems systems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_pkey PRIMARY KEY (id);
 
 
 --
@@ -709,5 +737,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260402215326'),
     ('20260420140437'),
     ('20260427151426'),
-    ('20260505141110'),
+    ('20260428155732'),
     ('20260511160133');

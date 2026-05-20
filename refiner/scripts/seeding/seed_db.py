@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from lib import (
     get_db_connection,
 )
+from load_system_data import load_system_data
 from load_tes_data import load_tes_data
 
 
@@ -26,6 +27,7 @@ def seed_database(db_url: str, db_password: str) -> None:
                 "configurations",
                 "sessions",
                 "users",
+                "systems",
             ]:
                 try:
                     cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE;")
@@ -40,6 +42,7 @@ def seed_database(db_url: str, db_password: str) -> None:
         raise
 
     load_tes_data(db_url=db_url, db_password=db_password)
+    load_system_data(db_url=db_url, db_password=db_password)
 
 
 if __name__ == "__main__":
