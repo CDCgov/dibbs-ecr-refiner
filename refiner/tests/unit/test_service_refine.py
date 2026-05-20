@@ -300,6 +300,46 @@ class TestRefiningService:
         section_text = etree.tostring(results_section, encoding="unicode")
         assert "94533-7" in section_text
 
+    async def test_refine_action_on_narrative_only_section_v1_1(
+        self, eicr_root_v1_1: etree._Element, original_eicr_root_v1_1: etree._Element
+    ):
+        """
+        Tests that 'refine' action on a narrative-only section (e.g., Reason for Visit)
+        is treated as 'retain' and does NOT result in a stubbed section (nullFlavor NI),
+        even if no matching codes are provided.
+        """
+
+        empty_config = await _make_empty_processed_config()
+
+        # Using '29299-5' (Reason for Visit) which is narrative-only
+        plan = EICRRefinementPlan(
+            codes_to_check=set(),
+            code_system_sets=empty_config.code_system_sets,
+            section_instructions={
+                "29299-5": DbConfigurationSectionInstructions(
+                    action="refine", include=True, narrative=True
+                )
+            },
+            section_provenance={},
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        section_refined = eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="29299-5"]]', namespaces=HL7_NS
+        )[0]
+
+        # It should NOT be stubbed (nullFlavor should be None)
+        assert section_refined.get("nullFlavor") is None
+
+        # The content should remain identical to the original
+        section_original = original_eicr_root_v1_1.xpath(
+            './/hl7:section[hl7:code[@code="29299-5"]]', namespaces=HL7_NS
+        )[0]
+        assert etree.tostring(section_refined) == etree.tostring(section_original)
+
     # NOTE:
     # EICR REFINEMENT TESTS — section-aware path
     # =============================================================================
