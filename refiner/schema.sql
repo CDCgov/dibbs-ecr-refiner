@@ -216,7 +216,6 @@ CREATE TABLE public.configurations (
     version integer NOT NULL,
     jurisdiction_id text NOT NULL,
     name text NOT NULL,
-    included_conditions uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     custom_codes jsonb DEFAULT '[]'::jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
@@ -227,6 +226,16 @@ CREATE TABLE public.configurations (
     condition_canonical_url text NOT NULL,
     created_by uuid NOT NULL,
     s3_urls text[]
+);
+
+
+--
+-- Name: configurations_conditions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_conditions (
+    configuration_id uuid NOT NULL,
+    condition_id uuid NOT NULL
 );
 
 
@@ -373,6 +382,14 @@ ALTER TABLE ONLY public.conditions
 
 ALTER TABLE ONLY public.configurations
     ADD CONSTRAINT configurations_condition_canonical_url_jurisdiction_id_vers_key UNIQUE (condition_canonical_url, jurisdiction_id, version);
+
+
+--
+-- Name: configurations_conditions configurations_conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_pkey PRIMARY KEY (configuration_id, condition_id);
 
 
 --
@@ -601,6 +618,22 @@ ALTER TABLE ONLY public.configurations
 
 
 --
+-- Name: configurations_conditions configurations_conditions_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: configurations_conditions configurations_conditions_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
+
+
+--
 -- Name: configurations configurations_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -710,4 +743,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260420140437'),
     ('20260427151426'),
     ('20260505141110'),
-    ('20260511160133');
+    ('20260511160133'),
+    ('20260520153052');

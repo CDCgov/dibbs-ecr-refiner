@@ -8,7 +8,6 @@ from app.api.auth.middleware import get_logged_in_user
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
-    get_included_conditions_db,
 )
 from app.db.configurations.db import (
     get_configuration_by_id_db,
@@ -263,11 +262,6 @@ async def get_configuration(
             locked_by = None
             logger.error(f"Error fetching user for lock: {e}")
 
-    # Fetch all included conditions
-    conditions = await get_included_conditions_db(
-        included_conditions=config.included_conditions, db=db
-    )
-
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
@@ -275,10 +269,17 @@ async def get_configuration(
     # precomputed set of included_conditions ids
     included_ids = set(config.included_conditions)
 
+    primary_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+
+    if not primary_condition:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Could not find primary condition associated with configuration.",
+        )
+
     # fetch all conditions from the db based on the primary condition's version
-    condition_version_to_use = conditions[0].version
     all_conditions = await get_conditions_by_version_db(
-        db=db, version=condition_version_to_use
+        db=db, version=primary_condition.version
     )
 
     latest_config = await get_latest_config_db(
@@ -288,18 +289,17 @@ async def get_configuration(
     )
 
     # Build IncludedCondition objects, marking which are associated
-    included_conditions = []
-    for condition in all_conditions:
-        is_associated = condition.id in included_ids
-        included_conditions.append(
-            IncludedCondition(
-                id=condition.id,
-                display_name=condition.display_name,
-                canonical_url=condition.canonical_url,
-                version=condition.version,
-                associated=is_associated,
-            )
+    included_conditions = [
+        IncludedCondition(
+            id=condition.id,
+            display_name=condition.display_name,
+            canonical_url=condition.canonical_url,
+            version=condition.version,
+            associated=condition.id in included_ids
+            or condition.id == primary_condition.id,
         )
+        for condition in all_conditions
+    ]
 
     all_versions = await get_configuration_versions_db(
         jurisdiction_id=jd,

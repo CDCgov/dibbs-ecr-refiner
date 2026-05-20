@@ -1,9 +1,8 @@
-from collections import defaultdict
 from typing import Any, Literal
 from uuid import UUID
 
 from psycopg import AsyncCursor
-from psycopg.rows import DictRow, class_row, dict_row
+from psycopg.rows import class_row, dict_row
 from psycopg.types.json import Jsonb
 
 from app.api.v1.configurations.model import AddSectionInput, DeleteSectionInput
@@ -247,11 +246,9 @@ async def insert_configuration_db(
         condition_id,
         name,
         created_by,
-        included_conditions,
         custom_codes
     )
     VALUES (
-        %s,
         %s,
         %s,
         %s,
@@ -267,11 +264,6 @@ async def insert_configuration_db(
     latest_condition = await get_latest_tes_condition_db(condition=condition, db=db)
 
     if config_to_clone:
-        # always use the latest version of associated condition IDs
-        included_condition_ids = await get_latest_tes_condition_ids_db(
-            ids=config_to_clone.included_conditions, db=db
-        )
-
         params = (
             jurisdiction_id,
             # always link a configuration to a primary condition
@@ -280,8 +272,6 @@ async def insert_configuration_db(
             config_to_clone.name,
             # cloned by this user
             user_id,
-            # included_conditions: always start with primary
-            included_condition_ids,
             # custom_codes
             Jsonb(
                 [
@@ -299,8 +289,6 @@ async def insert_configuration_db(
             latest_condition.display_name,
             # created by this user
             user_id,
-            # included_conditions: always start with primary
-            [latest_condition.id],
             # custom_codes
             EMPTY_JSONB,
         )
@@ -341,78 +329,32 @@ async def insert_configuration_db(
                 ),
                 cursor=cur,
             )
+
+            if config_to_clone:
+                included_condition_ids = await get_latest_tes_condition_ids_db(
+                    ids=config_to_clone.included_conditions, db=db
+                )
+                condition_ids_to_insert = included_condition_ids
+                if latest_condition.id not in condition_ids_to_insert:
+                    condition_ids_to_insert = [
+                        latest_condition.id,
+                        *condition_ids_to_insert,
+                    ]
+            else:
+                condition_ids_to_insert = [latest_condition.id]
+
+            await cur.executemany(
+                """
+                INSERT INTO configurations_conditions (configuration_id, condition_id)
+                VALUES (%s, %s)
+                ON CONFLICT DO NOTHING
+                """,
+                [(config_id, cond_id) for cond_id in condition_ids_to_insert],
+            )
+
     return await get_configuration_by_id_db(
         id=row["id"], jurisdiction_id=jurisdiction_id, db=db
     )
-
-
-async def _get_configuration_sections_db(
-    configuration_ids: list[UUID], db: AsyncDatabaseConnection
-) -> list[DbConfigurationSection]:
-    """
-    Fetch all sections for the given configurations.
-
-    Args:
-        configuration_ids (UUID): List of configuration IDs
-        db (AsyncDatabaseConnection): The database connection
-
-    Returns:
-        list(DbConfigurationSection): List of sections
-    """
-
-    query = """
-    SELECT
-        id,
-        configuration_id,
-        name,
-        code,
-        action,
-        include,
-        narrative,
-        versions,
-        section_type,
-        created_at,
-        updated_at
-    FROM configurations_sections
-    WHERE configuration_id = ANY(%s)
-    ORDER BY name;
-    """
-    params = (configuration_ids,)
-    async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(DbConfigurationSection)) as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-
-    return rows
-
-
-async def _map_sections_to_config_db(
-    raw_configurations: list[DictRow], db: AsyncDatabaseConnection
-) -> list[DictRow]:
-    """
-    Given a list of unprocessed configurations, adds a `section_processing` key with a list of section data.
-
-    Args:
-        raw_configurations (list[DictRow]): List of unprocessed configuration data coming from the database
-        db (AsyncDatabaseConnection): The database connection.
-
-    Returns:
-        list[DictRow]: List of unprocessed configuration data that includes `section_processing`
-    """
-    updated_configs_list = raw_configurations.copy()
-    configuration_ids: list[UUID] = [row["id"] for row in updated_configs_list]
-    sections = await _get_configuration_sections_db(
-        configuration_ids=configuration_ids, db=db
-    )
-    sections_by_config: dict[str, list[dict]] = defaultdict(list)
-
-    for section in sections:
-        sections_by_config[str(section.configuration_id)].append(
-            section.to_processing_dict()
-        )
-    for config in updated_configs_list:
-        config["section_processing"] = sections_by_config.get(str(config["id"]), [])
-    return updated_configs_list
 
 
 async def get_configurations_db(
@@ -422,25 +364,7 @@ async def get_configurations_db(
     Fetch all configurations from the DB for a given jurisdiction.
     """
 
-    query = """
-        SELECT
-            id,
-            name,
-            status,
-            jurisdiction_id,
-            condition_id,
-            included_conditions,
-            custom_codes,
-            version,
-            last_activated_at,
-            last_activated_by,
-            created_by,
-            condition_canonical_url,
-            s3_urls
-        FROM configurations
-        WHERE jurisdiction_id = %s
-    """
-
+    query = _get_configurations_core_query() + " WHERE c.jurisdiction_id = %s"
     params: tuple[str, ...] = (jurisdiction_id,)
 
     if status is not None:
@@ -457,11 +381,7 @@ async def get_configurations_db(
     if not config_rows:
         return []
 
-    updated_config_rows = await _map_sections_to_config_db(
-        raw_configurations=config_rows, db=db
-    )
-
-    return [DbConfiguration.from_db_row(row) for row in updated_config_rows]
+    return [DbConfiguration.from_db_row(row) for row in config_rows]
 
 
 async def get_configurations_by_ids_db(
@@ -473,48 +393,11 @@ async def get_configurations_by_ids_db(
     if not ids:
         return []
 
-    # TODO: Leaving `section_processing` as JSONB on read for compatability.
-    # We may want to revisit this at some point.
-
-    query = """
-    SELECT
-        c.id,
-        c.name,
-        c.status,
-        c.jurisdiction_id,
-        c.condition_id,
-        c.included_conditions,
-        c.custom_codes,
-
-        -- build section_processing from configurations_sections
-        COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
-
-        c.version,
-        c.last_activated_at,
-        c.last_activated_by,
-        c.created_by,
-        c.condition_canonical_url,
-        c.s3_urls
-    FROM configurations c
-    LEFT JOIN LATERAL (
-        SELECT jsonb_agg(
-                   jsonb_build_object(
-                       'code', s.code,
-                       'name', s.name,
-                       'action', s.action::text,
-                       'include', s.include,
-                       'versions', to_jsonb(s.versions),
-                       'narrative', s.narrative,
-                       'section_type', s.section_type
-                   )
-                   ORDER BY s.code
-               ) AS section_processing
-        FROM configurations_sections s
-        WHERE s.configuration_id = c.id
-    ) secs ON TRUE
-    WHERE c.id = ANY(%s)
-    AND c.jurisdiction_id = %s;
-    """
+    query = (
+        _get_configurations_core_query()
+        + " WHERE c.id = ANY(%s) AND c.jurisdiction_id = %s"
+        + " ORDER BY c.name ASC;"
+    )
 
     params = (
         ids,
@@ -590,14 +473,13 @@ async def associate_condition_codeset_with_configuration_db(
     """
 
     query = """
-        UPDATE configurations
-        SET included_conditions = array_append(included_conditions, %s)
-        WHERE id = %s
-          AND NOT %s = ANY(included_conditions)
-        RETURNING id;
+        INSERT INTO configurations_conditions (configuration_id, condition_id)
+        VALUES (%s, %s)
+        ON CONFLICT DO NOTHING
+        RETURNING configuration_id;
     """
 
-    params = (condition.id, config.id, condition.id)
+    params = (config.id, condition.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -645,13 +527,13 @@ async def disassociate_condition_codeset_with_configuration_db(
     """
 
     query = """
-        UPDATE configurations
-        SET included_conditions = array_remove(included_conditions, %s)
-        WHERE id = %s
-        RETURNING id;
+        DELETE FROM configurations_conditions
+        WHERE configuration_id = %s
+        AND condition_id = %s
+        RETURNING configuration_id;
     """
 
-    params = (condition.id, config.id)
+    params = (config.id, condition.id)
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
@@ -686,9 +568,9 @@ async def get_total_condition_code_counts_by_configuration_db(
 
     query = """
         WITH conds AS (
-            SELECT unnest(included_conditions) AS cond_id
-            FROM configurations
-            WHERE id = %s
+            SELECT condition_id AS cond_id
+            FROM configurations_conditions
+            WHERE configuration_id = %s
         ),
         codes AS (
             SELECT
@@ -1280,3 +1162,47 @@ async def get_configuration_versions_db(
             rows = await cur.fetchall()
 
     return rows
+
+
+def _get_configurations_core_query() -> str:
+    return """
+    SELECT
+        c.id,
+        c.name,
+        c.status,
+        c.jurisdiction_id,
+        c.condition_id,
+        c.custom_codes,
+
+        COALESCE(conds.included_conditions, '{}') AS included_conditions,
+        COALESCE(secs.section_processing, '[]'::jsonb) AS section_processing,
+
+        c.version,
+        c.last_activated_at,
+        c.last_activated_by,
+        c.created_by,
+        c.condition_canonical_url,
+        c.s3_urls
+    FROM configurations c
+    LEFT JOIN LATERAL (
+        SELECT array_agg(cc.condition_id) AS included_conditions
+        FROM configurations_conditions cc
+        WHERE cc.configuration_id = c.id
+    ) conds ON TRUE
+    LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+                   jsonb_build_object(
+                       'code', s.code,
+                       'name', s.name,
+                       'action', s.action::text,
+                       'include', s.include,
+                       'versions', to_jsonb(s.versions),
+                       'narrative', s.narrative,
+                       'section_type', s.section_type
+                   )
+                   ORDER BY s.code
+               ) AS section_processing
+        FROM configurations_sections s
+        WHERE s.configuration_id = c.id
+    ) secs ON TRUE
+"""
