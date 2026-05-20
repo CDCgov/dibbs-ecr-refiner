@@ -8,7 +8,6 @@ from app.db.configurations.model import (
     DbConfigurationCustomCode,
 )
 from app.services.terminology import (
-    CodeSystems,
 )
 from tests.unit.helpers.configuration import create_processed_config
 
