@@ -41,10 +41,16 @@ def seed_localstack(s3_client):
     """
     BUCKET = "local-config-bucket"
 
+    response = s3_client.list_objects_v2(Bucket=BUCKET)
+    for obj in response.get("Contents", []):
+        s3_client.delete_object(Bucket=BUCKET, Key=obj["Key"])
+
     try:
-        s3_client.create_bucket(Bucket=BUCKET)
-    except s3_client.exceptions.BucketAlreadyOwnedByYou:
+        s3_client.delete_bucket(Bucket=BUCKET)
+    except s3_client.exceptions.NoSuchBucket:
         pass
+
+    s3_client.create_bucket(Bucket=BUCKET)
 
     COVID_CANONICAL_URL = "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/07221093-b8a1-4b1d-8678-259277bfba64"
     activation_key = get_active_file_key(
