@@ -15,7 +15,7 @@ from app.api.validation.file_validation import (
 from app.core.exceptions import (
     XMLValidationError,
 )
-from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
+from app.db.conditions.db import get_condition_by_id_db
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfiguration
@@ -44,28 +44,22 @@ def _get_upload_zip() -> Callable[[DbUser, io.BytesIO, str, Logger], Awaitable[s
     return upload_refined_file_package
 
 
-async def _get_conditions_for_configuration(
+async def _get_primary_condition_for_configuration_or_raise(
     configuration: DbConfiguration,
     db: AsyncDatabaseConnection,
-) -> tuple[DbCondition, list[DbCondition]]:
+) -> DbCondition:
     primary_condition = await get_condition_by_id_db(
         id=configuration.condition_id,
         db=db,
     )
+
     if primary_condition is None:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Primary condition not found for configuration.",
         )
 
-    if len(configuration.included_conditions) <= 1:
-        return primary_condition, [primary_condition]
-
-    all_conditions = await get_included_conditions_db(
-        included_conditions=configuration.included_conditions,
-        db=db,
-    )
-    return primary_condition, all_conditions
+    return primary_condition
 
 
 @router.post(
@@ -142,12 +136,9 @@ async def run_configuration_test(
         )
 
     # get the primary DbCondition row that is linked to the DbConfiguration for the jurisdiction
-    (
-        primary_condition,
-        all_conditions_for_configuration,
-    ) = await _get_conditions_for_configuration(
-        configuration=configuration,
-        db=db,
+
+    primary_condition = await _get_primary_condition_for_configuration_or_raise(
+        configuration=configuration, db=db
     )
 
     # call the testing service
@@ -157,7 +148,6 @@ async def run_configuration_test(
             xml_files=original_xml_files,
             configuration=configuration,
             primary_condition=primary_condition,
-            all_conditions=all_conditions_for_configuration,
             jurisdiction_id=user.jurisdiction_id,
             logger=logger,
             db=db,
