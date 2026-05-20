@@ -19,7 +19,7 @@ from app.services.aws.s3 import (
     upload_configuration_payload,
     upload_current_version_file,
 )
-from app.services.conditions import (
+from app.services.conditions.activation import (
     create_condition_mapping_payload,
 )
 from app.services.configurations import (
