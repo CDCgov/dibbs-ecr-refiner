@@ -13,6 +13,7 @@ import {
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
 import {
+  CodeSystemsReponse,
   ConfigurationCustomCode,
   DbConfigurationCustomCode,
 } from '../../../../api/schemas';
@@ -23,7 +24,6 @@ import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
-import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -265,6 +265,7 @@ export function ConditionCodeTable({
         <CodeSystemSelection
           selectedCodeSystem={selectedCodeSystem}
           handleCodeSystemSelect={handleCodeSystemSelect}
+          codeSystems={response.data.systems}
         />
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
@@ -346,27 +347,14 @@ type CodeSystemSelectionProps = {
   handleCodeSystemSelect: (
     event: React.ChangeEvent<HTMLSelectElement, Element>
   ) => void;
+  codeSystems: CodeSystemsReponse[];
 };
 
 function CodeSystemSelection({
   selectedCodeSystem,
   handleCodeSystemSelect,
+  codeSystems,
 }: CodeSystemSelectionProps) {
-  const {
-    data: supportedCodeSystems,
-    isPending,
-    isError,
-  } = useGetCodeSystems();
-
-  if (isPending)
-    return (
-      <div className="flex w-full justify-center">
-        <Spinner />
-      </div>
-    );
-
-  if (isError || !supportedCodeSystems) return 'Error!';
-
   return (
     <SelectContainer className="max-w-3xs!">
       <Field>
@@ -375,7 +363,7 @@ function CodeSystemSelection({
           <option key="all-code-systems" value="all">
             All code systems
           </option>
-          {supportedCodeSystems.data.map((s) => (
+          {codeSystems.map((s) => (
             <option key={s.id} value={s.key}>
               {s.display_name}
             </option>
