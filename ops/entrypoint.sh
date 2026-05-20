@@ -37,8 +37,8 @@ case "$COMMAND" in
         exec dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" "$@"
         ;;
     import)
-        echo "Importing condition data"
-        exec python3 ./scripts/seeding/load_tes_data.py
+        echo "Importing static data"
+        exec python3 ./scripts/seeding/load_static_data.py
         ;;
     python|python3)
         echo "Running Python script: $*"
@@ -48,7 +48,7 @@ case "$COMMAND" in
         echo "Running migration scripts and updating condition data"
         dbmate --no-dump-schema --migrations-dir ./migrations --url "$DATABASE_URL" migrate
         echo "Migration step complete"
-        exec python3 ./scripts/seeding/load_tes_data.py
+        exec python3 ./scripts/seeding/load_static_data.py
         ;;
     *)
         echo "Running custom command: $COMMAND $*"
