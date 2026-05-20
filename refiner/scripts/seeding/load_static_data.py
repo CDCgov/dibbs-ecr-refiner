@@ -343,17 +343,11 @@ def load_static_data(db_url: str, db_password: str) -> None:
         db_url (str): The database URL
         db_password (str): The database password
     """
-    tes_load_start = time.perf_counter()
+    start = time.perf_counter()
     load_tes_data(db_url=db_url, db_password=db_password)
-    tes_load_end = time.perf_counter()
-    logger.info(f"⏱️  TES data loaded in {tes_load_end - tes_load_start:.3f} seconds")
-
-    system_load_start = time.perf_counter()
     load_system_data(db_url=db_url, db_password=db_password)
-    system_load_end = time.perf_counter()
-    logger.info(
-        f"⏱️  System data loaded in {system_load_end - system_load_start:.3f} seconds"
-    )
+    end = time.perf_counter()
+    logger.info(f"⏱️  Static data loaded in {end - start:.3f} seconds")
 
 
 if __name__ == "__main__":
