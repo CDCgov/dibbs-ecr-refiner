@@ -12,7 +12,10 @@ import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { DbConfigurationCustomCode } from '../../../../api/schemas';
+import {
+  ConfigurationCustomCode,
+  DbConfigurationCustomCode,
+} from '../../../../api/schemas';
 import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
@@ -24,7 +27,7 @@ import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 
 interface CustomCodesDetailProps {
   configurationId: string;
-  customCodes: DbConfigurationCustomCode[];
+  customCodes: ConfigurationCustomCode[];
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -61,12 +64,12 @@ export function CustomCodesDetail({
         <tbody>
           {customCodes.map((customCode) => (
             <tr
-              key={customCode.code + customCode.system}
+              key={customCode.code + customCode.system_key}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
-                {customCode.system}
+                {customCode.system_display_name}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
@@ -94,7 +97,7 @@ export function CustomCodesDetail({
                           {
                             // encode to prevent special characters from breaking the action
                             code: encodeURIComponent(customCode.code),
-                            system: customCode.system,
+                            system: customCode.system_key,
                             configurationId: configurationId,
                           },
                           {

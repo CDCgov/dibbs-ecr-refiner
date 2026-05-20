@@ -144,7 +144,7 @@ function ViewAllCustomCodeEventsButton({
                     <tbody className="divide-gray-cool-20 divide-y">
                       {events.data.map((cc) => (
                         <tr key={cc.id}>
-                          <td>{cc.system}</td>
+                          <td>{cc.system_display_name}</td>
                           <td>{cc.code}</td>
                           <td className="py-3">{cc.name}</td>
                         </tr>

@@ -1,7 +1,6 @@
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field, fields
-from logging import Logger
 
 from fastapi import Depends
 from pydantic import BaseModel, Field
@@ -9,10 +8,9 @@ from pydantic import BaseModel, Field
 from app.db.code_systems.db import (
     CodeSystemKey,
     get_all_code_systems_db,
-    get_code_system_by_oid_db,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
-from app.services.logger import get_logger
+from app.services.ecr.section.utils import CODE_SYSTEM_LABELS
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -97,10 +95,9 @@ class CodeSystemSets:
             if isinstance(val, dict):
                 yield val
 
-    async def _get_system_dict(
+    def _get_system_dict(
         self,
         code_system_oid: str,
-        db: AsyncDatabaseConnection = Depends(get_db),
     ) -> dict[str, Coding] | None:
         """
         Resolve an OID to the corresponding code system dict.
@@ -112,11 +109,12 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
 
-        if system is None:
+        attr_name = CODE_SYSTEM_LABELS.get(code_system_oid)
+        if attr_name is None:
             return None
-        return getattr(self, system.key)
+        return getattr(self, attr_name)
 
-    async def find_match(
+    def find_match(
         self, code: str, code_system_oid: str | None = None
     ) -> Coding | None:
         """
@@ -135,7 +133,7 @@ class CodeSystemSets:
         """
 
         if code_system_oid is not None:
-            target = await self._get_system_dict(code_system_oid)
+            target = self._get_system_dict(code_system_oid)
             # unknown OID — fall through to check all systems
             # this handles local/proprietary code systems gracefully
             if target is not None:

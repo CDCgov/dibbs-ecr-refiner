@@ -21,7 +21,7 @@ import type {
 } from 'axios';
 
 import type {
-  GetCodeSystemsReponse
+  CodeSystemsReponse
 } from '../schemas';
 
 
@@ -37,7 +37,7 @@ Returns:
  */
 export const getCodeSystems = (
      options?: AxiosRequestConfig
- ): Promise<AxiosResponse<GetCodeSystemsReponse[]>> => {
+ ): Promise<AxiosResponse<CodeSystemsReponse[]>> => {
 
 
     return axios.default.get(

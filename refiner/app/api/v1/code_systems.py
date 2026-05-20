@@ -10,7 +10,7 @@ router = APIRouter(prefix="/code-systems")
 
 
 @dataclass(frozen=True)
-class GetCodeSystemsReponse:
+class CodeSystemsReponse:
     """
     Display information needed for code system information on the frontend.
     """
@@ -23,13 +23,13 @@ class GetCodeSystemsReponse:
 
 @router.get(
     "/",
-    response_model=list[GetCodeSystemsReponse],
+    response_model=list[CodeSystemsReponse],
     tags=["code-systems"],
     operation_id="getCodeSystems",
 )
 async def get_code_systems(
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> list[GetCodeSystemsReponse]:
+) -> list[CodeSystemsReponse]:
     """
     Returns a list of supported code systems.
 
@@ -38,7 +38,7 @@ async def get_code_systems(
     """
     all_code_systems = await get_all_code_systems_db(db)
     return [
-        GetCodeSystemsReponse(
+        CodeSystemsReponse(
             key=system_data.key,
             display_name=system_data.display_name,
             oid=system_data.oid,

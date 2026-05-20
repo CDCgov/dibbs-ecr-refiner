@@ -165,7 +165,9 @@ async def convert_config_to_storage_payload(
     # custom codes
     for cc in configuration.custom_codes:
         codes.add(cc.code)
-        cur_code_system = await get_code_system_by_key_or_raise_db(key=cc.system, db=db)
+        cur_code_system = await get_code_system_by_key_or_raise_db(
+            key=cc.system_key, db=db
+        )
         system_to_extend = cur_code_system.key
 
         # route custom codes to the correct system dict

@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.code_systems.db import get_all_code_systems_db
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -20,6 +21,7 @@ from app.db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from app.db.configurations.model import (
+    ConfigurationCustomCode,
     DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -31,6 +33,7 @@ from app.services.configurations import (
     get_canonical_url_to_highest_inactive_version_map,
 )
 from app.services.logger import get_logger
+from app.services.code_systems import get_code_systems_indexed_by_key
 
 from .model import (
     CreateConfigInput,
@@ -318,6 +321,7 @@ async def get_configuration(
 
     is_locked = locked_by is not None and locked_by.id != user.id
 
+    code_systems = await get_code_systems_indexed_by_key(db=db)
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,
@@ -328,7 +332,15 @@ async def get_configuration(
         status=config.status,
         code_sets=config_condition_info,
         included_conditions=included_conditions,
-        custom_codes=config.custom_codes,
+        custom_codes=[
+            ConfigurationCustomCode(
+                code=c.code,
+                name=c.name,
+                system_key=c.system_key,
+                system_display_name=code_systems[c.system_key].display_name,
+            )
+            for c in config.custom_codes
+        ],
         section_processing=sorted(
             [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.name.lower(),

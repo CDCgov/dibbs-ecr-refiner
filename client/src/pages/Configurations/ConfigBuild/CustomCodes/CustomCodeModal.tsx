@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import {
   DbConfigurationCustomCode,
-  GetCodeSystemsReponse,
+  CodeSystemsReponse,
 } from '../../../../api/schemas';
 import { useToast } from '../../../../hooks/useToast';
 import { TextInput } from '@components/TextInput';
@@ -93,7 +93,7 @@ function CustomCodeForm({
   const [name, setName] = useState(selectedCustomCode?.name ?? '');
   const [code, setCode] = useState(selectedCustomCode?.code ?? '');
   const [selectedSystem, setSelectedsystem] = useState(
-    selectedCustomCode?.system ?? ''
+    selectedCustomCode?.system_key ?? ''
   );
 
   const [isValidating, setIsValidating] = useState(false);
@@ -150,10 +150,10 @@ function CustomCodeForm({
           configurationId,
           data: {
             code: selectedCustomCode.code,
-            system: selectedCustomCode.system,
+            system_key: selectedCustomCode.system_key,
             name: selectedCustomCode.name,
             new_code: code.trim(),
-            new_system: selectedSystem,
+            new_system_key: selectedSystem,
             new_name: name.trim(),
           },
         },
@@ -207,7 +207,7 @@ function CustomCodeForm({
 
   if (isError || !supportedCodeSystems) return 'Error!';
 
-  const systemValues: GetCodeSystemsReponse[] = [
+  const systemValues: CodeSystemsReponse[] = [
     {
       display_name: 'Select system',
       key: SELECT_DEFAULT_LITERAL,
