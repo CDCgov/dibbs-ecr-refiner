@@ -185,6 +185,8 @@ async def get_code_system_by_key_or_display_name_or_raise_db(
         ValueError: if no code system is found
     """
     string_to_search = name.lower()
+    if string_to_search == "icd-10":
+        string_to_search = "icd10"
     try:
         by_name = await _get_code_system_by_display_name_or_raise_db(
             db=db, logger=logger, name=string_to_search

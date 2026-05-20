@@ -539,7 +539,7 @@ export function ImportCustomCodes({
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.system_key}</td>
+                    <td className="px-2 py-1">{item.system_display_name}</td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>
