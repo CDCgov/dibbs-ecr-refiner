@@ -1,4 +1,3 @@
-import { CodeSystem } from '../../../../api/schemas/codeSystem';
 import { Search } from '@components/Search';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
@@ -13,7 +12,10 @@ import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { DbConfigurationCustomCode } from '../../../../api/schemas';
+import {
+  ConfigurationCustomCode,
+  DbConfigurationCustomCode,
+} from '../../../../api/schemas';
 import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
@@ -21,10 +23,11 @@ import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
+import { useGetCodeSystems } from '../../../../api/code-systems/code-systems';
 
 interface CustomCodesDetailProps {
   configurationId: string;
-  customCodes: DbConfigurationCustomCode[];
+  customCodes: ConfigurationCustomCode[];
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -61,12 +64,12 @@ export function CustomCodesDetail({
         <tbody>
           {customCodes.map((customCode) => (
             <tr
-              key={customCode.code + customCode.system}
+              key={customCode.code + customCode.system_key}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
-                {customCode.system}
+                {customCode.system_display_name}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
@@ -94,7 +97,7 @@ export function CustomCodesDetail({
                           {
                             // encode to prevent special characters from breaking the action
                             code: encodeURIComponent(customCode.code),
-                            system: customCode.system,
+                            system: customCode.system_key,
                             configurationId: configurationId,
                           },
                           {
@@ -258,24 +261,11 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <SelectContainer className="max-w-3xs!">
-          <Field>
-            <Label>Code system</Label>
-            <Select
-              value={selectedCodeSystem}
-              onChange={handleCodeSystemSelect}
-            >
-              <option key="all-code-systems" value="all">
-                All code systems
-              </option>
-              {Object.keys(CodeSystem).map((system) => (
-                <option key={system} value={system}>
-                  {system}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </SelectContainer>
+
+        <CodeSystemSelection
+          selectedCodeSystem={selectedCodeSystem}
+          handleCodeSystemSelect={handleCodeSystemSelect}
+        />
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
@@ -348,5 +338,50 @@ function ConditionCodeRow({
         {highlightMatches(text, matches, 'description')}
       </td>
     </tr>
+  );
+}
+
+type CodeSystemSelectionProps = {
+  selectedCodeSystem: string;
+  handleCodeSystemSelect: (
+    event: React.ChangeEvent<HTMLSelectElement, Element>
+  ) => void;
+};
+
+function CodeSystemSelection({
+  selectedCodeSystem,
+  handleCodeSystemSelect,
+}: CodeSystemSelectionProps) {
+  const {
+    data: supportedCodeSystems,
+    isPending,
+    isError,
+  } = useGetCodeSystems();
+
+  if (isPending)
+    return (
+      <div className="flex w-full justify-center">
+        <Spinner />
+      </div>
+    );
+
+  if (isError || !supportedCodeSystems) return 'Error!';
+
+  return (
+    <SelectContainer className="max-w-3xs!">
+      <Field>
+        <Label>Code system</Label>
+        <Select value={selectedCodeSystem} onChange={handleCodeSystemSelect}>
+          <option key="all-code-systems" value="all">
+            All code systems
+          </option>
+          {supportedCodeSystems.data.map((s) => (
+            <option key={s.id} value={s.key}>
+              {s.display_name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </SelectContainer>
   );
 }

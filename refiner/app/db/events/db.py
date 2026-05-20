@@ -184,7 +184,7 @@ async def insert_custom_code_upload_events_db(
         INSERT INTO events_custom_code_uploads (event_id, system, code, name)
         VALUES (%s, %s, %s, %s)
         """,
-        [(event_id, cc.system.value, cc.code, cc.name) for cc in custom_codes],
+        [(event_id, cc.system_key, cc.code, cc.name) for cc in custom_codes],
     )
 
 

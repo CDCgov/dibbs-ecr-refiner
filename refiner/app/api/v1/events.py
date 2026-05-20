@@ -8,6 +8,7 @@ from app.api.auth.middleware import get_logged_in_user
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
+from app.services.code_systems import get_code_systems_indexed_by_key
 from app.services.logger import get_logger
 
 from ...db.events.db import (
@@ -137,7 +138,7 @@ class CustomCodeUploadEventResponse:
     """
 
     id: UUID
-    system: str
+    system_display_name: str
     code: str
     name: str
 
@@ -177,9 +178,14 @@ async def get_custom_code_upload_events(
         event_id=event_id, db=db
     )
 
+    system_by_key = await get_code_systems_indexed_by_key(db=db)
+
     return [
         CustomCodeUploadEventResponse(
-            id=cc.id, system=cc.system, code=cc.code, name=cc.name
+            id=cc.id,
+            system_display_name=system_by_key[cc.system].display_name,
+            code=cc.code,
+            name=cc.name,
         )
         for cc in custom_code_events
     ]

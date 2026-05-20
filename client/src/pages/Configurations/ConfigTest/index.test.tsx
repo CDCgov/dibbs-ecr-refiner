@@ -21,7 +21,7 @@ const mockCodeSets: DbTotalConditionCodeCount[] = [
 ];
 
 const mockCustomCodes: DbConfigurationCustomCode[] = [
-  { code: 'custom-code1', name: 'test-custom-code1', system: 'ICD-10' },
+  { code: 'custom-code1', name: 'test-custom-code1', system_key: 'ICD-10' },
 ];
 
 const mockMatchedCondition: Condition = {

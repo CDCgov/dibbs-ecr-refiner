@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from app.db.configurations.model import (
+    ConfigurationCustomCode,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
@@ -13,7 +14,6 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
-from app.services.terminology import CodeSystem
 
 
 @dataclass(frozen=True)
@@ -82,7 +82,7 @@ class GetConfigurationResponse:
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
-    custom_codes: list[DbConfigurationCustomCode]
+    custom_codes: list[ConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
     version: int
@@ -130,25 +130,8 @@ class AddCustomCodeInput(BaseModel):
     """
 
     code: str
-    system: CodeSystem
+    system_key: str
     name: str
-
-    @field_validator("system", mode="before")
-    @classmethod
-    def normalize_system(cls, v: str) -> str:
-        """
-        Make the system lowercase before Pydantic checks it.
-        """
-
-        if not isinstance(v, str):
-            raise TypeError('"system" must be a string')
-
-        lookup = {item.value.lower(): item for item in CodeSystem}
-        norm_input = v.lower()
-        if norm_input in lookup:
-            return lookup[norm_input]
-
-        return v
 
 
 @dataclass(frozen=True)
@@ -222,7 +205,7 @@ class UploadCustomCodesPreviewItem(BaseModel):
     """Validated CSV row ready for confirmation."""
 
     code: str
-    system: CodeSystem
+    system_key: str
     name: str
     row: int | None = None
 
