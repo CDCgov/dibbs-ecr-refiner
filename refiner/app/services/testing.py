@@ -158,7 +158,9 @@ async def discover_configurations_for_conditions(
 
     condition_sets: list[DiscoveredConfigurationSet] = []
     for all_versions in conditions_grouped_by_url.values():
-        representative_condition = next(
+        all_condition_ids = {c.id for c in all_versions}
+
+        primary_condition = next(
             (c for c in all_versions if c.id in configured_primary_condition_ids),
             None,
         ) or max(all_versions, key=lambda c: parse(c.version))
@@ -167,7 +169,7 @@ async def discover_configurations_for_conditions(
             [
                 c
                 for c in all_jurisdiction_configs
-                if c.condition_id == representative_condition.id
+                if c.condition_id in all_condition_ids
             ],
             key=lambda c: c.version,
             reverse=True,
@@ -175,8 +177,8 @@ async def discover_configurations_for_conditions(
 
         condition_sets.append(
             DiscoveredConfigurationSet(
-                name=representative_condition.display_name,
-                condition_id=representative_condition.id,
+                name=primary_condition.display_name,
+                condition_id=primary_condition.id,
                 versions=[
                     DiscoveredConfigurationVersion(
                         id=c.id, version=c.version, status=c.status
