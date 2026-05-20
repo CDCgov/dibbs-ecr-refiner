@@ -5,10 +5,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
+from app.db.code_systems.db import get_code_systems_indexed_by_key
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
-from app.services.code_systems import get_code_systems_indexed_by_key
 from app.services.logger import get_logger
 
 from ...db.events.db import (
