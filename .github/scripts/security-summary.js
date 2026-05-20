@@ -361,7 +361,80 @@ async function generateScheduledSummary(github, context, core) {
   }
 }
 
+function generateRiskExceptionMarkdown(scanResults) {
+  const { imageResults } = scanResults;
+  const date = new Date().toISOString().split("T")[0];
+
+  let md = `# Security Risk Exception Request\n\n`;
+  md += `**Date:** ${date}\n`;
+  md += `**Status:** Pending Review\n\n`;
+  md += `---\n\n`;
+
+  for (const result of imageResults) {
+    if (result.error) continue;
+
+    // we only care about critical and highs
+    const actionable = result.vulnerabilities.filter(
+      (v) => v.Severity === "CRITICAL" || v.Severity === "HIGH",
+    );
+
+    if (actionable.length === 0) continue;
+
+    md += `## 📦 ${result.name}\n\n`;
+
+    for (const vuln of actionable) {
+      const severity = vuln.Severity === "CRITICAL" ? "CRITICAL" : "HIGH";
+      const hasfix = vuln.FixedVersion
+        ? `Yes — upgrade to ${vuln.FixedVersion}`
+        : "No fix available";
+
+      md += `### ${severity}: ${vuln.VulnerabilityID}\n\n`;
+      md += `| Field | Details |\n|---|---|\n`;
+      md += `| **Package** | \`${vuln.PkgName}\` |\n`;
+      md += `| **Installed Version** | \`${vuln.InstalledVersion}\` |\n`;
+      md += `| **Fix Available** | ${hasfix} |\n`;
+      md += `| **Title** | ${vuln.Title ?? "N/A"} |\n`;
+      md += `| **Reference** | ${vuln.PrimaryURL ?? "N/A"} |\n\n`;
+
+      md += `#### Justification\n\n`;
+      md += `> _Why is this acceptable risk? Describe mitigating controls, exploitability context, or remediation timeline._\n\n`;
+      md += `**Justification:** \n\n`;
+      md += `**Mitigating Controls:** \n\n`;
+      md += `**Remediation Timeline:** \n\n`;
+      md += `**Approved By:** \n\n`;
+      md += `---\n\n`;
+    }
+  }
+
+  return md;
+}
+
+async function generateRiskExceptionTemplate(core) {
+  const images = ["refiner-app", "refiner-lambda", "refiner-ops"];
+  const scanResults = parseScanResults(images);
+
+  const hasActionable = scanResults.imageResults.some(
+    (r) =>
+      !r.error &&
+      r.vulnerabilities?.some(
+        (v) => v.Severity === "CRITICAL" || v.Severity === "HIGH",
+      ),
+  );
+
+  if (!hasActionable) {
+    core.info(
+      "No HIGH or CRITICAL vulnerabilities found — skipping risk exception template.",
+    );
+    return;
+  }
+
+  const markdown = generateRiskExceptionMarkdown(scanResults);
+  fs.writeFileSync("risk-exception.md", markdown);
+  core.info("Risk exception template written to risk-exception.md");
+}
+
 module.exports = {
   generatePRSummary,
   generateScheduledSummary,
+  generateRiskExceptionTemplate,
 };

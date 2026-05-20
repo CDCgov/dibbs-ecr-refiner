@@ -153,6 +153,36 @@ jobs:
           echo "Check the Security tab for detailed vulnerability reports"
           echo "Navigate to: Repository → Security → Code scanning alerts"
 
+  generate-risk-exception:
+    runs-on: ubuntu-latest
+    needs: scan-images
+    # Always send message during a scheduled run but allow user to choose when running manually
+    if: always() && (github.event_name == 'schedule' || github.event.inputs.send_slack_notification == 'true')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download scan results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: trivy-results-*
+          merge-multiple: true
+
+      - name: Generate risk exception template
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/scripts/security-summary.js');
+            await script.generateRiskExceptionTemplate(core);
+
+      - name: Upload risk exception template
+        uses: actions/upload-artifact@v4
+        with:
+          name: risk-exception-template
+          path: risk-exception.md
+          retention-days: 1
+
   notify-slack:
     runs-on: ubuntu-latest
     needs: scan-images
