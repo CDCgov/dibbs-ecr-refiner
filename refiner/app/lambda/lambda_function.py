@@ -23,14 +23,14 @@ from app.services.aws.s3_keys import (
     get_rsg_cg_mapping_file_key,
 )
 from app.services.ecr.model import JurisdictionReportableConditions, ReportableCondition
-from app.services.ecr.refine import (
-    get_file_size_in_mib,
-    refine_rr_for_unconfigured_conditions,
-)
+from app.services.ecr.refine import get_file_size_in_mib
 from app.services.pipeline import (
+    AugmentationRun,
     RefinementResult,
     RefinementTrace,
+    create_augmentation_run_from_xml_files,
     discover_reportable_conditions,
+    produce_remainder_rr_for_jurisdiction,
     refine_for_condition,
 )
 from app.services.terminology import ProcessedConfiguration
@@ -67,11 +67,22 @@ class RefinerCompleteFile(TypedDict):
 class RefinementState:
     """
     Internal mutable state accumulated during refinement processing.
+
+    Tracks output file keys for the RefinerComplete manifest, per-
+    jurisdiction/per-condition refinement traces, the AIMS-facing
+    metadata dict, and the set of codes per jurisdiction that were
+    NOT refined (used to drive remainder RR production).
+
+    TODO:
+    * skipped_condition_codes_by_jurisdiction holds information that
+      is also present on the per-condition RefinementTrace objects
+      (traces with refinement_outcome == "skipped")
+    * that means skipped codes are tracked in two places
     """
 
     output_files: set[str] = field(default_factory=set)
     metadata: RefinerMetadata = field(default_factory=dict)
-    non_active_reportable_conditions: dict[str, set[str]] = field(
+    skipped_condition_codes_by_jurisdiction: dict[str, set[str]] = field(
         default_factory=lambda: defaultdict(set)
     )
     traces: list[RefinementTrace] = field(default_factory=list)
@@ -445,6 +456,15 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
         operation="discovered_reportability",
     )
 
+    # TODO:
+    # * one AugmentationRun is built per input pair and threaded
+    #   through every refine_for_condition and
+    #   produce_remainder_rr_for_jurisdiction call in this invocation
+    #   so all augmented outputs share an effectiveTime
+    # * the construction lives here in the caller, not in a
+    #   session-level owner
+    run = create_augmentation_run_from_xml_files(input.xml_files)
+
     # mutable state that is updated during the refinement process
     state = RefinementState()
 
@@ -453,11 +473,13 @@ def run_refinement(input: RefinementInput) -> RefinementOutput:
             jurisdiction_group=jurisdiction_group,
             refiner_input=input,
             state=state,
+            run=run,
         )
 
-    write_unrefined_rrs(
+    write_remainder_rrs(
         refiner_input=input,
         state=state,
+        run=run,
     )
 
     log_refinement_summary(
@@ -475,6 +497,7 @@ def process_jurisdiction(
     jurisdiction_group: JurisdictionReportableConditions,
     refiner_input: RefinementInput,
     state: RefinementState,
+    run: AugmentationRun,
 ) -> None:
     """
     Process all reportable conditions for a given jurisdiction.
@@ -503,6 +526,7 @@ def process_jurisdiction(
             rsg_cg_payload=rsg_cg_payload,
             refiner_input=refiner_input,
             state=state,
+            run=run,
         )
 
 
@@ -512,6 +536,7 @@ def process_condition(
     rsg_cg_payload: ConditionMappingPayload,
     refiner_input: RefinementInput,
     state: RefinementState,
+    run: AugmentationRun,
 ) -> None:
     """
     Process a single reportable condition for a jurisdiction.
@@ -566,6 +591,7 @@ def process_condition(
         xml_files=refiner_input.xml_files,
         processed_configuration=processed_configuration,
         trace=trace,
+        run=run,
     )
 
     state.traces.append(trace)
@@ -628,7 +654,9 @@ def skip_all_conditions_for_missing_mapping(
             skip_reason="no_mapping_file",
         )
         state.traces.append(trace)
-        state.non_active_reportable_conditions[jurisdiction_code].add(condition.code)
+        state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(
+            condition.code
+        )
         state.metadata[jurisdiction_code][condition.code] = False
 
 
@@ -647,7 +675,7 @@ def mark_condition_skipped(
 
     state.traces.append(trace)
     state.metadata[jurisdiction_code][condition_code] = False
-    state.non_active_reportable_conditions[jurisdiction_code].add(condition_code)
+    state.skipped_condition_codes_by_jurisdiction[jurisdiction_code].add(condition_code)
 
 
 def load_active_configuration(
@@ -757,40 +785,82 @@ def write_refined_outputs(
     )
 
 
-def write_unrefined_rrs(
+def write_remainder_rrs(
     refiner_input: RefinementInput,
     state: RefinementState,
+    run: AugmentationRun,
 ) -> None:
     """
-    Write unrefined RR outputs for conditions that were skipped due to missing or
-    inactive configuration.
+    Write augmented remainder RR outputs for jurisdictions that need them.
+
+    For each jurisdiction with at least one skipped condition, produces
+    the augmented remainder RR carrying the skipped codes. The pipeline
+    enforces the if-and-only-if rule: returns None for jurisdictions
+    where nothing was refined (the original RR moves forward untouched
+    instead) or where nothing was skipped.
+
+    TODO(s3-path): the output path segment is "unrefined_rr" for
+    backwards compatibility with AIMS-side consumers. Renaming
+    to "remainder_rr" requires coordinating with AIMS first.
     """
+
     for (
         jurisdiction_code,
-        condition_codes,
-    ) in state.non_active_reportable_conditions.items():
-        unrefined_rr_content = refine_rr_for_unconfigured_conditions(
+        skipped_codes,
+    ) in state.skipped_condition_codes_by_jurisdiction.items():
+        refined_codes = {
+            code
+            for code, did_refine in state.metadata.get(jurisdiction_code, {}).items()
+            if did_refine
+        }
+
+        remainder = produce_remainder_rr_for_jurisdiction(
             xml_files=refiner_input.xml_files,
-            condition_codes=condition_codes,
+            jurisdiction_id=jurisdiction_code,
+            refined_condition_codes=refined_codes,
+            skipped_condition_codes=skipped_codes,
+            run=run,
         )
 
-        output_key = f"{REFINER_OUTPUT_PREFIX}{refiner_input.persistence_id}/{jurisdiction_code}/unrefined_rr"
+        if remainder is None:
+            # if-and-only-if rule not satisfied: either nothing was
+            # refined for this jurisdiction, or nothing was skipped;
+            # in either case there is no remainder to write
+            logger.info(
+                "Remainder RR not produced for jurisdiction.",
+                jurisdiction_code=jurisdiction_code,
+                refined_count=len(refined_codes),
+                skipped_count=len(skipped_codes),
+                operation="remainder_rr_skipped",
+            )
+            continue
+
+        # TODO:
+        # rename "unrefined_rr" -> "remainder"
+        # requires coordination with AIMS to ensure
+        # mirth related logic isn't broken
+        output_key = (
+            f"{REFINER_OUTPUT_PREFIX}{refiner_input.persistence_id}/"
+            f"{jurisdiction_code}/unrefined_rr"
+        )
         rr_output_key = f"{output_key}/refined_RR.xml"
 
         refiner_input.s3_client.put_object(
             Bucket=refiner_input.output_bucket_name,
             Key=rr_output_key,
-            Body=unrefined_rr_content.encode("utf-8"),
+            Body=remainder.remainder_rr.encode("utf-8"),
             ContentType="application/xml",
         )
         state.output_files.add(rr_output_key)
 
         logger.info(
-            "Created unrefined conditions RR",
+            "Created remainder RR",
             output_key=rr_output_key,
             jurisdiction_code=jurisdiction_code,
-            condition_codes=list(condition_codes),
-            operation="unrefined_conditions_rr_written",
+            condition_codes=list(remainder.skipped_codes),
+            original_rr_doc_id=remainder.augmented_result.original_doc_id,
+            augmented_rr_doc_id=remainder.augmented_result.augmented_doc_id,
+            operation="remainder_rr_written",
         )
 
 

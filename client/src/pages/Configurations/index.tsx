@@ -81,7 +81,9 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
     <>
       <AppUpdateBanner
         isVisible={
-          user.notifications.to_render[NotificationKeys.most_recent_app_update]
+          user.notifications.to_render[
+            NotificationKeys.most_recent_app_update
+          ] ?? false
         }
         refreshUser={refreshUser}
       />
@@ -89,8 +91,8 @@ export function Configurations({ user, refreshUser }: ConfigurationsProps) {
         <div className="flex flex-col gap-4 py-10">
           <Title>Configurations</Title>
           <p>
-            Configurations define which patient data is included in refined
-            eCR’s for each reportable condition
+            Configurations define which patient data is included in refined eCRs
+            for each reportable condition
           </p>
         </div>
         <div

@@ -25,7 +25,9 @@ import type {
 } from 'axios';
 
 import type {
+  BodyDiscoverConfigurations,
   BodyUploadEcr,
+  DiscoveredConfigurationsResponse,
   HTTPValidationError,
   IndependentTestUploadResponse
 } from '../schemas';
@@ -35,6 +37,83 @@ import type {
 
 
 /**
+ * Detects reportable conditions found in `uploaded_file` and matches them with existing configurations.
+
+Configurations are returned to the client.
+
+Args:
+    uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
+    demo_zip_path (Path, optional): The path to the demo zip file.
+    user (DbUser, optional): The logged in user.
+    db (AsyncDatabaseConnection, optional): The database connection.
+    logger (Logger, optional): The app logger.
+
+Returns:
+    DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
+ * @summary Discover Configurations
+ */
+export const discoverConfigurations = (
+    bodyDiscoverConfigurations?: BodyDiscoverConfigurations, options?: AxiosRequestConfig
+ ): Promise<AxiosResponse<DiscoveredConfigurationsResponse>> => {
+
+    const formData = new FormData();
+if(bodyDiscoverConfigurations?.uploaded_file !== undefined && bodyDiscoverConfigurations.uploaded_file !== null) {
+ formData.append(`uploaded_file`, bodyDiscoverConfigurations.uploaded_file);
+ }
+
+    return axios.default.post(
+      `/api/v1/demo/discover-configurations`,
+      formData,options
+    );
+  }
+
+
+
+export const getDiscoverConfigurationsMutationOptions = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext> => {
+
+const mutationKey = ['discoverConfigurations'];
+const {mutation: mutationOptions, axios: axiosOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, axios: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discoverConfigurations>>, {data?: BodyDiscoverConfigurations}> = (props) => {
+          const {data} = props ?? {};
+
+          return  discoverConfigurations(data,axiosOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DiscoverConfigurationsMutationResult = NonNullable<Awaited<ReturnType<typeof discoverConfigurations>>>
+    export type DiscoverConfigurationsMutationBody = BodyDiscoverConfigurations | undefined
+    export type DiscoverConfigurationsMutationError = AxiosError<HTTPValidationError>
+
+    /**
+ * @summary Discover Configurations
+ */
+export const useDiscoverConfigurations = <TError = AxiosError<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discoverConfigurations>>, TError,{data?: BodyDiscoverConfigurations}, TContext>, axios?: AxiosRequestConfig}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof discoverConfigurations>>,
+        TError,
+        {data?: BodyDiscoverConfigurations},
+        TContext
+      > => {
+      return useMutation(getDiscoverConfigurationsMutationOptions(options), queryClient);
+    }
+    /**
  * Handles the demo upload workflow for eICR refinement.
 
 Steps:
@@ -54,11 +133,12 @@ Any exceptions during file processing or workflow execution are caught and mappe
  * @summary Demo Upload
  */
 export const uploadEcr = (
-    bodyUploadEcr?: BodyUploadEcr, options?: AxiosRequestConfig
+    bodyUploadEcr: BodyUploadEcr, options?: AxiosRequestConfig
  ): Promise<AxiosResponse<IndependentTestUploadResponse>> => {
 
     const formData = new FormData();
-if(bodyUploadEcr?.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== null) {
+formData.append(`body`, bodyUploadEcr.body);
+if(bodyUploadEcr.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !== null) {
  formData.append(`uploaded_file`, bodyUploadEcr.uploaded_file);
  }
 
@@ -71,8 +151,8 @@ if(bodyUploadEcr?.uploaded_file !== undefined && bodyUploadEcr.uploaded_file !==
 
 
 export const getUploadEcrMutationOptions = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data?: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
-): UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data?: BodyUploadEcr}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext> => {
 
 const mutationKey = ['uploadEcr'];
 const {mutation: mutationOptions, axios: axiosOptions} = options ?
@@ -84,7 +164,7 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEcr>>, {data?: BodyUploadEcr}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEcr>>, {data: BodyUploadEcr}> = (props) => {
           const {data} = props ?? {};
 
           return  uploadEcr(data,axiosOptions)
@@ -98,18 +178,18 @@ const {mutation: mutationOptions, axios: axiosOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type UploadEcrMutationResult = NonNullable<Awaited<ReturnType<typeof uploadEcr>>>
-    export type UploadEcrMutationBody = BodyUploadEcr | undefined
+    export type UploadEcrMutationBody = BodyUploadEcr
     export type UploadEcrMutationError = AxiosError<HTTPValidationError>
 
     /**
  * @summary Demo Upload
  */
 export const useUploadEcr = <TError = AxiosError<HTTPValidationError>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data?: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEcr>>, TError,{data: BodyUploadEcr}, TContext>, axios?: AxiosRequestConfig}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof uploadEcr>>,
         TError,
-        {data?: BodyUploadEcr},
+        {data: BodyUploadEcr},
         TContext
       > => {
       return useMutation(getUploadEcrMutationOptions(options), queryClient);
@@ -156,7 +236,7 @@ const {query: queryOptions, axios: axiosOptions} = options ?? {};
 
 
 
-   return  { queryKey, queryFn, enabled: !!(filename), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: filename !== null && filename !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadRefinedEcr>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type DownloadRefinedEcrQueryResult = NonNullable<Awaited<ReturnType<typeof downloadRefinedEcr>>>

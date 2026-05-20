@@ -23,7 +23,7 @@ class GetConfigurationResponseVersion:
     condition_canonical_url: str
     status: DbConfigurationStatus
     created_at: datetime
-    created_by: str
+    created_by: UUID
     last_activated_at: datetime | None
     last_activated_by: str | None
 
