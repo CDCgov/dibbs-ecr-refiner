@@ -369,7 +369,6 @@ function generateRiskExceptionMarkdown(scanResults) {
 
   let md = `# Security Risk Exception Request\n\n`;
   md += `**Date:** ${date}\n`;
-  md += `**Status:** Pending Review\n\n`;
   md += `---\n\n`;
 
   for (const result of imageResults) {
@@ -382,7 +381,7 @@ function generateRiskExceptionMarkdown(scanResults) {
 
     if (actionable.length === 0) continue;
 
-    md += `## 📦 ${result.name}\n\n`;
+    md += `## ${result.name} image\n\n`;
 
     for (const vuln of actionable) {
       const severity = vuln.Severity === "CRITICAL" ? "CRITICAL" : "HIGH";
@@ -399,11 +398,10 @@ function generateRiskExceptionMarkdown(scanResults) {
       md += `| **Reference** | ${vuln.PrimaryURL ?? "N/A"} |\n\n`;
 
       md += `#### Justification\n\n`;
-      md += `> _Why is this acceptable risk? Describe mitigating controls, exploitability context, or remediation timeline._\n\n`;
+      md += `> _Why is this an acceptable risk?_\n\n`;
       md += `**Justification:** \n\n`;
       md += `**Mitigating Controls:** \n\n`;
       md += `**Remediation Timeline:** \n\n`;
-      md += `**Approved By:** \n\n`;
       md += `---\n\n`;
     }
   }
