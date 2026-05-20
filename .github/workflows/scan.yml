@@ -156,8 +156,7 @@ jobs:
   generate-risk-exception:
     runs-on: ubuntu-latest
     needs: scan-images
-    # Always send message during a scheduled run but allow user to choose when running manually
-    if: always() && (github.event_name == 'schedule' || github.event.inputs.send_slack_notification == 'true')
+    if: always()
 
     steps:
       - name: Checkout repository
