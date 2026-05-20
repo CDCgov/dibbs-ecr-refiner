@@ -31,7 +31,7 @@ const mockCustomCodes: ConfigurationCustomCode[] = [
   {
     code: 'custom-code1',
     name: 'test-custom-code1',
-    system_key: 'icd-10',
+    system_key: 'icd10',
     system_display_name: 'ICD-10',
   },
 ];
@@ -109,7 +109,7 @@ const mockCodeSystems: CodeSystemsReponse[] = [
   {
     id: '375d4fd5-81f8-4b9e-abd9-979c7987691f',
     oid: '2.16.840.1.113883.6.90',
-    key: 'icd-10',
+    key: 'icd10',
     display_name: 'ICD-10',
   },
   {
@@ -170,6 +170,8 @@ vi.mock('../../../api/conditions/conditions', async () => {
             { code: '1', system: 'LOINC', description: 'idk' },
             { code: '2', system: 'SNOMED', description: 'example' },
           ],
+
+          systems: mockCodeSystems,
         },
       },
     })),
@@ -609,6 +611,13 @@ describe('Config builder page', () => {
       reset: vi.fn(),
     });
 
+    (useValidateCustomCodeFromConfiguration as unknown as Mock).mockReturnValue(
+      {
+        mutate: vi.fn().mockReturnValue(true),
+        reset: vi.fn(),
+      }
+    );
+
     await user.click(screen.getByText('Custom codes', { selector: 'span' }));
     expect(
       screen.getByText(
@@ -626,8 +635,8 @@ describe('Config builder page', () => {
 
     expect(screen.getByText('Update', { selector: 'button' })).toBeEnabled();
     expect(screen.getByLabelText('Code #')).toHaveValue('custom-code1');
-    expect(screen.getByLabelText('Code system')).toHaveValue('icd-10');
     expect(screen.getByLabelText('Code name')).toHaveValue('test-custom-code1');
+    expect(screen.getByLabelText('Code system')).toHaveValue('icd10');
 
     await user.type(screen.getByLabelText('Code #'), '12345');
 
