@@ -34,7 +34,7 @@ export function VersionMenu({
             <Icon.ArrowDropDown aria-hidden />
           </div>
         </MenuButton>
-        <MenuItems className="absolute mt-1 ml-4 flex flex-col rounded-lg bg-white px-4 py-2 shadow-lg">
+        <MenuItems className="absolute mt-1 ml-4 flex max-h-100 flex-col overflow-y-auto rounded-lg bg-white px-4 py-2 shadow-lg">
           {versions.map((config, i) => (
             <Fragment key={config.id}>
               <MenuItem>
