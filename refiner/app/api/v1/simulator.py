@@ -179,9 +179,9 @@ async def discover_configurations(
     )
 
 
-class IndependentTestInput(BaseModel):
+class SimulateTestInput(BaseModel):
     """
-    Independent testing request model.
+    Simulate testing request model.
     """
 
     configuration_ids: list[UUID]
@@ -228,7 +228,7 @@ async def simulator_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
-    parsed_body = IndependentTestInput.model_validate_json(body)
+    parsed_body = SimulateTestInput.model_validate_json(body)
 
     if len(parsed_body.configuration_ids) == 0:
         raise HTTPException(
@@ -250,31 +250,31 @@ async def simulator_upload(
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
-        config_ids = list(set(parsed_body.configuration_ids))
+    config_ids = list(set(parsed_body.configuration_ids))
 
-        configurations = await get_configurations_by_ids_db(
-            ids=config_ids, jurisdiction_id=user.jurisdiction_id, db=db
+    configurations = await get_configurations_by_ids_db(
+        ids=config_ids, jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    if len(configurations) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Configurations with provided IDs could not be found.",
         )
 
-        if len(configurations) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Configurations with provided IDs could not be found.",
+    # Fetch conditions for IDs without a config + unused conditions
+    latest_condition_ids = await get_latest_tes_condition_ids_db(
+        ids=list(
+            set(
+                parsed_body.unconfigured_condition_ids
+                + parsed_body.unused_condition_ids
             )
-
-        # Fetch conditions for IDs without a config + unused conditions
-        latest_condition_ids = await get_latest_tes_condition_ids_db(
-            ids=list(
-                set(
-                    parsed_body.unconfigured_condition_ids
-                    + parsed_body.unused_condition_ids
-                )
-            ),
-            db=db,
-        )
-        conditions_without_config = await get_conditions_by_ids(
-            ids=latest_condition_ids, db=db
-        )
+        ),
+        db=db,
+    )
+    conditions_without_config = await get_conditions_by_ids(
+        ids=latest_condition_ids, db=db
+    )
 
     # Run the simulation
     try:
