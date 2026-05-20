@@ -32,6 +32,7 @@ from lxml.etree import _Element
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
+from app.db.code_systems.db import DbCodeSystem, get_all_code_systems_db
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration
 from app.db.pool import get_db
@@ -45,6 +46,15 @@ TEST_SESSION_TOKEN = "test-token"
 MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
 MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
 MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
+
+CODE_SYSTEM_DATA = {
+    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
+    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
+    "icd-10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
+    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
+    "other": {"oid": None, "display_name": "Other"},
+}
 
 
 class AsyncContextManagerMock:
@@ -111,6 +121,19 @@ def mock_user():
 
 
 @pytest.fixture
+def mock_supported_systems():
+    return [
+        DbCodeSystem(
+            id=uuid4(),
+            oid=system[1]["oid"],
+            display_name=system[1]["display_name"],
+            key=system[0],
+        )
+        for system in CODE_SYSTEM_DATA.items()
+    ]
+
+
+@pytest.fixture
 def mock_condition():
     return DbCondition(
         id=uuid4(),
@@ -167,6 +190,19 @@ def mock_logged_in_user(mock_user, test_app):
     test_app.dependency_overrides[get_logged_in_user] = lambda: mock_user
     yield
     test_app.dependency_overrides.pop(get_logged_in_user, None)
+
+
+@pytest.fixture
+def mock_code_systems(test_app):
+    """
+    Mock the logged-in user dependency
+    """
+
+    test_app.dependency_overrides[get_all_code_systems_db] = lambda: (
+        mock_supported_systems
+    )
+    yield
+    test_app.dependency_overrides.pop(get_all_code_systems_db, None)
 
 
 @pytest.fixture(scope="session")

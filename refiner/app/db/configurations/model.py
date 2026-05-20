@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from app.services.terminology import CodeSystem
-
 type DbSectionAction = Literal["retain", "refine"]
 
 type DbConfigurationStatus = Literal["draft", "inactive", "active"]
@@ -51,8 +49,17 @@ class DbConfigurationCustomCode:
     """
 
     code: str
-    system: CodeSystem
+    system_key: str
     name: str
+
+
+@dataclass(frozen=True)
+class ConfigurationCustomCode(DbConfigurationCustomCode):
+    """
+    Custom code associated with a Configuration.
+    """
+
+    system_display_name: str
 
 
 @dataclass(frozen=True)
@@ -165,7 +172,12 @@ class DbConfiguration:
             jurisdiction_id=row["jurisdiction_id"],
             condition_id=row["condition_id"],
             included_conditions=row.get("included_conditions") or [],
-            custom_codes=[DbConfigurationCustomCode(**c) for c in row["custom_codes"]],
+            custom_codes=[
+                DbConfigurationCustomCode(
+                    system_key=c["system"], code=c["code"], name=c["name"]
+                )
+                for c in row["custom_codes"]
+            ],
             section_processing=[
                 DbConfigurationSectionProcessing(**sp)
                 for sp in (row.get("section_processing") or [])
