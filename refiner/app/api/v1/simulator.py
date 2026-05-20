@@ -165,7 +165,7 @@ async def discover_configurations(
 
     # Validate and load the file
     file = await get_validated_file(
-        uploaded_file=uploaded_file, demo_file_path=demo_zip_path, logger=logger
+        uploaded_file=uploaded_file, test_file_path=demo_zip_path, logger=logger
     )
 
     logger.info("Processing independent test file", extra={"file": file.filename})
