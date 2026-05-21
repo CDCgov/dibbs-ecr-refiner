@@ -11,6 +11,7 @@ CREATE TABLE systems (
 CREATE TRIGGER update_systems_updated_at
 BEFORE UPDATE ON systems
 FOR EACH ROW
+WHEN (OLD.display_name IS DISTINCT FROM NEW.display_name)
 EXECUTE FUNCTION set_updated_at();
 
 -- migrate:down
