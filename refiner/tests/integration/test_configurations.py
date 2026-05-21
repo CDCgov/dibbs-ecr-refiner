@@ -110,10 +110,8 @@ class TestConfigurations:
                 condition_id,
                 name,
                 created_by,
-                included_conditions,
                 custom_codes
             ) VALUES (
-                %s,
                 %s,
                 %s,
                 %s,
@@ -127,7 +125,6 @@ class TestConfigurations:
             old_condition_id,
             PRIMARY_CONDITION,
             test_user_id,
-            [old_condition_id],
             Jsonb([]),
         )
 

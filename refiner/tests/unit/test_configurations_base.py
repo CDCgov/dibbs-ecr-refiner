@@ -50,10 +50,7 @@ def mock_db_functions(
         "app.api.v1.configurations.base.get_configuration_by_id_db",
         AsyncMock(return_value=mock_configuration),
     )
-    monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_included_conditions_db",
-        AsyncMock(return_value=[mock_condition]),
-    )
+
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_latest_config_db",
         AsyncMock(return_value=mock_configuration),
