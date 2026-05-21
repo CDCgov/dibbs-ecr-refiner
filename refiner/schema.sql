@@ -624,6 +624,13 @@ CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configur
 
 
 --
+-- Name: systems update_systems_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: users update_users_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 

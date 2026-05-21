@@ -8,6 +8,12 @@ CREATE TABLE systems (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TRIGGER update_systems_updated_at
+BEFORE UPDATE ON systems
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
 -- migrate:down
+DROP TRIGGER IF EXISTS update_systems_updated_at ON systems;
 
 DROP TABLE IF EXISTS systems;
