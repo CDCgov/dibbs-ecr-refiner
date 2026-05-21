@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import (
     CodeSystemKey,
+    DbCodeSystem,
     get_all_code_systems_db,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
@@ -189,7 +190,11 @@ class CodeSystemSets:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, list[dict[str, str]]]) -> "CodeSystemSets":
+    def from_dict(
+        cls,
+        data: dict[str, list[dict[str, str]]],
+        code_systems: dict[CodeSystemKey, DbCodeSystem],
+    ) -> "CodeSystemSets":
         """
         Deserialize a CodeSystemSets from a dictionary (read from S3).
 
