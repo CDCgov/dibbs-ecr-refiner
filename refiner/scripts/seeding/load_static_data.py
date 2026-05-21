@@ -328,7 +328,7 @@ def load_static_data(db_url: str, db_password: str) -> None:
 
     except Exception:
         logger.error(
-            "❌ A critical error occurred during the condition upsert process.",
+            "❌ A critical error occurred during the static data upsert process.",
             exc_info=True,
         )
         logger.error("Make sure migrations have been run prior to seeding!")
