@@ -326,7 +326,7 @@ def load_static_data(db_url: str, db_password: str) -> None:
 
                 logger.info("🏁 Done!")
 
-    except Exception as e:
+    except Exception:
         logger.error(
             "❌ A critical error occurred during the condition upsert process.",
             exc_info=True,
