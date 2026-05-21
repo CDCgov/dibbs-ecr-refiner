@@ -271,13 +271,7 @@ def load_system_data(
                 %(display_name)s,
                 %(oid)s
             )
-            ON CONFLICT (oid)
-            DO UPDATE SET
-                key = EXCLUDED.key,
-                display_name = EXCLUDED.display_name
-            WHERE
-                systems.display_name IS DISTINCT FROM EXCLUDED.display_name
-                OR systems.key IS DISTINCT FROM EXCLUDED.key
+            ON CONFLICT DO NOTHING
             RETURNING id
             """
 
