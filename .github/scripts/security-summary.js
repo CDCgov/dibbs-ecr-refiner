@@ -139,7 +139,12 @@ function formatGitHubComment(scanResults, repoOwner, repoName) {
 /**
  * Format results as Slack message for scheduled scans
  */
-function formatSlackMessage(scanResults, repoUrl, branch = "main") {
+function formatSlackMessage(
+  scanResults,
+  repoUrl,
+  branch = "main",
+  riskExceptionUrl = null,
+) {
   const {
     totalCritical,
     totalHigh,
@@ -232,6 +237,16 @@ function formatSlackMessage(scanResults, repoUrl, branch = "main") {
     },
   });
 
+  if (riskExceptionUrl) {
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `<${riskExceptionUrl}|📋 Download Risk Exception Template> (under Artifacts)`,
+      },
+    });
+  }
+
   return {
     attachments: [
       {
@@ -245,8 +260,19 @@ function formatSlackMessage(scanResults, repoUrl, branch = "main") {
 /**
  * Send notification to Slack
  */
-async function sendSlackNotification(scanResults, repoUrl, branch, webhookUrl) {
-  const payload = formatSlackMessage(scanResults, repoUrl, branch);
+async function sendSlackNotification(
+  scanResults,
+  repoUrl,
+  branch,
+  webhookUrl,
+  riskExceptionUrl = null,
+) {
+  const payload = formatSlackMessage(
+    scanResults,
+    repoUrl,
+    branch,
+    riskExceptionUrl,
+  );
 
   const response = await fetch(webhookUrl, {
     method: "POST",
@@ -352,8 +378,15 @@ async function generateScheduledSummary(github, context, core) {
     try {
       const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
       const branch = context.ref.replace("refs/heads/", "");
+      const riskExceptionUrl = process.env.RISK_EXCEPTION_URL || null;
 
-      await sendSlackNotification(scanResults, repoUrl, branch, slackWebhook);
+      await sendSlackNotification(
+        scanResults,
+        repoUrl,
+        branch,
+        slackWebhook,
+        riskExceptionUrl,
+      );
     } catch (error) {
       console.error("Failed to send Slack notification:", error);
       core.setFailed(`Slack notification failed: ${error.message}`);
