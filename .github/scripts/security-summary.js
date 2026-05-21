@@ -363,7 +363,7 @@ async function generateScheduledSummary(github, context, core) {
   }
 }
 
-function generateRiskExceptionMarkdown(scanResults) {
+function generateRiskExceptionMarkdown(scanResults, generateForLevels) {
   const { imageResults } = scanResults;
   const date = new Date().toISOString().split("T")[0];
 
@@ -374,22 +374,20 @@ function generateRiskExceptionMarkdown(scanResults) {
   for (const result of imageResults) {
     if (result.error) continue;
 
-    // we only care about critical and highs
-    const actionable = result.vulnerabilities.filter(
-      (v) => v.Severity === "CRITICAL" || v.Severity === "HIGH",
+    const actionableVulns = result.vulnerabilities.filter((v) =>
+      generateForLevels.includes(v.Severity),
     );
 
-    if (actionable.length === 0) continue;
+    if (actionableVulns.length === 0) continue;
 
     md += `## ${result.name} image\n\n`;
 
-    for (const vuln of actionable) {
-      const severity = vuln.Severity === "CRITICAL" ? "CRITICAL" : "HIGH";
+    for (const vuln of actionableVulns) {
       const hasfix = vuln.FixedVersion
         ? `Yes — upgrade to ${vuln.FixedVersion}`
         : "No fix available";
 
-      md += `### ${severity}: ${vuln.VulnerabilityID}\n\n`;
+      md += `### ${vuln.Severity}: ${vuln.VulnerabilityID}\n\n`;
       md += `| Field | Details |\n|---|---|\n`;
       md += `| **Package** | \`${vuln.PkgName}\` |\n`;
       md += `| **Installed Version** | \`${vuln.InstalledVersion}\` |\n`;
@@ -411,24 +409,27 @@ function generateRiskExceptionMarkdown(scanResults) {
 
 async function generateRiskExceptionTemplate(core) {
   const images = ["refiner-app", "refiner-lambda", "refiner-ops"];
+  const generateForLevels = ["CRITICAL", "HIGH"];
+
   const scanResults = parseScanResults(images);
 
-  const hasActionable = scanResults.imageResults.some(
+  const hasActionableVuln = scanResults.imageResults.some(
     (r) =>
       !r.error &&
-      r.vulnerabilities?.some(
-        (v) => v.Severity === "CRITICAL" || v.Severity === "HIGH",
-      ),
+      r.vulnerabilities?.some((v) => generateForLevels.includes(v.Severity)),
   );
 
-  if (!hasActionable) {
+  if (!hasActionableVuln) {
     core.info(
-      "No HIGH or CRITICAL vulnerabilities found — skipping risk exception template.",
+      `No vulnerabilities found for desired levels: ${generateForLevels.join(", ")}. Skipping risk exception template.`,
     );
     return;
   }
 
-  const markdown = generateRiskExceptionMarkdown(scanResults);
+  const markdown = generateRiskExceptionMarkdown(
+    scanResults,
+    generateForLevels,
+  );
   fs.writeFileSync("risk-exception.md", markdown);
   core.info("Risk exception template written to risk-exception.md");
 }
