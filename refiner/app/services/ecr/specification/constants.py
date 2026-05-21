@@ -30,3 +30,12 @@ ICD10_OID: Final[str] = "2.16.840.1.113883.6.90"
 LOINC_OID: Final[str] = "2.16.840.1.113883.6.1"
 RXNORM_OID: Final[str] = "2.16.840.1.113883.6.88"
 SNOMED_OID: Final[str] = "2.16.840.1.113883.6.96"
+
+
+CODE_SYSTEM_LABELS: Final[dict[str, str]] = {
+    LOINC_OID: "LOINC",
+    SNOMED_OID: "SNOMED",
+    RXNORM_OID: "RxNorm",
+    ICD10_OID: "ICD-10",
+    CVX_OID: "CVX",
+}
