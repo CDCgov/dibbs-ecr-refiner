@@ -219,11 +219,9 @@ CREATE TABLE public.configurations (
     custom_codes jsonb DEFAULT '[]'::jsonb,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    condition_id uuid NOT NULL,
     status public.configuration_status DEFAULT 'draft'::public.configuration_status NOT NULL,
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
-    condition_canonical_url text NOT NULL,
     created_by uuid NOT NULL,
     s3_urls text[]
 );
@@ -235,7 +233,8 @@ CREATE TABLE public.configurations (
 
 CREATE TABLE public.configurations_conditions (
     configuration_id uuid NOT NULL,
-    condition_id uuid NOT NULL
+    condition_id uuid NOT NULL,
+    is_primary boolean DEFAULT false NOT NULL
 );
 
 
@@ -330,6 +329,20 @@ CREATE TABLE public.sessions (
 
 
 --
+-- Name: systems; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.systems (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    key text NOT NULL,
+    display_name text NOT NULL,
+    oid text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -374,14 +387,6 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
-
-
---
--- Name: configurations configurations_condition_canonical_url_jurisdiction_id_vers_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configurations
-    ADD CONSTRAINT configurations_condition_canonical_url_jurisdiction_id_vers_key UNIQUE (condition_canonical_url, jurisdiction_id, version);
 
 
 --
@@ -473,6 +478,38 @@ ALTER TABLE ONLY public.sessions
 
 
 --
+-- Name: systems systems_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_display_name_key UNIQUE (display_name);
+
+
+--
+-- Name: systems systems_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_key_key UNIQUE (key);
+
+
+--
+-- Name: systems systems_oid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_oid_key UNIQUE (oid);
+
+
+--
+-- Name: systems systems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -511,20 +548,6 @@ CREATE INDEX conditions_context_groupers_condition_id_idx ON public.conditions_c
 
 
 --
--- Name: configurations_one_active_per_pair_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX configurations_one_active_per_pair_idx ON public.configurations USING btree (condition_canonical_url, jurisdiction_id) WHERE (status = 'active'::public.configuration_status);
-
-
---
--- Name: configurations_one_draft_per_pair_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX configurations_one_draft_per_pair_idx ON public.configurations USING btree (condition_canonical_url, jurisdiction_id) WHERE (status = 'draft'::public.configuration_status);
-
-
---
 -- Name: configurations_sections_code_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -546,10 +569,10 @@ CREATE INDEX idx_conditions_child_snomed_codes ON public.conditions USING gin (c
 
 
 --
--- Name: configurations configurations_set_condition_canonical_url_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE TRIGGER configurations_set_condition_canonical_url_trigger BEFORE INSERT OR UPDATE OF condition_id ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.configurations_set_condition_canonical_url_on_insert();
+CREATE UNIQUE INDEX one_primary_per_configuration ON public.configurations_conditions USING btree (configuration_id) WHERE (is_primary = true);
 
 
 --
@@ -595,6 +618,13 @@ CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configur
 
 
 --
+-- Name: systems update_systems_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EACH ROW WHEN ((old.display_name IS DISTINCT FROM new.display_name)) EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: users update_users_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -607,14 +637,6 @@ CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users FOR EACH RO
 
 ALTER TABLE ONLY public.conditions_context_groupers
     ADD CONSTRAINT conditions_context_groupers_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
-
-
---
--- Name: configurations configurations_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.configurations
-    ADD CONSTRAINT configurations_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
 
 
 --
@@ -744,4 +766,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260427151426'),
     ('20260505141110'),
     ('20260511160133'),
-    ('20260520153052');
+    ('20260520153052'),
+    ('20260520185510');
