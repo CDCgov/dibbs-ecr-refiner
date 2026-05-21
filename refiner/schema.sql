@@ -328,7 +328,9 @@ CREATE TABLE public.systems (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     key text NOT NULL,
     display_name text NOT NULL,
-    oid text
+    oid text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -465,6 +467,22 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (token_hash);
+
+
+--
+-- Name: systems systems_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_display_name_key UNIQUE (display_name);
+
+
+--
+-- Name: systems systems_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_key_key UNIQUE (key);
 
 
 --
