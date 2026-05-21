@@ -368,8 +368,7 @@ function generateRiskExceptionMarkdown(scanResults, generateForLevels) {
   const date = new Date().toISOString().split("T")[0];
 
   let md = `# Security Risk Exception Request\n\n`;
-  md += `**Date:** ${date}\n`;
-  md += `---\n\n`;
+  md += `**Date:** ${date}\n\n`;
 
   for (const result of imageResults) {
     if (result.error) continue;
@@ -395,7 +394,7 @@ function generateRiskExceptionMarkdown(scanResults, generateForLevels) {
       md += `| **Title** | ${vuln.Title ?? "N/A"} |\n`;
       md += `| **Reference** | ${vuln.PrimaryURL ?? "N/A"} |\n\n`;
 
-      md += `#### Justification\n\n`;
+      md += `#### Risk Acceptance Justification\n\n`;
       md += `> _Why is this an acceptable risk?_\n\n`;
       md += `**Justification:** \n\n`;
       md += `**Mitigating Controls:** \n\n`;
