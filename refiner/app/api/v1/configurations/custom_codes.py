@@ -250,7 +250,7 @@ async def upload_custom_codes_csv(
         )
         try:
             sanitized_system = await get_code_system_by_key_or_display_name_or_raise_db(
-                name=code_system_raw, db=db, logger=logger
+                name=code_system_raw, db=db
             )
         except ValueError:
             row_errors.append(
