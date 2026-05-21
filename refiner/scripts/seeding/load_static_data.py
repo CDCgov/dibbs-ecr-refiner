@@ -249,6 +249,9 @@ def load_system_data(cursor: Cursor):
     """
     logger.info("⏳ Upserting system data...")
 
+    # if we ever update this query to do conflict checks on other roles, we'll
+    # need to update the trigger via a migration on when to fire an update to the
+    #  updated_at column
     system_upsert_query = """
         MERGE INTO systems s
         USING (VALUES (
@@ -257,6 +260,7 @@ def load_system_data(cursor: Cursor):
             %(oid)s
         )) as v(key, display_name, oid)
         ON s.key = v.key OR s.oid = v.oid
+
         WHEN MATCHED THEN
             UPDATE SET display_name = v.display_name
         WHEN NOT MATCHED THEN
