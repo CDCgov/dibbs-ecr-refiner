@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.db.code_systems.db import DbCodeSystem, get_all_code_systems_db
 from app.db.conditions.model import DbConditionsContextGrouper
 
 from ...db.conditions.db import (
@@ -91,6 +92,7 @@ class GetConditionResponse:
     display_name: str
     completeness_status: CompletenessStatus
     codes: list[GetConditionCode]
+    systems: list[DbCodeSystem]
 
 
 def _get_code_set_status(coverage_level: str | None) -> CodeSetStatus:
@@ -167,7 +169,7 @@ async def get_condition(
     )
 
     code_category_statuses = _get_code_category_statuses(groupers=groupers)
-
+    systems = await get_all_code_systems_db(db)
     return GetConditionResponse(
         id=condition.id,
         display_name=condition.display_name,
@@ -176,4 +178,5 @@ async def get_condition(
             code_category_statuses=code_category_statuses,
         ),
         codes=condition_codes,
+        systems=list(systems.values()),
     )

@@ -6,10 +6,10 @@ from fastapi import status
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from app.db.code_systems.db import get_code_system_by_key_or_raise_db
 from app.db.configurations.activations.db import activate_configuration_db
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfigurationCustomCode
-from app.services.terminology import CodeSystem
 
 LOCALSTACK_BASE_URL = "http://localhost:4566/local-config-bucket/configurations/SDDH"
 EXPECTED_DROWNING_CG_UUID = "c05cab96-c023-4ee2-bb7d-071fb600be7b"
@@ -448,7 +448,13 @@ class TestConfigurations:
         assert response.json()["valid"]
 
     async def test_adding_custom_code_validation_fails_on_conflicting_custom_code(
-        self, setup, authed_client, get_condition_id, create_config, add_custom_code
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        add_custom_code,
+        db_pool,
     ):
         """
         A brand new custom code can't have the value of another custom code attached to the same config.
@@ -458,10 +464,13 @@ class TestConfigurations:
 
         config_id = config["id"]
         same_code = "VERY-FAKE-CODE-00000"
+        loinc_info = await get_code_system_by_key_or_raise_db(key="loinc", db=db_pool)
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=same_code, system=CodeSystem("loinc"), name="Mock code"
+                code=same_code,
+                system_key=loinc_info.key,
+                name="Mock code",
             ),
         )
 
@@ -473,7 +482,13 @@ class TestConfigurations:
         assert not response.json()["valid"]
 
     async def test_editing_custom_code_validation_fails_on_conflicting_custom_code(
-        self, setup, authed_client, get_condition_id, create_config, add_custom_code
+        self,
+        setup,
+        authed_client,
+        get_condition_id,
+        create_config,
+        add_custom_code,
+        db_pool,
     ):
         """
         An edited custom code can't have the value of another custom code attached to the same config.
@@ -484,18 +499,26 @@ class TestConfigurations:
         config_id = config["id"]
 
         desired_code = "FAKE-DESIRED-CODE-99999"
+        loinc_info = await get_code_system_by_key_or_raise_db(key="loinc", db=db_pool)
+
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=desired_code, system=CodeSystem("loinc"), name="Mock code"
+                code=desired_code,
+                system_key=loinc_info.key,
+                name="Mock code",
             ),
         )
 
         code_to_edit = "FAKE-CODE-TO-EDIT-111"
+        rxnorm_info = await get_code_system_by_key_or_raise_db(key="rxnorm", db=db_pool)
+
         await add_custom_code(
             config_id,
             DbConfigurationCustomCode(
-                code=code_to_edit, system=CodeSystem("rxnorm"), name="edit me"
+                code=code_to_edit,
+                system_key=rxnorm_info.key,
+                name="edit me",
             ),
         )
 

@@ -1,4 +1,3 @@
-import { CodeSystem } from '../../../../api/schemas/codeSystem';
 import { Search } from '@components/Search';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
@@ -13,7 +12,11 @@ import {
   useDeleteCustomCodeFromConfiguration,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { DbConfigurationCustomCode } from '../../../../api/schemas';
+import {
+  CodeSystemsReponse,
+  ConfigurationCustomCode,
+  DbConfigurationCustomCode,
+} from '../../../../api/schemas';
 import { Spinner } from '@components/Spinner';
 import { useToast } from '../../../../hooks/useToast';
 import { Button } from '@components/Button';
@@ -24,7 +27,7 @@ import { Field } from '@components/Field';
 
 interface CustomCodesDetailProps {
   configurationId: string;
-  customCodes: DbConfigurationCustomCode[];
+  customCodes: ConfigurationCustomCode[];
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -61,12 +64,12 @@ export function CustomCodesDetail({
         <tbody>
           {customCodes.map((customCode) => (
             <tr
-              key={customCode.code + customCode.system}
+              key={customCode.code + customCode.system_key}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
-                {customCode.system}
+                {customCode.system_display_name}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
@@ -94,7 +97,7 @@ export function CustomCodesDetail({
                           {
                             // encode to prevent special characters from breaking the action
                             code: encodeURIComponent(customCode.code),
-                            system: customCode.system,
+                            system: customCode.system_key,
                             configurationId: configurationId,
                           },
                           {
@@ -258,24 +261,12 @@ export function ConditionCodeTable({
           name="code-search"
           placeholder="Search code set"
         />
-        <SelectContainer className="max-w-3xs!">
-          <Field>
-            <Label>Code system</Label>
-            <Select
-              value={selectedCodeSystem}
-              onChange={handleCodeSystemSelect}
-            >
-              <option key="all-code-systems" value="all">
-                All code systems
-              </option>
-              {Object.keys(CodeSystem).map((system) => (
-                <option key={system} value={system}>
-                  {system}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </SelectContainer>
+
+        <CodeSystemSelection
+          selectedCodeSystem={selectedCodeSystem}
+          handleCodeSystemSelect={handleCodeSystemSelect}
+          codeSystems={response.data.systems}
+        />
       </div>
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
@@ -348,5 +339,37 @@ function ConditionCodeRow({
         {highlightMatches(text, matches, 'description')}
       </td>
     </tr>
+  );
+}
+
+type CodeSystemSelectionProps = {
+  selectedCodeSystem: string;
+  handleCodeSystemSelect: (
+    event: React.ChangeEvent<HTMLSelectElement, Element>
+  ) => void;
+  codeSystems: CodeSystemsReponse[];
+};
+
+function CodeSystemSelection({
+  selectedCodeSystem,
+  handleCodeSystemSelect,
+  codeSystems,
+}: CodeSystemSelectionProps) {
+  return (
+    <SelectContainer className="max-w-3xs!">
+      <Field>
+        <Label>Code system</Label>
+        <Select value={selectedCodeSystem} onChange={handleCodeSystemSelect}>
+          <option key="all-code-systems" value="all">
+            All code systems
+          </option>
+          {codeSystems.map((s) => (
+            <option key={s.id} value={s.key}>
+              {s.display_name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    </SelectContainer>
   );
 }

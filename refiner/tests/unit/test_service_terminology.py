@@ -7,9 +7,6 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
 )
-from app.services.terminology import (
-    CodeSystem,
-)
 from tests.unit.helpers.configuration import create_processed_config
 
 
@@ -58,13 +55,16 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
 @pytest.mark.asyncio
 class TestTerminologyService:
     async def test_processed_configuration_from_payload_and_xpath(self):
+
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
         )
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbConfigurationCustomCode(
-                    code="B", system=CodeSystem.LOINC, name="Custom LOINC"
+                    code="B",
+                    system_key="loinc",
+                    name="Custom LOINC",
                 )
             ]
         )
@@ -81,7 +81,9 @@ class TestTerminologyService:
         config: DbConfiguration = make_dbconfiguration(
             custom_codes=[
                 DbConfigurationCustomCode(
-                    code="DUP", system=CodeSystem.LOINC, name="Custom"
+                    code="DUP",
+                    system_key="loinc",
+                    name="Custom",
                 )
             ]
         )

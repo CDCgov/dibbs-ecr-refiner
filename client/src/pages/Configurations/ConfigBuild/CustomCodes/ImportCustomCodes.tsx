@@ -6,7 +6,6 @@ import {
   useConfirmUploadCustomCodesCsv,
   getGetConfigurationQueryKey,
 } from '../../../../api/configurations/configurations';
-import { CodeSystem } from '../../../../api/schemas';
 import { UploadCustomCodesPreviewItem } from '../../../../api/schemas/uploadCustomCodesPreviewItem';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { useSearch } from '../../../../hooks/useSearch';
@@ -22,17 +21,16 @@ import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
 import { Search } from '@components/Search';
 
+const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
+  code: '',
+  system_key: 'other',
+  system_display_name: 'Other',
+  name: '',
+};
+
 type PreviewRow = {
   item: SearchPreviewItem;
   matches?: readonly FuseResultMatch[];
-};
-
-const PREVIEW_CODE_SYSTEMS: CodeSystem[] = Object.values(CodeSystem);
-
-const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
-  code: '',
-  system: CodeSystem['Other'],
-  name: '',
 };
 
 interface ImportCustomCodesProps {
@@ -68,11 +66,7 @@ export function ImportCustomCodes({
   const [isUploading, setIsUploading] = useState(false);
   const [previewEditIndex, setPreviewEditIndex] = useState<number | null>(null);
   const [previewEditForm, setPreviewEditForm] =
-    useState<UploadCustomCodesPreviewItem>({
-      code: '',
-      system: 'ICD-10',
-      name: '',
-    });
+    useState<UploadCustomCodesPreviewItem>(EMPTY_PREVIEW_FORM);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isUndoModalOpen, setIsUndoModalOpen] = useState(false);
@@ -409,7 +403,9 @@ export function ImportCustomCodes({
   }, [previewData, previewSearchResults, searchText]);
 
   const isEditSaveDisabled =
-    !previewEditForm.code || !previewEditForm.name || !previewEditForm.system;
+    !previewEditForm.code ||
+    !previewEditForm.name ||
+    !previewEditForm.system_key;
 
   return (
     <>
@@ -440,7 +436,7 @@ export function ImportCustomCodes({
               <img
                 src={UploadSvg}
                 alt=""
-                className="h-[68px] w-[54px]"
+                className="h-17 w-13.5"
                 aria-hidden="true"
               />
             </div>
@@ -538,13 +534,13 @@ export function ImportCustomCodes({
               <tbody>
                 {previewRows.map(({ item, matches }) => (
                   <tr
-                    key={`${item.code}-${item.system}-${item.previewIndex ?? item.row}`}
+                    key={`${item.code}-${item.system_key}-${item.previewIndex ?? item.row}`}
                     className="border-y border-blue-50"
                   >
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.system}</td>
+                    <td className="px-2 py-1">{item.system_display_name}</td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>
@@ -610,7 +606,6 @@ export function ImportCustomCodes({
         setPreviewEditForm={setPreviewEditForm}
         isEditSaveDisabled={isEditSaveDisabled}
         handlePreviewEditSubmit={handlePreviewEditSubmit}
-        PREVIEW_CODE_SYSTEMS={PREVIEW_CODE_SYSTEMS}
         previewItems={previewItems}
         previewEditIndex={previewEditIndex}
         setError={setError}
