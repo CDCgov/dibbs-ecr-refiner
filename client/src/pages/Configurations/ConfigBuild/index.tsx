@@ -113,6 +113,7 @@ export function ConfigBuild() {
           included_conditions={configuration.data.included_conditions}
           custom_codes={configuration.data.custom_codes}
           section_processing={configuration.data.section_processing}
+          section_metadata={configuration.data.section_metadata}
           display_name={configuration.data.display_name}
           disabled={isDisabled}
         />
@@ -144,6 +145,7 @@ type BuilderProps = Pick<
   | 'custom_codes'
   | 'included_conditions'
   | 'section_processing'
+  | 'section_metadata'
   | 'display_name'
 > & { disabled: boolean };
 
@@ -153,6 +155,7 @@ function Builder({
   custom_codes,
   included_conditions,
   section_processing,
+  section_metadata,
   display_name: default_condition_name,
   disabled,
 }: BuilderProps) {
@@ -366,6 +369,7 @@ function Builder({
             <Sections
               configurationId={id}
               sections={section_processing}
+              sectionMetadata={section_metadata}
               disabled={disabled}
             />
           ) : isCsvImportView(tableView) ? (

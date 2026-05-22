@@ -1,4 +1,5 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
+import { SectionMetadata } from '../../../../api/schemas/sectionMetadata';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
 import { DbSectionAction } from '../../../../api/schemas';
@@ -8,7 +9,7 @@ import {
   useDeleteCustomSection,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@components/Button';
 import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
@@ -19,36 +20,36 @@ import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 import { Tooltip } from '@components/Tooltip';
 
-/**
- * TODO: please refer to specification.py
- *
- * These sections are "skipped" so we don't allow users to make selections for them.
- * This will change in the future when we know how the sections will be used.
- * Ask @robertmitchellv about this for more detail.
- */
-
-const disabledSections = new Set(['88085-6', '83910-0']);
-const narrativeOnlySections = new Set([
-  '10154-3', // Chief Complaint
-  '29299-5', // Reason for Visit
-  '10164-2', // History of Present Illness
-  '10187-3', // Review of Systems
-]);
-
 interface SectionsProps {
   configurationId: string;
   sections: DbConfigurationSectionProcessing[];
+  sectionMetadata: SectionMetadata;
   disabled: boolean;
 }
 
 export function Sections({
   configurationId,
   sections: sectionProcessing,
+  sectionMetadata,
   disabled,
 }: SectionsProps) {
   const [selectedSection, setSelectedSection] =
     useState<DbConfigurationSectionProcessing | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  // these LOINC codes are sourced from the server (see refiner/app/services/ecr/policy.py):
+  //   - disabled_sections: sections that are always retained by the refiner regardless of
+  //     configuration, so the user shouldn't be able to toggle them in the UI
+  //   - narrative_only_sections: sections with no entry match rules in the eICR spec, so
+  //     "refine" is meaningless for them — we surface "Not applicable" instead of a switch
+  const disabledSections = useMemo(
+    () => new Set<string>(sectionMetadata.disabled_sections ?? []),
+    [sectionMetadata.disabled_sections]
+  );
+  const narrativeOnlySections = useMemo(
+    () => new Set<string>(sectionMetadata.narrative_only_sections ?? []),
+    [sectionMetadata.narrative_only_sections]
+  );
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
     setSelectedSection(section);
@@ -158,6 +159,7 @@ export function Sections({
                       currentSection={section}
                       sections={sectionProcessing}
                       disabled={disabled || disabledSections.has(section.code)}
+                      isNarrativeOnly={narrativeOnlySections.has(section.code)}
                     />
                   </div>
                 ) : null}
@@ -386,9 +388,9 @@ function RefineSwitch({
   currentSection,
   configurationId,
   disabled,
-}: SelectionToggleProps) {
+  isNarrativeOnly,
+}: SelectionToggleProps & { isNarrativeOnly: boolean }) {
   const updateSection = useSectionUpdater(configurationId);
-  const isNarrativeOnly = narrativeOnlySections.has(currentSection.code);
 
   if (isNarrativeOnly) {
     return (

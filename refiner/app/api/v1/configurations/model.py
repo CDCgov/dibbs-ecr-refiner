@@ -13,7 +13,28 @@ from app.db.configurations.model import (
 )
 from app.db.demo.model import Condition
 from app.db.users.model import UserInfoBase
+from app.services.ecr.policy import (
+    DISABLED_SECTIONS,
+    NARRATIVE_ONLY_SECTIONS,
+    DisabledSections,
+    NarrativeOnlySections,
+)
 from app.services.terminology import CodeSystem
+
+
+@dataclass
+class SectionMetadata:
+    """
+    Utility class to help Orval ship these values to the frontend.
+
+    These sets of LOINC codes drive UI behavior in the eICR Sections
+    table and are sourced from refiner policy + the eICR specification.
+    Shipping them as literal-typed defaults means the frontend imports
+    real values rather than re-declaring them.
+    """
+
+    disabled_sections: DisabledSections = DISABLED_SECTIONS
+    narrative_only_sections: NarrativeOnlySections = NARRATIVE_ONLY_SECTIONS
 
 
 @dataclass(frozen=True)
@@ -84,6 +105,7 @@ class GetConfigurationResponse:
     included_conditions: list[IncludedCondition]
     custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
+    section_metadata: SectionMetadata
     all_versions: list[GetConfigurationResponseVersion]
     version: int
     active_configuration_id: UUID | None

@@ -45,6 +45,7 @@ export * from './notificationsToRenderToRender';
 export * from './release';
 export * from './releaseNotes';
 export * from './releasesResponse';
+export * from './sectionMetadata';
 export * from './sectionUpdateInput';
 export * from './updateCustomCodeInput';
 export * from './updateUserNotificationsRequest';

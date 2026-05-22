@@ -39,6 +39,7 @@ from .model import (
     GetConfigurationsResponse,
     IncludedCondition,
     LockedByUser,
+    SectionMetadata,
 )
 
 router = APIRouter()
@@ -333,6 +334,7 @@ async def get_configuration(
             [format_section_naming(section) for section in config.section_processing],
             key=lambda r: r.name.lower(),
         ),
+        section_metadata=SectionMetadata(),
         all_versions=all_versions,
         version=config.version,
         active_version=active_version,

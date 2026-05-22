@@ -5,6 +5,7 @@ import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 import type { GetConfigurationResponseVersion } from './getConfigurationResponseVersion';
 import type { IncludedCondition } from './includedCondition';
 import type { LockedByUser } from './lockedByUser';
+import type { SectionMetadata } from './sectionMetadata';
 
 /**
  * Model for a configration response.
@@ -21,6 +22,7 @@ export interface GetConfigurationResponse {
   included_conditions: IncludedCondition[];
   custom_codes: DbConfigurationCustomCode[];
   section_processing: DbConfigurationSectionProcessing[];
+  section_metadata: SectionMetadata;
   all_versions: GetConfigurationResponseVersion[];
   version: number;
   active_configuration_id: string | null;

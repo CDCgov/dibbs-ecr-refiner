@@ -12,7 +12,7 @@ section?" should find the answer here, not in the specification, because
 the IG doesn't tell us to skip it — we decided to.
 """
 
-from typing import Final
+from typing import Final, Literal, get_args
 
 # NOTE:
 # SECTIONS ALWAYS RETAINED REGARDLESS OF JURISDICTION CONFIGURATION
@@ -27,8 +27,46 @@ from typing import Final
 # In the future we may decide to implement new ways to handle these sections
 # but for now skipping them is easier and produces valid (Schematron-valid)
 # output.
+#
+# The Literal-typed tuple alias below is the single source of truth: it is
+# used both at runtime (to derive SECTION_PROCESSING_SKIP) and at the API
+# boundary (so Orval ships the concrete LOINC codes to the frontend as
+# const values rather than as plain `string[]`).
 
-SECTION_PROCESSING_SKIP: Final[set[str]] = {
-    "83910-0",  # emergency outbreak information section
-    "88085-6",  # reportability response information section
-}
+DisabledSections = tuple[
+    Literal["83910-0"],  # emergency outbreak information section
+    Literal["88085-6"],  # reportability response information section
+]
+
+DISABLED_SECTIONS: Final[DisabledSections] = tuple(
+    get_args(a)[0] for a in get_args(DisabledSections)
+)  # type: ignore[assignment]
+
+SECTION_PROCESSING_SKIP: Final[set[str]] = set(DISABLED_SECTIONS)
+
+
+# NOTE:
+# NARRATIVE-ONLY SECTIONS
+# =============================================================================
+# These sections have no entry match rules in the eICR specification —
+# they are conveyed via the narrative block only. Configuring them for
+# "refine" is meaningless (there is nothing to match against), so the
+# UI disables the refine toggle for them and the refinement plan
+# normalizes "refine" -> "retain" for these codes (see refine.py).
+#
+# The Literal-typed tuple alias is the single source of truth shipped to
+# the frontend. A unit test guards that this tuple stays in sync with
+# the spec catalog (every code listed here has has_match_rules=False in
+# the catalog, and every catalog section with has_match_rules=False is
+# listed here).
+
+NarrativeOnlySections = tuple[
+    Literal["10154-3"],  # Chief Complaint
+    Literal["29299-5"],  # Reason for Visit
+    Literal["10164-2"],  # History of Present Illness
+    Literal["10187-3"],  # Review of Systems
+]
+
+NARRATIVE_ONLY_SECTIONS: Final[NarrativeOnlySections] = tuple(
+    get_args(a)[0] for a in get_args(NarrativeOnlySections)
+)  # type: ignore[assignment]
