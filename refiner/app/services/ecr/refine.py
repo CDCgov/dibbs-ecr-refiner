@@ -338,7 +338,6 @@ def create_eicr_refinement_plan(
 
 
 def _interpret_run_result(
-    section_rules: DbConfigurationSectionInstructions,
     run_result: SectionRunResult,
     has_match_rules: bool,
 ) -> SectionOutcome:
@@ -368,11 +367,6 @@ def _interpret_run_result(
     indirection would obscure rather than clarify it.
 
     Args:
-        section_rules: The jurisdiction's configured instructions for
-            this section. Currently only used for documentation
-            symmetry — the run result alone is sufficient to determine
-            the outcome — but reserved for future policy variations
-            that need to consult the configuration.
         run_result: What the matching engine reported about the run.
         has_match_rules: Whether it's not a narrative-only section or is.
             Narrative-only sections do not have any match rules within them by
@@ -509,7 +503,6 @@ def refine_eicr(
                 include_narrative=section_rules.narrative,
             )
             outcome = _interpret_run_result(
-                section_rules=section_rules,
                 run_result=run_result,
                 has_match_rules=section_specification.has_match_rules
                 if section_specification
