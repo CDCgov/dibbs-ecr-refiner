@@ -368,7 +368,7 @@ def _interpret_run_result(
 
     Args:
         run_result: What the matching engine reported about the run.
-        has_match_rules: Whether it's not a narrative-only section or is.
+        has_match_rules: Whether it's a narrative-only section or not.
             Narrative-only sections do not have any match rules within them by
             design.
 
