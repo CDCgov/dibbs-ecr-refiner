@@ -222,8 +222,8 @@ async def test_discovers_configs_across_all_tes_versions(
 
     NOTE: The `condition_id` of the set will be the latest TES version's condition ID.
     """
-    current_covid_id = await get_condition_id("COVID-19", "5.0.0")
-    current_flu_id = await get_condition_id("Influenza", "5.0.0")
+    current_covid_id = await get_condition_id("COVID-19")
+    current_flu_id = await get_condition_id("Influenza")
 
     old_covid_id = await get_condition_id("COVID-19", "3.0.0")
     old_flu_id = await get_condition_id("Influenza", "4.0.0")
