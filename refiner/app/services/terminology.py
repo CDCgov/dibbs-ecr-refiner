@@ -72,7 +72,7 @@ class CodeSystemSets:
     - Backward compatibility via the all_codes property
     """
 
-    oid_to_system_key_map: dict[Oid, CodeSystemKey] = field(default_factory=dict)
+    systems: dict[CodeSystemKey, DbCodeSystem] = field(default_factory=dict)
     system_to_code_maps: dict[CodeSystemKey, dict[Code, Coding]] = field(
         default_factory=dict
     )
@@ -109,10 +109,11 @@ class CodeSystemSets:
         Returns:
             The dict for that system, or None if the OID is unknown.
         """
-        matching_system = self.oid_to_system_key_map.get(code_system_oid)
+        oid_to_system_key = {s.oid: s for s in self.systems.values()}
+        matching_system = oid_to_system_key.get(code_system_oid)
         if matching_system is None:
             return None
-        return getattr(self.system_to_code_maps, matching_system)
+        return getattr(self.system_to_code_maps, matching_system.key)
 
     def find_match(
         self, code: str, code_system_oid: str | None = None
@@ -226,11 +227,9 @@ class CodeSystemSets:
             for system_key in systems.keys()
         }
 
-        oid_to_system_key_map = {s.oid: s.key for s in systems.values()}
-
         return cls(
             system_to_code_maps=system_to_code_maps,
-            oid_to_system_key_map=oid_to_system_key_map,
+            systems=systems,
         )
 
 
