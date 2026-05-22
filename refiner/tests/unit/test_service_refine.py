@@ -6,8 +6,15 @@ from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationSectionInstructions,
 )
-from app.services.ecr.model import HL7_NS, EICRRefinementPlan
+from app.services.ecr.model import (
+    HL7_NS,
+    EICRRefinementPlan,
+    SectionOutcome,
+    SectionProvenanceRecord,
+    SectionSource,
+)
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
+from app.services.ecr.section.constants import PROVENANCE_OUTCOME_NOTES
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
 from tests.unit.helpers.configuration import create_processed_config
@@ -307,6 +314,11 @@ class TestRefiningService:
         Tests that 'refine' action on a narrative-only section (e.g., Reason for Visit)
         is treated as 'retain' and does NOT result in a stubbed section (nullFlavor NI),
         even if no matching codes are provided.
+
+        Also asserts that the rendered provenance footnote uses the
+        NARRATIVE_ONLY_RETAINED outcome — distinct from the configured
+        retain outcomes (RETAINED / RETAINED_NARRATIVE_REMOVED) because
+        the section had no entry match rules to begin with.
         """
 
         empty_config = await _make_empty_processed_config()
@@ -320,7 +332,17 @@ class TestRefiningService:
                     action="refine", include=True, narrative=True
                 )
             },
-            section_provenance={},
+            section_provenance={
+                "29299-5": SectionProvenanceRecord(
+                    loinc_code="29299-5",
+                    display_name="Reason for Visit",
+                    include=True,
+                    action="refine",
+                    narrative=True,
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
             specification=load_spec("1.1"),
             augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
         )
@@ -334,11 +356,66 @@ class TestRefiningService:
         # It should NOT be stubbed (nullFlavor should be None)
         assert section_refined.get("nullFlavor") is None
 
-        # The content should remain identical to the original
-        section_original = original_eicr_root_v1_1.xpath(
+        # the provenance footnote should render the narrative-only outcome,
+        # not a generic RETAINED or REFINED_* outcome
+        rendered = etree.tostring(section_refined, encoding="unicode")
+        assert (
+            PROVENANCE_OUTCOME_NOTES[SectionOutcome.NARRATIVE_ONLY_RETAINED] in rendered
+        )
+        assert PROVENANCE_OUTCOME_NOTES[SectionOutcome.RETAINED] not in rendered
+
+    async def test_narrative_removed_on_narrative_only_section_v1_1(
+        self, eicr_root_v1_1: etree._Element
+    ):
+        """
+        Tests narrative removal on a narrative-only section.
+
+        With narrative=False, the section's <text> should be replaced
+        with the removal notice and the rendered provenance footnote
+        should carry the NARRATIVE_ONLY_REMOVED outcome — distinct from
+        the configured RETAINED_NARRATIVE_REMOVED because the section
+        had no entry match rules to begin with.
+        """
+
+        empty_config = await _make_empty_processed_config()
+
+        plan = EICRRefinementPlan(
+            codes_to_check=set(),
+            code_system_sets=empty_config.code_system_sets,
+            section_instructions={
+                "29299-5": DbConfigurationSectionInstructions(
+                    action="retain", include=True, narrative=False
+                )
+            },
+            section_provenance={
+                "29299-5": SectionProvenanceRecord(
+                    loinc_code="29299-5",
+                    display_name="Reason for Visit",
+                    include=True,
+                    action="retain",
+                    narrative=False,
+                    config_version=1,
+                    source=SectionSource.CONFIGURED,
+                )
+            },
+            specification=load_spec("1.1"),
+            augmentation_timestamp=_PLACEHOLDER_AUGMENTATION_TIMESTAMP,
+        )
+
+        refine_eicr(eicr_root=eicr_root_v1_1, plan=plan)
+
+        section_refined = eicr_root_v1_1.xpath(
             './/hl7:section[hl7:code[@code="29299-5"]]', namespaces=HL7_NS
         )[0]
-        assert etree.tostring(section_refined) == etree.tostring(section_original)
+        rendered = etree.tostring(section_refined, encoding="unicode")
+
+        assert (
+            PROVENANCE_OUTCOME_NOTES[SectionOutcome.NARRATIVE_ONLY_REMOVED] in rendered
+        )
+        assert (
+            PROVENANCE_OUTCOME_NOTES[SectionOutcome.RETAINED_NARRATIVE_REMOVED]
+            not in rendered
+        )
 
     # NOTE:
     # EICR REFINEMENT TESTS — section-aware path

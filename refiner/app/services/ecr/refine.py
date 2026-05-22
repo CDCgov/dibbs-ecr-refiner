@@ -339,15 +339,14 @@ def create_eicr_refinement_plan(
 
 def _interpret_run_result(
     run_result: SectionRunResult,
-    has_match_rules: bool,
 ) -> SectionOutcome:
     """
-    Map (configuration, run result) to a user-facing SectionOutcome.
+    Map a refinement engine's run result to a user-facing SectionOutcome.
 
-    Most of this function is mechanical: the configured action and
-    narrative disposition determine the outcome name. The one
-    exception is the no-match override on the first branch — that's
-    a refiner *policy* decision, not a configuration translation.
+    Most of this function is mechanical: the engine's narrative
+    disposition determines the outcome name. The one exception is the
+    no-match override on the first branch — that's a refiner *policy*
+    decision, not a configuration translation.
 
     The no-match override: when a section is configured for refinement
     (action="refine") but the matching engine finds no entries that
@@ -366,11 +365,16 @@ def _interpret_run_result(
     policy is a single condition in this function and adding
     indirection would obscure rather than clarify it.
 
+    Contract: this function is only ever called for sections that
+    actually went through the refinement engine (i.e., the section has
+    entry match rules in the spec). Narrative-only sections are short-
+    circuited upstream in `refine_eicr` and never reach this code path;
+    their outcomes (NARRATIVE_ONLY_RETAINED / NARRATIVE_ONLY_REMOVED)
+    are assigned directly by `refine_eicr` because the refinement
+    engine is bypassed for them.
+
     Args:
         run_result: What the matching engine reported about the run.
-        has_match_rules: Whether it's a narrative-only section or not.
-            Narrative-only sections do not have any match rules within them by
-            design.
 
     Returns:
         The SectionOutcome describing what happened to this section.
@@ -379,7 +383,7 @@ def _interpret_run_result(
     # policy override: no matches always produces a stub, regardless
     # of what the narrative configuration said. see the docstring
     # above for the rationale.
-    if has_match_rules and not run_result.matches_found:
+    if not run_result.matches_found:
         return SectionOutcome.REFINED_NO_MATCHES_STUBBED
 
     # matches were found; outcome reflects what happened to the narrative
@@ -413,12 +417,21 @@ def refine_eicr(
     Processing behavior:
         - It iterates through the instructions in the plan.
         - For each section, it executes one of four branches based on the
-          configured (include, action, narrative) combination:
+          configured (include, action, narrative) combination and whether
+          the section is narrative-only in the eICR spec:
 
             - include=False                              -> remove (stub)
-            - include=True, action="retain", narrative   -> retain branch
-            - include=True, action="refine"              -> refine via process_section
+            - include=True, narrative-only section       -> narrative-only branch
+            - include=True, action="retain", refinable   -> retain branch
+            - include=True, action="refine", refinable   -> refine via process_section
 
+        - The narrative-only branch is reached when the section has no
+          entry match rules in the spec. There is no coded data to
+          refine, so the only decision is what to do with the narrative.
+          The outcome is NARRATIVE_ONLY_RETAINED or NARRATIVE_ONLY_REMOVED
+          depending on the configured narrative setting — distinct from
+          the configured-retain outcomes below because this reflects the
+          spec's structural reality, not a jurisdiction choice.
         - The retain branch honors the narrative setting: when the
           jurisdiction has configured narrative removal on a retained
           section, the narrative is replaced with the removal notice
@@ -472,14 +485,33 @@ def refine_eicr(
             create_minimal_section(section=section, removal_reason="configured")
             outcome = SectionOutcome.REMOVED_BY_CONFIG
 
-        elif section_rules.action == "retain" or (
-            section_specification and not section_specification.has_match_rules
-        ):
-            # BRANCH 2: retain entries; honor the narrative setting.
-            # the narrative=False case used to be a silent no-op (the old
-            # `retain` branch was a literal `pass`); it now correctly
-            # replaces the narrative with the removal notice while
-            # leaving the entries untouched
+        elif section_specification and not section_specification.has_match_rules:
+            # BRANCH 2a: narrative-only section. the eICR spec defines
+            # no entry match rules for this section, so there is no
+            # coded data to refine — the section is conveyed entirely
+            # through its <text> element. the only decision is what to
+            # do with the narrative.
+            #
+            # these outcomes are distinct from RETAINED /
+            # RETAINED_NARRATIVE_REMOVED below because this branch
+            # reflects the spec's structural reality, not a
+            # configuration choice the jurisdiction made.
+            if not section_rules.narrative:
+                replace_narrative_with_removal_notice(
+                    section=section, namespaces=HL7_NS
+                )
+                outcome = SectionOutcome.NARRATIVE_ONLY_REMOVED
+            else:
+                outcome = SectionOutcome.NARRATIVE_ONLY_RETAINED
+
+        elif section_rules.action == "retain":
+            # BRANCH 2b: refinable section, jurisdiction chose to retain
+            # it. honor the narrative setting.
+            #
+            # the narrative=False case used to be a silent no-op (the
+            # old `retain` branch was a literal `pass`); it now
+            # correctly replaces the narrative with the removal notice
+            # while leaving the entries untouched.
             if not section_rules.narrative:
                 replace_narrative_with_removal_notice(
                     section=section, namespaces=HL7_NS
@@ -493,7 +525,6 @@ def refine_eicr(
             # process_section returns a SectionRunResult describing what
             # actually happened, which _interpret_run_result maps to a
             # user-facing outcome (including the no-match policy override)
-            section_specification = plan.specification.sections.get(section_code)
             run_result = process_section(
                 section=section,
                 codes_to_match=plan.codes_to_check,
@@ -502,12 +533,7 @@ def refine_eicr(
                 code_system_sets=plan.code_system_sets,
                 include_narrative=section_rules.narrative,
             )
-            outcome = _interpret_run_result(
-                run_result=run_result,
-                has_match_rules=section_specification.has_match_rules
-                if section_specification
-                else False,
-            )
+            outcome = _interpret_run_result(run_result=run_result)
 
         if provenance is not None:
             # finalize the provenance record with the runtime outcome
