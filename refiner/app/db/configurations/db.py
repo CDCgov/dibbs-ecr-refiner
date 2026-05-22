@@ -237,64 +237,81 @@ async def insert_configuration_db(
     Inserts a configuration into the database. If a `config_to_clone` is passed in, it'll base the new config's values off of that config.
 
     The `name` field is always set to the display_name of the associated condition at creation time,
-    for easier display and searching. The authoritative clinical context is still given by `condition_id`.
-    """
+    for easier display and searching. The authoritative clinical context is still given by the
+    primary condition in configurations_conditions.
 
-    query = """
-    INSERT INTO configurations (
-        jurisdiction_id,
-        condition_id,
-        name,
-        created_by,
-        custom_codes
-    )
-    VALUES (
-        %s,
-        %s,
-        %s,
-        %s,
-        %s::jsonb
-    )
-    RETURNING
-        id
+    Versioning is computed at insert time by finding the highest existing version for the
+    condition/jurisdiction pair via configurations_conditions, rather than via a DB trigger.
     """
 
     # always use the latest version of the given condition when creating a new config
     # this applies to both a "fresh" config and cloning from an old config
     latest_condition = await get_latest_tes_condition_db(condition=condition, db=db)
 
-    if config_to_clone:
-        params = (
-            jurisdiction_id,
-            # always link a configuration to a primary condition
-            latest_condition.id,
-            # always set name to condition display name
-            config_to_clone.name,
-            # cloned by this user
-            user_id,
-            # custom_codes
-            Jsonb(
-                [
-                    {"name": c.name, "code": c.code, "system": c.system}
-                    for c in config_to_clone.custom_codes
-                ]
-            ),
-        )
-    else:
-        params = (
-            jurisdiction_id,
-            # always link a configuration to a primary condition
-            latest_condition.id,
-            # always set name to condition display name
-            latest_condition.display_name,
-            # created by this user
-            user_id,
-            # custom_codes
-            EMPTY_JSONB,
-        )
+    query = """
+    INSERT INTO configurations (
+        jurisdiction_id,
+        name,
+        created_by,
+        custom_codes,
+        version
+    )
+    VALUES (
+        %s,
+        %s,
+        %s,
+        %s::jsonb,
+        %s
+    )
+    RETURNING
+        id
+    """
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
+            # Compute the next version for this condition/jurisdiction pair
+            await cur.execute(
+                """
+                SELECT MAX(c.version) AS max_version
+                FROM configurations c
+                JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+                JOIN conditions cond ON cond.id = cc.condition_id
+                WHERE cond.canonical_url = %s
+                  AND c.jurisdiction_id = %s
+                """,
+                (latest_condition.canonical_url, jurisdiction_id),
+            )
+            version_row = await cur.fetchone()
+            next_version = (version_row["max_version"] or 0) + 1
+
+            if config_to_clone:
+                params = (
+                    jurisdiction_id,
+                    # always set name to condition display name
+                    config_to_clone.name,
+                    # cloned by this user
+                    user_id,
+                    # custom_codes
+                    Jsonb(
+                        [
+                            {"name": c.name, "code": c.code, "system": c.system}
+                            for c in config_to_clone.custom_codes
+                        ]
+                    ),
+                    next_version,
+                )
+            else:
+                params = (
+                    jurisdiction_id,
+                    # always set name to condition display name
+                    latest_condition.display_name,
+                    # created by this user
+                    user_id,
+                    # custom_codes
+                    EMPTY_JSONB,
+                    next_version,
+                )
+
             await cur.execute(query, params)
             row = await cur.fetchone()
             if not row:
@@ -345,11 +362,14 @@ async def insert_configuration_db(
 
             await cur.executemany(
                 """
-                INSERT INTO configurations_conditions (configuration_id, condition_id)
-                VALUES (%s, %s)
+                INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
+                VALUES (%s, %s, %s)
                 ON CONFLICT DO NOTHING
                 """,
-                [(config_id, cond_id) for cond_id in condition_ids_to_insert],
+                [
+                    (config_id, cond_id, cond_id == latest_condition.id)
+                    for cond_id in condition_ids_to_insert
+                ],
             )
 
     return await get_configuration_by_id_db(

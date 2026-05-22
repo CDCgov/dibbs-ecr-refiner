@@ -17,15 +17,26 @@ INSERT INTO configurations_conditions (configuration_id, condition_id, is_primar
 SELECT
     id,
     unnest(included_conditions),
-    unnest(included_conditions) = condition_id  -- true if it matches the primary condition ID
+    unnest(included_conditions) = condition_id
 FROM configurations
-WHERE included_conditions <> '{}';
+WHERE included_conditions IS NOT NULL AND included_conditions <> '{}'
+UNION
+-- ensure the primary condition is always present, even if missing from included_conditions
+SELECT id, condition_id, true
+FROM configurations
+WHERE condition_id IS NOT NULL
+  AND NOT (condition_id = ANY(included_conditions))
+ON CONFLICT (configuration_id, condition_id) DO UPDATE SET is_primary = true;
 
 -- drop the old columns
 ALTER TABLE configurations
     DROP COLUMN included_conditions,
     DROP COLUMN condition_id CASCADE, -- this will delete: `configurations_condition_id_not_null`, `configurations_set_condition_canonical_url_trigger`, `configurations_condition_id_fkey`
     DROP COLUMN condition_canonical_url; -- use canonical_url on the condition instead
+
+-- drop the version trigger and function (versioning is now handled in the application layer)
+DROP TRIGGER IF EXISTS configurations_set_version_on_insert ON configurations;
+DROP FUNCTION IF EXISTS configurations_set_version_on_insert() CASCADE;
 
 -- migrate:down
 
@@ -68,3 +79,30 @@ DROP TABLE configurations_conditions;
 ALTER TABLE configurations
     ALTER COLUMN condition_id SET NOT NULL,
     ADD CONSTRAINT configurations_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES conditions(id);
+
+-- restore the version trigger and function
+CREATE FUNCTION configurations_set_version_on_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  max_version INTEGER;
+BEGIN
+  SELECT MAX(version)
+  INTO max_version
+  FROM configurations
+  WHERE condition_canonical_url = NEW.condition_canonical_url
+    AND jurisdiction_id = NEW.jurisdiction_id;
+
+  IF max_version IS NULL THEN
+    NEW.version := 1;
+  ELSE
+    NEW.version := max_version + 1;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER configurations_set_version_on_insert
+    BEFORE INSERT ON configurations
+    FOR EACH ROW EXECUTE FUNCTION configurations_set_version_on_insert();

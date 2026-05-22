@@ -121,35 +121,6 @@ $$;
 
 
 --
--- Name: configurations_set_version_on_insert(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.configurations_set_version_on_insert() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  max_version INTEGER;
-BEGIN
-  -- find the highest version for the condition/jurisdiction pair
-  SELECT MAX(version)
-  INTO max_version
-  FROM configurations
-  WHERE condition_canonical_url = NEW.condition_canonical_url
-    AND jurisdiction_id = NEW.jurisdiction_id;
-
-  -- if none exist yet, start at 1 otherwise increment previous max
-  IF max_version IS NULL THEN
-    NEW.version := 1;
-  ELSE
-    NEW.version := max_version + 1;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
---
 -- Name: set_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -329,20 +300,6 @@ CREATE TABLE public.sessions (
 
 
 --
--- Name: systems; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.systems (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    key text NOT NULL,
-    display_name text NOT NULL,
-    oid text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -478,38 +435,6 @@ ALTER TABLE ONLY public.sessions
 
 
 --
--- Name: systems systems_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.systems
-    ADD CONSTRAINT systems_display_name_key UNIQUE (display_name);
-
-
---
--- Name: systems systems_key_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.systems
-    ADD CONSTRAINT systems_key_key UNIQUE (key);
-
-
---
--- Name: systems systems_oid_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.systems
-    ADD CONSTRAINT systems_oid_key UNIQUE (oid);
-
-
---
--- Name: systems systems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.systems
-    ADD CONSTRAINT systems_pkey PRIMARY KEY (id);
-
-
---
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -583,13 +508,6 @@ CREATE TRIGGER configurations_set_last_activated_at_on_status_change_trigger BEF
 
 
 --
--- Name: configurations configurations_set_version_on_insert_trigger; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER configurations_set_version_on_insert_trigger BEFORE INSERT ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.configurations_set_version_on_insert();
-
-
---
 -- Name: conditions_context_groupers update_conditions_context_groupers_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -615,13 +533,6 @@ CREATE TRIGGER update_configurations_sections_updated_at BEFORE UPDATE ON public
 --
 
 CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-
-
---
--- Name: systems update_systems_updated_at; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EACH ROW WHEN ((old.display_name IS DISTINCT FROM new.display_name)) EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -766,5 +677,4 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260427151426'),
     ('20260505141110'),
     ('20260511160133'),
-    ('20260520153052'),
-    ('20260520185510');
+    ('20260520153052');
