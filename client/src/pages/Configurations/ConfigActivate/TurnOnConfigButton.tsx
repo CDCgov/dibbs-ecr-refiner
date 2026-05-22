@@ -7,14 +7,17 @@ import {
   ModalTitle,
 } from '@components/Modal';
 import { Button } from '@components/Button';
+import { Spinner } from '@components/Spinner';
 
 interface TurnOnConfigButtonProps {
   handleActivation: () => void;
   disabled: boolean;
+  isLoading: boolean;
 }
 export function TurnOnConfigButton({
   handleActivation,
   disabled,
+  isLoading,
 }: TurnOnConfigButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -32,6 +35,7 @@ export function TurnOnConfigButton({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         handleActivation={handleActivation}
+        isLoading={isLoading}
       />
     </div>
   );
@@ -39,7 +43,7 @@ export function TurnOnConfigButton({
 
 type TurnOnConfigModalProps = Pick<
   TurnOnConfigButtonProps,
-  'handleActivation'
+  'handleActivation' | 'isLoading'
 > & {
   isOpen: boolean;
   onClose: () => void;
@@ -49,6 +53,7 @@ function TurnOnConfigModal({
   isOpen,
   onClose,
   handleActivation,
+  isLoading,
 }: TurnOnConfigModalProps) {
   return (
     <Modal open={isOpen} onClose={onClose} position="top">
@@ -71,8 +76,12 @@ function TurnOnConfigModal({
         </div>
       </ModalBody>
       <ModalFooter align="right">
-        <Button onClick={() => handleActivation()}>
-          Yes, turn on configuration
+        <Button
+          className="min-w-58.75"
+          onClick={() => handleActivation()}
+          disabled={isLoading}
+        >
+          {isLoading ? <Spinner size="20px" /> : 'Yes, turn on configuration'}
         </Button>
       </ModalFooter>
     </Modal>

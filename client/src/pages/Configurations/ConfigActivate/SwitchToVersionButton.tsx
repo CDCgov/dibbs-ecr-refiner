@@ -7,17 +7,20 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
+import { Spinner } from '@components/Spinner';
 
 interface SwitchToVersionButtonProps {
   handleActivation: () => void;
   curVersion: number;
   activeVersion: number | null;
+  isLoading: boolean;
   grouped?: boolean;
 }
 export function SwitchToVersionButton({
   handleActivation,
   curVersion,
   activeVersion,
+  isLoading,
   grouped = false,
 }: SwitchToVersionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,6 +47,7 @@ export function SwitchToVersionButton({
         activeVersion={activeVersion}
         curVersion={curVersion}
         handleActivation={handleActivation}
+        isLoading={isLoading}
       />
     </div>
   );
@@ -51,7 +55,7 @@ export function SwitchToVersionButton({
 
 type SwitchToVersionModalProps = Pick<
   SwitchToVersionButtonProps,
-  'curVersion' | 'activeVersion' | 'handleActivation'
+  'curVersion' | 'activeVersion' | 'handleActivation' | 'isLoading'
 > & {
   isOpen: boolean;
   onClose: () => void;
@@ -63,6 +67,7 @@ function SwitchToVersionModal({
   curVersion,
   activeVersion,
   handleActivation,
+  isLoading,
 }: SwitchToVersionModalProps) {
   return (
     <Modal open={isOpen} onClose={onClose} position="top">
@@ -83,11 +88,21 @@ function SwitchToVersionModal({
         </div>
       </ModalBody>
       <ModalFooter align="right">
-        <Button onClick={onClose} variant="secondary">
-          Cancel
-        </Button>
-        <Button onClick={() => handleActivation()}>
-          Yes, switch to Version {curVersion}
+        {isLoading ? null : (
+          <Button onClick={onClose} variant="secondary">
+            Cancel
+          </Button>
+        )}
+        <Button
+          className="min-w-55"
+          onClick={() => handleActivation()}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Spinner size="20px" />
+          ) : (
+            `Yes, switch to Version ${curVersion}`
+          )}
         </Button>
       </ModalFooter>
     </Modal>

@@ -22,10 +22,14 @@ export function ActivationButtons({
 }: ActivationButtonsProps) {
   const queryClient = useQueryClient();
 
-  const { mutate: activate } = useActivateConfiguration();
-  const { mutate: deactivate } = useDeactivateConfiguration();
+  const { mutate: activate, isPending: isActivating } =
+    useActivateConfiguration();
+  const { mutate: deactivate, isPending: isDeactivating } =
+    useDeactivateConfiguration();
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
+
+  const isLoading = isActivating || isDeactivating;
 
   function handleActivation() {
     activate(
@@ -100,6 +104,7 @@ export function ActivationButtons({
       <TurnOnConfigButton
         handleActivation={handleActivation}
         disabled={isLocked}
+        isLoading={isLoading}
       />
     );
   }
@@ -109,6 +114,7 @@ export function ActivationButtons({
       <TurnOffConfigButton
         handleDeactivation={handleDeactivation}
         disabled={isLocked}
+        isLoading={isLoading}
       />
     );
   }
@@ -121,6 +127,7 @@ export function ActivationButtons({
           handleActivation={handleActivation}
           activeVersion={activeVersion}
           curVersion={curVersion}
+          isLoading={isLoading}
           grouped
         />
       </div>
@@ -129,6 +136,7 @@ export function ActivationButtons({
         <TurnOffConfigButton
           handleDeactivation={handleDeactivation}
           disabled={isLocked}
+          isLoading={isLoading}
           grouped
         />
       </div>
