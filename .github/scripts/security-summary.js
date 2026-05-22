@@ -242,7 +242,7 @@ function formatSlackMessage(
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `<${riskExceptionUrl}|📋 Download Risk Exception Template> (under Artifacts)`,
+        text: `<${riskExceptionUrl}|Download risk exception template> (scroll down to Artifacts)`,
       },
     });
   }
