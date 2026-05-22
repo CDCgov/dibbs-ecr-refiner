@@ -638,7 +638,7 @@ def print_acg_summary(
 
 
 # the versions we care about, in order
-VERSIONS_TO_CHECK = ["3.0.0", "4.0.0", "5.0.0"]
+VERSIONS_TO_CHECK = ["3.0.0", "4.0.0", "5.0.0", "6.0.0"]
 
 
 def main() -> None:

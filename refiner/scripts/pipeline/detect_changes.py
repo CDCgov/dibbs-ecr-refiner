@@ -40,6 +40,14 @@ API_KEY = os.getenv("TES_API_KEY")
 API_SLEEP_INTERVAL = float(os.getenv("API_SLEEP_INTERVAL", "1.0"))
 TES_VALIDATE = os.getenv("TES_VALIDATE", "true").lower() in ("1", "true", "yes")
 
+# manifest schema constants
+# * bump MANIFEST_VERSION when the manifest schema changes in a way that
+#   older code wouldn't understand correctly
+# * v2 added: manifest_version, name, version top-level fields, and per-file
+#   shard support via .partNN.json filenames
+MANIFEST_VERSION = 2
+MANIFEST_NAME = "tes-groupers"
+
 
 def calculate_sha256(filepath: Path) -> str:
     """
@@ -138,6 +146,23 @@ def main() -> None:
         )
         with open(MANIFEST_PATH, encoding="utf-8") as manifest_file:
             old_manifest = json.load(manifest_file)
+
+        # refuse to operate on a manifest schema we don't understand
+        # * older manifests without manifest_version are tolerated: the first
+        #   run after upgrade regenerates them in the current schema
+        # * unknown versions ahead of MANIFEST_VERSION are a hard stop
+        old_version = old_manifest.get("manifest_version")
+        if old_version is not None and old_version > MANIFEST_VERSION:
+            raise ValueError(
+                f"Manifest at {MANIFEST_PATH} has manifest_version={old_version}, "
+                f"which is newer than this script supports ({MANIFEST_VERSION}). "
+                f"Upgrade the pipeline before continuing."
+            )
+        if old_version is None:
+            print(
+                "  ⚠️  Existing manifest predates manifest_version field; "
+                "it will be regenerated in the current schema."
+            )
 
     # 2: run the fetch pipeline
     print("🚀 Running API fetch and classification pipeline...")
@@ -250,6 +275,9 @@ def main() -> None:
 
         # 6: write new manifest
         final_manifest = {
+            "manifest_version": MANIFEST_VERSION,
+            "name": MANIFEST_NAME,
+            "version": datetime.now(UTC).strftime("%Y.%m.%d"),
             "last_updated_utc": datetime.now(UTC).isoformat(),
             "files": new_manifest_files,
         }
