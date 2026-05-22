@@ -228,24 +228,22 @@ function formatSlackMessage(
     });
   }
 
-  // Add link to GitHub Security tab
-  blocks.push({
-    type: "section",
-    text: {
+  // Add link to GitHub Security tab and risk exception template
+  const contextElements = [
+    {
       type: "mrkdwn",
       text: `<${repoUrl}/security/code-scanning|View detailed results in GitHub Security tab>`,
     },
-  });
+  ];
 
   if (riskExceptionUrl) {
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: `<${riskExceptionUrl}|Download risk exception template> (scroll down to Artifacts)`,
-      },
+    contextElements.push({
+      type: "mrkdwn",
+      text: `<${riskExceptionUrl}|Download risk exception template> (scroll down to Artifacts)`,
     });
   }
+
+  blocks.push({ type: "context", elements: contextElements });
 
   return {
     attachments: [
