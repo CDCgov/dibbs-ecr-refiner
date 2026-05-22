@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.code_systems.db import get_code_systems_indexed_by_key
+from app.db.code_systems.db import get_all_code_systems_by_key
 from app.db.configurations.db import get_configurations_db
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
@@ -178,7 +178,7 @@ async def get_custom_code_upload_events(
         event_id=event_id, db=db
     )
 
-    system_by_key = await get_code_systems_indexed_by_key(db=db)
+    system_by_key = await get_all_code_systems_by_key(db=db)
 
     return [
         CustomCodeUploadEventResponse(

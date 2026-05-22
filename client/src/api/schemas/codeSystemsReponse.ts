@@ -6,5 +6,5 @@ export interface CodeSystemsReponse {
   id: string;
   key: string;
   display_name: string;
-  oid: string;
+  oid: string | null;
 }

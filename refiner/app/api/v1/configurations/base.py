@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.code_systems.db import get_code_systems_indexed_by_key
+from app.db.code_systems.db import get_all_code_systems_by_key
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
@@ -320,7 +320,7 @@ async def get_configuration(
 
     is_locked = locked_by is not None and locked_by.id != user.id
 
-    code_systems = await get_code_systems_indexed_by_key(db=db)
+    code_systems = await get_all_code_systems_by_key(db=db)
     return GetConfigurationResponse(
         id=config.id,
         draft_id=draft_id,

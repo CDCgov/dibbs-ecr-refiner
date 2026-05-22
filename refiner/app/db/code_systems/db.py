@@ -232,7 +232,7 @@ async def get_allowed_code_system_display_names(
     return [s.display_name for s in allowed_code_systems.values()]
 
 
-async def get_code_systems_indexed_by_key(
+async def get_all_code_systems_by_key(
     db: AsyncDatabaseConnection,
 ) -> dict[CodeSystemKey, DbCodeSystem]:
     """

@@ -4,7 +4,11 @@ from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
 
-from app.db.code_systems.db import CodeSystemKey, get_code_system_by_key_or_raise_db
+from app.db.code_systems.db import (
+    CodeSystemKey,
+    get_all_code_systems_by_key,
+    get_code_system_by_key_or_raise_db,
+)
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
 from app.db.conditions.model import DbConditionCoding
 from app.db.configurations.model import (
@@ -214,7 +218,10 @@ async def convert_config_to_storage_payload(
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
     # STEP 3: build the CodeSystemSets
-    code_system_sets = CodeSystemSets.from_dict(data=coding_by_code_system)
+    systems_data = await get_all_code_systems_by_key(db=db)
+    code_system_sets = CodeSystemSets.from_dict(
+        s3_data=coding_by_code_system, code_systems=systems_data
+    )
 
     return ConfigurationStoragePayload(
         codes=codes,

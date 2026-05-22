@@ -126,7 +126,7 @@ const mockCodeSystems: CodeSystemsReponse[] = [
   },
   {
     id: 'f65063a3-6836-41ce-8ab8-253994907faa',
-    oid: '2.16.840.1.113883.5.1008',
+    oid: null,
     key: 'other',
     display_name: 'Other',
   },
