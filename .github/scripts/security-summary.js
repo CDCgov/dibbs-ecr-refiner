@@ -419,13 +419,19 @@ function generateRiskExceptionMarkdown(scanResults, generateForLevels) {
         ? `Yes — upgrade to ${vuln.FixedVersion}`
         : "No fix available";
 
+      // The Aqua page takes a long time to update so the link often doesn't work.
+      // We can try getting the NVD URL first and fallback to the Aqua URL if needed.
+      const nvdURL = vuln.VulnerabilityID?.startsWith("CVE-")
+        ? `https://nvd.nist.gov/vuln/detail/${vuln.VulnerabilityID}`
+        : (vuln.PrimaryURL ?? "N/A");
+
       md += `### ${vuln.Severity}: ${vuln.VulnerabilityID}\n\n`;
       md += `| Field | Details |\n|---|---|\n`;
       md += `| **Package** | \`${vuln.PkgName}\` |\n`;
       md += `| **Installed Version** | \`${vuln.InstalledVersion}\` |\n`;
       md += `| **Fix Available** | ${hasfix} |\n`;
       md += `| **Title** | ${vuln.Title ?? "N/A"} |\n`;
-      md += `| **Reference** | ${vuln.PrimaryURL ?? "N/A"} |\n\n`;
+      md += `| **Reference** | ${nvdURL} |\n\n`;
 
       md += `#### Risk Acceptance Justification\n\n`;
       md += `> _Why is this an acceptable risk?_\n\n`;
