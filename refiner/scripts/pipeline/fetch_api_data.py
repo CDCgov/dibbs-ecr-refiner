@@ -10,7 +10,7 @@ import requests
 from dotenv import load_dotenv
 
 # size threshold per shard, in bytes
-# * keeps individual files comfortably under GitHub's 50 MB soft warning
+# * keeps individual files comfortably under github's 50 mb soft warning
 # * gives headroom for category growth between releases
 SHARD_THRESHOLD_BYTES = 30 * 1024 * 1024
 
@@ -87,9 +87,9 @@ def _write_category_files(
     Writes a category's ValueSets to one or more shard files.
 
     A category that fits under SHARD_THRESHOLD_BYTES is written as a single
-    file: ``<category>.json``. A category that exceeds the threshold is sorted
+    file: `<category>.json`. A category that exceeds the threshold is sorted
     by canonical url and split into roughly equal-sized chunks by record count,
-    written as ``<category>.partNN.json``.
+    written as `<category>.partNN.json`.
 
     Args:
         category: The category name (e.g., 'condition_grouper_6.0.0').
@@ -201,7 +201,7 @@ def run_fetch_pipeline(
     classifies them into versioned categories, sorts each category by canonical
     url, and writes them to one or more shard files per category. Categories
     that fit under SHARD_THRESHOLD_BYTES are written as a single file;
-    larger categories are split into multiple ``.partNN.json`` files.
+    larger categories are split into multiple `.partNN.json` files.
 
     Args:
         output_dir: The directory where the output JSON files will be saved.
@@ -220,7 +220,7 @@ def run_fetch_pipeline(
     BATCH_SIZE = 250
 
     # buffer per-category in memory so we can sort and split at the end
-    # * peak memory is bounded by the size of the full active TES dataset
+    # * peak memory is bounded by the size of the full active tes dataset
     # * the previous version of this script streamed straight to disk, which
     #   was lighter on memory but made size-based sharding impossible without
     #   reading files back; given the dataset size, buffering is the simpler
