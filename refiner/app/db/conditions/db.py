@@ -425,6 +425,41 @@ async def get_conditions_by_ids(
     return [DbCondition.from_db_row(row) for row in rows]
 
 
+async def get_primary_conditions_for_configurations_db(
+    configuration_ids: list[UUID],
+    db: AsyncDatabaseConnection,
+) -> dict[UUID, DbCondition]:
+    """
+    Given a list of configuration IDs, return a mapping of configuration_id to primary condition.
+    """
+    query = """
+        SELECT cc.configuration_id, cond.*
+        FROM conditions cond
+        JOIN configurations_conditions cc ON cc.condition_id = cond.id
+        WHERE cc.configuration_id = ANY(%s)
+        AND cc.is_primary = true
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(query, (configuration_ids,))
+            rows = await cur.fetchall()
+
+    return {row["configuration_id"]: DbCondition.from_db_row(row) for row in rows}
+
+
+async def get_primary_condition_db(
+    configuration_id: UUID,
+    db: AsyncDatabaseConnection,
+) -> DbCondition | None:
+    """
+    Given a configuration ID, return the primary condition.
+    """
+    results = await get_primary_conditions_for_configurations_db(
+        configuration_ids=[configuration_id], db=db
+    )
+    return results.get(configuration_id)
+
+
 async def get_included_conditions_db(
     included_conditions: list[UUID], db: AsyncDatabaseConnection
 ) -> list[DbCondition]:

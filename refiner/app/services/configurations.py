@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import asdict, replace
 from logging import Logger
 from typing import Any
@@ -221,12 +222,14 @@ async def convert_config_to_storage_payload(
 
 def get_canonical_url_to_highest_inactive_version_map(
     configs: list[DbConfiguration],
+    canonical_url: Callable[[DbConfiguration], str | None],
 ) -> dict[str, DbConfiguration]:
     """
     Creates a dictionary that maps a condition URL to the highest inactive version configuration.
 
     Args:
         configs (list[DbConfiguration]): List of DbConfigurations
+        canonical_url(Callable): Callable that returns the canonical URL for a given configuration
 
     Returns:
     a dictionary with the structure:
@@ -236,7 +239,9 @@ def get_canonical_url_to_highest_inactive_version_map(
     highest_version_inactive_configs_map: dict[str, DbConfiguration] = {}
     for c in configs:
         if c.status == "inactive":
-            key = c.condition_canonical_url
+            key = canonical_url(c)
+            if key is None:
+                continue
             if (
                 key not in highest_version_inactive_configs_map
                 or c.version > highest_version_inactive_configs_map[key].version

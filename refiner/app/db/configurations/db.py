@@ -431,11 +431,13 @@ async def is_config_valid_to_insert_db(
     """
 
     query = """
-    SELECT id
-    from configurations
-    WHERE condition_canonical_url = %s
-    AND jurisdiction_id = %s
-    and status = 'draft'
+        SELECT c.id
+        FROM configurations c
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE cond.canonical_url = %s
+        AND c.jurisdiction_id = %s
+        AND c.status = 'draft'
         """
 
     params = (
@@ -1075,13 +1077,14 @@ async def get_latest_config_db(
     Given a jurisdiction ID and condition canonical URL, find the latest configuration version.
     """
     query = """
-        SELECT
-            id
-        FROM configurations
-        WHERE jurisdiction_id = %s
-        AND condition_canonical_url = %s
-		ORDER BY version DESC
-		LIMIT 1
+        SELECT c.id
+        FROM configurations c
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE c.jurisdiction_id = %s
+        AND cond.canonical_url = %s
+        ORDER BY c.version DESC
+        LIMIT 1
     """
     params = (jurisdiction_id, condition_canonical_url)
     async with db.get_connection() as conn:
@@ -1106,12 +1109,13 @@ async def get_active_config_db(
     Given a jurisdiction ID and condition canonical URL, find the active configuration version, if any.
     """
     query = """
-        SELECT
-            id
-        FROM configurations
-        WHERE jurisdiction_id = %s
-        AND condition_canonical_url = %s
-        AND status = 'active';
+        SELECT c.id
+        FROM configurations c
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE c.jurisdiction_id = %s
+        AND cond.canonical_url = %s
+        AND c.status = 'active';
     """
     params = (jurisdiction_id, condition_canonical_url)
     async with db.get_connection() as conn:
@@ -1138,18 +1142,18 @@ async def get_configuration_versions_db(
             c.id,
             c.version,
             c.status,
-            c.condition_canonical_url,
+            cond.canonical_url AS condition_canonical_url,
             c.last_activated_at,
             la.username AS last_activated_by,
             c.created_at,
             u.username AS created_by
         FROM configurations c
-        JOIN users u
-            ON u.id = c.created_by
-        LEFT JOIN users la
-            ON la.id = c.last_activated_by
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        JOIN users u ON u.id = c.created_by
+        LEFT JOIN users la ON la.id = c.last_activated_by
         WHERE c.jurisdiction_id = %s
-        AND c.condition_canonical_url = %s
+        AND cond.canonical_url = %s
         ORDER BY c.version DESC;
     """
 
@@ -1171,7 +1175,7 @@ def _get_configurations_core_query() -> str:
         c.name,
         c.status,
         c.jurisdiction_id,
-        c.condition_id,
+        cc_primary.condition_id,
         c.custom_codes,
 
         COALESCE(conds.included_conditions, '{}') AS included_conditions,
@@ -1181,9 +1185,9 @@ def _get_configurations_core_query() -> str:
         c.last_activated_at,
         c.last_activated_by,
         c.created_by,
-        c.condition_canonical_url,
         c.s3_urls
     FROM configurations c
+    JOIN configurations_conditions cc_primary ON cc_primary.configuration_id = c.id AND cc_primary.is_primary = true
     LEFT JOIN LATERAL (
         SELECT array_agg(cc.condition_id) AS included_conditions
         FROM configurations_conditions cc

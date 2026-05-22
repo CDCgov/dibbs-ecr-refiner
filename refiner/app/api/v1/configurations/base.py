@@ -8,6 +8,8 @@ from app.api.auth.middleware import get_logged_in_user
 from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
+    get_primary_condition_db,
+    get_primary_conditions_for_configurations_db,
 )
 from app.db.configurations.db import (
     get_configuration_by_id_db,
@@ -60,28 +62,36 @@ async def get_configurations(
         List of configuration objects.
     """
 
-    # get user jurisdiction
-    jd = user.jurisdiction_id
-
     # get all configs in a JD
-    all_configs = await get_configurations_db(jurisdiction_id=jd, db=db)
+    all_configs = await get_configurations_db(
+        jurisdiction_id=user.jurisdiction_id, db=db
+    )
+
+    # fetch all primary conditions in one query
+    primary_conditions = await get_primary_conditions_for_configurations_db(
+        configuration_ids=[c.id for c in all_configs], db=db
+    )
+
+    def canonical_url(c: DbConfiguration) -> str | None:
+        cond = primary_conditions.get(c.id)
+        return cond.canonical_url if cond else None
 
     # active config by condition
     active_configs_map = {
-        c.condition_canonical_url: c for c in all_configs if c.status == "active"
+        canonical_url(c): c for c in all_configs if c.status == "active"
     }
 
     # draft config by condition
     draft_configs_map = {
-        c.condition_canonical_url: c for c in all_configs if c.status == "draft"
+        canonical_url(c): c for c in all_configs if c.status == "draft"
     }
 
     # inactive config with the highest version by condition
     highest_version_inactive_configs_map: dict[str, DbConfiguration] = (
-        get_canonical_url_to_highest_inactive_version_map(all_configs)
+        get_canonical_url_to_highest_inactive_version_map(all_configs, canonical_url)
     )
 
-    unique_urls = {c.condition_canonical_url for c in all_configs}
+    unique_urls = {canonical_url(c) for c in all_configs} - {None}
     response = []
     for key in unique_urls:
         has_active = key in active_configs_map
@@ -116,7 +126,6 @@ async def get_configurations(
                 )
             )
 
-    # TODO: What should the order be?
     return sorted(response, key=lambda r: r.name.lower())
 
 
@@ -269,7 +278,9 @@ async def get_configuration(
     # precomputed set of included_conditions ids
     included_ids = set(config.included_conditions)
 
-    primary_condition = await get_condition_by_id_db(id=config.condition_id, db=db)
+    primary_condition = await get_primary_condition_db(
+        configuration_id=config.id, db=db
+    )
 
     if not primary_condition:
         raise HTTPException(
@@ -284,7 +295,7 @@ async def get_configuration(
 
     latest_config = await get_latest_config_db(
         jurisdiction_id=jd,
-        condition_canonical_url=config.condition_canonical_url,
+        condition_canonical_url=primary_condition.canonical_url,
         db=db,
     )
 
@@ -303,7 +314,7 @@ async def get_configuration(
 
     all_versions = await get_configuration_versions_db(
         jurisdiction_id=jd,
-        condition_canonical_url=config.condition_canonical_url,
+        condition_canonical_url=primary_condition.canonical_url,
         db=db,
     )
 
@@ -322,8 +333,8 @@ async def get_configuration(
         id=config.id,
         draft_id=draft_id,
         is_draft=is_draft,
-        condition_id=config.condition_id,
-        condition_canonical_url=config.condition_canonical_url,
+        condition_id=primary_condition.id,
+        condition_canonical_url=primary_condition.canonical_url,
         display_name=config.name,
         status=config.status,
         code_sets=config_condition_info,
