@@ -19,7 +19,7 @@ RUN npm run build
 
 
 # Runtime image
-FROM python:3.14-slim
+FROM python:3.14.5-slim
 
 # default VERSION is 0.0.0 if not passed at build time
 ARG VERSION="0.0.0"
