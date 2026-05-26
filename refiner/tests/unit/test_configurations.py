@@ -128,7 +128,6 @@ def mock_db_functions(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
 
@@ -326,7 +325,6 @@ async def test_edit_custom_code_from_configuration(
         last_activated_at=None,
         last_activated_by=None,
         created_by=mock_user.id,
-        condition_canonical_url="https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123",
         s3_urls=[],
     )
     monkeypatch.setattr(
