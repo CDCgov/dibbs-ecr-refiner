@@ -56,6 +56,8 @@ function parseScanResults(images) {
         medium: imageMedium,
         low: imageLow,
         total: imageCritical + imageHigh + imageMedium + imageLow,
+        vulnerabilities:
+          results.Results?.flatMap((r) => r.Vulnerabilities ?? []) ?? [],
       });
     } catch (error) {
       console.error(`Error parsing ${image}:`, error);
@@ -137,7 +139,12 @@ function formatGitHubComment(scanResults, repoOwner, repoName) {
 /**
  * Format results as Slack message for scheduled scans
  */
-function formatSlackMessage(scanResults, repoUrl, branch = "main") {
+function formatSlackMessage(
+  scanResults,
+  repoUrl,
+  branch = "main",
+  riskExceptionUrl = null,
+) {
   const {
     totalCritical,
     totalHigh,
@@ -221,14 +228,22 @@ function formatSlackMessage(scanResults, repoUrl, branch = "main") {
     });
   }
 
-  // Add link to GitHub Security tab
-  blocks.push({
-    type: "section",
-    text: {
+  // Add link to GitHub Security tab and risk exception template
+  const contextElements = [
+    {
       type: "mrkdwn",
       text: `<${repoUrl}/security/code-scanning|View detailed results in GitHub Security tab>`,
     },
-  });
+  ];
+
+  if (riskExceptionUrl) {
+    contextElements.push({
+      type: "mrkdwn",
+      text: `<${riskExceptionUrl}|Download risk exception template> (scroll down to Artifacts)`,
+    });
+  }
+
+  blocks.push({ type: "context", elements: contextElements });
 
   return {
     attachments: [
@@ -243,8 +258,19 @@ function formatSlackMessage(scanResults, repoUrl, branch = "main") {
 /**
  * Send notification to Slack
  */
-async function sendSlackNotification(scanResults, repoUrl, branch, webhookUrl) {
-  const payload = formatSlackMessage(scanResults, repoUrl, branch);
+async function sendSlackNotification(
+  scanResults,
+  repoUrl,
+  branch,
+  webhookUrl,
+  riskExceptionUrl = null,
+) {
+  const payload = formatSlackMessage(
+    scanResults,
+    repoUrl,
+    branch,
+    riskExceptionUrl,
+  );
 
   const response = await fetch(webhookUrl, {
     method: "POST",
@@ -350,8 +376,15 @@ async function generateScheduledSummary(github, context, core) {
     try {
       const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
       const branch = context.ref.replace("refs/heads/", "");
+      const riskExceptionUrl = process.env.RISK_EXCEPTION_URL || null;
 
-      await sendSlackNotification(scanResults, repoUrl, branch, slackWebhook);
+      await sendSlackNotification(
+        scanResults,
+        repoUrl,
+        branch,
+        slackWebhook,
+        riskExceptionUrl,
+      );
     } catch (error) {
       console.error("Failed to send Slack notification:", error);
       core.setFailed(`Slack notification failed: ${error.message}`);
@@ -361,7 +394,84 @@ async function generateScheduledSummary(github, context, core) {
   }
 }
 
+function generateRiskExceptionMarkdown(scanResults, generateForLevels) {
+  const { imageResults } = scanResults;
+  const date = new Date().toISOString().split("T")[0];
+
+  let md = `# Security Risk Exception Request\n\n`;
+  md += `**Date:** ${date}\n\n`;
+
+  for (const result of imageResults) {
+    if (result.error) continue;
+
+    const actionableVulns = result.vulnerabilities.filter((v) =>
+      generateForLevels.includes(v.Severity),
+    );
+
+    if (actionableVulns.length === 0) continue;
+
+    md += `## ${result.name} image\n\n`;
+
+    for (const vuln of actionableVulns) {
+      const hasfix = vuln.FixedVersion
+        ? `Yes — upgrade to ${vuln.FixedVersion}`
+        : "No fix available";
+
+      // The Aqua page takes a long time to update so the link often doesn't work.
+      // We can try getting the NVD URL first and fallback to the Aqua URL if needed.
+      const nvdURL = vuln.VulnerabilityID?.startsWith("CVE-")
+        ? `https://nvd.nist.gov/vuln/detail/${vuln.VulnerabilityID}`
+        : (vuln.PrimaryURL ?? "N/A");
+
+      md += `### ${vuln.Severity}: ${vuln.VulnerabilityID}\n\n`;
+      md += `| Field | Details |\n|---|---|\n`;
+      md += `| **Package** | \`${vuln.PkgName}\` |\n`;
+      md += `| **Installed Version** | \`${vuln.InstalledVersion}\` |\n`;
+      md += `| **Fix Available** | ${hasfix} |\n`;
+      md += `| **Title** | ${vuln.Title ?? "N/A"} |\n`;
+      md += `| **Reference** | ${nvdURL} |\n\n`;
+
+      md += `#### Risk Acceptance Justification\n\n`;
+      md += `> _Why is this an acceptable risk?_\n\n`;
+      md += `**Justification:** \n\n`;
+      md += `**Mitigating Controls:** \n\n`;
+      md += `**Remediation Timeline:** \n\n`;
+      md += `---\n\n`;
+    }
+  }
+
+  return md;
+}
+
+async function generateRiskExceptionTemplate(core) {
+  const images = ["refiner-app", "refiner-lambda", "refiner-ops"];
+  const generateForLevels = ["CRITICAL", "HIGH"];
+
+  const scanResults = parseScanResults(images);
+
+  const hasActionableVuln = scanResults.imageResults.some(
+    (r) =>
+      !r.error &&
+      r.vulnerabilities?.some((v) => generateForLevels.includes(v.Severity)),
+  );
+
+  if (!hasActionableVuln) {
+    core.info(
+      `No vulnerabilities found for desired levels: ${generateForLevels.join(", ")}. Skipping risk exception template.`,
+    );
+    return;
+  }
+
+  const markdown = generateRiskExceptionMarkdown(
+    scanResults,
+    generateForLevels,
+  );
+  fs.writeFileSync("risk-exception.md", markdown);
+  core.info("Risk exception template written to risk-exception.md");
+}
+
 module.exports = {
   generatePRSummary,
   generateScheduledSummary,
+  generateRiskExceptionTemplate,
 };
