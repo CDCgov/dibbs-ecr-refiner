@@ -282,7 +282,8 @@ async def insert_configuration_db(
                 (latest_condition.canonical_url, jurisdiction_id),
             )
             version_row = await cur.fetchone()
-            next_version = (version_row["max_version"] or 0) + 1
+            max_version = version_row["max_version"] if version_row else 0
+            next_version = (max_version or 0) + 1
 
             if config_to_clone:
                 params = (

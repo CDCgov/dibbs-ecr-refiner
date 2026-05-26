@@ -122,13 +122,14 @@ async def get_events(
 
     for c in jd_configurations:
         condition = primary_conditions.get(c.id)
-        canonical_url = condition.canonical_url if condition else None
-        if canonical_url not in seen_urls:
-            option = EventFilterOption(
-                name=c.name, id=c.id, canonical_url=canonical_url
-            )
-            configuration_options.append(option)
-            seen_urls.add(canonical_url)
+        if condition is None or condition.canonical_url in seen_urls:
+            continue
+
+        option = EventFilterOption(
+            name=c.name, id=c.id, canonical_url=condition.canonical_url
+        )
+        configuration_options.append(option)
+        seen_urls.add(condition.canonical_url)
 
     return EventsResponse(
         total_pages=total_pages,
