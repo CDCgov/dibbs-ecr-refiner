@@ -101,7 +101,7 @@ async def get_configurations(
         )
     )
 
-    unique_urls = config_id_to_canonical_url.values()
+    unique_urls = set(config_id_to_canonical_url.values())
     response = []
     for key in unique_urls:
         has_active = key in active_configs_map
