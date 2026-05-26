@@ -63,4 +63,7 @@ This document will outline the process for releasing a new version of the eCR Re
 
 1. Communicate to APHL that the final release is ready for them to promote up to prod, along with the version number. They should be able to pull the newly tagged image and promote it up to the prod environment.
 
+> [!IMPORTANT]
+> If any images we want to ship to prod contain `HIGH` or `CRITICAL` findings we must review these findings and provide a risk exception form. A risk exception form template can be generated using the [scan job](https://github.com/CDCgov/dibbs-ecr-refiner/actions/workflows/scan.yml) with the `Generates a risk exception doc in Markdown` option checked. The document will be available for download once the job completes
+
 :tada: You have just released the newest version of the DIBBs eCR Refiner! :tada:
