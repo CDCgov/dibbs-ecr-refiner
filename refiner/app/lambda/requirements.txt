@@ -1,4 +1,4 @@
-boto3==1.43.7
+boto3==1.43.11
 chardet==7.4.3
 lxml==6.1.0
 pydantic==2.13.4
