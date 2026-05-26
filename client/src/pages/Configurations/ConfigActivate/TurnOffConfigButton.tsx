@@ -7,16 +7,19 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@components/Modal';
+import { Spinner } from '@components/Spinner';
 
 interface TurnOffConfigButtonProps {
   handleDeactivation: () => void;
   disabled: boolean;
+  isLoading: boolean;
   grouped?: boolean;
 }
 
 export function TurnOffConfigButton({
   handleDeactivation,
   disabled,
+  isLoading,
   grouped = false,
 }: TurnOffConfigButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +29,7 @@ export function TurnOffConfigButton({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         handleDeactivation={handleDeactivation}
+        isLoading={isLoading}
       />
       <div className="flex flex-row items-center gap-1">
         <Button
@@ -49,7 +53,7 @@ export function TurnOffConfigButton({
 
 type TurnOffConfigModalProps = Pick<
   TurnOffConfigButtonProps,
-  'handleDeactivation'
+  'handleDeactivation' | 'isLoading'
 > & {
   isOpen: boolean;
   onClose: () => void;
@@ -59,6 +63,7 @@ function TurnOffConfigModal({
   isOpen,
   onClose,
   handleDeactivation,
+  isLoading,
 }: TurnOffConfigModalProps) {
   return (
     <Modal open={isOpen} onClose={onClose} position="top">
@@ -73,10 +78,18 @@ function TurnOffConfigModal({
       </ModalBody>
 
       <ModalFooter align="right">
-        <Button onClick={onClose} variant="secondary">
-          Cancel
+        {isLoading ? null : (
+          <Button onClick={onClose} variant="secondary">
+            Cancel
+          </Button>
+        )}
+        <Button
+          className="min-w-33"
+          onClick={() => handleDeactivation()}
+          disabled={isLoading}
+        >
+          {isLoading ? <Spinner size="20px" /> : 'Yes, turn off'}
         </Button>
-        <Button onClick={() => handleDeactivation()}>Yes, turn off</Button>
       </ModalFooter>
     </Modal>
   );
