@@ -44,7 +44,12 @@ export function Sections({
   //   - narrative_only_sections: sections with no entry match rules in the eICR spec, so
   //     "refine" is meaningless for them — we surface "Not applicable" instead of a switch
   const disabledSections = Object.values(DisabledSection);
+  const isDisabledSection = (s: string): s is DisabledSection =>
+    disabledSections.some((v) => (v as string) === s);
+
   const narrativeOnlySections = Object.values(NarrativeOnlySection);
+  const isNarrativeSection = (s: string): s is NarrativeOnlySection =>
+    narrativeOnlySections.some((v) => (v as string) === s);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
     setSelectedSection(section);
@@ -134,10 +139,7 @@ export function Sections({
                     configurationId={configurationId}
                     currentSection={section}
                     sections={sectionProcessing}
-                    disabled={
-                      disabled ||
-                      disabledSections.includes(section.code as DisabledSection)
-                    }
+                    disabled={disabled || isDisabledSection(section.code)}
                   />
                 </div>
               </td>
@@ -156,12 +158,7 @@ export function Sections({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={
-                        disabled ||
-                        disabledSections.includes(
-                          section.code as DisabledSection
-                        )
-                      }
+                      disabled={disabled || isDisabledSection(section.code)}
                       isNarrativeOnly={narrativeOnlySections.includes(
                         section.code as NarrativeOnlySection
                       )}
@@ -177,12 +174,7 @@ export function Sections({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={
-                        disabled ||
-                        disabledSections.includes(
-                          section.code as DisabledSection
-                        )
-                      }
+                      disabled={disabled || isDisabledSection(section.code)}
                     />
                   </div>
                 ) : null}
