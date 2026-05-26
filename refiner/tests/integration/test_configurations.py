@@ -100,37 +100,32 @@ class TestConfigurations:
         # Try creating a config with an outdated TES version
         old_condition_id = await get_condition_id(PRIMARY_CONDITION, OLD_TES_VERSION)
 
-        # Can't be done through the API so it needs to be done via query
-        old_config_id = None
-        query = """
-            INSERT INTO configurations (
-                jurisdiction_id,
-                condition_id,
-                name,
-                created_by,
-                custom_codes
-            ) VALUES (
-                %s,
-                %s,
-                %s,
-                %s,
-                %s::jsonb
-            )
-            RETURNING id
-        """
-        params = (
-            test_user_jurisdiction_id,
-            old_condition_id,
-            PRIMARY_CONDITION,
-            test_user_id,
-            Jsonb([]),
-        )
-
         async with db_pool.get_connection() as conn:
             async with conn.cursor(row_factory=dict_row) as cur:
-                await cur.execute(query, params)
+                await cur.execute(
+                    """
+                    INSERT INTO configurations (jurisdiction_id, name, created_by, custom_codes, version)
+                    VALUES (%s, %s, %s, %s::jsonb, %s)
+                    RETURNING id
+                    """,
+                    (
+                        test_user_jurisdiction_id,
+                        PRIMARY_CONDITION,
+                        test_user_id,
+                        Jsonb([]),
+                        1,
+                    ),
+                )
                 row = await cur.fetchone()
                 old_config_id = row["id"]
+
+                await cur.execute(
+                    """
+                    INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
+                    VALUES (%s, %s, true)
+                    """,
+                    (old_config_id, old_condition_id),
+                )
 
         assert old_config_id is not None
 
