@@ -44,7 +44,7 @@ jobs:
 
       - name: Cache Docker pull of structurizr/lite:2025.05.28 image
         id: image-cache
-        uses: actions/cache@v7
+        uses: actions/cache@v5
         with:
           path: ~/image-cache
           # The SHA256 here is copied from the index digest for the 2025.05.28
@@ -66,14 +66,14 @@ jobs:
 
       - name: Cache dependencies
         id: node-cache
-        uses: actions/cache@v7
+        uses: actions/cache@v5
         with:
           path: ./docs/node_modules
           key: modules-${{ hashFiles('docs/package-lock.json') }}-v1
 
       - name: Cache Puppeteer
         id: puppeteer-cache
-        uses: actions/cache@v7
+        uses: actions/cache@v5
         with:
           path: ~/.cache/puppeteer
           key: puppeteer-${{ hashFiles('docs/package-lock.json') }}-v1
