@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from logging import Logger
 from uuid import UUID
 
@@ -52,21 +52,6 @@ class IndependentTestingResult:
     original_eicr_doc_id: str
     refined_documents: list[RefinedDocument]
     remainder_rr: str | None
-
-
-@dataclass
-class InlineTestingTrace:
-    """
-    Holds tracing data for a single configuration through the validation pipeline.
-    """
-
-    configuration: DbConfiguration
-    primary_condition: DbCondition
-    number_of_included_conditions: int = 0
-    all_conditions_for_configuration: list[DbCondition] = field(default_factory=list)
-    is_reportable_in_file: bool = False
-    matched_code: str | None = None
-    refined_document: RefinedDocument | None = None
 
 
 @dataclass
@@ -409,7 +394,6 @@ async def inline_testing(
     xml_files: XMLFiles,
     configuration: DbConfiguration,
     primary_condition: DbCondition,
-    all_conditions: list[DbCondition],
     jurisdiction_id: str,
     logger: Logger,
     db: AsyncDatabaseConnection,
@@ -441,26 +425,12 @@ async def inline_testing(
         An InlineTestingResult dictionary containing either the refined document or a validation error.
     """
 
-    # STEP 1:
-    # start with already-fetched configuration and primary condition
-    trace = InlineTestingTrace(
-        configuration=configuration,
-        primary_condition=primary_condition,
-        all_conditions_for_configuration=all_conditions,
-        number_of_included_conditions=len(configuration.included_conditions),
-    )
-
-    # STEP 2:
-    # use the shared pipeline to discover reportable conditions, then
-    # filter to this jurisdiction and validate against the primary condition
     rc_codes_for_jurisdiction = _get_reportable_codes_for_jurisdiction(
         xml_files, jurisdiction_id
     )
 
     reportable_codes_in_rr = set(rc_codes_for_jurisdiction)
-    rsg_codes_from_primary_condition = set(
-        trace.primary_condition.child_rsg_snomed_codes
-    )
+    rsg_codes_from_primary_condition = set(primary_condition.child_rsg_snomed_codes)
 
     # inner join the codes
     matched_codes = rsg_codes_from_primary_condition.intersection(
@@ -469,42 +439,37 @@ async def inline_testing(
 
     # if no matching codes, then the eICR/RR pair was not suitable for testing the configuration
     if not matched_codes:
-        logger.warning(
-            "Inline testing: Processed one configuration",
-            extra={
-                "configuration_tested": trace.configuration.name,
-                "primary_condition": trace.primary_condition.display_name,
-                "total_conditions_used": trace.number_of_included_conditions,
-                "configuration_settings": asdict(configuration),
-                "outcome": "Validation failed: No matching reportable condition code found in file.",
-            },
+        _log_inline_testing_outcome(
+            logger=logger,
+            configuration=configuration,
+            primary_condition=primary_condition,
+            outcome="Validation failed: No matching reportable condition code found in file.",
         )
+
         return InlineTestingResult(
             original_eicr_doc_id="",
             refined_document=None,
-            configuration_does_not_match_conditions=f"The condition '{trace.primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
+            configuration_does_not_match_conditions=f"The condition '{primary_condition.display_name}' was not found as a reportable condition in the uploaded file for this jurisdiction.",
         )
 
-    # STEP 3:
+    # prepare and execute the refinement from payload -> processed_configuration -> shared pipeline
+    processed_configuration = await _convert_to_processed_config(
+        configuration=configuration, logger=logger, db=db
+    )
+
     # use the first RR code that matched the condition for the RefinedDocument
     # TODO: in the future we might want the ReportableCondition model to use
     # a list instead of a string since technically there could be more than one
     # `rc_snomed_code` that was **in** the RR that matches the condition and
     # has a configuration. picking the first entry in an index isn't correct but
     # we should wait to see how the testing service evolves with the routes
-    trace.matched_code = list(matched_codes)[0]
-
-    # STEP 4:
-    # prepare and execute the refinement from payload -> processed_configuration -> shared pipeline
-    processed_configuration = await _convert_to_processed_config(
-        configuration=configuration, logger=logger, db=db
-    )
+    matched_code = list(matched_codes)[0]
 
     pipeline_trace = RefinementTrace(
         jurisdiction_code=jurisdiction_id,
-        rsg_code=trace.matched_code,
-        canonical_url=trace.primary_condition.canonical_url,
-        configuration_version=trace.configuration.version,
+        rsg_code=matched_code,
+        canonical_url=primary_condition.canonical_url,
+        configuration_version=configuration.version,
     )
 
     # inline testing refines a single condition; refine_for_condition
@@ -518,12 +483,11 @@ async def inline_testing(
         run=run,
     )
 
-    # STEP 5:
     # finalize and return the successful result
-    trace.refined_document = RefinedDocument(
+    refined_document = RefinedDocument(
         reportable_condition=ReportableCondition(
-            code=trace.matched_code,
-            display_name=trace.primary_condition.display_name,
+            code=matched_code,
+            display_name=primary_condition.display_name,
         ),
         refined_eicr=result.refined_eicr,
         refined_rr=result.refined_rr,
@@ -532,25 +496,42 @@ async def inline_testing(
         ),
     )
 
-    # log high level details of the refinement flow for this
-    # condition
-    logger.info(
-        "Inline testing: Processed one configuration",
-        extra={
-            "configuration_tested": trace.configuration.name,
-            "primary_condition": trace.primary_condition.display_name,
-            "matched_code_in_rr": trace.matched_code,
-            "total_conditions_used": trace.number_of_included_conditions,
-            "configuration_settings": asdict(configuration),
-            "eicr_size_reduction_percentage": pipeline_trace.eicr_size_reduction_percentage,
-            "outcome": "Refinement successful",
-        },
+    # log high level details of the refinement flow for this condition
+    _log_inline_testing_outcome(
+        logger=logger,
+        configuration=configuration,
+        matched_code=matched_code,
+        eicr_size_reduction_percentage=pipeline_trace.eicr_size_reduction_percentage,
+        primary_condition=primary_condition,
+        outcome="Refinement successful",
     )
 
     return InlineTestingResult(
         original_eicr_doc_id=result.augmented_eicr_result.original_doc_id,
-        refined_document=trace.refined_document,
+        refined_document=refined_document,
         configuration_does_not_match_conditions=None,
+    )
+
+
+def _log_inline_testing_outcome(
+    logger: Logger,
+    configuration: DbConfiguration,
+    primary_condition: DbCondition,
+    outcome: str,
+    matched_code: str | None = None,
+    eicr_size_reduction_percentage: int | None = None,
+) -> None:
+    logger.info(
+        "Inline testing: Processed one configuration",
+        extra={
+            "configuration_tested": configuration.name,
+            "primary_condition": primary_condition.display_name,
+            "matched_code_in_rr": matched_code,
+            "total_conditions_used": len(configuration.included_conditions),
+            "configuration_settings": asdict(configuration),
+            "eicr_size_reduction_percentage": eicr_size_reduction_percentage,
+            "outcome": outcome,
+        },
     )
 
 

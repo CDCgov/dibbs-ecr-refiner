@@ -22,6 +22,12 @@ on:
         required: false
         default: false
         type: boolean
+      generate_risk_exception_doc:
+        description: "Generates a risk exception doc in Markdown"
+        required: false
+        default: false
+        type: boolean
+
   schedule:
     # Run once daily at 2 PM UTC
     - cron: "0 14 * * *"
@@ -51,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Make repo owner lowercase
         id: repo
@@ -118,7 +124,7 @@ jobs:
 
       - name: Upload JSON results as artifact
         if: steps.check.outputs.exists == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-results-${{ matrix.image.name }}
           path: trivy-${{ matrix.image.name }}-results.json
@@ -153,18 +159,47 @@ jobs:
           echo "Check the Security tab for detailed vulnerability reports"
           echo "Navigate to: Repository → Security → Code scanning alerts"
 
-  notify-slack:
+  generate-risk-exception:
     runs-on: ubuntu-latest
     needs: scan-images
+    if: always() && (github.event_name == 'schedule' || github.event.inputs.generate_risk_exception_doc == 'true')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download scan results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: trivy-results-*
+          merge-multiple: true
+
+      - name: Generate risk exception template
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/scripts/security-summary.js');
+            await script.generateRiskExceptionTemplate(core);
+
+      - name: Upload risk exception template
+        uses: actions/upload-artifact@v4
+        with:
+          name: risk-exception-template
+          path: risk-exception.md
+          retention-days: 1
+
+  notify-slack:
+    runs-on: ubuntu-latest
+    needs: [scan-images, generate-risk-exception]
     # Always send message during a scheduled run but allow user to choose when running manually
     if: always() && (github.event_name == 'schedule' || github.event.inputs.send_slack_notification == 'true')
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download scan results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: trivy-results-*
           merge-multiple: true
@@ -173,6 +208,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_ENG_CHANNEL_WEBHOOK_URL }}
+          RISK_EXCEPTION_URL: ${{ needs.generate-risk-exception.result == 'success' && format('https://github.com/{0}/actions/runs/{1}', github.repository, github.run_id) || '' }}
         with:
           script: |
             const script = require('./.github/scripts/security-summary.js');
