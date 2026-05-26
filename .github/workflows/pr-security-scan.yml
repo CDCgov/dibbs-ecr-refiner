@@ -116,7 +116,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download scan results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: trivy-results-*
           merge-multiple: true
