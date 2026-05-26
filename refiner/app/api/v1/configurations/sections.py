@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -23,9 +24,23 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import format_section_naming
+from app.services.ecr.policy import DisabledSection, NarrativeOnlySection
 from app.services.ecr.specification import load_spec
 
 router = APIRouter(prefix="/{configuration_id}/sections")
+
+
+@dataclass(frozen=True)
+class UpdateSectionProcessingResponse:
+    """
+    Section with information for a custom section update.
+    """
+
+    section_updated_code: str
+    # these values aren't used in the response, but include them here so
+    # Orval generates them as constant enums on the frontend
+    disabled_section: list[DisabledSection]
+    narrative_only_section: list[NarrativeOnlySection]
 
 
 @router.post(
@@ -112,7 +127,7 @@ async def delete_custom_section(
 
 @router.patch(
     "",
-    response_model=str,
+    response_model=UpdateSectionProcessingResponse,
     tags=["configurations"],
     operation_id="updateSection",
 )
@@ -121,7 +136,7 @@ async def update_section(
     section_input: SectionUpdateInput,
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
-) -> str:
+) -> UpdateSectionProcessingResponse:
     """
     Update a section entry for a configuration.
 
@@ -185,7 +200,11 @@ async def update_section(
             detail="Failed to update configuration.",
         )
 
-    return section_update.code
+    return UpdateSectionProcessingResponse(
+        section_updated_code=section_update.code,
+        narrative_only_section=list(NarrativeOnlySection),
+        disabled_section=list(DisabledSection),
+    )
 
 
 def _raise_if_invalid_section_fields(
