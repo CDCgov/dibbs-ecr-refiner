@@ -1,15 +1,18 @@
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
-import { SectionMetadata } from '../../../../api/schemas/sectionMetadata';
 import { useToast } from '../../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../../hooks/useErrorFormatter';
-import { DbSectionAction } from '../../../../api/schemas';
+import {
+  DbSectionAction,
+  DisabledSection,
+  NarrativeOnlySection,
+} from '../../../../api/schemas';
 import {
   getGetConfigurationQueryKey,
   useUpdateSection,
   useDeleteCustomSection,
 } from '../../../../api/configurations/configurations';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@components/Button';
 import { CustomSectionModal } from './CustomSectionModal';
 import { CustomSectionBadge } from './CustomSectionBadge';
@@ -23,14 +26,12 @@ import { Tooltip } from '@components/Tooltip';
 interface SectionsProps {
   configurationId: string;
   sections: DbConfigurationSectionProcessing[];
-  sectionMetadata: SectionMetadata;
   disabled: boolean;
 }
 
 export function Sections({
   configurationId,
   sections: sectionProcessing,
-  sectionMetadata,
   disabled,
 }: SectionsProps) {
   const [selectedSection, setSelectedSection] =
@@ -42,14 +43,13 @@ export function Sections({
   //     configuration, so the user shouldn't be able to toggle them in the UI
   //   - narrative_only_sections: sections with no entry match rules in the eICR spec, so
   //     "refine" is meaningless for them — we surface "Not applicable" instead of a switch
-  const disabledSections = useMemo(
-    () => new Set<string>(sectionMetadata.disabled_sections ?? []),
-    [sectionMetadata.disabled_sections]
-  );
-  const narrativeOnlySections = useMemo(
-    () => new Set<string>(sectionMetadata.narrative_only_sections ?? []),
-    [sectionMetadata.narrative_only_sections]
-  );
+  const disabledSections = Object.values(DisabledSection);
+  const isDisabledSection = (s: string): s is DisabledSection =>
+    disabledSections.some((v) => (v as string) === s);
+
+  const narrativeOnlySections = Object.values(NarrativeOnlySection);
+  const isNarrativeSection = (s: string): s is NarrativeOnlySection =>
+    narrativeOnlySections.some((v) => (v as string) === s);
 
   const onSelectedSection = (section: DbConfigurationSectionProcessing) => {
     setSelectedSection(section);
@@ -139,7 +139,7 @@ export function Sections({
                     configurationId={configurationId}
                     currentSection={section}
                     sections={sectionProcessing}
-                    disabled={disabled || disabledSections.has(section.code)}
+                    disabled={disabled || isDisabledSection(section.code)}
                   />
                 </div>
               </td>
@@ -158,8 +158,8 @@ export function Sections({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={disabled || disabledSections.has(section.code)}
-                      isNarrativeOnly={narrativeOnlySections.has(section.code)}
+                      disabled={disabled || isDisabledSection(section.code)}
+                      isNarrativeOnly={isNarrativeSection(section.code)}
                     />
                   </div>
                 ) : null}
@@ -172,7 +172,7 @@ export function Sections({
                       configurationId={configurationId}
                       currentSection={section}
                       sections={sectionProcessing}
-                      disabled={disabled || disabledSections.has(section.code)}
+                      disabled={disabled || isDisabledSection(section.code)}
                     />
                   </div>
                 ) : null}

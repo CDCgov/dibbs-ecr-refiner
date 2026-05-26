@@ -12,61 +12,53 @@ section?" should find the answer here, not in the specification, because
 the IG doesn't tell us to skip it — we decided to.
 """
 
-from typing import Final, Literal, get_args
+from enum import StrEnum
 
 # NOTE:
 # SECTIONS ALWAYS RETAINED REGARDLESS OF JURISDICTION CONFIGURATION
 # =============================================================================
-# These sections are preserved intact in every refined document, even if a
-# jurisdiction has not configured them. They exist outside the normal
-# refinement workflow because their content is either public-health
-# infrastructure (outbreak information) or downstream routing metadata
-# (reportability response content) that jurisdictions expect to see
-# untouched in the refined output.
-#
-# In the future we may decide to implement new ways to handle these sections
-# but for now skipping them is easier and produces valid (Schematron-valid)
-# output.
-#
-# The Literal-typed tuple alias below is the single source of truth: it is
-# used both at runtime (to derive SECTION_PROCESSING_SKIP) and at the API
-# boundary (so Orval ships the concrete LOINC codes to the frontend as
-# const values rather than as plain `string[]`).
-
-DisabledSections = tuple[
-    Literal["83910-0"],  # emergency outbreak information section
-    Literal["88085-6"],  # reportability response information section
-]
-
-DISABLED_SECTIONS: Final[DisabledSections] = tuple(
-    get_args(a)[0] for a in get_args(DisabledSections)
-)  # type: ignore[assignment]
-
-SECTION_PROCESSING_SKIP: Final[set[str]] = set(DISABLED_SECTIONS)
 
 
-# NOTE:
-# NARRATIVE-ONLY SECTIONS
-# =============================================================================
-# These sections have no entry match rules in the eICR specification —
-# they are conveyed via the narrative block only. Configuring them for
-# "refine" is meaningless (there is nothing to match against), so the
-# UI disables the refine toggle for them and the refinement plan
-# normalizes "refine" -> "retain" for these codes (see refine.py).
-#
-# The Literal-typed tuple alias is the single source of truth shipped to
-# the frontend. A unit test guards that this tuple stays in sync with
-# the spec catalog (every code listed here has has_match_rules=False in
-# the catalog, and every catalog section with has_match_rules=False is
-# listed here).
+class DisabledSection(StrEnum):
+    """
+    These sections are preserved intact in every refined document, even if a jurisdiction has not configured them.
 
-NarrativeOnlySections = tuple[
-    Literal["10154-3"],  # Chief Complaint
-    Literal["29299-5"],  # Reason for Visit
-    Literal["10164-2"],  # History of Present Illness
-    Literal["10187-3"],  # Review of Systems
-]
+    They exist outside the normal refinement workflow because their content is either public-health
+    infrastructure (outbreak information) or downstream routing metadata
+    (reportability response content) that jurisdictions expect to see
+    untouched in the refined output. In the future we may decide to implement new ways to handle these sections
+    but for now skipping them is easier and produces valid (Schematron-valid)
+    output. The Literal-typed tuple alias below is the single source of truth: it is
+    used both at runtime (to derive SECTION_PROCESSING_SKIP) and at the API
+    boundary (so Orval ships the concrete LOINC codes to the frontend as
+    const values rather than as plain `string[]`).
+    """
 
-NARRATIVE_ONLY_SECTIONS: Final[NarrativeOnlySections] = tuple(
-    get_args(a)[0] for a in get_args(NarrativeOnlySections)
-)  # type: ignore[assignment]
+    EMERGENCY_OUTBREAK = "83910-0"
+    REPORTABILITY_RESPONSE = "88085-6"
+
+
+SECTION_PROCESSING_SKIP = [section.value for section in DisabledSection]
+
+
+class NarrativeOnlySection(StrEnum):
+    """
+    These sections have no entry match rules in the eICR specification.
+
+    They are conveyed via the narrative block only. Configuring them for
+    "refine" is meaningless (there is nothing to match against), so the
+    UI disables the refine toggle for them and the refinement plan
+    normalizes "refine" -> "retain" for these codes (see refine.py).
+    The Enum values remain the single source of truth shipped to the frontend.
+    A unit test guards that this enum stays in sync with the spec catalog
+    (every code listed here has has_match_rules=False in the catalog, and
+    every catalog section with has_match_rules=False is listed here).
+    """
+
+    CHIEF_COMPLAINT = "10154-3"
+    REASON_FOR_VISIT = "29299-5"
+    HISTORY_OF_PRESENT_ILLNESS = "10164-2"
+    REVIEW_OF_SYSTEMS = "10187-3"
+
+
+NARRATIVE_ONLY_SECTIONS = [section.value for section in NarrativeOnlySection]

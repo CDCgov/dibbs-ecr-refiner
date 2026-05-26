@@ -257,7 +257,7 @@ class TestConfigurations:
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == payload["new_code"]
+        assert response.json()["section_updated_code"] == payload["new_code"]
 
         # try editing in a new name and new code
         payload = {
@@ -270,7 +270,7 @@ class TestConfigurations:
             f"/api/v1/configurations/{config_id}/sections", json=payload
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == payload["new_code"]
+        assert response.json()["section_updated_code"] == payload["new_code"]
 
         # for good measure, try editing a standard section's name and code which shouldn't work
         medications_admin_code = "29549-3"
@@ -283,7 +283,7 @@ class TestConfigurations:
             f"/api/v1/configurations/{config_id}/sections", json=payload
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json() == medications_admin_code
+        assert response.json()["section_updated_code"] == medications_admin_code
 
     async def test_section_updates_success(
         self, setup, authed_client, get_condition_id
@@ -338,7 +338,8 @@ class TestConfigurations:
             },
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.text == f'"{admission_diagnosis_code}"'
+        update_response = response.json()
+        assert update_response["section_updated_code"] == admission_diagnosis_code
 
         # Get the updated admission diagnosis section
         response = await authed_client.get(f"/api/v1/configurations/{draft_id}")
