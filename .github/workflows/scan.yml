@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Make repo owner lowercase
         id: repo
@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload JSON results as artifact
         if: steps.check.outputs.exists == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trivy-results-${{ matrix.image.name }}
           path: trivy-${{ matrix.image.name }}-results.json
@@ -196,7 +196,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download scan results
         uses: actions/download-artifact@v4
