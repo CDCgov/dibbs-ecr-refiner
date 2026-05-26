@@ -19,6 +19,49 @@ EXPECTED_DROWNING_RSG_CODE = "212962007"
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestConfigurations:
+    async def test_configurations_list_has_no_duplicates(
+        self,
+        setup,
+        authed_client,
+        create_config,
+        get_condition_id,
+        activate_config,
+        deactivate_config,
+    ):
+        """
+        Test that configurations using the same condition only appear
+        in the list returned to the client a single time.
+        """
+        acan_id = await get_condition_id("Acanthamoeba")
+        acan_config = await create_config(acan_id)
+
+        # active + draft
+        await activate_config(acan_config["id"])
+        await create_config(acan_id)
+
+        covid_id = await get_condition_id("COVID-19")
+
+        # draft only
+        await create_config(covid_id)
+
+        zika_id = await get_condition_id("Zika Virus Disease")
+        zika_config = await create_config(zika_id)
+
+        # inactive only
+        await activate_config(zika_config["id"])
+        await deactivate_config(zika_config["id"])
+
+        response = await authed_client.get("/api/v1/configurations/")
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+
+        assert len(data) == 3
+
+        # data is returned in alphabetical order by condition name
+        assert data[0]["status"] == "active"  # any active is "active"
+        assert data[1]["status"] == "draft"  # draft only should be "draft"
+        assert data[2]["status"] == "inactive"  # inactive only should be "inactive"
+
     async def test_create_configuration(
         self, setup, authed_client, test_username, get_condition_id
     ):
