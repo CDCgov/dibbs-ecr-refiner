@@ -22,9 +22,10 @@ jobs:
           python-version: ${{env.PYTHON_RUNNER_VERSION}}
           cache: pip
       - name: Install dependencies
+        working-directory: ./refiner
         run: |
           pip install -U pip
-          pip install ruff==0.15.13
+          pip install $(grep "^ruff==" dev-requirements.txt)
       - name: Run linter (ruff)
         run: |
           ruff check --output-format=github .
