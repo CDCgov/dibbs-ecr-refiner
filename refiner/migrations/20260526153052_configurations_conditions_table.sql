@@ -1,5 +1,6 @@
 -- migrate:up
 
+-- create new join table
 CREATE TABLE configurations_conditions (
     configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
     condition_id UUID NOT NULL REFERENCES conditions(id) ON DELETE CASCADE,
@@ -7,14 +8,14 @@ CREATE TABLE configurations_conditions (
     PRIMARY KEY (configuration_id, condition_id)
 );
 
--- only allow one primary condition per configuration
+-- only allow one primary condition per config
 CREATE UNIQUE INDEX one_primary_per_configuration
 ON configurations_conditions (configuration_id)
 WHERE is_primary = true;
 
 -- migrate existing data. condition_id is the primary value
 INSERT INTO configurations_conditions (configuration_id, condition_id, is_primary)
-SELECT
+SELECT DISTINCT -- avoid duplicates
     id,
     unnest(included_conditions),
     unnest(included_conditions) = condition_id
@@ -32,7 +33,7 @@ ON CONFLICT (configuration_id, condition_id) DO UPDATE SET is_primary = true;
 ALTER TABLE configurations
     DROP COLUMN included_conditions,
     DROP COLUMN condition_id CASCADE, -- this will delete: `configurations_condition_id_not_null`, `configurations_set_condition_canonical_url_trigger`, `configurations_condition_id_fkey`
-    DROP COLUMN condition_canonical_url; -- use canonical_url on the condition instead
+    DROP COLUMN condition_canonical_url;
 
 -- drop the version trigger and function (versioning is now handled in the application layer)
 DROP TRIGGER IF EXISTS configurations_set_version_on_insert ON configurations;
