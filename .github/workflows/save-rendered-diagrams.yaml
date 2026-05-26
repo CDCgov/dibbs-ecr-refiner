@@ -36,7 +36,7 @@ jobs:
       #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -44,7 +44,7 @@ jobs:
 
       - name: Cache Docker pull of structurizr/lite:2025.05.28 image
         id: image-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v7
         with:
           path: ~/image-cache
           # The SHA256 here is copied from the index digest for the 2025.05.28
@@ -60,20 +60,20 @@ jobs:
         run: docker load -i ~/image-cache/structurizr.tar
 
       - name: Setup Node v24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
       - name: Cache dependencies
         id: node-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v7
         with:
           path: ./docs/node_modules
           key: modules-${{ hashFiles('docs/package-lock.json') }}-v1
 
       - name: Cache Puppeteer
         id: puppeteer-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v7
         with:
           path: ~/.cache/puppeteer
           key: puppeteer-${{ hashFiles('docs/package-lock.json') }}-v1
