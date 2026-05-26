@@ -5,7 +5,7 @@ pytest
 pytest-asyncio
 pytest-cov
 python-dotenv
-ruff==0.15.12
+ruff==0.15.13
 saxonche
 testcontainers[compose]>=4.14.2
 tqdm

@@ -74,6 +74,7 @@ export function Testing() {
   ) {
     return async () => {
       try {
+        setStatus('pending');
         await runRefinement(
           selectedFile,
           configIds,
