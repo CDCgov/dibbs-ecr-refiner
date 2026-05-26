@@ -72,30 +72,36 @@ async def get_configurations(
         configuration_ids=[c.id for c in all_configs], db=db
     )
 
-    def canonical_url(c: DbConfiguration) -> str | None:
-        cond = primary_conditions.get(c.id)
-        return cond.canonical_url if cond else None
+    config_id_to_canonical_url: dict[UUID, str] = {
+        c.id: condition.canonical_url
+        for c in all_configs
+        if (condition := primary_conditions.get(c.id)) is not None
+    }
 
     # active config by condition
     active_configs_map: dict[str, DbConfiguration] = {
         url: c
         for c in all_configs
-        if c.status == "active" and (url := canonical_url(c)) is not None
+        if c.status == "active"
+        and (url := config_id_to_canonical_url.get(c.id)) is not None
     }
 
     # draft config by condition
     draft_configs_map: dict[str, DbConfiguration] = {
         url: c
         for c in all_configs
-        if c.status == "draft" and (url := canonical_url(c)) is not None
+        if c.status == "draft"
+        and (url := config_id_to_canonical_url.get(c.id)) is not None
     }
 
     # inactive config with the highest version by condition
     highest_version_inactive_configs_map: dict[str, DbConfiguration] = (
-        get_canonical_url_to_highest_inactive_version_map(all_configs, canonical_url)
+        get_canonical_url_to_highest_inactive_version_map(
+            configs=all_configs, config_id_to_canonical_url=config_id_to_canonical_url
+        )
     )
 
-    unique_urls = {url for c in all_configs if (url := canonical_url(c)) is not None}
+    unique_urls = config_id_to_canonical_url.values()
     response = []
     for key in unique_urls:
         has_active = key in active_configs_map
