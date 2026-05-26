@@ -159,9 +159,7 @@ export function Sections({
                       currentSection={section}
                       sections={sectionProcessing}
                       disabled={disabled || isDisabledSection(section.code)}
-                      isNarrativeOnly={narrativeOnlySections.includes(
-                        section.code as NarrativeOnlySection
-                      )}
+                      isNarrativeOnly={isNarrativeSection(section.code)}
                     />
                   </div>
                 ) : null}

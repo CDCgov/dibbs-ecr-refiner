@@ -4,7 +4,6 @@ import { render, screen, within } from '@testing-library/react';
 import { TestQueryClientProvider } from '../../../../test-utils';
 import { Sections } from '.';
 import { DbConfigurationSectionProcessing } from '../../../../api/schemas/dbConfigurationSectionProcessing';
-import { SectionMetadata } from '../../../../api/schemas/sectionMetadata';
 import userEvent from '@testing-library/user-event';
 
 const sections: DbConfigurationSectionProcessing[] = [
@@ -48,11 +47,6 @@ const sections: DbConfigurationSectionProcessing[] = [
 
 const testId = 'test-id';
 
-const sectionMetadata: SectionMetadata = {
-  disabled_sections: ['83910-0', '88085-6'],
-  narrative_only_sections: ['10154-3', '29299-5', '10164-2', '10187-3'],
-};
-
 function renderWithClient(ui: React.ReactElement) {
   return render(<TestQueryClientProvider>{ui}</TestQueryClientProvider>);
 }
@@ -60,12 +54,7 @@ function renderWithClient(ui: React.ReactElement) {
 describe('Configuration sections', () => {
   it('should display sections based on stored section data', () => {
     renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sections}
-        sectionMetadata={sectionMetadata}
-      />
+      <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
     // all table rows (including header)
@@ -120,12 +109,7 @@ describe('Configuration sections', () => {
     const user = userEvent.setup();
 
     renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sections}
-        sectionMetadata={sectionMetadata}
-      />
+      <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
     expect(screen.getByText('Add custom section')).toBeInTheDocument();
@@ -153,12 +137,7 @@ describe('Configuration sections', () => {
 
   it('should allow custom section edits', () => {
     renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sections}
-        sectionMetadata={sectionMetadata}
-      />
+      <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
     const cell = screen.getByText('Mock custom section');
@@ -177,12 +156,7 @@ describe('Configuration sections', () => {
 
   it('should allow custom section deletions', () => {
     renderWithClient(
-      <Sections
-        configurationId={testId}
-        disabled={false}
-        sections={sections}
-        sectionMetadata={sectionMetadata}
-      />
+      <Sections configurationId={testId} disabled={false} sections={sections} />
     );
 
     const cell = screen.getByText('Mock custom section');

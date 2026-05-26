@@ -76,10 +76,6 @@ const baseMockConfig: GetConfigurationResponse = {
       section_type: 'standard',
     },
   ],
-  section_metadata: {
-    disabled_sections: ['83910-0', '88085-6'],
-    narrative_only_sections: ['10154-3', '29299-5', '10164-2', '10187-3'],
-  },
   included_conditions: [],
   all_versions: mockVersions,
   version: 2,

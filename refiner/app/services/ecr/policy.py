@@ -39,6 +39,7 @@ class DisabledSection(StrEnum):
 
 
 SECTION_PROCESSING_SKIP = [section.value for section in DisabledSection]
+DISABLED_SECTIONS = set(SECTION_PROCESSING_SKIP)
 
 
 class NarrativeOnlySection(StrEnum):
