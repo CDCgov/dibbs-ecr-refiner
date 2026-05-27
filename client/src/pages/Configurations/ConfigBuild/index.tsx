@@ -328,7 +328,7 @@ function Builder({
             </OptionsListContainer>
           </div>
         </div>
-        <div className="flex min-h-0 w-full! flex-col items-start overflow-y-hidden rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
+        <div className="flex min-h-0 w-full! flex-col items-start overflow-y-auto rounded-lg bg-white p-1 pt-4 sm:w-2/3 sm:pt-0 md:p-6">
           {selectedCodesetId && tableView === 'codeset' ? (
             <ConditionCodeTable
               defaultCondition={selectedCodesetName}
