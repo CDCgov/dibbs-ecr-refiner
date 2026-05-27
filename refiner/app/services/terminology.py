@@ -111,7 +111,10 @@ class CodeSystemSets:
             The dict for that system, or None if the OID is unknown.
         """
         matching_system = self.oid_to_system_map.get(code_system_oid)
-        if matching_system is None:
+        if (
+            matching_system is None
+            or matching_system not in self.system_to_code_maps.keys()
+        ):
             return None
         return self.system_to_code_maps[matching_system]
 
