@@ -305,10 +305,10 @@ export function ConditionCodeTable({
             role="table"
             id="codeset-table"
             aria-label={`Codes in set with ID ${conditionId}`}
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 4fr' }}
+            className="grid grid-cols-[1fr_1fr_4fr]"
           >
-            <div role="rowgroup" style={{ display: 'contents' }}>
-              <div role="row" style={{ display: 'contents' }}>
+            <div role="rowgroup" className="contents">
+              <div role="row" className="contents">
                 <div
                   role="columnheader"
                   className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
@@ -330,8 +330,11 @@ export function ConditionCodeTable({
               </div>
             </div>
 
-            <div role="rowgroup" style={{ display: 'contents' }}>
-              <div style={{ height: `${topSpacer}px`, gridColumn: '1 / -1' }} />
+            <div role="rowgroup" className="contents">
+              <div
+                className="col-span-full"
+                style={{ height: `${topSpacer}px` }}
+              />
 
               {virtualItems.map((virtualRow) => {
                 const code = visibleCodes[virtualRow.index];
@@ -344,7 +347,7 @@ export function ConditionCodeTable({
                   <div
                     key={`${code.system}-${code.code}-${virtualRow.index}`}
                     role="row"
-                    style={{ display: 'contents' }}
+                    className="contents"
                   >
                     <div role="cell" className="pb-6">
                       {highlightMatches(
@@ -368,7 +371,8 @@ export function ConditionCodeTable({
               })}
 
               <div
-                style={{ height: `${bottomSpacer}px`, gridColumn: '1 / -1' }}
+                className="col-span-full"
+                style={{ height: `${bottomSpacer}px` }}
               />
             </div>
           </div>
