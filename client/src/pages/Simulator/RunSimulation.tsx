@@ -133,7 +133,7 @@ function UploadZipFile({
           ) : null}
           <label
             htmlFor="zip-upload"
-            aria-label="Open system file browser for simlating"
+            aria-label="Open system file browser for simulating"
             role="button"
             className={labelStyling}
             tabIndex={0}
