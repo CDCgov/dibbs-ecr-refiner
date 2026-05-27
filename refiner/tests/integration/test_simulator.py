@@ -11,7 +11,7 @@ api_route_base = "/api/v1/simulator"
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_full_independent_test_flow_smoke(
+async def test_full_simulator_flow_smoke(
     covid_influenza_v1_1_zip_path: Path,
     authed_client,
     get_condition_id,
@@ -19,8 +19,8 @@ async def test_full_independent_test_flow_smoke(
     activate_config,
 ) -> None:
     """
-    Smoke test for the simulate test flow.
-    Verifies that the endpoint processes a demo ZIP file and returns a 200 with expected top-level fields.
+    Smoke test for the simulator.
+    Verifies that the endpoint processes a simulator ZIP file and returns a 200 with expected top-level fields.
     """
 
     # activated config

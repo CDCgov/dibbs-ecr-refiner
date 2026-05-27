@@ -41,7 +41,7 @@ from app.services.sample_file import get_sample_zip_path
 from app.services.testing import (
     DiscoveredConfigurationsResponse,
     discover_configurations_for_conditions,
-    simulate_testing,
+    run_simulation,
 )
 from app.services.xslt import create_refined_eicr_html_file
 
@@ -168,7 +168,7 @@ async def discover_configurations(
         uploaded_file=uploaded_file, test_file_path=demo_zip_path, logger=logger
     )
 
-    logger.info("Processing independent test file", extra={"file": file.filename})
+    logger.info("Processing simulator file", extra={"file": file.filename})
 
     original_xml_files = await get_validated_xml_files(file=file, logger=logger)
 
@@ -179,7 +179,7 @@ async def discover_configurations(
     )
 
 
-class SimulateTestInput(BaseModel):
+class SimulatorInput(BaseModel):
     """
     Simulate testing request model.
     """
@@ -228,7 +228,7 @@ async def simulator_upload(
     Any exceptions during file processing or workflow execution are caught and mapped to HTTP errors.
     """
 
-    parsed_body = SimulateTestInput.model_validate_json(body)
+    parsed_body = SimulatorInput.model_validate_json(body)
 
     if len(parsed_body.configuration_ids) == 0:
         raise HTTPException(
@@ -278,7 +278,7 @@ async def simulator_upload(
 
     # Run the simulation
     try:
-        test_results = await simulate_testing(
+        test_results = await run_simulation(
             xml_files=original_xml_files,
             jurisdiction_id=user.jurisdiction_id,
             configurations=configurations,

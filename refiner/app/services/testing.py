@@ -38,7 +38,7 @@ from .pipeline import (
 
 
 @dataclass
-class SimulateTestingResult:
+class SimulatorResult:
     """
     Model to represent the result of running simulate testing.
 
@@ -212,14 +212,14 @@ def _group_conditions_by_url(
     return grouped
 
 
-async def simulate_testing(
+async def run_simulation(
     xml_files: XMLFiles,
     jurisdiction_id: str,
     configurations: list[DbConfiguration],
     conditions_without_config: list[DbCondition],
     logger: Logger,
     db: AsyncDatabaseConnection,
-) -> SimulateTestingResult:
+) -> SimulatorResult:
     """
     Orchestrates the full simulate testing workflow for eICR refinement.
 
@@ -233,7 +233,7 @@ async def simulate_testing(
         db: AsyncDatabaseConnection
 
     Returns:
-        A SimulateTestingResult dictionary containing refined documents and a list of non-matches.
+        A SimulatorResult dictionary containing refined documents and a list of non-matches.
     """
 
     # one session-scoped AugmentationRun, built once and threaded into
@@ -310,7 +310,7 @@ async def simulate_testing(
     # code carried on each produced RefinedDocument
     refined_condition_codes = {doc.reportable_condition.code for doc in refined_docs}
 
-    return SimulateTestingResult(
+    return SimulatorResult(
         original_eicr_doc_id=first_original_eicr_doc_id,
         refined_documents=refined_docs,
         remainder_rr=_generate_remainder_rr(
