@@ -151,7 +151,7 @@ async def run_configuration_test(
     )
 
     # call the testing service
-    # business logic around **how** inline testing works is in services/testing.py
+    # business logic around **how** simulator testing works is in services/testing.py
     try:
         test_results = await inline_testing(
             xml_files=original_xml_files,
