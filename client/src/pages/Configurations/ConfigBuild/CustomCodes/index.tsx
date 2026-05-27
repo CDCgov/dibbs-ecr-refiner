@@ -137,7 +137,7 @@ export function CustomCodesDetail({
 
 function ConditionCodeGroupingParagraph() {
   return (
-    <p>
+    <p className="mb-6">
       These condition code sets come from the default groupings in the{' '}
       <TesLink />
     </p>
