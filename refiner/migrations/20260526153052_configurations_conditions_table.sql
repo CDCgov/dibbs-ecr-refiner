@@ -81,6 +81,26 @@ ALTER TABLE configurations
     ALTER COLUMN condition_id SET NOT NULL,
     ADD CONSTRAINT configurations_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES conditions(id);
 
+-- restore condition_canonical_url trigger for configs
+CREATE FUNCTION configurations_set_condition_canonical_url_on_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  -- grab canonical_url from conditions when inserting or updating condition_id
+  SELECT canonical_url
+  INTO NEW.condition_canonical_url
+  FROM conditions
+  WHERE id = NEW.condition_id
+  LIMIT 1;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER configurations_set_condition_canonical_url_trigger
+    BEFORE INSERT OR UPDATE OF condition_id ON configurations
+    FOR EACH ROW EXECUTE FUNCTION configurations_set_condition_canonical_url_on_insert();
+
 -- restore the version trigger and function
 CREATE FUNCTION configurations_set_version_on_insert() RETURNS trigger
     LANGUAGE plpgsql
