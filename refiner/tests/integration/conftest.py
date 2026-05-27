@@ -62,7 +62,7 @@ TEST_JD_ID = "SDDH"
 TEST_JD_NAME = "Senate District Health Department"
 TEST_JD_STATE_CODE = "GC"
 
-DEFAULT_TES_VERSION = "5.0.0"
+DEFAULT_TES_VERSION = "6.0.0"
 
 
 @pytest_asyncio.fixture

@@ -10,7 +10,7 @@ from lib import (
     load_valuesets_from_all_files,
 )
 
-from scripts.seeding.load_tes_data import _build_condition_groupers
+from scripts.seeding.load_static_data import _build_condition_groupers
 
 type UrlVersionTuple = tuple[VsCanonicalUrl, VsVersion]
 type ConditionId = UUID

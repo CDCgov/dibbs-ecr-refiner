@@ -1,32 +1,20 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from lxml import etree
 from lxml.etree import _Element
 
-from app.services.terminology import CodeSystemSets, Coding
+if TYPE_CHECKING:
+    from app.services.terminology import CodeSystemSets, Coding
+
 
 from ..model import EntryMatchRule, NamespaceMap
-from ..specification.constants import (
-    CVX_OID,
-    ICD10_OID,
-    LOINC_OID,
-    RXNORM_OID,
-    SNOMED_OID,
-)
+from ..specification.constants import CODE_SYSTEM_LABELS
 
 # NOTE:
 # NAMESPACE CONSTANTS
 # =============================================================================
 
 SDTC_NAMESPACE: Final[str] = "urn:hl7-org:sdtc"
-
-CODE_SYSTEM_LABELS: Final[dict[str, str]] = {
-    LOINC_OID: "LOINC",
-    SNOMED_OID: "SNOMED",
-    RXNORM_OID: "RxNorm",
-    ICD10_OID: "ICD-10",
-    CVX_OID: "CVX",
-}
 
 
 def code_system_label(oid: str | None) -> str:
@@ -51,7 +39,7 @@ def code_system_label(oid: str | None) -> str:
 
 def enrich_surviving_entries(
     section: _Element,
-    code_system_sets: CodeSystemSets,
+    code_system_sets: "CodeSystemSets",
     namespaces: NamespaceMap,
 ) -> None:
     """
@@ -104,7 +92,7 @@ def enrich_surviving_entries(
                 _enrich_display_name(element, coding)
 
 
-def _enrich_display_name(code_element: _Element, coding: Coding) -> None:
+def _enrich_display_name(code_element: _Element, coding: "Coding") -> None:
     """
     Set `displayName` on a code-bearing element from a Coding.
 

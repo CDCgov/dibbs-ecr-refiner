@@ -77,6 +77,7 @@ export function Simulator() {
   ) {
     return async () => {
       try {
+        setStatus('pending');
         await runRefinement(
           selectedFile,
           configIds,

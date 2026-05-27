@@ -307,6 +307,20 @@ CREATE TABLE public.sessions (
 
 
 --
+-- Name: systems; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.systems (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    key text NOT NULL,
+    display_name text NOT NULL,
+    oid text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -442,6 +456,38 @@ ALTER TABLE ONLY public.sessions
 
 
 --
+-- Name: systems systems_display_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_display_name_key UNIQUE (display_name);
+
+
+--
+-- Name: systems systems_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_key_key UNIQUE (key);
+
+
+--
+-- Name: systems systems_oid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_oid_key UNIQUE (oid);
+
+
+--
+-- Name: systems systems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.systems
+    ADD CONSTRAINT systems_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -561,6 +607,13 @@ CREATE TRIGGER update_configurations_sections_updated_at BEFORE UPDATE ON public
 --
 
 CREATE TRIGGER update_configurations_updated_at BEFORE UPDATE ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: systems update_systems_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_systems_updated_at BEFORE UPDATE ON public.systems FOR EACH ROW WHEN ((old.display_name IS DISTINCT FROM new.display_name)) EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -696,4 +749,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260420140437'),
     ('20260427151426'),
     ('20260505141110'),
-    ('20260511160133');
+    ('20260511160133'),
+    ('20260520185510');
