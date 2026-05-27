@@ -608,7 +608,7 @@ ALTER TABLE ONLY public.conditions_context_groupers
 --
 
 ALTER TABLE ONLY public.configurations_conditions
-    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id) ON DELETE CASCADE;
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
 
 
 --

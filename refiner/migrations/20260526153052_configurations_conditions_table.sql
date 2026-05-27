@@ -3,7 +3,7 @@
 -- create new join table
 CREATE TABLE configurations_conditions (
     configuration_id UUID NOT NULL REFERENCES configurations(id) ON DELETE CASCADE,
-    condition_id UUID NOT NULL REFERENCES conditions(id) ON DELETE CASCADE,
+    condition_id UUID NOT NULL REFERENCES conditions(id),
     is_primary BOOLEAN NOT NULL DEFAULT false,
     PRIMARY KEY (configuration_id, condition_id)
 );
