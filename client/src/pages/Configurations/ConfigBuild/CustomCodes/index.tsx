@@ -253,7 +253,7 @@ export function ConditionCodeTable({
     (virtualItems[virtualItems.length - 1]?.end ?? 0);
 
   return (
-    <div className="min-h-full min-w-full">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex flex-col gap-1">
         <CompletenessStatusBadge
           completenessStatus={response.data.completeness_status}
@@ -300,7 +300,7 @@ export function ConditionCodeTable({
           <p>No codes match the search criteria.</p>
         </div>
       ) : (
-        <div ref={parentRef} style={{ height: '600px', overflowY: 'auto' }}>
+        <div ref={parentRef} className="h-full overflow-y-auto">
           <div
             role="table"
             id="codeset-table"
