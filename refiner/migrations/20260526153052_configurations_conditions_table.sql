@@ -39,6 +39,10 @@ ALTER TABLE configurations
 DROP TRIGGER IF EXISTS configurations_set_version_on_insert ON configurations;
 DROP FUNCTION IF EXISTS configurations_set_version_on_insert() CASCADE;
 
+-- drop condition_canonical_url trigger
+DROP TRIGGER IF EXISTS configurations_set_condition_canonical_url_trigger ON configurations;
+DROP FUNCTION IF EXISTS configurations_set_condition_canonical_url_on_insert() CASCADE;
+
 -- migrate:down
 
 -- restore the columns first
@@ -82,7 +86,7 @@ ALTER TABLE configurations
     ADD CONSTRAINT configurations_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES conditions(id);
 
 -- restore condition_canonical_url trigger for configs
-CREATE FUNCTION configurations_set_condition_canonical_url_on_insert() RETURNS trigger
+CREATE OR REPLACE FUNCTION configurations_set_condition_canonical_url_on_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -97,12 +101,12 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER configurations_set_condition_canonical_url_trigger
+CREATE OR REPLACE TRIGGER configurations_set_condition_canonical_url_trigger
     BEFORE INSERT OR UPDATE OF condition_id ON configurations
     FOR EACH ROW EXECUTE FUNCTION configurations_set_condition_canonical_url_on_insert();
 
 -- restore the version trigger and function
-CREATE FUNCTION configurations_set_version_on_insert() RETURNS trigger
+CREATE OR REPLACE FUNCTION configurations_set_version_on_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 DECLARE
@@ -124,6 +128,6 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER configurations_set_version_on_insert
+CREATE OR REPLACE TRIGGER configurations_set_version_on_insert
     BEFORE INSERT ON configurations
     FOR EACH ROW EXECUTE FUNCTION configurations_set_version_on_insert();
