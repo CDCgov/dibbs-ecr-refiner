@@ -410,23 +410,44 @@ def get_sibling_context_valuesets(
     all_vs_map: dict[tuple[str, str], dict],
 ) -> list[dict]:
     """
-    Finds sibling 'Additional Context' ValueSets by matching name and version.
+    Finds the Additional Context Grouper ValueSets referenced by a parent.
+
+    Resolves children via the parent's compose.include[].valueSet references,
+    using the same (url, version) lookup pattern as get_child_rsg_valuesets.
+
+    The parent CG's compose section explicitly declares its ACG children, so
+    we don't have to reverse-engineer the relationship from naming patterns.
+    Earlier versions of this function matched siblings by name substring,
+    which had two failure modes:
+
+    * A spelling drift between parent and child silently dropped the ACG.
+      E.g. v6.0.0 "Streptoccal_Disease" (parent typo) does not match
+      "Streptococcal_Disease_Additional_Context_*" (children spelled
+      correctly), so every strep ACG was missed and ~22,000 codes were
+      lost from the seeded condition.
+
+    * A parent name that is a strict substring of another condition's name
+      silently absorbed that other condition's ACGs. E.g. "Influenza" is
+      a substring of "Invasive_Haemophilus_Influenzae_Disease...", so the
+      Influenza condition was pulling in H. Influenzae's ACGs as siblings
+      and inflating its code count by ~9,000.
+
+    Both failure modes go away once siblings are resolved by the explicit
+    reference graph.
     """
 
     siblings: list[dict] = []
 
-    parent_name = (parent.get("name") or "").lower().replace("_", "")
-    parent_version = parent.get("version")
-    parent_url = parent.get("url")
+    compose = parent.get("compose")
+    if not compose:
+        return siblings
 
-    for vs in all_vs_map.values():
-        if (
-            is_additional_context_grouper(vs)
-            and vs.get("version") == parent_version
-            and vs.get("url") != parent_url
-            and parent_name in (vs.get("name") or "").lower().replace("_", "")
-        ):
-            siblings.append(vs)
+    for inc in compose.get("include", []):
+        for ref in inc.get("valueSet", []):
+            url, sep, version = str(ref).partition("|")
+            if sep and (child_vs := all_vs_map.get((url, version))):
+                if is_additional_context_grouper(child_vs):
+                    siblings.append(child_vs)
 
     return siblings
 

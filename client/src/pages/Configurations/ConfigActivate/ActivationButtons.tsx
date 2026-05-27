@@ -10,6 +10,8 @@ import { useToast } from '../../../hooks/useToast';
 import { useApiErrorFormatter } from '../../../hooks/useErrorFormatter';
 import { TurnOffConfigButton } from './TurnOffConfigButton';
 import { SwitchToVersionButton } from './SwitchToVersionButton';
+import { AxiosError } from 'axios';
+import { useState } from 'react';
 
 interface ActivationButtonsProps {
   configurationData: GetConfigurationResponse;
@@ -22,41 +24,38 @@ export function ActivationButtons({
 }: ActivationButtonsProps) {
   const queryClient = useQueryClient();
 
-  const { mutate: activate } = useActivateConfiguration();
-  const { mutate: deactivate } = useDeactivateConfiguration();
+  const { mutateAsync: activate } = useActivateConfiguration();
+  const { mutateAsync: deactivate } = useDeactivateConfiguration();
+
   const formatError = useApiErrorFormatter();
   const showToast = useToast();
 
-  function handleActivation() {
-    activate(
-      {
-        configurationId: configurationData.id,
-      },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationData.id),
-          });
+  const [isLoading, setIsLoading] = useState(false);
 
-          showToast({
-            heading: 'Configuration activated',
-            body: '',
-          });
-        },
-        onError: (error) => {
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            variant: 'error',
-            heading: 'Error activating condition',
-            body: errorDetail,
-          });
-        },
-      }
-    );
+  async function handleActivation() {
+    setIsLoading(true);
+    try {
+      await activate({ configurationId: configurationData.id });
+      await queryClient.invalidateQueries({
+        queryKey: getGetConfigurationQueryKey(configurationData.id),
+      });
+      showToast({ heading: 'Configuration activated', body: '' });
+    } catch (error) {
+      const errorDetail =
+        error instanceof AxiosError
+          ? formatError(error) || error.message
+          : 'Unknown error';
+      showToast({
+        variant: 'error',
+        heading: 'Error activating condition',
+        body: errorDetail,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  function handleDeactivation() {
+  async function handleDeactivation() {
     if (!configurationData.active_configuration_id) {
       showToast({
         variant: 'error',
@@ -66,30 +65,29 @@ export function ActivationButtons({
       return;
     }
 
-    deactivate(
-      { configurationId: configurationData.active_configuration_id },
-      {
-        onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: getGetConfigurationQueryKey(configurationData.id),
-          });
+    setIsLoading(true);
 
-          showToast({
-            heading: 'Configuration deactivated',
-            body: '',
-          });
-        },
-        onError: (error) => {
-          const errorDetail =
-            formatError(error) || error.message || 'Unknown error';
-          showToast({
-            variant: 'error',
-            heading: 'Error deactivating condition',
-            body: errorDetail,
-          });
-        },
-      }
-    );
+    try {
+      await deactivate({
+        configurationId: configurationData.active_configuration_id,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getGetConfigurationQueryKey(configurationData.id),
+      });
+      showToast({ heading: 'Configuration deactivated', body: '' });
+    } catch (error) {
+      const errorDetail =
+        error instanceof AxiosError
+          ? formatError(error) || error.message
+          : 'Unknown error';
+      showToast({
+        variant: 'error',
+        heading: 'Error deactivating condition',
+        body: errorDetail,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const curVersion = configurationData.version;
@@ -100,6 +98,7 @@ export function ActivationButtons({
       <TurnOnConfigButton
         handleActivation={handleActivation}
         disabled={isLocked}
+        isLoading={isLoading}
       />
     );
   }
@@ -109,6 +108,7 @@ export function ActivationButtons({
       <TurnOffConfigButton
         handleDeactivation={handleDeactivation}
         disabled={isLocked}
+        isLoading={isLoading}
       />
     );
   }
@@ -121,6 +121,7 @@ export function ActivationButtons({
           handleActivation={handleActivation}
           activeVersion={activeVersion}
           curVersion={curVersion}
+          isLoading={isLoading}
           grouped
         />
       </div>
@@ -129,6 +130,7 @@ export function ActivationButtons({
         <TurnOffConfigButton
           handleDeactivation={handleDeactivation}
           disabled={isLocked}
+          isLoading={isLoading}
           grouped
         />
       </div>
