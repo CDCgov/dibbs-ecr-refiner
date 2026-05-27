@@ -226,6 +226,29 @@ async def _insert_configuration_sections_db(
     await cursor.executemany(query, params)
 
 
+async def _get_next_configuration_version_db(
+    canonical_url: str,
+    jurisdiction_id: str,
+    cursor: AsyncCursor[CursorType],
+) -> int:
+    """
+    Given a condition canonical URL and jurisdiction ID, determines the next version a configuration should use.
+    """
+    await cursor.execute(
+        """
+        SELECT MAX(c.version) AS max_version
+        FROM configurations c
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE cond.canonical_url = %s
+          AND c.jurisdiction_id = %s
+        """,
+        (canonical_url, jurisdiction_id),
+    )
+    row = await cursor.fetchone()
+    return ((row["max_version"] if row else 0) or 0) + 1
+
+
 async def insert_configuration_db(
     condition: DbCondition,
     user_id: UUID,
@@ -268,21 +291,11 @@ async def insert_configuration_db(
 
     async with db.get_connection() as conn:
         async with conn.cursor(row_factory=dict_row) as cur:
-            # Compute the next version for this condition/jurisdiction pair
-            await cur.execute(
-                """
-                SELECT MAX(c.version) AS max_version
-                FROM configurations c
-                JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
-                JOIN conditions cond ON cond.id = cc.condition_id
-                WHERE cond.canonical_url = %s
-                  AND c.jurisdiction_id = %s
-                """,
-                (latest_condition.canonical_url, jurisdiction_id),
+            next_version = await _get_next_configuration_version_db(
+                canonical_url=latest_condition.canonical_url,
+                jurisdiction_id=jurisdiction_id,
+                cursor=cur,
             )
-            version_row = await cur.fetchone()
-            max_version = version_row["max_version"] if version_row else 0
-            next_version = (max_version or 0) + 1
 
             if config_to_clone:
                 params = (
