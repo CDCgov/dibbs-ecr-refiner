@@ -1,12 +1,16 @@
+from collections import defaultdict
+
 import pytest
 from lxml import etree
 from lxml.etree import _Element
 
+from app.db.code_systems.db import CodeSystemKey
 from app.services.ecr.model import HL7_NS, EntryMatchRule, SectionSpecification
 from app.services.ecr.section import get_section_by_code
 from app.services.ecr.section.entry_matching import process
 from app.services.ecr.specification import load_spec
-from app.services.terminology import CodeSystemSets
+from app.services.terminology import CodeSystemSets, Oid
+from tests.unit.conftest import CODE_SYSTEM_DATA
 
 # NOTE:
 # HELPERS
@@ -44,6 +48,15 @@ def _get_refiner_comments(section: _Element) -> list[str]:
     ]
 
 
+def _make_oid_to_system_map() -> dict[Oid, CodeSystemKey]:
+    systems: dict[Oid, CodeSystemKey] = defaultdict()
+
+    for key, system in CODE_SYSTEM_DATA.items():
+        oid = system["oid"]
+        systems[oid] = key
+    return systems
+
+
 def _make_code_system_sets(codes_by_system: dict[str, list[str]]) -> CodeSystemSets:
     data: dict[str, list[dict[str, str]]] = {
         "snomed": [],
@@ -64,7 +77,10 @@ def _make_code_system_sets(codes_by_system: dict[str, list[str]]) -> CodeSystemS
                     "system": system,
                 }
             )
-    return CodeSystemSets.from_dict(data)
+
+    return CodeSystemSets.from_dict(
+        s3_data=data, oid_to_system_map=_make_oid_to_system_map()
+    )
 
 
 def _make_spec_with_rules(

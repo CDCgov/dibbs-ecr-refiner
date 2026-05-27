@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import (
     CodeSystemKey,
-    DbCodeSystem,
+    Oid,
     get_all_code_systems_db,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
 
@@ -32,7 +33,8 @@ async def index_condition_code_list_by_system(
     all_code_systems = await get_all_code_systems_db(db=db)
     result: dict[CodeSystemKey, list[DbConditionCoding]] = defaultdict(list)
     for s in all_code_systems.values():
-        condition_column_index = f"{s.display_name}_codes"
+        # TODO: replace this string mapping with proper read to the codes table
+        condition_column_index = f"{s.key}_codes"
         result[s.key] = getattr(condition, condition_column_index, [])
 
     return result
@@ -55,7 +57,6 @@ class Coding:
 
 
 type Code = str
-type Oid = str
 
 
 @dataclass(frozen=True)
@@ -72,7 +73,7 @@ class CodeSystemSets:
     - Backward compatibility via the all_codes property
     """
 
-    systems: dict[CodeSystemKey, DbCodeSystem] = field(default_factory=dict)
+    oid_to_system_map: dict[Oid, CodeSystemKey] = field(default_factory=dict)
     system_to_code_maps: dict[CodeSystemKey, dict[Code, Coding]] = field(
         default_factory=dict
     )
@@ -109,11 +110,10 @@ class CodeSystemSets:
         Returns:
             The dict for that system, or None if the OID is unknown.
         """
-        oid_to_system_key = {s.oid: s for s in self.systems.values()}
-        matching_system = oid_to_system_key.get(code_system_oid)
+        matching_system = self.oid_to_system_map.get(code_system_oid)
         if matching_system is None:
             return None
-        return getattr(self.system_to_code_maps, matching_system.key)
+        return self.system_to_code_maps[matching_system]
 
     def find_match(
         self, code: str, code_system_oid: str | None = None
@@ -186,8 +186,8 @@ class CodeSystemSets:
     @classmethod
     def from_dict(
         cls,
-        coding_data: dict[CodeSystemKey, list[dict[Code, str]]],
-        systems: dict[CodeSystemKey, DbCodeSystem],
+        s3_data: dict[CodeSystemKey, list[dict[Code, str]]],
+        oid_to_system_map: dict[Oid, CodeSystemKey],
     ) -> "CodeSystemSets":
         """
         Deserialize a CodeSystemSets from a dictionary (read from S3).
@@ -197,9 +197,8 @@ class CodeSystemSets:
         lookup dictionaries.
 
         Args:
-            coding_data: Dictionary with system names as keys and lists of
-                  Coding dicts as values.
-            systems: Code systems supported by the apps
+            s3_data: Dictionary with system names as keys and lists of Coding dicts as values, as stored in S3.
+            oid_to_system_map: Map between OID and internal system key used to index S3 code system information
 
         Returns:
             CodeSystemSets: A fully populated CodeSystemSets with codes
@@ -221,15 +220,15 @@ class CodeSystemSets:
             }
 
         system_to_code_maps = {
-            system_key: _deserialize_system(coding_data.get(system_key))
-            if coding_data.get(system_key)
+            system_key: _deserialize_system(s3_data.get(system_key))
+            if s3_data.get(system_key)
             else {}
-            for system_key in systems.keys()
+            for system_key in oid_to_system_map.values()
         }
 
         return cls(
             system_to_code_maps=system_to_code_maps,
-            systems=systems,
+            oid_to_system_map=oid_to_system_map,
         )
 
 
@@ -309,7 +308,10 @@ class ProcessedConfiguration:
 
         if validated.code_system_sets is not None:
             # enriched format: deserialize the per-system code structure
-            code_system_sets = CodeSystemSets.from_dict(validated.code_system_sets)
+            code_system_sets = CodeSystemSets.from_dict(
+                s3_data=validated.code_system_sets,
+                oid_to_system_map=OID_TO_SYSTEM_KEY_MAP,
+            )
         else:
             # no system info available, put everything in 'other'
             other_codings = {code: Coding(code=code) for code in validated.codes}

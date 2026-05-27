@@ -39,3 +39,11 @@ CODE_SYSTEM_LABELS: Final[dict[str, str]] = {
     ICD10_OID: "ICD-10",
     CVX_OID: "CVX",
 }
+
+OID_TO_SYSTEM_KEY_MAP: Final[dict[str, str]] = {
+    LOINC_OID: "loinc",
+    SNOMED_OID: "snomed",
+    RXNORM_OID: "rxnorm",
+    ICD10_OID: "icd10",
+    CVX_OID: "cvx",
+}

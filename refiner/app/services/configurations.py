@@ -6,7 +6,6 @@ from typing import Any
 
 from app.db.code_systems.db import (
     CodeSystemKey,
-    get_all_code_systems_by_key,
     get_code_system_by_key_or_raise_db,
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
@@ -23,6 +22,7 @@ from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
 )
+from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 from app.services.terminology import (
     CodeSystemSets,
     Coding,
@@ -194,7 +194,7 @@ async def convert_config_to_storage_payload(
         # map each db code list to its target dict + OID
         code_system_map: dict[
             CodeSystemKey, list[DbConditionCoding]
-        ] = await index_condition_code_list_by_system(condition)
+        ] = await index_condition_code_list_by_system(condition, db=db)
 
         for key, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}
@@ -218,9 +218,8 @@ async def convert_config_to_storage_payload(
         included_condition_rsg_codes.update(c.child_rsg_snomed_codes)
 
     # STEP 3: build the CodeSystemSets
-    systems_data = await get_all_code_systems_by_key(db=db)
     code_system_sets = CodeSystemSets.from_dict(
-        s3_data=coding_by_code_system, code_systems=systems_data
+        s3_data=coding_by_code_system, oid_to_system_map=OID_TO_SYSTEM_KEY_MAP
     )
 
     return ConfigurationStoragePayload(
