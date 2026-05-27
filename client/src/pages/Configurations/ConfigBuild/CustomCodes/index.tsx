@@ -3,11 +3,10 @@ import { Search } from '@components/Search';
 import { useSearch } from '../../../../hooks/useSearch';
 import { useGetCondition } from '../../../../api/conditions/conditions';
 import { useDebouncedCallback } from 'use-debounce';
-import type { FuseResultMatch } from 'fuse.js';
 import { highlightMatches } from '../../../../utils';
 import { TesLink } from '../../TesLink';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { CompletenessStatusBadge } from './CompletenessStatusBadge';
 import {
   useDeleteCustomCodeFromConfiguration,
@@ -21,6 +20,7 @@ import { CustomCodeModal } from './CustomCodeModal';
 import { Select, SelectContainer } from '@components/Select';
 import { Label } from '@components/Label';
 import { Field } from '@components/Field';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface CustomCodesDetailProps {
   configurationId: string;
@@ -160,6 +160,8 @@ export function ConditionCodeTable({
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const parentRef = useRef<HTMLDivElement>(null);
+
   const codes = useMemo(
     () => response?.data.codes ?? [],
     [response?.data.codes]
@@ -194,9 +196,6 @@ export function ConditionCodeTable({
 
   function isCodeLikeQuery(value: string) {
     const trimmed = value.trim();
-
-    // Treat inputs like 123, A12, J10, Z21.3 as code-like
-    // and avoid fuzzy matching them too loosely.
     return (
       /^[a-z0-9.-]+$/i.test(trimmed) &&
       !trimmed.includes(' ') &&
@@ -206,18 +205,12 @@ export function ConditionCodeTable({
 
   const visibleCodes = useMemo(() => {
     const trimmedSearch = searchText.trim();
+    if (!trimmedSearch) return filteredCodes;
 
-    if (!trimmedSearch) {
-      return filteredCodes;
-    }
-
-    // For code-like input, do exact/prefix matching on code only
     if (isCodeLikeQuery(trimmedSearch)) {
       const normalizedSearch = trimmedSearch.toLowerCase();
-
       return filteredCodes.filter((code) => {
         const normalizedCode = String(code.code).toLowerCase();
-
         return (
           normalizedCode === normalizedSearch ||
           normalizedCode.includes(normalizedSearch)
@@ -225,9 +218,20 @@ export function ConditionCodeTable({
       });
     }
 
-    // For regular text input, keep existing Fuse behavior
     return results.map((r) => r.item);
   }, [filteredCodes, results, searchText]);
+
+  /**
+   * TODO: Known issue
+   * See: https://github.com/TanStack/virtual/issues/1119
+   */
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: visibleCodes.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 48,
+    overscan: 10,
+  });
 
   if (isPending)
     return (
@@ -241,6 +245,12 @@ export function ConditionCodeTable({
   function handleCodeSystemSelect(event: React.ChangeEvent<HTMLSelectElement>) {
     setSelectedCodeSystem(event.target.value);
   }
+
+  const virtualItems = virtualizer.getVirtualItems();
+  const topSpacer = virtualItems[0]?.start ?? 0;
+  const bottomSpacer =
+    virtualizer.getTotalSize() -
+    (virtualItems[virtualItems.length - 1]?.end ?? 0);
 
   return (
     <div className="min-h-full min-w-full">
@@ -277,8 +287,10 @@ export function ConditionCodeTable({
           </Field>
         </SelectContainer>
       </div>
+
       <hr className="border-blue-cool-5! mb-6 w-full border" />
       <ConditionCodeGroupingParagraph />
+
       {isLoadingResults ? (
         <div className="pt-10">
           <p>Loading...</p>
@@ -288,65 +300,80 @@ export function ConditionCodeTable({
           <p>No codes match the search criteria.</p>
         </div>
       ) : (
-        <div role="region">
-          <table
+        <div ref={parentRef} style={{ height: '600px', overflowY: 'auto' }}>
+          <div
+            role="table"
             id="codeset-table"
-            className="w-full border-separate border-spacing-y-4"
             aria-label={`Codes in set with ID ${conditionId}`}
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 4fr' }}
           >
-            <thead className="bg-opacity-100 sticky -top-6 h-10 bg-white text-left">
-              <tr>
-                <th>Code</th>
-                <th>Code system</th>
-                <th>Condition</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleCodes.map((code, i) => {
+            <div role="rowgroup" style={{ display: 'contents' }}>
+              <div role="row" style={{ display: 'contents' }}>
+                <div
+                  role="columnheader"
+                  className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
+                >
+                  Code
+                </div>
+                <div
+                  role="columnheader"
+                  className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
+                >
+                  Code system
+                </div>
+                <div
+                  role="columnheader"
+                  className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
+                >
+                  Condition
+                </div>
+              </div>
+            </div>
+
+            <div role="rowgroup" style={{ display: 'contents' }}>
+              <div style={{ height: `${topSpacer}px`, gridColumn: '1 / -1' }} />
+
+              {virtualItems.map((virtualRow) => {
+                const code = visibleCodes[virtualRow.index];
                 const matchingResult = results.find(
                   (r) =>
                     r.item.code === code.code &&
                     r.item.description === code.description
                 );
-
                 return (
-                  <ConditionCodeRow
-                    key={`${code.system}-${code.code}-${i}`} // TODO: swap this to an ID when possible
-                    codeSystem={code.system}
-                    code={code.code}
-                    text={code.description}
-                    matches={matchingResult?.matches}
-                  />
+                  <div
+                    key={`${code.system}-${code.code}-${virtualRow.index}`}
+                    role="row"
+                    style={{ display: 'contents' }}
+                  >
+                    <div role="cell" className="pb-6">
+                      {highlightMatches(
+                        code.code,
+                        matchingResult?.matches,
+                        'code'
+                      )}
+                    </div>
+                    <div role="cell" className="text-gray-cool-60 pb-6">
+                      {code.system}
+                    </div>
+                    <div role="cell" className="pb-6">
+                      {highlightMatches(
+                        code.description,
+                        matchingResult?.matches,
+                        'description'
+                      )}
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+
+              <div
+                style={{ height: `${bottomSpacer}px`, gridColumn: '1 / -1' }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
-  );
-}
-
-interface ConditionCodeRowProps {
-  code: string;
-  codeSystem: string;
-  text: string;
-  matches?: readonly FuseResultMatch[];
-}
-
-function ConditionCodeRow({
-  code,
-  codeSystem,
-  text,
-  matches,
-}: ConditionCodeRowProps) {
-  return (
-    <tr>
-      <td className="w-1/6 pb-6">{highlightMatches(code, matches, 'code')}</td>
-      <td className="text-gray-cool-60 w-1/6 pb-6">{codeSystem}</td>
-      <td className="w-4/6 pb-6">
-        {highlightMatches(text, matches, 'description')}
-      </td>
-    </tr>
   );
 }
