@@ -83,26 +83,6 @@ CREATE TYPE public.section_action AS ENUM (
 
 
 --
--- Name: configurations_set_condition_canonical_url_on_insert(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.configurations_set_condition_canonical_url_on_insert() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  -- grab canonical_url from conditions when inserting or updating condition_id
-  SELECT canonical_url
-  INTO NEW.condition_canonical_url
-  FROM conditions
-  WHERE id = NEW.condition_id
-  LIMIT 1;
-
-  RETURN NEW;
-END;
-$$;
-
-
---
 -- Name: configurations_set_last_activated_at_on_status_change(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -113,33 +93,6 @@ BEGIN
   -- when going from any status to "active" we update `last_activated_at`
   IF NEW.status = 'active' AND OLD.status IS DISTINCT FROM 'active' THEN
     NEW.last_activated_at := NOW();
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
---
--- Name: configurations_set_version_on_insert(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.configurations_set_version_on_insert() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  max_version INTEGER;
-BEGIN
-  SELECT MAX(version)
-  INTO max_version
-  FROM configurations
-  WHERE condition_canonical_url = NEW.condition_canonical_url
-    AND jurisdiction_id = NEW.jurisdiction_id;
-
-  IF max_version IS NULL THEN
-    NEW.version := 1;
-  ELSE
-    NEW.version := max_version + 1;
   END IF;
 
   RETURN NEW;
@@ -221,10 +174,18 @@ CREATE TABLE public.configurations (
     last_activated_at timestamp with time zone,
     last_activated_by uuid,
     created_by uuid NOT NULL,
-    s3_urls text[],
+    s3_urls text[]
+);
+
+
+--
+-- Name: configurations_conditions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.configurations_conditions (
+    configuration_id uuid NOT NULL,
     condition_id uuid NOT NULL,
-    included_conditions uuid[] DEFAULT '{}'::uuid[] NOT NULL,
-    condition_canonical_url text
+    is_primary boolean DEFAULT false NOT NULL
 );
 
 
@@ -377,6 +338,14 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 ALTER TABLE ONLY public.conditions
     ADD CONSTRAINT conditions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: configurations_conditions configurations_conditions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_pkey PRIMARY KEY (configuration_id, condition_id);
 
 
 --
@@ -551,10 +520,10 @@ CREATE INDEX idx_conditions_child_snomed_codes ON public.conditions USING gin (c
 
 
 --
--- Name: configurations configurations_set_condition_canonical_url_trigger; Type: TRIGGER; Schema: public; Owner: -
+-- Name: one_primary_per_configuration; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE TRIGGER configurations_set_condition_canonical_url_trigger BEFORE INSERT OR UPDATE OF condition_id ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.configurations_set_condition_canonical_url_on_insert();
+CREATE UNIQUE INDEX one_primary_per_configuration ON public.configurations_conditions USING btree (configuration_id) WHERE (is_primary = true);
 
 
 --
@@ -562,13 +531,6 @@ CREATE TRIGGER configurations_set_condition_canonical_url_trigger BEFORE INSERT 
 --
 
 CREATE TRIGGER configurations_set_last_activated_at_on_status_change_trigger BEFORE UPDATE OF status ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.configurations_set_last_activated_at_on_status_change();
-
-
---
--- Name: configurations configurations_set_version_on_insert; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER configurations_set_version_on_insert BEFORE INSERT ON public.configurations FOR EACH ROW EXECUTE FUNCTION public.configurations_set_version_on_insert();
 
 
 --
@@ -622,11 +584,19 @@ ALTER TABLE ONLY public.conditions_context_groupers
 
 
 --
--- Name: configurations configurations_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: configurations_conditions configurations_conditions_condition_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.configurations
-    ADD CONSTRAINT configurations_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_condition_id_fkey FOREIGN KEY (condition_id) REFERENCES public.conditions(id);
+
+
+--
+-- Name: configurations_conditions configurations_conditions_configuration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.configurations_conditions
+    ADD CONSTRAINT configurations_conditions_configuration_id_fkey FOREIGN KEY (configuration_id) REFERENCES public.configurations(id) ON DELETE CASCADE;
 
 
 --
@@ -740,4 +710,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260427151426'),
     ('20260505141110'),
     ('20260511160133'),
-    ('20260520185510');
+    ('20260520185510'),
+    ('20260526153052');
