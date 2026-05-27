@@ -236,12 +236,11 @@ async def insert_configuration_db(
     """
     Inserts a configuration into the database. If a `config_to_clone` is passed in, it'll base the new config's values off of that config.
 
-    The `name` field is always set to the display_name of the associated condition at creation time,
-    for easier display and searching. The authoritative clinical context is still given by the
-    primary condition in configurations_conditions.
-
-    Versioning is computed at insert time by finding the highest existing version for the
-    condition/jurisdiction pair via configurations_conditions, rather than via a DB trigger.
+    - Determines the version number the new configuration should have
+    - Determines default info (cloned or brand new)
+    - Inserts a configuration record
+    - Inserts section info
+    - Inserts condition relation info
     """
 
     # always use the latest version of the given condition when creating a new config
