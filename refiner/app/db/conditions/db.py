@@ -430,7 +430,7 @@ async def get_primary_conditions_for_configurations_db(
     db: AsyncDatabaseConnection,
 ) -> dict[UUID, DbCondition]:
     """
-    Given a list of configuration IDs, return a mapping of configuration_id to primary condition.
+    Given a list of configuration IDs, return a mapping of configuration ID to primary condition.
     """
     query = """
         SELECT cc.configuration_id, cond.*
@@ -452,7 +452,14 @@ async def get_primary_condition_db(
     db: AsyncDatabaseConnection,
 ) -> DbCondition | None:
     """
-    Given a configuration ID, return the primary condition.
+    Returns the primary condition for a configuration given its ID.
+
+    Args:
+        configuration_id (UUID): The configuration ID
+        db (AsyncDatabaseConnection): The database connection
+
+    Returns:
+        DbCondition | None: The primary condition, or None if it can't be found.
     """
     results = await get_primary_conditions_for_configurations_db(
         configuration_ids=[configuration_id], db=db
