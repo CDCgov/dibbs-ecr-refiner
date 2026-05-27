@@ -6,7 +6,7 @@ import {
 import { StepsContainer, Steps } from '../Steps';
 import { useParams } from 'react-router';
 import { Title } from '@components/Title';
-import { RunSimulation } from '../../Simulator/RunSimulation.tsx';
+import { RunSimulation } from '../../Simulator/RunSimulation';
 import { useState } from 'react';
 import {
   useGetConfiguration,
