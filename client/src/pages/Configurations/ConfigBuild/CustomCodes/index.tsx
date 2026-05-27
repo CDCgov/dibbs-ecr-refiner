@@ -309,24 +309,9 @@ export function ConditionCodeTable({
           >
             <div role="rowgroup" className="contents">
               <div role="row" className="contents">
-                <div
-                  role="columnheader"
-                  className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
-                >
-                  Code
-                </div>
-                <div
-                  role="columnheader"
-                  className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
-                >
-                  Code system
-                </div>
-                <div
-                  role="columnheader"
-                  className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
-                >
-                  Condition
-                </div>
+                <Header>Code</Header>
+                <Header>Code system</Header>
+                <Header>Condition</Header>
               </div>
             </div>
 
@@ -378,6 +363,17 @@ export function ConditionCodeTable({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Header({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      role="columnheader"
+      className="sticky top-0 z-10 h-10 bg-white pb-2 text-left font-semibold"
+    >
+      {children}
     </div>
   );
 }
