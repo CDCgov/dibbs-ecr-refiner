@@ -1,10 +1,8 @@
 from unittest.mock import AsyncMock
-from uuid import uuid4
 
 import pytest
 from lxml import etree
 
-from app.db.code_systems.db import DbCodeSystem
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
