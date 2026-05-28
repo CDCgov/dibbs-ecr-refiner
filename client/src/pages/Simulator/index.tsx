@@ -1,6 +1,9 @@
-import { RunTest } from './RunTest';
+import { RunSimulation } from './RunSimulation';
 import { useState } from 'react';
-import { useDiscoverConfigurations, useUploadEcr } from '../../api/demo/demo';
+import {
+  useDiscoverConfigurations,
+  useUploadEcr,
+} from '../../api/simulator/simulator';
 import { ReportableConditionsResults } from './ReportableConditionsResults';
 import { Uploading } from './Uploading';
 import { useApiErrorFormatter } from '../../hooks/useErrorFormatter';
@@ -9,14 +12,14 @@ import { Success } from './Success';
 import { Title } from '@components/Title';
 
 type Status =
-  | 'run-test'
+  | 'run-simulator'
   | 'reportable-conditions'
   | 'success'
   | 'error'
   | 'pending';
 
-export function Testing() {
-  const [status, setStatus] = useState<Status>('run-test');
+export function Simulator() {
+  const [status, setStatus] = useState<Status>('run-simulator');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const {
@@ -33,7 +36,7 @@ export function Testing() {
     errorMessage: refinementErrorMessage,
   } = useRunRefinement();
 
-  async function runTestWithCustomFile() {
+  async function runSimulationWithCustomFile() {
     try {
       setStatus('pending');
       await fetchConfigurations({
@@ -47,7 +50,7 @@ export function Testing() {
     }
   }
 
-  async function runTestWithSampleFile() {
+  async function runSimulationWithSampleFile() {
     try {
       setStatus('pending');
       await fetchConfigurations({
@@ -62,12 +65,12 @@ export function Testing() {
   }
 
   function reset() {
-    setStatus('run-test');
+    setStatus('run-simulator');
     resetConfigurations();
     resetRefinement();
   }
 
-  function executeTest(
+  function executeSimulator(
     configIds: string[],
     conditionsWithoutConfigIds: string[],
     uncheckedConditionIds: string[]
@@ -91,12 +94,12 @@ export function Testing() {
   return (
     <div className="flex px-10 md:px-20">
       <div className="flex flex-1 flex-col py-10">
-        {status === 'run-test' && (
+        {status === 'run-simulator' && (
           <>
-            <TestRefinerDescription />
-            <RunTest
-              onClickSampleFile={runTestWithSampleFile}
-              onClickCustomFile={runTestWithCustomFile}
+            <SimulateRefinerDescription />
+            <RunSimulation
+              onClickSampleFile={runSimulationWithSampleFile}
+              onClickCustomFile={runSimulationWithCustomFile}
               selectedFile={selectedFile}
               setSelectedFile={setSelectedFile}
             />
@@ -105,18 +108,18 @@ export function Testing() {
 
         {status === 'pending' && (
           <>
-            <TestRefinerDescription />
+            <SimulateRefinerDescription />
             <Uploading />
           </>
         )}
 
         {status === 'reportable-conditions' && configurationsResponse?.data && (
           <>
-            <TestRefinerDescription />
+            <SimulateRefinerDescription />
             <ReportableConditionsResults
               configurationSets={configurationsResponse.data.sets}
               startOver={reset}
-              runRefinement={executeTest}
+              runRefinement={executeSimulator}
             />
           </>
         )}
@@ -215,11 +218,11 @@ function useRunRefinement() {
   };
 }
 
-function TestRefinerDescription() {
+function SimulateRefinerDescription() {
   return (
     <div className="mb-6">
       <div className="flex flex-col gap-2">
-        <Title>Test Refiner</Title>
+        <Title>Simulate Refiner</Title>
         <p>
           This module allows you to simulate how the Refiner would work in
           production for a zipped eICR/RR pair input based on the reportable

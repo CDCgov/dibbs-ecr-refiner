@@ -81,7 +81,7 @@ def create_augmentation_run_from_xml_files(
     Build an AugmentationRun from an XMLFiles pair.
 
     The single XMLFiles→AugmentationRun entry point. Callers
-    (lambda_function.run_refinement, testing.independent_testing,
+    (lambda_function.run_refinement, testing.run_simulation,
     testing.inline_testing) build one run per input pair and thread
     it through every refine_for_condition and
     produce_remainder_rr_for_jurisdiction call, so all augmented

@@ -1,19 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Testing } from '.';
+import { Simulator } from '.';
 import { MemoryRouter } from 'react-router';
 import {
   useDiscoverConfigurations,
   useUploadEcr,
-} from '../../api/demo/demo.ts';
+} from '../../api/simulator/simulator.ts';
 import { Mock } from 'vitest';
 import { ERROR_UPLOAD_MESSAGE } from '@components/FileUploadWarning/index.tsx';
 import { uploadTestFile } from '../Configurations/ConfigTest/index.test.tsx';
 import { AxiosError } from 'axios';
 import { TestQueryClientProvider } from '../../test-utils.tsx';
-import { DiscoveredConfigurationsResponse } from '../../api/schemas/discoveredConfigurationsResponse.ts';
+import { DiscoveredConfigurationsResponse } from '../../api/schemas';
 
-vi.mock('../../api/demo/demo', () => ({
+vi.mock('../../api/simulator/simulator', () => ({
   useUploadEcr: vi.fn(),
   useDiscoverConfigurations: vi.fn(),
 }));
@@ -53,7 +53,7 @@ const renderView = () =>
   render(
     <MemoryRouter>
       <TestQueryClientProvider>
-        <Testing />
+        <Simulator />
       </TestQueryClientProvider>
     </MemoryRouter>
   );
@@ -62,8 +62,8 @@ type MutationParam = {
   onError?: (error: Error) => void;
 };
 
-describe('Independent testing', () => {
-  describe('Independent testing - errors during config discovery', () => {
+describe('Simulate testing', () => {
+  describe('Simulate testing - errors during config discovery', () => {
     beforeEach(() => {
       (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
         mutateAsync: vi.fn().mockResolvedValue({
@@ -145,7 +145,7 @@ describe('Independent testing', () => {
     });
   });
 
-  describe('Independent testing - errors during refinement', () => {
+  describe('Simulate testing - errors during refinement', () => {
     beforeEach(() => {
       (useDiscoverConfigurations as unknown as Mock).mockReturnValue({
         mutateAsync: vi.fn().mockResolvedValue({
