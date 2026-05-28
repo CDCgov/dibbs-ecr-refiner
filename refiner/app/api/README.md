@@ -11,7 +11,7 @@ api/
 ├── middleware/
 │   └── spa.py        # SPA fallback middleware
 └── v1/
-    ├── demo.py       # Demo endpoints
+    ├── simulator.py  # Simulate testing endpoints
     ├── ecr.py        # eCR processing endpoints
     ├── file_io.py    # File handling endpoints
     └── v1_router.py  # Route aggregation
@@ -23,7 +23,7 @@ api/
 
 API endpoints are organized by version and functionality:
 
-- `demo.py`: Demo endpoints for testing and examples
+- `simulator.py`: Simulator endpoints for testing and examples
 - `ecr.py`: Electronic Case Reporting (eCR) processing endpoints
 - `file_io.py`: File handling and processing endpoints
 - `v1_router.py`: Route aggregation for v1 API
