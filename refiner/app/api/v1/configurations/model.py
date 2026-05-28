@@ -206,7 +206,6 @@ class UploadCustomCodesPreviewItem(BaseModel):
 
     code: str
     system_key: str
-    system_display_name: str
     name: str
     row: int | None = None
 
