@@ -105,14 +105,14 @@ def validate_path_or_raise(path: Path) -> None:
 
 
 async def get_validated_file(
-    uploaded_file: UploadFile | None, demo_file_path: Path, logger: Logger
+    uploaded_file: UploadFile | None, test_file_path: Path, logger: Logger
 ) -> UploadFile:
     """
-    Returns a validated file to use for the test flow.
+    Returns a validated file to use for the simulator and inline testing flow.
 
     Args:
         uploaded_file (UploadFile | None): The uploaded file object
-        demo_file_path (Path): The path to the demo file
+        test_file_path (Path): The path to the test file
         logger (Logger): The logger
 
     Raises:
@@ -122,7 +122,7 @@ async def get_validated_file(
         UploadFile: A validated file object
     """
     if not uploaded_file:
-        return create_sample_zip_file(sample_zip_path=demo_file_path)
+        return create_sample_zip_file(sample_zip_path=test_file_path)
 
     try:
         return await _validate_ecr_zip_pair(file=uploaded_file)

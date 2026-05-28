@@ -32,9 +32,9 @@ class FileInfoResponse:
 
 
 @dataclass(frozen=True)
-class IndependentTestUploadResponse:
+class SimulatorUploadResponse:
     """
-    Model for the response when uploading a document in the testing suite.
+    Model for the response when uploading a document in the simulate testing suite.
     """
 
     message: str

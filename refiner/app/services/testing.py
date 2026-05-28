@@ -38,9 +38,9 @@ from .pipeline import (
 
 
 @dataclass
-class IndependentTestingResult:
+class SimulatorResult:
     """
-    Model to represent the result of running independent testing.
+    Model to represent the result of running simulate testing.
 
     remainder_rr is the augmented RR carrying reportability for
     conditions reportable to the jurisdiction that were not refined.
@@ -197,16 +197,16 @@ def _group_conditions_by_url(
     return grouped
 
 
-async def independent_testing(
+async def run_simulation(
     xml_files: XMLFiles,
     jurisdiction_id: str,
     configurations: list[DbConfiguration],
     conditions_without_config: list[DbCondition],
     logger: Logger,
     db: AsyncDatabaseConnection,
-) -> IndependentTestingResult:
+) -> SimulatorResult:
     """
-    Orchestrates the full independent testing workflow for eICR refinement.
+    Orchestrates the full simulate testing workflow for eICR refinement.
 
     Args:
         xml_files: XMLFiles object containing eICR and RR XML strings
@@ -218,7 +218,7 @@ async def independent_testing(
         db: AsyncDatabaseConnection
 
     Returns:
-        An IndependentTestingResult dictionary containing refined documents and a list of non-matches.
+        A SimulatorResult dictionary containing refined documents and a list of non-matches.
     """
 
     # one session-scoped AugmentationRun, built once and threaded into
@@ -274,7 +274,7 @@ async def independent_testing(
         )
 
         logger.info(
-            "Independent testing: Processed one condition",
+            "Simulate testing: Processed one condition",
             extra={
                 "triggered_by_condition": primary_condition.display_name,
                 "triggering_codes": primary_condition.child_rsg_snomed_codes,
@@ -297,7 +297,7 @@ async def independent_testing(
     # code carried on each produced RefinedDocument
     refined_condition_codes = {doc.reportable_condition.code for doc in refined_docs}
 
-    return IndependentTestingResult(
+    return SimulatorResult(
         original_eicr_doc_id=first_original_eicr_doc_id,
         refined_documents=refined_docs,
         remainder_rr=_generate_remainder_rr(
@@ -359,7 +359,7 @@ def _generate_remainder_rr(
     without a usable configuration. The pipeline enforces the
     if-and-only-if rule (returns None when nothing was refined or
     nothing was skipped) and handles augmentation; this projects its
-    result down to the RR string, which is all the demo flow consumes.
+    result down to the RR string, which is all the simulate flow consumes.
 
     Args:
         xml_files: the original XML eCR files
