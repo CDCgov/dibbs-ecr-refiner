@@ -1,5 +1,4 @@
 import os
-import random
 from unittest.mock import AsyncMock, MagicMock
 
 os.environ["ENV"] = "local"
@@ -36,7 +35,6 @@ from app.core.models.types import XMLFiles
 from app.db.code_systems.db import (
     DbCodeSystem,
     get_all_code_systems_db,
-    get_code_system_by_key_db,
 )
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration
@@ -208,20 +206,6 @@ def mock_code_systems(test_app):
     )
     yield
     test_app.dependency_overrides.pop(get_all_code_systems_db, None)
-
-
-@pytest.fixture
-def mock_code_system(test_app):
-    """
-    Mock a single read to the code system table
-    """
-
-    test_app.dependency_overrides[get_code_system_by_key_db] = lambda: (
-        mock_supported_system
-    )
-
-    yield
-    test_app.dependency_overrides.pop(get_code_system_by_key_db, None)
 
 
 @pytest.fixture(scope="session")
