@@ -10,6 +10,7 @@ from app.db.configurations.model import (
     ConfigurationStoragePayload,
     DbConfiguration,
     DbConfigurationSectionProcessing,
+    DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
 from app.services.ecr.policy import SECTION_PROCESSING_SKIP
@@ -103,7 +104,7 @@ def clone_section_processing_instructions(
     for section in clone_to:
         section_spec = spec.sections.get(section.code)
         if section_spec and not section_spec.has_match_rules:
-            new_action = "retain"
+            new_action: DbSectionAction = "retain"
         else:
             new_action = action_map.get(section.code, section.action)
 
