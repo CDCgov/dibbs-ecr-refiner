@@ -6,7 +6,7 @@ from uuid import UUID
 from psycopg.rows import dict_row
 
 from app.db.pool import AsyncDatabaseConnection
-from app.services.terminology import CodeSystemKey, Oid
+from app.services.terminology import CodeSystemKey
 
 
 @dataclass
@@ -246,25 +246,6 @@ async def get_all_code_systems_by_key(
     allowed_code_systems = await get_all_code_systems_db(db)
 
     return {s.key: s for s in allowed_code_systems.values()}
-
-
-async def get_oid_to_system_key_map(
-    db: AsyncDatabaseConnection,
-) -> dict[Oid, CodeSystemKey]:
-    """
-    Helper method that returns a map of oid to code system key.
-
-    Used to construct the minimal set of information needed for lambda processing
-
-    Args:
-        db: AsyncDatabaseConnection: A database connection.
-
-    Returns:
-        list[str]: A list of stored DB code systems
-    """
-    allowed_code_systems = await get_all_code_systems_db(db)
-
-    return {s.oid: s.key for s in allowed_code_systems.values()}
 
 
 async def get_allowed_code_system_keys(db: AsyncDatabaseConnection) -> list[str]:

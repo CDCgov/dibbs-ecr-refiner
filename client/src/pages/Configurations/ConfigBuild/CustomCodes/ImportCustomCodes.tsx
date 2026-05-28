@@ -20,11 +20,11 @@ import { Button } from '@components/Button';
 import { CsvImportStep } from '../';
 import UploadSvg from '../../../../assets/upload.svg';
 import { Search } from '@components/Search';
+import { DbCodeSystem } from '../../../../api/schemas';
 
 const EMPTY_PREVIEW_FORM: UploadCustomCodesPreviewItem = {
   code: '',
   system_key: 'other',
-  system_display_name: 'Other',
   name: '',
 };
 
@@ -44,6 +44,7 @@ type PreviewError = { row: number; error: string };
 
 type SearchPreviewItem = UploadCustomCodesPreviewItem & {
   previewIndex: number;
+  systemDisplayName: string;
 };
 
 export function ImportCustomCodes({
@@ -62,6 +63,10 @@ export function ImportCustomCodes({
   const [previewItems, setPreviewItems] = useState<
     UploadCustomCodesPreviewItem[] | null
   >(null);
+  const [previewCodeSystems, setPreviewCodeSystems] = useState<{
+    [codeSystemKey: string]: DbCodeSystem;
+  } | null>(null);
+
   const [step, setStep] = useState<CsvImportStep>('intro');
   const [isUploading, setIsUploading] = useState(false);
   const [previewEditIndex, setPreviewEditIndex] = useState<number | null>(null);
@@ -185,11 +190,14 @@ export function ImportCustomCodes({
       {
         onSuccess: (res) => {
           const preview = res.data.preview ?? [];
+          const previewCodeSystems = res.data.code_systems ?? {};
+
           if (preview.length === 0) {
             setError('The CSV file did not produce any valid rows.');
             return;
           }
           setPreviewItems(preview);
+          setPreviewCodeSystems(previewCodeSystems);
           setStep('preview');
           setApiErrors(null);
         },
@@ -364,8 +372,12 @@ export function ImportCustomCodes({
     return previewItems.map((item, index) => ({
       ...item,
       previewIndex: index,
+      systemDisplayName: formatSystemDisplayName(
+        previewCodeSystems,
+        item.system_key
+      ),
     }));
-  }, [previewItems]);
+  }, [previewItems, previewCodeSystems]);
 
   const previewSearchOptions = useMemo<IFuseOptions<SearchPreviewItem>>(
     () => ({
@@ -540,7 +552,7 @@ export function ImportCustomCodes({
                     <td className="px-2 py-1">
                       {highlightMatches(item.code, matches, 'code')}
                     </td>
-                    <td className="px-2 py-1">{item.system_display_name}</td>
+                    <td className="px-2 py-1">{item.systemDisplayName}</td>
                     <td className="px-2 py-1">
                       {highlightMatches(item.name, matches, 'name')}
                     </td>
@@ -614,4 +626,17 @@ export function ImportCustomCodes({
       />
     </>
   );
+}
+
+function formatSystemDisplayName(
+  previewCodeSystems: { [key: string]: DbCodeSystem } | null,
+  keyToCheck: string
+) {
+  if (
+    previewCodeSystems &&
+    Object.keys(previewCodeSystems).includes(keyToCheck)
+  ) {
+    return previewCodeSystems[keyToCheck].display_name;
+  }
+  return keyToCheck;
 }

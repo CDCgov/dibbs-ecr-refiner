@@ -3,8 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.db.code_systems.db import DbCodeSystem
 from app.db.configurations.model import (
-    ConfigurationCustomCode,
     DbConfigurationCustomCode,
     DbConfigurationSectionProcessing,
     DbConfigurationStatus,
@@ -14,6 +14,7 @@ from app.db.configurations.model import (
 )
 from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
+from app.services.terminology import CodeSystemKey
 
 
 @dataclass(frozen=True)
@@ -82,7 +83,7 @@ class GetConfigurationResponse:
     status: DbConfigurationStatus
     code_sets: list[DbTotalConditionCodeCount]
     included_conditions: list[IncludedCondition]
-    custom_codes: list[ConfigurationCustomCode]
+    custom_codes: list[DbConfigurationCustomCode]
     section_processing: list[DbConfigurationSectionProcessing]
     all_versions: list[GetConfigurationResponseVersion]
     version: int
@@ -91,6 +92,7 @@ class GetConfigurationResponse:
     latest_version: int
     is_locked: bool
     locked_by: LockedByUser | None
+    code_systems: dict[CodeSystemKey, DbCodeSystem]
 
 
 @dataclass(frozen=True)
@@ -103,6 +105,7 @@ class ConfigurationCustomCodeResponse:
     display_name: str
     code_sets: list[DbTotalConditionCodeCount]
     custom_codes: list[DbConfigurationCustomCode]
+    code_systems: dict[CodeSystemKey, DbCodeSystem]
 
 
 class AssociateCodesetInput(BaseModel):

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import csv
 import io
 from dataclasses import dataclass
@@ -16,6 +17,8 @@ from app.api.v1.configurations.model import (
     UploadCustomCodesPreviewItem,
 )
 from app.db.code_systems.db import (
+    DbCodeSystem,
+    get_all_code_systems_by_key,
     get_allowed_code_system_display_names,
     get_allowed_code_system_keys,
     get_code_system_by_key_db,
@@ -39,6 +42,7 @@ from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.logger import get_logger
+from app.services.terminology import CodeSystemKey
 
 router = APIRouter(prefix="/{configuration_id}/custom-codes")
 
@@ -148,12 +152,14 @@ async def add_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
+    code_systems = await get_all_code_systems_by_key(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+        code_systems=code_systems,
     )
 
 
@@ -170,6 +176,7 @@ class UploadCustomCodesPreviewResponse(BaseModel):
     """Validated CSV preview for delayed confirmation; only valid if preview."""
 
     preview: list[UploadCustomCodesPreviewItem]
+    code_systems: dict[CodeSystemKey, DbCodeSystem]
     codes_processed: int | None = None
     total_custom_codes_in_configuration: int | None = None
 
@@ -233,6 +240,7 @@ async def upload_custom_codes_csv(
     errors: list[dict] = []
     code_keys = [(cc.code.lower(), cc.system_key) for cc in config.custom_codes]
     batch_keys = set()
+    code_systems: dict[CodeSystemKey, DbCodeSystem] = defaultdict()
     for row_number, row in enumerate(csv_reader, start=2):
         code = (row.get("code_number") or "").strip()
         code_system_raw = (row.get("code_system") or "").strip()
@@ -252,6 +260,7 @@ async def upload_custom_codes_csv(
             sanitized_system = await get_code_system_by_key_or_display_name_or_raise_db(
                 name=code_system_raw, db=db
             )
+            code_systems[sanitized_system.key] = sanitized_system
         except ValueError:
             row_errors.append(
                 f"Invalid system: {code_system_raw or '[blank]'}. [code_system] must be one of [{allowed_systems_str}]"
@@ -292,6 +301,7 @@ async def upload_custom_codes_csv(
         codes_processed=len(preview_items),
         total_custom_codes_in_configuration=len(config.custom_codes)
         + len(preview_items),
+        code_systems=code_systems,
     )
 
 
@@ -462,12 +472,14 @@ async def delete_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
+    code_systems = await get_all_code_systems_by_key(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+        code_systems=code_systems,
     )
 
 
@@ -752,10 +764,12 @@ async def edit_custom_code(
     config_condition_info = await get_total_condition_code_counts_by_configuration_db(
         config_id=config.id, db=db
     )
+    code_systems = await get_all_code_systems_by_key(db=db)
 
     return ConfigurationCustomCodeResponse(
         id=updated_config.id,
         display_name=updated_config.name,
         code_sets=config_condition_info,
         custom_codes=updated_config.custom_codes,
+        code_systems=code_systems,
     )

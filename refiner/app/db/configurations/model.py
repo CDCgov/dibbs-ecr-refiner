@@ -54,15 +54,6 @@ class DbConfigurationCustomCode:
 
 
 @dataclass(frozen=True)
-class ConfigurationCustomCode(DbConfigurationCustomCode):
-    """
-    Custom code associated with a Configuration.
-    """
-
-    system_display_name: str
-
-
-@dataclass(frozen=True)
 class DbConfigurationSectionInstructions:
     """
     Properties of a section that describe how it should be processed during refining.

@@ -112,6 +112,7 @@ export function ConfigBuild() {
           code_sets={sortedCodeSets}
           included_conditions={configuration.data.included_conditions}
           custom_codes={configuration.data.custom_codes}
+          code_systems={configuration.data.code_systems}
           section_processing={configuration.data.section_processing}
           display_name={configuration.data.display_name}
           disabled={isDisabled}
@@ -142,6 +143,7 @@ type BuilderProps = Pick<
   | 'id'
   | 'code_sets'
   | 'custom_codes'
+  | 'code_systems'
   | 'included_conditions'
   | 'section_processing'
   | 'display_name'
@@ -151,6 +153,7 @@ function Builder({
   id,
   code_sets,
   custom_codes,
+  code_systems,
   included_conditions,
   section_processing,
   display_name: default_condition_name,
@@ -359,6 +362,7 @@ function Builder({
                 setIsOpen={setIsModalOpen}
                 configurationId={id}
                 customCodes={custom_codes}
+                codeSystems={code_systems}
                 disabled={disabled}
               />
             </div>

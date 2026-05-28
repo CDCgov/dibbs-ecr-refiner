@@ -1,3 +1,4 @@
+import type { ConfigurationCustomCodeResponseCodeSystems } from './configurationCustomCodeResponseCodeSystems';
 import type { DbConfigurationCustomCode } from './dbConfigurationCustomCode';
 import type { DbTotalConditionCodeCount } from './dbTotalConditionCodeCount';
 
@@ -9,4 +10,5 @@ export interface ConfigurationCustomCodeResponse {
   display_name: string;
   code_sets: DbTotalConditionCodeCount[];
   custom_codes: DbConfigurationCustomCode[];
+  code_systems: ConfigurationCustomCodeResponseCodeSystems;
 }

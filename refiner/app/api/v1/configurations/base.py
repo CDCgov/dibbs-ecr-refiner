@@ -21,8 +21,8 @@ from app.db.configurations.db import (
     is_config_valid_to_insert_db,
 )
 from app.db.configurations.model import (
-    ConfigurationCustomCode,
     DbConfiguration,
+    DbConfigurationCustomCode,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
@@ -332,11 +332,10 @@ async def get_configuration(
         code_sets=config_condition_info,
         included_conditions=included_conditions,
         custom_codes=[
-            ConfigurationCustomCode(
+            DbConfigurationCustomCode(
                 code=c.code,
                 name=c.name,
                 system_key=c.system_key,
-                system_display_name=code_systems[c.system_key].display_name,
             )
             for c in config.custom_codes
         ],
@@ -351,4 +350,5 @@ async def get_configuration(
         latest_version=latest_version,
         locked_by=locked_by,
         is_locked=is_locked,
+        code_systems=code_systems,
     )

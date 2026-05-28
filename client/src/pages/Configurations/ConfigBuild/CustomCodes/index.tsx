@@ -14,7 +14,7 @@ import {
 } from '../../../../api/configurations/configurations';
 import {
   CodeSystemsReponse,
-  ConfigurationCustomCode,
+  DbCodeSystem,
   DbConfigurationCustomCode,
 } from '../../../../api/schemas';
 import { Spinner } from '@components/Spinner';
@@ -27,24 +27,50 @@ import { Field } from '@components/Field';
 
 interface CustomCodesDetailProps {
   configurationId: string;
-  customCodes: ConfigurationCustomCode[];
+  customCodes: DbConfigurationCustomCode[];
+  codeSystems: { [key: string]: DbCodeSystem };
   disabled: boolean;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+type ConfigurationCustomCodeDisplay = DbConfigurationCustomCode & {
+  codeSystemDisplayName: string;
+};
+
+function enrichCustomCodeWithSystemDisplay(
+  customCodes: DbConfigurationCustomCode[],
+  codeSystems: { [key: string]: DbCodeSystem } | null
+): ConfigurationCustomCodeDisplay[] {
+  return customCodes.map((c) => {
+    return {
+      ...c,
+      codeSystemDisplayName:
+        codeSystems && Object.keys(codeSystems).includes(c.system_key)
+          ? codeSystems[c.system_key].display_name
+          : c.system_key,
+    };
+  });
+}
+
 export function CustomCodesDetail({
   configurationId,
   customCodes,
+  codeSystems,
   disabled,
   isOpen,
   setIsOpen,
 }: CustomCodesDetailProps) {
   const { mutate: deleteCode } = useDeleteCustomCodeFromConfiguration();
   const [selectedCustomCode, setSelectedCustomCode] =
-    useState<DbConfigurationCustomCode | null>(null);
+    useState<ConfigurationCustomCodeDisplay | null>(null);
   const queryClient = useQueryClient();
   const showToast = useToast();
+
+  const displayCustomCodes = enrichCustomCodeWithSystemDisplay(
+    customCodes,
+    codeSystems
+  );
 
   const resetModal = () => {
     setSelectedCustomCode(null);
@@ -62,14 +88,14 @@ export function CustomCodesDetail({
           </tr>
         </thead>
         <tbody>
-          {customCodes.map((customCode) => (
+          {displayCustomCodes.map((customCode) => (
             <tr
               key={customCode.code + customCode.system_key}
               className="align-middle"
             >
               <td className="w-1/6 pb-6">{customCode.code}</td>
               <td className="text-gray-cool-60 w-1/6 pb-6">
-                {customCode.system_display_name}
+                {customCode.codeSystemDisplayName}
               </td>
               <td className="w-1/6 pb-6">{customCode.name}</td>
 
