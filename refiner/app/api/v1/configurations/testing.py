@@ -19,8 +19,8 @@ from app.db.conditions.db import get_condition_by_id_db
 from app.db.conditions.model import DbCondition
 from app.db.configurations.db import get_configuration_by_id_db
 from app.db.configurations.model import DbConfiguration
-from app.db.demo.model import Condition
 from app.db.pool import AsyncDatabaseConnection, get_db
+from app.db.simulator.model import Condition
 from app.db.users.model import DbUser
 from app.services.aws.s3 import upload_refined_file_package
 from app.services.conditions.refinement import filter_refined_files_by_diff_rendering
@@ -118,7 +118,7 @@ async def run_configuration_test(
 
     # Validate and load the file
     file = await get_validated_file(
-        uploaded_file=uploaded_file, demo_file_path=sample_zip_path, logger=logger
+        uploaded_file=uploaded_file, test_file_path=sample_zip_path, logger=logger
     )
 
     logger.info("Processing inline test file", extra={"file": file.filename})
@@ -142,7 +142,7 @@ async def run_configuration_test(
     )
 
     # call the testing service
-    # business logic around **how** inline testing works is in services/testing.py
+    # business logic around **how** simulator testing works is in services/testing.py
     try:
         test_results = await inline_testing(
             xml_files=original_xml_files,

@@ -7,14 +7,14 @@ import {
 import { ConfigurationPage } from '../pages/ConfigurationPage';
 import { ConfigurationsPage } from '../pages/ConfigurationsPage';
 import { AxeBuilder } from '@axe-core/playwright';
-import { TestingPage } from '../pages/TestingPage';
+import { SimulatorPage } from '../pages/SimulatorPage';
 import { Api } from './api';
 import { ActivityLogPage } from '../pages/ActivityLogPage';
 
 type Fixtures = {
   configurationPage: ConfigurationPage;
   configurationsPage: ConfigurationsPage;
-  testingPage: TestingPage;
+  simulatorPage: SimulatorPage;
   activityLogPage: ActivityLogPage;
   makeAxeBuilder: () => AxeBuilder;
   api: Api;
@@ -35,8 +35,8 @@ const extendedTest = baseTest.extend<Fixtures>({
   configurationsPage: async ({ page }, use) => {
     await use(new ConfigurationsPage(page));
   },
-  testingPage: async ({ page }, use) => {
-    await use(new TestingPage(page));
+  simulatorPage: async ({ page }, use) => {
+    await use(new SimulatorPage(page));
   },
   activityLogPage: async ({ page }, use) => {
     await use(new ActivityLogPage(page));

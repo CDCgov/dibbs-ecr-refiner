@@ -2,16 +2,16 @@ import { Locator } from '@playwright/test';
 import { deleteAllConfigurations } from './db';
 import { test, expect } from './fixtures';
 
-test.describe('Independent testing', () => {
+test.describe('Simulate testing', () => {
   test.beforeEach(async ({ configurationsPage }) => {
     await configurationsPage.goto();
     await deleteAllConfigurations();
   });
   test.afterEach(async () => await deleteAllConfigurations());
 
-  test('No available configurations', async ({ page, testingPage }) => {
-    await testingPage.goto();
-    await testingPage.uploadTestFile();
+  test('No available configurations', async ({ page, simulatorPage }) => {
+    await simulatorPage.goto();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'The following detected conditions have not been configured and will not produce a refined eICR in the output.'
@@ -34,7 +34,7 @@ test.describe('Independent testing', () => {
       page.getByRole('button', { name: 'Start over' })
     ).toBeEnabled();
 
-    await testingPage.startOver();
+    await simulatorPage.startOver();
 
     await expect(
       page.getByText('Want to refine your own eCR file?')
@@ -43,7 +43,7 @@ test.describe('Independent testing', () => {
   });
 
   test('Should be able to handle a reasonable amount of configuration options', async ({
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     for (let i = 0; i < 20; i++) {
@@ -56,22 +56,22 @@ test.describe('Independent testing', () => {
 
     await api.createConfiguration('COVID-19');
 
-    await testingPage.goto();
-    await testingPage.uploadTestFile();
+    await simulatorPage.goto();
+    await simulatorPage.uploadTestFile();
 
     // 19 inactive, 1 active, and 1 draft
     await expect(
-      testingPage.getConditionSelect('COVID-19').getByRole('option')
+      simulatorPage.getConditionSelect('COVID-19').getByRole('option')
     ).toHaveCount(21);
 
     await expect(
-      testingPage.getConditionSelect('COVID-19').locator('option:checked')
+      simulatorPage.getConditionSelect('COVID-19').locator('option:checked')
     ).toHaveText('Version 20 (active)');
   });
 
   test('Only COVID-19 has been configured', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     // create config and activate it
@@ -81,30 +81,32 @@ test.describe('Independent testing', () => {
     // create a draft
     await api.createConfiguration('COVID-19');
 
-    await testingPage.goto();
-    await testingPage.uploadTestFile();
+    await simulatorPage.goto();
+    await simulatorPage.uploadTestFile();
 
     // checkbox should be available for COVID-19 only
-    await expect(testingPage.getConditionCheckbox('COVID-19')).toBeVisible();
+    await expect(simulatorPage.getConditionCheckbox('COVID-19')).toBeVisible();
     await expect(
-      testingPage.getConditionCheckbox('Influenza')
+      simulatorPage.getConditionCheckbox('Influenza')
     ).not.toBeVisible();
 
     // select box should be available for COVID-19 configs
     await expect(
-      testingPage.getConditionSelect('COVID-19').getByRole('option')
+      simulatorPage.getConditionSelect('COVID-19').getByRole('option')
     ).toHaveCount(2);
 
     // no influenza select should be available
-    await expect(testingPage.getConditionSelect('Influenza')).not.toBeVisible();
+    await expect(
+      simulatorPage.getConditionSelect('Influenza')
+    ).not.toBeVisible();
 
     // default option should be the active covid config
     await expect(
-      testingPage.getConditionSelect('COVID-19').locator('option:checked')
+      simulatorPage.getConditionSelect('COVID-19').locator('option:checked')
     ).toHaveText('Version 1 (active)');
 
     // select the draft covid config
-    await testingPage
+    await simulatorPage
       .getConditionSelect('COVID-19')
       .selectOption('Version 2 (draft)');
 
@@ -140,24 +142,24 @@ test.describe('Independent testing', () => {
 
   test('Only Influenza is selected for refinement', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     await api.createConfiguration('COVID-19');
     await api.createConfiguration('Influenza');
 
-    await testingPage.goto();
+    await simulatorPage.goto();
 
-    await testingPage.uploadTestFile();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'We found the following reportable condition(s) in the RR:'
       )
     ).toBeVisible();
 
-    await testingPage.getConditionCheckbox('Influenza').click();
+    await simulatorPage.getConditionCheckbox('Influenza').click();
 
-    await testingPage.runRefinement();
+    await simulatorPage.runRefinement();
     await expect(page.getByLabel('CONDITION:').getByRole('option')).toHaveText([
       'COVID-19',
     ]);
@@ -165,15 +167,15 @@ test.describe('Independent testing', () => {
 
   test('Refine eCR button is disabled when no selections are made', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     await api.createConfiguration('COVID-19');
     await api.createConfiguration('Influenza');
 
-    await testingPage.goto();
+    await simulatorPage.goto();
 
-    await testingPage.uploadTestFile();
+    await simulatorPage.uploadTestFile();
 
     await expect(
       page.getByText(
@@ -199,7 +201,7 @@ test.describe('Independent testing', () => {
 
   test('Both COVID-19 and Influenza configurations are selected for refinement', async ({
     page,
-    testingPage,
+    simulatorPage,
     api,
   }) => {
     const covidActive = await api.createConfiguration('COVID-19');
@@ -210,9 +212,9 @@ test.describe('Independent testing', () => {
 
     const fluDraft = await api.createConfiguration('Influenza');
 
-    await testingPage.goto();
+    await simulatorPage.goto();
 
-    await testingPage.uploadTestFile();
+    await simulatorPage.uploadTestFile();
     await expect(
       page.getByText(
         'We found the following reportable condition(s) in the RR:'
@@ -228,10 +230,10 @@ test.describe('Independent testing', () => {
     // list indicates there were unmatched conditions
     await expect(page.getByRole('listitem')).not.toBeVisible();
 
-    const covidCheckbox = testingPage.getConditionCheckbox('COVID-19');
+    const covidCheckbox = simulatorPage.getConditionCheckbox('COVID-19');
     const covidSelect = page.getByLabel('COVID-19', { exact: true });
 
-    const fluCheckbox = testingPage.getConditionCheckbox('Influenza');
+    const fluCheckbox = simulatorPage.getConditionCheckbox('Influenza');
     const fluSelect = page.getByLabel('Influenza', { exact: true });
 
     const getOptionValues = (select: Locator) =>
