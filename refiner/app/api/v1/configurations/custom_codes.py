@@ -1,6 +1,6 @@
-from collections import defaultdict
 import csv
 import io
+from collections import defaultdict
 from dataclasses import dataclass
 from logging import Logger
 from uuid import UUID
