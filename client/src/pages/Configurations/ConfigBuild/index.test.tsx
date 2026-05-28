@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { TestQueryClientProvider } from '../../../test-utils';
 import {
   CodeSystemsReponse,
-  ConfigurationCustomCode,
+  DbConfigurationCustomCode,
   DbTotalConditionCodeCount,
   GetConfigurationResponse,
   GetConfigurationResponseVersion,
@@ -27,12 +27,11 @@ const mockCodeSets: DbTotalConditionCodeCount[] = [
   { condition_id: 'gonorrhea-1', display_name: 'Gonorrhea', total_codes: 5 },
 ];
 
-const mockCustomCodes: ConfigurationCustomCode[] = [
+const mockCustomCodes: DbConfigurationCustomCode[] = [
   {
     code: 'custom-code1',
     name: 'test-custom-code1',
     system_key: 'icd10',
-    system_display_name: 'ICD-10',
   },
 ];
 
@@ -91,6 +90,14 @@ const baseMockConfig: GetConfigurationResponse = {
     'https://tes.tools.aimsplatform.org/api/fhir/ValueSet/123',
   locked_by: null,
   is_locked: false,
+  code_systems: {
+    icd10: {
+      key: 'icd10',
+      id: '1cbe0833-7571-47b6-9374-48a3d60b2e43',
+      display_name: 'ICD-10',
+      oid: '2.16.840.1.113883.6.90',
+    },
+  },
 };
 
 const mockCodeSystems: CodeSystemsReponse[] = [
