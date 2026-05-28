@@ -99,20 +99,22 @@ def clone_section_processing_instructions(
     # Load spec to check for narrative-only sections
     spec = load_spec("3.1.1")
 
-    standard_updates = [
-        replace(
-            section,
-            action=(
-                "retain"
-                if spec.sections.get(section.code)
-                and not spec.sections.get(section.code).has_match_rules
-                else action_map.get(section.code, section.action)
-            ),
-            include=include_map.get(section.code, section.include),
-            narrative=narrative_map.get(section.code, section.narrative),
+    standard_updates = []
+    for section in clone_to:
+        section_spec = spec.sections.get(section.code)
+        if section_spec and not section_spec.has_match_rules:
+            new_action = "retain"
+        else:
+            new_action = action_map.get(section.code, section.action)
+
+        standard_updates.append(
+            replace(
+                section,
+                action=new_action,
+                include=include_map.get(section.code, section.include),
+                narrative=narrative_map.get(section.code, section.narrative),
+            )
         )
-        for section in clone_to
-    ]
 
     return standard_updates + custom_sections
 
