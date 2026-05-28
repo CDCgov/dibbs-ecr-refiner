@@ -106,36 +106,39 @@ export function Diff({
       </div>
 
       {renderDiff ? (
-        <ReactDiffViewer
-          oldValue={unrefined_eicr}
-          newValue={condition.refined_eicr}
-          splitView={splitView}
-          showDiffOnly={showDiffOnly}
-          compareMethod={DiffMethod.WORDS_WITH_SPACE}
-          leftTitle="Original eICR"
-          rightTitle="Refined eICR"
-          loadingElement={() => {
-            return (
-              <div className="m-auto flex w-50 items-center justify-center">
-                <Spinner className="m-2" /> Computing diff...
+        <div className="relative">
+          <ReactDiffViewer
+            oldValue={unrefined_eicr}
+            newValue={condition.refined_eicr}
+            splitView={splitView}
+            showDiffOnly={showDiffOnly}
+            compareMethod={DiffMethod.WORDS_WITH_SPACE}
+            leftTitle="Original eICR"
+            rightTitle="Refined eICR"
+            loadingElement={() => (
+              <div className="absolute inset-x-0 top-16 z-10 flex justify-center">
+                <div className="flex items-center rounded-md bg-white px-4 py-2 shadow">
+                  <Spinner className="mr-2" />
+                  <span>Computing diff...</span>
+                </div>
               </div>
-            );
-          }}
-          styles={{
-            titleBlock: {
-              fontFamily: 'Public Sans, sans-serif',
-              fontSize: '16px',
-            },
-            diffContainer: {
-              borderRadius: '1px',
-              borderStyle: '',
-            },
-            lineNumber: {
-              color: 'black !important',
-              opacity: '100 !important',
-            },
-          }}
-        />
+            )}
+            styles={{
+              titleBlock: {
+                fontFamily: 'Public Sans, sans-serif',
+                fontSize: '16px',
+              },
+              diffContainer: {
+                borderRadius: '1px',
+                borderStyle: '',
+              },
+              lineNumber: {
+                color: 'black !important',
+                opacity: '100 !important',
+              },
+            }}
+          />
+        </div>
       ) : (
         <DiffViewWarning />
       )}
