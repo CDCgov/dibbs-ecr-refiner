@@ -300,7 +300,11 @@ export function ConditionCodeTable({
           <p>No codes match the search criteria.</p>
         </div>
       ) : (
-        <div ref={parentRef} className="h-full overflow-y-auto">
+        <div
+          ref={parentRef}
+          className="h-100 overflow-y-auto sm:h-full"
+          tabIndex={0}
+        >
           <div
             role="table"
             id="codeset-table"

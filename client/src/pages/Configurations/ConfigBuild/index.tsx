@@ -213,7 +213,7 @@ function Builder({
   }
 
   return (
-    <div className="bg-blue-cool-5 h-140 rounded-lg p-4">
+    <div className="bg-blue-cool-5 h-auto overflow-y-auto rounded-lg p-4 sm:h-140 sm:overflow-y-hidden">
       <div className="flex h-full flex-col gap-4 sm:flex-row">
         <div className="flex flex-col py-2 pt-4 md:w-[20rem] md:gap-10">
           <div>
