@@ -55,8 +55,7 @@ async def get_event_count_by_condition_db(
         FROM events e
         LEFT JOIN configurations c ON e.configuration_id = c.id
         LEFT JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
-        LEFT JOIN conditions cond ON cond.id = cc.condition_id
-                                AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
+        LEFT JOIN conditions cond ON cond.id = cc.condition_id AND (%s::TEXT IS NULL OR cond.canonical_url = %s)
         WHERE e.jurisdiction_id = %s
         AND (%s::TEXT IS NULL OR cond.id IS NOT NULL);
     """
