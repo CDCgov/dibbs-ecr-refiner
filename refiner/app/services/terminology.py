@@ -2,7 +2,6 @@ from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from fastapi import Depends
 from pydantic import BaseModel, Field
 
 from app.db.code_systems.db import (
@@ -25,7 +24,7 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 
 
 async def index_condition_code_list_by_system(
-    condition: DbCondition, db: AsyncDatabaseConnection = Depends(get_db)
+    condition: DbCondition, db: AsyncDatabaseConnection
 ) -> dict[CodeSystemKey, list[DbConditionCoding]]:
     """
     Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.

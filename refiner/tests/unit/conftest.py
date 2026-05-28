@@ -53,7 +53,7 @@ CODE_SYSTEM_DATA = {
     "icd-10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
     "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
     "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
-    "other": {"oid": None, "display_name": "Other"},
+    "other": {"oid": "Other", "display_name": "Other"},
 }
 
 
