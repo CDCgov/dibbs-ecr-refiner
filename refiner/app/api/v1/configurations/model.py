@@ -11,7 +11,7 @@ from app.db.configurations.model import (
     DbTotalConditionCodeCount,
     GetConfigurationResponseVersion,
 )
-from app.db.demo.model import Condition
+from app.db.simulator.model import Condition
 from app.db.users.model import UserInfoBase
 from app.services.ecr.policy import (
     DisabledSection,

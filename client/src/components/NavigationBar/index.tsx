@@ -8,7 +8,7 @@ export function NavigationBar() {
       className="text-md! flex-col justify-end gap-4 text-white"
     >
       <NavigationLink to="/configurations" title="Configurations" />
-      <NavigationLink to="/testing" title="Testing" />
+      <NavigationLink to="/simulator" title="Simulator" />
       <NavigationLink to="/activity" title="Activity Log" />
     </nav>
   );

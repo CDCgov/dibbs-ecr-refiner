@@ -1,13 +1,15 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { uploadMonmothmaTestFile } from '../utils';
 
-export class TestingPage {
+export class SimulatorPage {
   constructor(private page: Page) {}
 
   async goto() {
-    await this.page.getByRole('link', { name: 'Testing', exact: true }).click();
+    await this.page
+      .getByRole('link', { name: 'Simulator', exact: true })
+      .click();
     await expect(
-      this.page.getByRole('heading', { name: 'Test Refiner', exact: true })
+      this.page.getByRole('heading', { name: 'Simulate Refiner', exact: true })
     ).toBeVisible();
   }
 

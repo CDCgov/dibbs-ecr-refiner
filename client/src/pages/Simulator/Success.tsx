@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Title } from '@components/Title';
-import { IndependentTestUploadResponse } from '../../api/schemas';
+import { SimulatorUploadResponse } from '../../api/schemas';
 import { Diff } from '@components/Diff';
 import { Select, SelectContainer } from '@components/Select';
 import { Field } from '@components/Field';
 import { Label } from '@components/Label';
 
 type SuccessProps = Pick<
-  IndependentTestUploadResponse,
+  SimulatorUploadResponse,
   'refined_conditions' | 'refined_download_key' | 'unrefined_eicr'
 >;
 
