@@ -43,7 +43,7 @@ Configurations are returned to the client.
 
 Args:
     uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
-    demo_zip_path (Path, optional): The path to the demo zip file.
+    simulator_zip_path (Path, optional): The path to the demo zip file.
     user (DbUser, optional): The logged in user.
     db (AsyncDatabaseConnection, optional): The database connection.
     logger (Logger, optional): The app logger.

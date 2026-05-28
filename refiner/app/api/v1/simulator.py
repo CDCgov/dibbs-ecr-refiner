@@ -140,7 +140,7 @@ async def _build_refined_conditions(
 )
 async def discover_configurations(
     uploaded_file: UploadFile | None = File(None),
-    demo_zip_path: Path = Depends(get_sample_zip_path),
+    simulator_zip_path: Path = Depends(get_sample_zip_path),
     user: DbUser = Depends(get_logged_in_user),
     db: AsyncDatabaseConnection = Depends(get_db),
     logger: Logger = Depends(get_logger),
@@ -152,7 +152,7 @@ async def discover_configurations(
 
     Args:
         uploaded_file (UploadFile | None, optional): The eCR file package uploaded by the user.
-        demo_zip_path (Path, optional): The path to the demo zip file.
+        simulator_zip_path (Path, optional): The path to the demo zip file.
         user (DbUser, optional): The logged in user.
         db (AsyncDatabaseConnection, optional): The database connection.
         logger (Logger, optional): The app logger.
@@ -161,11 +161,11 @@ async def discover_configurations(
         DiscoveredConfigurationsResponse: Matching configurations, grouped by condition.
     """
     # Check that demo file path is valid
-    validate_path_or_raise(path=demo_zip_path)
+    validate_path_or_raise(path=simulator_zip_path)
 
     # Validate and load the file
     file = await get_validated_file(
-        uploaded_file=uploaded_file, test_file_path=demo_zip_path, logger=logger
+        uploaded_file=uploaded_file, test_file_path=simulator_zip_path, logger=logger
     )
 
     logger.info("Processing simulator file", extra={"file": file.filename})
