@@ -14,7 +14,10 @@ from app.services.ecr.model import HL7_NS, EICRRefinementPlan
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
-from tests.unit.conftest import CODE_SYSTEM_DATA
+from tests.unit.helpers.code_systems import (
+    create_mock_code_system,
+    get_mock_allowed_system_keys,
+)
 from tests.unit.helpers.configuration import create_processed_config
 
 # NOTE:
@@ -214,17 +217,12 @@ def mock_db_functions(monkeypatch):
     """
     monkeypatch.setattr(
         "app.services.configurations.get_allowed_code_system_keys",
-        AsyncMock(return_value=CODE_SYSTEM_DATA.keys()),
+        AsyncMock(return_value=get_mock_allowed_system_keys()),
     )
     monkeypatch.setattr(
         "app.services.configurations.get_code_system_by_key_or_raise_db",
         AsyncMock(
-            return_value=DbCodeSystem(
-                id=uuid4(),
-                key="snomed",
-                display_name=CODE_SYSTEM_DATA["snomed"]["display_name"],
-                oid=CODE_SYSTEM_DATA["snomed"]["oid"],
-            )
+            return_value=create_mock_code_system("snomed"),
         ),
     )
 
@@ -305,12 +303,7 @@ class TestRefiningService:
         monkeypatch.setattr(
             "app.services.configurations.get_code_system_by_key_or_raise_db",
             AsyncMock(
-                return_value=DbCodeSystem(
-                    id=uuid4(),
-                    key="loinc",
-                    display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
-                    oid=CODE_SYSTEM_DATA["loinc"]["oid"],
-                )
+                return_value=create_mock_code_system("loinc"),
             ),
         )
 
@@ -359,12 +352,7 @@ class TestRefiningService:
         monkeypatch.setattr(
             "app.services.configurations.get_code_system_by_key_or_raise_db",
             AsyncMock(
-                return_value=DbCodeSystem(
-                    id=uuid4(),
-                    key="loinc",
-                    display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
-                    oid=CODE_SYSTEM_DATA["loinc"]["oid"],
-                )
+                return_value=create_mock_code_system("loinc"),
             ),
         )
 
@@ -457,12 +445,7 @@ class TestRefiningService:
         monkeypatch.setattr(
             "app.services.configurations.get_code_system_by_key_or_raise_db",
             AsyncMock(
-                side_effect=lambda key, db: DbCodeSystem(
-                    id=uuid4(),
-                    key=key,
-                    display_name=CODE_SYSTEM_DATA[key]["display_name"],
-                    oid=CODE_SYSTEM_DATA[key]["oid"],
-                )
+                side_effect=lambda key, db: create_mock_code_system(key=key),
             ),
         )
 

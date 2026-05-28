@@ -1,6 +1,8 @@
 import os
 from unittest.mock import AsyncMock, MagicMock
 
+from tests.unit.helpers.code_systems import create_mock_code_systems
+
 os.environ["ENV"] = "local"
 os.environ["VERSION"] = "unit-test"
 os.environ["DB_URL"] = "postgresql://mock@fakedb:5432/refiner"
@@ -33,7 +35,6 @@ from lxml.etree import _Element
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
 from app.db.code_systems.db import (
-    DbCodeSystem,
     get_all_code_systems_db,
 )
 from app.db.conditions.model import DbCondition, DbConditionCoding
@@ -49,15 +50,6 @@ TEST_SESSION_TOKEN = "test-token"
 MOCK_CONFIGURATION_ID = UUID("11111111-1111-1111-1111-111111111111")
 MOCK_CONDITION_ID = UUID("22222222-2222-2222-2222-222222222222")
 MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
-
-CODE_SYSTEM_DATA = {
-    "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
-    "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
-    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
-    "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
-    "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
-    "other": {"oid": "Other", "display_name": "Other"},
-}
 
 
 class AsyncContextManagerMock:
@@ -125,15 +117,7 @@ def mock_user():
 
 @pytest.fixture
 def mock_supported_systems():
-    return [
-        DbCodeSystem(
-            id=uuid4(),
-            oid=system[1]["oid"],
-            display_name=system[1]["display_name"],
-            key=system[0],
-        )
-        for system in CODE_SYSTEM_DATA.items()
-    ]
+    return create_mock_code_systems()
 
 
 @pytest.fixture

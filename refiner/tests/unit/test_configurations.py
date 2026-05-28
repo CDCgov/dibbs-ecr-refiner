@@ -9,7 +9,6 @@ from fastapi import status
 
 from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.api.v1.configurations.testing import _get_upload_zip
-from app.db.code_systems.db import DbCodeSystem
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
@@ -18,7 +17,10 @@ from app.db.configurations.model import (
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
 from app.services.testing import InlineTestingResult
-from tests.unit.conftest import CODE_SYSTEM_DATA
+from tests.unit.helpers.code_systems import (
+    create_mock_code_system,
+    get_mock_allowed_system_keys,
+)
 
 
 @pytest.fixture
@@ -226,7 +228,7 @@ async def test_disassociate_codeset_with_configuration(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("code_system", list(CODE_SYSTEM_DATA.keys()))
+@pytest.mark.parametrize("code_system", list(get_mock_allowed_system_keys()))
 async def test_add_custom_code_to_configuration(
     authed_client, mock_configuration, monkeypatch, code_system
 ):
@@ -234,12 +236,7 @@ async def test_add_custom_code_to_configuration(
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_code_system_by_key_db",
         AsyncMock(
-            return_value=DbCodeSystem(
-                id=uuid4(),
-                oid=CODE_SYSTEM_DATA[code_system]["oid"],
-                display_name=CODE_SYSTEM_DATA[code_system]["display_name"],
-                key=code_system,
-            )
+            return_value=create_mock_code_system(code_system),
         ),
     )
 
@@ -325,14 +322,7 @@ async def test_edit_custom_code_from_configuration(
 
     monkeypatch.setattr(
         "app.api.v1.configurations.custom_codes.get_code_system_by_key_or_raise_db",
-        AsyncMock(
-            return_value=DbCodeSystem(
-                id=uuid4(),
-                oid=CODE_SYSTEM_DATA["loinc"]["oid"],
-                display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
-                key="loinc",
-            )
-        ),
+        AsyncMock(return_value=create_mock_code_system("loinc")),
     )
     config_id = str(mock_configuration.id)
     # explicitly monkeypatch to ensure the code to edit is present
