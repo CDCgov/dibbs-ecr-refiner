@@ -7,9 +7,7 @@ from pydantic import BaseModel, Field
 from app.db.code_systems.db import (
     CodeSystemKey,
     Oid,
-    get_all_code_systems_db,
 )
-from app.db.pool import AsyncDatabaseConnection, get_db
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
@@ -23,18 +21,17 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 # =============================================================================
 
 
-async def index_condition_code_list_by_system(
-    condition: DbCondition, db: AsyncDatabaseConnection
+def index_condition_code_list_by_system(
+    condition: DbCondition, system_keys_to_index_by: list[CodeSystemKey]
 ) -> dict[CodeSystemKey, list[DbConditionCoding]]:
     """
     Utility method to index condition code lists as stored into the DB by the ID values. Useful for various processing jobs processing.
     """
-    all_code_systems = await get_all_code_systems_db(db=db)
     result: dict[CodeSystemKey, list[DbConditionCoding]] = defaultdict(list)
-    for s in all_code_systems.values():
+    for s in system_keys_to_index_by:
         # TODO: replace this string mapping with proper read to the codes table
-        condition_column_index = f"{s.key}_codes"
-        result[s.key] = getattr(condition, condition_column_index, [])
+        condition_column_index = f"{s}_codes"
+        result[s] = getattr(condition, condition_column_index, [])
 
     return result
 

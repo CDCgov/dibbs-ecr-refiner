@@ -1,6 +1,10 @@
+from unittest.mock import AsyncMock
+from uuid import uuid4
+
 import pytest
 from lxml import etree
 
+from app.db.code_systems.db import DbCodeSystem
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
@@ -10,6 +14,7 @@ from app.services.ecr.model import HL7_NS, EICRRefinementPlan
 from app.services.ecr.refine import create_rr_refinement_plan, refine_eicr, refine_rr
 from app.services.ecr.specification import load_spec
 from app.services.terminology import ProcessedConfiguration
+from tests.unit.conftest import CODE_SYSTEM_DATA
 from tests.unit.helpers.configuration import create_processed_config
 
 # NOTE:
@@ -202,6 +207,28 @@ def _make_plan(
 # =============================================================================
 
 
+@pytest.fixture(autouse=True)
+def mock_db_functions(monkeypatch):
+    """
+    Mock return values of the `_db` functions called by the routes.
+    """
+    monkeypatch.setattr(
+        "app.services.configurations.get_allowed_code_system_keys",
+        AsyncMock(return_value=CODE_SYSTEM_DATA.keys()),
+    )
+    monkeypatch.setattr(
+        "app.services.configurations.get_code_system_by_key_or_raise_db",
+        AsyncMock(
+            return_value=DbCodeSystem(
+                id=uuid4(),
+                key="snomed",
+                display_name=CODE_SYSTEM_DATA["snomed"]["display_name"],
+                oid=CODE_SYSTEM_DATA["snomed"]["oid"],
+            )
+        ),
+    )
+
+
 @pytest.mark.asyncio
 class TestRefiningService:
     async def test_retain_action_v1_1(
@@ -268,12 +295,24 @@ class TestRefiningService:
         assert problems_section.get("nullFlavor") == "NI"
 
     async def test_refine_action_with_matches_v1_1(
-        self, eicr_root_v1_1: etree._Element
+        self, eicr_root_v1_1: etree._Element, monkeypatch
     ):
         """
         Tests the 'refine' action for v1.1, ensuring it correctly uses the
         terminology pipeline to build codes and filter a section.
         """
+
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            AsyncMock(
+                return_value=DbCodeSystem(
+                    id=uuid4(),
+                    key="loinc",
+                    display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
+                    oid=CODE_SYSTEM_DATA["loinc"]["oid"],
+                )
+            ),
+        )
 
         processed_config = await _make_processed_config_v1_1(
             loinc_codes=[DbConditionCoding(code="94533-7", display="")]
@@ -310,13 +349,24 @@ class TestRefiningService:
     # internal functions, making them resilient to internal refactoring
 
     async def test_section_aware_results_filtering_v1_1(
-        self, eicr_root_v1_1: etree._Element
+        self, eicr_root_v1_1: etree._Element, monkeypatch
     ):
         """
         Tests that the section-aware path correctly filters the Results section:
         keeps entries with LOINC codes in the condition grouper and removes entries
         with LOINC codes not in the condition grouper.
         """
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            AsyncMock(
+                return_value=DbCodeSystem(
+                    id=uuid4(),
+                    key="loinc",
+                    display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
+                    oid=CODE_SYSTEM_DATA["loinc"]["oid"],
+                )
+            ),
+        )
 
         processed_config = await _make_processed_config_v1_1(
             loinc_codes=[
@@ -395,12 +445,26 @@ class TestRefiningService:
         assert "59621000" not in section_text  # hypertension
         assert "44054006" not in section_text  # diabetes
 
-    async def test_display_name_enrichment_v1_1(self, eicr_root_v1_1: etree._Element):
+    async def test_display_name_enrichment_v1_1(
+        self, eicr_root_v1_1: etree._Element, monkeypatch
+    ):
         """
         Tests that missing displayName attributes are filled in from the condition
         grouper, both at match time (observation code) and during the post-prune
         enrichment pass (organizer code, result value).
         """
+
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            AsyncMock(
+                side_effect=lambda key, db: DbCodeSystem(
+                    id=uuid4(),
+                    key=key,
+                    display_name=CODE_SYSTEM_DATA[key]["display_name"],
+                    oid=CODE_SYSTEM_DATA[key]["oid"],
+                )
+            ),
+        )
 
         processed_config = await _make_processed_config_v1_1(
             loinc_codes=[

@@ -1,4 +1,5 @@
 import os
+import random
 from unittest.mock import AsyncMock, MagicMock
 
 os.environ["ENV"] = "local"
@@ -32,7 +33,11 @@ from lxml.etree import _Element
 
 from app.api.auth.middleware import get_logged_in_user
 from app.core.models.types import XMLFiles
-from app.db.code_systems.db import DbCodeSystem, get_all_code_systems_db
+from app.db.code_systems.db import (
+    DbCodeSystem,
+    get_all_code_systems_db,
+    get_code_system_by_key_db,
+)
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import DbConfiguration
 from app.db.pool import get_db
@@ -50,7 +55,7 @@ MOCK_NEW_CONFIGURATION_ID = UUID("33333333-3333-3333-3333-333333333333")
 CODE_SYSTEM_DATA = {
     "snomed": {"oid": "2.16.840.1.113883.6.96", "display_name": "SNOMED"},
     "loinc": {"oid": "2.16.840.1.113883.6.1", "display_name": "LOINC"},
-    "icd-10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
+    "icd10": {"oid": "2.16.840.1.113883.6.90", "display_name": "ICD-10"},
     "rxnorm": {"oid": "2.16.840.1.113883.6.88", "display_name": "RxNorm"},
     "cvx": {"oid": "2.16.840.1.113883.12.292", "display_name": "CVX"},
     "other": {"oid": "Other", "display_name": "Other"},
@@ -195,7 +200,7 @@ def mock_logged_in_user(mock_user, test_app):
 @pytest.fixture
 def mock_code_systems(test_app):
     """
-    Mock the logged-in user dependency
+    Mock a read to the code system table
     """
 
     test_app.dependency_overrides[get_all_code_systems_db] = lambda: (
@@ -203,6 +208,20 @@ def mock_code_systems(test_app):
     )
     yield
     test_app.dependency_overrides.pop(get_all_code_systems_db, None)
+
+
+@pytest.fixture
+def mock_code_system(test_app):
+    """
+    Mock a single read to the code system table
+    """
+
+    test_app.dependency_overrides[get_code_system_by_key_db] = lambda: (
+        mock_supported_system
+    )
+
+    yield
+    test_app.dependency_overrides.pop(get_code_system_by_key_db, None)
 
 
 @pytest.fixture(scope="session")

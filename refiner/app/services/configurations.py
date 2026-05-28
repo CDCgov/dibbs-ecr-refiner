@@ -6,6 +6,7 @@ from typing import Any
 
 from app.db.code_systems.db import (
     CodeSystemKey,
+    get_allowed_code_system_keys,
     get_code_system_by_key_or_raise_db,
 )
 from app.db.conditions.db import get_condition_by_id_db, get_included_conditions_db
@@ -188,13 +189,15 @@ async def convert_config_to_storage_payload(
     conditions = await get_included_conditions_db(
         included_conditions=configuration.included_conditions, db=db
     )
-
+    systems_keys_to_index_by = await get_allowed_code_system_keys(db=db)
     # condition codes -> build both the flat set and per-system dicts
     for condition in conditions:
         # map each db code list to its target dict + OID
-        code_system_map: dict[
-            CodeSystemKey, list[DbConditionCoding]
-        ] = await index_condition_code_list_by_system(condition, db=db)
+        code_system_map: dict[CodeSystemKey, list[DbConditionCoding]] = (
+            index_condition_code_list_by_system(
+                condition=condition, system_keys_to_index_by=systems_keys_to_index_by
+            )
+        )
 
         for key, code_list in code_system_map.items():
             codes = codes | {c.code for c in code_list}

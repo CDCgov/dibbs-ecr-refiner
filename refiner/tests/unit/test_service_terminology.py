@@ -1,12 +1,15 @@
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
 
+from app.db.code_systems.db import DbCodeSystem
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
 )
+from tests.unit.conftest import CODE_SYSTEM_DATA
 from tests.unit.helpers.configuration import create_processed_config
 
 
@@ -54,7 +57,7 @@ def make_dbconfiguration(**kwargs) -> DbConfiguration:
 
 @pytest.mark.asyncio
 class TestTerminologyService:
-    async def test_processed_configuration_from_payload_and_xpath(self):
+    async def test_processed_configuration_from_payload_and_xpath(self, monkeypatch):
 
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("A", "SNOMED")]
@@ -68,10 +71,25 @@ class TestTerminologyService:
                 )
             ]
         )
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            AsyncMock(
+                return_value=DbCodeSystem(
+                    id=uuid4(),
+                    key="loinc",
+                    display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
+                    oid=CODE_SYSTEM_DATA["loinc"]["oid"],
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            "app.services.configurations.get_allowed_code_system_keys",
+            AsyncMock(return_value=CODE_SYSTEM_DATA.keys()),
+        )
         processed = await create_processed_config(config=config, conditions=[cond1])
         assert processed.codes == {"A", "B"}
 
-    async def test_processed_configuration_duplicate_codes(self):
+    async def test_processed_configuration_duplicate_codes(self, monkeypatch):
         cond1: DbCondition = make_condition(
             snomed_codes=[make_db_condition_coding("DUP", "SNOMED")]
         )
@@ -86,6 +104,21 @@ class TestTerminologyService:
                     name="Custom",
                 )
             ]
+        )
+        monkeypatch.setattr(
+            "app.services.configurations.get_code_system_by_key_or_raise_db",
+            AsyncMock(
+                return_value=DbCodeSystem(
+                    id=uuid4(),
+                    key="loinc",
+                    display_name=CODE_SYSTEM_DATA["loinc"]["display_name"],
+                    oid=CODE_SYSTEM_DATA["loinc"]["oid"],
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            "app.services.configurations.get_allowed_code_system_keys",
+            AsyncMock(return_value=CODE_SYSTEM_DATA.keys()),
         )
         processed = await create_processed_config(
             config=config, conditions=[cond1, cond2]
