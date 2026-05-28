@@ -246,7 +246,8 @@ async def _get_next_configuration_version_db(
         (canonical_url, jurisdiction_id),
     )
     row = await cursor.fetchone()
-    return ((row["max_version"] if row else 0) or 0) + 1
+    max_version = 0 if (not row or row["max_version"] is None) else row["max_version"]
+    return max_version + 1
 
 
 async def insert_configuration_db(
