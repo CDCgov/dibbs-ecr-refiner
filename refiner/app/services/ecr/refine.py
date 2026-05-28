@@ -297,16 +297,6 @@ def create_eicr_refinement_plan(
         # * if a code doesn't yet have rules, we'll skip it (include + retain)
         instructions = rules_map_with_skips.get(code, SKIP_SECTION_INSTRUCTIONS)
 
-        # NORMALIZATION: Narrative-only sections cannot be refined.
-        # Treat "refine" as "retain" to prevent accidental stubbing.
-        spec_entry = specification.sections.get(code)
-        if (
-            spec_entry
-            and not spec_entry.has_match_rules
-            and instructions.action == "refine"
-        ):
-            instructions = dataclasses.replace(instructions, action="retain")
-
         section_instructions[code] = instructions
 
     # build provenance before the maps are discarded — source classification

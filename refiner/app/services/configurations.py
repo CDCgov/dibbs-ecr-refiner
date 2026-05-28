@@ -39,13 +39,21 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
     # TODO:
     # we should try to keep `db` related models out of the
     # ecr service as much as practicable
+
+    # Narrative-only sections (has_match_rules=False) should default to "retain"
+    # since there is nothing to match against
     section_processing_defaults = [
         DbConfigurationSectionProcessing(
             name=section_spec.display_name,
             code=loinc_code,
             narrative=True,
             include=True,
-            action="retain" if loinc_code in SECTION_PROCESSING_SKIP else "refine",
+            action=(
+                "retain"
+                if loinc_code in SECTION_PROCESSING_SKIP
+                or not section_spec.has_match_rules
+                else "refine"
+            ),
             versions=loinc_versions_flat.get(loinc_code, []),
             section_type="standard",
         )
@@ -61,6 +69,9 @@ def clone_section_processing_instructions(
 ) -> list[DbConfigurationSectionProcessing]:
     """
     Clones section processing instruction info from one list of sections into another.
+
+    Handles narrative-only sections specially: ensures they always have action="retain"
+    regardless of what was cloned, since they cannot be refined (no entry match rules).
 
     Args:
         clone_from (list[DbConfigurationSectionProcessing]): The list of sections to clone processing instruction info from.
@@ -85,10 +96,18 @@ def clone_section_processing_instructions(
     include_map = {section.code: section.include for section in standard_sections}
     narrative_map = {section.code: section.narrative for section in standard_sections}
 
+    # Load spec to check for narrative-only sections
+    spec = load_spec("3.1.1")
+
     standard_updates = [
         replace(
             section,
-            action=action_map.get(section.code, section.action),
+            action=(
+                "retain"
+                if spec.sections.get(section.code)
+                and not spec.sections.get(section.code).has_match_rules
+                else action_map.get(section.code, section.action)
+            ),
             include=include_map.get(section.code, section.include),
             narrative=narrative_map.get(section.code, section.narrative),
         )
