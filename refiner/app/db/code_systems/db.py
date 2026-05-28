@@ -6,8 +6,7 @@ from uuid import UUID
 from psycopg.rows import dict_row
 
 from app.db.pool import AsyncDatabaseConnection
-
-type CodeSystemKey = str
+from app.services.terminology import CodeSystemKey, Oid
 
 
 @dataclass
@@ -247,9 +246,6 @@ async def get_all_code_systems_by_key(
     allowed_code_systems = await get_all_code_systems_db(db)
 
     return {s.key: s for s in allowed_code_systems.values()}
-
-
-type Oid = str
 
 
 async def get_oid_to_system_key_map(

@@ -4,10 +4,6 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field
 
-from app.db.code_systems.db import (
-    CodeSystemKey,
-    Oid,
-)
 from app.services.ecr.specification.constants import OID_TO_SYSTEM_KEY_MAP
 
 from ..db.conditions.model import DbCondition, DbConditionCoding
@@ -19,6 +15,8 @@ from ..db.conditions.model import DbCondition, DbConditionCoding
 #    the logic to transform the raw payload into the processed version.
 # This separates data fetching, data processing, and data usage into clean, testable steps.
 # =============================================================================
+type CodeSystemKey = str
+type Oid = str
 
 
 def index_condition_code_list_by_system(
