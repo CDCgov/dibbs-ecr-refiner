@@ -132,7 +132,7 @@ async def update_session_expiry_time(
 
     Args:
         response (Response): The response object
-        session_token: The user's session token
+        session_token (str): The user's session token
         expires_at (datetime): Current expiration time
         token_hash (str): Hashed session token
         logger (Logger): Standard logger
