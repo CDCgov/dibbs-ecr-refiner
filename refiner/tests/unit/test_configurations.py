@@ -13,6 +13,7 @@ from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
     DbConfigurationCustomCode,
+    DbConfigurationSummary,
     GetConfigurationResponseVersion,
 )
 from app.services.ecr.model import RefinedDocument, ReportableCondition
@@ -41,6 +42,12 @@ def mock_db_functions(
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_condition_by_id_db",
         AsyncMock(return_value=mock_condition),
+    )
+
+    fake_config_summary = DbConfigurationSummary(
+        id=mock_configuration.id,
+        name=mock_configuration.name,
+        status=mock_configuration.status,
     )
 
     fake_condition = DbCondition(
@@ -89,10 +96,9 @@ def mock_db_functions(
         AsyncMock(return_value=versions_mock),
     )
 
-    # Mock get_configurations_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_configurations_db",
-        AsyncMock(return_value=[mock_configuration]),
+        "app.api.v1.configurations.base.get_configurations_summary_db",
+        AsyncMock(return_value=[fake_config_summary]),
     )
 
     # Mock is_config_valid_to_insert_db

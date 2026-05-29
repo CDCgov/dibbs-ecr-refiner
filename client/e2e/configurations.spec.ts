@@ -56,4 +56,66 @@ test.describe('Configurations screen', () => {
       page.getByRole('heading', { name: config.name, level: 1 })
     ).toBeVisible();
   });
+
+  test('Navigates to the active config when one exists', async ({
+    api,
+    page,
+  }) => {
+    // create and activate config
+    const condition = 'Anotia';
+    const config = await api.createConfiguration('Anotia');
+    await api.updateConfigurationStatus(config.id, 'active');
+
+    // create draft
+    await api.createConfiguration('Anotia');
+
+    await page.reload();
+
+    await page.getByText(condition).click();
+
+    await expect(page.getByText('Viewing: Version 1')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Go to draft' })).toBeVisible();
+  });
+
+  test('Navigates to the draft config when only a draft and inactive configs exist', async ({
+    api,
+    page,
+  }) => {
+    // create and activate config
+    const condition = 'Anotia';
+    const config = await api.createConfiguration('Anotia');
+    await api.updateConfigurationStatus(config.id, 'active');
+
+    // create draft
+    await api.createConfiguration('Anotia');
+
+    await api.updateConfigurationStatus(config.id, 'inactive');
+
+    await page.reload();
+
+    await page.getByText(condition).click();
+
+    await expect(page.getByText('Editing: Version 2')).toBeVisible();
+  });
+
+  test('Navigates to the latest inactive config when only inactive configs exist', async ({
+    api,
+    page,
+  }) => {
+    // create and activate config
+    const condition = 'Anotia';
+    const config = await api.createConfiguration('Anotia');
+    await api.updateConfigurationStatus(config.id, 'active');
+
+    // create draft and then set inactive
+    const draft = await api.createConfiguration('Anotia');
+    await api.updateConfigurationStatus(draft.id, 'active');
+    await api.updateConfigurationStatus(draft.id, 'inactive');
+
+    await page.reload();
+
+    await page.getByText(condition).click();
+
+    await expect(page.getByText('Viewing: Version 2')).toBeVisible();
+  });
 });

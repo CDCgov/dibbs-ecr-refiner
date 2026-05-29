@@ -8,6 +8,7 @@ from app.api.v1.configurations.model import GetConfigurationsResponse
 from app.db.conditions.model import DbCondition, DbConditionCoding
 from app.db.configurations.model import (
     DbConfiguration,
+    DbConfigurationSummary,
     GetConfigurationResponseVersion,
 )
 from app.services.configuration_locks import ConfigurationLock
@@ -38,6 +39,12 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
     monkeypatch.setattr(
         "app.api.v1.configurations.base.get_condition_by_id_db",
         AsyncMock(return_value=condition_mock),
+    )
+
+    fake_config_summary = DbConfigurationSummary(
+        id=mock_configuration.id,
+        name=mock_configuration.name,
+        status=mock_configuration.status,
     )
 
     fake_condition = DbCondition(
@@ -86,10 +93,9 @@ def mock_db_functions(monkeypatch, mock_user, mock_configuration):
         AsyncMock(return_value=versions_mock),
     )
 
-    # Mock get_configurations_db
     monkeypatch.setattr(
-        "app.api.v1.configurations.base.get_configurations_db",
-        AsyncMock(return_value=[mock_configuration]),
+        "app.api.v1.configurations.base.get_configurations_summary_db",
+        AsyncMock(return_value=[fake_config_summary]),
     )
 
     # Mock is_config_valid_to_insert_db
