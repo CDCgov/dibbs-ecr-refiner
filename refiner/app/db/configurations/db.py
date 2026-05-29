@@ -1221,8 +1221,8 @@ async def get_configurations_summary_db(
                     ORDER BY
                         CASE c.status
                             WHEN 'active' THEN 1
-                            WHEN 'inactive' THEN 2
-                            WHEN 'draft' THEN 3
+                            WHEN 'draft' THEN 2
+                            WHEN 'inactive' THEN 3
                         END,
                         c.version DESC
                 ) AS rn
