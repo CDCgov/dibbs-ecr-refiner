@@ -20,21 +20,6 @@ from app.services.ecr.policy import (
 from app.services.terminology import CodeSystem
 
 
-@dataclass
-class SectionMetadata:
-    """
-    Utility class to help Orval ship these values to the frontend.
-
-    These sets of LOINC codes drive UI behavior in the eICR Sections
-    table and are sourced from refiner policy + the eICR specification.
-    Shipping them as literal-typed defaults means the frontend imports
-    real values rather than re-declaring them.
-    """
-
-    disabled_sections = DisabledSection
-    narrative_only_sections = NarrativeOnlySection
-
-
 @dataclass(frozen=True)
 class GetConfigurationsResponse:
     """
