@@ -68,7 +68,6 @@ function Modal({
             'items-start': position === 'top',
           })}
         >
-
           <DialogPanel
             className={classNames(
               'border-base-lighter relative z-60 w-full max-w-lg rounded-sm border bg-white p-6 shadow-lg',
