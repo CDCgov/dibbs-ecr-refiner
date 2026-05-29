@@ -221,6 +221,15 @@ export function ConditionCodeTable({
     return results.map((r) => r.item);
   }, [filteredCodes, results, searchText]);
 
+  const resultsByCode = useMemo(() => {
+    return new Map(
+      results.map((result) => [
+        `${result.item.system}-${result.item.code}-${result.item.description}`,
+        result,
+      ])
+    );
+  }, [results]);
+
   /**
    * TODO: Known issue
    * See: https://github.com/TanStack/virtual/issues/1119
@@ -327,10 +336,8 @@ export function ConditionCodeTable({
 
               {virtualItems.map((virtualRow) => {
                 const code = visibleCodes[virtualRow.index];
-                const matchingResult = results.find(
-                  (r) =>
-                    r.item.code === code.code &&
-                    r.item.description === code.description
+                const matchingResult = resultsByCode.get(
+                  `${code.system}-${code.code}-${code.description}`
                 );
                 return (
                   <div
