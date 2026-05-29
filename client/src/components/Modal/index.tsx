@@ -60,7 +60,7 @@ function Modal({
   return (
     <ModalContext.Provider value={{ onClose }}>
       <Dialog open={open} onClose={onClose} unmount>
-        <DialogBackdrop className="fixed inset-0 bg-black/60" />
+        <DialogBackdrop className="fixed inset-0 z-50 bg-black/60" />
 
         <div
           className={classNames('fixed inset-0 z-50 flex justify-center p-4', {
@@ -68,11 +68,10 @@ function Modal({
             'items-start': position === 'top',
           })}
         >
-          <div className="bg-base-dark/70 fixed inset-0" aria-hidden="true" />
 
           <DialogPanel
             className={classNames(
-              'border-base-lighter relative z-50 w-full max-w-lg rounded-sm border bg-white p-6 shadow-lg',
+              'border-base-lighter relative z-60 w-full max-w-lg rounded-sm border bg-white p-6 shadow-lg',
               className
             )}
           >
