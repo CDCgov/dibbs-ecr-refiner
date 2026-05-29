@@ -9,19 +9,15 @@ from app.db.conditions.db import (
     get_condition_by_id_db,
     get_conditions_by_version_db,
     get_primary_condition_db,
-    get_primary_conditions_for_configurations_db,
 )
 from app.db.configurations.db import (
     get_configuration_by_id_db,
     get_configuration_versions_db,
-    get_configurations_db,
+    get_configurations_summary_db,
     get_latest_config_db,
     get_total_condition_code_counts_by_configuration_db,
     insert_configuration_db,
     is_config_valid_to_insert_db,
-)
-from app.db.configurations.model import (
-    DbConfiguration,
 )
 from app.db.pool import AsyncDatabaseConnection, get_db
 from app.db.users.db import get_user_by_id_db
@@ -29,7 +25,6 @@ from app.db.users.model import DbUser
 from app.services.configuration_locks import ConfigurationLock
 from app.services.configurations import (
     format_section_naming,
-    get_canonical_url_to_highest_inactive_version_map,
 )
 from app.services.logger import get_logger
 
@@ -62,81 +57,12 @@ async def get_configurations(
         List of configuration objects.
     """
 
-    # get all configs in a JD
-    all_configs = await get_configurations_db(
-        jurisdiction_id=user.jurisdiction_id, db=db
-    )
-
-    # fetch all primary conditions in one query
-    primary_conditions = await get_primary_conditions_for_configurations_db(
-        configuration_ids=[c.id for c in all_configs], db=db
-    )
-
-    config_id_to_canonical_url: dict[UUID, str] = {
-        c.id: condition.canonical_url
-        for c in all_configs
-        if (condition := primary_conditions.get(c.id)) is not None
-    }
-
-    # active config by condition
-    active_configs_map: dict[str, DbConfiguration] = {
-        url: c
-        for c in all_configs
-        if c.status == "active"
-        and (url := config_id_to_canonical_url.get(c.id)) is not None
-    }
-
-    # draft config by condition
-    draft_configs_map: dict[str, DbConfiguration] = {
-        url: c
-        for c in all_configs
-        if c.status == "draft"
-        and (url := config_id_to_canonical_url.get(c.id)) is not None
-    }
-
-    # inactive config with the highest version by condition
-    highest_version_inactive_configs_map: dict[str, DbConfiguration] = (
-        get_canonical_url_to_highest_inactive_version_map(
-            configs=all_configs, config_id_to_canonical_url=config_id_to_canonical_url
+    return [
+        GetConfigurationsResponse(id=c.id, name=c.name, status=c.status)
+        for c in await get_configurations_summary_db(
+            jurisdiction_id=user.jurisdiction_id, db=db
         )
-    )
-
-    unique_urls = set(config_id_to_canonical_url.values())
-    response = []
-    for key in unique_urls:
-        has_active = key in active_configs_map
-        has_draft = key in draft_configs_map
-        has_inactive = key in highest_version_inactive_configs_map
-
-        # Active
-        if has_active:
-            response.append(
-                GetConfigurationsResponse(
-                    id=active_configs_map[key].id,
-                    name=active_configs_map[key].name,
-                    status=active_configs_map[key].status,
-                )
-            )
-        # Inactive
-        elif has_inactive:
-            response.append(
-                GetConfigurationsResponse(
-                    id=highest_version_inactive_configs_map[key].id,
-                    name=highest_version_inactive_configs_map[key].name,
-                    status=highest_version_inactive_configs_map[key].status,
-                )
-            )
-        # Draft
-        elif has_draft:
-            response.append(
-                GetConfigurationsResponse(
-                    id=draft_configs_map[key].id,
-                    name=draft_configs_map[key].name,
-                    status=draft_configs_map[key].status,
-                )
-            )
-
-    return sorted(response, key=lambda r: r.name.lower())
+    ]
 
 
 @router.post(
