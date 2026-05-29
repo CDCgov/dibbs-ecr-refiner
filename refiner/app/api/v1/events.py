@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from logging import Logger
 from uuid import UUID
@@ -5,19 +6,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth.middleware import get_logged_in_user
-from app.db.conditions.db import get_primary_conditions_for_configurations_db
-from app.db.configurations.db import get_configurations_db
-from app.db.pool import AsyncDatabaseConnection, get_db
-from app.db.users.model import DbUser
-from app.services.logger import get_logger
-
-from ...db.events.db import (
-    AuditEvent,
+from app.db.events.db import (
+    DbAuditEvent,
+    get_configuration_filter_options_db,
     get_custom_code_upload_events_by_event_id,
     get_event_count_by_condition_db,
     get_events_by_jd_db,
     is_event_valid,
 )
+from app.db.pool import AsyncDatabaseConnection, get_db
+from app.db.users.model import DbUser
+from app.services.logger import get_logger
 
 router = APIRouter(prefix="/events")
 
@@ -39,7 +38,7 @@ class EventsResponse:
     Response needed for the audit log page.
     """
 
-    audit_events: list[AuditEvent]
+    audit_events: list[DbAuditEvent]
     configuration_options: list[EventFilterOption]
     total_pages: int
 
@@ -77,8 +76,18 @@ async def get_events(
     PAGE_SIZE = 10
     jd = user.jurisdiction_id
 
-    total_event_count = await get_event_count_by_condition_db(
-        jurisdiction_id=jd, canonical_url=canonical_url, db=db
+    total_event_count, audit_events, configuration_options = await asyncio.gather(
+        get_event_count_by_condition_db(
+            jurisdiction_id=jd, canonical_url=canonical_url, db=db
+        ),
+        get_events_by_jd_db(
+            jurisdiction_id=jd,
+            page=page,
+            page_size=PAGE_SIZE,
+            canonical_url=canonical_url,
+            db=db,
+        ),
+        get_configuration_filter_options_db(jurisdiction_id=jd, db=db),
     )
 
     if total_event_count is None:
@@ -103,38 +112,13 @@ async def get_events(
             detail=f"'page' must be a number between 1 and {total_pages}.",
         )
 
-    audit_events = await get_events_by_jd_db(
-        jurisdiction_id=jd,
-        page=page,
-        page_size=PAGE_SIZE,
-        canonical_url=canonical_url,
-        db=db,
-    )
-
-    jd_configurations = await get_configurations_db(jurisdiction_id=jd, db=db)
-    config_ids = [c.id for c in jd_configurations]
-    primary_conditions = await get_primary_conditions_for_configurations_db(
-        configuration_ids=config_ids, db=db
-    )
-
-    seen_urls = set()
-    configuration_options = []
-
-    for c in jd_configurations:
-        condition = primary_conditions.get(c.id)
-        if condition is None or condition.canonical_url in seen_urls:
-            continue
-
-        option = EventFilterOption(
-            name=c.name, id=c.id, canonical_url=condition.canonical_url
-        )
-        configuration_options.append(option)
-        seen_urls.add(condition.canonical_url)
-
     return EventsResponse(
         total_pages=total_pages,
         audit_events=audit_events,
-        configuration_options=configuration_options,
+        configuration_options=[
+            EventFilterOption(id=co.id, name=co.name, canonical_url=co.canonical_url)
+            for co in configuration_options
+        ],
     )
 
 

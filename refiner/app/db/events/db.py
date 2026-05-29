@@ -12,8 +12,8 @@ from ..pool import AsyncDatabaseConnection
 from .model import EventInput
 
 
-@dataclass
-class AuditEvent:
+@dataclass(frozen=True)
+class DbAuditEvent:
     """
     An event returned by the DB function.
     """
@@ -28,8 +28,19 @@ class AuditEvent:
     has_custom_code_upload_events: bool
 
 
-@dataclass
-class CustomCodeUploadEvent:
+@dataclass(frozen=True)
+class DbEventFilterOption:
+    """
+    Filter option from the DB.
+    """
+
+    id: UUID
+    name: str
+    canonical_url: str
+
+
+@dataclass(frozen=True)
+class DbCustomCodeUploadEvent:
     """
     Custom code upload event.
     """
@@ -90,13 +101,36 @@ async def is_event_valid(
             return row is not None
 
 
+async def get_configuration_filter_options_db(
+    jurisdiction_id: str, db: AsyncDatabaseConnection
+) -> list[DbEventFilterOption]:
+    """
+    Collects all possible conditions within a jurisdiction a user can filter events by.
+    """
+    query = """
+        SELECT DISTINCT ON (cond.canonical_url)
+            c.id,
+            c.name,
+            cond.canonical_url
+        FROM configurations c
+        JOIN configurations_conditions cc ON cc.configuration_id = c.id AND cc.is_primary = true
+        JOIN conditions cond ON cond.id = cc.condition_id
+        WHERE c.jurisdiction_id = %s
+        ORDER BY cond.canonical_url, c.name
+    """
+    async with db.get_connection() as conn:
+        async with conn.cursor(row_factory=class_row(DbEventFilterOption)) as cur:
+            await cur.execute(query, (jurisdiction_id,))
+            return await cur.fetchall()
+
+
 async def get_events_by_jd_db(
     jurisdiction_id: str,
     page: int,
     page_size: int,
     db: AsyncDatabaseConnection,
     canonical_url: str | None = None,
-) -> list[AuditEvent]:
+) -> list[DbAuditEvent]:
     """
     Fetches all events for a given jurisdiction and condition.
     """
@@ -135,7 +169,7 @@ async def get_events_by_jd_db(
     )
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(AuditEvent)) as cur:
+        async with conn.cursor(row_factory=class_row(DbAuditEvent)) as cur:
             await cur.execute(query, params)
             events_rows = await cur.fetchall()
             return events_rows
@@ -143,7 +177,7 @@ async def get_events_by_jd_db(
 
 async def get_custom_code_upload_events_by_event_id(
     event_id: UUID, db: AsyncDatabaseConnection
-) -> list[CustomCodeUploadEvent]:
+) -> list[DbCustomCodeUploadEvent]:
     """
     Returns all custom code upload events for an event ID.
     """
@@ -160,7 +194,7 @@ async def get_custom_code_upload_events_by_event_id(
     params = (event_id,)
 
     async with db.get_connection() as conn:
-        async with conn.cursor(row_factory=class_row(CustomCodeUploadEvent)) as cur:
+        async with conn.cursor(row_factory=class_row(DbCustomCodeUploadEvent)) as cur:
             await cur.execute(query, params)
             rows = await cur.fetchall()
             return rows
