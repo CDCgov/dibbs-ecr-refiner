@@ -69,6 +69,30 @@ SCENARIOS: list[Scenario] = [
         ),
         configuration_version=1,
     ),
+    Scenario(
+        name="covid_with_custom_codes",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_with_custom_codes.json",
+        jurisdiction_code="SDDH",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=2,
+    ),
+    Scenario(
+        name="covid_with_section_overrides",
+        fixture_dir="all_sections_COVID_INFLUENZA",
+        config_filename="covid_with_section_overrides.json",
+        jurisdiction_code="SDDH",
+        rsg_code="840539006",
+        canonical_url=(
+            "https://tes.tools.aimsplatform.org/api/fhir/ValueSet/"
+            "07221093-b8a1-4b1d-8678-259277bfba64"
+        ),
+        configuration_version=3,
+    ),
 ]
 
 
