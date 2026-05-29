@@ -13,7 +13,7 @@ from app.db.configurations.model import (
     DbSectionAction,
 )
 from app.db.pool import AsyncDatabaseConnection
-from app.services.ecr.policy import SECTION_PROCESSING_SKIP
+from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.specification import (
     get_section_version_map,
     load_spec,
@@ -52,7 +52,7 @@ def get_default_sections() -> list[DbConfigurationSectionProcessing]:
             action=(
                 "retain"
                 if loinc_code in SECTION_PROCESSING_SKIP
-                or not section_spec.has_match_rules
+                or loinc_code in NARRATIVE_ONLY_SECTIONS
                 else "refine"
             ),
             versions=loinc_versions_flat.get(loinc_code, []),
@@ -97,13 +97,9 @@ def clone_section_processing_instructions(
     include_map = {section.code: section.include for section in standard_sections}
     narrative_map = {section.code: section.narrative for section in standard_sections}
 
-    # Load spec to check for narrative-only sections
-    spec = load_spec("3.1.1")
-
     standard_updates = []
     for section in clone_to:
-        section_spec = spec.sections.get(section.code)
-        if section_spec and not section_spec.has_match_rules:
+        if section.code in NARRATIVE_ONLY_SECTIONS:
             new_action: DbSectionAction = "retain"
         else:
             new_action = action_map.get(section.code, section.action)

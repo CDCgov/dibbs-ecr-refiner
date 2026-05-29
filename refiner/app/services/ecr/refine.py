@@ -17,7 +17,7 @@ from app.services.ecr.model import (
     SectionRunResult,
     SectionSource,
 )
-from app.services.ecr.policy import SECTION_PROCESSING_SKIP
+from app.services.ecr.policy import NARRATIVE_ONLY_SECTIONS, SECTION_PROCESSING_SKIP
 from app.services.ecr.section import (
     append_section_provenance_footnote,
     create_minimal_section,
@@ -475,7 +475,7 @@ def refine_eicr(
             create_minimal_section(section=section, removal_reason="configured")
             outcome = SectionOutcome.REMOVED_BY_CONFIG
 
-        elif section_specification and not section_specification.has_match_rules:
+        elif section_code in NARRATIVE_ONLY_SECTIONS:
             # BRANCH 2a: narrative-only section. the eICR spec defines
             # no entry match rules for this section, so there is no
             # coded data to refine — the section is conveyed entirely
